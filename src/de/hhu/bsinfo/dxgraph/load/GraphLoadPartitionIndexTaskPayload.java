@@ -9,9 +9,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
-import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
@@ -19,6 +19,8 @@ import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Load a partition index of a partitioned graph for one compute group. The index is
@@ -29,6 +31,9 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  */
 public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
 	public static final String MS_PART_INDEX_IDENT = "GPI";
+
+	private static final Logger LOGGER =
+			LogManager.getFormatterLogger(GraphLoadPartitionIndexTaskPayload.class.getSimpleName());
 
 	@Expose
 	private String m_pathFile = "./";
@@ -85,14 +90,14 @@ public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
 			// store the index for our current cLompute group
 			if (!tmpStorage.create(graphPartIndex)) {
 				// #if LOGGER >= ERROR
-				m_loggerService.error(getClass(), "Creating chunk for partition index failed.");
+				LOGGER.error("Creating chunk for partition index failed");
 				// #endif /* LOGGER >= ERROR */
 				return -2;
 			}
 
 			if (!tmpStorage.put(graphPartIndex)) {
 				// #if LOGGER >= ERROR
-				m_loggerService.error(getClass(), "Putting partition index failed.");
+				LOGGER.error("Putting partition index failed");
 				// #endif /* LOGGER >= ERROR */
 				return -3;
 			}
@@ -101,9 +106,8 @@ public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
 			nameserviceService.register(graphPartIndex, MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId());
 
 			// #if LOGGER >= INFO
-			m_loggerService.info(getClass(),
-					"Successfully loaded and stored graph partition index, nameservice entry name "
-							+ MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId() + ":\n" + graphPartIndex);
+			LOGGER.info("Successfully loaded and stored graph partition index, nameservice entry name %s:\n%s",
+					MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId(), graphPartIndex);
 			// #endif /* LOGGER >= INFO */
 		}
 
@@ -183,8 +187,7 @@ public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
 			reader = new BufferedReader(new FileReader(p_pathFile));
 		} catch (final FileNotFoundException e) {
 			// #if LOGGER >= ERROR
-			m_loggerService.error(getClass(),
-					"Missing index file " + p_pathFile + " to create graph index for loading graph");
+			LOGGER.error("Missing index file %s to create graph index for loading graph", p_pathFile);
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
@@ -206,8 +209,7 @@ public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
 			String[] tokens = line.split(",");
 			if (tokens.length != 4) {
 				// #if LOGGER >= ERROR
-				m_loggerService.error(getClass(),
-						"Invalid index entry " + line + " in file " + p_pathFile + ", ignoring.");
+				LOGGER.error("Invalid index entry %d in file %s, ignoring", line, p_pathFile);
 				// #endif /* LOGGER >= ERROR */
 				continue;
 			}

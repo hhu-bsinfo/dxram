@@ -2,7 +2,8 @@
 package de.hhu.bsinfo.dxram.engine;
 
 import com.google.gson.annotations.Expose;
-import de.hhu.bsinfo.utils.logger.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Base class for all components in DXRAM. A component serves the engine as a building block
@@ -14,6 +15,8 @@ import de.hhu.bsinfo.utils.logger.Logger;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public abstract class AbstractDXRAMComponent {
+
+	private final Logger LOGGER;
 
 	// config values
 	@Expose
@@ -34,6 +37,7 @@ public abstract class AbstractDXRAMComponent {
 	 * @param p_priorityShutdown Default shutdown priority for this component
 	 */
 	public AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown) {
+		LOGGER = LogManager.getFormatterLogger(this.getClass().getSimpleName());
 		m_priorityInit = p_priorityInit;
 		m_priorityShutdown = p_priorityShutdown;
 	}
@@ -77,7 +81,7 @@ public abstract class AbstractDXRAMComponent {
 		m_parentEngine = p_engine;
 
 		// #if LOGGER >= INFO
-		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Initializing component...");
+		LOGGER.info("Initializing component...");
 		// #endif /* LOGGER >= INFO */
 
 		resolveComponentDependencies(p_engine);
@@ -86,18 +90,18 @@ public abstract class AbstractDXRAMComponent {
 			ret = initComponent(m_parentEngine.getSettings());
 		} catch (final Exception e) {
 			// #if LOGGER >= ERROR
-			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Initializing component failed. ", e);
+			LOGGER.error("Initializing component failed", e);
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
 
 		if (!ret) {
 			// #if LOGGER >= ERROR
-			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Initializing component failed.");
+			LOGGER.error("Initializing component failed");
 			// #endif /* LOGGER >= ERROR */
 		} else {
 			// #if LOGGER >= INFO
-			m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Initializing component successful.");
+			LOGGER.info("Initializing component successful");
 			// #endif /* LOGGER >= INFO */
 		}
 
@@ -113,16 +117,16 @@ public abstract class AbstractDXRAMComponent {
 		boolean ret;
 
 		// #if LOGGER >= INFO
-		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down component...");
+		LOGGER.info("Shutting down component...");
 		// #endif /* LOGGER >= INFO */
 		ret = shutdownComponent();
 		if (!ret) {
 			// #if LOGGER >= WARN
-			m_parentEngine.getLogger().warn(this.getClass().getSimpleName(), "Shutting down component failed.");
+			LOGGER.warn("Shutting down component failed");
 			// #endif /* LOGGER >= WARN */
 		} else {
 			// #if LOGGER >= INFO
-			m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down component successful.");
+			LOGGER.info("Shutting down component successful");
 			// #endif /* LOGGER >= INFO */
 		}
 
@@ -130,17 +134,6 @@ public abstract class AbstractDXRAMComponent {
 	}
 
 	// ------------------------------------------------------------------------------
-
-	/**
-	 * Get the logger for logging messages.
-	 *
-	 * @return Logger for logging.
-	 * @note There is a LoggerComponent class. The Logger is wrapped by this class to enable further
-	 * control and features for logging messages. Use the LoggerComponent for logging instead.
-	 */
-	protected Logger getLogger() {
-		return m_parentEngine.getLogger();
-	}
 
 	/**
 	 * Called before the component is initialized. Get all the components your own component depends on.

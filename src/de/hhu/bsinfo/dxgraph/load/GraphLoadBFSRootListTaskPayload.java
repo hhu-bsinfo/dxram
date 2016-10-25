@@ -6,20 +6,21 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
-import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRoots;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRootsBinaryFile;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Task to load a list of root vertex ids for BFS entry points.
@@ -27,12 +28,14 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
+
+	private static final Logger LOGGER =
+			LogManager.getFormatterLogger(GraphLoadBFSRootListTaskPayload.class.getSimpleName());
+
 	public static final String MS_BFS_ROOTS = "BFS";
 
 	@Expose
 	private String m_path = "./";
-
-	private LoggerService m_loggerService;
 
 	/**
 	 * Constructor
@@ -67,7 +70,6 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 		// store the result. every other slave can simply grab the
 		// root list from chunk memory
 		if (p_ctx.getCtxData().getSlaveId() == 0) {
-			m_loggerService = p_ctx.getDXRAMServiceAccessor().getService(LoggerService.class);
 			TemporaryStorageService m_temporaryStorageService =
 					p_ctx.getDXRAMServiceAccessor().getService(TemporaryStorageService.class);
 			NameserviceService nameserviceService =
@@ -79,9 +81,8 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 							+ p_ctx.getCtxData().getComputeGroupId(), 5000);
 			if (chunkIdPartitionIndex == ChunkID.INVALID_ID) {
 				// #if LOGGER >= ERROR
-				m_loggerService.error(getClass(),
-						"Could not find partition index for current compute group "
-								+ p_ctx.getCtxData().getComputeGroupId());
+				LOGGER.error("Could not find partition index for current compute group %d",
+						p_ctx.getCtxData().getComputeGroupId());
 				// #endif /* LOGGER >= ERROR */
 				return -1;
 			}
@@ -92,7 +93,7 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 			// get the index
 			if (!m_temporaryStorageService.get(graphPartitionIndex)) {
 				// #if LOGGER >= ERROR
-				m_loggerService.error(getClass(), "Getting partition index from temporary memory failed.");
+				LOGGER.error("Getting partition index from temporary memory failed");
 				// #endif /* LOGGER >= ERROR */
 				return -2;
 			}
@@ -100,7 +101,7 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 			OrderedEdgeListRoots orderedEdgeListRoots = setupOrderedEdgeListRoots(m_path);
 			if (orderedEdgeListRoots == null) {
 				// #if LOGGER >= ERROR
-				m_loggerService.error(getClass(), "Setting up ordered edge list roots failed.");
+				LOGGER.error("Setting up ordered edge list roots failed");
 				// #endif /* LOGGER >= ERROR */
 				return -3;
 			}
@@ -108,7 +109,7 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 			GraphRootList rootList = loadRootList(orderedEdgeListRoots, graphPartitionIndex);
 			if (rootList == null) {
 				// #if LOGGER >= ERROR
-				m_loggerService.error(getClass(), "Loading root list failed.");
+				LOGGER.error("Loading root list failed");
 				// #endif /* LOGGER >= ERROR */
 				return -4;
 			}
@@ -119,14 +120,14 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 			// store the root list for our current compute group
 			if (!m_temporaryStorageService.create(rootList)) {
 				// #if LOGGER >= ERROR
-				m_loggerService.error(getClass(), "Creating chunk for root list failed.");
+				LOGGER.error("Creating chunk for root list failed");
 				// #endif /* LOGGER >= ERROR */
 				return -5;
 			}
 
 			if (!m_temporaryStorageService.put(rootList)) {
 				// #if LOGGER >= ERROR
-				m_loggerService.error(getClass(), "Putting root list failed.");
+				LOGGER.error("Putting root list failed");
 				// #endif /* LOGGER >= ERROR */
 				return -6;
 			}
@@ -135,9 +136,8 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 			nameserviceService.register(rootList, MS_BFS_ROOTS + p_ctx.getCtxData().getComputeGroupId());
 
 			// #if LOGGER >= INFO
-			m_loggerService.info(getClass(),
-					"Successfully loaded and stored root list, nameservice entry name "
-							+ MS_BFS_ROOTS + p_ctx.getCtxData().getComputeGroupId() + ":\n" + rootList);
+			LOGGER.info("Successfully loaded and stored root list, nameservice entry name %s:\n%s",
+					MS_BFS_ROOTS + p_ctx.getCtxData().getComputeGroupId(), rootList);
 			// #endif /* LOGGER >= INFO */
 		}
 
@@ -190,15 +190,14 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 		File tmpFile = new File(p_path);
 		if (!tmpFile.exists()) {
 			// #if LOGGER >= ERROR
-			m_loggerService.error(getClass(), "Cannot setup order ededge list roots, path does not exist: " + p_path);
+			LOGGER.error("Cannot setup order ededge list roots, path does not exist: %s", p_path);
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
 		if (!tmpFile.isDirectory()) {
 			// #if LOGGER >= ERROR
-			m_loggerService.error(getClass(),
-					"Cannot setup ordered edge list roots, path is not a directory: " + p_path);
+			LOGGER.error("Cannot setup ordered edge list roots, path is not a directory: %s", p_path);
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
@@ -219,12 +218,12 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 
 		// add filtered files
 		// #if LOGGER >= DEBUG
-		m_loggerService.debug(getClass(), "Setting up root oel, iterating files in " + p_path);
+		LOGGER.debug("Setting up root oel, iterating files in %s", p_path);
 		// #endif /* LOGGER >= DEBUG */
 
 		for (File file : files) {
 			// #if LOGGER >= DEBUG
-			m_loggerService.debug(getClass(), "Found root list: " + file);
+			LOGGER.debug("Found root list: %s", file);
 			// #endif /* LOGGER >= DEBUG */
 
 			orderedEdgeListRoots = new OrderedEdgeListRootsBinaryFile(file.getAbsolutePath());
@@ -253,8 +252,7 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 
 			long vertexId = p_graphPartitionIndex.rebaseGlobalVertexIdToLocalPartitionVertexId(root);
 			if (vertexId == ChunkID.INVALID_ID) {
-				m_loggerService.error(getClass(),
-						"Rebasing of " + ChunkID.toHexString(root) + " failed out of vertex id range of graph");
+				LOGGER.error("Rebasing of 0x%X failed out of vertex id range of graph", root);
 			}
 			roots.add(vertexId);
 		}

@@ -7,12 +7,18 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Represents a network connections
+ *
  * @author Florian Klein 18.03.2012
  * @author Marc Ewert 14.10.2014
  */
 abstract class AbstractConnection {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractConnection.class.getSimpleName());
 
 	// Attributes
 	private final DataHandler m_dataHandler;
@@ -43,16 +49,14 @@ abstract class AbstractConnection {
 	private Condition m_flowControlCond;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of AbstractConnection
-	 * @param p_destination
-	 *            the destination
-	 * @param p_nodeMap
-	 *            the node map
-	 * @param p_messageDirectory
-	 *            the message directory
-	 * @param p_flowControlWindowSize
-	 *            the maximal number of ByteBuffer to schedule for sending/receiving
+	 *
+	 * @param p_destination           the destination
+	 * @param p_nodeMap               the node map
+	 * @param p_messageDirectory      the message directory
+	 * @param p_flowControlWindowSize the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
 	AbstractConnection(final short p_destination, final NodeMap p_nodeMap,
 			final MessageDirectory p_messageDirectory, final int p_flowControlWindowSize) {
@@ -79,8 +83,10 @@ abstract class AbstractConnection {
 	}
 
 	// Getters
+
 	/**
 	 * Checks if the connection is connected
+	 *
 	 * @return true if the connection is connected, false otherwise
 	 */
 	public final boolean isConnected() {
@@ -95,6 +101,7 @@ abstract class AbstractConnection {
 
 	/**
 	 * Checks if the connection is connected
+	 *
 	 * @return true if the connection is connected, false otherwise
 	 */
 	public final boolean isCongested() {
@@ -106,6 +113,7 @@ abstract class AbstractConnection {
 
 	/**
 	 * Get node map
+	 *
 	 * @return the NodeMap
 	 */
 	public final NodeMap getNodeMap() {
@@ -114,6 +122,7 @@ abstract class AbstractConnection {
 
 	/**
 	 * Get the destination
+	 *
 	 * @return the destination
 	 */
 	public final short getDestination() {
@@ -122,6 +131,7 @@ abstract class AbstractConnection {
 
 	/**
 	 * Get the creation timestamp
+	 *
 	 * @return the creation timestamp
 	 */
 	public final long getCreationTimestamp() {
@@ -130,6 +140,7 @@ abstract class AbstractConnection {
 
 	/**
 	 * Get the timestamp of the last access
+	 *
 	 * @return the timestamp of the last access
 	 */
 	public final long getLastAccessTimestamp() {
@@ -138,6 +149,7 @@ abstract class AbstractConnection {
 
 	/**
 	 * Get the closing timestamp
+	 *
 	 * @return the closing timestamp
 	 */
 	public final long getClosingTimestamp() {
@@ -145,6 +157,7 @@ abstract class AbstractConnection {
 	}
 
 	// Setters
+
 	/**
 	 * Set the closing timestamp
 	 */
@@ -154,8 +167,8 @@ abstract class AbstractConnection {
 
 	/**
 	 * Marks the connection as (not) connected
-	 * @param p_connected
-	 *            if true the connection is marked as connected, otherwise the connections marked as not connected
+	 *
+	 * @param p_connected if true the connection is marked as connected, otherwise the connections marked as not connected
 	 */
 	protected final void setConnected(final boolean p_connected) {
 		m_lock.lock();
@@ -165,18 +178,19 @@ abstract class AbstractConnection {
 
 	/**
 	 * Set the ConnectionListener
-	 * @param p_listener
-	 *            the ConnectionListener
+	 *
+	 * @param p_listener the ConnectionListener
 	 */
 	public final void setListener(final DataReceiver p_listener) {
 		m_listener = p_listener;
 	}
 
 	// Methods
+
 	/**
 	 * Forward buffer to DataHandler to fill byte stream and create messages.
-	 * @param p_buffer
-	 *            the new buffer
+	 *
+	 * @param p_buffer the new buffer
 	 */
 	protected final void processBuffer(final ByteBuffer p_buffer) {
 		m_dataHandler.processBuffer(p_buffer);
@@ -184,10 +198,9 @@ abstract class AbstractConnection {
 
 	/**
 	 * Writes data to the connection
-	 * @param p_message
-	 *            the AbstractMessage to send
-	 * @throws NetworkException
-	 *             if the data could not be written
+	 *
+	 * @param p_message the AbstractMessage to send
+	 * @throws NetworkException if the data could not be written
 	 */
 	protected final void write(final AbstractMessage p_message) throws NetworkException {
 		m_flowControlCondLock.lock();
@@ -204,7 +217,7 @@ abstract class AbstractConnection {
 			doWrite(p_message);
 		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send message: " + p_message, e);
+			LOGGER.error("Could not send message: %s\n%s", p_message, e);
 			// #endif /* LOGGER >= ERROR */
 
 			return;
@@ -215,36 +228,37 @@ abstract class AbstractConnection {
 
 	/**
 	 * Writes data to the connection
-	 * @param p_message
-	 *            the AbstractMessage to send
-	 * @throws NetworkException
-	 *             if message buffer is too small
+	 *
+	 * @param p_message the AbstractMessage to send
+	 * @throws NetworkException if message buffer is too small
 	 */
 	protected abstract void doWrite(final AbstractMessage p_message) throws NetworkException;
 
 	/**
 	 * Writes data to the connection without delay
-	 * @param p_message
-	 *            the AbstractMessage to send
-	 * @throws NetworkException
-	 *             if message buffer is too small
+	 *
+	 * @param p_message the AbstractMessage to send
+	 * @throws NetworkException if message buffer is too small
 	 */
 	protected abstract void doForceWrite(AbstractMessage p_message) throws NetworkException;
 
 	/**
 	 * Returns whether there is data left to send in output queue
+	 *
 	 * @return whether the output queue is empty (false) or not (true)
 	 */
 	protected abstract boolean dataLeftToWrite();
 
 	/**
 	 * Returns whether the incoming buffer queue is full or not
+	 *
 	 * @return whether the incoming buffer queue is full or not
 	 */
 	protected abstract boolean isIncomingQueueFull();
 
 	/**
 	 * Returns the size of input and output queues
+	 *
 	 * @return the queue sizes
 	 */
 	protected abstract String getInputOutputQueueLength();
@@ -280,12 +294,13 @@ abstract class AbstractConnection {
 	/**
 	 * Called when the connection was closed.
 	 */
-	protected void cleanup() {}
+	protected void cleanup() {
+	}
 
 	/**
 	 * Informs the ConnectionListener about a new message
-	 * @param p_message
-	 *            the new message
+	 *
+	 * @param p_message the new message
 	 */
 	private void deliverMessage(final AbstractMessage p_message) {
 		if (p_message instanceof FlowControlMessage) {
@@ -295,7 +310,7 @@ abstract class AbstractConnection {
 				m_listener.newMessage(p_message);
 			} else {
 				// #if LOGGER >= ERROR
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), "No listener registered. Message will be discarded: " + p_message);
+				LOGGER.error("No listener registered. Message will be discarded: %s", p_message);
 				// #endif /* LOGGER >= ERROR */
 			}
 		}
@@ -313,7 +328,7 @@ abstract class AbstractConnection {
 			messageBuffer = message.getBuffer();
 		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send flow control message", e);
+			LOGGER.error("Could not send flow control message", e);
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -326,7 +341,7 @@ abstract class AbstractConnection {
 			doForceWrite(message);
 		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send flow control message", e);
+			LOGGER.error("Could not send flow control message", e);
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -337,8 +352,8 @@ abstract class AbstractConnection {
 
 	/**
 	 * Handles a received FlowControlMessage
-	 * @param p_message
-	 *            FlowControlMessage
+	 *
+	 * @param p_message FlowControlMessage
 	 */
 	private void handleFlowControlMessage(final FlowControlMessage p_message) {
 		m_flowControlCondLock.lock();
@@ -350,6 +365,7 @@ abstract class AbstractConnection {
 
 	/**
 	 * Get the String representation
+	 *
 	 * @return the String representation
 	 */
 	@Override
@@ -357,7 +373,9 @@ abstract class AbstractConnection {
 		String ret;
 
 		m_flowControlCondLock.lock();
-		ret = this.getClass().getSimpleName() + "[" + NodeID.toHexString(m_destination) + ", " + (m_connected ? "connected" : "not connected")
+		ret = this.getClass().getSimpleName() + "[" + NodeID.toHexString(m_destination) + ", " + (m_connected ?
+				"connected" :
+				"not connected")
 				+ ", sent(messages): " + m_sentMessages + ", received(messages): " + m_receivedMessages
 				+ ", unconfirmed(b): " + m_unconfirmedBytes + ", received_to_confirm(b): " + m_receivedBytes
 				+ ", buffer queues: " + getInputOutputQueueLength();
@@ -367,23 +385,27 @@ abstract class AbstractConnection {
 	}
 
 	// Classes
+
 	/**
 	 * Manages for reacting to connections
+	 *
 	 * @author Marc Ewert 11.04.2014
 	 */
 	protected interface DataReceiver {
 
 		// Methods
+
 		/**
 		 * New messsage is available
-		 * @param p_message
-		 *            the message which has been received
+		 *
+		 * @param p_message the message which has been received
 		 */
 		void newMessage(AbstractMessage p_message);
 	}
 
 	/**
 	 * Reacts on incoming data
+	 *
 	 * @author Florian Klein 23.07.2013
 	 * @author Marc Ewert 16.09.2014
 	 */
@@ -392,13 +414,15 @@ abstract class AbstractConnection {
 		/**
 		 * Default constructor
 		 */
-		DataHandler() {}
+		DataHandler() {
+		}
 
 		// Methods
+
 		/**
 		 * Adds a buffer to byte stream and creates a message if all data was gathered.
-		 * @param p_buffer
-		 *            the new buffer
+		 *
+		 * @param p_buffer the new buffer
 		 */
 		public void processBuffer(final ByteBuffer p_buffer) {
 			ByteBuffer messageBuffer;
@@ -441,8 +465,8 @@ abstract class AbstractConnection {
 
 		/**
 		 * Create a message from a given buffer
-		 * @param p_buffer
-		 *            buffer containing a message
+		 *
+		 * @param p_buffer buffer containing a message
 		 * @return message
 		 */
 		private AbstractMessage createMessage(final ByteBuffer p_buffer) {
@@ -487,9 +511,9 @@ abstract class AbstractConnection {
 			} catch (final Exception e) {
 				// #if LOGGER >= ERROR
 				if (message != null) {
-					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message: " + message, e);
+					LOGGER.error("Unable to create message: s\n%s", message, e);
 				} else {
-					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message", e);
+					LOGGER.error("Unable to create message", e);
 				}
 				// #endif /* LOGGER >= ERROR */
 			}
@@ -500,6 +524,7 @@ abstract class AbstractConnection {
 
 	/**
 	 * Creates ByteBuffers containing AbstractMessages from ByteBuffer-Chunks
+	 *
 	 * @author Florian Klein 09.03.2012
 	 * @author Marc Ewert 28.10.2014
 	 */
@@ -514,6 +539,7 @@ abstract class AbstractConnection {
 		private boolean m_exceptionOccurred;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of MessageCreator
 		 */
@@ -523,8 +549,10 @@ abstract class AbstractConnection {
 		}
 
 		// Getters
+
 		/**
 		 * Get the created Message
+		 *
 		 * @return the created Message
 		 */
 		public final ByteBuffer getMessageBuffer() {
@@ -533,6 +561,7 @@ abstract class AbstractConnection {
 
 		/**
 		 * Checks if an Exception occurred
+		 *
 		 * @return true if an Exception occurred, false otherwise
 		 */
 		public final boolean exceptionOccurred() {
@@ -540,6 +569,7 @@ abstract class AbstractConnection {
 		}
 
 		// Methods
+
 		/**
 		 * Clear all data
 		 */
@@ -551,30 +581,30 @@ abstract class AbstractConnection {
 
 		/**
 		 * Updates the current data
-		 * @param p_buffer
-		 *            the ByteBuffer with new data
+		 *
+		 * @param p_buffer the ByteBuffer with new data
 		 */
 		public void update(final ByteBuffer p_buffer) {
 			assert p_buffer != null;
 
 			while (m_step != Step.DONE && p_buffer.hasRemaining()) {
 				switch (m_step) {
-				case READ_HEADER:
-					readHeader(p_buffer);
-					break;
-				case READ_PAYLOAD:
-					readPayload(p_buffer);
-					break;
-				default:
-					break;
+					case READ_HEADER:
+						readHeader(p_buffer);
+						break;
+					case READ_PAYLOAD:
+						readPayload(p_buffer);
+						break;
+					default:
+						break;
 				}
 			}
 		}
 
 		/**
 		 * Reads the remaining message header
-		 * @param p_buffer
-		 *            the ByteBuffer with the data
+		 *
+		 * @param p_buffer the ByteBuffer with the data
 		 */
 		private void readHeader(final ByteBuffer p_buffer) {
 			try {
@@ -609,7 +639,7 @@ abstract class AbstractConnection {
 				}
 			} catch (final Exception e) {
 				// #if LOGGER >= ERROR
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to read message header ", e);
+				LOGGER.error("Unable to read message header ", e);
 				// #endif /* LOGGER >= ERROR */
 				clear();
 			}
@@ -617,8 +647,8 @@ abstract class AbstractConnection {
 
 		/**
 		 * Reads the message payload
-		 * @param p_buffer
-		 *            the ByteBuffer with the data
+		 *
+		 * @param p_buffer the ByteBuffer with the data
 		 */
 		private void readPayload(final ByteBuffer p_buffer) {
 			try {
@@ -633,7 +663,7 @@ abstract class AbstractConnection {
 				}
 			} catch (final Exception e) {
 				// #if LOGGER >= ERROR
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to read message payload ", e);
+				LOGGER.error("Unable to read message payload ", e);
 				// #endif /* LOGGER >= ERROR */
 				clear();
 			}
@@ -641,6 +671,7 @@ abstract class AbstractConnection {
 
 		/**
 		 * Checks if Message is complete
+		 *
 		 * @return true if the Message is complete, false otherwise
 		 */
 		public boolean isMessageComplete() {
@@ -650,6 +681,7 @@ abstract class AbstractConnection {
 
 	/**
 	 * Represents the steps in the creation process
+	 *
 	 * @author Florian Klein
 	 *         09.03.2012
 	 */

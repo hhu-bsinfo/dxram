@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Paging-like Tables for the ChunkID-VA mapping
@@ -17,6 +18,8 @@ import de.hhu.bsinfo.soh.SmallObjectHeap;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
 public final class CIDTable {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(CIDTable.class.getSimpleName());
 
 	public static final byte ENTRY_SIZE = 5;
 	public static final byte LID_TABLE_LEVELS = 4;
@@ -42,7 +45,6 @@ public final class CIDTable {
 
 	private LIDStore m_store;
 
-	private LoggerComponent m_logger;
 	private StatisticsComponent m_statistics;
 
 	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs;
@@ -55,15 +57,12 @@ public final class CIDTable {
 	 * @param p_nodeIdHook            Instance of a class implementing the node id hook.
 	 * @param p_statistics            Statistics component for recording.
 	 * @param p_statisticsRecorderIDs Metadata for statistics recording
-	 * @param p_logger                Logger component for logging.
 	 */
 	public CIDTable(final GetNodeIdHook p_nodeIdHook, final StatisticsComponent p_statistics,
-			final MemoryStatisticsRecorderIDs p_statisticsRecorderIDs,
-			final LoggerComponent p_logger) {
+			final MemoryStatisticsRecorderIDs p_statisticsRecorderIDs) {
 		m_nodeIdHook = p_nodeIdHook;
 		m_statistics = p_statistics;
 		m_statisticsRecorderIDs = p_statisticsRecorderIDs;
-		m_logger = p_logger;
 	}
 
 	/**
@@ -81,8 +80,7 @@ public final class CIDTable {
 		m_nextLocalID = new AtomicLong(1);
 
 		// #if LOGGER >= INFO
-		m_logger.info(getClass(),
-				"CIDTable: init success (page directory at: 0x" + Long.toHexString(m_addressTableDirectory) + ")");
+		LOGGER.info("CIDTable: init success (page directory at: 0x%X)", m_addressTableDirectory);
 		// #endif /* LOGGER >= INFO */
 	}
 

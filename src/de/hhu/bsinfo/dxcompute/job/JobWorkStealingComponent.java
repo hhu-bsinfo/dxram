@@ -10,7 +10,8 @@ import de.hhu.bsinfo.dxcompute.job.ws.WorkerDelegate;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Implementation of a JobComponent using a work stealing approach for scheduling/load balancing.
@@ -19,12 +20,13 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
  */
 public class JobWorkStealingComponent extends AbstractJobComponent implements WorkerDelegate {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(JobWorkStealingComponent.class.getSimpleName());
+
 	// configuration values
 	@Expose
 	private int m_numWorkers = 1;
 
 	// dependent components
-	private LoggerComponent m_logger;
 	private AbstractBootComponent m_boot;
 
 	private Worker[] m_workers;
@@ -47,7 +49,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 			if (worker.pushJob(p_job)) {
 				// causes the garbage collector to go crazy if too many jobs are pushed very quickly
 				// #if LOGGER >= DEBUG
-				m_logger.debug(getClass(), "Submitted job " + p_job + " to worker " + worker);
+				LOGGER.debug("Submitted job %s to worker %s", p_job, worker);
 				// #endif /* LOGGER >= DEBUG */
 
 				success = true;
@@ -57,7 +59,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 
 		// #if LOGGER >= WARN
 		if (!success) {
-			m_logger.warn(getClass(), "Submiting job " + p_job + " failed.");
+			LOGGER.warn("Submiting job %s failed", p_job);
 		}
 		// #endif /* LOGGER >= WARN */
 
@@ -80,7 +82,6 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
 	}
 
@@ -109,7 +110,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 	@Override
 	protected boolean shutdownComponent() {
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Waiting for unfinished jobs...");
+		LOGGER.debug("Waiting for unfinished jobs...");
 		// #endif /* LOGGER >= DEBUG */
 
 		while (m_unfinishedJobs.get() > 0) {
@@ -121,7 +122,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 		}
 
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Waiting for workers to shut down...");
+		LOGGER.debug("Waiting for workers to shut down...");
 		// #endif /* LOGGER >= DEBUG */
 
 		for (Worker worker : m_workers) {
@@ -146,7 +147,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 			job = worker.stealJob();
 			if (job != null) {
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), "Job " + job + " stolen from worker " + worker);
+				LOGGER.trace("Job %s stolen from worker %s", job, worker);
 				// #endif /* LOGGER == TRACE */
 				break;
 			}
@@ -170,11 +171,6 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 	public void finishedJob(final AbstractJob p_job) {
 		m_unfinishedJobs.decrementAndGet();
 		p_job.notifyListenersJobFinishedExecution(m_boot.getNodeID());
-	}
-
-	@Override
-	public LoggerComponent getLoggerComponent() {
-		return m_logger;
 	}
 
 	@Override

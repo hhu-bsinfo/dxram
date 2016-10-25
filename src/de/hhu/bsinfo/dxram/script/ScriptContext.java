@@ -8,7 +8,8 @@ import javax.script.SimpleScriptContext;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Script context wrapper for java script engine.
@@ -17,27 +18,25 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
  */
 public class ScriptContext {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(ScriptContext.class.getSimpleName());
+
 	private ScriptDXRAMContext m_scriptEngineContext;
 	private ScriptEngine m_scriptEngine;
 	private String m_name;
 	private javax.script.ScriptContext m_scriptContext;
-
-	private LoggerComponent m_logger;
 
 	/**
 	 * Constructor
 	 *
 	 * @param p_scriptEngineContext DXRAM script context to be exposed to the java script engine
 	 * @param p_scriptEngine        The (java) script engine to use
-	 * @param p_logger              Logger component used for logging errors
 	 * @param p_name                Name of this context
 	 */
 	ScriptContext(final ScriptDXRAMContext p_scriptEngineContext, final ScriptEngine p_scriptEngine,
-			final LoggerComponent p_logger, final String p_name) {
+			final String p_name) {
 		m_scriptEngine = p_scriptEngine;
 		m_scriptEngineContext = p_scriptEngineContext;
 		m_name = p_name;
-		m_logger = p_logger;
 
 		m_scriptContext = new SimpleScriptContext();
 		initContext(m_scriptContext);
@@ -67,18 +66,18 @@ public class ScriptContext {
 				m_scriptEngine.eval(new FileReader(p_path));
 			} catch (final ScriptException e) {
 				// #if LOGGER >= ERROR
-				m_logger.error(getClass(), "Loading script file '" + p_path + "' failed: " + e.getMessage());
+				LOGGER.error("Loading script file '%s' failed: %s", p_path, e.getMessage());
 				// #endif /* LOGGER >= ERROR */
 				return false;
 			} catch (final FileNotFoundException e) {
 				// #if LOGGER >= ERROR
-				m_logger.error(getClass(), "Loading script file '" + p_path + "' failed: file not found.");
+				LOGGER.error("Loading script file '%s' failed: file not found", p_path);
 				// #endif /* LOGGER >= ERROR */
 				return false;
 			}
 		} catch (final Exception e) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), e.getMessage());
+			LOGGER.error(e.getMessage());
 			// #endif /* LOGGER >= ERROR */
 
 			return false;
@@ -117,13 +116,13 @@ public class ScriptContext {
 				m_scriptEngine.eval(p_text);
 			} catch (final ScriptException e) {
 				// #if LOGGER >= ERROR
-				m_logger.error(getClass(), "Evaluating '" + p_text + "' failed: " + e.getMessage());
+				LOGGER.error("Evaluating '%s' failed: %s", p_text, e.getMessage());
 				// #endif /* LOGGER >= ERROR */
 				return false;
 			}
 		} catch (final Exception e) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), e.getMessage());
+			LOGGER.error(e.getMessage());
 			// #endif /* LOGGER >= ERROR */
 
 			return false;
@@ -166,11 +165,11 @@ public class ScriptContext {
 			return inv.invokeFunction(p_name, p_args);
 		} catch (final ScriptException e) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Calling '" + p_name + "' failed: " + e.getMessage());
+			LOGGER.error("Calling '%s' failed: %s", p_name, e.getMessage());
 			// #endif /* LOGGER >= ERROR */
 		} catch (final NoSuchMethodException e) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Calling '" + p_name + "' failed, function not available");
+			LOGGER.error("Calling '%s' failed, function not available", p_name);
 			// #endif /* LOGGER >= ERROR */
 		}
 

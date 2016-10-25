@@ -15,11 +15,17 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Manages the network connections
+ *
  * @author Florian Klein 18.03.2012
  */
 class NIOSelector extends Thread {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(NIOSelector.class.getSimpleName());
 
 	// Constants
 	private static final int READWRITE_MASK = 5;
@@ -42,14 +48,11 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Creates an instance of NIOSelector
-	 * @param p_connectionCreator
-	 *            the NIOConnectionCreator
-	 * @param p_nioInterface
-	 *            the NIOInterface to send/receive data
-	 * @param p_connectionTimeout
-	 *            the connection timeout
-	 * @param p_port
-	 *            the port
+	 *
+	 * @param p_connectionCreator the NIOConnectionCreator
+	 * @param p_nioInterface      the NIOInterface to send/receive data
+	 * @param p_connectionTimeout the connection timeout
+	 * @param p_port              the port
 	 */
 	protected NIOSelector(final NIOConnectionCreator p_connectionCreator, final NIOInterface p_nioInterface,
 			final int p_port, final int p_connectionTimeout) {
@@ -83,19 +86,19 @@ class NIOSelector extends Thread {
 				exception = e;
 
 				// #if LOGGER >= ERROR
-				NetworkHandler.getLogger()
-				.error(getClass().getSimpleName(), "Could not bind network address. Retry in 1s.");
+				LOGGER.error("Could not bind network address. Retry in 1s");
 				// #endif /* LOGGER >= ERROR */
 
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e1) {}
+				} catch (final InterruptedException e1) {
+				}
 			}
 		}
 
 		if (exception != null) {
 			// #if LOGGER >= ERROR
-			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not create network channel!");
+			LOGGER.error("Could not create network channel!");
 			// #endif /* LOGGER >= ERROR */
 		}
 	}
@@ -104,6 +107,7 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Returns the Selector
+	 *
 	 * @return the Selector
 	 */
 	protected Selector getSelector() {
@@ -168,9 +172,10 @@ class NIOSelector extends Thread {
 					if (System.currentTimeMillis() - connection.getClosingTimestamp() > (2 * m_connectionTimeout)) {
 						// #if LOGGER >= DEBUG
 						try {
-							NetworkHandler.getLogger().debug(getClass().getSimpleName(),
-									"Closing connection to " + connection.getDestination() + ";" + connection.getChannel().getRemoteAddress());
-						} catch (final IOException e) {}
+							LOGGER.debug("Closing connection to %s;%s",
+									connection.getDestination(), connection.getChannel().getRemoteAddress());
+						} catch (final IOException e) {
+						}
 						// #endif /* LOGGER >= DEBUG */
 						// Close connection
 						m_connectionCreator.closeConnection(connection, false);
@@ -184,7 +189,7 @@ class NIOSelector extends Thread {
 						connection.getChannel().register(m_selector, interest, connection);
 					} catch (final ClosedChannelException e) {
 						// #if LOGGER >= DEBUG
-						NetworkHandler.getLogger().debug(getClass().getSimpleName(), "Could not change operations!");
+						LOGGER.debug("Could not change operations!");
 						// #endif /* LOGGER >= DEBUG */
 					}
 				}
@@ -218,7 +223,7 @@ class NIOSelector extends Thread {
 				// Ignore!
 			} catch (final IOException e) {
 				// #if LOGGER >= ERROR
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Key selection failed!");
+				LOGGER.error("Key selection failed!");
 				// #endif /* LOGGER >= ERROR */
 			}
 		}
@@ -226,8 +231,8 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Accept a new incoming connection
-	 * @throws IOException
-	 *             if the new connection could not be accesses
+	 *
+	 * @throws IOException if the new connection could not be accesses
 	 */
 	private void accept() throws IOException {
 		SocketChannel channel;
@@ -240,8 +245,8 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Execute key by creating a new connection, reading from channel or writing to channel
-	 * @param p_key
-	 *            the current key
+	 *
+	 * @param p_key the current key
 	 */
 	private void dispatch(final SelectionKey p_key) {
 		boolean complete = true;
@@ -260,8 +265,7 @@ class NIOSelector extends Thread {
 							successful = m_nioInterface.read(connection);
 						} catch (final IOException e) {
 							// #if LOGGER >= DEBUG
-							NetworkHandler.getLogger().debug(getClass().getSimpleName(),
-									"Could not read from channel (" + NodeID.toHexString(connection.getDestination()) + ")!");
+							LOGGER.debug("Could not read from channel (0x%X)!", connection.getDestination());
 							// #endif /* LOGGER >= DEBUG */
 
 							successful = false;
@@ -273,8 +277,7 @@ class NIOSelector extends Thread {
 				} else if (p_key.isWritable()) {
 					if (connection == null) {
 						// #if LOGGER >= ERROR
-						NetworkHandler.getLogger().error(getClass().getSimpleName(),
-								"If connection is null key has to be either readable or connectable!");
+						LOGGER.error("If connection is null key has to be either readable or connectable!");
 						// #endif /* LOGGER >= ERROR */
 
 						m_connectionCreator.closeConnection(connection, true);
@@ -283,8 +286,7 @@ class NIOSelector extends Thread {
 						complete = m_nioInterface.write(connection);
 					} catch (final IOException e) {
 						// #if LOGGER >= DEBUG
-						NetworkHandler.getLogger().debug(getClass().getSimpleName(),
-								"Could not write to channel (" + NodeID.toHexString(connection.getDestination()) + ")!");
+						LOGGER.debug("Could not write to channel (0x%X)!", connection.getDestination());
 						// #endif /* LOGGER >= DEBUG */
 
 						m_connectionCreator.closeConnection(connection, true);
@@ -306,7 +308,7 @@ class NIOSelector extends Thread {
 				}
 			} catch (final IOException e) {
 				// #if LOGGER >= ERROR
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not access channel properly!");
+				LOGGER.error("Could not access channel properly!");
 				// #endif /* LOGGER >= ERROR */
 			}
 		}
@@ -314,8 +316,8 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Append the given ChangeOperationsRequest to the Queue
-	 * @param p_request
-	 *            the ChangeOperationsRequest
+	 *
+	 * @param p_request the ChangeOperationsRequest
 	 */
 	protected void changeOperationInterestAsync(final ChangeOperationsRequest p_request) {
 		boolean res;
@@ -331,8 +333,8 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Append the given NIOConnection to the Queue
-	 * @param p_connection
-	 *            the NIOConnection to close
+	 *
+	 * @param p_connection the NIOConnection to close
 	 */
 	protected void closeConnectionAsync(final NIOConnection p_connection) {
 		m_changeLock.lock();
@@ -352,22 +354,22 @@ class NIOSelector extends Thread {
 			m_serverChannel.close();
 		} catch (final IOException e) {
 			// #if LOGGER >= ERROR
-			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to close channel!");
+			LOGGER.error("Unable to close channel!");
 			// #endif /* LOGGER >= ERROR */
 		}
 		// #if LOGGER >= INFO
-		NetworkHandler.getLogger().info(getClass().getSimpleName(), "Closing ServerSocketChannel successful.");
+		LOGGER.info("Closing ServerSocketChannel successful");
 		// #endif /* LOGGER >= INFO */
 
 		try {
 			m_selector.close();
 		} catch (final IOException e) {
 			// #if LOGGER >= ERROR
-			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to shutdown selector!");
+			LOGGER.error("Unable to shutdown selector!");
 			// #endif /* LOGGER >= ERROR */
 		}
 		// #if LOGGER >= INFO
-		NetworkHandler.getLogger().info(getClass().getSimpleName(), "Shutdown of Selector successful.");
+		LOGGER.info("Shutdown of Selector successful");
 		// #endif /* LOGGER >= INFO */
 	}
 }

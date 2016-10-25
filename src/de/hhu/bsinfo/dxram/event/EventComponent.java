@@ -10,8 +10,9 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.utils.event.EventInterface;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Node local event system to notify other listening components about
@@ -21,6 +22,8 @@ import de.hhu.bsinfo.utils.event.EventInterface;
  */
 public class EventComponent extends AbstractDXRAMComponent implements EventInterface {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(EventComponent.class.getSimpleName());
+
 	// configuration values
 	@Expose
 	private boolean m_useExecutor = true;
@@ -28,7 +31,6 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
 	private int m_threadCount = 1;
 
 	// dependent components
-	private LoggerComponent m_logger;
 
 	// private state
 	private Map<String, ArrayList<EventListener<? extends AbstractEvent>>> m_eventListener = new HashMap<>();
@@ -57,8 +59,7 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
 
 		listeners.add(p_listener);
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(),
-				"Registered listener " + p_listener.getClass().getName() + " for event " + p_class.getName());
+		LOGGER.debug("Registered listener %s for event %s", p_listener.getClass().getName(), p_class.getName());
 		// #endif /* LOGGER >= DEBUG */
 	}
 
@@ -71,7 +72,7 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
 	@Override
 	public <T extends AbstractEvent> void fireEvent(final T p_event) {
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Event fired: " + p_event);
+		LOGGER.trace("Event fired: %s", p_event);
 		// #endif /* LOGGER == TRACE */
 
 		ArrayList<EventListener<?>> listeners = m_eventListener.get(p_event.getClass().getName());
@@ -88,16 +89,16 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
 
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		// no dependencies
 	}
 
 	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		if (m_useExecutor) {
 			// #if LOGGER >= INFO
-			m_logger.info(getClass().getSimpleName(), "EventExecutor: Initialising " + m_threadCount + " threads");
+			LOGGER.info("EventExecutor: Initialising %d threads", m_threadCount);
 			// #endif /* LOGGER >= INFO */
-			m_executor = new TaskExecutor("EventExecutor", m_threadCount, m_logger);
+			m_executor = new TaskExecutor("EventExecutor", m_threadCount);
 		}
 
 		return true;
@@ -110,12 +111,11 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
 			try {
 				m_executor.awaitTermination();
 				// #if LOGGER >= INFO
-				m_logger.info(getClass().getSimpleName(), "Shutdown of EventExecutor successful.");
+				LOGGER.info("Shutdown of EventExecutor successful");
 				// #endif /* LOGGER >= INFO */
 			} catch (final InterruptedException e) {
 				// #if LOGGER >= WARN
-				m_logger.warn(getClass().getSimpleName(),
-						"Could not wait for event executor thread pool to finish. Interrupted.");
+				LOGGER.warn("Could not wait for event executor thread pool to finish. Interrupted");
 				// #endif /* LOGGER >= WARN */
 			}
 			m_executor = null;

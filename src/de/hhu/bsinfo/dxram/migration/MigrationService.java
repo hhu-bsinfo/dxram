@@ -16,7 +16,6 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationMessages;
@@ -29,7 +28,8 @@ import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.ethnet.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Migration service providing migration of chunks.
@@ -38,12 +38,13 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class MigrationService extends AbstractDXRAMService implements MessageReceiver {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(MigrationService.class.getSimpleName());
+
 	// dependent components
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private ChunkComponent m_chunk;
 	private LookupComponent m_lookup;
-	private LoggerComponent m_logger;
 	private MemoryManagerComponent m_memoryManager;
 	private NetworkComponent m_network;
 
@@ -72,7 +73,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "A superpeer must not store chunks");
+			LOGGER.error("A superpeer must not store chunks");
 			// #endif /* LOGGER >= ERROR */
 		} else {
 			m_migrationLock.lock();
@@ -89,13 +90,13 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 				if (chunk != null) {
 					// #if LOGGER == TRACE
-					m_logger.trace(getClass(), "Sending migration request to " + p_target);
+					LOGGER.trace("Sending migration request to %s", p_target);
 					// #endif /* LOGGER == TRACE */
 
 					MigrationRequest request = new MigrationRequest(p_target, new Chunk[] {chunk});
 					if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 						// #if LOGGER >= ERROR
-						m_logger.error(getClass(), "Could not migrate chunks");
+						LOGGER.error("Could not migrate chunks");
 						// #endif /* LOGGER >= ERROR */
 						return false;
 					}
@@ -103,7 +104,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 					MigrationResponse response = (MigrationResponse) request.getResponse();
 					if (response.getStatusCode() == -1) {
 						// #if LOGGER >= ERROR
-						m_logger.error(getClass(), "Could not migrate chunks");
+						LOGGER.error("Could not migrate chunks");
 						// #endif /* LOGGER >= ERROR */
 						return false;
 					}
@@ -132,8 +133,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 				}
 			} else {
 				// #if LOGGER >= ERROR
-				m_logger.error(getClass(),
-						"Chunk with ChunkID " + ChunkID.toHexString(p_chunkID) + " could not be migrated");
+				LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", p_chunkID);
 				// #endif /* LOGGER >= ERROR */
 				ret = false;
 			}
@@ -176,7 +176,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "A superpeer must not store chunks");
+			LOGGER.error("A superpeer must not store chunks");
 			// #endif /* LOGGER >= ERROR */
 		} else {
 			if (p_startChunkID <= p_endChunkID) {
@@ -205,8 +205,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 								size += chunk.getDataSize();
 							} else {
 								// #if LOGGER >= ERROR
-								m_logger.error(getClass(),
-										"Chunk with ChunkID " + ChunkID.toHexString(iter) + " could not be migrated");
+								LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", iter);
 								// #endif /* LOGGER >= ERROR */
 							}
 							iter++;
@@ -214,13 +213,12 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 						m_memoryManager.unlockAccess();
 
 						// #if LOGGER >= INFO
-						m_logger.info(getClass(), "Sending " + counter + " Chunks (" + size + " Bytes) to " + NodeID
-								.toHexString(p_target));
+						LOGGER.info("Sending %d Chunks (%d Bytes) to 0x%X", counter, size, p_target);
 						// #endif /* LOGGER >= INFO */
 						if (m_network.sendSync(new MigrationRequest(p_target,
 								Arrays.copyOf(chunks, counter))) != NetworkErrorCodes.SUCCESS) {
 							// #if LOGGER >= ERROR
-							m_logger.error(getClass(), "Could not migrate chunks");
+							LOGGER.error("Could not migrate chunks");
 							// #endif /* LOGGER >= ERROR */
 						}
 
@@ -257,21 +255,20 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 					ret = true;
 				} else {
 					// #if LOGGER >= ERROR
-					m_logger.error(getClass(),
-							"Chunks could not be migrated because end of range is before start of range");
+					LOGGER.error("Chunks could not be migrated because end of range is before start of range");
 					// #endif /* LOGGER >= ERROR */
 					ret = false;
 				}
 			} else {
 				// #if LOGGER >= ERROR
-				m_logger.error(getClass(), "Chunks could not be migrated");
+				LOGGER.error("Chunks could not be migrated");
 				// #endif /* LOGGER >= ERROR */
 				ret = false;
 			}
 			m_migrationLock.unlock();
 
 			// #if LOGGER >= INFO
-			m_logger.info(getClass(), "All chunks migrated");
+			LOGGER.info("All chunks migrated");
 			// #endif /* LOGGER >= INFO */
 		}
 		return ret;
@@ -317,7 +314,6 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 		m_backup = p_componentAccessor.getComponent(BackupComponent.class);
 		m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
 		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 	}
@@ -360,9 +356,8 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 			if (!success) {
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), "Failure! Could not migrate chunk "
-						+ ChunkID.toHexString(p_message.getChunkID()) + " to node "
-						+ ChunkID.toHexString(p_message.getTargetNode()));
+				LOGGER.trace("Failure! Could not migrate chunk 0x%X to node 0x%X",
+						p_message.getChunkID(), p_message.getTargetNode());
 				// #endif /* LOGGER == TRACE */
 			}
 		};

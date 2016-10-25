@@ -1,7 +1,8 @@
 
 package de.hhu.bsinfo.dxcompute.job;
 
-import de.hhu.bsinfo.dxram.logger.LoggerService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Example for a job implementation.
@@ -9,6 +10,8 @@ import de.hhu.bsinfo.dxram.logger.LoggerService;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class JobNull extends AbstractJob {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(JobNull.class.getSimpleName());
 
 	public static final short MS_TYPE_ID = 0;
 
@@ -30,10 +33,8 @@ public class JobNull extends AbstractJob {
 
 	@Override
 	protected void execute(final short p_nodeID, final long[] p_chunkIDs) {
-		LoggerService logger = getService(LoggerService.class);
-
 		// #if LOGGER >= DEBUG
-		logger.debug(getClass(), "I am null job.");
+		LOGGER.debug("I am null job.");
 		// #endif /* LOGGER >= DEBUG */
 	}
 }

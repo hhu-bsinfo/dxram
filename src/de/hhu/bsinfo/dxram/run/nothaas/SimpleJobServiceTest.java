@@ -15,6 +15,8 @@ import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.AbstractMain;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Test of the JobService.
@@ -25,6 +27,8 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
  */
 public class SimpleJobServiceTest extends AbstractMain implements JobEventListener {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(SimpleJobServiceTest.class.getSimpleName());
 
 	private static final Argument ARG_REMOTE_PEER = new Argument("remotePeer", "true", true,
 			"Indicates if this is the remote peer waiting for other jobs to receive");
@@ -163,7 +167,7 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
 			try {
 				// abusing chunkID for time to wait
 				// #if LOGGER >= DEBUG
-				logger.debug(getClass(), "Sleeping " + p_chunkIDs[0]);
+				LOGGER.debug("Sleeping %d", p_chunkIDs[0]);
 				// #endif /* LOGGER >= DEBUG */
 
 				Thread.sleep(p_chunkIDs[0]);

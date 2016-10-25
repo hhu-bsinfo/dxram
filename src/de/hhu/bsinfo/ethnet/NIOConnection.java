@@ -9,12 +9,17 @@ import java.util.ArrayDeque;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Represents a network connection
  *
  * @author Florian Klein 18.03.2012
  */
 class NIOConnection extends AbstractConnection {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(NIOConnection.class.getSimpleName());
 
 	// Attributes
 	private SocketChannel m_channel;
@@ -107,7 +112,7 @@ class NIOConnection extends AbstractConnection {
 			final MessageCreator p_messageCreator, final NIOSelector p_nioSelector,
 			final int p_numberOfBuffersPerConnection,
 			final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize)
-					throws IOException {
+			throws IOException {
 		super(p_destination, p_nodeMap, p_messageDirectory, p_flowControlWindowSize);
 
 		m_incomingBufferSize = p_incomingBufferSize;
@@ -331,8 +336,7 @@ class NIOConnection extends AbstractConnection {
 	protected void doCloseGracefully() {
 		if (!m_outgoing.isEmpty()) {
 			// #if LOGGER >= DEBUG
-			NetworkHandler.getLogger().debug(getClass().getSimpleName(),
-					"Waiting for all scheduled messages to be sent over to be closed connection!");
+			LOGGER.debug("Waiting for all scheduled messages to be sent over to be closed connection!");
 			// #endif /* LOGGER >= DEBUG */
 			long start = System.currentTimeMillis();
 			while (!m_outgoing.isEmpty()) {
@@ -340,8 +344,7 @@ class NIOConnection extends AbstractConnection {
 
 				if (System.currentTimeMillis() - start > 10000) {
 					// #if LOGGER >= ERROR
-					NetworkHandler.getLogger().debug(getClass().getSimpleName(),
-							"Waiting for all scheduled messages to be sent over aborted, timeout");
+					LOGGER.debug("Waiting for all scheduled messages to be sent over aborted, timeout");
 					// #endif /* LOGGER >= ERROR */
 					break;
 				}

@@ -11,8 +11,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.log.storage.LogCatalog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.VersionsHashTable;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.utils.Tools;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Reorganization thread
@@ -21,9 +22,10 @@ import de.hhu.bsinfo.utils.Tools;
  */
 public final class SecondaryLogsReorgThread extends Thread {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(SecondaryLogsReorgThread.class.getSimpleName());
+
 	// Attributes
 	private LogService m_logService;
-	private LoggerComponent m_logger;
 	private long m_secondaryLogSize;
 
 	private boolean m_shutdown;
@@ -47,17 +49,15 @@ public final class SecondaryLogsReorgThread extends Thread {
 	 * Creates an instance of SecondaryLogsReorgThread
 	 *
 	 * @param p_logService       the log service
-	 * @param p_logger           the logger component
 	 * @param p_secondaryLogSize the secondary log size
 	 * @param p_logSegmentSize   the segment size
 	 */
-	public SecondaryLogsReorgThread(final LogService p_logService, final LoggerComponent p_logger,
+	public SecondaryLogsReorgThread(final LogService p_logService,
 			final long p_secondaryLogSize, final int p_logSegmentSize) {
 		m_logService = p_logService;
-		m_logger = p_logger;
 		m_secondaryLogSize = p_secondaryLogSize;
 
-		m_allVersions = new VersionsHashTable((int) (m_secondaryLogSize / 75 * 0.75), m_logger);
+		m_allVersions = new VersionsHashTable((int) (m_secondaryLogSize / 75 * 0.75));
 
 		m_reorganizationLock = new ReentrantLock(false);
 		m_reorganizationFinishedCondition = m_reorganizationLock.newCondition();
@@ -124,8 +124,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 			// Check if there is an urgent reorganization request -> reorganize complete secondary log and signal
 			if (m_secLog != null) {
 				// #if LOGGER >= DEBUG
-				m_logger.debug(SecondaryLogsReorgThread.class,
-						"Got urgent reorganization request for " + m_secLog.getRangeIDOrFirstLocalID() + ".");
+				LOGGER.debug("Got urgent reorganization request for %s", m_secLog.getRangeIDOrFirstLocalID());
 				// #endif /* LOGGER >= DEBUG */
 
 				// Leave current secondary log
@@ -181,9 +180,8 @@ public final class SecondaryLogsReorgThread extends Thread {
 					secondaryLog = iter.next();
 					iter.remove();
 					// #if LOGGER == TRACE
-					m_logger.trace(SecondaryLogsReorgThread.class,
-							"Got reorganization request for " + secondaryLog.getRangeIDOrFirstLocalID()
-									+ ". Queue length: " + m_reorganizationRequests.size());
+					LOGGER.trace("Got reorganization request for %s. Queue length: %d",
+							secondaryLog.getRangeIDOrFirstLocalID(), m_reorganizationRequests.size());
 					// #endif /* LOGGER == TRACE */
 					m_requestLock.unlock();
 
@@ -219,15 +217,13 @@ public final class SecondaryLogsReorgThread extends Thread {
 
 			// Reorganize one segment
 			// #if LOGGER == TRACE
-			m_logger.trace(SecondaryLogsReorgThread.class,
-					"Going to reorganize " + secondaryLog.getRangeIDOrFirstLocalID() + ".");
+			LOGGER.trace("Going to reorganize %s", secondaryLog.getRangeIDOrFirstLocalID());
 			// #endif /* LOGGER == TRACE */
 			m_logService.getAccessToSecLog(secondaryLog);
 			final long start = System.currentTimeMillis();
 			secondaryLog.reorganizeIteratively(m_reorgSegmentData, m_allVersions);
 			// #if LOGGER == TRACE
-			m_logger.trace(SecondaryLogsReorgThread.class,
-					"Time to reorganize segment: " + (System.currentTimeMillis() - start));
+			LOGGER.trace("Time to reorganize segment: %d", (System.currentTimeMillis() - start));
 			// #endif /* LOGGER == TRACE */
 
 			if (counter++ == iterationsPerLog) {
@@ -259,7 +255,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 		SecondaryLog secLog;
 
 		allCats = m_logService.getAllLogCatalogs();
-		cats = new ArrayList<LogCatalog>();
+		cats = new ArrayList<>();
 		for (int i = 0; i < allCats.length; i++) {
 			cat = allCats[i];
 			if (cat != null) {

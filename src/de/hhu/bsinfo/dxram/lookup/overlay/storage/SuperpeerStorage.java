@@ -10,13 +10,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
 import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * An object/chunk storage on the superpeer for temporary data which is not wanted in the normal
@@ -24,12 +25,13 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * and the total size of the storage is limited to avoid abusing this as a primary storage for data.
  * Also, the chunks stored here are NOT covered by the backup/recovery but are replicated to other superpeers
  * to cover superpeer failure (though a full system failure will lose all stored data)
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.05.16
  */
 public class SuperpeerStorage extends AbstractMetadata {
 
-	// Attributes
-	private LoggerComponent m_logger;
+	private static final Logger LOGGER = LogManager.getFormatterLogger(SuperpeerStorage.class.getSimpleName());
+	;
 
 	private int m_maxNumEntries;
 	private int m_maxSizeBytes;
@@ -42,23 +44,16 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 	/**
 	 * Constructor
-	 * @param p_maxNumEntries
-	 *            Max num of entries allowed in the storage.
-	 * @param p_maxSizeBytes
-	 *            Max size of bytes the objects are allowed to consume (all together)
-	 * @param p_hashGenerator
-	 *            the CRC16 hash generator
-	 * @param p_logger
-	 *            the logger component
+	 *
+	 * @param p_maxNumEntries Max num of entries allowed in the storage.
+	 * @param p_maxSizeBytes  Max size of bytes the objects are allowed to consume (all together)
+	 * @param p_hashGenerator the CRC16 hash generator
 	 */
-	public SuperpeerStorage(final int p_maxNumEntries, final int p_maxSizeBytes, final CRC16 p_hashGenerator,
-			final LoggerComponent p_logger) {
+	public SuperpeerStorage(final int p_maxNumEntries, final int p_maxSizeBytes, final CRC16 p_hashGenerator) {
 		m_maxNumEntries = p_maxNumEntries;
 		m_maxSizeBytes = p_maxSizeBytes;
 		m_entryCount = 0;
 		m_hashGenerator = p_hashGenerator;
-
-		m_logger = p_logger;
 	}
 
 	@Override
@@ -77,7 +72,7 @@ public class SuperpeerStorage extends AbstractMetadata {
 			data.get(currentData);
 
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), " Storing superpeer storage: " + id + "<->" + size);
+			LOGGER.trace("Storing superpeer storage: %d <-> %d", id, size);
 			// #endif /* LOGGER == TRACE */
 
 			create(id, size);
@@ -99,11 +94,10 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 		iter = m_storage.entrySet().iterator();
 		while (iter.hasNext()) {
-			Map.Entry<Integer, byte[]> pair = (Map.Entry<Integer, byte[]>) iter.next();
+			Map.Entry<Integer, byte[]> pair = iter.next();
 
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(),
-					" Including superpeer storage: " + pair.getKey() + "<->" + pair.getValue().length);
+			LOGGER.trace("Including superpeer storage: %s <-> %d", pair.getKey(), pair.getValue().length);
 			// #endif /* LOGGER == TRACE */
 
 			data.putInt(pair.getKey());
@@ -134,7 +128,7 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 			if (OverlayHelper.isHashInSuperpeerRange(m_hashGenerator.hash(id), p_bound1, p_bound2)) {
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), " Including superpeer storage: " + id + "<->" + currentData.length);
+				LOGGER.trace("Including superpeer storage: %d <-> %d", id, currentData.length);
 				// #endif /* LOGGER == TRACE */
 
 				data.putInt(id);
@@ -159,7 +153,7 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 			if (!OverlayHelper.isHashInSuperpeerRange(m_hashGenerator.hash(id), p_bound1, p_bound2)) {
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), " Removing superpeer storage: " + id);
+				LOGGER.trace("Removing superpeer storage: %d", id);
 				// #endif /* LOGGER == TRACE */
 
 				iter.remove();
@@ -189,10 +183,9 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 	/**
 	 * Create a new block to store a chunk.
-	 * @param p_id
-	 *            Id to assign to the block
-	 * @param p_size
-	 *            Size of the block
+	 *
+	 * @param p_id   Id to assign to the block
+	 * @param p_size Size of the block
 	 * @return 0 on success, -1 if quota reached, -2 if max num entries reached, -3 if id already in use.
 	 */
 	public int create(final int p_id, final int p_size) {
@@ -217,10 +210,9 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 	/**
 	 * Put data into an allocated block.
-	 * @param p_id
-	 *            Id of the block.
-	 * @param p_data
-	 *            Data to put.
+	 *
+	 * @param p_id   Id of the block.
+	 * @param p_data Data to put.
 	 * @return Number of bytes written to the block or -1 if the block does not exist.
 	 */
 	public int put(final int p_id, final byte[] p_data) {
@@ -243,8 +235,8 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 	/**
 	 * Get data from an allocated block
-	 * @param p_id
-	 *            Id of the block
+	 *
+	 * @param p_id Id of the block
 	 * @return Data read from the memory block or null if id does not point to an allocated block.
 	 */
 	public byte[] get(final int p_id) {
@@ -258,8 +250,8 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 	/**
 	 * Remove a block from the storage (i.e. delete it).
-	 * @param p_id
-	 *            Id of the block to delete.
+	 *
+	 * @param p_id Id of the block to delete.
 	 * @return False if the block does not exist, true on success.
 	 */
 	public boolean remove(final int p_id) {
@@ -275,6 +267,7 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 	/**
 	 * Get the current status of the storage (i.e. allocations).
+	 *
 	 * @return Current status of the storage.
 	 */
 	public Status getStatus() {
@@ -289,6 +282,7 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 	/**
 	 * Status of the superpeer storage (allocations)
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.05.16
 	 */
 	public static class Status implements Exportable, Importable {
@@ -305,12 +299,10 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 		/**
 		 * Constructor
-		 * @param p_maxNumItems
-		 *            Max number of items allowed in the storage.
-		 * @param p_maxStorageSizeBytes
-		 *            Max storage size in bytes.
-		 * @param p_storageStatus
-		 *            Storage status i.e. List of Ids + size of the blocks allocated.
+		 *
+		 * @param p_maxNumItems         Max number of items allowed in the storage.
+		 * @param p_maxStorageSizeBytes Max storage size in bytes.
+		 * @param p_storageStatus       Storage status i.e. List of Ids + size of the blocks allocated.
 		 */
 		public Status(final int p_maxNumItems, final int p_maxStorageSizeBytes, final ArrayList<Long> p_storageStatus) {
 			m_maxNumItems = p_maxNumItems;
@@ -320,6 +312,7 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 		/**
 		 * Get the item limit for the storage.
+		 *
 		 * @return Item limit of the storage.
 		 */
 		public int getMaxNumItems() {
@@ -328,6 +321,7 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 		/**
 		 * Get the max size of the storage in bytes.
+		 *
 		 * @return Max size on bytes.
 		 */
 		public int getMaxStorageSizeBytes() {
@@ -338,6 +332,7 @@ public class SuperpeerStorage extends AbstractMetadata {
 		 * Get the storage status. One long value consists of two ints.
 		 * The higher int contains the id of an allocated chunk, the lower int
 		 * the size of the chunk allocated.
+		 *
 		 * @return List of allocated "chunk states".
 		 */
 		public ArrayList<Long> getStatusArray() {
@@ -346,6 +341,7 @@ public class SuperpeerStorage extends AbstractMetadata {
 
 		/**
 		 * Calculate the total amount of bytes used for storing data based on the allocation status.
+		 *
 		 * @return Total amount of space occupied by actual data.
 		 */
 		public int calculateTotalDataUsageBytes() {

@@ -20,7 +20,6 @@ import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
 import de.hhu.bsinfo.dxram.log.messages.LogMessages;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRangeWithBackupPeers;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -28,6 +27,8 @@ import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Component for managing backup ranges.
@@ -35,6 +36,8 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
 public class BackupComponent extends AbstractDXRAMComponent implements EventListener<NodeFailureEvent> {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(BackupComponent.class.getSimpleName());
 
 	// configuration values
 	@Expose
@@ -48,7 +51,6 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
 	// dependent components
 	private AbstractBootComponent m_boot;
-	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
 	private LogComponent m_log;
 	private EventComponent m_event;
@@ -268,7 +270,6 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
 		m_log = p_componentAccessor.getComponent(LogComponent.class);
 		m_event = p_componentAccessor.getComponent(EventComponent.class);
@@ -323,8 +324,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
 		if (3 > numberOfPeers) {
 			// #if LOGGER >= WARN
-			m_logger.warn(BackupComponent.class,
-					"Less than three peers for backup available. Replication will be incomplete!");
+			LOGGER.warn("Less than three peers for backup available. Replication will be incomplete!");
 			// #endif /* LOGGER >= WARN */
 
 			newBackupPeers = new short[numberOfPeers];
@@ -333,7 +333,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 			insufficientPeers = true;
 		} else if (6 > numberOfPeers) {
 			// #if LOGGER >= WARN
-			m_logger.warn(BackupComponent.class, "Less than six peers for backup available. Some peers may store more"
+			LOGGER.warn("Less than six peers for backup available. Some peers may store more"
 					+ " than one backup range of a node!");
 			// #endif /* LOGGER >= WARN */
 
@@ -376,9 +376,10 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 						}
 					}
 					// #if LOGGER >= INFO
-					m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range "
-							+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": "
-							+ NodeID.toHexString(peers.get(index)));
+					LOGGER.info("%d. backup peer determined for new range %s: %s",
+							i + 1,
+							ChunkID.toHexString(((long) m_nodeID << 48) + p_localID),
+							NodeID.toHexString(peers.get(index)));
 					// #endif /* LOGGER >= INFO */
 					newBackupPeers[i] = peers.get(index);
 					ready = false;
@@ -411,9 +412,10 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 					}
 				}
 				// #if LOGGER >= INFO
-				m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range "
-						+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": "
-						+ NodeID.toHexString(peers.get(index)));
+				LOGGER.info("%d. backup peer determined for new range %s: %s",
+						i + 1,
+						ChunkID.toHexString(((long) m_nodeID << 48) + p_localID),
+						NodeID.toHexString(peers.get(index)));
 				// #endif /* LOGGER >= INFO */
 				newBackupPeers[i] = peers.get(index);
 				ready = false;

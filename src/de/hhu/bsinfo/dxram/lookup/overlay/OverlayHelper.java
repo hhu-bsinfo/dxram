@@ -4,14 +4,18 @@ package de.hhu.bsinfo.dxram.lookup.overlay;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.ethnet.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Helper methods for superpeer overlay
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 02.04.16
  */
 public final class OverlayHelper {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(OverlayHelper.class.getSimpleName());
 
 	// Constants
 	public static final short ORDER = 10;
@@ -20,16 +24,15 @@ public final class OverlayHelper {
 	/**
 	 * Hidden constructor
 	 */
-	private OverlayHelper() {}
+	private OverlayHelper() {
+	}
 
 	/**
 	 * Verifies if a peer is in interval (p_firstSuperpeer, p_lastSuperpeer]
-	 * @param p_peer
-	 *            NodeID to compare
-	 * @param p_firstSuperpeer
-	 *            first NodeID
-	 * @param p_lastSuperpeer
-	 *            last NodeID
+	 *
+	 * @param p_peer           NodeID to compare
+	 * @param p_firstSuperpeer first NodeID
+	 * @param p_lastSuperpeer  last NodeID
 	 * @return true if peer is in range, false otherwise
 	 */
 	public static boolean isPeerInSuperpeerRange(final short p_peer, final short p_firstSuperpeer,
@@ -39,12 +42,10 @@ public final class OverlayHelper {
 
 	/**
 	 * Verifies if a hash id is in interval (p_firstSuperpeer, p_lastSuperpeer]
-	 * @param p_hashID
-	 *            hash id to compare
-	 * @param p_firstSuperpeer
-	 *            first NodeID
-	 * @param p_lastSuperpeer
-	 *            last NodeID
+	 *
+	 * @param p_hashID         hash id to compare
+	 * @param p_firstSuperpeer first NodeID
+	 * @param p_lastSuperpeer  last NodeID
 	 * @return true if hash is in range, false otherwise
 	 */
 	public static boolean isHashInSuperpeerRange(final short p_hashID, final short p_firstSuperpeer,
@@ -54,12 +55,10 @@ public final class OverlayHelper {
 
 	/**
 	 * Verifies if an id is in interval (p_firstSuperpeer, p_lastSuperpeer]
-	 * @param p_id
-	 *            id to compare (NodeID of a peer, or hashed id of an nameservice entry for instance)
-	 * @param p_firstSuperpeer
-	 *            first NodeID
-	 * @param p_lastSuperpeer
-	 *            last NodeID
+	 *
+	 * @param p_id             id to compare (NodeID of a peer, or hashed id of an nameservice entry for instance)
+	 * @param p_firstSuperpeer first NodeID
+	 * @param p_lastSuperpeer  last NodeID
 	 * @return true if peer is in range, false otherwise
 	 */
 	private static boolean isIDInSuperpeerRange(final short p_id, final short p_firstSuperpeer,
@@ -86,12 +85,10 @@ public final class OverlayHelper {
 
 	/**
 	 * Verifies if a superpeer is in (p_startID, p_endID)
-	 * @param p_nodeID
-	 *            superpeer to compare
-	 * @param p_startID
-	 *            NodeID of first superpeer
-	 * @param p_endID
-	 *            NodeID of last superpeer
+	 *
+	 * @param p_nodeID  superpeer to compare
+	 * @param p_startID NodeID of first superpeer
+	 * @param p_endID   NodeID of last superpeer
 	 * @return true if superpeer is between p_startID and p_endID, false otherwise
 	 */
 	public static boolean isSuperpeerInRange(final short p_nodeID, final short p_startID, final short p_endID) {
@@ -120,10 +117,9 @@ public final class OverlayHelper {
 	/**
 	 * Checks if the superpeer overlay is stable by comparing the current number of superpeers with the initially
 	 * expected
-	 * @param p_initialNumberOfSuperpeers
-	 *            number of superpeers in nodes configuration
-	 * @param p_currentNumberOfSuperpeers
-	 *            number of currently available superpeers
+	 *
+	 * @param p_initialNumberOfSuperpeers number of superpeers in nodes configuration
+	 * @param p_currentNumberOfSuperpeers number of currently available superpeers
 	 * @return whether the overlay is stable or not
 	 */
 	protected static boolean isOverlayStable(final int p_initialNumberOfSuperpeers,
@@ -133,10 +129,9 @@ public final class OverlayHelper {
 
 	/**
 	 * Inserts the superpeer at given position in the superpeer array
-	 * @param p_superpeer
-	 *            NodeID of the new superpeer
-	 * @param p_superpeers
-	 *            all superpeers
+	 *
+	 * @param p_superpeer  NodeID of the new superpeer
+	 * @param p_superpeers all superpeers
 	 * @lock overlay lock must be write-locked
 	 */
 	protected static void insertSuperpeer(final short p_superpeer, final ArrayList<Short> p_superpeers) {
@@ -152,10 +147,9 @@ public final class OverlayHelper {
 
 	/**
 	 * Determines if the given superpeer is in given superpeer list
-	 * @param p_superpeer
-	 *            NodeID of the superpeer
-	 * @param p_superpeers
-	 *            all superpeers
+	 *
+	 * @param p_superpeer  NodeID of the superpeer
+	 * @param p_superpeers all superpeers
 	 * @return true if superpeer was found, false otherwise
 	 * @lock overlay lock must be read-locked
 	 */
@@ -173,10 +167,9 @@ public final class OverlayHelper {
 
 	/**
 	 * Removes superpeer
-	 * @param p_superpeer
-	 *            NodeID of the superpeer that has to be removed
-	 * @param p_superpeers
-	 *            all superpeers
+	 *
+	 * @param p_superpeer  NodeID of the superpeer that has to be removed
+	 * @param p_superpeers all superpeers
 	 * @return the index if p_superpeer was found and deleted, -1 otherwise
 	 * @lock overlay lock must be write-locked
 	 */
@@ -195,10 +188,9 @@ public final class OverlayHelper {
 
 	/**
 	 * Inserts the peer at given position in the peer array
-	 * @param p_peer
-	 *            NodeID of the new peer
-	 * @param p_peers
-	 *            all peers
+	 *
+	 * @param p_peer  NodeID of the new peer
+	 * @param p_peers all peers
 	 * @lock overlay lock must be write-locked
 	 */
 	protected static void insertPeer(final short p_peer, final ArrayList<Short> p_peers) {
@@ -214,10 +206,9 @@ public final class OverlayHelper {
 
 	/**
 	 * Removes peer
-	 * @param p_peer
-	 *            NodeID of the peer that has to be removed
-	 * @param p_peers
-	 *            all peers
+	 *
+	 * @param p_peer  NodeID of the peer that has to be removed
+	 * @param p_peers all peers
 	 * @return true if p_peer was found and deleted, false otherwise
 	 * @lock overlay lock must be write-locked
 	 */
@@ -236,12 +227,10 @@ public final class OverlayHelper {
 
 	/**
 	 * Determines the superpeers given superpeer stores backups for
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_predecessor
-	 *            the predecessor superpeer
-	 * @param p_superpeers
-	 *            all superpeers
+	 *
+	 * @param p_nodeID      the NodeID
+	 * @param p_predecessor the predecessor superpeer
+	 * @param p_superpeers  all superpeers
 	 * @return the superpeers p_nodeID is responsible for (got backups for)
 	 * @lock overlay lock must be read-locked
 	 */
@@ -271,23 +260,18 @@ public final class OverlayHelper {
 
 	/**
 	 * Determines the responsible superpeer for given NodeID
-	 * @param p_nodeID
-	 *            NodeID from chunk whose location is searched
-	 * @param p_superpeers
-	 *            all superpeers
-	 * @param p_logger
-	 *            the logger component
+	 *
+	 * @param p_nodeID     NodeID from chunk whose location is searched
+	 * @param p_superpeers all superpeers
 	 * @return the responsible superpeer for given ChunkID
 	 * @lock overlay lock must be read-locked
 	 */
-	protected static short getResponsibleSuperpeer(final short p_nodeID, final ArrayList<Short> p_superpeers,
-			final LoggerComponent p_logger) {
+	protected static short getResponsibleSuperpeer(final short p_nodeID, final ArrayList<Short> p_superpeers) {
 		short responsibleSuperpeer = -1;
 		int index;
 
 		// #if LOGGER == TRACE
-		p_logger.trace(OverlayHelper.class,
-				"Entering getResponsibleSuperpeer with: p_nodeID=" + NodeID.toHexString(p_nodeID));
+		LOGGER.trace("Entering getResponsibleSuperpeer with: p_nodeID=0x%X", p_nodeID);
 		// #endif /* LOGGER == TRACE */
 
 		if (!p_superpeers.isEmpty()) {
@@ -301,11 +285,11 @@ public final class OverlayHelper {
 			responsibleSuperpeer = p_superpeers.get(index);
 		} else {
 			// #if LOGGER >= WARN
-			p_logger.warn(OverlayHelper.class, "do not know any other superpeer");
+			LOGGER.warn("Do not know any other superpeer");
 			// #endif /* LOGGER >= WARN */
 		}
 		// #if LOGGER == TRACE
-		p_logger.trace(OverlayHelper.class, "Exiting getResponsibleSuperpeer");
+		LOGGER.trace("Exiting getResponsibleSuperpeer");
 		// #endif /* LOGGER == TRACE */
 
 		return responsibleSuperpeer;
@@ -313,10 +297,9 @@ public final class OverlayHelper {
 
 	/**
 	 * Determines the backup superpeers for this superpeer
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_superpeers
-	 *            all superpeers
+	 *
+	 * @param p_nodeID     the NodeID
+	 * @param p_superpeers all superpeers
 	 * @return the three successing superpeers
 	 * @lock overlay lock must be read-locked
 	 */

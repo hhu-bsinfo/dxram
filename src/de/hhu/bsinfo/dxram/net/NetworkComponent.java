@@ -13,7 +13,6 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
@@ -22,10 +21,11 @@ import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
 import de.hhu.bsinfo.ethnet.NetworkHandler;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.ethnet.RequestMap;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Access to the network interface to send messages or requests
@@ -35,24 +35,25 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  */
 public class NetworkComponent extends AbstractDXRAMComponent {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkComponent.class.getSimpleName());
+
 	// configuration values
 	@Expose
 	private int m_threadCountMsgHandler = 1;
 	@Expose
 	private int m_requestMapEntryCount = (int) Math.pow(2, 20);
 	@Expose
-    private StorageUnit m_incomingBufferSize = new StorageUnit(1, StorageUnit.MB);
+	private StorageUnit m_incomingBufferSize = new StorageUnit(1, StorageUnit.MB);
 	@Expose
-    private StorageUnit m_outgoingBufferSize = new StorageUnit(1, StorageUnit.MB);
+	private StorageUnit m_outgoingBufferSize = new StorageUnit(1, StorageUnit.MB);
 	@Expose
 	private int m_numberOfPendingBuffersPerConnection = 100;
 	@Expose
-    private StorageUnit m_flowControlWindowSize = new StorageUnit(1, StorageUnit.MB);
+	private StorageUnit m_flowControlWindowSize = new StorageUnit(1, StorageUnit.MB);
 	@Expose
 	private TimeUnit m_requestTimeout = new TimeUnit(333, TimeUnit.MS);
 
 	// dependent components
-	private LoggerComponent m_logger;
 	private AbstractBootComponent m_boot;
 	private EventComponent m_event;
 
@@ -101,7 +102,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	 */
 	public NetworkErrorCodes connectNode(final short p_nodeID) {
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Connecting node " + NodeID.toHexString(p_nodeID));
+		LOGGER.trace("Connecting node 0x%X", p_nodeID);
 		// #endif /* LOGGER == TRACE */
 
 		int res = m_networkHandler.connectNode(p_nodeID);
@@ -110,7 +111,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 			errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE;
 
 			// #if LOGGER >= ERROR
-			m_logger.error(this.getClass(), "Connecting node " + NodeID.toHexString(p_nodeID) + " failed: " + errCode);
+			LOGGER.error("Connecting node 0x%X failed: %s", p_nodeID, errCode);
 			// #endif /* LOGGER >= ERROR */
 		}
 
@@ -125,7 +126,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	 */
 	public NetworkErrorCodes sendMessage(final AbstractMessage p_message) {
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Sending message " + p_message);
+		LOGGER.trace("Sending message %s", p_message);
 		// #endif /* LOGGER == TRACE */
 
 		int res = m_networkHandler.sendMessage(p_message);
@@ -151,7 +152,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 		// #if LOGGER >= ERROR
 		if (errCode != NetworkErrorCodes.SUCCESS) {
-			m_logger.error(this.getClass(), "Sending message " + p_message + " failed: " + errCode);
+			LOGGER.error("Sending message %s failed: %s", p_message, errCode);
 		}
 		// #endif /* LOGGER >= ERROR */
 
@@ -166,29 +167,28 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	 */
 	public NetworkErrorCodes sendSync(final AbstractRequest p_request) {
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Sending request (sync): " + p_request);
+		LOGGER.trace("Sending request (sync): %s", p_request);
 		// #endif /* LOGGER == TRACE */
 
 		NetworkErrorCodes err = sendMessage(p_request);
 		if (err == NetworkErrorCodes.SUCCESS) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "Waiting for response to request: " + p_request);
+			LOGGER.trace("Waiting for response to request: %s", p_request);
 			// #endif /* LOGGER == TRACE */
 
 			if (!p_request.waitForResponses((int) m_requestTimeout.getMs())) {
 				// #if LOGGER >= ERROR
-				m_logger.error(this.getClass(),
-						"Sending sync, waiting for responses " + p_request + " failed, timeout.");
+				LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
 				// #endif /* LOGGER >= ERROR */
 
 				// #if LOGGER >= DEBUG
-				m_logger.debug(this.getClass(), m_networkHandler.getStatus());
+				LOGGER.debug(m_networkHandler.getStatus());
 				// #endif /* LOGGER >= DEBUG */
 
 				err = NetworkErrorCodes.RESPONSE_TIMEOUT;
 			} else {
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), "Received response: " + p_request.getResponse());
+				LOGGER.trace("Received response: %s", p_request.getResponse());
 				// #endif /* LOGGER == TRACE */
 			}
 		}
@@ -224,7 +224,6 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
 		m_event = p_componentAccessor.getComponent(EventComponent.class);
 	}
@@ -232,7 +231,6 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_networkHandler = new NetworkHandler(m_threadCountMsgHandler, m_requestMapEntryCount);
-		m_networkHandler.setLogger(m_logger);
 		m_networkHandler.setEventHandler(m_event);
 
 		// Check if given ip address is bound to one of this node's network interfaces
@@ -242,14 +240,14 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 			Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
 			outerloop:
 			while (networkInterfaces.hasMoreElements()) {
-				NetworkInterface currentNetworkInterface = (NetworkInterface) networkInterfaces.nextElement();
+				NetworkInterface currentNetworkInterface = networkInterfaces.nextElement();
 				Enumeration<InetAddress> addresses = currentNetworkInterface.getInetAddresses();
 				while (addresses.hasMoreElements()) {
-					InetAddress currentAddress = (InetAddress) addresses.nextElement();
+					InetAddress currentAddress = addresses.nextElement();
 					if (myAddress.equals(currentAddress)) {
 						// #if LOGGER >= INFO
-						m_logger.info(getClass(), myAddress.getHostAddress() + " is bound to " + currentNetworkInterface
-								.getDisplayName());
+						LOGGER.info("%s is bound to %s",
+								myAddress.getHostAddress(), currentNetworkInterface.getDisplayName());
 						// #endif /* LOGGER >= INFO */
 						found = true;
 						break outerloop;
@@ -258,13 +256,12 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 			}
 		} catch (final SocketException e1) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Could not get network interfaces for ip confirmation");
+			LOGGER.error("Could not get network interfaces for ip confirmation");
 			// #endif /* LOGGER >= ERROR */
 		} finally {
 			if (!found) {
 				// #if LOGGER >= ERROR
-				m_logger.error(getClass(),
-						"Could not find network interface with address " + myAddress.getHostAddress());
+				LOGGER.error("Could not find network interface with address %s", myAddress.getHostAddress());
 				// #endif /* LOGGER >= ERROR */
 				return false;
 			}
@@ -273,11 +270,11 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 		m_networkHandler.initialize(
 				m_boot.getNodeID(),
 				new NodeMappings(m_boot),
-                (int) m_incomingBufferSize.getBytes(),
-                (int) m_outgoingBufferSize.getBytes(),
+				(int) m_incomingBufferSize.getBytes(),
+				(int) m_outgoingBufferSize.getBytes(),
 				m_numberOfPendingBuffersPerConnection,
-                (int) m_flowControlWindowSize.getBytes(),
-                (int) m_requestTimeout.getMs());
+				(int) m_flowControlWindowSize.getBytes(),
+				(int) m_requestTimeout.getMs());
 
 		m_networkHandler.registerMessageType(DXRAMMessageTypes.DEFAULT_MESSAGES_TYPE,
 				DefaultMessages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);

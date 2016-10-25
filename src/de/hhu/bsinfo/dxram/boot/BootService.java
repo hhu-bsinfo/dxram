@@ -13,8 +13,6 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
@@ -22,6 +20,8 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Service providing information about the bootstrapping process like
@@ -31,10 +31,11 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class BootService extends AbstractDXRAMService implements MessageReceiver {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(BootService.class.getSimpleName());
+
 	// dependent components
 	private AbstractBootComponent m_boot;
 	private NetworkComponent m_network;
-	private LoggerComponent m_logger;
 
 	/**
 	 * Constructor
@@ -138,7 +139,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 	public boolean shutdownNode(final short p_nodeID, final boolean p_hardShutdown) {
 		if (p_nodeID == m_boot.getNodeID()) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Shutting down ourselves is not possible like this.");
+			LOGGER.error("Shutting down ourselves is not possible like this");
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
@@ -153,8 +154,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 					NetworkErrorCodes err = m_network.sendMessage(message);
 					if (err != NetworkErrorCodes.SUCCESS) {
 						// #if LOGGER >= ERROR
-						m_logger.error(getClass(),
-								"Shutting down node " + NodeID.toHexString(nodeId) + " failed: " + err);
+						LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(nodeId), err);
 						// #endif /* LOGGER >= ERROR */
 						return false;
 					}
@@ -175,8 +175,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 					NetworkErrorCodes err = m_network.sendMessage(message);
 					if (err != NetworkErrorCodes.SUCCESS) {
 						// #if LOGGER >= ERROR
-						m_logger.error(getClass(),
-								"Shutting down node " + NodeID.toHexString(nodeId) + " failed: " + err);
+						LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(nodeId), err);
 						// #endif /* LOGGER >= ERROR */
 						return false;
 					}
@@ -191,13 +190,13 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 			NetworkErrorCodes err = m_network.sendMessage(message);
 			if (err != NetworkErrorCodes.SUCCESS) {
 				// #if LOGGER >= ERROR
-				m_logger.error(getClass(), "Shutting down node " + NodeID.toHexString(p_nodeID) + " failed: " + err);
+				LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(p_nodeID), err);
 				// #endif /* LOGGER >= ERROR */
 				return false;
 			}
 
 			// #if LOGGER >= INFO
-			m_logger.info(getClass(), "Sent remote shutdown to node " + NodeID.toHexString(p_nodeID));
+			LOGGER.info("Sent remote shutdown to node %s", NodeID.toHexString(p_nodeID));
 			// #endif /* LOGGER >= INFO */
 		}
 
@@ -213,7 +212,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 	public boolean rebootNode(final short p_nodeID) {
 		if (p_nodeID == m_boot.getNodeID()) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Rebooting ourselves is not possible like this.");
+			LOGGER.error("Rebooting ourselves is not possible like this");
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
@@ -222,13 +221,13 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 		NetworkErrorCodes err = m_network.sendMessage(message);
 		if (err != NetworkErrorCodes.SUCCESS) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Rebooting node " + NodeID.toHexString(p_nodeID) + " failed: " + err);
+			LOGGER.error("Rebooting node %s failed: %s", NodeID.toHexString(p_nodeID), err);
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
 
 		// #if LOGGER >= INFO
-		m_logger.info(getClass(), "Sent reboot message to node " + NodeID.toHexString(p_nodeID));
+		LOGGER.info("Sent reboot message to node %s", NodeID.toHexString(p_nodeID));
 		// #endif /* LOGGER >= INFO */
 
 		return true;
@@ -256,7 +255,6 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 	}
 
 	@Override
@@ -274,13 +272,8 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 	@Override
 	protected boolean shutdownService() {
-		m_boot = null;
-		m_logger = null;
-
 		m_network.unregister(RebootMessage.class, this);
 		m_network.unregister(ShutdownMessage.class, this);
-
-		m_network = null;
 
 		return true;
 	}

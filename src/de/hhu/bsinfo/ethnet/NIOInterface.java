@@ -6,11 +6,17 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * NIO interface. Every access to the channels is done here.
+ *
  * @author Marc Ewert 03.09.2014
  */
 final class NIOInterface {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(NIOInterface.class.getSimpleName());
 
 	// Attributes
 	private int m_outgoingBufferSize;
@@ -20,10 +26,9 @@ final class NIOInterface {
 
 	/**
 	 * Creates an instance of NIOInterface
-	 * @param p_incomingBufferSize
-	 *            the size of incoming buffer
-	 * @param p_outgoingBufferSize
-	 *            the size of outgoing buffer
+	 *
+	 * @param p_incomingBufferSize the size of incoming buffer
+	 * @param p_outgoingBufferSize the size of outgoing buffer
 	 */
 	NIOInterface(final int p_incomingBufferSize, final int p_outgoingBufferSize) {
 		m_outgoingBufferSize = p_outgoingBufferSize;
@@ -34,13 +39,11 @@ final class NIOInterface {
 
 	/**
 	 * Reads the NodeID of the remote node that creates this new connection
-	 * @param p_channel
-	 *            the channel of the connection
-	 * @param p_nioSelector
-	 *            the NIOSelector
-	 * @throws IOException
-	 *             if the connection could not be created
+	 *
+	 * @param p_channel     the channel of the connection
+	 * @param p_nioSelector the NIOSelector
 	 * @return the NodeID
+	 * @throws IOException if the connection could not be created
 	 */
 	protected short readRemoteNodeID(final SocketChannel p_channel, final NIOSelector p_nioSelector)
 			throws IOException {
@@ -54,7 +57,7 @@ final class NIOInterface {
 			bytes = p_channel.read(buffer);
 			if (bytes == -1) {
 				// #if LOGGER >= ERROR
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not read remote NodeID from new incoming connection!");
+				LOGGER.error("Could not read remote NodeID from new incoming connection!");
 				// #endif /* LOGGER >= ERROR */
 				p_channel.keyFor(p_nioSelector.getSelector()).cancel();
 				p_channel.close();
@@ -71,11 +74,10 @@ final class NIOInterface {
 	/**
 	 * Reads from the given connection
 	 * m_buffer needs to be synchronized externally
-	 * @param p_connection
-	 *            the Connection
-	 * @throws IOException
-	 *             if the data could not be read
+	 *
+	 * @param p_connection the Connection
 	 * @return whether reading from channel was successful or not (connection is closed then)
+	 * @throws IOException if the data could not be read
 	 */
 	protected boolean read(final NIOConnection p_connection) throws IOException {
 		boolean ret = true;
@@ -112,11 +114,10 @@ final class NIOInterface {
 
 	/**
 	 * Writes to the given connection
-	 * @param p_connection
-	 *            the connection
+	 *
+	 * @param p_connection the connection
 	 * @return whether all data could be written or data is left
-	 * @throws IOException
-	 *             if the data could not be written
+	 * @throws IOException if the data could not be written
 	 */
 	protected boolean write(final NIOConnection p_connection) throws IOException {
 		boolean ret = true;
@@ -132,7 +133,8 @@ final class NIOInterface {
 			if (buffer.remaining() > m_outgoingBufferSize) {
 				// The write-Method for NIO SocketChannels is very slow for large buffers to write regardless of
 				// the length of the actual written data -> simulate a smaller buffer by slicing it
-				outerloop: while (buffer.remaining() > 0) {
+				outerloop:
+				while (buffer.remaining() > 0) {
 					size = Math.min(buffer.remaining(), m_outgoingBufferSize);
 					view = buffer.slice();
 					view.limit(size);
@@ -212,10 +214,9 @@ final class NIOInterface {
 
 	/**
 	 * Finishes the connection process for the given connection
-	 * @param p_connection
-	 *            the connection
-	 * @throws IOException
-	 *             if connection could not be finalized
+	 *
+	 * @param p_connection the connection
+	 * @throws IOException if connection could not be finalized
 	 */
 	protected static void connect(final NIOConnection p_connection) {
 		try {

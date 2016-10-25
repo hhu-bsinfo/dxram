@@ -3,7 +3,8 @@ package de.hhu.bsinfo.dxram.engine;
 
 import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.OSValidator;
-import de.hhu.bsinfo.utils.logger.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Separate class to avoid further bloating of DXRAMEngine to setup JNI related things (used by DXRAMEngine).
@@ -11,17 +12,14 @@ import de.hhu.bsinfo.utils.logger.Logger;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class DXRAMJNIManager {
-	private static final String LOG_HEADER = DXRAMJNIManager.class.getSimpleName();
 
-	private Logger m_logger;
+	private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMJNIManager.class.getSimpleName());
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_logger Logger so this class can do some logging as well.
 	 */
-	public DXRAMJNIManager(final Logger p_logger) {
-		m_logger = p_logger;
+	public DXRAMJNIManager() {
+
 	}
 
 	/**
@@ -31,7 +29,7 @@ public class DXRAMJNIManager {
 	 */
 	public void setup(final DXRAMContext.EngineSettings p_engineSettings) {
 		// #if LOGGER >= DEBUG
-		m_logger.debug(LOG_HEADER, "Setting up JNI classes...");
+		LOGGER.debug("Setting up JNI classes...");
 		// #endif /* LOGGER >= DEBUG */
 
 		String path;
@@ -44,7 +42,7 @@ public class DXRAMJNIManager {
 			extension = "dylib";
 		} else {
 			// #if LOGGER >= ERROR
-			m_logger.error(LOG_HEADER, "Non supported OS.");
+			LOGGER.error("Non supported OS");
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -52,7 +50,7 @@ public class DXRAMJNIManager {
 		path = cwd + "/" + p_engineSettings.getJNIPath() + "/libJNIconsole." + extension;
 
 		// #if LOGGER >= DEBUG
-		m_logger.debug(LOG_HEADER, "Loading JNIconsole: " + path);
+		LOGGER.debug("Loading JNIconsole: " + path);
 		// #endif /* LOGGER >= DEBUG */
 
 		JNIconsole.load(path);

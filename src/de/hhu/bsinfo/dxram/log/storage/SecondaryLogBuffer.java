@@ -5,7 +5,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This class implements the secondary log buffer
@@ -15,9 +16,9 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
  */
 public final class SecondaryLogBuffer {
 
-	// Attributes
-	private LoggerComponent m_logger;
+	private static final Logger LOGGER = LogManager.getFormatterLogger(SecondaryLogBuffer.class.getSimpleName());
 
+	// Attributes
 	private byte[] m_buffer;
 	private int m_bytesInBuffer;
 
@@ -29,21 +30,20 @@ public final class SecondaryLogBuffer {
 	/**
 	 * Creates an instance of SecondaryLogBuffer
 	 *
-	 * @param p_logger         the logger component
 	 * @param p_secondaryLog   Instance of the corresponding secondary log. Used to write directly to secondary
 	 * @param p_bufferSize     the secondary log buffer size
 	 * @param p_logSegmentSize the segment size
 	 */
-	public SecondaryLogBuffer(final LoggerComponent p_logger, final SecondaryLog p_secondaryLog, final int p_bufferSize,
+	public SecondaryLogBuffer(final SecondaryLog p_secondaryLog, final int p_bufferSize,
 			final int p_logSegmentSize) {
-		m_logger = p_logger;
+
 		m_secondaryLog = p_secondaryLog;
 		m_logSegmentSize = p_logSegmentSize;
 
 		m_bytesInBuffer = 0;
 		m_buffer = new byte[p_bufferSize];
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Initialized secondary log buffer (" + p_bufferSize + ")");
+		LOGGER.trace("Initialized secondary log buffer (%d)", p_bufferSize);
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -78,7 +78,7 @@ public final class SecondaryLogBuffer {
 		} catch (final IOException | InterruptedException e) {
 
 			// #if LOGGER >= ERROR
-			m_logger.error(SecondaryLogBuffer.class, "Could not flush secondary log buffer: " + e);
+			LOGGER.error("Could not flush secondary log buffer", e);
 			// #endif /* LOGGER >= ERROR */
 		}
 		m_bytesInBuffer = 0;

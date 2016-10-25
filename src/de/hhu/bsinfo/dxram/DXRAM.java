@@ -20,7 +20,6 @@ import de.hhu.bsinfo.dxram.lock.PeerLockComponent;
 import de.hhu.bsinfo.dxram.lock.PeerLockService;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.LogService;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupService;
@@ -47,6 +46,7 @@ import de.hhu.bsinfo.utils.ManifestHelper;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class DXRAM {
+
 	protected DXRAMEngine m_engine;
 
 	/**
@@ -99,8 +99,8 @@ public class DXRAM {
 	/**
 	 * Initialize the instance.
 	 *
-	 * @param p_autoShutdown       True to have DXRAM shut down automatically when the application quits.
-	 *                             If false, the caller has to take care of shutting down the instance by calling shutdown when done.
+	 * @param p_autoShutdown      True to have DXRAM shut down automatically when the application quits.
+	 *                            If false, the caller has to take care of shutting down the instance by calling shutdown when done.
 	 * @param p_configurationFile Absolute or relative path to a configuration file
 	 * @return True if initializing was successful, false otherwise.
 	 */
@@ -183,7 +183,6 @@ public class DXRAM {
 		p_engine.registerComponent(FailureComponent.class);
 		p_engine.registerComponent(PeerLockComponent.class);
 		p_engine.registerComponent(LogComponent.class);
-		p_engine.registerComponent(LoggerComponent.class);
 		p_engine.registerComponent(LookupComponent.class);
 		p_engine.registerComponent(MemoryManagerComponent.class);
 		p_engine.registerComponent(NameserviceComponent.class);

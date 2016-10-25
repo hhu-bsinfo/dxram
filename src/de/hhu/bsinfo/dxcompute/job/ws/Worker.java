@@ -2,6 +2,8 @@
 package de.hhu.bsinfo.dxcompute.job.ws;
 
 import de.hhu.bsinfo.dxcompute.job.AbstractJob;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Worker thread executing jobs using a work stealing approach.
@@ -9,6 +11,9 @@ import de.hhu.bsinfo.dxcompute.job.AbstractJob;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class Worker extends Thread {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(Worker.class.getSimpleName());
+
 	private int m_id = -1;
 	private volatile boolean m_running;
 	private volatile boolean m_shutdown;
@@ -107,7 +112,7 @@ public class Worker extends Thread {
 	@Override
 	public void run() {
 		// #if LOGGER >= INFO
-		m_workerDelegate.getLoggerComponent().info(getClass(), "Worker " + m_id + ": Running...");
+		LOGGER.info("Worker %d: Running...", m_id);
 		// #endif /* LOGGER >= INFO */
 
 		m_running = true;
@@ -120,8 +125,7 @@ public class Worker extends Thread {
 				m_isIdle = false;
 
 				// #if LOGGER >= DEBUG
-				m_workerDelegate.getLoggerComponent().debug(getClass(),
-						"Worker " + m_id + ": Executing job " + job + " from queue.");
+				LOGGER.debug("Worker %d: Executing job %s from queue", m_id, job);
 				// #endif /* LOGGER >= DEBUG */
 
 				m_workerDelegate.executingJob(job);
@@ -135,8 +139,7 @@ public class Worker extends Thread {
 				m_isIdle = false;
 
 				// #if LOGGER >= DEBUG
-				m_workerDelegate.getLoggerComponent().debug(getClass(),
-						"Worker " + m_id + ": Executing stolen job " + job);
+				LOGGER.debug("Worker %d: Executing stolen job %s", m_id, job);
 				// #endif /* LOGGER >= DEBUG */
 
 				m_workerDelegate.executingJob(job);
@@ -157,7 +160,7 @@ public class Worker extends Thread {
 		}
 
 		// #if LOGGER >= INFO
-		m_workerDelegate.getLoggerComponent().info(getClass(), "Worker " + m_id + ": Shut down.");
+		LOGGER.info("Worker %d: Shut down", m_id);
 		// #endif /* LOGGER >= INFO */
 
 		m_running = false;

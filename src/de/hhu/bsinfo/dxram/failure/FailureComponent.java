@@ -15,7 +15,6 @@ import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.failure.messages.FailureMessages;
 import de.hhu.bsinfo.dxram.failure.messages.FailureRequest;
 import de.hhu.bsinfo.dxram.failure.messages.FailureResponse;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
@@ -26,7 +25,8 @@ import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.ethnet.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Handles a node failure.
@@ -35,9 +35,10 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class FailureComponent extends AbstractDXRAMComponent implements MessageReceiver, EventListener<AbstractEvent> {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(FailureComponent.class.getSimpleName());
+
 	// dependent components
 	private AbstractBootComponent m_boot;
-	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
 	private EventComponent m_event;
 	private NetworkComponent m_network;
@@ -75,15 +76,14 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
 		if (ownRole == NodeRole.SUPERPEER) {
 			// #if LOGGER >= DEBUG
-			m_logger.debug(getClass(), "********** ********** Node Failure ********** **********");
+			LOGGER.debug("********** ********** Node Failure ********** **********");
 			// #endif /* LOGGER >= DEBUG */
 
 			if (m_lookup.isResponsibleForFailureHandling(p_nodeID)) {
 				// Failed node was either a superpeer or a peer/terminal this superpeer is responsible for
 
 				// #if LOGGER >= DEBUG
-				m_logger.debug(getClass(),
-						"Failed node was a " + roleOfFailedNode + ", NodeID: " + NodeID.toHexString(p_nodeID));
+				LOGGER.debug("Failed node was a %s, NodeID: 0x%X", roleOfFailedNode, p_nodeID);
 				// #endif /* LOGGER >= DEBUG */
 
 				// Restore superpeer overlay and/or initiate recovery
@@ -93,8 +93,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 				m_boot.failureHandling(p_nodeID, roleOfFailedNode);
 			} else {
 				// #if LOGGER >= DEBUG
-				m_logger.debug(getClass(),
-						"Not responsible for failed node, NodeID: " + NodeID.toHexString(p_nodeID));
+				LOGGER.debug("Not responsible for failed node, NodeID: 0x%X", p_nodeID);
 				// #endif /* LOGGER >= DEBUG */
 			}
 		} else {
@@ -124,16 +123,16 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 				m_eventLock.unlock();
 
 				// #if LOGGER == DEBUG
-				m_logger.debug(getClass(), "ConnectionLostEvent triggered: " + NodeID.toHexString(nodeID));
+				LOGGER.debug("ConnectionLostEvent triggered: 0x%X", nodeID);
 				// #endif /* LOGGER == DEBUG */
 
 				if (m_network.connectNode(nodeID) == NetworkErrorCodes.SUCCESS) {
 					// #if LOGGER == DEBUG
-					m_logger.debug(getClass(), "Re-connect successful, continuing.");
+					LOGGER.debug("Re-connect successful, continuing");
 					// #endif /* LOGGER == DEBUG */
 				} else {
 					// #if LOGGER == DEBUG
-					m_logger.debug(getClass(), "Node is unreachable. Initiating failure handling.");
+					LOGGER.debug("Node is unreachable. Initiating failure handling");
 					// #endif /* LOGGER == DEBUG */
 
 					failureHandling(nodeID);
@@ -153,16 +152,16 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 				m_eventLock.unlock();
 
 				// #if LOGGER == DEBUG
-				m_logger.debug(getClass(), "ResponseDelayedEvent triggered: " + NodeID.toHexString(nodeID));
+				LOGGER.debug("ResponseDelayedEvent triggered: 0x%X", nodeID);
 				// #endif /* LOGGER == DEBUG */
 
-				if (m_network.sendMessage(new DefaultMessage((short) nodeID)) == NetworkErrorCodes.SUCCESS) {
+				if (m_network.sendMessage(new DefaultMessage(nodeID)) == NetworkErrorCodes.SUCCESS) {
 					// #if LOGGER == DEBUG
-					m_logger.debug(getClass(), "Node is still reachable, continuing.");
+					LOGGER.debug("Node is still reachable, continuing");
 					// #endif /* LOGGER == DEBUG */
 				} else {
 					// #if LOGGER == DEBUG
-					m_logger.debug(getClass(), "Node is unreachable. Initiating failure handling.");
+					LOGGER.debug("Node is unreachable. Initiating failure handling");
 					// #endif /* LOGGER == DEBUG */
 
 					failureHandling(nodeID);
@@ -211,7 +210,6 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 		m_event = p_componentAccessor.getComponent(EventComponent.class);

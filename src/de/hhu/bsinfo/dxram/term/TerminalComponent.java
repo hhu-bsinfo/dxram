@@ -10,9 +10,10 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.script.ScriptContext;
 import de.hhu.bsinfo.dxram.script.ScriptEngineComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Component providing a separate script context and data/commands for an interactive terminal to be run on a node.
@@ -21,12 +22,13 @@ import de.hhu.bsinfo.dxram.script.ScriptEngineComponent;
  */
 public class TerminalComponent extends AbstractDXRAMComponent {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalComponent.class.getSimpleName());
+
 	// configuration values
 	@Expose
 	private String m_termCmdScriptFolder = "script/term";
 
 	// dependent components
-	private LoggerComponent m_logger;
 	private ScriptEngineComponent m_scriptEngine;
 
 	private ScriptTerminalContext m_terminalContext;
@@ -77,11 +79,10 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 		}
 	}
 
-    @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
-        m_scriptEngine = p_componentAccessor.getComponent(ScriptEngineComponent.class);
-    }
+	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_scriptEngine = p_componentAccessor.getComponent(ScriptEngineComponent.class);
+	}
 
 	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
@@ -103,8 +104,6 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 		unloadTerminalScripts();
 
 		m_terminalContext = null;
-		m_scriptEngine = null;
-		m_logger = null;
 
 		return true;
 	}
@@ -117,7 +116,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	private void loadTerminalScripts(final String p_path) {
 
 		// #if LOGGER >= INFO
-		m_logger.info(getClass(), "Loading terminal scripts from directory '" + p_path + "'...");
+		LOGGER.info("Loading terminal scripts from directory '%s'...", p_path);
 		// #endif /* LOGGER >= INFO */
 
 		File dir = new File(p_path);
@@ -127,7 +126,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 			for (File file : directoryListing) {
 				if (file.getName().endsWith(".js")) {
 					// #if LOGGER >= DEBUG
-					m_logger.debug(getClass(), "Loading terminal script '" + file.getName() + "'.");
+					LOGGER.debug("Loading terminal script '%s'", file.getName());
 					// #endif /* LOGGER >= DEBUG */
 
 					String name = file.getName().split("\\.")[0];
@@ -151,7 +150,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 			}
 		} else {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "List directory contents of script directory '" + p_path + "' failed.");
+			LOGGER.error("List directory contents of script directory '%s' failed", p_path);
 			// #endif /* LOGGER >= ERROR */
 		}
 	}
@@ -177,8 +176,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	private boolean assertFunctionExists(final ScriptContext p_ctx, final String p_name) {
 		if (!p_ctx.functionExists(p_name)) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Loading terminal script '" + p_ctx.getName()
-					+ "' failed: missing '" + p_name + "' function.");
+			LOGGER.error("Loading terminal script '%s' failed: missing '%s' function", p_ctx.getName(), p_name);
 			// #endif /* LOGGER >= ERROR */
 
 			return false;

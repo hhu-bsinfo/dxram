@@ -3,13 +3,18 @@ package de.hhu.bsinfo.dxram.log.header;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.storage.Version;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Extends AbstractLogEntryHeader for a normal log entry header (primary log)
+ *
  * @author Kevin Beineke
  *         25.06.2015
  */
 public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(DefaultPrimLogEntryHeader.class.getSimpleName());
 
 	// Attributes
 	private static short m_maximumSize;
@@ -18,6 +23,7 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 	private static byte m_lidOffset;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of NormalLogEntryHeader
 	 */
@@ -27,11 +33,14 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 		m_typeOffset = 0;
 		m_nidOffset = LOG_ENTRY_TYP_SIZE;
 		m_lidOffset = (byte) (m_nidOffset + LOG_ENTRY_NID_SIZE);
-	};
+	}
+
+	;
 
 	// Methods
 	@Override
-	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final byte p_rangeID, final short p_source) {
+	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version,
+			final byte p_rangeID, final short p_source) {
 		byte[] result;
 		byte lengthSize;
 		byte localIDSize;
@@ -83,7 +92,7 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 	@Override
 	public byte getRangeID(final byte[] p_buffer, final int p_offset) {
 		// #if LOGGER >= ERROR
-		AbstractLogEntryHeader.getLogger().error(DefaultPrimLogEntryHeader.class, "No RangeID available!");
+		LOGGER.error("No RangeID available!");
 		// #endif /* LOGGER >= ERROR */
 		return -1;
 	}
@@ -91,7 +100,7 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 	@Override
 	public short getSource(final byte[] p_buffer, final int p_offset) {
 		// #if LOGGER >= ERROR
-		AbstractLogEntryHeader.getLogger().error(DefaultPrimLogEntryHeader.class, "No source available!");
+		LOGGER.error("No source available!");
 		// #endif /* LOGGER >= ERROR */
 		return -1;
 	}
@@ -105,10 +114,9 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 	/**
 	 * Returns the LocalID
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the LocalID
 	 */
 	private long getLID(final byte[] p_buffer, final int p_offset) {
@@ -124,7 +132,8 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
 					+ ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
 		} else if (length == 3) {
-			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
+			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff)
+					<< 16)
 					+ (((long) p_buffer[offset + 3] & 0xff) << 24) + (((long) p_buffer[offset + 4] & 0xff) << 32)
 					+ (((long) p_buffer[offset + 5] & 0xff) << 40);
 		}
@@ -166,10 +175,14 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 		if (length == 1) {
 			version = p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff;
 		} else if (length == 2) {
-			version = (p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff) << 8);
+			version =
+					(p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff)
+							<< 8);
 		} else if (length == 3) {
-			version = (p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff) << 8)
-					+ ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 2] & 0xff) << 16);
+			version =
+					(p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff)
+							<< 8)
+							+ ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 2] & 0xff) << 16);
 		}
 
 		return new Version(epoch, version);
@@ -182,11 +195,12 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 		if (AbstractLogEntryHeader.useChecksum()) {
 			offset = p_offset + getCRCOffset(p_buffer, p_offset);
-			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
+			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff)
+					<< 16)
 					+ ((p_buffer[offset + 3] & 0xff) << 24);
 		} else {
 			// #if LOGGER >= ERROR
-			AbstractLogEntryHeader.getLogger().error(DefaultPrimLogEntryHeader.class, "No checksum available!");
+			LOGGER.error("No checksum available!");
 			// #endif /* LOGGER >= ERROR */
 			ret = -1;
 		}
@@ -207,7 +221,8 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 		if (AbstractLogEntryHeader.useChecksum()) {
 			ret = (short) (getCRCOffset(p_buffer, p_offset) + AbstractLogEntryHeader.getCRCSize());
 		} else {
-			versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
+			versionSize =
+					(byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
 			ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);
 		}
 
@@ -245,23 +260,23 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 		final byte localIDSize = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
 
 		switch (localIDSize) {
-		case 0:
-			ret += 1;
-			break;
-		case 1:
-			ret += 2;
-			break;
-		case 2:
-			ret += 4;
-			break;
-		case 3:
-			ret += 6;
-			break;
-		default:
-			// #if LOGGER >= ERROR
-			AbstractLogEntryHeader.getLogger().error(DefaultPrimLogEntryHeader.class, "LocalID's length unknown!");
-			// #endif /* LOGGER >= ERROR */
-			break;
+			case 0:
+				ret += 1;
+				break;
+			case 1:
+				ret += 2;
+				break;
+			case 2:
+				ret += 4;
+				break;
+			case 3:
+				ret += 6;
+				break;
+			default:
+				// #if LOGGER >= ERROR
+				LOGGER.error("LocalID's length unknown!");
+				// #endif /* LOGGER >= ERROR */
+				break;
 		}
 
 		return ret;
@@ -284,7 +299,7 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 			ret += versionSize;
 		} else {
 			// #if LOGGER >= ERROR
-			AbstractLogEntryHeader.getLogger().error(DefaultPrimLogEntryHeader.class, "No checksum available!");
+			LOGGER.error("No checksum available!");
 			// #endif /* LOGGER >= ERROR */
 			ret = -1;
 		}

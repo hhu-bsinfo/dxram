@@ -10,8 +10,9 @@ import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Print the statistics to a file.
@@ -19,6 +20,8 @@ import de.hhu.bsinfo.dxram.stats.StatisticsService;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class PrintStatisticsToFileTask extends PrintStatisticsTask {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(PrintStatisticsToFileTask.class.getSimpleName());
 
 	@Expose
 	private String m_path;
@@ -37,7 +40,6 @@ public class PrintStatisticsToFileTask extends PrintStatisticsTask {
 	public int execute(final TaskContext p_ctx) {
 		BootService bootService = p_ctx.getDXRAMServiceAccessor().getService(BootService.class);
 		StatisticsService statisticsService = p_ctx.getDXRAMServiceAccessor().getService(StatisticsService.class);
-		LoggerService loggerService = p_ctx.getDXRAMServiceAccessor().getService(LoggerService.class);
 
 		if (m_path == null) {
 			return -1;
@@ -47,20 +49,20 @@ public class PrintStatisticsToFileTask extends PrintStatisticsTask {
 		if (file.exists()) {
 			if (!file.delete()) {
 				// #if LOGGER >= ERROR
-				loggerService.error(getClass(), "Deleting file " + file + " failed.");
+				LOGGER.error("Deleting file %s failed", file);
 				// #endif /* LOGGER >= ERROR */
 				return -2;
 			}
 			try {
 				if (!file.createNewFile()) {
 					// #if LOGGER >= ERROR
-					loggerService.error(getClass(), "Creating output file " + m_path + " for statistics failed");
+					LOGGER.error("Creating output file %s for statistics failed", m_path);
 					// #endif /* LOGGER >= ERROR */
 					return -3;
 				}
 			} catch (final IOException e) {
 				// #if LOGGER >= ERROR
-				loggerService.error(getClass(), "Creating output file " + m_path + " for statistics failed", e);
+				LOGGER.error("Creating output file %s for statistics failed: %s", m_path, e);
 				// #endif /* LOGGER >= ERROR */
 				return -4;
 			}
@@ -71,7 +73,7 @@ public class PrintStatisticsToFileTask extends PrintStatisticsTask {
 			out = new PrintStream(file);
 		} catch (final FileNotFoundException e) {
 			// #if LOGGER >= ERROR
-			loggerService.error(getClass(), "Creating print stream for statistics failed", e);
+			LOGGER.error("Creating print stream for statistics failed", e);
 			// #endif /* LOGGER >= ERROR */
 			return -5;
 		}

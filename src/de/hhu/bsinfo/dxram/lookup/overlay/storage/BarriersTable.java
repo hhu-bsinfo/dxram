@@ -5,17 +5,19 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
 import de.hhu.bsinfo.ethnet.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Table managing synchronization barriers on a superpeer.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 06.05.16
  */
 public class BarriersTable extends AbstractMetadata {
 
-	private LoggerComponent m_logger;
+	private static final Logger LOGGER = LogManager.getFormatterLogger(BarriersTable.class.getSimpleName());
 
 	private int m_maxNumBarriers;
 	private int m_allBarriersCount;
@@ -26,14 +28,11 @@ public class BarriersTable extends AbstractMetadata {
 
 	/**
 	 * Constructor
-	 * @param p_maxNumBarriers
-	 *            Max number of barriers allowed to be allocated.
-	 * @param p_nodeId
-	 *            Node id of the superpeer this class is running on.
-	 * @param p_logger
-	 *            the logger component
+	 *
+	 * @param p_maxNumBarriers Max number of barriers allowed to be allocated.
+	 * @param p_nodeId         Node id of the superpeer this class is running on.
 	 */
-	public BarriersTable(final int p_maxNumBarriers, final short p_nodeId, final LoggerComponent p_logger) {
+	public BarriersTable(final int p_maxNumBarriers, final short p_nodeId) {
 		m_maxNumBarriers = p_maxNumBarriers;
 		m_allBarriersCount = 0;
 		m_allBarrierEntriesCount = 0;
@@ -41,8 +40,6 @@ public class BarriersTable extends AbstractMetadata {
 		m_barrierNodes = new BarrierNode[Short.MAX_VALUE * 2];
 
 		m_allocationLock = new ReentrantLock(false);
-
-		m_logger = p_logger;
 	}
 
 	@Override
@@ -63,7 +60,7 @@ public class BarriersTable extends AbstractMetadata {
 			barrierState = new short[m_maxNumBarriers][];
 
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), " Storing barriers of " + NodeID.toHexString(nodeId));
+			LOGGER.trace("Storing barriers of 0x%X", nodeId);
 			// #endif /* LOGGER == TRACE */
 
 			for (int i = 0; i < allSize; i++) {
@@ -96,7 +93,7 @@ public class BarriersTable extends AbstractMetadata {
 			barrierNode = m_barrierNodes[i & 0xFFFF];
 			if (barrierNode != null) {
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), " Including barriers of " + NodeID.toHexString((short) i));
+				LOGGER.trace("Including barriers of 0x%X", (short) i);
 				// #endif /* LOGGER == TRACE */
 
 				data.put(barrierNode.toByteArray());
@@ -120,7 +117,7 @@ public class BarriersTable extends AbstractMetadata {
 				barrierNode = m_barrierNodes[i & 0xFFFF];
 				if (barrierNode != null) {
 					// #if LOGGER == TRACE
-					m_logger.trace(getClass(), " Including barriers of " + NodeID.toHexString((short) i));
+					LOGGER.trace("Including barriers of 0x%X", (short) i);
 					// #endif /* LOGGER == TRACE */
 
 					currentData = barrierNode.toByteArray();
@@ -149,7 +146,7 @@ public class BarriersTable extends AbstractMetadata {
 					}
 
 					// #if LOGGER == TRACE
-					m_logger.trace(getClass(), " Removing barriers of " + NodeID.toHexString((short) i));
+					LOGGER.trace("Removing barriers of 0x%X", (short) i);
 					// #endif /* LOGGER == TRACE */
 
 					res = node.freeBarrier(counter++);
@@ -186,10 +183,9 @@ public class BarriersTable extends AbstractMetadata {
 
 	/**
 	 * Allocate a new barrier.
-	 * @param p_nodeId
-	 *            the creator
-	 * @param p_size
-	 *            Size of the barrier, i.e. how many peers have to sign on for release.
+	 *
+	 * @param p_nodeId the creator
+	 * @param p_size   Size of the barrier, i.e. how many peers have to sign on for release.
 	 * @return Barrier id on succuess, -1 on failure.
 	 */
 	public int allocateBarrier(final short p_nodeId, final int p_size) {
@@ -210,10 +206,9 @@ public class BarriersTable extends AbstractMetadata {
 
 	/**
 	 * Free a previously allocated barrier.
-	 * @param p_nodeId
-	 *            the creator
-	 * @param p_barrierId
-	 *            Id of the barrier to free.
+	 *
+	 * @param p_nodeId    the creator
+	 * @param p_barrierId Id of the barrier to free.
 	 * @return True if successful, false on failure.
 	 */
 	public boolean freeBarrier(final short p_nodeId, final int p_barrierId) {
@@ -230,12 +225,10 @@ public class BarriersTable extends AbstractMetadata {
 
 	/**
 	 * Change the size of a barrier after being created (i.e. you want to keep the barrier id)
-	 * @param p_nodeId
-	 *            the creator
-	 * @param p_barrierId
-	 *            Id of the barrier to change the size of.
-	 * @param p_newSize
-	 *            The new size for the barrier.
+	 *
+	 * @param p_nodeId    the creator
+	 * @param p_barrierId Id of the barrier to change the size of.
+	 * @param p_newSize   The new size for the barrier.
 	 * @return True if chaning size was sucessful, false otherwise.
 	 */
 	public boolean changeBarrierSize(final short p_nodeId, final int p_barrierId, final int p_newSize) {
@@ -244,14 +237,11 @@ public class BarriersTable extends AbstractMetadata {
 
 	/**
 	 * Sign on to a barrier using a barrier id.
-	 * @param p_nodeId
-	 *            the creator
-	 * @param p_barrierId
-	 *            Barrier id to sign on to.
-	 * @param p_nodeIdToSignOn
-	 *            Id of the peer node signing on
-	 * @param p_barrierData
-	 *            Additional custom data to pass along to the barrier
+	 *
+	 * @param p_nodeId         the creator
+	 * @param p_barrierId      Barrier id to sign on to.
+	 * @param p_nodeIdToSignOn Id of the peer node signing on
+	 * @param p_barrierData    Additional custom data to pass along to the barrier
 	 * @return On success returns the number of peers left to sign on, -1 on failure
 	 */
 	public int signOn(final short p_nodeId, final int p_barrierId, final short p_nodeIdToSignOn,
@@ -261,10 +251,9 @@ public class BarriersTable extends AbstractMetadata {
 
 	/**
 	 * Reset an existing barrier for reuse.
-	 * @param p_nodeId
-	 *            the creator
-	 * @param p_barrierId
-	 *            Id of the barrier to reset.
+	 *
+	 * @param p_nodeId    the creator
+	 * @param p_barrierId Id of the barrier to reset.
 	 * @return True if successful, false otherwise.
 	 */
 	public boolean reset(final short p_nodeId, final int p_barrierId) {
@@ -274,10 +263,9 @@ public class BarriersTable extends AbstractMetadata {
 	/**
 	 * Get the list of currently signed on peers from a barrier.
 	 * The first item (index 0) is the sign on count.
-	 * @param p_nodeId
-	 *            the creator
-	 * @param p_barrierId
-	 *            Id of the barrier to get.
+	 *
+	 * @param p_nodeId    the creator
+	 * @param p_barrierId Id of the barrier to get.
 	 * @return Array with node ids that already signed on. First index element is the count of signed on peers.
 	 */
 	public short[] getSignedOnPeers(final short p_nodeId, final int p_barrierId) {
@@ -286,12 +274,11 @@ public class BarriersTable extends AbstractMetadata {
 
 	/**
 	 * Get the custom data of a barrier that is passed along on barrier sign ons.
-	 * @param p_nodeId
-	 *            the creator
-	 * @param p_barrierId
-	 *            Id of the barrier to get the custom data of.
+	 *
+	 * @param p_nodeId    the creator
+	 * @param p_barrierId Id of the barrier to get the custom data of.
 	 * @return On success returns an array with the currently available custom data (sorted by order the peers logged
-	 *         in)
+	 * in)
 	 */
 	public long[] getBarrierCustomData(final short p_nodeId, final int p_barrierId) {
 		return m_barrierNodes[p_nodeId].getBarrierCustomData(p_barrierId);
@@ -299,6 +286,7 @@ public class BarriersTable extends AbstractMetadata {
 
 	/**
 	 * Wrapper class for all barriers of one superpeer
+	 *
 	 * @author Kevin Beineke <kevin.beineke@hhu.de> 10.10.16
 	 */
 	private final class BarrierNode {
@@ -311,12 +299,12 @@ public class BarriersTable extends AbstractMetadata {
 		private int m_allocatedBarriersCount;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of BarrierNode
-		 * @param p_nodeId
-		 *            the creator
-		 * @param p_maxNumBarriers
-		 *            Max number of barriers allowed to be allocated.
+		 *
+		 * @param p_nodeId         the creator
+		 * @param p_maxNumBarriers Max number of barriers allowed to be allocated.
 		 */
 		private BarrierNode(final short p_nodeId, final int p_maxNumBarriers) {
 			m_barrierData = new long[p_maxNumBarriers][];
@@ -331,14 +319,11 @@ public class BarriersTable extends AbstractMetadata {
 
 		/**
 		 * Creates an instance of BarrierNode
-		 * @param p_nodeId
-		 *            the creator
-		 * @param p_maxNumBarriers
-		 *            Max number of barriers allowed to be allocated.
-		 * @param p_barrierData
-		 *            all barriers' data
-		 * @param p_barrierState
-		 *            all barriers' states
+		 *
+		 * @param p_nodeId         the creator
+		 * @param p_maxNumBarriers Max number of barriers allowed to be allocated.
+		 * @param p_barrierData    all barriers' data
+		 * @param p_barrierState   all barriers' states
 		 */
 		private BarrierNode(final short p_nodeId, final int p_maxNumBarriers, final long[][] p_barrierData,
 				final short[][] p_barrierState) {
@@ -353,8 +338,10 @@ public class BarriersTable extends AbstractMetadata {
 		}
 
 		// Methods
+
 		/**
 		 * Returns the number of barriers in this barrier node
+		 *
 		 * @return the number of allocated barriers
 		 */
 		private int getNumberOfBarriers() {
@@ -363,8 +350,8 @@ public class BarriersTable extends AbstractMetadata {
 
 		/**
 		 * Allocate a new barrier.
-		 * @param p_size
-		 *            Size of the barrier, i.e. how many peers have to sign on for release.
+		 *
+		 * @param p_size Size of the barrier, i.e. how many peers have to sign on for release.
 		 * @return Barrier id on succuess, -1 on failure.
 		 */
 		private int allocateBarrier(final int p_size) {
@@ -396,8 +383,8 @@ public class BarriersTable extends AbstractMetadata {
 
 		/**
 		 * Free a previously allocated barrier.
-		 * @param p_barrierId
-		 *            Id of the barrier to free.
+		 *
+		 * @param p_barrierId Id of the barrier to free.
 		 * @return The size of freed barrier if successful, -1 on failure.
 		 */
 		private int freeBarrier(final int p_barrierId) {
@@ -446,10 +433,9 @@ public class BarriersTable extends AbstractMetadata {
 
 		/**
 		 * Change the size of a barrier after being created (i.e. you want to keep the barrier id)
-		 * @param p_barrierId
-		 *            Id of the barrier to change the size of.
-		 * @param p_newSize
-		 *            The new size for the barrier.
+		 *
+		 * @param p_barrierId Id of the barrier to change the size of.
+		 * @param p_newSize   The new size for the barrier.
 		 * @return True if chaning size was sucessful, false otherwise.
 		 */
 		private boolean changeBarrierSize(final int p_barrierId, final int p_newSize) {
@@ -492,12 +478,10 @@ public class BarriersTable extends AbstractMetadata {
 
 		/**
 		 * Sign on to a barrier using a barrier id.
-		 * @param p_barrierId
-		 *            Barrier id to sign on to.
-		 * @param p_nodeId
-		 *            Id of the peer node signing on
-		 * @param p_barrierData
-		 *            Additional custom data to pass along to the barrier
+		 *
+		 * @param p_barrierId   Barrier id to sign on to.
+		 * @param p_nodeId      Id of the peer node signing on
+		 * @param p_barrierData Additional custom data to pass along to the barrier
 		 * @return On success returns the number of peers left to sign on, -1 on failure
 		 */
 		private int signOn(final int p_barrierId, final short p_nodeId, final long p_barrierData) {
@@ -534,8 +518,8 @@ public class BarriersTable extends AbstractMetadata {
 
 		/**
 		 * Reset an existing barrier for reuse.
-		 * @param p_barrierId
-		 *            Id of the barrier to reset.
+		 *
+		 * @param p_barrierId Id of the barrier to reset.
 		 * @return True if successful, false otherwise.
 		 */
 		private boolean reset(final int p_barrierId) {
@@ -569,8 +553,8 @@ public class BarriersTable extends AbstractMetadata {
 		/**
 		 * Get the list of currently signed on peers from a barrier.
 		 * The first item (index 0) is the sign on count.
-		 * @param p_barrierId
-		 *            Id of the barrier to get.
+		 *
+		 * @param p_barrierId Id of the barrier to get.
 		 * @return Array with node ids that already signed on. First index element is the count of signed on peers.
 		 */
 		private short[] getSignedOnPeers(final int p_barrierId) {
@@ -594,10 +578,10 @@ public class BarriersTable extends AbstractMetadata {
 
 		/**
 		 * Get the custom data of a barrier that is passed along on barrier sign ons.
-		 * @param p_barrierId
-		 *            Id of the barrier to get the custom data of.
+		 *
+		 * @param p_barrierId Id of the barrier to get the custom data of.
 		 * @return On success returns an array with the currently available custom data (sorted by order the peers
-		 *         logged in)
+		 * logged in)
 		 */
 		private long[] getBarrierCustomData(final int p_barrierId) {
 			if (p_barrierId == BarrierID.INVALID_ID) {
@@ -620,6 +604,7 @@ public class BarriersTable extends AbstractMetadata {
 
 		/**
 		 * Return all barriers in a byte array.
+		 *
 		 * @return a byte array with all barriers.
 		 */
 		private byte[] toByteArray() {
@@ -641,7 +626,7 @@ public class BarriersTable extends AbstractMetadata {
 				data.putInt(m_barrierData[i].length);
 
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), "  Including barrier with id " + i);
+				LOGGER.trace("Including barrier with id %d", i);
 				// #endif /* LOGGER == TRACE */
 
 				for (int j = 0; j < m_barrierData[i].length; j++) {

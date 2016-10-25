@@ -13,10 +13,11 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.JNIconsole;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Service providing an interactive terminal running on a DXRAM instance.
@@ -28,12 +29,13 @@ import de.hhu.bsinfo.utils.JNIconsole;
  */
 public class TerminalService extends AbstractDXRAMService {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalService.class.getSimpleName());
+
 	// configuration values
 	@Expose
 	private String m_autostartScript = "";
 
 	// dependent components
-	private LoggerComponent m_logger;
 	private AbstractBootComponent m_boot;
 	private TerminalComponent m_terminal;
 
@@ -63,7 +65,7 @@ public class TerminalService extends AbstractDXRAMService {
 		JNIconsole.autocompleteCommands(m_terminal.getRegisteredCommands().keySet().toArray(new String[0]));
 
 		// #if LOGGER >= INFO
-		m_logger.info(getClass(), "Running terminal...");
+		LOGGER.info("Running terminal...");
 		// #endif /* LOGGER >= INFO */
 
 		System.out.println(">>> DXRAM Terminal <<<");
@@ -93,7 +95,7 @@ public class TerminalService extends AbstractDXRAMService {
 					}
 				} catch (IOException e) {
 					// #if LOGGER >= ERROR
-					m_logger.error(getClass(), "Writing history file failed", e);
+					LOGGER.error("Writing history file failed", e);
 					// #endif /* LOGGER >= ERROR */
 				}
 
@@ -102,7 +104,7 @@ public class TerminalService extends AbstractDXRAMService {
 		}
 
 		// #if LOGGER >= INFO
-		m_logger.info(getClass(), "Exiting terminal...");
+		LOGGER.info("Exiting terminal...");
 		// #endif /* LOGGER >= INFO */
 	}
 
@@ -183,7 +185,6 @@ public class TerminalService extends AbstractDXRAMService {
 
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
 		m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
 	}
@@ -238,11 +239,11 @@ public class TerminalService extends AbstractDXRAMService {
 			reader.close();
 		} catch (final FileNotFoundException e) {
 			// #if LOGGER >= DEBUG
-			m_logger.debug(getClass(), "No history found: " + p_file);
+			LOGGER.debug("No history found: %s", p_file);
 			// #endif /* LOGGER >= DEBUG */
 		} catch (final IOException e) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Reading history " + p_file + " failed", e);
+			LOGGER.error("Reading history %s failed: %s", p_file, e);
 			// #endif /* LOGGER >= ERROR */
 		}
 
@@ -251,7 +252,7 @@ public class TerminalService extends AbstractDXRAMService {
 		} catch (final IOException e) {
 			m_historyFile = null;
 			// #if LOGGER >= WARN
-			m_logger.warn(getClass(), "Opening history " + p_file + " for writing failed", e);
+			LOGGER.warn("Opening history %s for writing failed: %s", p_file, e);
 			// #endif /* LOGGER >= WARN */
 		}
 	}

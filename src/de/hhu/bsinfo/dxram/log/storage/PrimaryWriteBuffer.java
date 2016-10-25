@@ -16,7 +16,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Primary log write buffer Implemented as a ring buffer in a byte array. The
@@ -34,6 +35,8 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
  */
 public class PrimaryWriteBuffer {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(PrimaryWriteBuffer.class.getSimpleName());
+
 	// Constants
 	private static final int WRITE_BUFFER_MAX_SIZE = Integer.MAX_VALUE;
 	// Must be smaller than 1/2 of WRITE_BUFFER_SIZE
@@ -42,7 +45,6 @@ public class PrimaryWriteBuffer {
 
 	// Attributes
 	private LogService m_logService;
-	private LoggerComponent m_logger;
 	private int m_writeBufferSize;
 	private int m_flashPageSize;
 	private int m_secondaryLogBufferSize;
@@ -87,7 +89,6 @@ public class PrimaryWriteBuffer {
 	 * configuration
 	 *
 	 * @param p_logService             the log service
-	 * @param p_logger                 the logger component
 	 * @param p_primaryLog             Instance of the primary log. Used to write directly to primary log if buffer is full
 	 * @param p_writeBufferSize        the size of the write buffer
 	 * @param p_flashPageSize          the size of a flash page
@@ -96,13 +97,12 @@ public class PrimaryWriteBuffer {
 	 * @param p_useChecksum            whether checksums are used
 	 * @param p_sortBufferPooling      whether buffer pooling is enabled or not
 	 */
-	public PrimaryWriteBuffer(final LogService p_logService, final LoggerComponent p_logger,
+	public PrimaryWriteBuffer(final LogService p_logService,
 			final PrimaryLog p_primaryLog,
 			final int p_writeBufferSize, final int p_flashPageSize, final int p_secondaryLogBufferSize,
 			final int p_logSegmentSize,
 			final boolean p_useChecksum, final boolean p_sortBufferPooling) {
 		m_logService = p_logService;
-		m_logger = p_logger;
 		m_primaryLog = p_primaryLog;
 		m_writeBufferSize = p_writeBufferSize;
 		m_flashPageSize = p_flashPageSize;
@@ -157,7 +157,7 @@ public class PrimaryWriteBuffer {
 		m_writerThread.start();
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Initialized primary write buffer (" + m_writeBufferSize + ")");
+		LOGGER.trace("Initialized primary write buffer (%d)", m_writeBufferSize);
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -465,7 +465,7 @@ public class PrimaryWriteBuffer {
 					writtenBytes = bufferAndStore(m_buffer, readPointer, bytesInWriteBuffer, lengthByBackupRange);
 				} catch (final IOException | InterruptedException e) {
 					// #if LOGGER >= ERROR
-					m_logger.error(PrimaryWriteBuffer.class, "Could not flush data: " + e);
+					LOGGER.error("Could not flush data", e);
 					// #endif /* LOGGER >= ERROR */
 				}
 			}

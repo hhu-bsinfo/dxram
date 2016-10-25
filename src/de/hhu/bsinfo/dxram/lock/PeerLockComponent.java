@@ -11,9 +11,10 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Implementation of the lock component interface. This provides a peer side locking i.e.
@@ -23,8 +24,7 @@ import de.hhu.bsinfo.utils.Pair;
  */
 public class PeerLockComponent extends AbstractLockComponent {
 
-	// dependent components
-	private LoggerComponent m_logger;
+	private static final Logger LOGGER = LogManager.getFormatterLogger(PeerLockComponent.class.getSimpleName());
 
 	private Map<Long, LockEntry> m_lockedChunks;
 	private AtomicBoolean m_mapEntryCreationLock;
@@ -38,7 +38,7 @@ public class PeerLockComponent extends AbstractLockComponent {
 
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		// no dependencies
 	}
 
 	@Override
@@ -51,8 +51,6 @@ public class PeerLockComponent extends AbstractLockComponent {
 
 	@Override
 	protected boolean shutdownComponent() {
-		m_logger = null;
-
 		m_lockedChunks.clear();
 		m_lockedChunks = null;
 		m_mapEntryCreationLock = null;
@@ -131,8 +129,8 @@ public class PeerLockComponent extends AbstractLockComponent {
 		if (lockEntry == null) {
 			// trying to unlock non locked chunk
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Unlocking previously non locked chunk " + ChunkID.toHexString(p_chunkId)
-					+ " by node " + NodeID.toHexString(p_unlockingNodeID) + " not possible.");
+			LOGGER.error("Unlocking previously non locked chunk 0x%X by node 0x%X not possible",
+					p_chunkId, p_unlockingNodeID);
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
@@ -140,9 +138,8 @@ public class PeerLockComponent extends AbstractLockComponent {
 		if (lockEntry.m_nodeID != p_unlockingNodeID) {
 			// trying to unlock a chunk we have not locked
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Unlocking chunk " + ChunkID.toHexString(p_chunkId)
-					+ " locked by node " + NodeID.toHexString(lockEntry.m_nodeID)
-					+ " not allowed for node " + NodeID.toHexString(p_unlockingNodeID) + ".");
+			LOGGER.error("Unlocking chunk 0x%X locked by node 0x%X not allowed for node 0x%X",
+					p_chunkId, lockEntry.m_nodeID, p_unlockingNodeID);
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}

@@ -13,7 +13,6 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.LogComponent;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
@@ -24,7 +23,8 @@ import de.hhu.bsinfo.dxram.recovery.messages.RecoverMessage;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.ethnet.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This service provides all recovery functionality.
@@ -33,12 +33,13 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class RecoveryService extends AbstractDXRAMService implements MessageReceiver {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(RecoveryService.class.getSimpleName());
+
 	// dependent components
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private ChunkComponent m_chunk;
 	private LogComponent m_log;
-	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
 	private NetworkComponent m_network;
 
@@ -70,13 +71,12 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 			}
 		} else {
 			// #if LOGGER >= INFO
-			m_logger.info(RecoveryService.class, "Forwarding recovery to " + NodeID.toHexString(p_dest));
+			LOGGER.info("Forwarding recovery to 0x%X", p_dest);
 			// #endif /* LOGGER >= INFO */
 			final NetworkErrorCodes err = m_network.sendMessage(new RecoverMessage(p_dest, p_owner, p_useLiveData));
 			if (err != NetworkErrorCodes.SUCCESS) {
 				// #if LOGGER >= ERROR
-				m_logger.error(RecoveryService.class,
-						"Could not forward command to " + NodeID.toHexString(p_dest) + ". Aborting recovery!");
+				LOGGER.error("Could not forward command to 0x%X. Aborting recovery!", p_dest);
 				// #endif /* LOGGER >= ERROR */
 				ret = false;
 			}
@@ -91,7 +91,6 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 		m_backup = p_componentAccessor.getComponent(BackupComponent.class);
 		m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
 		m_log = p_componentAccessor.getComponent(LogComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 	}
@@ -103,7 +102,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 		// #if LOGGER >= WARN
 		if (!m_backup.isActive()) {
-			m_logger.warn(RecoveryService.class, "Backup is not activated. Recovery service will not work!");
+			LOGGER.warn("Backup is not activated. Recovery service will not work!");
 		}
 		// #endif /* LOGGER >= WARN */
 		m_backupDirectory = m_backup.getBackupDirectory();
@@ -130,7 +129,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 		if (!m_backup.isActive()) {
 			// #if LOGGER >= WARN
-			m_logger.warn(RecoveryService.class, "Backup is not activated. Cannot recover!");
+			LOGGER.warn("Backup is not activated. Cannot recover!");
 			// #endif /* LOGGER >= WARN */
 		} else {
 			backupRanges = m_lookup.getAllBackupRanges(p_owner);
@@ -149,7 +148,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 					// }
 					// if (chunks == null) {
 					// #if LOGGER >= ERROR
-					m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next backup peer.");
+					LOGGER.error("Cannot recover Chunks! Trying next backup peer");
 					// #endif /* LOGGER >= ERROR */
 					// continue;
 					// }
@@ -168,7 +167,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 					}
 
 					// #if LOGGER >= INFO
-					m_logger.info(RecoveryService.class, "Retrieved " + chunks.length + " Chunks.");
+					LOGGER.info("Retrieved %d Chunks", chunks.length);
 					// #endif /* LOGGER >= INFO */
 
 					// Store recovered Chunks
@@ -200,7 +199,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 		if (!m_backup.isActive()) {
 			// #if LOGGER >= WARN
-			m_logger.warn(RecoveryService.class, "Backup is not activated. Cannot recover!");
+			LOGGER.warn("Backup is not activated. Cannot recover!");
 			// #endif /* LOGGER >= WARN */
 		} else {
 			folderToScan = new File(m_backupDirectory);
@@ -213,12 +212,12 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 						if (chunks == null) {
 							// #if LOGGER >= ERROR
-							m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next file.");
+							LOGGER.error("Cannot recover Chunks! Trying next file.");
 							// #endif /* LOGGER >= ERROR */
 							continue;
 						}
 						// #if LOGGER >= INFO
-						m_logger.info(RecoveryService.class, "Retrieved " + chunks.length + " Chunks from file.");
+						LOGGER.info("Retrieved %d Chunks from file", chunks.length);
 						// #endif /* LOGGER >= INFO */
 
 						// Store recovered Chunks
@@ -265,7 +264,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 		if (ret == 0) {
 			// #if LOGGER >= ERROR
-			m_logger.error(RecoveryService.class, "Cannot recover Chunks locally.");
+			LOGGER.error("Cannot recover Chunks locally");
 			// #endif /* LOGGER >= ERROR */
 		}
 

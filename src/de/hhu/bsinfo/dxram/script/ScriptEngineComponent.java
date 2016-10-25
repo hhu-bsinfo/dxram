@@ -19,10 +19,11 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Script engine component creating a java script engine instance with access to different contexts
@@ -31,12 +32,11 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class ScriptEngineComponent extends AbstractDXRAMComponent implements ScriptDXRAMContext {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(ScriptEngineComponent.class.getSimpleName());
+
 	// configuration values
 	@Expose
 	private String m_autostartScript = "";
-
-	// dependent components
-	private LoggerComponent m_logger;
 
 	// private state
 	private ScriptEngineManager m_scriptEngineManager;
@@ -64,12 +64,12 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 
 		if (m_scriptContexts.containsKey(p_name)) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Cannot create new context '" + p_name + "', name already exists.");
+			LOGGER.error("Cannot create new context '%s', name already exists", p_name);
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
-		ScriptContext ctx = new ScriptContext(this, m_scriptEngine, m_logger, p_name);
+		ScriptContext ctx = new ScriptContext(this, m_scriptEngine, p_name);
 		m_scriptContexts.put(p_name, ctx);
 
 		return ctx;
@@ -118,7 +118,7 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 
 		if (ctx == null) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Script context '" + p_name + "' does not exist");
+			LOGGER.error("Script context '%s' does not exist", p_name);
 			// #endif /* LOGGER >= ERROR */
 		}
 
@@ -127,10 +127,10 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 
 	// -------------------------------------------------------------------------------------------------------
 
-    @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
-    }
+	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		// no dependencies
+	}
 
 	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
@@ -138,7 +138,7 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 		m_scriptEngine = m_scriptEngineManager.getEngineByName("JavaScript");
 
 		// create default context
-		m_defaultScriptContext = new ScriptContext(m_scriptEngineContext, m_scriptEngine, m_logger, "default");
+		m_defaultScriptContext = new ScriptContext(m_scriptEngineContext, m_scriptEngine, "default");
 
 		// TODO autostart script
 
@@ -156,15 +156,13 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 
 		m_scriptEngineContext = null;
 
-		m_logger = null;
-
 		return true;
 	}
 
 	@Override
-    protected boolean isEngineAccessor() {
-        return true;
-    }
+	protected boolean isEngineAccessor() {
+		return true;
+	}
 
 	// -------------------------------------------------------------------------------------------------------
 
@@ -258,12 +256,12 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 		try {
 			clazz = Class.forName(p_className);
 		} catch (final ClassNotFoundException e) {
-			m_logger.error(getClass(), "Cannot find class with name " + p_className);
+			LOGGER.error("Cannot find class with name %s", p_className);
 			return null;
 		}
 
 		if (!DataStructure.class.isAssignableFrom(clazz)) {
-			m_logger.error(getClass(), "Class " + p_className + " is not implementing the DataStructure interface");
+			LOGGER.error("Class %s is not implementing the DataStructure interface", p_className);
 			return null;
 		}
 
@@ -272,7 +270,7 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 			dataStructure = (DataStructure) clazz.getConstructor().newInstance();
 		} catch (final InstantiationException | IllegalAccessException
 				| InvocationTargetException | NoSuchMethodException e) {
-			m_logger.error(getClass(), "Creating instance of " + p_className + " failed: " + e.getMessage());
+			LOGGER.error("Creating instance of %s failed: %s", p_className, e.getMessage());
 			return null;
 		}
 

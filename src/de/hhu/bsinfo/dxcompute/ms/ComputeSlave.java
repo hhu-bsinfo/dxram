@@ -5,11 +5,15 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
-import de.hhu.bsinfo.dxcompute.ms.messages.*;
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
+import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
+import de.hhu.bsinfo.dxcompute.ms.messages.SignalMessage;
+import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
+import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
@@ -18,12 +22,17 @@ import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Implementation of a slave. The slave waits for tasks for execution from the master
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, TaskSignalInterface {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(ComputeSlave.class.getSimpleName());
 
 	private short m_masterNodeId = NodeID.INVALID_ID;
 
@@ -36,30 +45,22 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
 	/**
 	 * Constructor
-	 * @param p_computeGroupId
-	 *            Compute group id the instance is assigned to.
-	 * @param p_pingIntervalMs
-	 *            Ping interval in ms to check back with the compute group if still alive.
-	 * @param p_serviceAccessor
-	 *            Service accessor for tasks.
-	 * @param p_network
-	 *            NetworkComponent
-	 * @param p_logger
-	 *            LoggerComponent
-	 * @param p_nameservice
-	 *            NameserviceComponent
-	 * @param p_boot
-	 *            BootComponent
-	 * @param p_lookup
-	 *            LookupComponent
+	 *
+	 * @param p_computeGroupId  Compute group id the instance is assigned to.
+	 * @param p_pingIntervalMs  Ping interval in ms to check back with the compute group if still alive.
+	 * @param p_serviceAccessor Service accessor for tasks.
+	 * @param p_network         NetworkComponent
+	 * @param p_nameservice     NameserviceComponent
+	 * @param p_boot            BootComponent
+	 * @param p_lookup          LookupComponent
 	 */
 	ComputeSlave(final short p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
-			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
+			final NameserviceComponent p_nameservice,
 			final AbstractBootComponent p_boot,
 			final LookupComponent p_lookup) {
-		super(ComputeRole.SLAVE, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_logger,
+		super(ComputeRole.SLAVE, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network,
 				p_nameservice, p_boot, p_lookup);
 
 		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
@@ -113,7 +114,8 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 			m_state = State.STATE_TERMINATE;
 			try {
 				join();
-			} catch (final InterruptedException ignored) {}
+			} catch (final InterruptedException ignored) {
+			}
 		}
 	}
 
@@ -140,8 +142,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 		NetworkErrorCodes err = m_network.sendMessage(new SignalMessage(m_masterNodeId, p_signal));
 		if (err != NetworkErrorCodes.SUCCESS) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(),
-					"Sending signal to master " + NodeID.toHexString(m_masterNodeId) + " failed: " + err);
+			LOGGER.error("Sending signal to master 0x%X failed: %s", m_masterNodeId, err);
 			// #endif /* LOGGER >= ERROR */
 		}
 	}
@@ -151,7 +152,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 	 */
 	private void stateSetup() {
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Setting up slave for compute group " + m_computeGroupId + ")");
+		LOGGER.debug("Setting up slave for compute group %d", m_computeGroupId);
 		// #endif /* LOGGER >= DEBUG */
 
 		// bootstrap: get master node id from nameservice
@@ -159,13 +160,14 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 			long tmp = m_nameservice.getChunkID(m_nameserviceMasterNodeIdKey, 0);
 			if (tmp == -1) {
 				// #if LOGGER >= ERROR
-				m_logger.error(getClass(),
-						"Setting up slave, cannot find nameservice entry for master node id for key "
-								+ m_nameserviceMasterNodeIdKey + " of compute group " + m_computeGroupId);
+				LOGGER.error(
+						"Setting up slave, cannot find nameservice entry for master node id for key %s of compute group %d",
+						m_nameserviceMasterNodeIdKey, m_computeGroupId);
 				// #endif /* LOGGER >= ERROR */
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException ignored) {}
+				} catch (final InterruptedException ignored) {
+				}
 
 				return;
 			}
@@ -178,12 +180,12 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 		NetworkErrorCodes err = m_network.sendSync(request);
 		if (err != NetworkErrorCodes.SUCCESS) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(),
-					"Sending join request to master " + NodeID.toHexString(m_masterNodeId) + " failed: " + err);
+			LOGGER.error("Sending join request to master 0x%X failed: %s", m_masterNodeId, err);
 			// #endif /* LOGGER >= ERROR */
 			try {
 				Thread.sleep(1000);
-			} catch (final InterruptedException ignored) {}
+			} catch (final InterruptedException ignored) {
+			}
 
 			// trigger a full retry. might happen that the master node has changed
 			m_masterNodeId = NodeID.INVALID_ID;
@@ -193,19 +195,18 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 				// master is busy, retry
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException ignored) {}
+				} catch (final InterruptedException ignored) {
+				}
 			} else {
 				// #if LOGGER >= INFO
-				m_logger.info(getClass(),
-						"Successfully joined compute group " + m_computeGroupId + " with master "
-								+ NodeID.toHexString(m_masterNodeId));
+				LOGGER.info("Successfully joined compute group %d with master 0x%X", m_computeGroupId, m_masterNodeId);
 				// #endif /* LOGGER >= INFO */
 
 				m_masterExecutionBarrierId = response.getExecutionBarrierId();
 				m_state = State.STATE_IDLE;
 
 				// #if LOGGER >= DEBUG
-				m_logger.debug(getClass(), "Entering idle state");
+				LOGGER.debug("Entering idle state");
 				// #endif /* LOGGER >= DEBUG */
 			}
 		}
@@ -223,8 +224,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 				if (!m_boot.isNodeOnline(m_masterNodeId)) {
 					// master is gone, go back to sign on
 					// #if LOGGER >= INFO
-					m_logger.info(getClass(),
-							"Master " + NodeID.toHexString(m_masterNodeId) + " went offline, logout.");
+					LOGGER.info("Master 0x%X went offline, logout", m_masterNodeId);
 					// #endif /* LOGGER >= INFO */
 
 					m_masterNodeId = NodeID.INVALID_ID;
@@ -235,13 +235,14 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 				m_lastPingMs = System.currentTimeMillis();
 
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), "Pinging master " + NodeID.toHexString(m_masterNodeId) + ": online.");
+				LOGGER.trace("Pinging master 0x%X: online", m_masterNodeId);
 				// #endif /* LOGGER == TRACE */
 			}
 
 			try {
 				Thread.sleep(10);
-			} catch (final InterruptedException ignored) {}
+			} catch (final InterruptedException ignored) {
+			}
 		}
 	}
 
@@ -250,7 +251,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 	 */
 	private void stateExecute() {
 		// #if LOGGER >= INFO
-		m_logger.info(getClass(), "Starting execution of task " + m_task);
+		LOGGER.info("Starting execution of task %s", m_task);
 		// #endif /* LOGGER >= INFO */
 
 		m_executeTaskLock.lock();
@@ -258,7 +259,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 		int result = m_task.execute(new TaskContext(m_ctxData, this, getServiceAccessor()));
 
 		// #if LOGGER >= INFO
-		m_logger.info(getClass(), "Execution finished, return code: " + result);
+		LOGGER.info("Execution finished, return code: %d", result);
 		// #endif /* LOGGER >= INFO */
 
 		m_handleSignalLock.lock();
@@ -267,8 +268,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 		m_handleSignalLock.unlock();
 
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(),
-				"Syncing with master " + NodeID.toHexString(m_masterNodeId) + " ...");
+		LOGGER.debug("Syncing with master 0x%X ...", m_masterNodeId);
 		// #endif /* LOGGER >= DEBUG */
 
 		// set idle state before sync to avoid race condition with master sending
@@ -279,18 +279,18 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 		m_lookup.barrierSignOn(m_masterExecutionBarrierId, result);
 
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Syncing done.");
+		LOGGER.debug("Syncing done");
 		// #endif /* LOGGER >= DEBUG */
 
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Entering idle state");
+		LOGGER.debug("Entering idle state");
 		// #endif /* LOGGER >= DEBUG */
 	}
 
 	/**
 	 * Handle an incoming ExecuteTaskRequest
-	 * @param p_message
-	 *            ExecuteTaskRequest
+	 *
+	 * @param p_message ExecuteTaskRequest
 	 */
 	private void incomingExecuteTaskRequest(final ExecuteTaskRequest p_message) {
 		ExecuteTaskResponse response = new ExecuteTaskResponse(p_message);
@@ -310,8 +310,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 		NetworkErrorCodes err = m_network.sendMessage(response);
 		if (err != NetworkErrorCodes.SUCCESS) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Sending response for executing task to "
-					+ NodeID.toHexString(p_message.getSource()) + " failed: " + err);
+			LOGGER.error("Sending response for executing task to 0x%X failed: %s", p_message.getSource(), err);
 			// #endif /* LOGGER >= ERROR */
 		} else {
 			if (task != null) {
@@ -325,8 +324,8 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
 	/**
 	 * Handle a SignalMessage
-	 * @param p_message
-	 *            SignalMessage
+	 *
+	 * @param p_message SignalMessage
 	 */
 	private void incomingSignalMessage(final SignalMessage p_message) {
 		m_handleSignalLock.lock();

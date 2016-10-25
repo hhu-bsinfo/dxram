@@ -12,13 +12,14 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.SmallObjectHeapSegment;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Interface to access the local heap. Features for migration
@@ -34,13 +35,14 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  */
 public final class MemoryManagerComponent extends AbstractDXRAMComponent implements CIDTable.GetNodeIdHook {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
+
 	// configuration values
 	@Expose
 	private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
 
 	// dependent components
 	private AbstractBootComponent m_boot;
-	private LoggerComponent m_logger;
 	private StatisticsComponent m_statistics;
 
 	private SmallObjectHeap m_rawMemory;
@@ -77,7 +79,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		// #ifdef STATISTICS
 		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
 		// #endif /* STATISTICS */
@@ -91,12 +92,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 			// #endif /* STATISTICS */
 
 			// #if LOGGER == INFO
-			m_logger.info(getClass(),
-					"Allocating native memory (" + m_keyValueStoreSize.getMB() + " mb). This may take a while.");
+			LOGGER.info("Allocating native memory (%d mb). This may take a while...", m_keyValueStoreSize.getMB());
 			// #endif /* LOGGER == INFO */
 			m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 			m_rawMemory.initialize(m_keyValueStoreSize.getBytes(), m_keyValueStoreSize.getBytes());
-			m_cidTable = new CIDTable(this, m_statistics, m_statisticsRecorderIDs, m_logger);
+			m_cidTable = new CIDTable(this, m_statistics, m_statisticsRecorderIDs);
 			m_cidTable.initialize(m_rawMemory);
 
 			// m_lock = new ReentrantReadWriteLock(false);
@@ -197,7 +197,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 			status.m_freeMemoryBytes = 0;
 			status.m_totalMemoryBytes = 0;
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not have any memory");
+			LOGGER.error("A %s does not have any memory", role);
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
@@ -233,15 +233,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " is not allowed to create an index chunk");
+			LOGGER.error("A %s is not allowed to create an index chunk", role);
 			// #endif /* LOGGER >= ERROR */
 			return chunkID;
 		}
 
 		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
 			// #if LOGGER >= WARN
-			m_logger.warn(getClass(), "Performance warning, creating a chunk with size " + p_size +
-					" exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+			LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d",
+					p_size, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
 			// #endif /* LOGGER >= WARN */
 		}
 
@@ -290,7 +290,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " is not allowed to create a chunk with an id");
+			LOGGER.error("A %s is not allowed to create a chunk with an id", role);
 			// #endif /* LOGGER >= ERROR */
 			return chunkID;
 		}
@@ -299,8 +299,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
 		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
 			// #if LOGGER >= WARN
-			m_logger.warn(getClass(), "Performance warning, creating a chunk with size " + p_size +
-					" exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+			LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d",
+					p_size, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
 			// #endif /* LOGGER >= WARN */
 		}
 
@@ -338,22 +338,22 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 	public long create(final int p_size) {
 		assert p_size > 0;
 
-		long address = -1;
+		long address;
 		long chunkID = -1;
-		long lid = -1;
+		long lid;
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " is not allowed to create a chunk");
+			LOGGER.error("A %s is not allowed to create a chunk", role);
 			// #endif /* LOGGER >= ERROR */
 			return chunkID;
 		}
 
 		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
 			// #if LOGGER >= WARN
-			m_logger.warn(getClass(), "Performance warning, creating a chunk with size " + p_size +
-					" exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+			LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d",
+					p_size, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
 			// #endif /* LOGGER >= WARN */
 		}
 
@@ -389,9 +389,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 			} else {
 				// most likely out of memory
 				// #if LOGGER >= ERROR
-				m_logger.error(getClass(),
-						"Creating chunk with size " + p_size + " failed, most likely out of memory, free "
-								+ m_rawMemory.getFreeMemory() + ", total " + m_rawMemory.getTotalMemory());
+				LOGGER.fatal("Creating chunk with size %d failed, most likely out of memory, free %d, total %d",
+						p_size, m_rawMemory.getFreeMemory(), m_rawMemory.getTotalMemory());
 				// #endif /* LOGGER >= ERROR */
 
 				// put lid back
@@ -420,7 +419,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return size;
 		}
@@ -511,7 +510,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 			}
 		} else {
 			// #if LOGGER >= WARN
-			m_logger.warn(getClass(), "Could not find data for ID=" + p_chunkID);
+			LOGGER.warn("Could not find data for ID=0x%X", p_chunkID);
 			// #endif /* LOGGER >= WARN */
 		}
 
@@ -582,7 +581,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			ret = MemoryErrorCodes.INVALID_NODE_ROLE;
 			return ret;
@@ -643,7 +642,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
@@ -668,7 +667,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
@@ -693,7 +692,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
@@ -718,7 +717,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
@@ -744,7 +743,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
@@ -772,7 +771,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
@@ -800,7 +799,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
@@ -828,7 +827,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
@@ -887,7 +886,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -904,7 +903,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
@@ -921,7 +920,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			LOGGER.error("A %s does not store any chunks", role);
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}

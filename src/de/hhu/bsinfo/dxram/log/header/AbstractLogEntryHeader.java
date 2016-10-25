@@ -6,15 +6,19 @@ import java.util.zip.Checksum;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.storage.Version;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * A helper class for the LogEntryHeaderInterface.
  * Provides methods to detect the type of a log entry header or to convert one.
+ *
  * @author Kevin Beineke
  *         25.06.2015
  */
 public abstract class AbstractLogEntryHeader {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractLogEntryHeader.class.getSimpleName());
 
 	// Constants
 	private static final byte PRIMLOG_TYPE_MASK = (byte) 0x03;
@@ -42,8 +46,6 @@ public abstract class AbstractLogEntryHeader {
 	private static byte m_logEntryCRCSize = (byte) 4;
 	private static boolean m_useChecksum = true;
 
-	private static LoggerComponent m_logger;
-
 	private static final Checksum CRC = new CRC32();
 	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
@@ -52,36 +54,24 @@ public abstract class AbstractLogEntryHeader {
 	private static final AbstractLogEntryHeader MIGRATION_SEC_LOG_ENTRY_HEADER = new MigrationSecLogEntryHeader();
 
 	// Methods
-	/**
-	 * Generates a log entry with filled-in header but without any payload
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_size
-	 *            the payload length
-	 * @param p_version
-	 *            the version
-	 * @param p_rangeID
-	 *            the RangeID
-	 * @param p_source
-	 *            the source NodeID
-	 * @return the log entry
-	 */
-	public abstract byte[] createLogEntryHeader(long p_chunkID, int p_size, Version p_version, byte p_rangeID, short p_source);
 
 	/**
-	 * Sets the logger
-	 * @param p_logger
-	 *            the logger component
-	 * @note Must be called before the first log entry header is created
+	 * Generates a log entry with filled-in header but without any payload
+	 *
+	 * @param p_chunkID the ChunkID
+	 * @param p_size    the payload length
+	 * @param p_version the version
+	 * @param p_rangeID the RangeID
+	 * @param p_source  the source NodeID
+	 * @return the log entry
 	 */
-	public static void setLogger(final LoggerComponent p_logger) {
-		m_logger = p_logger;
-	}
+	public abstract byte[] createLogEntryHeader(long p_chunkID, int p_size, Version p_version, byte p_rangeID,
+			short p_source);
 
 	/**
 	 * Sets the crc size
-	 * @param p_useChecksum
-	 *            whether a checksum is added or not
+	 *
+	 * @param p_useChecksum whether a checksum is added or not
 	 * @note Must be called before the first log entry header is created
 	 */
 	public static void setCRCSize(final boolean p_useChecksum) {
@@ -93,18 +83,15 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Adds checksum to entry header
-	 * @param p_buffer
-	 *            the byte array
-	 * @param p_offset
-	 *            the offset within buffer
-	 * @param p_size
-	 *            the size of the complete log entry
-	 * @param p_logEntryHeader
-	 *            the LogEntryHeader
-	 * @param p_bytesUntilEnd
-	 *            number of bytes until wrap around
+	 *
+	 * @param p_buffer         the byte array
+	 * @param p_offset         the offset within buffer
+	 * @param p_size           the size of the complete log entry
+	 * @param p_logEntryHeader the LogEntryHeader
+	 * @param p_bytesUntilEnd  number of bytes until wrap around
 	 */
-	public static void addChecksum(final byte[] p_buffer, final int p_offset, final int p_size, final AbstractLogEntryHeader p_logEntryHeader,
+	public static void addChecksum(final byte[] p_buffer, final int p_offset, final int p_size,
+			final AbstractLogEntryHeader p_logEntryHeader,
 			final int p_bytesUntilEnd) {
 		final short headerSize = p_logEntryHeader.getHeaderSize(p_buffer, p_offset);
 		final short crcOffset = p_logEntryHeader.getCRCOffset(p_buffer, p_offset);
@@ -158,139 +145,129 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Returns the type of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the type
 	 */
 	public abstract short getType(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns RangeID of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the version
 	 */
 	public abstract byte getRangeID(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns source of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the NodeID
 	 */
 	public abstract short getSource(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns NodeID of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the NodeID
 	 */
 	public abstract short getNodeID(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns the ChunkID or the LocalID of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the ChunkID if secondary log stores migrations, the LocalID otherwise
 	 */
 	public abstract long getCID(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns length of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the length
 	 */
 	public abstract int getLength(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns epoch and version of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the epoch and version
 	 */
 	public abstract Version getVersion(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns the checksum of a log entry's payload
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the checksum
 	 */
 	public abstract int getChecksum(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Checks whether this log entry was migrated or not
+	 *
 	 * @return whether this log entry was migrated or not
 	 */
 	public abstract boolean wasMigrated();
 
 	/**
 	 * Returns the log entry header size
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the size
 	 */
 	public abstract short getHeaderSize(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns the maximum log entry header size
+	 *
 	 * @return the size
 	 */
 	public abstract short getMaxHeaderSize();
 
 	/**
 	 * Returns the offset for conversion
+	 *
 	 * @return the offset
 	 */
 	public abstract short getConversionOffset();
 
 	/**
 	 * Returns whether the length field is completely in this iteration or not
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
-	 * @param p_bytesUntilEnd
-	 *            number of bytes until wrap around
+	 *
+	 * @param p_buffer        buffer with log entries
+	 * @param p_offset        offset in buffer
+	 * @param p_bytesUntilEnd number of bytes until wrap around
 	 * @return whether the length field is completely in this iteration or not
 	 */
 	public abstract boolean readable(final byte[] p_buffer, final int p_offset, final int p_bytesUntilEnd);
 
 	/**
 	 * Prints the log header
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 */
 	public abstract void print(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns the corresponding AbstractLogEntryHeader of a primary log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the AbstractLogEntryHeader
 	 */
 	public static AbstractLogEntryHeader getPrimaryHeader(final byte[] p_buffer, final int p_offset) {
@@ -304,7 +281,7 @@ public abstract class AbstractLogEntryHeader {
 			ret = MIGRATION_PRIM_LOG_ENTRY_HEADER;
 		} else {
 			// #if LOGGER >= ERROR
-			m_logger.error(AbstractLogEntryHeader.class, "Type of log entry header unknown!");
+			LOGGER.error("Type of log entry header unknown!");
 			// #endif /* LOGGER >= ERROR */
 		}
 
@@ -313,15 +290,14 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Returns the corresponding AbstractLogEntryHeader of a secondary log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
-	 * @param p_storesMigrations
-	 *            whether the secondary log this entry is in stores migrations or not
+	 *
+	 * @param p_buffer           buffer with log entries
+	 * @param p_offset           offset in buffer
+	 * @param p_storesMigrations whether the secondary log this entry is in stores migrations or not
 	 * @return the AbstractLogEntryHeader
 	 */
-	public static AbstractLogEntryHeader getSecondaryHeader(final byte[] p_buffer, final int p_offset, final boolean p_storesMigrations) {
+	public static AbstractLogEntryHeader getSecondaryHeader(final byte[] p_buffer, final int p_offset,
+			final boolean p_storesMigrations) {
 		AbstractLogEntryHeader ret = null;
 		byte type;
 
@@ -340,23 +316,18 @@ public abstract class AbstractLogEntryHeader {
 	/**
 	 * Converts a log entry header from PrimaryWriteBuffer/Primary Log to a secondary log entry header
 	 * and copies the payload
-	 * @param p_input
-	 *            the input buffer
-	 * @param p_inputOffset
-	 *            the input buffer offset
-	 * @param p_output
-	 *            the output buffer
-	 * @param p_outputOffset
-	 *            the output buffer offset
-	 * @param p_logEntrySize
-	 *            the length of the log entry
-	 * @param p_bytesUntilEnd
-	 *            the number of bytes to the end of the input buffer
-	 * @param p_conversionOffset
-	 *            the conversion offset
+	 *
+	 * @param p_input            the input buffer
+	 * @param p_inputOffset      the input buffer offset
+	 * @param p_output           the output buffer
+	 * @param p_outputOffset     the output buffer offset
+	 * @param p_logEntrySize     the length of the log entry
+	 * @param p_bytesUntilEnd    the number of bytes to the end of the input buffer
+	 * @param p_conversionOffset the conversion offset
 	 * @return the number of written bytes
 	 */
-	public static int convertAndPut(final byte[] p_input, final int p_inputOffset, final byte[] p_output, final int p_outputOffset, final int p_logEntrySize,
+	public static int convertAndPut(final byte[] p_input, final int p_inputOffset, final byte[] p_output,
+			final int p_outputOffset, final int p_logEntrySize,
 			final int p_bytesUntilEnd, final short p_conversionOffset) {
 		int ret;
 
@@ -364,15 +335,18 @@ public abstract class AbstractLogEntryHeader {
 		p_output[p_outputOffset] = p_input[p_inputOffset];
 		if (p_logEntrySize <= p_bytesUntilEnd) {
 			// Copy shortened header and payload
-			System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset + 1, p_logEntrySize - p_conversionOffset);
+			System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset + 1,
+					p_logEntrySize - p_conversionOffset);
 		} else {
 			// Entry is bisected
 			if (p_conversionOffset >= p_bytesUntilEnd) {
 				// Copy shortened header and payload
-				System.arraycopy(p_input, p_conversionOffset - p_bytesUntilEnd, p_output, p_outputOffset + 1, p_logEntrySize - p_conversionOffset);
+				System.arraycopy(p_input, p_conversionOffset - p_bytesUntilEnd, p_output, p_outputOffset + 1,
+						p_logEntrySize - p_conversionOffset);
 			} else {
 				// Copy shortened header and payload in two steps
-				System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset + 1, p_bytesUntilEnd - p_conversionOffset);
+				System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset + 1,
+						p_bytesUntilEnd - p_conversionOffset);
 				System.arraycopy(p_input, 0, p_output, p_outputOffset + p_bytesUntilEnd - p_conversionOffset + 1,
 						p_logEntrySize - (p_bytesUntilEnd - p_conversionOffset));
 			}
@@ -384,8 +358,8 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Calculates the CRC32 checksum of a log entry's payload
-	 * @param p_payload
-	 *            the payload
+	 *
+	 * @param p_payload the payload
 	 * @return the checksum
 	 */
 	public static int calculateChecksumOfPayload(final byte[] p_payload) {
@@ -399,15 +373,14 @@ public abstract class AbstractLogEntryHeader {
 	/**
 	 * Returns the approximated log entry header size for secondary log (the version size can only be determined on
 	 * backup -> 1 byte as average value)
-	 * @param p_logStoresMigrations
-	 *            whether the entry is in a secondary log for migrations or not
-	 * @param p_localID
-	 *            the LocalID
-	 * @param p_size
-	 *            the size
+	 *
+	 * @param p_logStoresMigrations whether the entry is in a secondary log for migrations or not
+	 * @param p_localID             the LocalID
+	 * @param p_size                the size
 	 * @return the maximum log entry header size for secondary log
 	 */
-	public static short getAproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
+	public static short getAproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID,
+			final int p_size) {
 		// Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation
 		// because the
 		// actual version is determined during logging on backup peer (at creation time it's size is 0 but it might be
@@ -424,8 +397,8 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Returns the maximum log entry header size for secondary log
-	 * @param p_logStoresMigrations
-	 *            whether the entry is in a secondary log for migrations or not
+	 *
+	 * @param p_logStoresMigrations whether the entry is in a secondary log for migrations or not
 	 * @return the maximum log entry header size for secondary log
 	 */
 	public static short getMaxSecLogHeaderSize(final boolean p_logStoresMigrations) {
@@ -442,29 +415,21 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Flip eon in log entry header
-	 * @param p_logEntryHeader
-	 *            the AbstractLogEntryHeader
-	 * @param p_buffer
-	 *            the buffer the log entry header is in
-	 * @param p_offset
-	 *            the offset within the buffer
+	 *
+	 * @param p_logEntryHeader the AbstractLogEntryHeader
+	 * @param p_buffer         the buffer the log entry header is in
+	 * @param p_offset         the offset within the buffer
 	 */
-	public static void flipEon(final AbstractLogEntryHeader p_logEntryHeader, final byte[] p_buffer, final int p_offset) {
+	public static void flipEon(final AbstractLogEntryHeader p_logEntryHeader, final byte[] p_buffer,
+			final int p_offset) {
 		final int offset = p_offset + p_logEntryHeader.getVEROffset(p_buffer, p_offset);
 
 		p_buffer[offset + 1] = (byte) (p_buffer[offset + 1] ^ 1 << 15);
 	}
 
 	/**
-	 * Returns the LoggerComponent
-	 * @return the LoggerComponent
-	 */
-	protected static LoggerComponent getLogger() {
-		return m_logger;
-	}
-
-	/**
 	 * Returns whether there is a checksum in log entry header or not
+	 *
 	 * @return whether there is a checksum in log entry header or not
 	 */
 	protected static boolean useChecksum() {
@@ -473,6 +438,7 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Returns the checksum length
+	 *
 	 * @return the checksum length
 	 */
 	protected static byte getCRCSize() {
@@ -481,54 +447,51 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Returns the NodeID offset
+	 *
 	 * @return the offset
 	 */
 	protected abstract short getNIDOffset();
 
 	/**
 	 * Returns the LocalID offset
+	 *
 	 * @return the offset
 	 */
 	protected abstract short getLIDOffset();
 
 	/**
 	 * Returns the length offset
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the offset
 	 */
 	protected abstract short getLENOffset(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns the version offset
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the offset
 	 */
 	protected abstract short getVEROffset(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns the checksum offset
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
+	 *
+	 * @param p_buffer buffer with log entries
+	 * @param p_offset offset in buffer
 	 * @return the offset
 	 */
 	protected abstract short getCRCOffset(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Puts type of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_type
-	 *            the type (0 => normal, 1 => migration)
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry log entry
+	 * @param p_type     the type (0 => normal, 1 => migration)
+	 * @param p_offset   the type-specific offset
 	 */
 	protected static void putType(final byte[] p_logEntry, final byte p_type, final short p_offset) {
 		p_logEntry[p_offset] = p_type;
@@ -536,12 +499,10 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Puts RangeID of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_rangeID
-	 *            the RangeID
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry log entry
+	 * @param p_rangeID  the RangeID
+	 * @param p_offset   the type-specific offset
 	 */
 	protected static void putRangeID(final byte[] p_logEntry, final byte p_rangeID, final short p_offset) {
 		p_logEntry[p_offset] = p_rangeID;
@@ -549,12 +510,10 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Puts source of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_source
-	 *            the source
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry log entry
+	 * @param p_source   the source
+	 * @param p_offset   the type-specific offset
 	 */
 	protected static void putSource(final byte[] p_logEntry, final short p_source, final short p_offset) {
 		for (int i = 0; i < LOG_ENTRY_SRC_SIZE; i++) {
@@ -564,16 +523,14 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Puts ChunkID in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_localIDSize
-	 *            the length of the LocalID field
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry    log entry
+	 * @param p_chunkID     the ChunkID
+	 * @param p_localIDSize the length of the LocalID field
+	 * @param p_offset      the type-specific offset
 	 */
-	protected static void putChunkID(final byte[] p_logEntry, final long p_chunkID, final byte p_localIDSize, final short p_offset) {
+	protected static void putChunkID(final byte[] p_logEntry, final long p_chunkID, final byte p_localIDSize,
+			final short p_offset) {
 		// NodeID
 		for (int i = 0; i < LOG_ENTRY_NID_SIZE; i++) {
 			p_logEntry[p_offset + i] = (byte) (ChunkID.getCreatorID(p_chunkID) >> i * 8 & 0xff);
@@ -587,12 +544,10 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Puts length of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_length
-	 *            the length
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry log entry
+	 * @param p_length   the length
+	 * @param p_offset   the type-specific offset
 	 */
 	protected static void putLength(final byte[] p_logEntry, final byte p_length, final short p_offset) {
 		p_logEntry[p_offset] = (byte) (p_length & 0xff);
@@ -600,12 +555,10 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Puts length of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_length
-	 *            the length
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry log entry
+	 * @param p_length   the length
+	 * @param p_offset   the type-specific offset
 	 */
 	protected static void putLength(final byte[] p_logEntry, final short p_length, final short p_offset) {
 		for (int i = 0; i < Short.BYTES; i++) {
@@ -615,12 +568,10 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Puts length of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_length
-	 *            the length
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry log entry
+	 * @param p_length   the length
+	 * @param p_offset   the type-specific offset
 	 */
 	protected static void putLength(final byte[] p_logEntry, final int p_length, final short p_offset) {
 		for (int i = 0; i < MAX_LOG_ENTRY_LEN_SIZE; i++) {
@@ -630,12 +581,10 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Puts epoch of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_epoch
-	 *            the version
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry log entry
+	 * @param p_epoch    the version
+	 * @param p_offset   the type-specific offset
 	 */
 	protected static void putEpoch(final byte[] p_logEntry, final short p_epoch, final short p_offset) {
 		for (int i = 0; i < Short.BYTES; i++) {
@@ -645,12 +594,10 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Puts version of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_version
-	 *            the version
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry log entry
+	 * @param p_version  the version
+	 * @param p_offset   the type-specific offset
 	 */
 	protected static void putVersion(final byte[] p_logEntry, final byte p_version, final short p_offset) {
 		p_logEntry[p_offset] = (byte) (p_version & 0xff);
@@ -658,12 +605,10 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Puts version of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_version
-	 *            the version
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry log entry
+	 * @param p_version  the version
+	 * @param p_offset   the type-specific offset
 	 */
 	protected static void putVersion(final byte[] p_logEntry, final short p_version, final short p_offset) {
 		for (int i = 0; i < Short.BYTES; i++) {
@@ -673,12 +618,10 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Puts version of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_version
-	 *            the version
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry log entry
+	 * @param p_version  the version
+	 * @param p_offset   the type-specific offset
 	 */
 	protected static void putVersion(final byte[] p_logEntry, final int p_version, final short p_offset) {
 		for (int i = 0; i < MAX_LOG_ENTRY_VER_SIZE; i++) {
@@ -688,12 +631,10 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Puts checksum of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_checksum
-	 *            the checksum
-	 * @param p_offset
-	 *            the type-specific offset
+	 *
+	 * @param p_logEntry log entry
+	 * @param p_checksum the checksum
+	 * @param p_offset   the type-specific offset
 	 */
 	protected static void putChecksum(final byte[] p_logEntry, final int p_checksum, final short p_offset) {
 		for (int i = 0; i < m_logEntryCRCSize; i++) {
@@ -703,8 +644,8 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Returns the number of bytes necessary to store given value
-	 * @param p_localID
-	 *            the value
+	 *
+	 * @param p_localID the value
 	 * @return the number of bytes necessary to store given value
 	 */
 	protected static byte getSizeForLocalIDField(final long p_localID) {
@@ -726,8 +667,8 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Returns the number of bytes necessary to store given value
-	 * @param p_length
-	 *            the value
+	 *
+	 * @param p_length the value
 	 * @return the number of bytes necessary to store given value
 	 */
 	protected static byte getSizeForLengthField(final int p_length) {
@@ -737,7 +678,7 @@ public abstract class AbstractLogEntryHeader {
 
 		// #if LOGGER >= ERROR
 		if (ret > 3) {
-			m_logger.error(AbstractLogEntryHeader.class, "Log Entry too large!");
+			LOGGER.error("Log Entry too large!");
 		}
 		// #endif /* LOGGER >= ERROR */
 
@@ -746,8 +687,8 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Returns the number of bytes necessary to store given value
-	 * @param p_version
-	 *            the value
+	 *
+	 * @param p_version the value
 	 * @return the number of bytes necessary to store given value
 	 */
 	protected static byte getSizeForVersionField(final int p_version) {
@@ -758,7 +699,7 @@ public abstract class AbstractLogEntryHeader {
 
 			// #if LOGGER >= ERROR
 			if (ret > 3) {
-				m_logger.error(AbstractLogEntryHeader.class, "Log Entry version too high!");
+				LOGGER.error("Log Entry version too high!");
 			}
 			// #endif /* LOGGER >= ERROR */
 		}
@@ -768,39 +709,37 @@ public abstract class AbstractLogEntryHeader {
 
 	/**
 	 * Returns the number of bytes necessary to store given value
-	 * @param p_type
-	 *            the type of the log entry header
-	 * @param p_localIDSize
-	 *            the size of the checksum field
-	 * @param p_lengthSize
-	 *            the size of the length field
-	 * @param p_versionSize
-	 *            the size of the version field
+	 *
+	 * @param p_type        the type of the log entry header
+	 * @param p_localIDSize the size of the checksum field
+	 * @param p_lengthSize  the size of the length field
+	 * @param p_versionSize the size of the version field
 	 * @return the number of bytes necessary to store given value
 	 */
-	protected static byte generateTypeField(final byte p_type, final byte p_localIDSize, final byte p_lengthSize, final byte p_versionSize) {
+	protected static byte generateTypeField(final byte p_type, final byte p_localIDSize, final byte p_lengthSize,
+			final byte p_versionSize) {
 		byte ret = p_type;
 
 		// Length of LocalID is between 0 and 6 Bytes, but there are only 2 Bits for storing the length. Different
 		// lengths: 1, 2, 4 ,6
 		switch (p_localIDSize) {
-		case 1:
-			ret |= 0 << LID_LENGTH_SHFT;
-			break;
-		case 2:
-			ret |= 1 << LID_LENGTH_SHFT;
-			break;
-		case 4:
-			ret |= 2 << LID_LENGTH_SHFT;
-			break;
-		case 6:
-			ret |= 3 << LID_LENGTH_SHFT;
-			break;
-		default:
-			// #if LOGGER >= ERROR
-			m_logger.error(AbstractLogEntryHeader.class, "Unknown LocalID!");
-			// #endif /* LOGGER >= ERROR */
-			break;
+			case 1:
+				ret |= 0 << LID_LENGTH_SHFT;
+				break;
+			case 2:
+				ret |= 1 << LID_LENGTH_SHFT;
+				break;
+			case 4:
+				ret |= 2 << LID_LENGTH_SHFT;
+				break;
+			case 6:
+				ret |= 3 << LID_LENGTH_SHFT;
+				break;
+			default:
+				// #if LOGGER >= ERROR
+				LOGGER.error("Unknown LocalID!");
+				// #endif /* LOGGER >= ERROR */
+				break;
 		}
 
 		// Length of size is linear: 0, 1, 2, 3

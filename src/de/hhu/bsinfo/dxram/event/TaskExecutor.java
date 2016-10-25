@@ -1,10 +1,15 @@
 
 package de.hhu.bsinfo.dxram.event;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Access to a singleton of an ExecutorService
@@ -12,42 +17,45 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
  * NOTE:
  * The currently running Task has to stay in the task map.
  * Otherwise the Queue will never be used.
- * @see java.util.concurrent.ExecutorService
+ *
  * @author Marc Ewert 14.08.14
+ * @see java.util.concurrent.ExecutorService
  */
 public final class TaskExecutor {
 
-	private LoggerComponent m_logger;
+	private final Logger LOGGER;
+
 	private final ExecutorService m_executor;
 	private final String m_name;
 
 	// Constructors
+
 	/**
 	 * Creates a new TaskExecutor
-	 * @param p_name
-	 *            Identifier for debug prints
-	 * @param p_threads
-	 *            Number of Threads to create
+	 *
+	 * @param p_name    Identifier for debug prints
+	 * @param p_threads Number of Threads to create
 	 */
-	public TaskExecutor(final String p_name, final int p_threads, final LoggerComponent p_logger) {
-		m_logger = p_logger;
+	public TaskExecutor(final String p_name, final int p_threads) {
+		LOGGER = LogManager.getFormatterLogger(TaskExecutor.class.getSimpleName() + " " + p_name);
 		m_name = p_name;
 
 		m_executor = Executors.newFixedThreadPool(p_threads, new ExecutorThreadFactory());
 	}
 
 	// Methods
+
 	/**
 	 * Add a task to the queue to be executed
-	 * @param p_runnable
-	 *            Task to be executed
+	 *
+	 * @param p_runnable Task to be executed
 	 */
 	public void execute(final Runnable p_runnable) {
 		try {
 			m_executor.execute(p_runnable);
 		} catch (final RejectedExecutionException e) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass().getSimpleName(), m_name + ":" + e.getMessage());
+			LOGGER.error(e);
 			// #endif /* LOGGER >= ERROR */
 		}
 	}
@@ -61,9 +69,9 @@ public final class TaskExecutor {
 
 	/**
 	 * Waits until thread pool is terminated
+	 *
 	 * @return whether the shut-down is finished or not
-	 * @throws InterruptedException
-	 *             if awaiting termination was interrupted
+	 * @throws InterruptedException if awaiting termination was interrupted
 	 */
 	public boolean awaitTermination() throws InterruptedException {
 		return m_executor.awaitTermination(100, TimeUnit.MILLISECONDS);
@@ -71,6 +79,7 @@ public final class TaskExecutor {
 
 	/**
 	 * Creates new Threads for the TaskExecutor
+	 *
 	 * @author Marc Ewert 01.10.14
 	 */
 	private class ExecutorThreadFactory implements ThreadFactory {

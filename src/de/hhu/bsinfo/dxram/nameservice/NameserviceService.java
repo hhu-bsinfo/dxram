@@ -9,7 +9,6 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.nameservice.messages.ForwardRegisterMessage;
 import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -20,6 +19,8 @@ import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Nameservice service providing mappings of string identifiers to chunkIDs.
@@ -30,11 +31,12 @@ import de.hhu.bsinfo.utils.Pair;
  */
 public class NameserviceService extends AbstractDXRAMService implements MessageReceiver {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceService.class.getSimpleName());
+
 	// dependent components
 	private NameserviceComponent m_nameservice;
 	private AbstractBootComponent m_boot;
 	private NetworkComponent m_network;
-	private LoggerComponent m_logger;
 
 	/**
 	 * Constructor
@@ -63,9 +65,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 			// let each node manage its own index (the chunk part)
 			short nodeId = ChunkID.getCreatorID(p_chunkId);
 			if (nodeId == NodeID.INVALID_ID) {
-				m_logger.error(getClass(),
-						"Invalid creator id specified for registering " + ChunkID.toHexString(p_chunkId) + " for name "
-								+ p_name);
+				LOGGER.error("Invalid creator id specified for registering 0x%X for name %s", p_chunkId, p_name);
 				return;
 			}
 
@@ -75,8 +75,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 				ForwardRegisterMessage message = new ForwardRegisterMessage(nodeId, p_chunkId, p_name);
 				NetworkErrorCodes err = m_network.sendMessage(message);
 				if (err != NetworkErrorCodes.SUCCESS) {
-					m_logger.error(getClass(),
-							"Sending register message to " + NodeID.toHexString(nodeId) + " failed: " + err);
+					LOGGER.error("Sending register message to 0x%X failed: %s", nodeId, err);
 				}
 			}
 		} else {
@@ -144,7 +143,6 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 		m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 	}
 
 	@Override
@@ -160,11 +158,6 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 
 	@Override
 	protected boolean shutdownService() {
-		m_nameservice = null;
-		m_boot = null;
-		m_network = null;
-		m_logger = null;
-
 		return true;
 	}
 

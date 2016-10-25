@@ -8,7 +8,6 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -18,7 +17,6 @@ import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
 import de.hhu.bsinfo.dxram.lock.messages.LockRequest;
 import de.hhu.bsinfo.dxram.lock.messages.LockResponse;
 import de.hhu.bsinfo.dxram.lock.messages.UnlockMessage;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
@@ -29,9 +27,10 @@ import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Lock service providing exclusive locking of chunks/data structures.
@@ -39,6 +38,8 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class PeerLockService extends AbstractLockService implements MessageReceiver, EventListener<NodeFailureEvent> {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(PeerLockService.class.getSimpleName());
 
 	// configuration values
 	@Expose
@@ -48,7 +49,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 	// dependent components
 	private AbstractBootComponent m_boot;
-	private LoggerComponent m_logger;
 	private NetworkComponent m_network;
 	private MemoryManagerComponent m_memoryManager;
 	private AbstractLockComponent m_lock;
@@ -61,7 +61,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
 		m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
@@ -112,11 +111,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 	@Override
 	protected boolean shutdownService() {
-		m_network = null;
-		m_memoryManager = null;
-		m_lock = null;
-		m_lookup = null;
-
 		return true;
 	}
 
@@ -124,7 +118,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	public ArrayList<Pair<Long, Short>> getLockedList() {
 		if (!m_boot.getNodeRole().equals(NodeRole.PEER)) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + m_boot.getNodeRole() + " must not lock chunks");
+			LOGGER.error("A %s must not lock chunks", m_boot.getNodeRole());
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
@@ -142,8 +136,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		NetworkErrorCodes err = m_network.sendSync(request);
 		if (err != NetworkErrorCodes.SUCCESS) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(),
-					"Sending request to get locked list from node " + NodeID.toHexString(p_nodeId) + " failed: " + err);
+			LOGGER.error("Sending request to get locked list from node 0x%X failed: %s", p_nodeId, err);
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
@@ -158,7 +151,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a superpeer must not lock chunks");
+			LOGGER.error("A superpeer must not lock chunks");
 			// #endif /* LOGGER >= ERROR */
 			return ErrorCode.INVALID_PEER_ROLE;
 		}
@@ -258,7 +251,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		// early returns
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a superpeer must not use chunks");
+			LOGGER.error("A superpeer must not use chunks");
 			// #endif /* LOGGER >= ERROR */
 			return ErrorCode.INVALID_PEER_ROLE;
 		}
@@ -332,14 +325,13 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	public void eventTriggered(final NodeFailureEvent p_event) {
 		if (p_event.getRole() == NodeRole.PEER) {
 			// #if LOGGER >= DEBUG
-			m_logger.debug(getClass(), "Connection to peer " + p_event.getNodeID()
-					+ " lost, unlocking all chunks locked by lost instance.");
+			LOGGER.debug("Connection to peer 0x%X lost, unlocking all chunks locked by lost instance",
+					p_event.getNodeID());
 			// #endif /* LOGGER >= DEBUG */
 
 			if (!m_lock.unlockAllByNodeID(p_event.getNodeID())) {
 				// #if LOGGER >= ERROR
-				m_logger.error(getClass(), "Unlocking all locked chunks of crashed peer "
-						+ p_event.getNodeID() + " failed.");
+				LOGGER.error("Unlocking all locked chunks of crashed peer 0x%X failed", p_event.getNodeID());
 				// #endif /* LOGGER >= ERROR */
 			}
 		}
@@ -348,7 +340,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
+		LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
 		// #endif /* LOGGER == TRACE */
 
 		if (p_message != null) {
@@ -370,7 +362,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting incomingMessage");
+		LOGGER.trace("Exiting incomingMessage");
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -431,7 +423,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		NetworkErrorCodes err = m_network.sendMessage(response);
 		// #if LOGGER >= ERROR
 		if (err != NetworkErrorCodes.SUCCESS) {
-			m_logger.error(getClass(), "Sending locked list response for request " + p_request + " failed: " + err);
+			LOGGER.error("Sending locked list response for request %s failed: %s", p_request, err);
 		}
 		// #endif /* LOGGER >= ERROR */
 	}

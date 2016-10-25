@@ -12,11 +12,12 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.ethnet.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Component for chunk handling.
@@ -25,13 +26,14 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class ChunkComponent extends AbstractDXRAMComponent {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkComponent.class.getSimpleName());
+
 	// dependent components
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private MemoryManagerComponent m_memoryManager;
 	private NetworkComponent m_network;
 	private LogComponent m_log;
-	private LoggerComponent m_logger;
 
 	/**
 	 * Constructor
@@ -100,8 +102,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 				for (short peer : backupPeers) {
 					if (peer != m_boot.getNodeID() && peer != NodeID.INVALID_ID) {
 						// #if LOGGER == TRACE
-						m_logger.trace(getClass(),
-								"Logging " + ChunkID.toHexString(p_dataStructure.getID()) + " to " + peer);
+						LOGGER.trace("Logging %s to %s",
+								ChunkID.toHexString(p_dataStructure.getID()), NodeID.toHexString(peer));
 						// #endif /* LOGGER == TRACE */
 
 						m_network.sendMessage(new LogMessage(peer, p_dataStructure));
@@ -127,7 +129,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 			m_memoryManager.put(chunk);
 
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "Stored recovered chunk " + chunk + " locally");
+			LOGGER.trace("Stored recovered chunk %s locally", ChunkID.toHexString(chunk.getID()));
 			// #endif /* LOGGER == TRACE */
 		}
 		m_memoryManager.unlockManage();
@@ -153,7 +155,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 			m_memoryManager.put(chunk);
 
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "Stored migrated chunk " + chunk + " locally");
+			LOGGER.trace("Stored migrated chunk %s locally", ChunkID.toHexString(chunk.getID()));
 			// #endif /* LOGGER == TRACE */
 
 			if (m_backup.isActive()) {
@@ -204,7 +206,6 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 		m_log = p_componentAccessor.getComponent(LogComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 	}
 
 	@Override

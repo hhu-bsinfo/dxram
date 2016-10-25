@@ -15,9 +15,10 @@ import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Component for remote logging of chunks.
@@ -26,10 +27,11 @@ import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
  */
 public class LogComponent extends AbstractDXRAMComponent {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(LogComponent.class.getSimpleName());
+
 	// dependent components
 	private AbstractBootComponent m_boot;
 	private NetworkComponent m_network;
-	private LoggerComponent m_logger;
 
 	private LogService m_logService;
 	private boolean m_useChecksum;
@@ -88,7 +90,7 @@ public class LogComponent extends AbstractDXRAMComponent {
 			}
 		}
 		// #if LOGGER == TRACE
-		m_logger.trace(LogService.class, "Time to initialize range: " + (System.currentTimeMillis() - time));
+		LOGGER.trace("Time to initialize range: %d", (System.currentTimeMillis() - time));
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -114,7 +116,7 @@ public class LogComponent extends AbstractDXRAMComponent {
 			}
 		} catch (final IOException | InterruptedException e) {
 			// #if LOGGER >= ERROR
-			m_logger.error(LogService.class, "Backup range recovery failed: " + e);
+			LOGGER.error("Backup range recovery failed: %s", e);
 			// #endif /* LOGGER >= ERROR */
 		}
 
@@ -136,7 +138,7 @@ public class LogComponent extends AbstractDXRAMComponent {
 					m_logSegmentSize);
 		} catch (final IOException | InterruptedException e) {
 			// #if LOGGER >= ERROR
-			m_logger.error(LogService.class, "Could not recover from file " + p_path + ": " + e);
+			LOGGER.error("Could not recover from file %s: %s", p_path, e);
 			// #endif /* LOGGER >= ERROR */
 		}
 
@@ -147,7 +149,6 @@ public class LogComponent extends AbstractDXRAMComponent {
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 	}
 
 	@Override

@@ -5,13 +5,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Log catalog: Bundles all logs and buffers for one node
+ *
  * @author Kevin Beineke 22.05.2015
  */
 public final class LogCatalog {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(LogCatalog.class.getSimpleName());
 
 	// Attributes
 	private ArrayList<SecondaryLog> m_creatorLogs;
@@ -23,24 +27,26 @@ public final class LogCatalog {
 	private int m_currentRangeID;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of SecondaryLogsReorgThread
 	 */
 	public LogCatalog() {
-		m_creatorLogs = new ArrayList<SecondaryLog>();
-		m_creatorBuffers = new ArrayList<SecondaryLogBuffer>();
-		m_creatorBackupRanges = new ArrayList<Long>();
+		m_creatorLogs = new ArrayList<>();
+		m_creatorBuffers = new ArrayList<>();
+		m_creatorBackupRanges = new ArrayList<>();
 
-		m_migrationLogs = new ArrayList<SecondaryLog>();
-		m_migrationBuffers = new ArrayList<SecondaryLogBuffer>();
+		m_migrationLogs = new ArrayList<>();
+		m_migrationBuffers = new ArrayList<>();
 		m_currentRangeID = 0;
 	}
 
 	// Getter
+
 	/**
 	 * Gets the unique identification for the next backup range
-	 * @param p_isMigration
-	 *            whether the next backup range is for migrations or not
+	 *
+	 * @param p_isMigration whether the next backup range is for migrations or not
 	 * @return the secondary log
 	 */
 	public String getNewID(final boolean p_isMigration) {
@@ -57,6 +63,7 @@ public final class LogCatalog {
 
 	/**
 	 * Gets the number of logs in this catalog
+	 *
 	 * @return the number of logs
 	 */
 	public int getNumberOfLogs() {
@@ -65,10 +72,9 @@ public final class LogCatalog {
 
 	/**
 	 * Returns whether there is already a secondary log with given identifier
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_rangeID
-	 *            the RangeID for migrations or -1
+	 *
+	 * @param p_chunkID the ChunkID
+	 * @param p_rangeID the RangeID for migrations or -1
 	 * @return whether there is already a secondary log with given identifier or not
 	 */
 	public boolean exists(final long p_chunkID, final byte p_rangeID) {
@@ -79,7 +85,8 @@ public final class LogCatalog {
 				ret = true;
 			}
 		} else {
-			if (m_creatorBackupRanges.size() > 0 && m_creatorBackupRanges.get(m_creatorBackupRanges.size() - 1) >= ChunkID.getLocalID(p_chunkID)) {
+			if (m_creatorBackupRanges.size() > 0
+					&& m_creatorBackupRanges.get(m_creatorBackupRanges.size() - 1) >= ChunkID.getLocalID(p_chunkID)) {
 				ret = true;
 			}
 		}
@@ -89,15 +96,12 @@ public final class LogCatalog {
 
 	/**
 	 * Gets the corresponding secondary log
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_rangeID
-	 *            the RangeID for migrations or -1
-	 * @param p_logger
-	 *            the logger component
+	 *
+	 * @param p_chunkID the ChunkID
+	 * @param p_rangeID the RangeID for migrations or -1
 	 * @return the secondary log
 	 */
-	public SecondaryLog getLog(final long p_chunkID, final byte p_rangeID, final LoggerComponent p_logger) {
+	public SecondaryLog getLog(final long p_chunkID, final byte p_rangeID) {
 		SecondaryLog ret;
 		int rangeID;
 
@@ -109,7 +113,7 @@ public final class LogCatalog {
 		}
 		// #if LOGGER >= ERROR
 		if (ret == null) {
-			p_logger.error(LogCatalog.class, "There is no secondary log for CID=" + p_chunkID + " and RID=" + p_rangeID);
+			LOGGER.error("There is no secondary log for CID=0x%X and RID=%d", p_chunkID, p_rangeID);
 		}
 		// #endif /* LOGGER >= ERROR */
 
@@ -118,15 +122,12 @@ public final class LogCatalog {
 
 	/**
 	 * Gets the corresponding secondary log buffer
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_rangeID
-	 *            the RangeID for migrations or -1
-	 * @param p_logger
-	 *            the logger component
+	 *
+	 * @param p_chunkID the ChunkID
+	 * @param p_rangeID the RangeID for migrations or -1
 	 * @return the secondary log buffer
 	 */
-	public SecondaryLogBuffer getBuffer(final long p_chunkID, final byte p_rangeID, final LoggerComponent p_logger) {
+	public SecondaryLogBuffer getBuffer(final long p_chunkID, final byte p_rangeID) {
 		SecondaryLogBuffer ret;
 		int rangeID;
 
@@ -138,7 +139,7 @@ public final class LogCatalog {
 		}
 		// #if LOGGER >= ERROR
 		if (ret == null) {
-			p_logger.error(LogCatalog.class, "There is no secondary log buffer for CID=" + p_chunkID + " and RID=" + p_rangeID);
+			LOGGER.error("There is no secondary log buffer for CID=0x%X and RID=%d", p_chunkID, p_rangeID);
 		}
 		// #endif /* LOGGER >= ERROR */
 
@@ -147,8 +148,8 @@ public final class LogCatalog {
 
 	/**
 	 * Gets the corresponding range
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_chunkID the ChunkID
 	 * @return the first ChunkID of the range
 	 */
 	public long getRange(final long p_chunkID) {
@@ -166,6 +167,7 @@ public final class LogCatalog {
 
 	/**
 	 * Gets all secondary logs from this node
+	 *
 	 * @return the secondary log array
 	 */
 	public SecondaryLog[] getAllLogs() {
@@ -185,6 +187,7 @@ public final class LogCatalog {
 
 	/**
 	 * Gets all creator secondary logs from this node
+	 *
 	 * @return the creator secondary log array
 	 */
 	public SecondaryLog[] getAllCreatorLogs() {
@@ -193,6 +196,7 @@ public final class LogCatalog {
 
 	/**
 	 * Gets all migration secondary logs from this node
+	 *
 	 * @return the migration secondary log array
 	 */
 	public SecondaryLog[] getAllMigrationLogs() {
@@ -201,6 +205,7 @@ public final class LogCatalog {
 
 	/**
 	 * Gets all secondary log buffers from this node
+	 *
 	 * @return the secondary log buffer array
 	 */
 	public SecondaryLogBuffer[] getAllBuffers() {
@@ -220,6 +225,7 @@ public final class LogCatalog {
 
 	/**
 	 * Gets all creator secondary log buffers from this node
+	 *
 	 * @return the creator secondary log buffer array
 	 */
 	public SecondaryLogBuffer[] getAllCreatorBuffers() {
@@ -228,6 +234,7 @@ public final class LogCatalog {
 
 	/**
 	 * Gets all migration secondary log buffers from this node
+	 *
 	 * @return the migration secondary log buffer array
 	 */
 	public SecondaryLogBuffer[] getAllMigrationBuffers() {
@@ -235,24 +242,19 @@ public final class LogCatalog {
 	}
 
 	// Setter
+
 	/**
 	 * Inserts a new range
-	 * @param p_firstChunkIDOrRangeID
-	 *            the first ChunkID of the range
-	 * @param p_log
-	 *            the new secondary log to link
-	 * @param p_logger
-	 *            the logger component
-	 * @param p_secondaryLogBufferSize
-	 *            the secondary log buffer size
-	 * @param p_logSegmentSize
-	 *            the segment size
-	 * @throws IOException
-	 *             if no new secondary log could be created
-	 * @throws InterruptedException
-	 *             if no new secondary log could be created
+	 *
+	 * @param p_firstChunkIDOrRangeID  the first ChunkID of the range
+	 * @param p_log                    the new secondary log to link
+	 * @param p_secondaryLogBufferSize the secondary log buffer size
+	 * @param p_logSegmentSize         the segment size
+	 * @throws IOException          if no new secondary log could be created
+	 * @throws InterruptedException if no new secondary log could be created
 	 */
-	public void insertRange(final LoggerComponent p_logger, final long p_firstChunkIDOrRangeID, final SecondaryLog p_log, final int p_secondaryLogBufferSize,
+	public void insertRange(final long p_firstChunkIDOrRangeID,
+			final SecondaryLog p_log, final int p_secondaryLogBufferSize,
 			final int p_logSegmentSize) throws IOException, InterruptedException {
 		SecondaryLogBuffer buffer;
 		int rangeID;
@@ -262,7 +264,7 @@ public final class LogCatalog {
 			m_creatorLogs.add(rangeID, p_log);
 
 			// Create new secondary log buffer
-			buffer = new SecondaryLogBuffer(p_logger, p_log, p_secondaryLogBufferSize, p_logSegmentSize);
+			buffer = new SecondaryLogBuffer(p_log, p_secondaryLogBufferSize, p_logSegmentSize);
 			m_creatorBuffers.add(rangeID, buffer);
 
 			// Insert range
@@ -271,7 +273,7 @@ public final class LogCatalog {
 			m_migrationLogs.add(m_currentRangeID, p_log);
 
 			// Create new secondary log buffer
-			buffer = new SecondaryLogBuffer(p_logger, p_log, p_secondaryLogBufferSize, p_logSegmentSize);
+			buffer = new SecondaryLogBuffer(p_log, p_secondaryLogBufferSize, p_logSegmentSize);
 			m_migrationBuffers.add(m_currentRangeID, buffer);
 
 			m_currentRangeID++;
@@ -279,10 +281,11 @@ public final class LogCatalog {
 	}
 
 	// Methods
+
 	/**
 	 * Determines the corresponding range
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_chunkID the ChunkID
 	 * @return the RangeID
 	 */
 	private int getRangeID(final long p_chunkID) {
@@ -301,10 +304,9 @@ public final class LogCatalog {
 
 	/**
 	 * Closes all logs and buffers from this node
-	 * @throws IOException
-	 *             if the log could not be closed
-	 * @throws InterruptedException
-	 *             if the log could not be closed
+	 *
+	 * @throws IOException          if the log could not be closed
+	 * @throws InterruptedException if the log could not be closed
 	 */
 	public void closeLogsAndBuffers() throws IOException, InterruptedException {
 		for (int i = 0; i < m_creatorLogs.size(); i++) {

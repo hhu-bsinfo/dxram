@@ -13,12 +13,13 @@ import de.hhu.bsinfo.dxgraph.load.GraphLoadBFSRootListTaskPayload;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadOrderedEdgeListTaskPayload;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadPartitionIndexTaskPayload;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Special wrapper API (though DXRAMEngine is still accessible) providing
@@ -29,6 +30,8 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 09.09.16
  */
 public class DXGraph extends DXCompute {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(DXGraph.class.getSimpleName());
 
 	private ChunkService m_chunkService;
 
@@ -322,7 +325,7 @@ public class DXGraph extends DXCompute {
 			ChunkService chunkService = getService(ChunkService.class);
 
 			// #if LOGGER >= DEBUG
-			logger.debug(getClass(), "Starting BFS traversal at " + ChunkID.toHexString(m_startVertexId));
+			LOGGER.debug("Starting BFS traversal at 0x%X", m_startVertexId);
 			// #endif /* LOGGER >= DEBUG */
 
 			int depth = 0;

@@ -10,10 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import de.hhu.bsinfo.utils.logger.LogDestination;
-import de.hhu.bsinfo.utils.logger.LogDestinationConsole;
-import de.hhu.bsinfo.utils.logger.LogDestinationFile;
-import de.hhu.bsinfo.utils.logger.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Main class to run DXRAM with components and services.
@@ -22,15 +20,14 @@ import de.hhu.bsinfo.utils.logger.Logger;
  */
 public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor {
 
-	private static final String DXRAM_ENGINE_LOG_HEADER = DXRAMEngine.class.getSimpleName();
+	private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMEngine.class.getSimpleName());
 
-    private DXRAMComponentManager m_componentManager;
-    private DXRAMServiceManager m_serviceManager;
+	private DXRAMComponentManager m_componentManager;
+	private DXRAMServiceManager m_serviceManager;
 	private DXRAMContextHandler m_contextHandler;
-	
+
 	private boolean m_isInitilized;
 
-	private Logger m_logger;
 	private DXRAMJNIManager m_jniManager;
 
 	private Map<String, String> m_servicesShortName = new HashMap<>();
@@ -71,7 +68,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 				// check for any kind of instance of the specified class
 				// we might have another interface/abstract class between the
 				// class we request and an instance we could serve
-				for (Entry<String, AbstractDXRAMService> entry : m_contextHandler.getContext().getServices().entrySet()) {
+				for (Entry<String, AbstractDXRAMService> entry : m_contextHandler.getContext().getServices()
+						.entrySet()) {
 					tmpService = entry.getValue();
 					if (p_class.isInstance(tmpService)) {
 						break;
@@ -87,7 +85,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
 			// #if LOGGER >= WARN
 			if (service == null) {
-				m_logger.warn(DXRAM_ENGINE_LOG_HEADER, "Service not available " + p_class);
+				LOGGER.warn("Service not available %s", p_class);
 			}
 			// #endif /* LOGGER >= WARN */
 		}
@@ -113,12 +111,14 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 	public <T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
 		T component = null;
 
-		AbstractDXRAMComponent tmpComponent = m_contextHandler.getContext().getComponents().get(p_class.getSimpleName());
+		AbstractDXRAMComponent tmpComponent =
+				m_contextHandler.getContext().getComponents().get(p_class.getSimpleName());
 		if (tmpComponent == null) {
 			// check for any kind of instance of the specified class
 			// we might have another interface/abstract class between the
 			// class we request and an instance we could serve
-			for (Entry<String, AbstractDXRAMComponent> entry : m_contextHandler.getContext().getComponents().entrySet()) {
+			for (Entry<String, AbstractDXRAMComponent> entry : m_contextHandler.getContext().getComponents()
+					.entrySet()) {
 				tmpComponent = entry.getValue();
 				if (p_class.isInstance(tmpComponent)) {
 					break;
@@ -134,8 +134,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
 		// #if LOGGER >= WARN
 		if (component == null) {
-			m_logger.warn(DXRAM_ENGINE_LOG_HEADER,
-					"Getting component '" + p_class.getSimpleName() + "', not available.");
+			LOGGER.warn("Getting component '%s', not available", p_class.getSimpleName());
 		}
 		// #endif /* LOGGER >= WARN */
 
@@ -152,15 +151,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 	}
 
 	/**
-	 * Get the logger of the engine.
-	 *
-	 * @return Logger instance or null if engine is not initialized.
-	 */
-	Logger getLogger() {
-		return m_logger;
-	}
-
-	/**
 	 * Initialize DXRAM without configuration. This creates a default configuration
 	 * and stores it in the default configuration path
 	 *
@@ -174,7 +164,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 	 * Initialize DXRAM with a configuration file
 	 *
 	 * @param p_configurationFile Path to configuration file. If the file does not exist, a default configuration is
- *                            	  created.
+	 *                            created.
 	 * @return True if initialization successful, false on error or if a new configuration was generated
 	 */
 	public boolean init(final String p_configurationFile) {
@@ -182,6 +172,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
 		final List<AbstractDXRAMComponent> list;
 		final Comparator<AbstractDXRAMComponent> comp;
+
+		// #if LOGGER >= INFO
+		LOGGER.info("Initializing engine with configuration '%s'", p_configurationFile);
+		// #endif /* LOGGER >= INFO */
 
 		if (!bootstrap(p_configurationFile)) {
 			// false indicates here that a configuration files was created
@@ -193,46 +187,40 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 			m_servicesShortName.put(service.getValue().getShortName(), service.getKey());
 		}
 
-		// #if LOGGER >= INFO
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing engine...");
-		// #endif /* LOGGER >= INFO */
-
 		// sort list by initialization priority
 		list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());
 		comp = (p_o1, p_o2) -> (new Integer(p_o1.getPriorityInit())).compareTo(p_o2.getPriorityInit());
 		Collections.sort(list, comp);
 
 		// #if LOGGER >= INFO
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing " + list.size() + " components...");
+		LOGGER.info("Initializing %d components...", list.size());
 		// #endif /* LOGGER >= INFO */
 		for (AbstractDXRAMComponent component : list) {
 			if (!component.init(this)) {
 				// #if LOGGER >= ERROR
-				m_logger.error(DXRAM_ENGINE_LOG_HEADER,
-						"Initializing component '" + component.getComponentName() + "' failed, aborting init.");
+				LOGGER.error("Initializing component '%s' failed, aborting init", component.getComponentName());
 				// #endif /* LOGGER >= ERROR */
 				return false;
 			}
 		}
 		// #if LOGGER >= INFO
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing components done.");
+		LOGGER.info("Initializing components done");
 		//
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Starting " + m_contextHandler.getContext().getServices().size() + " services...");
+		LOGGER.info("Starting %d services...", m_contextHandler.getContext().getServices().size());
 		// #endif /* LOGGER >= INFO */
 
 		for (AbstractDXRAMService service : m_contextHandler.getContext().getServices().values()) {
 			if (!service.start(this)) {
 				// #if LOGGER >= ERROR
-				m_logger.error(DXRAM_ENGINE_LOG_HEADER,
-						"Starting service '" + service.getServiceName() + "' failed, aborting init.");
+				LOGGER.error("Starting service '%s' failed, aborting init", service.getServiceName());
 				// #endif /* LOGGER >= ERROR */
 				return false;
 			}
 		}
 		// #if LOGGER >= INFO
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Starting services done.");
+		LOGGER.info("Starting services done");
 		//
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing engine done.");
+		LOGGER.info("Initializing engine done");
 		// #endif /* LOGGER >= INFO */
 		m_isInitilized = true;
 
@@ -251,22 +239,22 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 		final Comparator<AbstractDXRAMComponent> comp;
 
 		// #if LOGGER >= INFO
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down engine...");
+		LOGGER.info("Shutting down engine...");
 		// #endif /* LOGGER >= INFO */
 		// #if LOGGER >= INFO
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down " + m_contextHandler.getContext().getServices().size() + " services...");
+		LOGGER.info("Shutting down %d services...", m_contextHandler.getContext().getServices().size());
 		// #endif /* LOGGER >= INFO */
 
-		m_contextHandler.getContext().getServices().values().stream().filter(service -> !service.shutdown()).forEach(service -> {
-			// #if LOGGER >= ERROR
-			m_logger.error(DXRAM_ENGINE_LOG_HEADER,
-					"Shutting down service '" + service.getServiceName() + "' failed.");
-			// #endif /* LOGGER >= ERROR */
-		});
+		m_contextHandler.getContext().getServices().values().stream().filter(service -> !service.shutdown())
+				.forEach(service -> {
+					// #if LOGGER >= ERROR
+					LOGGER.error("Shutting down service '%s' failed.", service.getServiceName());
+					// #endif /* LOGGER >= ERROR */
+				});
 		m_servicesShortName.clear();
 
 		// #if LOGGER >= INFO
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down services done.");
+		LOGGER.info("Shutting down services done");
 		// #endif /* LOGGER >= INFO */
 
 		list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());
@@ -276,18 +264,17 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 		Collections.sort(list, comp);
 
 		// #if LOGGER >= INFO
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down " + list.size() + " components...");
+		LOGGER.info("Shutting down %d components...", list.size());
 		// #endif /* LOGGER >= INFO */
 
 		list.forEach(AbstractDXRAMComponent::shutdown);
 
 		// #if LOGGER >= INFO
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down components done.");
-		//
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down engine done.");
+		LOGGER.info("Shutting down components done");
 		// #endif /* LOGGER >= INFO */
-
-		m_logger.close();
+		// #endif /* LOGGER >= INFO */
+		LOGGER.info("Shutting down engine done");
+		// #endif /* LOGGER >= INFO */
 
 		m_contextHandler = null;
 
@@ -298,9 +285,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
 	/**
 	 * Execute bootstrapping tasks for the engine.
+	 *
+	 * @param p_configurationFile Configuration file to use
 	 */
 	private boolean bootstrap(final String p_configurationFile) {
-
 		String config = p_configurationFile;
 
 		m_contextHandler = new DXRAMContextHandler(m_componentManager, m_serviceManager);
@@ -309,6 +297,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 		String configurationOverride = System.getProperty("dxram.config");
 		if (configurationOverride != null) {
 			config = configurationOverride;
+			LOGGER.info("Configuration override by vm argument: %s", config);
 		}
 
 		// check if a config needs to be created
@@ -322,35 +311,16 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 			return false;
 		}
 
-		setupLogger();
-
 		setupJNI();
 
 		return true;
 	}
 
 	/**
-	 * Setup the logger.
-	 */
-	private void setupLogger() {
-		m_logger = new Logger();
-		m_logger.setLogLevel(m_contextHandler.getContext().getEngineSettings().getLoggerLevel());
-		{
-			final LogDestination logDest = new LogDestinationConsole();
-			m_logger.addLogDestination(logDest, m_contextHandler.getContext().getEngineSettings().getLoggerLevelConsole());
-		}
-		{
-			final LogDestination logDest = new LogDestinationFile(m_contextHandler.getContext().getEngineSettings().getLoggerFilePath(),
-					m_contextHandler.getContext().getEngineSettings().loggerFileBackUpOld());
-			m_logger.addLogDestination(logDest, m_contextHandler.getContext().getEngineSettings().getLoggerFileLevel());
-		}
-	}
-
-	/**
 	 * Setup JNI related stuff.
 	 */
 	private void setupJNI() {
-		m_jniManager = new DXRAMJNIManager(m_logger);
+		m_jniManager = new DXRAMJNIManager();
 		m_jniManager.setup(m_contextHandler.getContext().getEngineSettings());
 	}
 }

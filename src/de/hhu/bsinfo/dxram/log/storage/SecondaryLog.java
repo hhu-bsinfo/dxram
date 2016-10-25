@@ -15,8 +15,9 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxram.log.SecondaryLogsReorgThread;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.utils.Tools;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This class implements the secondary log
@@ -24,6 +25,8 @@ import de.hhu.bsinfo.utils.Tools;
  * @author Kevin Beineke 23.10.2014
  */
 public class SecondaryLog extends AbstractLog {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(SecondaryLog.class.getSimpleName());
 
 	// Constants
 	private static final String SECLOG_PREFIX_FILENAME = "sec";
@@ -33,8 +36,6 @@ public class SecondaryLog extends AbstractLog {
 	private static final int VERSIONS_BUFFER_CAPACITY = 65536;
 
 	// Attributes
-	private LoggerComponent m_logger;
-
 	private short m_nodeID;
 	private long m_rangeIDOrFirstLocalID;
 	private long m_secondaryLogSize;
@@ -65,7 +66,6 @@ public class SecondaryLog extends AbstractLog {
 	 * secondary log size
 	 *
 	 * @param p_logService                the log service to enable calling access granting methods in VersionsBuffer
-	 * @param p_logger                    the logger component
 	 * @param p_reorganizationThread      the reorganization thread
 	 * @param p_nodeID                    the NodeID
 	 * @param p_rangeIDOrFirstLocalID     the RangeID (for migrations) or the first localID of the backup range
@@ -80,7 +80,7 @@ public class SecondaryLog extends AbstractLog {
 	 * @throws IOException          if secondary log could not be created
 	 * @throws InterruptedException if the caller was interrupted
 	 */
-	public SecondaryLog(final LogService p_logService, final LoggerComponent p_logger,
+	public SecondaryLog(final LogService p_logService,
 			final SecondaryLogsReorgThread p_reorganizationThread,
 			final short p_nodeID, final long p_rangeIDOrFirstLocalID, final String p_rangeIdentification,
 			final boolean p_storesMigrations,
@@ -94,7 +94,7 @@ public class SecondaryLog extends AbstractLog {
 		if (p_secondaryLogSize < p_flashPageSize) {
 			throw new IllegalArgumentException("Error: Secondary log too small");
 		}
-		m_logger = p_logger;
+
 		m_secondaryLogSize = p_secondaryLogSize;
 		m_logSegmentSize = p_logSegmentSize;
 		m_useChecksum = p_useChecksum;
@@ -105,7 +105,7 @@ public class SecondaryLog extends AbstractLog {
 		m_nodeID = p_nodeID;
 		m_rangeIDOrFirstLocalID = p_rangeIDOrFirstLocalID;
 
-		m_versionsBuffer = new VersionsBuffer(p_logService, m_logger, VERSIONS_BUFFER_CAPACITY * 4, 0.9f,
+		m_versionsBuffer = new VersionsBuffer(p_logService, VERSIONS_BUFFER_CAPACITY * 4, 0.9f,
 				p_backupDirectory + "N" + p_nodeID
 						+ "_" + SECLOG_PREFIX_FILENAME + p_nodeID + "_" + p_rangeIdentification + ".ver");
 
@@ -119,7 +119,7 @@ public class SecondaryLog extends AbstractLog {
 		createLogAndWriteHeader(SECLOG_HEADER);
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Initialized secondary log (" + m_secondaryLogSize + ")");
+		LOGGER.trace("Initialized secondary log (%d)", m_secondaryLogSize);
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -306,8 +306,8 @@ public class SecondaryLog extends AbstractLog {
 		} else {
 			while (m_secondaryLogSize - determineLogSize() < length) {
 				// #if LOGGER >= WARN
-				m_logger.warn(SecondaryLog.class, "Secondary log for " + getNodeID()
-						+ " is full. Initializing reorganization and awaiting execution.");
+				LOGGER.warn("Secondary log for 0x%X is full. Initializing reorganization and awaiting execution",
+						getNodeID());
 				// #endif /* LOGGER >= WARN */
 				signalReorganizationAndWait();
 			}
@@ -381,7 +381,7 @@ public class SecondaryLog extends AbstractLog {
 
 						// #if LOGGER >= ERROR
 						if (length > 0) {
-							m_logger.error(SecondaryLog.class, "Secondary log is full!");
+							LOGGER.error("Secondary log is full!");
 						}
 						// #endif /* LOGGER >= ERROR */
 					}
@@ -401,7 +401,7 @@ public class SecondaryLog extends AbstractLog {
 
 					// #if LOGGER >= ERROR
 					if (length > 0) {
-						m_logger.error(SecondaryLog.class, "Secondary log is full!");
+						LOGGER.error("Secondary log is full!");
 					}
 					// #endif /* LOGGER >= ERROR */
 				}
@@ -411,8 +411,7 @@ public class SecondaryLog extends AbstractLog {
 		if (determineLogSize() >= m_secondaryLogReorgThreshold && !isSignaled) {
 			signalReorganization();
 			// #if LOGGER >= INFO
-			m_logger.info(SecondaryLog.class,
-					"Threshold breached for secondary log of " + getNodeID() + ". Initializing reorganization.");
+			LOGGER.info("Threshold breached for secondary log of 0x%X. Initializing reorganization", getNodeID());
 			// #endif /* LOGGER >= INFO */
 		}
 
@@ -1032,7 +1031,7 @@ public class SecondaryLog extends AbstractLog {
 					}
 				} catch (final IOException | InterruptedException e) {
 					// #if LOGGER >= ERROR
-					m_logger.error(SecondaryLog.class, "Reorganization failed(" + m_rangeIDOrFirstLocalID + "): " + e);
+					LOGGER.error("Reorganization failed(%d): ", m_rangeIDOrFirstLocalID, e);
 					// #endif /* LOGGER >= ERROR */
 				}
 			} else {
@@ -1041,9 +1040,9 @@ public class SecondaryLog extends AbstractLog {
 
 			if (readBytes - writtenBytes > 0) {
 				// #if LOGGER >= INFO
-				m_logger.info(getClass(), "Freed " + (readBytes - writtenBytes) + " bytes during reorganization of:"
-						+ p_segmentIndex + "  " + m_nodeID + "," + m_rangeIDOrFirstLocalID + "\t "
-						+ determineLogSize() / 1024 / 1024);
+				LOGGER.info("Freed %d bytes during reorganization of: %d  0x%X, %d\t %d",
+						(readBytes - writtenBytes), p_segmentIndex, m_nodeID, m_rangeIDOrFirstLocalID,
+						determineLogSize() / 1024 / 1024);
 				// #endif /* LOGGER >= INFO */
 			}
 		}

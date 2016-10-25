@@ -2,6 +2,8 @@
 package de.hhu.bsinfo.dxram.engine;
 
 import com.google.gson.annotations.Expose;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Base class for all services in DXRAM. All services in DXRAM form the API for the user.
@@ -13,6 +15,8 @@ import com.google.gson.annotations.Expose;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 25.01.16
  */
 public abstract class AbstractDXRAMService {
+
+	private final Logger LOGGER;
 
 	// config values
 	@Expose
@@ -29,6 +33,7 @@ public abstract class AbstractDXRAMService {
 	 * @param p_shortName Short name of the service (used for terminal)
 	 */
 	public AbstractDXRAMService(final String p_shortName) {
+		LOGGER = LogManager.getFormatterLogger(this.getClass().getSimpleName());
 		m_shortName = p_shortName;
 	}
 
@@ -62,7 +67,7 @@ public abstract class AbstractDXRAMService {
 		m_parentEngine = p_engine;
 
 		// #if LOGGER >= INFO
-		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Starting service...");
+		LOGGER.info("Starting service...");
 		// #endif /* LOGGER >= INFO */
 
 		resolveComponentDependencies(p_engine);
@@ -71,7 +76,7 @@ public abstract class AbstractDXRAMService {
 			ret = startService(m_parentEngine.getSettings());
 		} catch (final Exception e) {
 			// #if LOGGER >= ERROR
-			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Starting service failed.", e);
+			LOGGER.error("Starting service failed", e);
 			// #endif /* LOGGER >= ERROR */
 
 			return false;
@@ -79,11 +84,11 @@ public abstract class AbstractDXRAMService {
 
 		if (!ret) {
 			// #if LOGGER >= ERROR
-			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Starting service failed.");
+			LOGGER.error("Starting service failed");
 			// #endif /* LOGGER >= ERROR */
 		} else {
 			// #if LOGGER >= INFO
-			m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Starting service successful.");
+			LOGGER.info("Starting service successful");
 			// #endif /* LOGGER >= INFO */
 		}
 
@@ -99,16 +104,16 @@ public abstract class AbstractDXRAMService {
 		boolean ret;
 
 		// #if LOGGER >= INFO
-		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down service...");
+		LOGGER.info("Shutting down service...");
 		// #endif /* LOGGER >= INFO */
 		ret = shutdownService();
 		if (!ret) {
 			// #if LOGGER >= WARN
-			m_parentEngine.getLogger().warn(this.getClass().getSimpleName(), "Shutting down service failed.");
+			LOGGER.warn("Shutting down service failed");
 			// #endif /* LOGGER >= WARN */
 		} else {
 			// #if LOGGER >= INFO
-			m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down service successful.");
+			LOGGER.info("Shutting down service successful");
 			// #endif /* LOGGER >= INFO */
 		}
 

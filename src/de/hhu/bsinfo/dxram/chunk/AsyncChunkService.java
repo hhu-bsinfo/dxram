@@ -15,9 +15,7 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
@@ -26,11 +24,12 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This service provides access to the backend storage system.
@@ -40,9 +39,10 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class AsyncChunkService extends AbstractDXRAMService implements MessageReceiver {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(AsyncChunkService.class.getSimpleName());
+
 	// dependent components
 	private AbstractBootComponent m_boot;
-	private LoggerComponent m_logger;
 	private MemoryManagerComponent m_memoryManager;
 	private NetworkComponent m_network;
 	private LookupComponent m_lookup;
@@ -61,7 +61,6 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
@@ -88,10 +87,6 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 	@Override
 	protected boolean shutdownService() {
-		m_memoryManager = null;
-		m_network = null;
-		m_lookup = null;
-
 		return true;
 	}
 
@@ -117,20 +112,18 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 		if (p_dataStructures[0] == null) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(),
-					"put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length
-							+ ") ...]");
+			LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_dataStructures.length);
 			// #endif /* LOGGER == TRACE */
 		} else {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-					+ p_dataStructures.length + ") " + ChunkID.toHexString(p_dataStructures[0].getID()) + ", ...]");
+			LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]",
+					p_chunkUnlockOperation, p_dataStructures.length, ChunkID.toHexString(p_dataStructures[0].getID()));
 			// #endif /* LOGGER == TRACE */
 		}
 
 		// #if LOGGER >= ERROR
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
-			m_logger.error(getClass(), "a superpeer must not put chunks");
+			LOGGER.error("A superpeer must not put chunks");
 		}
 		// #endif /* LOGGER >= ERROR */
 
@@ -139,7 +132,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 				p_dataStructures.length);
 		// #endif /* STATISTICS */
 
-		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<Short, ArrayList<DataStructure>>();
+		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<>();
 
 		// sort by local/remote chunks
 		m_memoryManager.lockAccess();
@@ -173,7 +166,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 						ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
 						if (remoteChunksOfPeer == null) {
-							remoteChunksOfPeer = new ArrayList<DataStructure>();
+							remoteChunksOfPeer = new ArrayList<>();
 							remoteChunksByPeers.put(peer, remoteChunksOfPeer);
 						}
 						remoteChunksOfPeer.add(dataStructure);
@@ -182,8 +175,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 				}
 				default: {
 					// #if LOGGER >= ERROR
-					m_logger.error(getClass(),
-							"Putting local chunk " + ChunkID.toHexString(dataStructure.getID()) + " failed.");
+					LOGGER.error("Putting local chunk %s failed", ChunkID.toHexString(dataStructure.getID()));
 					// #endif /* LOGGER >= ERROR */
 					break;
 				}
@@ -202,8 +194,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 				for (final DataStructure dataStructure : entry.getValue()) {
 					if (m_memoryManager.put(dataStructure) != MemoryErrorCodes.SUCCESS) {
 						// #if LOGGER >= ERROR
-						m_logger.error(getClass(),
-								"Putting local chunk " + ChunkID.toHexString(dataStructure.getID()) + " failed.");
+						LOGGER.error("Putting local chunk %s failed", ChunkID.toHexString(dataStructure.getID()));
 						// #endif /* LOGGER >= ERROR */
 					}
 				}
@@ -216,8 +207,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 				NetworkErrorCodes error = m_network.sendMessage(message);
 				if (error != NetworkErrorCodes.SUCCESS) {
 					// #if LOGGER >= ERROR
-					m_logger.error(getClass(), "Sending chunk put message to peer " + NodeID.toHexString(peer)
-							+ " failed: " + error);
+					LOGGER.error("Sending chunk put message to peer %s failed: %s", NodeID.toHexString(peer), error);
 					// #endif /* LOGGER >= ERROR */
 
 					// TODO
@@ -232,13 +222,12 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 		if (p_dataStructures[0] == null) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-					+ p_dataStructures.length + ") ...]");
+			LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_dataStructures.length);
 			// #endif /* LOGGER == TRACE */
 		} else {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-					+ p_dataStructures.length + ") " + ChunkID.toHexString(p_dataStructures[0].getID()) + ", ...]");
+			LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]",
+					p_chunkUnlockOperation, p_dataStructures.length, ChunkID.toHexString(p_dataStructures[0].getID()));
 			// #endif /* LOGGER == TRACE */
 		}
 	}
@@ -246,7 +235,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
+		LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
 		// #endif /* LOGGER == TRACE */
 
 		if (p_message != null) {
@@ -262,7 +251,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting incomingMessage");
+		LOGGER.trace("Exiting incomingMessage");
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -316,8 +305,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 			MemoryErrorCodes err = m_memoryManager.put(chunk);
 			// #if LOGGER >= WARN
 			if (err != MemoryErrorCodes.SUCCESS) {
-				m_logger.warn(getClass(),
-						"Putting chunk " + ChunkID.toHexString(chunk.getID()) + " failed: " + err);
+				LOGGER.warn("Putting chunk %s failed: %s", ChunkID.toHexString(chunk.getID()), err);
 			}
 			// #endif /* LOGGER >= WARN */
 		}

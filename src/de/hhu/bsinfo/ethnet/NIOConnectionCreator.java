@@ -9,12 +9,18 @@ import java.util.Iterator;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Creates and manages new network connections using Java NIO
+ *
  * @author Florian Klein 18.03.2012
  *         Marc Ewert 11.08.2014
  */
 class NIOConnectionCreator extends AbstractConnectionCreator {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(NIOConnectionCreator.class.getSimpleName());
 
 	// Attributes
 	private MessageCreator m_messageCreator;
@@ -36,22 +42,15 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	/**
 	 * Creates an instance of NIOConnectionCreator
-	 * @param p_messageDirectory
-	 *            the message directory
-	 * @param p_nodeMap
-	 *            the node map
-	 * @param p_ownNodeID
-	 *            the NodeID of this node
-	 * @param p_incomingBufferSize
-	 *            the size of incoming buffer
-	 * @param p_outgoingBufferSize
-	 *            the size of outgoing buffer
-	 * @param p_numberOfBuffersPerConnection
-	 *            the number of bytes until a flow control message must be received to continue sending
-	 * @param p_flowControlWindowSize
-	 *            the maximal number of ByteBuffer to schedule for sending/receiving
-	 * @param p_connectionTimeout
-	 *            the connection timeout
+	 *
+	 * @param p_messageDirectory             the message directory
+	 * @param p_nodeMap                      the node map
+	 * @param p_ownNodeID                    the NodeID of this node
+	 * @param p_incomingBufferSize           the size of incoming buffer
+	 * @param p_outgoingBufferSize           the size of outgoing buffer
+	 * @param p_numberOfBuffersPerConnection the number of bytes until a flow control message must be received to continue sending
+	 * @param p_flowControlWindowSize        the maximal number of ByteBuffer to schedule for sending/receiving
+	 * @param p_connectionTimeout            the connection timeout
 	 */
 	protected NIOConnectionCreator(final MessageDirectory p_messageDirectory, final NodeMap p_nodeMap,
 			final short p_ownNodeID, final int p_incomingBufferSize, final int p_outgoingBufferSize,
@@ -83,7 +82,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	@Override
 	public void initialize(final short p_nodeID, final int p_listenPort) {
 		// #if LOGGER >= INFO
-		NetworkHandler.getLogger().info(getClass().getSimpleName(), "Network: MessageCreator");
+		LOGGER.info("Network: MessageCreator");
 		// #endif /* LOGGER >= INFO */
 		m_messageCreator = new MessageCreator(m_numberOfBuffersPerConnection);
 		m_messageCreator.setName("Network: MessageCreator");
@@ -91,7 +90,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		m_messageCreator.start();
 
 		// #if LOGGER >= INFO
-		NetworkHandler.getLogger().info(getClass().getSimpleName(), "Network: NIOSelector");
+		LOGGER.info("Network: NIOSelector");
 		// #endif /* LOGGER >= INFO */
 		m_nioSelector = new NIOSelector(this, m_nioInterface, p_listenPort, m_connectionTimeout);
 		m_nioSelector.setName("Network: NIOSelector");
@@ -137,11 +136,10 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	/**
 	 * Creates a new connection to the given destination
-	 * @param p_destination
-	 *            the destination
+	 *
+	 * @param p_destination the destination
 	 * @return a new connection
-	 * @throws IOException
-	 *             if the connection could not be created
+	 * @throws IOException if the connection could not be created
 	 */
 	@Override
 	public NIOConnection createConnection(final short p_destination) throws IOException {
@@ -165,8 +163,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			timeNow = System.currentTimeMillis();
 			if (timeNow - timeStart > m_connectionTimeout) {
 				// #if LOGGER >= DEBUG
-				NetworkHandler.getLogger().debug(getClass().getSimpleName(), "connection creation time-out. Interval "
-						+ m_connectionTimeout + "ms might be to small");
+				LOGGER.debug("connection creation time-out. Interval %d ms might be to small", m_connectionTimeout);
 				// #endif /* LOGGER >= DEBUG */
 
 				condLock.unlock();
@@ -194,10 +191,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	/**
 	 * Creates a new connection, triggered by incoming key
 	 * m_buffer needs to be synchronized externally
-	 * @param p_channel
-	 *            the channel of the connection
-	 * @throws IOException
-	 *             if the connection could not be created
+	 *
+	 * @param p_channel the channel of the connection
+	 * @throws IOException if the connection could not be created
 	 */
 	protected void createConnection(final SocketChannel p_channel) throws IOException {
 		NIOConnection connection;
@@ -227,7 +223,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			}
 		} catch (final IOException e) {
 			// #if LOGGER >= ERROR
-			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not create connection!");
+			LOGGER.error("Could not create connection!");
 			// #endif /* LOGGER >= ERROR */
 			throw e;
 		}
@@ -235,10 +231,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	/**
 	 * Closes the given connection
-	 * @param p_connection
-	 *            the connection
-	 * @param p_informConnectionManager
-	 *            whether to inform the connection manager or not
+	 *
+	 * @param p_connection              the connection
+	 * @param p_informConnectionManager whether to inform the connection manager or not
 	 */
 	protected void closeConnection(final NIOConnection p_connection, final boolean p_informConnectionManager) {
 		SelectionKey key;
@@ -250,8 +245,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				p_connection.getChannel().close();
 			} catch (final IOException e) {
 				// #if LOGGER >= ERROR
-				NetworkHandler.getLogger().error(getClass().getSimpleName(),
-						"Could not close connection to " + p_connection.getDestination() + "!");
+				LOGGER.error("Could not close connection to %s!", p_connection.getDestination());
 				// #endif /* LOGGER >= ERROR */
 			}
 			if (p_informConnectionManager) {

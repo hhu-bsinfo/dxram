@@ -8,8 +8,6 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.log.LogService;
-import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryRequest;
@@ -22,6 +20,8 @@ import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Look up service providing look ups for e.g. use in TCMDs
@@ -30,10 +30,11 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
  */
 public class LookupService extends AbstractDXRAMService implements MessageReceiver {
 
+	private static final Logger LOGGER = LogManager.getFormatterLogger(LookupService.class.getSimpleName());
+
 	// dependent components
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
-	private LoggerComponent m_logger;
 	private NetworkComponent m_network;
 	private LookupComponent m_lookup;
 
@@ -48,7 +49,6 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
 		m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
 	}
@@ -87,7 +87,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 		if (err != NetworkErrorCodes.SUCCESS) {
 			// #if LOGGER >= ERROR
-			m_logger.error(LogService.class, "Could not acknowledge initilization of backup range: " + err);
+			LOGGER.error("Could not acknowledge initilization of backup range: %s", err);
 			// #endif /* LOGGER >= ERROR */
 		}
 
