@@ -17,3 +17,4 @@ dxram_term_history
 out/*
 config/
 conf/
+start_dxram_terminal.sh
