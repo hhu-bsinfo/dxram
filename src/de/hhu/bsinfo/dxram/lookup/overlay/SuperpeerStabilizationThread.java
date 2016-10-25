@@ -141,6 +141,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 				// Predecessor is not available anymore, repeat it. New predecessor will be determined by failure
 				// handling, but lock must be released first.
 				m_overlayLock.readLock().unlock();
+				Thread.yield();
 				m_overlayLock.readLock().lock();
 				continue;
 			}
@@ -157,6 +158,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 				// Predecessor is not available anymore, repeat it. New predecessor will be determined by failure
 				// handling, but lock must be released first.
 				m_overlayLock.readLock().unlock();
+				Thread.yield();
 				m_overlayLock.readLock().lock();
 				continue;
 			}

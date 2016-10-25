@@ -765,12 +765,29 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		return m_peer.superpeerStorageGetStatus();
 	}
 
+	/**
+	 * Replaces the backup peer for given range on responsible superpeer
+	 */
+	public void replaceBackupPeer(final long p_firstChunkIDOrRangeID, final short p_failedPeer,
+			final short p_newPeer) {
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "A superpeer is not allowed to change a peer's backup peers");
+			// #endif /* LOGGER >= ERROR */
+			return;
+		}
+
+		m_peer.replaceBackupPeer(p_firstChunkIDOrRangeID, p_failedPeer, p_newPeer);
+	}
+
 	@Override
 	public void eventTriggered(final AbstractEvent p_event) {
 		if (p_event instanceof NodeFailureEvent) {
 			NodeFailureEvent event = (NodeFailureEvent) p_event;
 
-			m_chunkIDCacheTree.invalidatePeer(event.getNodeID());
+			if (event.getRole() == NodeRole.PEER) {
+				m_chunkIDCacheTree.invalidatePeer(event.getNodeID());
+			}
 		} else if (p_event instanceof NameserviceCacheEntryUpdateEvent) {
 			NameserviceCacheEntryUpdateEvent event = (NameserviceCacheEntryUpdateEvent) p_event;
 			// update if available to avoid caching all entries

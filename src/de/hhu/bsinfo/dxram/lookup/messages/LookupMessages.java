@@ -42,38 +42,39 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE = 31;
 	public static final byte SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE = 32;
 	public static final byte SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE = 33;
+
 	public static final byte SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_REQUEST = 34;
 	public static final byte SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_RESPONSE = 35;
 	public static final byte SUBTYPE_START_RECOVERY_MESSAGE = 36;
+	public static final byte SUBTYPE_REPLACE_BACKUP_PEER_REQUEST = 37;
+	public static final byte SUBTYPE_REPLACE_BACKUP_PEER_RESPONSE = 38;
 
-	public static final byte SUBTYPE_BARRIER_ALLOC_REQUEST = 37;
-	public static final byte SUBTYPE_BARRIER_ALLOC_RESPONSE = 38;
-	public static final byte SUBTYPE_BARRIER_FREE_REQUEST = 39;
-	public static final byte SUBTYPE_BARRIER_FREE_RESPONSE = 40;
-	public static final byte SUBTYPE_BARRIER_SIGN_ON_REQUEST = 41;
-	public static final byte SUBTYPE_BARRIER_SIGN_ON_RESPONSE = 42;
-	public static final byte SUBTYPE_BARRIER_RELEASE_MESSAGE = 43;
-	public static final byte SUBTYPE_BARRIER_STATUS_REQUEST = 44;
-	public static final byte SUBTYPE_BARRIER_STATUS_RESPONSE = 45;
-	public static final byte SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST = 46;
-	public static final byte SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE = 47;
+	public static final byte SUBTYPE_BARRIER_ALLOC_REQUEST = 39;
+	public static final byte SUBTYPE_BARRIER_ALLOC_RESPONSE = 40;
+	public static final byte SUBTYPE_BARRIER_FREE_REQUEST = 41;
+	public static final byte SUBTYPE_BARRIER_FREE_RESPONSE = 42;
+	public static final byte SUBTYPE_BARRIER_SIGN_ON_REQUEST = 43;
+	public static final byte SUBTYPE_BARRIER_SIGN_ON_RESPONSE = 44;
+	public static final byte SUBTYPE_BARRIER_RELEASE_MESSAGE = 45;
+	public static final byte SUBTYPE_BARRIER_STATUS_REQUEST = 46;
+	public static final byte SUBTYPE_BARRIER_STATUS_RESPONSE = 47;
+	public static final byte SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST = 48;
+	public static final byte SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE = 49;
 
-	public static final byte SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST = 48;
-	public static final byte SUBTYPE_SUPERPEER_STORAGE_CREATE_RESPONSE = 49;
-	public static final byte SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST = 50;
-	public static final byte SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE = 51;
-	public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST = 52;
-	public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE = 53;
-	public static final byte SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE = 54;
-	public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST = 55;
-	public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE = 56;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST = 50;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_CREATE_RESPONSE = 51;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST = 52;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE = 53;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST = 54;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE = 55;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE = 56;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST = 57;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE = 58;
 
-	public static final byte SUBTYPE_GET_LOOKUP_TREE_REQUEST = 57;
-	public static final byte SUBTYPE_GET_LOOKUP_TREE_RESPONSE = 58;
-	public static final byte SUBTYPE_GET_METADATA_SUMMARY_REQUEST = 59;
-	public static final byte SUBTYPE_GET_METADATA_SUMMARY_RESPONSE = 60;
-	public static final byte SUBTYPE_GET_RESPONSIBLE_SUPERPEER_REQUEST = 61;
-	public static final byte SUBTYPE_GET_RESPONSIBLE_SUPERPEER_RESPONSE = 62;
+	public static final byte SUBTYPE_GET_LOOKUP_TREE_REQUEST = 59;
+	public static final byte SUBTYPE_GET_LOOKUP_TREE_RESPONSE = 60;
+	public static final byte SUBTYPE_GET_METADATA_SUMMARY_REQUEST = 61;
+	public static final byte SUBTYPE_GET_METADATA_SUMMARY_RESPONSE = 62;
 
 	/**
 	 * Hidden constructor

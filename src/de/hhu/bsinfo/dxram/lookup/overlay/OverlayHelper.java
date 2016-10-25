@@ -15,7 +15,6 @@ public final class OverlayHelper {
 
 	// Constants
 	public static final short ORDER = 10;
-	protected static final short DUMMY = -1;
 
 	/**
 	 * Hidden constructor

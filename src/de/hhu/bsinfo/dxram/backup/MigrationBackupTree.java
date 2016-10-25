@@ -2,7 +2,6 @@
 package de.hhu.bsinfo.dxram.backup;
 
 import java.io.Serializable;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Btree to store backup ranges of migrated chunks.
@@ -28,8 +27,6 @@ public final class MigrationBackupTree implements Serializable {
 
 	private Entry m_changedEntry;
 
-	private ReentrantLock m_lock;
-
 	// Constructors
 	/**
 	 * Creates an instance of MigrationsTree
@@ -54,8 +51,6 @@ public final class MigrationBackupTree implements Serializable {
 
 		m_changedEntry = null;
 
-		m_lock = new ReentrantLock(false);
-
 		createOrReplaceEntry(Long.MAX_VALUE, INVALID);
 	}
 
@@ -67,13 +62,7 @@ public final class MigrationBackupTree implements Serializable {
 	 * @return true if it fits
 	 */
 	public boolean fits(final long p_size) {
-		boolean ret;
-
-		m_lock.lock();
-		ret = p_size + m_currentSecLogSize <= m_backupRangeSize;
-		m_lock.unlock();
-
-		return ret;
+		return p_size + m_currentSecLogSize <= m_backupRangeSize;
 	}
 
 	/**
@@ -96,7 +85,6 @@ public final class MigrationBackupTree implements Serializable {
 	public boolean putObject(final long p_chunkID, final byte p_rangeID, final long p_size) {
 		Node node;
 
-		m_lock.lock();
 		node = createOrReplaceEntry(p_chunkID, p_rangeID);
 
 		mergeWithPredecessorOrBound(p_chunkID, p_rangeID, node);
@@ -104,7 +92,6 @@ public final class MigrationBackupTree implements Serializable {
 		mergeWithSuccessor(p_chunkID, p_rangeID);
 
 		m_currentSecLogSize += p_size;
-		m_lock.unlock();
 
 		return true;
 	}
@@ -130,7 +117,6 @@ public final class MigrationBackupTree implements Serializable {
 		if (p_startID == p_endID) {
 			putObject(p_startID, p_rangeID, p_rangeSize);
 		} else {
-			m_lock.lock();
 			startNode = createOrReplaceEntry(p_startID, p_rangeID);
 
 			mergeWithPredecessorOrBound(p_startID, p_rangeID, startNode);
@@ -142,9 +128,71 @@ public final class MigrationBackupTree implements Serializable {
 			mergeWithSuccessor(p_endID, p_rangeID);
 
 			m_currentSecLogSize += p_rangeSize;
-			m_lock.unlock();
 		}
 		return true;
+	}
+
+	/**
+	 * Returns ChunkIDs of all Chunks in given range
+	 * @param p_rangeID
+	 *            the RangeID
+	 * @return all ChunkIDs
+	 */
+	public long[] getAllChunkIDsOfRange(final byte p_rangeID) {
+		long[] ret = null;
+
+		if (m_root != null) {
+			ret = iterateNode(m_root, p_rangeID);
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Iterates the node and returns ChunkIDs of given range
+	 * @param p_node
+	 *            the node
+	 * @param p_rangeID
+	 *            the RangeID
+	 * @return all ChunkIDs
+	 */
+	private long[] iterateNode(final Node p_node, final byte p_rangeID) {
+		long[] ret = null;
+		int allEntriesCounter;
+		int fittingEntriesCounter = 0;
+		int childrenCounter;
+		int fittingChildrenEntriesCounter = 0;
+		int offset = 0;
+		long[] myEntries;
+
+		// Store all ChunkIDs of given range in an array
+		allEntriesCounter = p_node.getNumberOfEntries();
+		myEntries = new long[allEntriesCounter];
+		for (int i = 0; i < allEntriesCounter; i++) {
+			if (p_node.getRangeID(i) == p_rangeID) {
+				myEntries[fittingEntriesCounter++] = p_node.getChunkID(i);
+			}
+		}
+
+		// Get all fitting ChunkIDs of all children
+		childrenCounter = p_node.getNumberOfChildren();
+		long[][] res = new long[childrenCounter][];
+		for (int i = 0; i < childrenCounter; i++) {
+			res[i] = iterateNode(p_node.getChild(i), p_rangeID);
+			fittingChildrenEntriesCounter += res[i].length;
+		}
+
+		// Copy this node's entries to result array
+		ret = new long[fittingEntriesCounter + fittingChildrenEntriesCounter];
+		System.arraycopy(myEntries, 0, ret, 0, fittingEntriesCounter);
+		offset = fittingEntriesCounter;
+		// Copy all children's entries to result array
+		for (long[] array : res) {
+			System.arraycopy(array, 0, ret, offset, array.length);
+			offset += array.length;
+		}
+
+		return ret;
 	}
 
 	/**
@@ -154,15 +202,7 @@ public final class MigrationBackupTree implements Serializable {
 	 * @return the backup range ID
 	 */
 	public byte getBackupRange(final long p_chunkID) {
-		assert m_root != null;
-
-		byte ret;
-
-		m_lock.lock();
-		ret = getRangeIDOrSuccessorsRangeID(p_chunkID);
-		m_lock.unlock();
-
-		return ret;
+		return getRangeIDOrSuccessorsRangeID(p_chunkID);
 	}
 
 	/**
@@ -179,7 +219,6 @@ public final class MigrationBackupTree implements Serializable {
 		Entry predecessor;
 		Entry successor;
 
-		m_lock.lock();
 		if (null != m_root) {
 			node = getNodeOrSuccessorsNode(p_chunkID);
 			if (null != node) {
@@ -248,7 +287,6 @@ public final class MigrationBackupTree implements Serializable {
 				}
 			}
 		}
-		m_lock.unlock();
 	}
 
 	/**
@@ -1221,16 +1259,16 @@ public final class MigrationBackupTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_chunkID) {
-				low = mid + 1;
-			} else if (midVal > p_chunkID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_chunkID) {
+					low = mid + 1;
+				} else if (midVal > p_chunkID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1420,16 +1458,16 @@ public final class MigrationBackupTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getChunkID(0);
+				midVal = m_children[mid].getChunkID(0);
 
-			if (midVal < chunkID) {
-				low = mid + 1;
-			} else if (midVal > chunkID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < chunkID) {
+					low = mid + 1;
+				} else if (midVal > chunkID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

@@ -9,21 +9,7 @@ import java.util.TreeMap;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
-import de.hhu.bsinfo.dxram.chunk.messages.CreateRequest;
-import de.hhu.bsinfo.dxram.chunk.messages.CreateResponse;
-import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesRequest;
-import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesResponse;
-import de.hhu.bsinfo.dxram.chunk.messages.GetMigratedChunkIDRangesRequest;
-import de.hhu.bsinfo.dxram.chunk.messages.GetMigratedChunkIDRangesResponse;
-import de.hhu.bsinfo.dxram.chunk.messages.GetRequest;
-import de.hhu.bsinfo.dxram.chunk.messages.GetResponse;
-import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
-import de.hhu.bsinfo.dxram.chunk.messages.PutResponse;
-import de.hhu.bsinfo.dxram.chunk.messages.RemoveRequest;
-import de.hhu.bsinfo.dxram.chunk.messages.RemoveResponse;
-import de.hhu.bsinfo.dxram.chunk.messages.StatusRequest;
-import de.hhu.bsinfo.dxram.chunk.messages.StatusResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.*;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
@@ -528,7 +514,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 				if (m_backup.isActive()) {
 					// sort by backup peers
-					long backupPeersAsLong = m_backup.getBackupPeersForLocalChunksAsLong(p_chunkIDs[i]);
+					long backupPeersAsLong = m_backup.getBackupPeersForLocalChunks(p_chunkIDs[i]);
 					ArrayList<Long> remoteChunkIDsOfBackupPeers = remoteChunksByBackupPeers.get(backupPeersAsLong);
 					if (remoteChunkIDsOfBackupPeers == null) {
 						remoteChunkIDsOfBackupPeers = new ArrayList<Long>();
@@ -751,7 +737,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				if (m_backup.isActive()) {
 					// sort by backup peers
 					long backupPeersAsLong =
-							m_backup.getBackupPeersForLocalChunksAsLong(p_dataStructures[i + p_offset].getID());
+							m_backup.getBackupPeersForLocalChunks(p_dataStructures[i + p_offset].getID());
 					ArrayList<DataStructure> remoteChunksOfBackupPeers =
 							remoteChunksByBackupPeers.get(backupPeersAsLong);
 					if (remoteChunksOfBackupPeers == null) {
@@ -1421,29 +1407,29 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		if (p_message != null) {
 			if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
-				case ChunkMessages.SUBTYPE_GET_REQUEST:
-					incomingGetRequest((GetRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_PUT_REQUEST:
-					incomingPutRequest((PutRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
-					incomingRemoveRequest((RemoveRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_CREATE_REQUEST:
-					incomingCreateRequest((CreateRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_STATUS_REQUEST:
-					incomingStatusRequest((StatusRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST:
-					incomingGetLocalChunkIDRangesRequest((GetLocalChunkIDRangesRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST:
-					incomingGetMigratedChunkIDRangesRequest((GetMigratedChunkIDRangesRequest) p_message);
-					break;
-				default:
-					break;
+					case ChunkMessages.SUBTYPE_GET_REQUEST:
+						incomingGetRequest((GetRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_PUT_REQUEST:
+						incomingPutRequest((PutRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
+						incomingRemoveRequest((RemoveRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_CREATE_REQUEST:
+						incomingCreateRequest((CreateRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_STATUS_REQUEST:
+						incomingStatusRequest((StatusRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST:
+						incomingGetLocalChunkIDRangesRequest((GetLocalChunkIDRangesRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST:
+						incomingGetMigratedChunkIDRangesRequest((GetMigratedChunkIDRangesRequest) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -1629,7 +1615,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 			if (m_backup.isActive()) {
 				// sort by backup peers
-				long backupPeersAsLong = m_backup.getBackupPeersForLocalChunksAsLong(chunks[i].getID());
+				long backupPeersAsLong = m_backup.getBackupPeersForLocalChunks(chunks[i].getID());
 				ArrayList<DataStructure> remoteChunksOfBackupPeers = remoteChunksByBackupPeers.get(backupPeersAsLong);
 				if (remoteChunksOfBackupPeers == null) {
 					remoteChunksOfBackupPeers = new ArrayList<DataStructure>();
@@ -1722,7 +1708,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 			if (m_backup.isActive()) {
 				// sort by backup peers
-				long backupPeersAsLong = m_backup.getBackupPeersForLocalChunksAsLong(chunkIDs[i]);
+				long backupPeersAsLong = m_backup.getBackupPeersForLocalChunks(chunkIDs[i]);
 				ArrayList<Long> remoteChunkIDsOfBackupPeers = remoteChunksByBackupPeers.get(backupPeersAsLong);
 				if (remoteChunkIDsOfBackupPeers == null) {
 					remoteChunkIDsOfBackupPeers = new ArrayList<Long>();

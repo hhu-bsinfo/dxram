@@ -1126,6 +1126,28 @@ public class OverlayPeer implements MessageReceiver {
 	}
 
 	/**
+	 * Replaces the backup peer for given range on responsible superpeer
+	 */
+	public void replaceBackupPeer(final long p_firstChunkIDOrRangeID, final short p_failedPeer,
+			final short p_newPeer) {
+		short responsibleSuperpeer;
+
+		m_overlayLock.readLock().lock();
+		responsibleSuperpeer = m_mySuperpeer;
+		m_overlayLock.readLock().unlock();
+
+		ReplaceBackupPeerRequest request = new ReplaceBackupPeerRequest(responsibleSuperpeer,
+				p_firstChunkIDOrRangeID, p_failedPeer, p_newPeer, false);
+		NetworkErrorCodes err = m_network.sendSync(request);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(),
+					"Replacing backup peer on " + NodeID.toHexString(responsibleSuperpeer) + " failed.");
+			// #endif /* LOGGER >= ERROR */
+		}
+	}
+
+	/**
 	 * Joins the superpeer overlay through contactSuperpeer
 	 * @param p_contactSuperpeer
 	 *            NodeID of a known superpeer

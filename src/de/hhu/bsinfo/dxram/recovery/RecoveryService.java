@@ -27,7 +27,6 @@ import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * This service provides all recovery functionality.
- *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 31.03.16
  */
 public class RecoveryService extends AbstractDXRAMService implements MessageReceiver {
@@ -51,10 +50,12 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 	/**
 	 * Recovers all Chunks of given node
-	 *
-	 * @param p_owner       the NodeID of the node whose Chunks have to be restored
-	 * @param p_dest        the NodeID of the node where the Chunks have to be restored
-	 * @param p_useLiveData whether the recover should use current logs or log files
+	 * @param p_owner
+	 *            the NodeID of the node whose Chunks have to be restored
+	 * @param p_dest
+	 *            the NodeID of the node where the Chunks have to be restored
+	 * @param p_useLiveData
+	 *            whether the recover should use current logs or log files
 	 * @return whether the operation was successful or not
 	 */
 	public boolean recover(final short p_owner, final short p_dest, final boolean p_useLiveData) {
@@ -84,8 +85,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-	}
+	protected void registerDefaultSettingsService(final Settings p_settings) {}
 
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
@@ -118,8 +118,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 	/**
 	 * Recovers all Chunks of given node on this node
-	 *
-	 * @param p_owner the NodeID of the node whose Chunks have to be restored
+	 * @param p_owner
+	 *            the NodeID of the node whose Chunks have to be restored
 	 */
 	private void recoverLocally(final short p_owner) {
 		long firstChunkIDOrRangeID;
@@ -149,7 +149,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 					// }
 					// if (chunks == null) {
 					// #if LOGGER >= ERROR
-					m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next backup peer.");
+					// /*m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next backup peer.");*/
 					// #endif /* LOGGER >= ERROR */
 					// continue;
 					// }
@@ -189,8 +189,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 	/**
 	 * Recovers all Chunks of given node from log file on this node
-	 *
-	 * @param p_owner the NodeID of the node whose Chunks have to be restored
+	 * @param p_owner
+	 *            the NodeID of the node whose Chunks have to be restored
 	 */
 	private void recoverLocallyFromFile(final short p_owner) {
 		String fileName;
@@ -246,8 +246,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 	/**
 	 * Recovers all Chunks of given node on this node
-	 *
-	 * @param p_owner the NodeID of the node whose Chunks have to be restored
+	 * @param p_owner
+	 *            the NodeID of the node whose Chunks have to be restored
 	 */
 	private int recoverBackupRange(final short p_owner, final long p_firstChunkIDOrRangeID) {
 		int ret = 0;
@@ -276,8 +276,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 	/**
 	 * Handles an incoming RecoverMessage
-	 *
-	 * @param p_message the RecoverMessage
+	 * @param p_message
+	 *            the RecoverMessage
 	 */
 	private void incomingRecoverMessage(final RecoverMessage p_message) {
 		// Outsource recovery to another thread to avoid blocking a message handler
@@ -293,8 +293,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 	/**
 	 * Handles an incoming GetChunkIDRequest
-	 *
-	 * @param p_request the RecoverBackupRangeRequest
+	 * @param p_request
+	 *            the RecoverBackupRangeRequest
 	 */
 	private void incomingRecoverBackupRangeRequest(final RecoverBackupRangeRequest p_request) {
 		// Outsource recovery to another thread to avoid blocking a message handler
