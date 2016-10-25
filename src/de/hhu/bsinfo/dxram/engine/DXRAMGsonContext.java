@@ -38,6 +38,9 @@ class DXRAMGsonContext {
 				.create();
 	}
 
+	/**
+	 * Gson serializer and deserizlier for components
+	 */
 	private static class ComponentSerializer
 			implements JsonDeserializer<AbstractDXRAMComponent>, JsonSerializer<AbstractDXRAMComponent> {
 		@Override
@@ -86,6 +89,9 @@ class DXRAMGsonContext {
 		}
 	}
 
+	/**
+	 * Gson serializer and deserializer for services
+	 */
 	private static class ServiceSerializer
 			implements JsonDeserializer<AbstractDXRAMService>, JsonSerializer<AbstractDXRAMService> {
 		@Override
