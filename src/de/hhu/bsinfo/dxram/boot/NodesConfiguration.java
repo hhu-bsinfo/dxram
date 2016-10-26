@@ -198,7 +198,8 @@ public final class NodesConfiguration {
 		@Override
 		public String toString() {
 			return "NodesConfigurationEntry [m_address=" + m_address + ", m_rack=" + m_rack + ", m_switch="
-					+ m_switch + ", m_role=" + m_role.getAcronym() + (m_readFromFile == 1 ? "true" : "false") + "]";
+					+ m_switch + ", m_role=" + m_role.getAcronym() + ", m_readFromFile="
+					+ (m_readFromFile == 1 ? "true" : "false") + "]";
 		}
 
 	}

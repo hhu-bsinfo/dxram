@@ -5,13 +5,13 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.data.Stat;
+
+import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
@@ -429,11 +429,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 					}
 					if (null != path) {
 						if (path.equals(prefix + "nodes/new")) {
+
 							childs = m_zookeeper.getChildren("nodes/new", this);
 							for (String child : childs) {
 								nodeID = Short.parseShort(child);
 								node = new String(m_zookeeper.getData("nodes/new/" + nodeID));
-								splits = node.split("/");
+								splits = node.split(":");
 
 								m_nodes.addNode(nodeID, new NodeEntry(new IPV4Unit(splits[0],
 										Integer.parseInt(splits[1])), (short) 0, (short) 0,
@@ -729,7 +730,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				splits = node.split("/");
 
 				m_nodes.addNode(nodeID,
-						new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), (short) 0, (short) 0,
+						new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])),
+								(short) 0, (short) 0,
 								NodeRole.toNodeRole(splits[2]), false));
 
 				if (nodeID == m_nodes.getOwnNodeID()) {
@@ -744,7 +746,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				m_logger.warn(this.getClass(), "node not in nodes.config (" + m_ownAddress + ")");
 				// #endif /* LOGGER >= WARN */
 
-				node = m_ownAddress + "/" + p_cmdLineNodeRole.getAcronym() + "/" + 0 + "/" + 0;
+				node = m_ownAddress + ":" + p_cmdLineNodeRole.getAcronym() + ":" + 0 + ":" + 0;
 
 				childs = m_zookeeper.getChildren("nodes/free");
 				if (!childs.isEmpty()) {

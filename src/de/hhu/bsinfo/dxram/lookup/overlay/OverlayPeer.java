@@ -1160,7 +1160,8 @@ public class OverlayPeer implements MessageReceiver {
 		JoinResponse joinResponse = null;
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering joinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
+		m_logger.trace(getClass(),
+				"Entering joinSuperpeerOverlay with: p_contactSuperpeer=" + NodeID.toHexString(p_contactSuperpeer));
 		// #endif /* LOGGER == TRACE */
 
 		contactSuperpeer = p_contactSuperpeer;
@@ -1175,10 +1176,11 @@ public class OverlayPeer implements MessageReceiver {
 		while (-1 != contactSuperpeer) {
 			// #if LOGGER == TRACE
 			m_logger.trace(getClass(),
-					"Contacting " + contactSuperpeer + " to get the responsible superpeer, I am "
+					"Contacting " + NodeID.toHexString(contactSuperpeer) + " to get the responsible superpeer, I am "
 							+ NodeID.toHexString(m_nodeID));
 			// #endif /* LOGGER == TRACE */
 
+			System.out.println(contactSuperpeer + ", " + m_nodeID);
 			joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, false);
 			if (m_network.sendSync(joinRequest) != NetworkErrorCodes.SUCCESS) {
 				// Contact superpeer is not available, get a new contact superpeer
