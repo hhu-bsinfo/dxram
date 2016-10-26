@@ -14,9 +14,9 @@ import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewSuccessorMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SendBackupsMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import org.apache.logging.log4j.LogManager;
@@ -140,14 +140,16 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 			LOGGER.trace("Performing stabilization by sending NodeID to predecessor=0x%X",
 					m_superpeer.getPredecessor());
 			// #endif /* LOGGER == TRACE */
-			if (m_network.sendMessage(new NotifyAboutNewSuccessorMessage(m_superpeer.getPredecessor(),
-					m_nodeID)) != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendMessage(new NotifyAboutNewSuccessorMessage(m_superpeer.getPredecessor(), m_nodeID));
+			} catch (final NetworkException e) {
 				// Predecessor is not available anymore, repeat it. New predecessor will be determined by failure
 				// handling, but lock must be released first.
 				m_overlayLock.readLock().unlock();
 				m_overlayLock.readLock().lock();
 				continue;
 			}
+
 			break;
 		}
 
@@ -155,14 +157,17 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 			// #if LOGGER == TRACE
 			LOGGER.trace("Performing stabilization by sending NodeID to successor=0x%X", m_superpeer.getSuccessor());
 			// #endif /* LOGGER == TRACE */
-			if (m_network.sendMessage(new NotifyAboutNewPredecessorMessage(m_superpeer.getSuccessor(),
-					m_nodeID)) != NetworkErrorCodes.SUCCESS) {
+
+			try {
+				m_network.sendMessage(new NotifyAboutNewPredecessorMessage(m_superpeer.getSuccessor(), m_nodeID));
+			} catch (final NetworkException e) {
 				// Predecessor is not available anymore, repeat it. New predecessor will be determined by failure
 				// handling, but lock must be released first.
 				m_overlayLock.readLock().unlock();
 				m_overlayLock.readLock().lock();
 				continue;
 			}
+
 			break;
 		}
 		m_overlayLock.readLock().unlock();
@@ -207,7 +212,10 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 			LOGGER.trace("Asking 0x%X about his successor to fix overlay", contactSuperpeer);
 			// #endif /* LOGGER == TRACE */
 			request = new AskAboutSuccessorRequest(contactSuperpeer);
-			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+
+			try {
+				m_network.sendSync(request);
+			} catch (final NetworkException e) {
 				// Superpeer is not available anymore, remove from superpeer array and try next superpeer
 				m_next--;
 				fixSuperpeers();
@@ -249,8 +257,10 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 				// #if LOGGER == TRACE
 				LOGGER.trace("Pinging 0x%X for heartbeat protocol", peer);
 				// #endif /* LOGGER == TRACE */
-				if (m_network
-						.sendMessage(new SendSuperpeersMessage(peer, m_otherSuperpeers)) != NetworkErrorCodes.SUCCESS) {
+
+				try {
+					m_network.sendMessage(new SendSuperpeersMessage(peer, m_otherSuperpeers));
+				} catch (final NetworkException e) {
 					// Peer is not available anymore, will be removed from peer array by failure handling
 				}
 			}
@@ -321,7 +331,9 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 						numberOfStorages, numberOfBarriers);
 				m_overlayLock.readLock().unlock();
 
-				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// CurrentSuperpeer is not available anymore, will be removed from superpeer array by failure
 					// handling
 					m_overlayLock.readLock().lock();
@@ -432,8 +444,9 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 				p_askAboutBackupsRequest.getNumberOfStorages(), p_askAboutBackupsRequest.getNumberOfBarriers());
 		m_overlayLock.readLock().unlock();
 
-		if (m_network.sendMessage(
-				new AskAboutBackupsResponse(p_askAboutBackupsRequest, missingMetadata)) != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendMessage(new AskAboutBackupsResponse(p_askAboutBackupsRequest, missingMetadata));
+		} catch (final NetworkException e) {
 			// Requesting superpeer is not available anymore, ignore request. Superpeer will be removed by failure
 			// handling.
 		}
@@ -454,8 +467,9 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 		m_overlayLock.readLock().lock();
 		successor = m_superpeer.getSuccessor();
 		m_overlayLock.readLock().unlock();
-		if (m_network.sendMessage(
-				new AskAboutSuccessorResponse(p_askAboutSuccessorRequest, successor)) != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendMessage(new AskAboutSuccessorResponse(p_askAboutSuccessorRequest, successor));
+		} catch (final NetworkException e) {
 			// Requesting superpeer is not available anymore, ignore request. Superpeer will be removed by failure
 			// handling.
 		}

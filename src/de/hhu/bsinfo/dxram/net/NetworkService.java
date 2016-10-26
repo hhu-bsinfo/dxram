@@ -4,10 +4,12 @@ package de.hhu.bsinfo.dxram.net;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
 
 /**
  * Service to access the backend network service for sending messages
@@ -62,20 +64,23 @@ public class NetworkService extends AbstractDXRAMService {
 	 * Send a message.
 	 *
 	 * @param p_message Message to send
-	 * @return NetworkErrorCode, refer to enum
+	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
+	 * @throws NetworkException                       If sending the message failed
 	 */
-	public NetworkErrorCodes sendMessage(final AbstractMessage p_message) {
-		return m_network.sendMessage(p_message);
+	public void sendMessage(final AbstractMessage p_message) throws NetworkException {
+		m_network.sendMessage(p_message);
 	}
 
 	/**
 	 * Send the Request and wait for fulfillment (wait for response).
 	 *
 	 * @param p_request The request to send.
-	 * @return 0 if successful, -1 if sending the request failed, 1 waiting for the response timed out.
+	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
+	 * @throws NetworkResponseTimeoutException        If the max. timeout was exceed
+	 * @throws NetworkException                       If sending the message failed
 	 */
-	public NetworkErrorCodes sendSync(final AbstractRequest p_request) {
-		return m_network.sendSync(p_request);
+	public void sendSync(final AbstractRequest p_request) throws NetworkException {
+		m_network.sendSync(p_request);
 	}
 
 	@Override

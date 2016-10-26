@@ -267,9 +267,9 @@ public final class NetworkHandler implements DataReceiver {
 	 * Connects a node.
 	 *
 	 * @param p_nodeID Node to connect
-	 * @return the status
+	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
 	 */
-	public int connectNode(final short p_nodeID) {
+	public void connectNode(final short p_nodeID) throws NetworkException {
 		// #if LOGGER == TRACE
 		LOGGER.trace("Entering connectNode with: p_nodeID=0x%X", p_nodeID);
 		// #endif /* LOGGER == TRACE */
@@ -280,23 +280,22 @@ public final class NetworkHandler implements DataReceiver {
 			// #if LOGGER >= DEBUG
 			LOGGER.debug("IOException during connection lookup", e);
 			// #endif /* LOGGER >= DEBUG */
-			return -1;
+			throw new NetworkDestinationUnreachableException(p_nodeID);
 		}
 
 		// #if LOGGER == TRACE
 		LOGGER.trace("Exiting connectNode");
 		// #endif /* LOGGER == TRACE */
-
-		return 0;
 	}
 
 	/**
 	 * Sends a message
 	 *
 	 * @param p_message the message to send
-	 * @return the status
+	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
+	 * @throws NetworkException                       If sending the message failed
 	 */
-	public int sendMessage(final AbstractMessage p_message) {
+	public void sendMessage(final AbstractMessage p_message) throws NetworkException {
 		AbstractConnection connection;
 
 		p_message.beforeSend();
@@ -329,7 +328,7 @@ public final class NetworkHandler implements DataReceiver {
 					// #if LOGGER >= DEBUG
 					LOGGER.debug("Connection invalid", e);
 					// #endif /* LOGGER >= DEBUG */
-					return -1;
+					throw new NetworkDestinationUnreachableException(p_message.getDestination());
 				}
 				try {
 					if (null != connection) {
@@ -338,13 +337,13 @@ public final class NetworkHandler implements DataReceiver {
 						// #if LOGGER >= DEBUG
 						LOGGER.debug("Connection invalid");
 						// #endif /* LOGGER >= DEBUG */
-						return -1;
+						throw new NetworkDestinationUnreachableException(p_message.getDestination());
 					}
 				} catch (final NetworkException e) {
 					// #if LOGGER >= DEBUG
-					LOGGER.debug("Message invalid", e);
+					LOGGER.debug("Sending data failed, Message invalid", e);
 					// #endif /* LOGGER >= DEBUG */
-					return -2;
+					throw new NetworkException("Sending data failed, invalid message", e);
 				}
 			}
 		}
@@ -354,8 +353,6 @@ public final class NetworkHandler implements DataReceiver {
 		// #if LOGGER == TRACE
 		LOGGER.trace("Exiting sendMessage");
 		// #endif /* LOGGER == TRACE */
-
-		return 0;
 	}
 
 	/**

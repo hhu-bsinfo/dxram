@@ -23,10 +23,10 @@ import de.hhu.bsinfo.dxram.migration.messages.MigrationRemoteMessage;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -94,7 +94,9 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 					// #endif /* LOGGER == TRACE */
 
 					MigrationRequest request = new MigrationRequest(p_target, new Chunk[] {chunk});
-					if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+					try {
+						m_network.sendSync(request);
+					} catch (final NetworkException e) {
 						// #if LOGGER >= ERROR
 						LOGGER.error("Could not migrate chunks");
 						// #endif /* LOGGER >= ERROR */
@@ -124,7 +126,12 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 						if (backupPeers != null) {
 							for (int i = 0; i < backupPeers.length; i++) {
 								if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
-									m_network.sendMessage(new RemoveMessage(backupPeers[i], new Long[] {p_chunkID}));
+									try {
+										m_network
+												.sendMessage(new RemoveMessage(backupPeers[i], new Long[] {p_chunkID}));
+									} catch (final NetworkException e) {
+
+									}
 								}
 							}
 						}
@@ -150,7 +157,11 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	 */
 	public void targetMigrate(final long p_chunkID, final short p_target) {
 
-		m_network.sendMessage(new MigrationRemoteMessage(ChunkID.getCreatorID(p_chunkID), p_chunkID, p_target));
+		try {
+			m_network.sendMessage(new MigrationRemoteMessage(ChunkID.getCreatorID(p_chunkID), p_chunkID, p_target));
+		} catch (final NetworkException e) {
+
+		}
 		m_lookup.invalidate(p_chunkID);
 	}
 
@@ -215,8 +226,9 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 						// #if LOGGER >= INFO
 						LOGGER.info("Sending %d Chunks (%d Bytes) to 0x%X", counter, size, p_target);
 						// #endif /* LOGGER >= INFO */
-						if (m_network.sendSync(new MigrationRequest(p_target,
-								Arrays.copyOf(chunks, counter))) != NetworkErrorCodes.SUCCESS) {
+						try {
+							m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter)));
+						} catch (final NetworkException e) {
 							// #if LOGGER >= ERROR
 							LOGGER.error("Could not migrate chunks");
 							// #endif /* LOGGER >= ERROR */
@@ -236,7 +248,11 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 						if (backupPeers != null) {
 							for (int i = 0; i < backupPeers.length; i++) {
 								if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
-									m_network.sendMessage(new RemoveMessage(backupPeers[i], chunkIDs));
+									try {
+										m_network.sendMessage(new RemoveMessage(backupPeers[i], chunkIDs));
+									} catch (final NetworkException e) {
+
+									}
 								}
 							}
 						}
@@ -340,7 +356,12 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 		if (!m_chunk.putForeignChunks((Chunk[]) p_request.getDataStructures())) {
 			response.setStatusCode((byte) -1);
 		}
-		m_network.sendMessage(response);
+
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
+
+		}
 	}
 
 	/**

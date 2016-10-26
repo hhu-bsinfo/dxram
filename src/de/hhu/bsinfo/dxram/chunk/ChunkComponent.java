@@ -15,6 +15,7 @@ import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NodeID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -106,7 +107,11 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 								ChunkID.toHexString(p_dataStructure.getID()), NodeID.toHexString(peer));
 						// #endif /* LOGGER == TRACE */
 
-						m_network.sendMessage(new LogMessage(peer, p_dataStructure));
+						try {
+							m_network.sendMessage(new LogMessage(peer, p_dataStructure));
+						} catch (final NetworkException e) {
+
+						}
 					}
 				}
 			}
@@ -189,7 +194,11 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 				if (backupPeers != null) {
 					for (short backupPeer : backupPeers) {
 						if (backupPeer != m_boot.getNodeID() && backupPeer != -1) {
-							m_network.sendMessage(new LogMessage(backupPeer, rangeID, new Chunk[] {chunk}));
+							try {
+								m_network.sendMessage(new LogMessage(backupPeer, rangeID, new Chunk[] {chunk}));
+							} catch (NetworkException e) {
+
+							}
 						}
 					}
 				}

@@ -39,11 +39,11 @@ import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
@@ -158,14 +158,15 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		} else {
 			// grab from remote
 			StatusRequest request = new StatusRequest(p_nodeID);
-			NetworkErrorCodes err = m_network.sendSync(request);
-			if (err != NetworkErrorCodes.SUCCESS) {
-				// #if LOGGER >= ERROR
-				LOGGER.error("Sending get status request to peer %s failed: %s", NodeID.toHexString(p_nodeID), err);
-				// #endif /* LOGGER >= ERROR */
-			} else {
+			try {
+				m_network.sendSync(request);
+
 				StatusResponse response = request.getResponse(StatusResponse.class);
 				status = response.getStatus();
+			} catch (final NetworkException e) {
+				// #if LOGGER >= ERROR
+				LOGGER.error("Sending get status request to peer %s failed: %s", NodeID.toHexString(p_nodeID), e);
+				// #endif /* LOGGER >= ERROR */
 			}
 		}
 
@@ -428,14 +429,15 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		// #endif /* STATISTICS */
 
 		CreateRequest request = new CreateRequest(p_peer, p_sizes);
-		NetworkErrorCodes error = m_network.sendSync(request);
-		if (error != NetworkErrorCodes.SUCCESS) {
-			// #if LOGGER >= ERROR
-			LOGGER.error("Sending chunk create request to peer %s failed: %s", NodeID.toHexString(p_peer), error);
-			// #endif /* LOGGER >= ERROR */
-		} else {
+		try {
+			m_network.sendSync(request);
+
 			CreateResponse response = request.getResponse(CreateResponse.class);
 			chunkIDs = response.getChunkIDs();
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Sending chunk create request to peer %s failed: %s", NodeID.toHexString(p_peer), e);
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		// #ifdef STATISTICS
@@ -590,10 +592,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			} else {
 				// Remote remove from specified peer
 				RemoveRequest request = new RemoveRequest(peer, remoteChunks.toArray(new Long[0]));
-				NetworkErrorCodes error = m_network.sendSync(request);
-				if (error != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// #if LOGGER >= ERROR
-					LOGGER.error("Sending chunk remove request to peer 0x%X failed: %s", peer, error);
+					LOGGER.error("Sending chunk remove request to peer 0x%X failed: %s", peer, e);
 					// #endif /* LOGGER >= ERROR */
 					continue;
 				}
@@ -634,7 +637,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 						(short) ((backupPeersAsLong & 0x0000FFFF00000000L) >> 32)};
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
-						m_network.sendMessage(new RemoveMessage(backupPeers[i], ids));
+						try {
+							m_network.sendMessage(new RemoveMessage(backupPeers[i], ids));
+						} catch (final NetworkException e) {
+
+						}
 					}
 				}
 			}
@@ -787,10 +794,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				ArrayList<DataStructure> chunksToPut = entry.getValue();
 				PutRequest request = new PutRequest(peer, p_chunkUnlockOperation,
 						chunksToPut.toArray(new DataStructure[chunksToPut.size()]));
-				NetworkErrorCodes error = m_network.sendSync(request);
-				if (error != NetworkErrorCodes.SUCCESS) {
+
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// #if LOGGER >= ERROR
-					LOGGER.error("Sending chunk put request to peer 0x%X failed: %s", peer, error);
+					LOGGER.error("Sending chunk put request to peer 0x%X failed: %s", peer, e);
 					// #endif /* LOGGER >= ERROR */
 
 					// TODO
@@ -837,7 +846,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 						LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeers[i]);
 						// #endif /* LOGGER == TRACE */
 
-						m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
+						try {
+							m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
+						} catch (final NetworkException e) {
+
+						}
 					}
 				}
 			}
@@ -957,10 +970,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			} else {
 				// Remote get from specified peer
 				GetRequest request = new GetRequest(peer, remoteChunks.toArray(new DataStructure[remoteChunks.size()]));
-				NetworkErrorCodes error = m_network.sendSync(request);
-				if (error != NetworkErrorCodes.SUCCESS) {
+
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// #if LOGGER >= ERROR
-					LOGGER.error("Sending chunk get request to peer 0x%X failed: %", peer, error);
+					LOGGER.error("Sending chunk get request to peer 0x%X failed: %", peer, e);
 					// #endif /* LOGGER >= ERROR */
 					continue;
 				}
@@ -1087,10 +1102,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				}
 				GetRequest request = new GetRequest(peer, chunks);
 				// mike foo requests chunk
-				NetworkErrorCodes error = m_network.sendSync(request);
-				if (error != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// #if LOGGER >= ERROR
-					LOGGER.error("Sending chunk get request to peer 0x%X failed: %s", peer, error);
+					LOGGER.error("Sending chunk get request to peer 0x%X failed: %s", peer, e);
 					// #endif /* LOGGER >= ERROR */
 					continue;
 				}
@@ -1305,10 +1321,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			list = getAllLocalChunkIDRanges();
 		} else {
 			GetLocalChunkIDRangesRequest request = new GetLocalChunkIDRangesRequest(p_nodeID);
-			NetworkErrorCodes err = m_network.sendSync(request);
-			if (err != NetworkErrorCodes.SUCCESS) {
+
+			try {
+				m_network.sendSync(request);
+			} catch (final NetworkException e) {
 				// #if LOGGER >= ERROR
-				LOGGER.error("Sending request to get chunk id ranges of node 0x%X failed: %s", p_nodeID, err);
+				LOGGER.error("Sending request to get chunk id ranges of node 0x%X failed: %s", p_nodeID, e);
 				// #endif /* LOGGER >= ERROR */
 				return null;
 			}
@@ -1366,10 +1384,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			list = getAllLocalChunkIDRanges();
 		} else {
 			GetMigratedChunkIDRangesRequest request = new GetMigratedChunkIDRangesRequest(p_nodeID);
-			NetworkErrorCodes err = m_network.sendSync(request);
-			if (err != NetworkErrorCodes.SUCCESS) {
+
+			try {
+				m_network.sendSync(request);
+			} catch (final NetworkException e) {
 				// #if LOGGER >= ERROR
-				LOGGER.error("Sending request to get chunk id ranges of node 0x%X failed: %s", p_nodeID, err);
+				LOGGER.error("Sending request to get chunk id ranges of node 0x%X failed: %s", p_nodeID, e);
 				// #endif /* LOGGER >= ERROR */
 				return null;
 			}
@@ -1550,12 +1570,14 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_memoryManager.unlockAccess();
 
 		GetResponse response = new GetResponse(p_request, numChunksGot, chunks);
-		NetworkErrorCodes error = m_network.sendMessage(response);
-		// #if LOGGER >= ERROR
-		if (error != NetworkErrorCodes.SUCCESS) {
-			LOGGER.error("Sending GetResponse for %d chunks failed: %s", numChunksGot, error);
+
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Sending GetResponse for %d chunks failed: %s", numChunksGot, e);
+			// #endif /* LOGGER >= ERROR */
 		}
-		// #endif /* LOGGER >= ERROR */
 
 		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingGet);
@@ -1628,12 +1650,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			response = new PutResponse(p_request, statusChunks);
 		}
 
-		NetworkErrorCodes error = m_network.sendMessage(response);
-		// #if LOGGER >= ERROR
-		if (error != NetworkErrorCodes.SUCCESS) {
-			LOGGER.error("Sending chunk put respond to request %s failed: %s", p_request, error);
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Sending chunk put respond to request %s failed: %s", p_request, e);
+			// #endif /* LOGGER >= ERROR */
 		}
-		// #endif /* LOGGER >= ERROR */
 
 		// Send backups
 		if (m_backup.isActive() && remoteChunksByBackupPeers != null) {
@@ -1653,7 +1676,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 						LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeers[i]);
 						// #endif /* LOGGER == TRACE */
 
-						m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
+						try {
+							m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
+						} catch (final NetworkException e) {
+
+						}
 					}
 				}
 			}
@@ -1721,12 +1748,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			response = new RemoveResponse(p_request, chunkStatusCodes);
 		}
 
-		NetworkErrorCodes error = m_network.sendMessage(response);
-		// #if LOGGER >= ERROR
-		if (error != NetworkErrorCodes.SUCCESS) {
-			LOGGER.error("Sending chunk remove respond to request %s failed: ", p_request, error);
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Sending chunk remove respond to request %s failed: ", p_request, e);
+			// #endif /* LOGGER >= ERROR */
 		}
-		// #endif /* LOGGER >= ERROR */
 
 		// TODO for migrated chunks, send remove request to peer currently holding the chunk data
 		// for (int i = 0; i < chunkIDs.length; i++) {
@@ -1760,7 +1788,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 						(short) ((backupPeersAsLong & 0x0000FFFF00000000L) >> 32)};
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
-						m_network.sendMessage(new RemoveMessage(backupPeers[i], ids));
+						try {
+							m_network.sendMessage(new RemoveMessage(backupPeers[i], ids));
+						} catch (final NetworkException e) {
+
+						}
 					}
 				}
 			}
@@ -1795,12 +1827,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_memoryManager.unlockManage();
 
 		CreateResponse response = new CreateResponse(p_request, chunkIDs);
-		NetworkErrorCodes error = m_network.sendMessage(response);
-		// #if LOGGER >= ERROR
-		if (error != NetworkErrorCodes.SUCCESS) {
-			LOGGER.error("Sending chunk create respond to request %s failed: ", p_request, error);
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Sending chunk create respond to request %s failed: ", p_request, e);
+			// #endif /* LOGGER >= ERROR */
 		}
-		// #endif /* LOGGER >= ERROR */
 
 		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingCreate);
@@ -1816,12 +1849,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		Status status = getStatus();
 
 		StatusResponse response = new StatusResponse(p_request, status);
-		NetworkErrorCodes error = m_network.sendMessage(response);
-		// #if LOGGER >= ERROR
-		if (error != NetworkErrorCodes.SUCCESS) {
-			LOGGER.error("Sending status respond to request %s failed: %s", p_request, error);
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Sending status respond to request %s failed: %s", p_request, e);
+			// #endif /* LOGGER >= ERROR */
 		}
-		// #endif /* LOGGER >= ERROR */
 	}
 
 	/**
@@ -1844,12 +1878,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		GetLocalChunkIDRangesResponse response = new GetLocalChunkIDRangesResponse(p_request, cidRangesLocalChunks);
-		NetworkErrorCodes error = m_network.sendMessage(response);
-		// #if LOGGER >= ERROR
-		if (error != NetworkErrorCodes.SUCCESS) {
-			LOGGER.error("Responding to local chunk id ranges request %s failed: %s", p_request, error);
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Responding to local chunk id ranges request %s failed: %s", p_request, e);
+			// #endif /* LOGGER >= ERROR */
 		}
-		// #endif /* LOGGER >= ERROR */
 	}
 
 	/**
@@ -1873,12 +1908,14 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		GetMigratedChunkIDRangesResponse response =
 				new GetMigratedChunkIDRangesResponse(p_request, cidRangesMigratedChunks);
-		NetworkErrorCodes error = m_network.sendMessage(response);
-		// #if LOGGER >= ERROR
-		if (error != NetworkErrorCodes.SUCCESS) {
-			LOGGER.error("Responding to migrated chunk id ranges request %s failed: %s", p_request, error);
+
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Responding to migrated chunk id ranges request %s failed: %s", p_request, e);
+			// #endif /* LOGGER >= ERROR */
 		}
-		// #endif /* LOGGER >= ERROR */
 	}
 
 	/**

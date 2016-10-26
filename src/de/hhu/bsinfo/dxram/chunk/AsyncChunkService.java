@@ -21,11 +21,11 @@ import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import org.apache.logging.log4j.LogManager;
@@ -204,10 +204,11 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 				ArrayList<DataStructure> chunksToPut = entry.getValue();
 				PutMessage message = new PutMessage(peer, p_chunkUnlockOperation,
 						chunksToPut.toArray(new DataStructure[chunksToPut.size()]));
-				NetworkErrorCodes error = m_network.sendMessage(message);
-				if (error != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendMessage(message);
+				} catch (final NetworkException e) {
 					// #if LOGGER >= ERROR
-					LOGGER.error("Sending chunk put message to peer %s failed: %s", NodeID.toHexString(peer), error);
+					LOGGER.error("Sending chunk put message to peer %s failed: %s", NodeID.toHexString(peer), e);
 					// #endif /* LOGGER >= ERROR */
 
 					// TODO

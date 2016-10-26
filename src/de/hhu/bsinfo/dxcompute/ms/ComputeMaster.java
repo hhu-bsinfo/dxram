@@ -24,8 +24,8 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.utils.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -315,10 +315,11 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 			ExecuteTaskRequest request =
 					new ExecuteTaskRequest(slave, m_executeBarrierIdentifier, ctxData, taskPayload);
 
-			NetworkErrorCodes err = m_network.sendSync(request);
-			if (err != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendSync(request);
+			} catch (final NetworkException e) {
 				// #if LOGGER >= ERROR
-				LOGGER.error("Sending task to slave 0x%X failed: %s", slave, err);
+				LOGGER.error("Sending task to slave 0x%X failed: %s", slave, e);
 				// #endif /* LOGGER >= ERROR */
 				// remove slave from list
 				m_signedOnSlaves.remove(slave);
@@ -441,17 +442,19 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 			SlaveJoinResponse response = new SlaveJoinResponse(p_message, m_executionBarrierId);
 			response.setStatusCode((byte) 0);
-			NetworkErrorCodes err = m_network.sendMessage(response);
-			if (err != NetworkErrorCodes.SUCCESS) {
-				// #if LOGGER >= ERROR
-				LOGGER.error("Sending response to join request of slave 0x%X failed: %s", p_message.getSource(), err);
-				// #endif /* LOGGER >= ERROR */
-				// remove slave
-				m_signedOnSlaves.remove(p_message.getSource());
-			} else {
+
+			try {
+				m_network.sendMessage(response);
+
 				// #if LOGGER >= INFO
 				LOGGER.info("Slave (%d) 0x%X has joined", (m_signedOnSlaves.size() - 1), p_message.getSource());
 				// #endif /* LOGGER >= INFO */
+			} catch (final NetworkException e) {
+				// #if LOGGER >= ERROR
+				LOGGER.error("Sending response to join request of slave 0x%X failed: %s", p_message.getSource(), e);
+				// #endif /* LOGGER >= ERROR */
+				// remove slave
+				m_signedOnSlaves.remove(p_message.getSource());
 			}
 
 			m_joinLock.unlock();
@@ -463,10 +466,12 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 			// send response that joining is not possible currently
 			SlaveJoinResponse response = new SlaveJoinResponse(p_message, BarrierID.INVALID_ID);
 			response.setStatusCode((byte) 1);
-			NetworkErrorCodes err = m_network.sendMessage(response);
-			if (err != NetworkErrorCodes.SUCCESS) {
+
+			try {
+				m_network.sendMessage(response);
+			} catch (final NetworkException e) {
 				// #if LOGGER >= ERROR
-				LOGGER.error("Sending response to join request of slave 0x%X failed: %s", p_message.getSource(), err);
+				LOGGER.error("Sending response to join request of slave 0x%X failed: %s", p_message.getSource(), e);
 				// #endif /* LOGGER >= ERROR */
 			}
 		}
@@ -483,11 +488,12 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 				// the slave requested aborting the currently running task
 				// send an abort to all other slaves as well
 				for (short slaveNodeId : m_signedOnSlaves) {
-					NetworkErrorCodes err =
-							m_network.sendMessage(new SignalMessage(slaveNodeId, p_message.getSignal()));
-					if (err != NetworkErrorCodes.SUCCESS) {
+
+					try {
+						m_network.sendMessage(new SignalMessage(slaveNodeId, p_message.getSignal()));
+					} catch (final NetworkException e) {
 						// #if LOGGER >= ERROR
-						LOGGER.error("Sending signal to slave 0x%X failed: %s", p_message.getSource(), err);
+						LOGGER.error("Sending signal to slave 0x%X failed: %s", p_message.getSource(), e);
 						// #endif /* LOGGER >= ERROR */
 					}
 				}

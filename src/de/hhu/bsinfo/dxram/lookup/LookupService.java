@@ -15,10 +15,10 @@ import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.LookupMessages;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,15 +82,13 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	private void incomingRequestLookupTreeOnServerMessage(final GetLookupTreeRequest p_message) {
 		LookupTree tree = m_lookup.superPeerGetLookUpTree(p_message.getTreeNodeID());
 
-		final NetworkErrorCodes err =
-				m_network.sendMessage(new GetLookupTreeResponse(p_message, tree));
-
-		if (err != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendMessage(new GetLookupTreeResponse(p_message, tree));
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Could not acknowledge initilization of backup range: %s", err);
+			LOGGER.error("Could not acknowledge initilization of backup range: %s", e);
 			// #endif /* LOGGER >= ERROR */
 		}
-
 	}
 
 	@Override
@@ -145,7 +143,9 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 		lookupTreeRequest = new GetLookupTreeRequest(p_superPeerNid, p_nodeId);
 
-		if (m_network.sendSync(lookupTreeRequest) != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendSync(lookupTreeRequest);
+		} catch (final NetworkException e) {
 			/* TODO err handling */
 		}
 
@@ -167,9 +167,13 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 		GetMetadataSummaryResponse response;
 
 		request = new GetMetadataSummaryRequest(p_nodeID);
-		if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+
+		try {
+			m_network.sendSync(request);
+		} catch (final NetworkException e) {
 			return "Error!";
 		}
+
 		response = request.getResponse(GetMetadataSummaryResponse.class);
 		ret = response.getMetadataSummary();
 

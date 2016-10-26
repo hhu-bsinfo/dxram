@@ -14,10 +14,10 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import org.apache.logging.log4j.LogManager;
@@ -151,10 +151,11 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 			for (Short nodeId : nodeIds) {
 				if (nodeId != m_boot.getNodeID() && m_boot.getNodeRole(nodeId) == NodeRole.PEER) {
 					ShutdownMessage message = new ShutdownMessage(nodeId, p_hardShutdown);
-					NetworkErrorCodes err = m_network.sendMessage(message);
-					if (err != NetworkErrorCodes.SUCCESS) {
+					try {
+						m_network.sendMessage(message);
+					} catch (final NetworkException e) {
 						// #if LOGGER >= ERROR
-						LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(nodeId), err);
+						LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(nodeId), e);
 						// #endif /* LOGGER >= ERROR */
 						return false;
 					}
@@ -172,10 +173,12 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 			for (Short nodeId : nodeIds) {
 				if (nodeId != m_boot.getNodeID() && m_boot.getNodeRole(nodeId) == NodeRole.SUPERPEER) {
 					ShutdownMessage message = new ShutdownMessage(nodeId, p_hardShutdown);
-					NetworkErrorCodes err = m_network.sendMessage(message);
-					if (err != NetworkErrorCodes.SUCCESS) {
+
+					try {
+						m_network.sendMessage(message);
+					} catch (final NetworkException e) {
 						// #if LOGGER >= ERROR
-						LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(nodeId), err);
+						LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(nodeId), e);
 						// #endif /* LOGGER >= ERROR */
 						return false;
 					}
@@ -187,10 +190,12 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 		} else {
 			ShutdownMessage message = new ShutdownMessage(p_nodeID, p_hardShutdown);
-			NetworkErrorCodes err = m_network.sendMessage(message);
-			if (err != NetworkErrorCodes.SUCCESS) {
+
+			try {
+				m_network.sendMessage(message);
+			} catch (final NetworkException e) {
 				// #if LOGGER >= ERROR
-				LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(p_nodeID), err);
+				LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(p_nodeID), e);
 				// #endif /* LOGGER >= ERROR */
 				return false;
 			}
@@ -218,10 +223,11 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 		}
 
 		RebootMessage message = new RebootMessage(p_nodeID);
-		NetworkErrorCodes err = m_network.sendMessage(message);
-		if (err != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendMessage(message);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Rebooting node %s failed: %s", NodeID.toHexString(p_nodeID), err);
+			LOGGER.error("Rebooting node %s failed: %s", NodeID.toHexString(p_nodeID), e);
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}

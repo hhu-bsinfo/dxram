@@ -15,13 +15,13 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverMessage;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -73,8 +73,9 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 			// #if LOGGER >= INFO
 			LOGGER.info("Forwarding recovery to 0x%X", p_dest);
 			// #endif /* LOGGER >= INFO */
-			final NetworkErrorCodes err = m_network.sendMessage(new RecoverMessage(p_dest, p_owner, p_useLiveData));
-			if (err != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendMessage(new RecoverMessage(p_dest, p_owner, p_useLiveData));
+			} catch (final NetworkException e) {
 				// #if LOGGER >= ERROR
 				LOGGER.error("Could not forward command to 0x%X. Aborting recovery!", p_dest);
 				// #endif /* LOGGER >= ERROR */
@@ -298,8 +299,12 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 	private void incomingRecoverBackupRangeRequest(final RecoverBackupRangeRequest p_request) {
 		// Outsource recovery to another thread to avoid blocking a message handler
 		Runnable task = () -> {
-			m_network.sendMessage(new RecoverBackupRangeResponse(p_request,
-					recoverBackupRange(p_request.getOwner(), p_request.getFirstChunkIDOrRangeID())));
+			try {
+				m_network.sendMessage(new RecoverBackupRangeResponse(p_request,
+						recoverBackupRange(p_request.getOwner(), p_request.getFirstChunkIDOrRangeID())));
+			} catch (final NetworkException e) {
+
+			}
 		};
 		new Thread(task).start();
 	}

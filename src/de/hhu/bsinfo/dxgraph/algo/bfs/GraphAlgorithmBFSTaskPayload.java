@@ -34,11 +34,11 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import org.apache.logging.log4j.LogManager;
@@ -168,7 +168,11 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
 				// send ping message to force open socket connections in order
 				for (short slave : m_ctx.getCtxData().getSlaveNodeIds()) {
 					if (slave != m_nodeId) {
-						m_networkService.sendMessage(new PingMessage(slave));
+						try {
+							m_networkService.sendMessage(new PingMessage(slave));
+						} catch (final NetworkException e) {
+
+						}
 					}
 				}
 
@@ -590,16 +594,17 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
 									new BFSTerminateMessage(slavesNodeIds[i], m_nextFrontier.size(),
 											numEdgesInNextFrontier);
 							// System.out.println("<<<<< BFSTerminateMessage " + NodeID.toHexString(slavesNodeIds[i]));
-							NetworkErrorCodes err = m_networkService.sendMessage(msg);
-							// System.out.println("<<<<<??? BFSTerminateMessage " +
-							// NodeID.toHexString(slavesNodeIds[i]));
-							if (err != NetworkErrorCodes.SUCCESS) {
-								LOGGER.error("Sending bfs terminate message to 0x%X failed: %s", slavesNodeIds[i], err);
+							try {
+								m_networkService.sendMessage(msg);
+							} catch (final NetworkException e) {
+								LOGGER.error("Sending bfs terminate message to 0x%X failed: %s", slavesNodeIds[i], e);
 								// abort execution and have the master send a kill signal
 								// for this task to all other slaves
 								m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
 								return;
 							}
+							// System.out.println("<<<<<??? BFSTerminateMessage " +
+							// NodeID.toHexString(slavesNodeIds[i]));
 						}
 					}
 
@@ -773,9 +778,12 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
 				}
 
 				if (reply.getNumVerticesInBatch() > 0) {
-					NetworkErrorCodes err = m_networkService.sendMessage(reply);
-					if (err != NetworkErrorCodes.SUCCESS) {
-						LOGGER.error("Sending reply for bottom up vertices next frontier failed: %s", err);
+					try {
+						m_networkService.sendMessage(reply);
+					} catch (final NetworkException e) {
+						// #if LOGGER >= ERROR
+						LOGGER.error("Sending reply for bottom up vertices next frontier failed: %s", e);
+						// #endif /* LOGGER >= ERROR */
 					}
 
 					m_syncBFSFinished.incrementSentVertexMsgCountLocal();
@@ -1193,7 +1201,9 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
 						if (slaveNodeId != m_nodeId) {
 							VerticesForNextFrontierMessage msg = m_remoteMessages[slaveNodeId & 0xFFFF];
 							if (msg != null && msg.getBatchSize() > 0) {
-								if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
+								try {
+									m_networkService.sendMessage(msg);
+								} catch (final NetworkException e) {
 									// #if LOGGER >= ERROR
 									LOGGER.error("Sending vertex message to node 0x%X failed", msg.getDestination());
 									// #endif /* LOGGER >= ERROR */
@@ -1283,7 +1293,9 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
 								// add vertex to message batch
 								if (!msg.addVertex(vertex.getID())) {
 									// vertex does not fit anymore, full
-									if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
+									try {
+										m_networkService.sendMessage(msg);
+									} catch (final NetworkException e) {
 										// #if LOGGER >= ERROR
 										LOGGER.error("Sending vertex message to node 0x%X failed", neighborCreatorId);
 										// #endif /* LOGGER >= ERROR */
@@ -1338,7 +1350,9 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
 								// add vertex to message batch
 								if (!msg.addVertex(neighbour)) {
 									// neighbor does not fit anymore, full
-									if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
+									try {
+										m_networkService.sendMessage(msg);
+									} catch (final NetworkException e) {
 										// #if LOGGER >= ERROR
 										LOGGER.error("Sending vertex message to node 0x%X failed", neighborCreatorId);
 										// #endif /* LOGGER >= ERROR */

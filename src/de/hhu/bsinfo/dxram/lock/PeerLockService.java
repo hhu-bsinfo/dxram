@@ -21,12 +21,14 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -133,10 +135,12 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		}
 
 		GetLockedListRequest request = new GetLockedListRequest(p_nodeId);
-		NetworkErrorCodes err = m_network.sendSync(request);
-		if (err != NetworkErrorCodes.SUCCESS) {
+
+		try {
+			m_network.sendSync(request);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Sending request to get locked list from node 0x%X failed: %s", p_nodeId, err);
+			LOGGER.error("Sending request to get locked list from node 0x%X failed: %s", p_nodeId, e);
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
@@ -198,41 +202,35 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 						// Remote lock
 						LockRequest request = new LockRequest(peer, p_writeLock, p_chunkID);
-						NetworkErrorCodes errNet = m_network.sendSync(request);
-						if (errNet != NetworkErrorCodes.SUCCESS) {
-							switch (errNet) {
-								case DESTINATION_UNREACHABLE:
-									err = ErrorCode.PEER_NOT_AVAILABLE;
-									break;
-								case SEND_DATA:
-									m_lookup.invalidate(p_chunkID);
-									err = ErrorCode.NETWORK;
-									break;
-								case RESPONSE_TIMEOUT:
-									err = ErrorCode.NETWORK;
-									break;
-								default:
-									assert false;
-									break;
-							}
 
+						try {
+							m_network.sendSync(request);
+						} catch (final NetworkDestinationUnreachableException e) {
+							err = ErrorCode.PEER_NOT_AVAILABLE;
 							break;
-						} else {
-							LockResponse response = request.getResponse(LockResponse.class);
-							if (response != null) {
-								if (response.getStatusCode() == 0) {
-									// successfully locked on remote
-									err = ErrorCode.SUCCESS;
-									break;
-								} else if (response.getStatusCode() == -1) {
-									// timeout for now, but possible retry
-									err = ErrorCode.LOCK_TIMEOUT;
-									idle = true;
-								}
-							} else {
-								err = ErrorCode.NETWORK;
+						} catch (final NetworkResponseTimeoutException e) {
+							err = ErrorCode.NETWORK;
+							break;
+						} catch (final NetworkException e) {
+							m_lookup.invalidate(p_chunkID);
+							err = ErrorCode.NETWORK;
+							break;
+						}
+
+						LockResponse response = request.getResponse(LockResponse.class);
+						if (response != null) {
+							if (response.getStatusCode() == 0) {
+								// successfully locked on remote
+								err = ErrorCode.SUCCESS;
 								break;
+							} else if (response.getStatusCode() == -1) {
+								// timeout for now, but possible retry
+								err = ErrorCode.LOCK_TIMEOUT;
+								idle = true;
 							}
+						} else {
+							err = ErrorCode.NETWORK;
+							break;
 						}
 					} while (p_timeout == MS_TIMEOUT_UNLIMITED || System.currentTimeMillis() - startTime < p_timeout);
 				}
@@ -294,20 +292,14 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 					} else {
 						// Remote release
 						UnlockMessage message = new UnlockMessage(primaryPeer, p_writeLock, p_chunkID);
-						NetworkErrorCodes errNet = m_network.sendMessage(message);
-						if (errNet != NetworkErrorCodes.SUCCESS) {
-							switch (errNet) {
-								case DESTINATION_UNREACHABLE:
-									err = ErrorCode.PEER_NOT_AVAILABLE;
-									break;
-								case SEND_DATA:
-									m_lookup.invalidate(p_chunkID);
-									err = ErrorCode.NETWORK;
-									break;
-								default:
-									assert false;
-									break;
-							}
+
+						try {
+							m_network.sendMessage(message);
+						} catch (final NetworkDestinationUnreachableException e) {
+							err = ErrorCode.PEER_NOT_AVAILABLE;
+						} catch (final NetworkException e) {
+							m_lookup.invalidate(p_chunkID);
+							err = ErrorCode.NETWORK;
 						}
 					}
 				}
@@ -383,10 +375,14 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		success = m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(),
 				p_request.isWriteLockOperation(), (int) m_remoteLockTryTimeout.getMs());
 
-		if (success) {
-			m_network.sendMessage(new LockResponse(p_request, (byte) 0));
-		} else {
-			m_network.sendMessage(new LockResponse(p_request, (byte) -1));
+		try {
+			if (success) {
+				m_network.sendMessage(new LockResponse(p_request, (byte) 0));
+			} else {
+				m_network.sendMessage(new LockResponse(p_request, (byte) -1));
+			}
+		} catch (final NetworkException e) {
+
 		}
 
 		// #ifdef STATISTICS
@@ -420,11 +416,13 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		ArrayList<Pair<Long, Short>> list = m_lock.getLockedList();
 
 		GetLockedListResponse response = new GetLockedListResponse(p_request, list);
-		NetworkErrorCodes err = m_network.sendMessage(response);
-		// #if LOGGER >= ERROR
-		if (err != NetworkErrorCodes.SUCCESS) {
-			LOGGER.error("Sending locked list response for request %s failed: %s", p_request, err);
+
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Sending locked list response for request %s failed: %s", p_request, e);
+			// #endif /* LOGGER >= ERROR */
 		}
-		// #endif /* LOGGER >= ERROR */
 	}
 }

@@ -15,7 +15,7 @@ import de.hhu.bsinfo.utils.unit.IPV4Unit;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 9.12.15
  */
 public final class NodesConfiguration {
-	
+
 	private NodeEntry[] m_nodes = new NodeEntry[NodeID.MAX_ID + 1];
 	private short m_ownID = NodeID.INVALID_ID;
 
@@ -124,14 +124,13 @@ public final class NodesConfiguration {
 		private short m_rack = 0;
 		@Expose
 		private short m_switch = 0;
-
-		// private state
-		private byte m_readFromFile;
+		@Expose
+		private byte m_readFromFile = 1;
 
 		/**
 		 * Creates an instance of NodesConfigurationEntry
 		 *
-		 * @param p_address		 addres of the node
+		 * @param p_address      addres of the node
 		 * @param p_rack         the rack of the node
 		 * @param p_switch       the switcharea of the node
 		 * @param p_role         the role of the node

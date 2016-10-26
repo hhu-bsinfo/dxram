@@ -17,13 +17,13 @@ import de.hhu.bsinfo.dxram.failure.messages.FailureRequest;
 import de.hhu.bsinfo.dxram.failure.messages.FailureResponse;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -126,11 +126,13 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 				LOGGER.debug("ConnectionLostEvent triggered: 0x%X", nodeID);
 				// #endif /* LOGGER == DEBUG */
 
-				if (m_network.connectNode(nodeID) == NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.connectNode(nodeID);
+
 					// #if LOGGER == DEBUG
 					LOGGER.debug("Re-connect successful, continuing");
 					// #endif /* LOGGER == DEBUG */
-				} else {
+				} catch (final NetworkException e) {
 					// #if LOGGER == DEBUG
 					LOGGER.debug("Node is unreachable. Initiating failure handling");
 					// #endif /* LOGGER == DEBUG */
@@ -155,11 +157,13 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 				LOGGER.debug("ResponseDelayedEvent triggered: 0x%X", nodeID);
 				// #endif /* LOGGER == DEBUG */
 
-				if (m_network.sendMessage(new DefaultMessage(nodeID)) == NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendMessage(new DefaultMessage(nodeID));
+
 					// #if LOGGER == DEBUG
 					LOGGER.debug("Node is still reachable, continuing");
 					// #endif /* LOGGER == DEBUG */
-				} else {
+				} catch (final NetworkException e) {
 					// #if LOGGER == DEBUG
 					LOGGER.debug("Node is unreachable. Initiating failure handling");
 					// #endif /* LOGGER == DEBUG */
@@ -186,7 +190,11 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 		};
 		new Thread(task).start();
 
-		m_network.sendMessage(new FailureResponse(p_request));
+		try {
+			m_network.sendMessage(new FailureResponse(p_request));
+		} catch (final NetworkException e) {
+
+		}
 	}
 
 	@Override

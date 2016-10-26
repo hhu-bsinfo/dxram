@@ -19,8 +19,11 @@ import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessages;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
 import de.hhu.bsinfo.ethnet.RequestMap;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
@@ -98,106 +101,88 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	 * Connect a node.
 	 *
 	 * @param p_nodeID Node to connect
-	 * @return 0 if successful, -1 if not
+	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
 	 */
-	public NetworkErrorCodes connectNode(final short p_nodeID) {
+	public void connectNode(final short p_nodeID) throws NetworkException {
 		// #if LOGGER == TRACE
 		LOGGER.trace("Connecting node 0x%X", p_nodeID);
 		// #endif /* LOGGER == TRACE */
 
-		int res = m_networkHandler.connectNode(p_nodeID);
-		NetworkErrorCodes errCode = NetworkErrorCodes.SUCCESS;
-		if (res == -1) {
-			errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE;
-
+		try {
+			m_networkHandler.connectNode(p_nodeID);
+		} catch (final NetworkDestinationUnreachableException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Connecting node 0x%X failed: %s", p_nodeID, errCode);
+			LOGGER.error("Connecting node 0x%X failed: %s", p_nodeID, e);
 			// #endif /* LOGGER >= ERROR */
+			throw e;
 		}
-
-		return errCode;
 	}
 
 	/**
 	 * Send a message.
 	 *
 	 * @param p_message Message to send
-	 * @return NetworkErrorCode, refer to enum
+	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
+	 * @throws NetworkException                       If sending the message failed
 	 */
-	public NetworkErrorCodes sendMessage(final AbstractMessage p_message) {
+	public void sendMessage(final AbstractMessage p_message) throws NetworkException {
 		// #if LOGGER == TRACE
 		LOGGER.trace("Sending message %s", p_message);
 		// #endif /* LOGGER == TRACE */
 
-		int res = m_networkHandler.sendMessage(p_message);
-		NetworkErrorCodes errCode = NetworkErrorCodes.UNKNOWN;
+		try {
+			m_networkHandler.sendMessage(p_message);
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Sending message %s failed: %s", p_message, e);
+			// #endif /* LOGGER >= ERROR */
 
-		switch (res) {
-			case 0:
-				errCode = NetworkErrorCodes.SUCCESS;
-				break;
-			case -1:
-				errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE;
-
+			if (e instanceof NetworkDestinationUnreachableException) {
 				// Connection creation failed -> trigger failure handling
 				m_event.fireEvent(new ConnectionLostEvent(getClass().getSimpleName(), p_message.getDestination()));
-				break;
-			case -2:
-				errCode = NetworkErrorCodes.SEND_DATA;
-				break;
-			default:
-				assert false;
-				break;
-		}
+			}
 
-		// #if LOGGER >= ERROR
-		if (errCode != NetworkErrorCodes.SUCCESS) {
-			LOGGER.error("Sending message %s failed: %s", p_message, errCode);
+			throw e;
 		}
-		// #endif /* LOGGER >= ERROR */
-
-		return errCode;
 	}
 
 	/**
 	 * Send the Request and wait for fulfillment (wait for response).
 	 *
 	 * @param p_request The request to send.
-	 * @return 0 if successful, -1 if sending the request failed, 1 waiting for the response timed out.
+	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
+	 * @throws NetworkResponseTimeoutException        If the max. timeout was exceed
+	 * @throws NetworkException                       If sending the message failed
 	 */
-	public NetworkErrorCodes sendSync(final AbstractRequest p_request) {
+	public void sendSync(final AbstractRequest p_request) throws NetworkException {
 		// #if LOGGER == TRACE
 		LOGGER.trace("Sending request (sync): %s", p_request);
 		// #endif /* LOGGER == TRACE */
 
-		NetworkErrorCodes err = sendMessage(p_request);
-		if (err == NetworkErrorCodes.SUCCESS) {
-			// #if LOGGER == TRACE
-			LOGGER.trace("Waiting for response to request: %s", p_request);
-			// #endif /* LOGGER == TRACE */
-
-			if (!p_request.waitForResponses((int) m_requestTimeout.getMs())) {
-				// #if LOGGER >= ERROR
-				LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
-				// #endif /* LOGGER >= ERROR */
-
-				// #if LOGGER >= DEBUG
-				LOGGER.debug(m_networkHandler.getStatus());
-				// #endif /* LOGGER >= DEBUG */
-
-				err = NetworkErrorCodes.RESPONSE_TIMEOUT;
-			} else {
-				// #if LOGGER == TRACE
-				LOGGER.trace("Received response: %s", p_request.getResponse());
-				// #endif /* LOGGER == TRACE */
-			}
-		}
-
-		if (err != NetworkErrorCodes.SUCCESS) {
+		try {
+			sendMessage(p_request);
+		} catch (final NetworkException e) {
 			RequestMap.remove(p_request.getRequestID());
+			throw e;
 		}
 
-		return err;
+		// #if LOGGER == TRACE
+		LOGGER.trace("Waiting for response to request: %s", p_request);
+		// #endif /* LOGGER == TRACE */
+
+		if (!p_request.waitForResponses((int) m_requestTimeout.getMs())) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
+			// #endif /* LOGGER >= ERROR */
+
+			// #if LOGGER >= DEBUG
+			LOGGER.debug(m_networkHandler.getStatus());
+			// #endif /* LOGGER >= DEBUG */
+
+			RequestMap.remove(p_request.getRequestID());
+
+			throw new NetworkResponseTimeoutException(p_request.getDestination());
+		}
 	}
 
 	/**

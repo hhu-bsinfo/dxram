@@ -12,10 +12,10 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.nameservice.messages.ForwardRegisterMessage;
 import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
@@ -65,7 +65,9 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 			// let each node manage its own index (the chunk part)
 			short nodeId = ChunkID.getCreatorID(p_chunkId);
 			if (nodeId == NodeID.INVALID_ID) {
+				// #if LOGGER >= ERROR
 				LOGGER.error("Invalid creator id specified for registering 0x%X for name %s", p_chunkId, p_name);
+				// #endif /* LOGGER >= ERROR */
 				return;
 			}
 
@@ -73,9 +75,13 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 				m_nameservice.register(p_chunkId, p_name);
 			} else {
 				ForwardRegisterMessage message = new ForwardRegisterMessage(nodeId, p_chunkId, p_name);
-				NetworkErrorCodes err = m_network.sendMessage(message);
-				if (err != NetworkErrorCodes.SUCCESS) {
-					LOGGER.error("Sending register message to 0x%X failed: %s", nodeId, err);
+
+				try {
+					m_network.sendMessage(message);
+				} catch (final NetworkException e) {
+					// #if LOGGER >= ERROR
+					LOGGER.error("Sending register message to 0x%X failed: %s", nodeId, e);
+					// #endif /* LOGGER >= ERROR */
 				}
 			}
 		} else {

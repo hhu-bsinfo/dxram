@@ -8,9 +8,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSLevelFinishedMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler;
 
 /**
@@ -117,8 +117,9 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 					BFSLevelFinishedMessage msg = new BFSLevelFinishedMessage(nodeID, m_token,
 							localSentMsgCnt, localRecvMsgCnt);
 
-					NetworkErrorCodes err = m_networkService.sendMessage(msg);
-					if (err != NetworkErrorCodes.SUCCESS) {
+					try {
+						m_networkService.sendMessage(msg);
+					} catch (final NetworkException e) {
 						return false;
 					}
 				}
@@ -132,7 +133,8 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 
 				try {
 					Thread.sleep(2);
-				} catch (final InterruptedException ignored) {}
+				} catch (final InterruptedException ignored) {
+				}
 
 				if (m_signalAbortExecution) {
 					return false;
@@ -190,7 +192,8 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 
 		try {
 			m_finishedCounterLock[p_message.getToken()].acquire();
-		} catch (final InterruptedException ignored) {}
+		} catch (final InterruptedException ignored) {
+		}
 
 		m_recvVertexMsgCountGlobal[p_message.getToken()] += p_message.getReceivedMessageCount();
 		m_sentVertexMsgCountGlobal[p_message.getToken()] += p_message.getSentMessageCount();

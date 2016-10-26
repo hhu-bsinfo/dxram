@@ -32,10 +32,10 @@ import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
 import de.hhu.bsinfo.dxram.log.storage.Version;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.utils.Tools;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
@@ -605,16 +605,16 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	public String getCurrentUtilization(final short p_nodeID) {
 		final GetUtilizationRequest request = new GetUtilizationRequest(p_nodeID);
 
-		NetworkErrorCodes err = m_network.sendSync(request);
-
-		if (err != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendSync(request);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
 			LOGGER.error("Could not get log utilization of " + p_nodeID);
 			// #endif /* LOGGER >= ERROR */
 			return "";
-		} else {
-			return ((GetUtilizationResponse) request.getResponse()).getUtilization();
 		}
+
+		return ((GetUtilizationResponse) request.getResponse()).getUtilization();
 	}
 
 	/**
@@ -739,12 +739,11 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 		}
 		m_secondaryLogCreationLock.writeLock().unlock();
 
-		final NetworkErrorCodes err = m_network.sendMessage(new InitResponse(p_request, success));
-		// #if LOGGER >= ERROR
-		if (err != NetworkErrorCodes.SUCCESS) {
-			LOGGER.error("Could not acknowledge initilization of backup range: %s", err);
+		try {
+			m_network.sendMessage(new InitResponse(p_request, success));
+		} catch (final NetworkException e) {
+			LOGGER.error("Could not acknowledge initilization of backup range", e);
 		}
-		// #endif /* LOGGER >= ERROR */
 	}
 
 	/**
@@ -754,23 +753,19 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	 */
 	private void incomingGetUtilizationRequest(final GetUtilizationRequest p_request) {
 
-		if (m_loggingIsActive) {
-			final NetworkErrorCodes err =
-					m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
-			// #if LOGGER >= ERROR
-			if (err != NetworkErrorCodes.SUCCESS) {
-				LOGGER.error("Could not answer GetUtilizationRequest: %s", err);
+		try {
+			if (m_loggingIsActive) {
+				m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
+			} else {
+				// #if LOGGER >= WARN
+				LOGGER.warn("Incoming GetUtilizationRequest, but superpeers do not store backups");
+				// #endif /* LOGGER >= WARN */
+
+				m_network.sendMessage(new GetUtilizationResponse(p_request, null));
 			}
-			// #endif /* LOGGER >= ERROR */
-		} else {
-			// #if LOGGER >= WARN
-			LOGGER.warn("Incoming GetUtilizationRequest, but superpeers do not store backups");
-			// #endif /* LOGGER >= WARN */
-			final NetworkErrorCodes err = m_network.sendMessage(new GetUtilizationResponse(p_request, null));
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			if (err != NetworkErrorCodes.SUCCESS) {
-				LOGGER.error("Could not answer GetUtilizationRequest: %s", err);
-			}
+			LOGGER.error("Could not answer GetUtilizationRequest", e);
 			// #endif /* LOGGER >= ERROR */
 		}
 	}

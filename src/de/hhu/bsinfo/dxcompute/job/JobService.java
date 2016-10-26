@@ -19,10 +19,10 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.serialization.Exportable;
@@ -154,10 +154,11 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 		}
 
 		PushJobQueueMessage message = new PushJobQueueMessage(p_nodeID, p_job, mergedCallbackBitMask);
-		NetworkErrorCodes error = m_network.sendMessage(message);
-		if (error != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendMessage(message);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Sending push job queue message to node 0x%X failed: %s", p_nodeID, error);
+			LOGGER.error("Sending push job queue message to node 0x%X failed: %s", p_nodeID, e);
 			// #endif /* LOGGER >= ERROR */
 			jobId = JobID.INVALID_ID;
 		}
@@ -199,25 +200,27 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 			List<Short> peers = m_boot.getIDsOfOnlinePeers();
 			for (short peer : peers) {
 				StatusRequest request = new StatusRequest(peer);
-				NetworkErrorCodes error = m_network.sendSync(request);
-				if (error != NetworkErrorCodes.SUCCESS) {
+
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// #if LOGGER >= ERROR
-					LOGGER.error("Sending get status request to wait for termination to 0x%X failed: %s", peer, error);
+					LOGGER.error("Sending get status request to wait for termination to 0x%X failed: %s", peer, e);
 					// #endif /* LOGGER >= ERROR */
 					// abort here as well, as we do not know what happened exactly
 					return false;
-				} else {
-					StatusResponse response = request.getResponse(StatusResponse.class);
-					if (response.getStatus().getNumberOfUnfinishedJobs() != 0) {
-						successCount = 0;
+				}
 
-						// not done, yet...sleep a little and try again
-						try {
-							Thread.sleep(1000);
-						} catch (final InterruptedException e) {
-						}
-						continue;
+				StatusResponse response = request.getResponse(StatusResponse.class);
+				if (response.getStatus().getNumberOfUnfinishedJobs() != 0) {
+					successCount = 0;
+
+					// not done, yet...sleep a little and try again
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException e) {
 					}
+					continue;
 				}
 			}
 
@@ -285,10 +288,12 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 				JobEventTriggeredMessage message =
 						new JobEventTriggeredMessage(JobID.getCreatorID(p_jobId), p_jobId, p_eventId);
-				NetworkErrorCodes error = m_network.sendMessage(message);
-				if (error != NetworkErrorCodes.SUCCESS) {
+
+				try {
+					m_network.sendMessage(message);
+				} catch (final NetworkException e) {
 					// #if LOGGER >= ERROR
-					LOGGER.error("Triggering job event '%s' for job '%s' failed: %s", p_eventId, job.m_second, error);
+					LOGGER.error("Triggering job event '%s' for job '%s' failed: %s", p_eventId, job.m_second, e);
 					// #endif /* LOGGER >= ERROR */
 				}
 			}
@@ -418,10 +423,12 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 		status.m_numUnfinishedJobs = m_job.getNumberOfUnfinishedJobs();
 
 		StatusResponse response = new StatusResponse(p_request, status);
-		NetworkErrorCodes error = m_network.sendMessage(response);
-		if (error != NetworkErrorCodes.SUCCESS) {
+
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Sending StatusResponse for %s failed: %s", p_request, error);
+			LOGGER.error("Sending StatusResponse for %s failed: %s", p_request, e);
 			// #endif /* LOGGER >= ERROR */
 		}
 	}

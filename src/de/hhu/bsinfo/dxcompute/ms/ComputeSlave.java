@@ -18,8 +18,8 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import org.apache.logging.log4j.LogManager;
@@ -139,10 +139,12 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
 	@Override
 	public void sendSignalToMaster(final Signal p_signal) {
-		NetworkErrorCodes err = m_network.sendMessage(new SignalMessage(m_masterNodeId, p_signal));
-		if (err != NetworkErrorCodes.SUCCESS) {
+
+		try {
+			m_network.sendMessage(new SignalMessage(m_masterNodeId, p_signal));
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Sending signal to master 0x%X failed: %s", m_masterNodeId, err);
+			LOGGER.error("Sending signal to master 0x%X failed: %s", m_masterNodeId, e);
 			// #endif /* LOGGER >= ERROR */
 		}
 	}
@@ -177,19 +179,10 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 		}
 
 		SlaveJoinRequest request = new SlaveJoinRequest(m_masterNodeId);
-		NetworkErrorCodes err = m_network.sendSync(request);
-		if (err != NetworkErrorCodes.SUCCESS) {
-			// #if LOGGER >= ERROR
-			LOGGER.error("Sending join request to master 0x%X failed: %s", m_masterNodeId, err);
-			// #endif /* LOGGER >= ERROR */
-			try {
-				Thread.sleep(1000);
-			} catch (final InterruptedException ignored) {
-			}
 
-			// trigger a full retry. might happen that the master node has changed
-			m_masterNodeId = NodeID.INVALID_ID;
-		} else {
+		try {
+			m_network.sendSync(request);
+
 			SlaveJoinResponse response = (SlaveJoinResponse) request.getResponse();
 			if (response.getStatusCode() != 0) {
 				// master is busy, retry
@@ -209,6 +202,17 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 				LOGGER.debug("Entering idle state");
 				// #endif /* LOGGER >= DEBUG */
 			}
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Sending join request to master 0x%X failed: %s", m_masterNodeId, e);
+			// #endif /* LOGGER >= ERROR */
+			try {
+				Thread.sleep(1000);
+			} catch (final InterruptedException ignored) {
+			}
+
+			// trigger a full retry. might happen that the master node has changed
+			m_masterNodeId = NodeID.INVALID_ID;
 		}
 	}
 
@@ -307,18 +311,19 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 			response.setStatusCode((byte) 1);
 		}
 
-		NetworkErrorCodes err = m_network.sendMessage(response);
-		if (err != NetworkErrorCodes.SUCCESS) {
-			// #if LOGGER >= ERROR
-			LOGGER.error("Sending response for executing task to 0x%X failed: %s", p_message.getSource(), err);
-			// #endif /* LOGGER >= ERROR */
-		} else {
+		try {
+			m_network.sendMessage(response);
+
 			if (task != null) {
 				m_ctxData = p_message.getTaskContextData();
 
 				// assign and start execution if non null
 				m_task = task;
 			}
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Sending response for executing task to 0x%X failed: %s", p_message.getSource(), e);
+			// #endif /* LOGGER >= ERROR */
 		}
 	}
 

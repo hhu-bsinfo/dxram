@@ -37,8 +37,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
@@ -186,10 +186,12 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		}
 
 		GetMasterStatusRequest request = new GetMasterStatusRequest(masterNodeId);
-		NetworkErrorCodes err = m_network.sendSync(request);
-		if (err != NetworkErrorCodes.SUCCESS) {
+
+		try {
+			m_network.sendSync(request);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Getting status of master 0x%X failed: %s", masterNodeId, err);
+			LOGGER.error("Getting status of master 0x%X failed: %s", masterNodeId, e);
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
@@ -257,10 +259,12 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		}
 
 		SubmitTaskRequest request = new SubmitTaskRequest(masterNodeId, p_task.getPayload());
-		NetworkErrorCodes err = m_network.sendSync(request);
-		if (err != NetworkErrorCodes.SUCCESS) {
+
+		try {
+			m_network.sendSync(request);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Sending submit task request to node 0x%X failed: %s", masterNodeId, err);
+			LOGGER.error("Sending submit task request to node 0x%X failed: %s", masterNodeId, e);
 			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
@@ -330,8 +334,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		TaskExecutionStartedMessage message =
 				new TaskExecutionStartedMessage(p_task.getNodeIdSubmitted(), p_task.getTaskIdAssigned());
 
-		NetworkErrorCodes err = m_network.sendMessage(message);
-		if (err != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendMessage(message);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
 			LOGGER.error("Sending remote callback before execution to node %d failed", p_task.getNodeIdSubmitted());
 			// #endif /* LOGGER >= ERROR */
@@ -345,8 +350,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 				new TaskExecutionFinishedMessage(p_task.getNodeIdSubmitted(), p_task.getTaskIdAssigned(),
 						p_task.getExecutionReturnCodes());
 
-		NetworkErrorCodes err = m_network.sendMessage(message);
-		if (err != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendMessage(message);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
 			LOGGER.error("Sending remote callback completed to node 0x%X failed", p_task.getNodeIdSubmitted());
 			// #endif /* LOGGER >= ERROR */
@@ -507,8 +513,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			}
 		}
 
-		NetworkErrorCodes err = m_network.sendMessage(response);
-		if (err != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
 			LOGGER.error("Sending response to submit task request to master %s failed", p_request);
 			// #endif /* LOGGER >= ERROR */
@@ -533,8 +540,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			response.setStatusCode((byte) 0);
 		}
 
-		NetworkErrorCodes err = m_network.sendMessage(response);
-		if (err != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendMessage(response);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
 			LOGGER.error("Sending response to master status request %s failed", p_request);
 			// #endif /* LOGGER >= ERROR */

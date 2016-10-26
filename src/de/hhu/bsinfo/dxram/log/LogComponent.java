@@ -16,7 +16,7 @@ import de.hhu.bsinfo.dxram.log.messages.InitResponse;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -77,11 +77,14 @@ public class LogComponent extends AbstractDXRAMComponent {
 				} else {
 					request = new InitRequest(p_backupPeers[i], p_firstChunkIDOrRangeID, m_boot.getNodeID());
 				}
-				final NetworkErrorCodes err = m_network.sendSync(request);
-				if (err != NetworkErrorCodes.SUCCESS) {
+
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					i--;
 					continue;
 				}
+
 				response = request.getResponse(InitResponse.class);
 
 				if (!response.getStatus()) {

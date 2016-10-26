@@ -68,9 +68,9 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.CRC16;
@@ -157,7 +157,9 @@ public class OverlayPeer implements MessageReceiver {
 
 		if (-1 != responsibleSuperpeer) {
 			request = new GetLookupRangeRequest(responsibleSuperpeer, p_chunkID);
-			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendSync(request);
+			} catch (final NetworkException e) {
 				// Responsible superpeer is not available, try again and check responsible superpeer
 				check = true;
 			}
@@ -223,7 +225,9 @@ public class OverlayPeer implements MessageReceiver {
 			m_overlayLock.readLock().unlock();
 
 			request = new RemoveChunkIDsRequest(responsibleSuperpeer, p_chunkIDs, false);
-			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendSync(request);
+			} catch (final NetworkException e) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
 				try {
@@ -241,7 +245,9 @@ public class OverlayPeer implements MessageReceiver {
 					// Send backups
 					for (short backupSuperpeer : backupSuperpeers) {
 						request = new RemoveChunkIDsRequest(backupSuperpeer, p_chunkIDs, true);
-						if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+						try {
+							m_network.sendSync(request);
+						} catch (final NetworkException e) {
 							// Ignore superpeer failure, own superpeer will fix this
 						}
 					}
@@ -279,7 +285,9 @@ public class OverlayPeer implements MessageReceiver {
 		while (true) {
 			if (-1 != responsibleSuperpeer) {
 				request = new InsertNameserviceEntriesRequest(responsibleSuperpeer, p_id, p_chunkID, false);
-				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
@@ -302,7 +310,9 @@ public class OverlayPeer implements MessageReceiver {
 						// Send backups
 						for (short backupSuperpeer : backupSuperpeers) {
 							request = new InsertNameserviceEntriesRequest(backupSuperpeer, p_id, p_chunkID, true);
-							if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+							try {
+								m_network.sendSync(request);
+							} catch (final NetworkException e) {
 								// Ignore superpeer failure, own superpeer will fix this
 							}
 						}
@@ -344,7 +354,9 @@ public class OverlayPeer implements MessageReceiver {
 		do {
 			if (-1 != responsibleSuperpeer) {
 				request = new GetChunkIDForNameserviceEntryRequest(responsibleSuperpeer, p_id);
-				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
@@ -394,16 +406,18 @@ public class OverlayPeer implements MessageReceiver {
 
 		for (short superpeer : superpeers) {
 			request = new GetNameserviceEntryCountRequest(superpeer);
-			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendSync(request);
+			} catch (final NetworkException e) {
 				// #if LOGGER >= ERROR
 				LOGGER.error("Could not determine nameservice entry count");
 				// #endif /* LOGGER >= ERROR */
 				ret = -1;
 				break;
-			} else {
-				response = request.getResponse(GetNameserviceEntryCountResponse.class);
-				ret += response.getCount();
 			}
+
+			response = request.getResponse(GetNameserviceEntryCountResponse.class);
+			ret += response.getCount();
 		}
 
 		return ret;
@@ -426,16 +440,18 @@ public class OverlayPeer implements MessageReceiver {
 
 		for (short superpeer : superpeers) {
 			request = new GetNameserviceEntriesRequest(superpeer);
-			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendSync(request);
+			} catch (final NetworkException e) {
 				// #if LOGGER >= ERROR
 				LOGGER.error("Could not determine nameservice entries");
 				// #endif /* LOGGER >= ERROR */
 				entries = null;
 				break;
-			} else {
-				response = request.getResponse(GetNameserviceEntriesResponse.class);
-				entries.addAll(NameserviceHashTable.convert(response.getEntries()));
 			}
+
+			response = request.getResponse(GetNameserviceEntriesResponse.class);
+			entries.addAll(NameserviceHashTable.convert(response.getEntries()));
 		}
 
 		return entries;
@@ -461,7 +477,9 @@ public class OverlayPeer implements MessageReceiver {
 			m_overlayLock.readLock().unlock();
 
 			request = new MigrateRequest(responsibleSuperpeer, p_chunkID, p_nodeID, false);
-			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendSync(request);
+			} catch (final NetworkException e) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
 				try {
@@ -470,6 +488,7 @@ public class OverlayPeer implements MessageReceiver {
 				}
 				continue;
 			}
+
 			finished = request.getResponse(MigrateResponse.class).getStatus();
 		}
 	}
@@ -500,7 +519,9 @@ public class OverlayPeer implements MessageReceiver {
 				m_overlayLock.readLock().unlock();
 
 				request = new MigrateRangeRequest(responsibleSuperpeer, p_startCID, p_endCID, p_nodeID, false);
-				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
@@ -537,7 +558,9 @@ public class OverlayPeer implements MessageReceiver {
 
 			request = new InitRangeRequest(responsibleSuperpeer, p_firstChunkIDOrRangeID,
 					p_primaryAndBackupPeers.convertToLong(), false);
-			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendSync(request);
+			} catch (final NetworkException e) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
 				try {
@@ -575,7 +598,9 @@ public class OverlayPeer implements MessageReceiver {
 		while (null == ret) {
 			if (-1 != responsibleSuperpeer) {
 				request = new GetAllBackupRangesRequest(responsibleSuperpeer, p_nodeID);
-				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again and check responsible superpeer
 					check = true;
 
@@ -585,6 +610,7 @@ public class OverlayPeer implements MessageReceiver {
 
 					continue;
 				}
+
 				response = request.getResponse(GetAllBackupRangesResponse.class);
 				ret = response.getBackupRanges();
 			}
@@ -616,8 +642,9 @@ public class OverlayPeer implements MessageReceiver {
 		m_overlayLock.readLock().unlock();
 
 		while (true) {
-			if (m_network.sendMessage(
-					new SetRestorerAfterRecoveryMessage(responsibleSuperpeer, p_owner)) != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendMessage(new SetRestorerAfterRecoveryMessage(responsibleSuperpeer, p_owner));
+			} catch (final NetworkException e) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
 				try {
@@ -647,11 +674,17 @@ public class OverlayPeer implements MessageReceiver {
 		int i = 0;
 
 		m_overlayLock.readLock().lock();
-		if (m_network.sendMessage(new PingSuperpeerMessage(m_mySuperpeer)) != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendMessage(new PingSuperpeerMessage(m_mySuperpeer));
+			ret = false;
+		} catch (final NetworkException e) {
 			if (!m_superpeers.isEmpty()) {
 				while (i < m_superpeers.size()) {
 					superpeer = m_superpeers.get(i++);
-					if (m_network.sendMessage(new PingSuperpeerMessage(superpeer)) != NetworkErrorCodes.SUCCESS) {
+
+					try {
+						m_network.sendMessage(new PingSuperpeerMessage(superpeer));
+					} catch (final NetworkException e2) {
 						continue;
 					}
 
@@ -659,9 +692,8 @@ public class OverlayPeer implements MessageReceiver {
 					break;
 				}
 			}
-		} else {
-			ret = false;
 		}
+
 		m_overlayLock.readLock().unlock();
 
 		return ret;
@@ -678,10 +710,12 @@ public class OverlayPeer implements MessageReceiver {
 		m_overlayLock.readLock().lock();
 		BarrierAllocRequest request = new BarrierAllocRequest(m_mySuperpeer, p_size, false);
 		m_overlayLock.readLock().unlock();
-		NetworkErrorCodes err = m_network.sendSync(request);
-		if (err != NetworkErrorCodes.SUCCESS) {
+
+		try {
+			m_network.sendSync(request);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Allocating barrier with size %d on superpeer 0x%X failed: %s", p_size, m_mySuperpeer, err);
+			LOGGER.error("Allocating barrier with size %d on superpeer 0x%X failed: %s", p_size, m_mySuperpeer, e);
 			// #endif /* LOGGER >= ERROR */
 			return BarrierID.INVALID_ID;
 		}
@@ -703,10 +737,12 @@ public class OverlayPeer implements MessageReceiver {
 
 		short responsibleSuperpeer = BarrierID.getOwnerID(p_barrierId);
 		BarrierFreeRequest message = new BarrierFreeRequest(responsibleSuperpeer, p_barrierId, false);
-		NetworkErrorCodes err = m_network.sendSync(message);
-		if (err != NetworkErrorCodes.SUCCESS) {
+
+		try {
+			m_network.sendSync(message);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Freeing barrier 0x%X on superpeer 0x%X failed: %s", p_barrierId, responsibleSuperpeer, err);
+			LOGGER.error("Freeing barrier 0x%X on superpeer 0x%X failed: %s", p_barrierId, responsibleSuperpeer, e);
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
@@ -738,10 +774,11 @@ public class OverlayPeer implements MessageReceiver {
 		short responsibleSuperpeer = BarrierID.getOwnerID(p_barrierId);
 		BarrierChangeSizeRequest request =
 				new BarrierChangeSizeRequest(responsibleSuperpeer, p_barrierId, p_size, false);
-		NetworkErrorCodes err = m_network.sendSync(request);
-		if (err != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendSync(request);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Sending barrier change size request to superpeer 0x%X failed: %s", responsibleSuperpeer, err);
+			LOGGER.error("Sending barrier change size request to superpeer 0x%X failed: %s", responsibleSuperpeer, e);
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
@@ -794,10 +831,11 @@ public class OverlayPeer implements MessageReceiver {
 
 		short responsibleSuperpeer = BarrierID.getOwnerID(p_barrierId);
 		BarrierSignOnRequest request = new BarrierSignOnRequest(responsibleSuperpeer, p_barrierId, p_customData);
-		NetworkErrorCodes err = m_network.sendSync(request);
-		if (err != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendSync(request);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Sign on barrier 0x%X failed: %s", p_barrierId, err);
+			LOGGER.error("Sign on barrier 0x%X failed: %s", p_barrierId, e);
 			// #endif /* LOGGER >= ERROR */
 			m_network.unregister(BarrierReleaseMessage.class, msg);
 			return null;
@@ -836,10 +874,11 @@ public class OverlayPeer implements MessageReceiver {
 		m_overlayLock.readLock().lock();
 		BarrierGetStatusRequest request = new BarrierGetStatusRequest(m_mySuperpeer, p_barrierId);
 		m_overlayLock.readLock().unlock();
-		NetworkErrorCodes err = m_network.sendSync(request);
-		if (err != NetworkErrorCodes.SUCCESS) {
+		try {
+			m_network.sendSync(request);
+		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
-			LOGGER.error("Getting status request of barrier 0x%X failed: %s", p_barrierId, err);
+			LOGGER.error("Getting status request of barrier 0x%X failed: %s", p_barrierId, e);
 			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
@@ -879,7 +918,9 @@ public class OverlayPeer implements MessageReceiver {
 			if (-1 != responsibleSuperpeer) {
 				SuperpeerStorageCreateRequest request =
 						new SuperpeerStorageCreateRequest(responsibleSuperpeer, p_storageId, p_size, false);
-				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
@@ -942,7 +983,9 @@ public class OverlayPeer implements MessageReceiver {
 			if (-1 != responsibleSuperpeer) {
 				SuperpeerStoragePutRequest request =
 						new SuperpeerStoragePutRequest(responsibleSuperpeer, p_dataStructure, false);
-				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
@@ -989,7 +1032,9 @@ public class OverlayPeer implements MessageReceiver {
 				Chunk chunk = new Chunk((long) p_id);
 				SuperpeerStorageGetRequest request =
 						new SuperpeerStorageGetRequest(responsibleSuperpeer, chunk);
-				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
@@ -1048,7 +1093,9 @@ public class OverlayPeer implements MessageReceiver {
 			if (-1 != responsibleSuperpeer) {
 				SuperpeerStorageGetRequest request =
 						new SuperpeerStorageGetRequest(responsibleSuperpeer, p_dataStructure);
-				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendSync(request);
+				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
@@ -1093,7 +1140,9 @@ public class OverlayPeer implements MessageReceiver {
 			if (-1 != responsibleSuperpeer) {
 				SuperpeerStorageRemoveMessage message =
 						new SuperpeerStorageRemoveMessage(responsibleSuperpeer, p_superpeerStorageId, false);
-				if (m_network.sendMessage(message) != NetworkErrorCodes.SUCCESS) {
+				try {
+					m_network.sendMessage(message);
+				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
@@ -1131,15 +1180,16 @@ public class OverlayPeer implements MessageReceiver {
 			m_overlayLock.readLock().unlock();
 
 			SuperpeerStorageStatusRequest request = new SuperpeerStorageStatusRequest(superpeer);
-			NetworkErrorCodes err = m_network.sendSync(request);
-			if (err != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendSync(request);
+				statusArray[i] = request.getResponse(SuperpeerStorageStatusResponse.class).getStatus();
+			} catch (final NetworkException e) {
 				// #if LOGGER >= ERROR
 				LOGGER.error("Getting superpeer 0x%X storage status failed", superpeer);
 				// #endif /* LOGGER >= ERROR */
 				statusArray[i] = null;
-			} else {
-				statusArray[i] = request.getResponse(SuperpeerStorageStatusResponse.class).getStatus();
 			}
+
 			m_overlayLock.readLock().lock();
 		}
 		m_overlayLock.readLock().unlock();
@@ -1194,7 +1244,9 @@ public class OverlayPeer implements MessageReceiver {
 			// #endif /* LOGGER == TRACE */
 
 			joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, false);
-			if (m_network.sendSync(joinRequest) != NetworkErrorCodes.SUCCESS) {
+			try {
+				m_network.sendSync(joinRequest);
+			} catch (final NetworkException e) {
 				// Contact superpeer is not available, get a new contact superpeer
 				contactSuperpeer = m_boot.getNodeIDBootstrap();
 				continue;
@@ -1256,11 +1308,14 @@ public class OverlayPeer implements MessageReceiver {
 				while (true) {
 					m_overlayLock.readLock().unlock();
 					request = new AskAboutSuccessorRequest(predecessor);
-					if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+					try {
+						m_network.sendSync(request);
+					} catch (final NetworkException e) {
 						// Predecessor is not available, try responsibleSuperpeer without checking
 						m_overlayLock.readLock().lock();
 						break;
 					}
+
 					m_overlayLock.readLock().lock();
 
 					response = request.getResponse(AskAboutSuccessorResponse.class);
