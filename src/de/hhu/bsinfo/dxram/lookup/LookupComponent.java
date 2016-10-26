@@ -436,23 +436,14 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	}
 
 	/**
-	 * Determines if this superpeer is responsible for failure handling
-	 *
-	 * @param p_failedNode NodeID of failed node
-	 * @return true if superpeer is responsible for failed node, false otherwise
-	 */
-	public boolean isResponsibleForFailureHandling(final short p_failedNode) {
-		return m_superpeer.isResponsibleForFailureHandling(p_failedNode);
-	}
-
-	/**
 	 * Removes failed node from superpeer overlay
 	 *
 	 * @param p_failedNode NodeID of failed node
 	 * @param p_role       NodeRole of failed node
+	 * @return whether this superpeer is responsible for the failed node
 	 */
-	public void failureHandling(final short p_failedNode, final NodeRole p_role) {
-		m_superpeer.failureHandling(p_failedNode, p_role);
+	public boolean failureHandling(final short p_failedNode, final NodeRole p_role) {
+		return m_superpeer.failureHandling(p_failedNode, p_role);
 	}
 
 	/**
@@ -777,12 +768,29 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		return m_peer.superpeerStorageGetStatus();
 	}
 
+	/**
+	 * Replaces the backup peer for given range on responsible superpeer
+	 */
+	public void replaceBackupPeer(final long p_firstChunkIDOrRangeID, final short p_failedPeer,
+			final short p_newPeer) {
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("A superpeer is not allowed to change a peer's backup peers");
+			// #endif /* LOGGER >= ERROR */
+			return;
+		}
+
+		m_peer.replaceBackupPeer(p_firstChunkIDOrRangeID, p_failedPeer, p_newPeer);
+	}
+
 	@Override
 	public void eventTriggered(final AbstractEvent p_event) {
 		if (p_event instanceof NodeFailureEvent) {
 			NodeFailureEvent event = (NodeFailureEvent) p_event;
 
-			m_chunkIDCacheTree.invalidatePeer(event.getNodeID());
+			if (event.getRole() == NodeRole.PEER) {
+				m_chunkIDCacheTree.invalidatePeer(event.getNodeID());
+			}
 		} else if (p_event instanceof NameserviceCacheEntryUpdateEvent) {
 			NameserviceCacheEntryUpdateEvent event = (NameserviceCacheEntryUpdateEvent) p_event;
 			// update if available to avoid caching all entries

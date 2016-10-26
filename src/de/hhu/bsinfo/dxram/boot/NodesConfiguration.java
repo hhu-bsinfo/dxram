@@ -129,6 +129,12 @@ public final class NodesConfiguration {
 
 		/**
 		 * Creates an instance of NodesConfigurationEntry
+		 */
+		NodeEntry() {
+		}
+
+		/**
+		 * Creates an instance of NodesConfigurationEntry
 		 *
 		 * @param p_address      addres of the node
 		 * @param p_rack         the rack of the node
@@ -197,7 +203,8 @@ public final class NodesConfiguration {
 		@Override
 		public String toString() {
 			return "NodesConfigurationEntry [m_address=" + m_address + ", m_rack=" + m_rack + ", m_switch="
-					+ m_switch + ", m_role=" + m_role.getAcronym() + (m_readFromFile == 1 ? "true" : "false") + "]";
+					+ m_switch + ", m_role=" + m_role.getAcronym() + ", m_readFromFile="
+					+ (m_readFromFile == 1 ? "true" : "false") + "]";
 		}
 
 	}

@@ -149,7 +149,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 					// }
 					// if (chunks == null) {
 					// #if LOGGER >= ERROR
-					LOGGER.error("Cannot recover Chunks! Trying next backup peer");
+					// /*m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next backup peer.");*/
 					// #endif /* LOGGER >= ERROR */
 					// continue;
 					// }
@@ -299,9 +299,9 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 	private void incomingRecoverBackupRangeRequest(final RecoverBackupRangeRequest p_request) {
 		// Outsource recovery to another thread to avoid blocking a message handler
 		Runnable task = () -> {
+			int recoveredChunks = recoverBackupRange(p_request.getOwner(), p_request.getFirstChunkIDOrRangeID());
 			try {
-				m_network.sendMessage(new RecoverBackupRangeResponse(p_request,
-						recoverBackupRange(p_request.getOwner(), p_request.getFirstChunkIDOrRangeID())));
+				m_network.sendMessage(new RecoverBackupRangeResponse(p_request, recoveredChunks));
 			} catch (final NetworkException e) {
 
 			}

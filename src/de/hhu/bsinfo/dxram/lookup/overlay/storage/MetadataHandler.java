@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -853,25 +852,21 @@ public final class MetadataHandler {
 	}
 
 	/**
+<<<<<<< HEAD
 	 * Removes given peer from all backup ranges as backup peer
 	 *
 	 * @param p_failedPeer the failed peer
+=======
+	 * Replaces given peer from specific backup ranges as backup peer
+	 * @param p_failedPeer
+	 *            the failed peer
+>>>>>>> master
 	 */
-	public void removeFailedPeerFromBackupListsInLookupTrees(final short p_failedPeer) {
-		LookupTree tree;
-		Iterator<Short> iter;
-
+	public void replaceFailedPeerInLookupTree(final long p_firstChunkIDOrRangeID, final short p_failedPeer,
+			final short p_newBackupPeer) {
 		m_dataLock.writeLock().lock();
-		// Remove failedPeer from all backup peer lists
-		iter = m_assignedPeersIncludingBackups.iterator();
-		while (iter.hasNext()) {
-			getLookupTreeLocal(iter.next()).removeBackupPeer(p_failedPeer, (short) -1);
-		}
-
-		tree = getLookupTreeLocal(p_failedPeer);
-		if (null != tree) {
-			tree.setStatus(false);
-		}
+		// Replace failedPeer from specific backup peer lists
+		getLookupTreeLocal(p_failedPeer).replaceBackupPeer(p_firstChunkIDOrRangeID, p_failedPeer, p_failedPeer);
 		m_dataLock.writeLock().unlock();
 	}
 

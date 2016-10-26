@@ -1,17 +1,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.overlay.storage;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.ethnet.NodeID;
@@ -359,7 +353,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 		m_migrationBackupRanges.add(p_rangeID,
 				((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16)
-				+ (p_backupPeers[0] & 0x0000FFFF));
+						+ (p_backupPeers[0] & 0x0000FFFF));
 
 		return true;
 	}
@@ -573,36 +567,32 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 	}
 
 	/**
-	 * Removes given peer from all backups
+	 * Replaces given peer from all backup ranges
+	 * @param p_firstChunkIDOrRangeID
+	 *            first ChunkID or RangeID
 	 * @param p_failedPeer
 	 *            NodeID of failed peer
 	 * @param p_replacement
 	 *            NodeID of new backup peer
 	 */
-	public void removeBackupPeer(final short p_failedPeer, final short p_replacement) {
-		long backupNodes;
-		short[] backupPeers;
-		long[] element;
+	public void replaceBackupPeer(final long p_firstChunkIDOrRangeID, final short p_failedPeer,
+			final short p_replacement) {
+		long backupPeers;
 
-		for (int i = 0; i < m_backupRanges.size(); i++) {
-			element = m_backupRanges.get(i);
-			backupNodes = element[1];
-			backupPeers =
-					new short[] {(short) backupNodes, (short) ((backupNodes & 0x00000000FFFF0000L) >> 16),
-					(short) ((backupNodes & 0x0000FFFF00000000L) >> 32)};
-			if (p_failedPeer == backupPeers[0]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
-						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[1] & 0x0000FFFF);
-				element[1] = backupNodes;
-			} else if (p_failedPeer == backupPeers[1]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
-						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
-				element[1] = backupNodes;
-			} else if (p_failedPeer == backupPeers[2]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
-						+ ((backupPeers[1] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
-				element[1] = backupNodes;
+		if (ChunkID.getCreatorID(p_firstChunkIDOrRangeID) != -1) {
+			// This is a normal backup range
+			for (long[] backupRangeArray : m_backupRanges) {
+				if (backupRangeArray[0] == p_firstChunkIDOrRangeID) {
+					backupRangeArray[1] =
+							BackupRange.replaceBackupPeer(backupRangeArray[1], p_failedPeer, p_replacement);
+					break;
+				}
 			}
+		} else {
+			// This is a migration backup range
+			backupPeers = BackupRange.replaceBackupPeer(m_migrationBackupRanges.get((int) p_firstChunkIDOrRangeID),
+					p_failedPeer, p_replacement);
+			m_migrationBackupRanges.set((int) p_firstChunkIDOrRangeID, backupPeers);
 		}
 	}
 
@@ -1584,16 +1574,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_localID) {
-				low = mid + 1;
-			} else if (midVal > p_localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_localID) {
+					low = mid + 1;
+				} else if (midVal > p_localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1783,16 +1773,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getLocalID(0);
+				midVal = m_children[mid].getLocalID(0);
 
-			if (midVal < localID) {
-				low = mid + 1;
-			} else if (midVal > localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < localID) {
+					low = mid + 1;
+				} else if (midVal > localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

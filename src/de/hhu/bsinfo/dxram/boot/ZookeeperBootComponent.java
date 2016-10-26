@@ -51,12 +51,14 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	@Expose
 	// we can't use the NodesConfiguration class with the configuration because the nodes in that class
 	// are already mapped to their node ids
-	private ArrayList<NodesConfiguration.NodeEntry> m_nodesConfig = new ArrayList<NodesConfiguration.NodeEntry>() {{
-		// default values for local testing
-		add(new NodeEntry(new IPV4Unit("127.0.0.1", 22221), (short) 0, (short) 0, NodeRole.SUPERPEER, true));
-		add(new NodeEntry(new IPV4Unit("127.0.0.1", 22222), (short) 0, (short) 0, NodeRole.PEER, true));
-		add(new NodeEntry(new IPV4Unit("127.0.0.1", 22223), (short) 0, (short) 0, NodeRole.PEER, true));
-	}};
+	private ArrayList<NodesConfiguration.NodeEntry> m_nodesConfig = new ArrayList<NodesConfiguration.NodeEntry>() {
+		{
+			// default values for local testing
+			add(new NodeEntry(new IPV4Unit("127.0.0.1", 22221), (short) 0, (short) 0, NodeRole.SUPERPEER, true));
+			add(new NodeEntry(new IPV4Unit("127.0.0.1", 22222), (short) 0, (short) 0, NodeRole.PEER, true));
+			add(new NodeEntry(new IPV4Unit("127.0.0.1", 22223), (short) 0, (short) 0, NodeRole.PEER, true));
+		}
+	};
 
 	// dependent components
 	private LookupComponent m_lookup;
@@ -398,14 +400,14 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 			}
 		}
 
-		// Remove failed node from nodes configuration
-		m_nodes.removeNode(p_nodeID);
+		// TODO: Remove failed node from nodes configuration?
+		// m_nodesConfiguration.removeNode(p_nodeID);
 	}
 
 	@Override
 	public void eventTriggered(final NodeFailureEvent p_event) {
-		// Remove failed node from nodes configuration
-		m_nodes.removeNode(p_event.getNodeID());
+		// TODO: Remove failed node from nodes configuration?
+		// m_nodesConfiguration.removeNode(p_event.getNodeID());
 	}
 
 	@Override
@@ -436,11 +438,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 					}
 					if (null != path) {
 						if (path.equals(prefix + "nodes/new")) {
+
 							childs = m_zookeeper.getChildren("nodes/new", this);
 							for (String child : childs) {
 								nodeID = Short.parseShort(child);
 								node = new String(m_zookeeper.getData("nodes/new/" + nodeID));
-								splits = node.split("/");
+								splits = node.split(":");
 
 								m_nodes.addNode(nodeID, new NodeEntry(new IPV4Unit(splits[0],
 										Integer.parseInt(splits[1])), (short) 0, (short) 0,
@@ -732,7 +735,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				splits = node.split("/");
 
 				m_nodes.addNode(nodeID,
-						new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), (short) 0, (short) 0,
+						new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])),
+								(short) 0, (short) 0,
 								NodeRole.toNodeRole(splits[2]), false));
 
 				if (nodeID == m_nodes.getOwnNodeID()) {
@@ -747,7 +751,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				LOGGER.warn("Node not in nodes.config (%s)", m_ownAddress);
 				// #endif /* LOGGER >= WARN */
 
-				node = m_ownAddress + "/" + p_cmdLineNodeRole.getAcronym() + "/" + 0 + "/" + 0;
+				node = m_ownAddress + ":" + p_cmdLineNodeRole.getAcronym() + ":" + 0 + ":" + 0;
 
 				childs = m_zookeeper.getChildren("nodes/free");
 				if (!childs.isEmpty()) {

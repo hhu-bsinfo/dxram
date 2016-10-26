@@ -53,6 +53,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.NameserviceUpdatePeerCachesMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.PingSuperpeerMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.ReplaceBackupPeerRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SetRestorerAfterRecoveryMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateRequest;
@@ -1214,6 +1215,29 @@ public class OverlayPeer implements MessageReceiver {
 	}
 
 	/**
+	 * Replaces the backup peer for given range on responsible superpeer
+	 */
+	public void replaceBackupPeer(final long p_firstChunkIDOrRangeID, final short p_failedPeer,
+			final short p_newPeer) {
+		short responsibleSuperpeer;
+
+		m_overlayLock.readLock().lock();
+		responsibleSuperpeer = m_mySuperpeer;
+		m_overlayLock.readLock().unlock();
+
+		ReplaceBackupPeerRequest request = new ReplaceBackupPeerRequest(responsibleSuperpeer,
+				p_firstChunkIDOrRangeID, p_failedPeer, p_newPeer, false);
+
+		try {
+			m_network.sendSync(request);
+		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
+			LOGGER.error("Replacing backup peer on 0x%X failed", responsibleSuperpeer);
+			// #endif /* LOGGER >= ERROR */
+		}
+	}
+
+	/**
 	 * Joins the superpeer overlay through contactSuperpeer
 	 *
 	 * @param p_contactSuperpeer NodeID of a known superpeer
@@ -1243,6 +1267,7 @@ public class OverlayPeer implements MessageReceiver {
 			LOGGER.trace("Contacting 0x%X to get the responsible superpeer, I am 0x%X", contactSuperpeer, m_nodeID);
 			// #endif /* LOGGER == TRACE */
 
+			System.out.println(contactSuperpeer + ", " + m_nodeID);
 			joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, false);
 			try {
 				m_network.sendSync(joinRequest);

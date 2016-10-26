@@ -19,7 +19,6 @@ public final class OverlayHelper {
 
 	// Constants
 	public static final short ORDER = 10;
-	protected static final short DUMMY = -1;
 
 	/**
 	 * Hidden constructor
@@ -202,6 +201,27 @@ public final class OverlayHelper {
 		if (0 > index) {
 			p_peers.add(index * -1 - 1, p_peer);
 		}
+	}
+
+	/**
+	 * Determines if the given peer is in given peer list
+	 * @param p_peer
+	 *            NodeID of the peer
+	 * @param p_peers
+	 *            all peers
+	 * @return true if peer was found, false otherwise
+	 * @lock overlay lock must be read-locked
+	 */
+	protected static boolean containsPeer(final short p_peer, final ArrayList<Short> p_peers) {
+		boolean ret = false;
+		int index;
+
+		index = Collections.binarySearch(p_peers, p_peer);
+		if (0 <= index) {
+			ret = true;
+		}
+
+		return ret;
 	}
 
 	/**

@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Look up service providing look ups for e.g. use in TCMDs
- *
  * @author Mike Birkhoff
  */
 public class LookupService extends AbstractDXRAMService implements MessageReceiver {
@@ -76,8 +75,8 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	/**
 	 * Sends a Response to a LookupTree Request
-	 *
-	 * @param p_message the LookupTreeRequest
+	 * @param p_message
+	 *            the LookupTreeRequest
 	 */
 	private void incomingRequestLookupTreeOnServerMessage(final GetLookupTreeRequest p_message) {
 		LookupTree tree = m_lookup.superPeerGetLookUpTree(p_message.getTreeNodeID());
@@ -97,11 +96,11 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 		if (p_message != null) {
 			if (p_message.getType() == DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
-					case LookupMessages.SUBTYPE_GET_LOOKUP_TREE_REQUEST:
-						incomingRequestLookupTreeOnServerMessage((GetLookupTreeRequest) p_message);
-						break;
-					default:
-						break;
+				case LookupMessages.SUBTYPE_GET_LOOKUP_TREE_REQUEST:
+					incomingRequestLookupTreeOnServerMessage((GetLookupTreeRequest) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}
@@ -110,7 +109,6 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	/**
 	 * Returns all known superpeers
-	 *
 	 * @return array with all superpeers
 	 */
 	public ArrayList<Short> getAllSuperpeers() {
@@ -119,8 +117,8 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	/**
 	 * Returns the responsible superpeer for given peer
-	 *
-	 * @param p_nid node id to get responsible super peer from
+	 * @param p_nid
+	 *            node id to get responsible super peer from
 	 * @return node ID of superpeer
 	 */
 	public short getResponsibleSuperpeer(final short p_nid) {
@@ -129,9 +127,10 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	/**
 	 * sends a message to a superpeer to get a lookuptree from
-	 *
-	 * @param p_superPeerNid superpeer where the lookuptree to get from
-	 * @param p_nodeId       node id which lookuptree to get
+	 * @param p_superPeerNid
+	 *            superpeer where the lookuptree to get from
+	 * @param p_nodeId
+	 *            node id which lookuptree to get
 	 * @return requested lookup Tree
 	 */
 	public LookupTree getLookupTreeFromSuperpeer(final short p_superPeerNid, final short p_nodeId) {
@@ -157,8 +156,8 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	/**
 	 * Sends a request to given superpeer to get a metadata summary
-	 *
-	 * @param p_nodeID superpeer to get summary from
+	 * @param p_nodeID
+	 *            superpeer to get summary from
 	 * @return the metadata summary
 	 */
 	public String getMetadataSummary(final short p_nodeID) {
