@@ -1,9 +1,7 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
-import de.hhu.bsinfo.utils.Pair;
-import de.hhu.bsinfo.utils.conf.Configuration;
-import de.hhu.bsinfo.utils.logger.Logger;
+import com.google.gson.annotations.Expose;
 
 /**
  * Base class for all services in DXRAM. All services in DXRAM form the API for the user.
@@ -16,12 +14,19 @@ import de.hhu.bsinfo.utils.logger.Logger;
  */
 public abstract class AbstractDXRAMService {
 
+	// config values
+	@Expose
+	private final String m_class = this.getClass().getName();
+	@Expose
+	private final boolean m_enabled = true;
+
 	private String m_shortName;
 	private DXRAMEngine m_parentEngine;
-	private Settings m_settings;
 
 	/**
 	 * Constructor
+	 *
+	 * @param p_shortName Short name of the service (used for terminal)
 	 */
 	public AbstractDXRAMService(final String p_shortName) {
 		m_shortName = p_shortName;
@@ -46,35 +51,32 @@ public abstract class AbstractDXRAMService {
 	}
 
 	/**
-	 * Pre-init method to be called before start is called.
-	 *
-	 * @param p_engine Engine this service is part of (parent).
-	 */
-	public void preInit(final DXRAMEngine p_engine) {
-		m_parentEngine = p_engine;
-
-		m_settings = new Settings(m_parentEngine.getConfiguration(), m_parentEngine.getLogger(), getServiceName());
-		registerDefaultSettingsService(m_settings);
-	}
-
-	/**
 	 * Start this service.
 	 *
 	 * @param p_engine Engine this service is part of (parent).
 	 * @return True if initializing was successful, false otherwise.
 	 */
 	public boolean start(final DXRAMEngine p_engine) {
-		boolean ret = false;
+		boolean ret;
 
 		m_parentEngine = p_engine;
-		m_settings = new Settings(m_parentEngine.getConfiguration(), m_parentEngine.getLogger(), getServiceName());
-
-		registerDefaultSettingsService(m_settings);
 
 		// #if LOGGER >= INFO
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Starting service...");
 		// #endif /* LOGGER >= INFO */
-		ret = startService(m_parentEngine.getSettings(), m_settings);
+
+		resolveComponentDependencies(p_engine);
+
+		try {
+			ret = startService(m_parentEngine.getSettings());
+		} catch (final Exception e) {
+			// #if LOGGER >= ERROR
+			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Starting service failed.", e);
+			// #endif /* LOGGER >= ERROR */
+
+			return false;
+		}
+
 		if (!ret) {
 			// #if LOGGER >= ERROR
 			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Starting service failed.");
@@ -94,7 +96,7 @@ public abstract class AbstractDXRAMService {
 	 * @return True if shutting down was successful, false otherwise.
 	 */
 	public boolean shutdown() {
-		boolean ret = false;
+		boolean ret;
 
 		// #if LOGGER >= INFO
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down service...");
@@ -114,32 +116,19 @@ public abstract class AbstractDXRAMService {
 	}
 
 	/**
-	 * Get a component from the engine.
+	 * Called before the service is initialized. Get all the components your service depends on.
 	 *
-	 * @param <T>     Class implementing DXRAMComponent
-	 * @param p_class Class of the component to get. If a component has multiple implementations, always use the base
-	 *                class/interface here.
-	 * @return Reference to the component requested or null if not available/enabled.
+	 * @param p_componentAccessor Component accessor that provides access to the components
 	 */
-	protected <T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
-		return m_parentEngine.getComponent(p_class);
-	}
-
-	/**
-	 * Register default value for any settings this service can get from the configuration.
-	 *
-	 * @param p_settings Settings instance to register default values at.
-	 */
-	protected abstract void registerDefaultSettingsService(final Settings p_settings);
+	protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
 
 	/**
 	 * Called when the service is initialized. Setup data structures, get components for operation, read settings etc.
 	 *
-	 * @param p_engineSettings Settings instance provided by the engine.
-	 * @param p_settings       Settings instance with service related settings.
+	 * @param p_engineEngineSettings EngineSettings instance provided by the engine.
 	 * @return True if initialing was successful, false otherwise.
 	 */
-	protected abstract boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings);
+	protected abstract boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings);
 
 	/**
 	 * Called when the service gets shut down. Cleanup your service in here.
@@ -161,6 +150,7 @@ public abstract class AbstractDXRAMService {
 	/**
 	 * Check if this class is an engine accessor i.e. breaking the rules of
 	 * not knowing the engine. Override this if this feature is used.
+	 * Do not override this if you do not know what you are doing.
 	 *
 	 * @return True if accessor, false otherwise.
 	 */
@@ -183,8 +173,8 @@ public abstract class AbstractDXRAMService {
 
 	/**
 	 * Get the engine within the service.
-	 * This is not wanted in most cases to hide as much as possible from the services.
-	 * But for some exceptions (like triggering a shutdown or reboot) there is no other way.
+	 * If you don't know what you are doing, do not use this.
+	 * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
 	 *
 	 * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
 	 */
@@ -193,82 +183,6 @@ public abstract class AbstractDXRAMService {
 			return m_parentEngine;
 		} else {
 			return null;
-		}
-	}
-
-	/**
-	 * Convenience wrapper to get service related settings from a configuration.
-	 *
-	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
-	 */
-	public static class Settings {
-		private Configuration m_configuration;
-		private Logger m_logger;
-		private String m_basePath = new String();
-
-		/**
-		 * Constructor
-		 *
-		 * @param p_configuration     Configuration to wrap which contains service settings.
-		 * @param p_logger            Logger to use for logging messages.
-		 * @param p_serviceIdentifier Identifier of the service used for the configuration path.
-		 */
-		Settings(final Configuration p_configuration, final Logger p_logger, final String p_serviceIdentifier) {
-			m_configuration = p_configuration;
-			m_logger = p_logger;
-			m_basePath = "/DXRAMEngine/ServiceSettings/" + p_serviceIdentifier + "/";
-		}
-
-		/**
-		 * Set a default value for a specific configuration key.
-		 *
-		 * @param <T>       Type of the value.
-		 * @param p_default Pair of configuration key and default value to set for the specified key.
-		 */
-		public <T> void setDefaultValue(final Pair<String, T> p_default) {
-			setDefaultValue(p_default.first(), p_default.second());
-		}
-
-		/**
-		 * Set a default value for a specific configuration key.
-		 *
-		 * @param <T>     Type of the value.
-		 * @param p_key   Key for the value.
-		 * @param p_value Value to set.
-		 */
-		public <T> void setDefaultValue(final String p_key, final T p_value) {
-			if (m_configuration.addValue(m_basePath + p_key, p_value, false)) {
-				// we added a default value => value was missing from configuration
-				// #if LOGGER >= WARN
-				m_logger.warn(this.getClass().getSimpleName(),
-						"Settings value for '" + p_key + "' is missing in " + m_basePath + ", using default value "
-								+ p_value);
-				// #endif /* LOGGER >= WARN */
-			}
-		}
-
-		/**
-		 * Get a value from the configuration for the service.
-		 *
-		 * @param <T>       Type of the value.
-		 * @param p_default Pair of key and default value to get value for.
-		 * @return Value associated with the provided key.
-		 */
-		@SuppressWarnings("unchecked")
-		public <T> T getValue(final Pair<String, T> p_default) {
-			return (T) getValue(p_default.first(), p_default.second().getClass());
-		}
-
-		/**
-		 * Get a value from the configuration for the service.
-		 *
-		 * @param <T>    Type of the value.
-		 * @param p_key  Key to get the value for.
-		 * @param p_type Type of the value to get.
-		 * @return Value assicated with the provided key.
-		 */
-		public <T> T getValue(final String p_key, final Class<T> p_type) {
-			return m_configuration.getValue(m_basePath + p_key, p_type);
 		}
 	}
 }

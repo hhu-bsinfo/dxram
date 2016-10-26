@@ -8,11 +8,13 @@ import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.DefaultPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.MigrationPrimLogEntryHeader;
@@ -36,6 +38,7 @@ import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.Tools;
 
 /**
@@ -44,15 +47,40 @@ import de.hhu.bsinfo.utils.Tools;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class LogService extends AbstractDXRAMService implements MessageReceiver {
+
 	// Constants
 	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
 	private static final int PAYLOAD_PRINT_LENGTH = 128;
 
-	// Attributes
+	// configuration values
+	@Expose
+	private boolean m_useChecksum = true;
+	@Expose
+	private StorageUnit m_flashPageSize = new StorageUnit(4, StorageUnit.KB);
+	@Expose
+	private StorageUnit m_logSegmentSize = new StorageUnit(8, StorageUnit.MB);
+	@Expose
+	private StorageUnit m_primaryLogSize = new StorageUnit(256, StorageUnit.MB);
+	@Expose
+	private StorageUnit m_secondaryLogSize = new StorageUnit(512, StorageUnit.MB);
+	@Expose
+	private StorageUnit m_writeBufferSize = new StorageUnit(256, StorageUnit.MB);
+	@Expose
+	private StorageUnit m_secondaryLogBufferSize = new StorageUnit(128, StorageUnit.KB);
+	@Expose
+	private int m_reorgUtilizationThreshold = 70;
+	@Expose
+	private boolean m_sortBufferPooling = true;
+
+	// dependent components
 	private NetworkComponent m_network;
 	private LoggerComponent m_logger;
+	private AbstractBootComponent m_boot;
+	private LogComponent m_log;
+	private BackupComponent m_backup;
 
+	// private state
 	private short m_nodeID;
 	private boolean m_loggingIsActive;
 
@@ -70,16 +98,6 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	private boolean m_accessGrantedForReorgThread;
 
 	private String m_backupDirectory;
-	private boolean m_useChecksum;
-
-	private int m_flashPageSize;
-	private int m_logSegmentSize;
-	private long m_primaryLogSize;
-	private long m_secondaryLogSize;
-	private int m_writeBufferSize;
-	private int m_secondaryLogBufferSize;
-
-	private int m_reorgUtilizationThreshold;
 
 	/**
 	 * Constructor
@@ -280,56 +298,38 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-		p_settings.setDefaultValue(LogConfigurationValues.Service.LOG_CHECKSUM);
-
-		p_settings.setDefaultValue(LogConfigurationValues.Service.FLASHPAGE_SIZE);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.LOG_SEGMENT_SIZE);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.PRIMARY_LOG_SIZE);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.SECONDARY_LOG_SIZE);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.WRITE_BUFFER_SIZE);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.SECONDARY_LOG_BUFFER_SIZE);
-
-		p_settings.setDefaultValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.SORT_BUFFER_POOLING);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_log = p_componentAccessor.getComponent(LogComponent.class);
+		m_backup = p_componentAccessor.getComponent(BackupComponent.class);
 	}
 
 	@Override
-	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-		m_network = getComponent(NetworkComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 
-		m_loggingIsActive = (getComponent(AbstractBootComponent.class).getNodeRole() == NodeRole.PEER)
-				&& getComponent(BackupComponent.class).isActive();
+		m_loggingIsActive = (m_boot.getNodeRole() == NodeRole.PEER) && m_backup.isActive();
 		if (m_loggingIsActive) {
-			m_useChecksum = p_settings.getValue(LogConfigurationValues.Service.LOG_CHECKSUM);
 
-			m_flashPageSize = p_settings.getValue(LogConfigurationValues.Service.FLASHPAGE_SIZE);
-			m_logSegmentSize = p_settings.getValue(LogConfigurationValues.Service.LOG_SEGMENT_SIZE);
-			m_primaryLogSize = p_settings.getValue(LogConfigurationValues.Service.PRIMARY_LOG_SIZE);
-			m_secondaryLogSize = p_settings.getValue(LogConfigurationValues.Service.SECONDARY_LOG_SIZE);
-			m_writeBufferSize = p_settings.getValue(LogConfigurationValues.Service.WRITE_BUFFER_SIZE);
-			m_secondaryLogBufferSize = p_settings.getValue(LogConfigurationValues.Service.SECONDARY_LOG_BUFFER_SIZE);
+			m_nodeID = m_boot.getNodeID();
 
-			m_reorgUtilizationThreshold =
-					p_settings.getValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
-
-			m_nodeID = getComponent(AbstractBootComponent.class).getNodeID();
-
-			m_backupDirectory = getComponent(BackupComponent.class).getBackupDirectory();
+			m_backupDirectory = m_backup.getBackupDirectory();
 
 			// Set attributes of log component that can only be set by log service
-			getComponent(LogComponent.class).setAttributes(this, m_backupDirectory, m_useChecksum, m_secondaryLogSize,
-					m_logSegmentSize);
+			m_log.setAttributes(this, m_backupDirectory, m_useChecksum,
+					m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes());
 
 			// Set the log entry header crc size (must be called before the first log entry header is created)
 			AbstractLogEntryHeader.setCRCSize(m_useChecksum);
 
 			// Create primary log
 			try {
-				m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, m_primaryLogSize, m_flashPageSize);
+				m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, m_primaryLogSize.getBytes(),
+						(int) m_flashPageSize.getBytes());
 			} catch (final IOException | InterruptedException e) {
 				// #if LOGGER >= ERROR
 				m_logger.error(LogService.class, "Primary log creation failed: " + e);
@@ -340,9 +340,9 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 			// #endif /* LOGGER == TRACE */
 
 			// Create primary log buffer
-			m_writeBuffer = new PrimaryWriteBuffer(this, m_logger, m_primaryLog, m_writeBufferSize,
-					m_flashPageSize, m_secondaryLogBufferSize, m_logSegmentSize, m_useChecksum,
-					p_settings.getValue(LogConfigurationValues.Service.SORT_BUFFER_POOLING));
+			m_writeBuffer = new PrimaryWriteBuffer(this, m_logger, m_primaryLog, (int) m_writeBufferSize.getBytes(),
+					(int) m_flashPageSize.getBytes(), (int) m_secondaryLogBufferSize.getBytes(),
+					(int) m_logSegmentSize.getBytes(), m_useChecksum, m_sortBufferPooling);
 
 			// Create secondary log and secondary log buffer catalogs
 			m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
@@ -351,7 +351,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 			// Create reorganization thread for secondary logs
 			m_secondaryLogsReorgThread =
-					new SecondaryLogsReorgThread(this, m_logger, m_secondaryLogSize, m_logSegmentSize);
+					new SecondaryLogsReorgThread(this, m_logger, m_secondaryLogSize.getBytes(),
+							(int) m_logSegmentSize.getBytes());
 			m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
 			// Start secondary logs reorganization thread
 			m_secondaryLogsReorgThread.start();
@@ -709,22 +710,24 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 							new SecondaryLog(this, m_logger, m_secondaryLogsReorgThread, owner,
 									ChunkID.getLocalID(firstChunkIDOrRangeID), cat.getNewID(false),
 									false,
-									m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize,
+									m_backupDirectory, m_secondaryLogSize.getBytes(),
+									(int) m_flashPageSize.getBytes(), (int) m_logSegmentSize.getBytes(),
 									m_reorgUtilizationThreshold, m_useChecksum);
 					// Insert range in log catalog
-					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize,
-							m_logSegmentSize);
+					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, (int) m_secondaryLogBufferSize.getBytes(),
+							(int) m_logSegmentSize.getBytes());
 				}
 			} else {
 				if (!cat.exists(-1, (byte) firstChunkIDOrRangeID)) {
 					// Create new secondary log for migrations
 					secLog = new SecondaryLog(this, m_logger, m_secondaryLogsReorgThread, owner, firstChunkIDOrRangeID,
 							cat.getNewID(true), true,
-							m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize,
+							m_backupDirectory, m_secondaryLogSize.getBytes(), (int) m_flashPageSize.getBytes(),
+							(int) m_logSegmentSize.getBytes(),
 							m_reorgUtilizationThreshold, m_useChecksum);
 					// Insert range in log catalog
-					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize,
-							m_logSegmentSize);
+					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, (int) m_secondaryLogBufferSize.getBytes(),
+							(int) m_logSegmentSize.getBytes());
 				}
 			}
 		} catch (final IOException | InterruptedException e) {

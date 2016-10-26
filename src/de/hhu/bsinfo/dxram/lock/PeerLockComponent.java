@@ -7,7 +7,10 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
@@ -20,33 +23,27 @@ import de.hhu.bsinfo.utils.Pair;
  */
 public class PeerLockComponent extends AbstractLockComponent {
 
+	// dependent components
+	private LoggerComponent m_logger;
+
 	private Map<Long, LockEntry> m_lockedChunks;
 	private AtomicBoolean m_mapEntryCreationLock;
 
-	private LoggerComponent m_logger;
-
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
 	 */
-	public PeerLockComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public PeerLockComponent() {
+		super(DXRAMComponentOrder.Init.PEER_LOCK, DXRAMComponentOrder.Shutdown.PEER_LOCK);
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 	}
 
 	@Override
-	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
-		m_logger = getDependentComponent(LoggerComponent.class);
-
-		m_lockedChunks = new ConcurrentHashMap<Long, LockEntry>();
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+		m_lockedChunks = new ConcurrentHashMap<>();
 		m_mapEntryCreationLock = new AtomicBoolean(false);
 
 		return true;
@@ -65,13 +62,13 @@ public class PeerLockComponent extends AbstractLockComponent {
 
 	@Override
 	public ArrayList<Pair<Long, Short>> getLockedList() {
-		ArrayList<Pair<Long, Short>> ret = new ArrayList<Pair<Long, Short>>();
+		ArrayList<Pair<Long, Short>> ret = new ArrayList<>();
 		for (Entry<Long, LockEntry> entry : m_lockedChunks.entrySet()) {
 
 			LockEntry lockEntry = entry.getValue();
 			short node = lockEntry.m_nodeID;
 			if (node != NodeID.INVALID_ID) {
-				ret.add(new Pair<Long, Short>(entry.getKey(), node));
+				ret.add(new Pair<>(entry.getKey(), node));
 			}
 		}
 

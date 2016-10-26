@@ -4,6 +4,9 @@ package de.hhu.bsinfo.dxram.stats;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 
 /**
  * Exposing the component backend to the front with some
@@ -13,6 +16,7 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
  */
 public class StatisticsService extends AbstractDXRAMService {
 
+	// dependent components
 	private StatisticsComponent m_statistics;
 
 	/**
@@ -152,21 +156,17 @@ public class StatisticsService extends AbstractDXRAMService {
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
 	}
 
 	@Override
-	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
-		m_statistics = getComponent(StatisticsComponent.class);
-
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		return true;
 	}
 
 	@Override
 	protected boolean shutdownService() {
-		m_statistics = null;
 		return true;
 	}
 

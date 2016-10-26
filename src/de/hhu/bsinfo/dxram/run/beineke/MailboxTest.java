@@ -15,23 +15,28 @@ import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
  * 3) Start server: With parameters "server x" whereas x is the number of messages that should be stored on server
  * 4) Start clients: No parameters
  */
+
 /**
  * Test case for the distributed Chunk handling.
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 07.04.2016
  */
 public final class MailboxTest {
 
 	// Constructors
+
 	/**
 	 * Creates an instance of MailboxTest
 	 */
-	private MailboxTest() {}
+	private MailboxTest() {
+	}
 
 	// Methods
+
 	/**
 	 * Program entry point
-	 * @param p_arguments
-	 *            The program arguments
+	 *
+	 * @param p_arguments The program arguments
 	 */
 	public static void main(final String[] p_arguments) {
 		if (p_arguments.length == 2 && p_arguments[0].equals("server")) {
@@ -42,8 +47,10 @@ public final class MailboxTest {
 	}
 
 	// Classes
+
 	/**
 	 * Represents a superpeer
+	 *
 	 * @author Florian Klein
 	 *         22.07.2013
 	 */
@@ -53,16 +60,18 @@ public final class MailboxTest {
 		private int m_amount;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of Server
-		 * @param p_amount
-		 *            the amount of Chunks to create
+		 *
+		 * @param p_amount the amount of Chunks to create
 		 */
 		Server(final int p_amount) {
 			m_amount = p_amount;
 		}
 
 		// Methods
+
 		/**
 		 * Starts the server
 		 */
@@ -73,7 +82,8 @@ public final class MailboxTest {
 			// Wait a moment
 			try {
 				Thread.sleep(500);
-			} catch (final InterruptedException e) {}
+			} catch (final InterruptedException e) {
+			}
 
 			// Initialize DXRAM
 			final DXRAM dxram = new DXRAM();
@@ -109,7 +119,8 @@ public final class MailboxTest {
 				// Wait a moment
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e) {}
+				} catch (final InterruptedException e) {
+				}
 				i++;
 			}
 			// try {
@@ -131,25 +142,30 @@ public final class MailboxTest {
 				// Wait a moment
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e) {}
+				} catch (final InterruptedException e) {
+				}
 			}
 		}
 	}
 
 	/**
 	 * Represents a client
+	 *
 	 * @author Florian Klein
 	 *         22.07.2013
 	 */
 	private static class Client {
 
 		// Constructors
+
 		/**
 		 * Creates an instance of Client
 		 */
-		Client() {}
+		Client() {
+		}
 
 		// Methods
+
 		/**
 		 * Starts the client
 		 */
@@ -164,11 +180,12 @@ public final class MailboxTest {
 			// Wait a moment
 			try {
 				Thread.sleep(1000);
-			} catch (final InterruptedException e) {}
+			} catch (final InterruptedException e) {
+			}
 
 			// Initialize DXRAM
 			final DXRAM dxram = new DXRAM();
-			dxram.initialize("config/dxram.conf", "config/dxram.nodes.local.conf");
+			dxram.initialize("config/dxram.json");
 			final ChunkService chunkService = dxram.getService(ChunkService.class);
 			final NameserviceService nameService = dxram.getService(NameserviceService.class);
 
@@ -198,7 +215,8 @@ public final class MailboxTest {
 				// Wait a moment
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e) {}
+				} catch (final InterruptedException e) {
+				}
 			}
 		}
 	}

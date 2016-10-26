@@ -5,10 +5,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -23,19 +27,36 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
  * Component for managing backup ranges.
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
 public class BackupComponent extends AbstractDXRAMComponent implements EventListener<NodeFailureEvent> {
 
-	private boolean m_backupActive;
-	private String m_backupDirectory;
-	private long m_backupRangeSize;
+	// configuration values
+	@Expose
+	private boolean m_backupActive = false;
+	@Expose
+	private String m_backupDirectory = "./log/";
+	@Expose
+	private StorageUnit m_backupRangeSize = new StorageUnit(256, StorageUnit.MB);
+	@Expose
+	private short m_replicationFactor = 3;
+
+	// dependent components
+	private AbstractBootComponent m_boot;
+	private LoggerComponent m_logger;
+	private LookupComponent m_lookup;
+	private LogComponent m_log;
+	private EventComponent m_event;
+	private NetworkComponent m_network;
+
+	// private state
 	private long m_rangeSize;
 	private boolean m_firstRangeInitialized;
-	private short m_replicationFactor;
 
 	private short m_nodeID;
 
@@ -47,24 +68,16 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 	// ChunkID -> migration backup range
 	private MigrationBackupTree m_migrationsTree;
 
-	private AbstractBootComponent m_boot;
-	private LoggerComponent m_logger;
-	private LookupComponent m_lookup;
-	private LogComponent m_log;
-
 	/**
 	 * Creates the backup component
-	 * @param p_priorityInit
-	 *            the initialization priority
-	 * @param p_priorityShutdown
-	 *            the shutdown priority
 	 */
-	public BackupComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public BackupComponent() {
+		super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP);
 	}
 
 	/**
 	 * Returns whether backup is enabled or not
+	 *
 	 * @return whether backup is enabled or not
 	 */
 	public boolean isActive() {
@@ -73,6 +86,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
 	/**
 	 * Return the path to all logs
+	 *
 	 * @return the backup directory
 	 */
 	public String getBackupDirectory() {
@@ -89,10 +103,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 	/**
 	 * Initializes the backup range for current locations
 	 * and determines new backup peers if necessary
-	 * @param p_chunkID
-	 *            the current ChunkID
-	 * @param p_size
-	 *            the size of the new created chunk
+	 *
+	 * @param p_chunkID the current ChunkID
+	 * @param p_size    the size of the new created chunk
 	 */
 	public void initBackupRange(final long p_chunkID, final int p_size) {
 		final int size;
@@ -109,7 +122,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 				m_log.initBackupRange((long) m_nodeID << 48, m_currentBackupRange.getBackupPeers());
 				m_rangeSize = size;
 				m_firstRangeInitialized = true;
-			} else if (m_rangeSize + size > m_backupRangeSize) {
+			} else if (m_backupRangeSize.getBytes() + size > m_backupRangeSize.getBytes()) {
 				determineBackupPeers(localID);
 				m_lookup.initRange(((long) m_nodeID << 48) + localID,
 						new LookupRangeWithBackupPeers(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
@@ -127,8 +140,8 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
 	/**
 	 * Returns the corresponding backup peers
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_chunkID the ChunkID
 	 * @return the backup peers
 	 */
 	public short[] getBackupPeersForLocalChunks(final long p_chunkID) {
@@ -150,8 +163,8 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
 	/**
 	 * Returns the corresponding backup peers
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_chunkID the ChunkID
 	 * @return the backup peers
 	 */
 	public long getBackupPeersForLocalChunksAsLong(final long p_chunkID) {
@@ -187,6 +200,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
 	/**
 	 * Returns the backup peers for current migration backup range
+	 *
 	 * @return the backup peers for current migration backup range
 	 */
 	public short[] getCurrentMigrationBackupPeers() {
@@ -195,8 +209,8 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
 	/**
 	 * Puts a migrated chunk into the migration tree
-	 * @param p_chunk
-	 *            the migrated chunk
+	 *
+	 * @param p_chunk the migrated chunk
 	 * @return the RangeID of the migration backup range the chunk was put in
 	 */
 	public byte addMigratedChunk(final Chunk p_chunk) {
@@ -209,10 +223,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
 	/**
 	 * Checks if given log entry fits in current migration backup range
-	 * @param p_size
-	 *            the range size
-	 * @param p_logEntrySize
-	 *            the log entry size
+	 *
+	 * @param p_size         the range size
+	 * @param p_logEntrySize the log entry size
 	 * @return whether the entry and range fits in backup range
 	 */
 	public boolean fitsInCurrentMigrationBackupRange(final long p_size, final int p_logEntrySize) {
@@ -253,40 +266,31 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-		p_settings.setDefaultValue(BackupConfigurationValues.Component.BACKUP_ACTIVE);
-		p_settings.setDefaultValue(BackupConfigurationValues.Component.BACKUP_DIRECTORY);
-		p_settings.setDefaultValue(BackupConfigurationValues.Component.BACKUP_RANGE_SIZE);
-		p_settings.setDefaultValue(BackupConfigurationValues.Component.REPLICATION_FACTOR);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+		m_log = p_componentAccessor.getComponent(LogComponent.class);
+		m_event = p_componentAccessor.getComponent(EventComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 	}
 
 	@Override
-	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
-
-		m_backupActive = p_settings.getValue(BackupConfigurationValues.Component.BACKUP_ACTIVE);
-		m_backupDirectory = p_settings.getValue(BackupConfigurationValues.Component.BACKUP_DIRECTORY);
-		m_backupRangeSize = p_settings.getValue(BackupConfigurationValues.Component.BACKUP_RANGE_SIZE);
-		m_replicationFactor = p_settings.getValue(BackupConfigurationValues.Component.REPLICATION_FACTOR);
-		m_boot = getDependentComponent(AbstractBootComponent.class);
-		m_logger = getDependentComponent(LoggerComponent.class);
-		m_lookup = getDependentComponent(LookupComponent.class);
-		m_log = getDependentComponent(LogComponent.class);
-
-		getDependentComponent(EventComponent.class).registerListener(this, NodeFailureEvent.class);
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+		m_event.registerListener(this, NodeFailureEvent.class);
 
 		m_nodeID = m_boot.getNodeID();
 		if (m_backupActive && m_boot.getNodeRole().equals(NodeRole.PEER)) {
-			m_ownBackupRanges = new ArrayList<BackupRange>();
-			m_migrationBackupRanges = new ArrayList<BackupRange>();
-			m_migrationsTree = new MigrationBackupTree((short) 10, m_backupRangeSize);
+			m_ownBackupRanges = new ArrayList<>();
+			m_migrationBackupRanges = new ArrayList<>();
+			m_migrationsTree = new MigrationBackupTree((short) 10, m_backupRangeSize.getBytes());
 			m_currentBackupRange = null;
 			m_currentMigrationBackupRange = new BackupRange(-1, null);
 			m_rangeSize = 0;
 
-			getDependentComponent(NetworkComponent.class).registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
+			m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
 					LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
-			getDependentComponent(NetworkComponent.class).registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
+			m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
 					LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
 		}
 		m_firstRangeInitialized = false;
@@ -301,8 +305,8 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
 	/**
 	 * Determines backup peers
-	 * @param p_localID
-	 *            the current LocalID
+	 *
+	 * @param p_localID the current LocalID
 	 */
 	private void determineBackupPeers(final long p_localID) {
 		boolean ready = false;

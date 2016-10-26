@@ -13,7 +13,9 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -33,9 +35,12 @@ import de.hhu.bsinfo.ethnet.NodeID;
 /**
  * This service provides access to the backend storage system.
  * It does not replace the normal ChunkService, but extends it capabilities with async operations.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 17.02.16
  */
 public class AsyncChunkService extends AbstractDXRAMService implements MessageReceiver {
+
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private MemoryManagerComponent m_memoryManager;
@@ -43,6 +48,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	private LookupComponent m_lookup;
 	private AbstractLockComponent m_lock;
 	private StatisticsComponent m_statistics;
+
 	private ChunkStatisticsRecorderIDs m_statisticsRecorderIDs;
 
 	/**
@@ -53,21 +59,20 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {}
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+		m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
+		// #ifdef STATISTICS
+		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
+		// #endif /* STATISTICS */
+	}
 
 	@Override
-	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_memoryManager = getComponent(MemoryManagerComponent.class);
-		m_network = getComponent(NetworkComponent.class);
-		m_lookup = getComponent(LookupComponent.class);
-		m_lock = getComponent(AbstractLockComponent.class);
-		// #ifdef STATISTICS
-		m_statistics = getComponent(StatisticsComponent.class);
-		// #endif /* STATISTICS */
-		getComponent(TerminalComponent.class);
-
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 		// #ifdef STATISTICS
@@ -92,8 +97,8 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 * @param p_dataStructres
-	 *            Data structures to put/update.
+	 *
+	 * @param p_dataStructres Data structures to put/update.
 	 */
 	public void put(final DataStructure... p_dataStructres) {
 		put(ChunkLockOperation.NO_LOCK_OPERATION, p_dataStructres);
@@ -101,10 +106,9 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 * @param p_chunkUnlockOperation
-	 *            Unlock operation to execute right after the put operation.
-	 * @param p_dataStructures
-	 *            Data structures to put/update.
+	 *
+	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
+	 * @param p_dataStructures       Data structures to put/update.
 	 */
 	public void put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
 		if (p_dataStructures.length == 0) {
@@ -218,8 +222,6 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 					// TODO
 					// m_lookup.invalidate(dataStructure.getID());
-
-					continue;
 				}
 			}
 		}
@@ -239,7 +241,6 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 					+ p_dataStructures.length + ") " + ChunkID.toHexString(p_dataStructures[0].getID()) + ", ...]");
 			// #endif /* LOGGER == TRACE */
 		}
-		return;
 	}
 
 	@Override
@@ -299,8 +300,8 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 	/**
 	 * Handles an incoming PutRequest
-	 * @param p_request
-	 *            the PutRequest
+	 *
+	 * @param p_request the PutRequest
 	 */
 	private void incomingPutMessage(final PutMessage p_request) {
 		DataStructure[] chunks = p_request.getDataStructures();
@@ -311,12 +312,12 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		// #endif /* STATISTICS */
 
 		m_memoryManager.lockAccess();
-		for (int i = 0; i < chunks.length; i++) {
-			MemoryErrorCodes err = m_memoryManager.put(chunks[i]);
+		for (DataStructure chunk : chunks) {
+			MemoryErrorCodes err = m_memoryManager.put(chunk);
 			// #if LOGGER >= WARN
 			if (err != MemoryErrorCodes.SUCCESS) {
 				m_logger.warn(getClass(),
-						"Putting chunk " + ChunkID.toHexString(chunks[i].getID()) + " failed: " + err);
+						"Putting chunk " + ChunkID.toHexString(chunk.getID()) + " failed: " + err);
 			}
 			// #endif /* LOGGER >= WARN */
 		}

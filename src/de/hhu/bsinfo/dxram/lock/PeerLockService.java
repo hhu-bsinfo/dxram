@@ -3,9 +3,12 @@ package de.hhu.bsinfo.dxram.lock;
 
 import java.util.ArrayList;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -28,6 +31,7 @@ import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * Lock service providing exclusive locking of chunks/data structures.
@@ -36,6 +40,13 @@ import de.hhu.bsinfo.utils.Pair;
  */
 public class PeerLockService extends AbstractLockService implements MessageReceiver, EventListener<NodeFailureEvent> {
 
+	// configuration values
+	@Expose
+	private TimeUnit m_remoteLockSendInterval = new TimeUnit(10, TimeUnit.MS);
+	@Expose
+	private TimeUnit m_remoteLockTryTimeout = new TimeUnit(100, TimeUnit.MS);
+
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private NetworkComponent m_network;
@@ -43,32 +54,28 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	private AbstractLockComponent m_lock;
 	private LookupComponent m_lookup;
 	private StatisticsComponent m_statistics;
+	private EventComponent m_event;
 
 	private LockStatisticsRecorderIDs m_statisticsRecorderIDs;
 
-	private int m_remoteLockSendIntervalMs = -1;
-	private int m_remoteLockTryTimeoutMs = -1;
-
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-		p_settings.setDefaultValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
-		p_settings.setDefaultValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
+		m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+		// #ifdef STATISTICS
+		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
+		// #endif /* STATISTICS */
+		m_event = p_componentAccessor.getComponent(EventComponent.class);
 	}
 
 	@Override
-	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_network = getComponent(NetworkComponent.class);
-		m_memoryManager = getComponent(MemoryManagerComponent.class);
-		m_lock = getComponent(AbstractLockComponent.class);
-		m_lookup = getComponent(LookupComponent.class);
-		// #ifdef STATISTICS
-		m_statistics = getComponent(StatisticsComponent.class);
-		// #endif /* STATISTICS */
-
-		getComponent(EventComponent.class).registerListener(this, NodeFailureEvent.class);
+		m_event.registerListener(this, NodeFailureEvent.class);
 
 		m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST,
 				LockRequest.class);
@@ -99,9 +106,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		m_statisticsRecorderIDs.m_operations.m_incomingUnlock = m_statistics
 				.createOperation(m_statisticsRecorderIDs.m_id, LockStatisticsRecorderIDs.Operations.MS_INCOMING_UNLOCK);
 		// #endif /* STATISTICS */
-
-		m_remoteLockSendIntervalMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
-		m_remoteLockTryTimeoutMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
 
 		return true;
 	}
@@ -194,8 +198,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 						// avoid heavy network load/lock polling
 						if (idle) {
 							try {
-								Thread.sleep(m_remoteLockSendIntervalMs);
-							} catch (final InterruptedException e) {
+								Thread.sleep(m_remoteLockSendInterval.getMs());
+							} catch (final InterruptedException ignored) {
 							}
 						}
 
@@ -215,7 +219,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 									err = ErrorCode.NETWORK;
 									break;
 								default:
-									assert 1 == 2;
+									assert false;
 									break;
 							}
 
@@ -308,7 +312,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 									err = ErrorCode.NETWORK;
 									break;
 								default:
-									assert 1 == 2;
+									assert false;
 									break;
 							}
 						}
@@ -376,7 +380,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	 * @param p_request the LockRequest
 	 */
 	private void incomingLockRequest(final LockRequest p_request) {
-		boolean success = false;
+		boolean success;
 
 		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingLock);
@@ -385,7 +389,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		// the host handles the timeout as we don't want to block the message receiver thread
 		// for too long, execute a tryLock instead
 		success = m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(),
-				p_request.isWriteLockOperation(), m_remoteLockTryTimeoutMs);
+				p_request.isWriteLockOperation(), (int) m_remoteLockTryTimeout.getMs());
 
 		if (success) {
 			m_network.sendMessage(new LockResponse(p_request, (byte) 0));

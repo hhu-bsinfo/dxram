@@ -3,10 +3,11 @@ package de.hhu.bsinfo.dxram.logger;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.utils.logger.LogLevel;
 import de.hhu.bsinfo.utils.logger.LoggerInterface;
 
@@ -20,18 +21,14 @@ import de.hhu.bsinfo.utils.logger.LoggerInterface;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInterface {
-	private Map<String, LogLevel> m_logLevels = new HashMap<String, LogLevel>();
+
+	private Map<String, LogLevel> m_logLevels = new HashMap<>();
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
 	 */
-	public LoggerComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public LoggerComponent() {
+		super(DXRAMComponentOrder.Init.LOGGER, DXRAMComponentOrder.Shutdown.LOGGER);
 	}
 
 	// -------------------------------------------------------------------------------------
@@ -224,24 +221,23 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 	// -------------------------------------------------------------------------------------
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		// no dependencies
 	}
 
 	@Override
-	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
-		// get further configuration values for
-		Map<Integer, String> classNames = p_settings.getValues("Class/Name", String.class);
-		Map<Integer, String> logLevels = p_settings.getValues("Class/LogLevel", String.class);
-
-		if (classNames != null) {
-			for (Entry<Integer, String> entries : classNames.entrySet()) {
-				LogLevel logLevel = LogLevel.toLogLevel(logLevels.get(entries.getKey()));
-				m_logLevels.put(entries.getValue(), logLevel);
-			}
-		}
+		//		// get further configuration values for
+		//		Map<Integer, String> classNames = p_settings.getValues("Class/Name", String.class);
+		//		Map<Integer, String> logLevels = p_settings.getValues("Class/LogLevel", String.class);
+		//
+		//		if (classNames != null) {
+		//			for (Entry<Integer, String> entries : classNames.entrySet()) {
+		//				LogLevel logLevel = LogLevel.toLogLevel(logLevels.get(entries.getKey()));
+		//				m_logLevels.put(entries.getValue(), logLevel);
+		//			}
+		//		}
 
 		return true;
 	}

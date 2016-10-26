@@ -10,7 +10,8 @@ import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -31,7 +32,8 @@ import de.hhu.bsinfo.ethnet.NodeID;
  * @author Kevin Beineke <kevin.beineke@hhu.de> 31.03.16
  */
 public class RecoveryService extends AbstractDXRAMService implements MessageReceiver {
-	// Attributes
+
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private ChunkComponent m_chunk;
@@ -84,20 +86,18 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_backup = p_componentAccessor.getComponent(BackupComponent.class);
+		m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
+		m_log = p_componentAccessor.getComponent(LogComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 	}
 
 	@Override
-	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_backup = getComponent(BackupComponent.class);
-		m_chunk = getComponent(ChunkComponent.class);
-		m_log = getComponent(LogComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_lookup = getComponent(LookupComponent.class);
-		m_network = getComponent(NetworkComponent.class);
-
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 

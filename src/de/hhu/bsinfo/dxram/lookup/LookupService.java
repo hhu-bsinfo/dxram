@@ -6,9 +6,15 @@ import java.util.ArrayList;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.dxram.lookup.messages.*;
+import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.LookupMessages;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
@@ -21,14 +27,13 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
  * Look up service providing look ups for e.g. use in TCMDs
  * @author Mike Birkhoff
  */
-
 public class LookupService extends AbstractDXRAMService implements MessageReceiver {
 
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private LoggerComponent m_logger;
 	private NetworkComponent m_network;
-
 	private LookupComponent m_lookup;
 
 	/**
@@ -39,18 +44,16 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {}
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_backup = p_componentAccessor.getComponent(BackupComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+	}
 
 	@Override
-	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
-
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_backup = getComponent(BackupComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_network = getComponent(NetworkComponent.class);
-		m_lookup = getComponent(LookupComponent.class);
-
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 
@@ -95,11 +98,11 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 		if (p_message != null) {
 			if (p_message.getType() == DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
-					case LookupMessages.SUBTYPE_GET_LOOKUP_TREE_REQUEST:
-						incomingRequestLookupTreeOnServerMessage((GetLookupTreeRequest) p_message);
-						break;
-					default:
-						break;
+				case LookupMessages.SUBTYPE_GET_LOOKUP_TREE_REQUEST:
+					incomingRequestLookupTreeOnServerMessage((GetLookupTreeRequest) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}

@@ -9,9 +9,15 @@ import java.util.concurrent.atomic.AtomicLong;
 import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.job.event.JobEventListener;
 import de.hhu.bsinfo.dxcompute.job.event.JobEvents;
-import de.hhu.bsinfo.dxcompute.job.messages.*;
+import de.hhu.bsinfo.dxcompute.job.messages.JobEventTriggeredMessage;
+import de.hhu.bsinfo.dxcompute.job.messages.JobMessages;
+import de.hhu.bsinfo.dxcompute.job.messages.PushJobQueueMessage;
+import de.hhu.bsinfo.dxcompute.job.messages.StatusRequest;
+import de.hhu.bsinfo.dxcompute.job.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
@@ -28,10 +34,12 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 /**
  * Service interface to schedule executables jobs. Use this to execute code
  * concurrently and even remotely with DXRAM.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class JobService extends AbstractDXRAMService implements MessageReceiver, JobEventListener {
 
+	// depdendent components
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private AbstractJobComponent m_job;
@@ -42,7 +50,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	private AtomicLong m_jobIDCounter = new AtomicLong(0);
 
-	private Map<Long, Pair<Byte, AbstractJob>> m_remoteJobCallbackMap = new HashMap<Long, Pair<Byte, AbstractJob>>();
+	private Map<Long, Pair<Byte, AbstractJob>> m_remoteJobCallbackMap = new HashMap<>();
 
 	/**
 	 * Constructor
@@ -54,10 +62,9 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	/**
 	 * Register a new implementation/type of Job class.
 	 * Make sure to register all your Job classes.
-	 * @param p_typeID
-	 *            Type ID for the job to register.
-	 * @param p_clazz
-	 *            Class to register for the specified ID.
+	 *
+	 * @param p_typeID Type ID for the job to register.
+	 * @param p_clazz  Class to register for the specified ID.
 	 */
 	public void registerJobType(final short p_typeID, final Class<? extends AbstractJob> p_clazz) {
 		// #if LOGGER >= DEBUG
@@ -69,8 +76,8 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Schedule a job for execution (local).
-	 * @param p_job
-	 *            Job to be scheduled for execution.
+	 *
+	 * @param p_job Job to be scheduled for execution.
 	 * @return True if scheduling was successful, false otherwise.
 	 */
 	public long pushJob(final AbstractJob p_job) {
@@ -106,10 +113,9 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	/**
 	 * Schedule a job for remote execution. The job is sent to the node specified and
 	 * scheduled for execution there.
-	 * @param p_job
-	 *            Job to schedule.
-	 * @param p_nodeID
-	 *            ID of the node to schedule the job on.
+	 *
+	 * @param p_job    Job to schedule.
+	 * @param p_nodeID ID of the node to schedule the job on.
 	 * @return Valid job ID assigned to the submitted job, false otherwise.
 	 */
 	public long pushJobRemote(final AbstractJob p_job, final short p_nodeID) {
@@ -165,6 +171,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Wait for all locally scheduled and currently executing jobs to finish.
+	 *
 	 * @return True if waiting was successful and all jobs finished, false otherwise.
 	 */
 	public boolean waitForLocalJobsToFinish() {
@@ -173,6 +180,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Wait for all jobs including remote ones to finish
+	 *
 	 * @return True if all jobs finished successfully, false otherwise.
 	 */
 	public boolean waitForAllJobsToFinish() {
@@ -205,7 +213,8 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 						// not done, yet...sleep a little and try again
 						try {
 							Thread.sleep(1000);
-						} catch (final InterruptedException e) {}
+						} catch (final InterruptedException e) {
+						}
 						continue;
 					}
 				}
@@ -295,21 +304,18 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	// --------------------------------------------------------------------------------------------
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_job = p_componentAccessor.getComponent(AbstractJobComponent.class);
+		// #ifdef STATISTICS
+		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
+		// #endif /* STATISTICS */
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 	}
 
 	@Override
-	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_job = getComponent(AbstractJobComponent.class);
-		// #ifdef STATISTICS
-		m_statistics = getComponent(StatisticsComponent.class);
-		// #endif /* STATISTICS */
-		m_network = getComponent(NetworkComponent.class);
-
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 
@@ -324,12 +330,6 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	@Override
 	protected boolean shutdownService() {
-		m_boot = null;
-		m_logger = null;
-		m_job = null;
-		m_statistics = null;
-		m_network = null;
-
 		return true;
 	}
 
@@ -382,8 +382,8 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Handle incoming push queue request.
-	 * @param p_request
-	 *            Incoming request.
+	 *
+	 * @param p_request Incoming request.
 	 */
 	private void incomingPushJobQueueMessage(final PushJobQueueMessage p_request) {
 		// #ifdef STATISTICS
@@ -413,8 +413,8 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Handle incoming status request.
-	 * @param p_request
-	 *            Incoming request.
+	 *
+	 * @param p_request Incoming request.
 	 */
 	private void incomingStatusRequest(final StatusRequest p_request) {
 		Status status = new Status();
@@ -431,8 +431,8 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Dispatch for JobEventTriggeredMessage
-	 * @param p_message
-	 *            The incoming message
+	 *
+	 * @param p_message The incoming message
 	 */
 	private void incomingJobEventTriggeredMessage(final JobEventTriggeredMessage p_message) {
 		Pair<Byte, AbstractJob> job = m_remoteJobCallbackMap.get(p_message.getJobID());
@@ -483,6 +483,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Status object holding information about the job service.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
 	 */
 	public static class Status implements Importable, Exportable {
@@ -497,6 +498,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 		/**
 		 * Get the number of unfinished jobs
+		 *
 		 * @return Number of unfinished jobs
 		 */
 		public long getNumberOfUnfinishedJobs() {

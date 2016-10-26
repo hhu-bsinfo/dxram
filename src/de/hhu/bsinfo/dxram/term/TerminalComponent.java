@@ -5,7 +5,11 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.script.ScriptContext;
 import de.hhu.bsinfo.dxram.script.ScriptEngineComponent;
@@ -17,25 +21,23 @@ import de.hhu.bsinfo.dxram.script.ScriptEngineComponent;
  */
 public class TerminalComponent extends AbstractDXRAMComponent {
 
+	// configuration values
+	@Expose
+	private String m_termCmdScriptFolder = "script/term";
+
+	// dependent components
 	private LoggerComponent m_logger;
 	private ScriptEngineComponent m_scriptEngine;
 
-	private String m_terminalScriptFolder;
 	private ScriptTerminalContext m_terminalContext;
 	private ScriptContext m_terminalScriptContext;
 	private Map<String, ScriptContext> m_terminalScriptCommands = new HashMap<>();
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
 	 */
-	public TerminalComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
-
+	public TerminalComponent() {
+		super(DXRAMComponentOrder.Init.TERMINAL, DXRAMComponentOrder.Shutdown.TERMINAL);
 	}
 
 	/**
@@ -69,30 +71,25 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	 * Reload the terminal scripts
 	 */
 	void reloadTerminalScripts() {
-		if (!m_terminalScriptFolder.isEmpty()) {
+		if (!m_termCmdScriptFolder.isEmpty()) {
 			unloadTerminalScripts();
-			loadTerminalScripts(m_terminalScriptFolder);
+			loadTerminalScripts(m_termCmdScriptFolder);
 		}
 	}
 
-	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-		p_settings.setDefaultValue(TerminalConfigurationValues.Component.TERM_CMD_SCRIPT_FOLDER);
-	}
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+        m_scriptEngine = p_componentAccessor.getComponent(ScriptEngineComponent.class);
+    }
 
 	@Override
-	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
-		m_logger = getDependentComponent(LoggerComponent.class);
-		m_scriptEngine = getDependentComponent(ScriptEngineComponent.class);
-
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		// create script context for terminal
 		m_terminalScriptContext = m_scriptEngine.createContext("terminal");
 		m_terminalContext = new ScriptTerminalContext(m_scriptEngine, this);
 
 		m_terminalScriptContext.bind("dxterm", m_terminalContext);
-
-		m_terminalScriptFolder = p_settings.getValue(TerminalConfigurationValues.Component.TERM_CMD_SCRIPT_FOLDER);
 
 		// initial load
 		reloadTerminalScripts();

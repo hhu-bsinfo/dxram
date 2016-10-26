@@ -1,11 +1,7 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
-import java.lang.reflect.Modifier;
-import java.util.Map;
-
-import de.hhu.bsinfo.utils.Pair;
-import de.hhu.bsinfo.utils.conf.Configuration;
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.utils.logger.Logger;
 
 /**
@@ -19,21 +15,25 @@ import de.hhu.bsinfo.utils.logger.Logger;
  */
 public abstract class AbstractDXRAMComponent {
 
-	private DXRAMEngine m_parentEngine;
-	private Settings m_settings;
+	// config values
+	@Expose
+	private final String m_class = this.getClass().getName();
+	@Expose
+	private final boolean m_enabled = true;
+	@Expose
+	private final short m_priorityInit;
+	@Expose
+	private final short m_priorityShutdown;
 
-	private int m_priorityInit;
-	private int m_priorityShutdown;
+	private DXRAMEngine m_parentEngine;
 
 	/**
 	 * Constructor
 	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
+	 * @param p_priorityInit     Default init priority for this component
+	 * @param p_priorityShutdown Default shutdown priority for this component
 	 */
-	public AbstractDXRAMComponent(final int p_priorityInit, final int p_priorityShutdown) {
+	public AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown) {
 		m_priorityInit = p_priorityInit;
 		m_priorityShutdown = p_priorityShutdown;
 	}
@@ -66,61 +66,31 @@ public abstract class AbstractDXRAMComponent {
 	}
 
 	/**
-	 *
-	 */
-	public void preInit(final DXRAMEngine p_engine) {
-
-		m_parentEngine = p_engine;
-
-		String componentInterfaceIdentifier = new String();
-
-		// is superclass abstract and not DXRAMComponent -> interface
-
-		if (Modifier.isAbstract(this.getClass().getSuperclass().getModifiers())
-				&& !this.getClass().getSuperclass().equals(AbstractDXRAMComponent.class)) {
-
-			componentInterfaceIdentifier = this.getClass().getSuperclass().getSimpleName();
-
-		}
-		m_settings = new Settings(m_parentEngine.getConfiguration(),
-				m_parentEngine.getLogger(),
-				componentInterfaceIdentifier,
-				this.getClass().getSimpleName());
-
-		registerDefaultSettingsComponent(m_settings);
-
-	}
-
-	/**
 	 * Initialize this component.
 	 *
 	 * @param p_engine Engine this component is part of (parent).
 	 * @return True if initializing was successful, false otherwise.
 	 */
 	public boolean init(final DXRAMEngine p_engine) {
-		boolean ret = false;
+		boolean ret;
 
 		m_parentEngine = p_engine;
-
-		String componentInterfaceIdentifier = new String();
-		// is superclass abstract and not DXRAMComponent -> interface
-		if (Modifier.isAbstract(this.getClass().getSuperclass().getModifiers())
-				&& !this.getClass().getSuperclass().equals(AbstractDXRAMComponent.class)) {
-			componentInterfaceIdentifier = this.getClass().getSuperclass().getSimpleName();
-		}
-
-		m_settings = new Settings(m_parentEngine.getConfiguration(),
-				m_parentEngine.getLogger(),
-				componentInterfaceIdentifier,
-				this.getClass().getSimpleName());
-
-		registerDefaultSettingsComponent(m_settings);
 
 		// #if LOGGER >= INFO
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Initializing component...");
 		// #endif /* LOGGER >= INFO */
 
-		ret = initComponent(m_parentEngine.getSettings(), m_settings);
+		resolveComponentDependencies(p_engine);
+
+		try {
+			ret = initComponent(m_parentEngine.getSettings());
+		} catch (final Exception e) {
+			// #if LOGGER >= ERROR
+			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Initializing component failed. ", e);
+			// #endif /* LOGGER >= ERROR */
+			return false;
+		}
+
 		if (!ret) {
 			// #if LOGGER >= ERROR
 			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Initializing component failed.");
@@ -140,7 +110,7 @@ public abstract class AbstractDXRAMComponent {
 	 * @return True if shutting down was successful, false otherwise.
 	 */
 	public boolean shutdown() {
-		boolean ret = false;
+		boolean ret;
 
 		// #if LOGGER >= INFO
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down component...");
@@ -162,19 +132,6 @@ public abstract class AbstractDXRAMComponent {
 	// ------------------------------------------------------------------------------
 
 	/**
-	 * Get a dependent component from the engine. Use it in this component if you have
-	 * to interact with other components.
-	 *
-	 * @param <T>     Class of the implemented component.
-	 * @param p_class Class of the component to get. If a component has multiple implementations, always use the base
-	 *                class/interface here.
-	 * @return Reference to the component requested or null if not available/enabled.
-	 */
-	protected <T extends AbstractDXRAMComponent> T getDependentComponent(final Class<T> p_class) {
-		return m_parentEngine.getComponent(p_class);
-	}
-
-	/**
 	 * Get the logger for logging messages.
 	 *
 	 * @return Logger for logging.
@@ -186,30 +143,19 @@ public abstract class AbstractDXRAMComponent {
 	}
 
 	/**
-	 * Get the parent engine of this component.
+	 * Called before the component is initialized. Get all the components your own component depends on.
 	 *
-	 * @return Parent engine of this component.
-	 * @note This is available for very special occasions. If you do not know what you are doing, don't use this method.
+	 * @param p_componentAccessor Component accessor that provides access to other components
 	 */
-	protected DXRAMEngine getParentEngine() {
-		return m_parentEngine;
-	}
-
-	/**
-	 * Register default value for any settings this component can get from the configuration.
-	 *
-	 * @param p_settings Settings instance to register default values at.
-	 */
-	protected abstract void registerDefaultSettingsComponent(final Settings p_settings);
+	protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
 
 	/**
 	 * Called when the component is initialized. Setup data structures, get dependent components, read settings etc.
 	 *
-	 * @param p_engineSettings Settings instance provided by the engine.
-	 * @param p_settings       Settings instance with component related settings.
+	 * @param p_engineEngineSettings EngineSettings instance provided by the engine.
 	 * @return True if initialing was successful, false otherwise.
 	 */
-	protected abstract boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings);
+	protected abstract boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings);
 
 	/**
 	 * Called when the component gets shut down. Cleanup your component in here.
@@ -219,113 +165,28 @@ public abstract class AbstractDXRAMComponent {
 	protected abstract boolean shutdownComponent();
 
 	/**
-	 * Convenience wrapper to get component related settings from a configuration.
+	 * Check if this class is an engine accessor i.e. breaking the rules of
+	 * not knowing the engine. Override this if this feature is used.
+	 * Do not override this if you do not know what you are doing.
 	 *
-	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+	 * @return True if accessor, false otherwise.
 	 */
-	public static class Settings {
-		private static final String CONFIG_ROOT = "/DXRAMEngine/ComponentSettings/";
+	protected boolean isEngineAccessor() {
+		return false;
+	}
 
-		private Configuration m_configuration;
-		private Logger m_logger;
-		private String m_commonBasePath = new String();
-		private String m_basePath = new String();
-
-		/**
-		 * Constructor
-		 *
-		 * @param p_configuration                     Configuration to wrap which contains components settings.
-		 * @param p_logger                            Logger to use for logging messages.
-		 * @param p_componentInterfaceIdentifier      Identifier/Name of the component interface
-		 *                                            (if the component has multiple implementations based on an abstract class/interface) used
-		 *                                            for the configuration path.
-		 * @param p_componentImplementationIdentifier Identifier of the component used for the configuration path.
-		 */
-		Settings(final Configuration p_configuration, final Logger p_logger,
-				final String p_componentInterfaceIdentifier, final String p_componentImplementationIdentifier) {
-			m_configuration = p_configuration;
-			m_logger = p_logger;
-			m_commonBasePath = CONFIG_ROOT;
-			if (!p_componentInterfaceIdentifier.isEmpty()) {
-				m_commonBasePath += p_componentInterfaceIdentifier + "/";
-			}
-			m_basePath = m_commonBasePath + p_componentImplementationIdentifier + "/";
-		}
-
-		/**
-		 * Set a default value for a specific configuration key.
-		 *
-		 * @param <T>       Class of the value.
-		 * @param p_default Pair of configuration key and default value to set for the specified key.
-		 */
-		public <T> void setDefaultValue(final Pair<String, T> p_default) {
-			setDefaultValue(p_default.first(), p_default.second());
-		}
-
-		/**
-		 * Set a default value for a specific configuration key.
-		 *
-		 * @param <T>     Class of the value.
-		 * @param p_key   Key for the value.
-		 * @param p_value Value to set.
-		 */
-		public <T> void setDefaultValue(final String p_key, final T p_value) {
-			if (m_configuration.addValue(m_basePath + p_key, p_value, false)) {
-				// we added a default value => value was missing from configuration
-				// #if LOGGER >= WARN
-				m_logger.warn(this.getClass().getSimpleName(),
-						"Settings value for '" + p_key + "' is missing in " + m_basePath + ", using default value '"
-								+ p_value + "'.");
-				// #endif /* LOGGER >= WARN */
-			}
-		}
-
-		/**
-		 * Get a value from the configuration for the component.
-		 *
-		 * @param <T>       Class of the value.
-		 * @param p_default Pair of key and default value to get value for.
-		 * @return Value associated with the provided key.
-		 */
-		@SuppressWarnings("unchecked")
-		public <T> T getValue(final Pair<String, T> p_default) {
-			return (T) getValue(p_default.first(), p_default.second().getClass());
-		}
-
-		/**
-		 * Get a value from the configuration for the component.
-		 *
-		 * @param <T>    Class of the value.
-		 * @param p_key  Key to get the value for.
-		 * @param p_type Type of the value to get.
-		 * @return Value assicated with the provided key.
-		 */
-		public <T> T getValue(final String p_key, final Class<T> p_type) {
-			// try implementation specific path first, then common interface path
-			T val = m_configuration.getValue(m_basePath + p_key, p_type);
-			if (val == null) {
-				val = m_configuration.getValue(m_commonBasePath + p_key, p_type);
-			}
-
-			return val;
-		}
-
-		/**
-		 * Get a list of values with the same key (but different indices).
-		 *
-		 * @param <T>    Class of the value.
-		 * @param p_key  Key of the values to get.
-		 * @param p_type Type of the values to get.
-		 * @return Map with values and their indices.
-		 */
-		public <T> Map<Integer, T> getValues(final String p_key, final Class<T> p_type) {
-			// try implementation specific path first, then common interface path
-			Map<Integer, T> vals = m_configuration.getValues(m_basePath + p_key, p_type);
-			if (vals == null || vals.isEmpty()) {
-				vals = m_configuration.getValues(m_commonBasePath + p_key, p_type);
-			}
-
-			return vals;
+	/**
+	 * Get the engine within the component.
+	 * If you don't know what you are doing, do not use this.
+	 * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
+	 *
+	 * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
+	 */
+	protected DXRAMEngine getParentEngine() {
+		if (isEngineAccessor()) {
+			return m_parentEngine;
+		} else {
+			return null;
 		}
 	}
 }

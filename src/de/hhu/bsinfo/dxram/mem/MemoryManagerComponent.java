@@ -4,18 +4,21 @@ package de.hhu.bsinfo.dxram.mem;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.SmallObjectHeapSegment;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
  * Interface to access the local heap. Features for migration
@@ -31,6 +34,15 @@ import de.hhu.bsinfo.soh.StorageUnsafeMemory;
  */
 public final class MemoryManagerComponent extends AbstractDXRAMComponent implements CIDTable.GetNodeIdHook {
 
+	// configuration values
+	@Expose
+	private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
+
+	// dependent components
+	private AbstractBootComponent m_boot;
+	private LoggerComponent m_logger;
+	private StatisticsComponent m_statistics;
+
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
 	// private ReentrantReadWriteLock m_lock;
@@ -39,10 +51,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 	private long m_totalActiveChunkMemory;
 
 	private SmallObjectHeapDataStructureImExporter[] m_imexporter = new SmallObjectHeapDataStructureImExporter[65536];
-
-	private AbstractBootComponent m_boot;
-	private LoggerComponent m_logger;
-	private StatisticsComponent m_statistics;
 
 	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs;
 
@@ -61,43 +69,33 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
 	 */
-	public MemoryManagerComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public MemoryManagerComponent() {
+		super(DXRAMComponentOrder.Init.MEMORY, DXRAMComponentOrder.Shutdown.MEMORY);
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
-	}
-
-	@Override
-	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-		m_boot = getDependentComponent(AbstractBootComponent.class);
-		m_logger = getDependentComponent(LoggerComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		// #ifdef STATISTICS
-		m_statistics = getDependentComponent(StatisticsComponent.class);
+		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
 		// #endif /* STATISTICS */
+	}
 
-		NodeRole nodeRole = NodeRole.toNodeRole(p_engineSettings.getValue(DXRAMEngineConfigurationValues.ROLE));
-
-		if (nodeRole == NodeRole.PEER) {
+	@Override
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+		if (p_engineEngineSettings.getRole() == NodeRole.PEER) {
 			// #ifdef STATISTICS
 			registerStatisticsOperations();
 			// #endif /* STATISTICS */
 
-			final long ramSize = p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
 			// #if LOGGER == INFO
 			m_logger.info(getClass(),
-					"Allocating native memory (" + (ramSize / 1024 / 1024) + " mb). This may take a while.");
+					"Allocating native memory (" + m_keyValueStoreSize.getMB() + " mb). This may take a while.");
 			// #endif /* LOGGER == INFO */
 			m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
-			m_rawMemory.initialize(ramSize, ramSize);
+			m_rawMemory.initialize(m_keyValueStoreSize.getBytes(), m_keyValueStoreSize.getBytes());
 			m_cidTable = new CIDTable(this, m_statistics, m_statisticsRecorderIDs, m_logger);
 			m_cidTable.initialize(m_rawMemory);
 

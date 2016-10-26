@@ -4,12 +4,12 @@ package de.hhu.bsinfo.dxram.boot;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
+import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -20,6 +20,9 @@ import de.hhu.bsinfo.utils.BloomFilter;
 import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.ZooKeeperHandler;
 import de.hhu.bsinfo.utils.ZooKeeperHandler.ZooKeeperException;
+import de.hhu.bsinfo.utils.unit.IPV4Unit;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
+import de.hhu.bsinfo.utils.unit.TimeUnit;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -33,59 +36,69 @@ import org.apache.zookeeper.data.Stat;
  */
 public class ZookeeperBootComponent extends AbstractBootComponent implements Watcher, EventListener<NodeFailureEvent> {
 
-	// Attributes
-	private String m_ownIP;
-	private int m_ownPort = -1;
+	// configuration values
+	@Expose
+	private String m_path = "/dxram";
+	@Expose
+	private IPV4Unit m_connection = new IPV4Unit("127.0.0.1", 2181);
+	@Expose
+	private TimeUnit m_timeout = new TimeUnit(10, TimeUnit.SEC);
+	@Expose
+	private StorageUnit m_zookeeperBitfieldSize = new StorageUnit(256, StorageUnit.KB);
+	@Expose
+	// we can't use the NodesConfiguration class with the configuration because the nodes in that class
+	// are already mapped to their node ids
+	private ArrayList<NodesConfiguration.NodeEntry> m_nodesConfig = new ArrayList<NodesConfiguration.NodeEntry>() {{
+		// default values for local testing
+		add(new NodeEntry(new IPV4Unit("127.0.0.1", 22221), (short) 0, (short) 0, NodeRole.SUPERPEER, true));
+		add(new NodeEntry(new IPV4Unit("127.0.0.1", 22222), (short) 0, (short) 0, NodeRole.PEER, true));
+		add(new NodeEntry(new IPV4Unit("127.0.0.1", 22223), (short) 0, (short) 0, NodeRole.PEER, true));
+	}};
+
+	// dependent components
+	private LoggerComponent m_logger;
+	private LookupComponent m_lookup;
+
+	// private state
+	private IPV4Unit m_ownAddress;
 	private ZooKeeperHandler m_zookeeper;
-	private int m_zookeeperBitfieldSize = -1;
 	private short m_bootstrap = -1;
 	private CRC16 m_hashGenerator;
 	private BloomFilter m_bloomFilter;
 
-	private NodesConfiguration m_nodesConfiguration;
+	private NodesConfiguration m_nodes;
 
 	private boolean m_isStarting;
 	private boolean m_shutdown;
 
-	private LoggerComponent m_logger;
-
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
 	 */
-	public ZookeeperBootComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public ZookeeperBootComponent() {
+		super(DXRAMComponentOrder.Init.BOOT, DXRAMComponentOrder.Shutdown.BOOT);
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-		p_settings.setDefaultValue(ZookeeperBootConfigurationValues.Component.PATH);
-		p_settings.setDefaultValue(ZookeeperBootConfigurationValues.Component.CONNECTION_STRING);
-		p_settings.setDefaultValue(ZookeeperBootConfigurationValues.Component.TIMEOUT);
-		p_settings.setDefaultValue(ZookeeperBootConfigurationValues.Component.BITFIELD_SIZE);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
 	}
 
 	@Override
-	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-		m_logger = getDependentComponent(LoggerComponent.class);
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+		m_ownAddress = p_engineEngineSettings.getAddress();
+		NodeRole role = p_engineEngineSettings.getRole();
 
-		m_ownIP = p_engineSettings.getValue(DXRAMEngineConfigurationValues.IP);
-		m_ownPort = p_engineSettings.getValue(DXRAMEngineConfigurationValues.PORT);
-		m_zookeeper = new ZooKeeperHandler(p_settings.getValue(ZookeeperBootConfigurationValues.Component.PATH),
-				p_settings.getValue(ZookeeperBootConfigurationValues.Component.CONNECTION_STRING),
-				p_settings.getValue(ZookeeperBootConfigurationValues.Component.TIMEOUT),
-				m_logger);
+		// #if LOGGER >= INFO
+		m_logger.info(getClass(), "Initializing with address " + m_ownAddress + ", role " + role);
+		// #endif /* LOGGER >= INFO */
+
+		m_zookeeper = new ZooKeeperHandler(m_path, m_connection.getAddressStr(), (int) m_timeout.getMs(), m_logger);
 		m_isStarting = true;
-		m_zookeeperBitfieldSize = p_settings.getValue(ZookeeperBootConfigurationValues.Component.BITFIELD_SIZE);
 
-		m_nodesConfiguration = new NodesConfiguration();
-		ArrayList<NodeEntry> nodes = readNodesFromSettings(p_settings);
+		m_nodes = new NodesConfiguration();
 
-		if (!parseNodes(nodes, NodeRole.toNodeRole(p_engineSettings.getValue(DXRAMEngineConfigurationValues.ROLE)))) {
+		if (!parseNodes(m_nodesConfig, role)) {
 			// #if LOGGER >= ERROR
 			m_logger.error(this.getClass(), "Parsing nodes failed.");
 			// #endif /* LOGGER >= ERROR */
@@ -100,8 +113,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		LookupComponent lookup;
 
 		m_shutdown = true;
-		lookup = getDependentComponent(LookupComponent.class);
-		if (lookup != null && lookup.isResponsibleForBootstrapCleanup()) {
+
+		if (m_lookup != null && m_lookup.isResponsibleForBootstrapCleanup()) {
 			try {
 				// #if LOGGER >= INFO
 				m_logger.info(getClass(), "Cleaning-up ZooKeeper folder");
@@ -137,7 +150,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 						return true;
 					}
 				}
-			} catch (final ZooKeeperException e) {
+			} catch (final ZooKeeperException ignored) {
 			}
 		}
 		if (zookeeperPathExists("nodes/peers")) {
@@ -148,7 +161,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 						return true;
 					}
 				}
-			} catch (final ZooKeeperException e) {
+			} catch (final ZooKeeperException ignored) {
 			}
 		}
 		if (zookeeperPathExists("nodes/terminals")) {
@@ -159,7 +172,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 						return true;
 					}
 				}
-			} catch (final ZooKeeperException e) {
+			} catch (final ZooKeeperException ignored) {
 			}
 		}
 
@@ -170,7 +183,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	public List<Short> getIDsOfOnlineNodes() {
 		// TODO: Don't use ZooKeeper for this
 
-		List<Short> ids = new ArrayList<Short>();
+		List<Short> ids = new ArrayList<>();
 
 		if (zookeeperPathExists("nodes/superpeers")) {
 			try {
@@ -178,7 +191,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				for (String child : children) {
 					ids.add(Short.parseShort(child));
 				}
-			} catch (final ZooKeeperException e) {
+			} catch (final ZooKeeperException ignored) {
 			}
 		}
 		if (zookeeperPathExists("nodes/peers")) {
@@ -187,7 +200,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				for (String child : children) {
 					ids.add(Short.parseShort(child));
 				}
-			} catch (final ZooKeeperException e) {
+			} catch (final ZooKeeperException ignored) {
 			}
 		}
 		if (zookeeperPathExists("nodes/terminals")) {
@@ -196,7 +209,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				for (String child : children) {
 					ids.add(Short.parseShort(child));
 				}
-			} catch (final ZooKeeperException e) {
+			} catch (final ZooKeeperException ignored) {
 			}
 		}
 
@@ -208,7 +221,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		// TODO: Don't use ZooKeeper for this
 
 		short childID;
-		List<Short> ids = new ArrayList<Short>();
+		List<Short> ids = new ArrayList<>();
 
 		if (zookeeperPathExists("nodes/peers")) {
 			try {
@@ -219,7 +232,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 						ids.add(Short.parseShort(child));
 					}
 				}
-			} catch (final ZooKeeperException e) {
+			} catch (final ZooKeeperException ignored) {
 			}
 		}
 
@@ -231,7 +244,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		// TODO: Don't use ZooKeeper for this
 
 		short childID;
-		List<Short> ids = new ArrayList<Short>();
+		List<Short> ids = new ArrayList<>();
 
 		if (zookeeperPathExists("nodes/superpeers")) {
 			try {
@@ -242,7 +255,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 						ids.add(Short.parseShort(child));
 					}
 				}
-			} catch (final ZooKeeperException e) {
+			} catch (final ZooKeeperException ignored) {
 			}
 		}
 
@@ -251,17 +264,17 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	@Override
 	public short getNodeID() {
-		return m_nodesConfiguration.getOwnNodeID();
+		return m_nodes.getOwnNodeID();
 	}
 
 	@Override
 	public NodeRole getNodeRole() {
-		return m_nodesConfiguration.getOwnNodeEntry().getRole();
+		return m_nodes.getOwnNodeEntry().getRole();
 	}
 
 	@Override
 	public NodeRole getNodeRole(final short p_nodeID) {
-		NodeEntry entry = m_nodesConfiguration.getNode(p_nodeID);
+		NodeEntry entry = m_nodes.getNode(p_nodeID);
 		if (entry == null) {
 			// #if LOGGER >= WARN
 			m_logger.warn(getClass(), "Could not find node role for " + NodeID.toHexString(p_nodeID));
@@ -274,7 +287,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	@Override
 	public InetSocketAddress getNodeAddress(final short p_nodeID) {
-		NodeEntry entry = m_nodesConfiguration.getNode(p_nodeID);
+		NodeEntry entry = m_nodes.getNode(p_nodeID);
 		InetSocketAddress address;
 		// return "proper" invalid address if entry does not exist
 		if (entry == null) {
@@ -283,7 +296,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 			// #endif /* LOGGER >= WARN */
 			address = new InetSocketAddress("255.255.255.255", 0xFFFF);
 		} else {
-			address = new InetSocketAddress(entry.getIP(), entry.getPort());
+			address = entry.getAddress().getInetSocketAddress();
 		}
 
 		return address;
@@ -319,7 +332,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	@Override
 	public void failureHandling(final short p_nodeID, final NodeRole p_role) {
-		boolean ret = false;
 		Stat status;
 
 		if (p_role == NodeRole.SUPERPEER) {
@@ -328,7 +340,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				status = zookeeperGetStatus("nodes/superpeers/" + p_nodeID);
 				if (null != status) {
 					zookeeperDelete("nodes/superpeers/" + p_nodeID, status.getVersion());
-					if (!m_nodesConfiguration.getNode(p_nodeID).readFromFile()) {
+					if (!m_nodes.getNode(p_nodeID).readFromFile()) {
 						// Enable re-usage of NodeID if failed superpeer was not in nodes file
 						zookeeperCreate("node/free/" + p_nodeID);
 					}
@@ -339,7 +351,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 			// Determine new bootstrap if failed superpeer is current one
 			if (p_nodeID == m_bootstrap) {
-				setBootstrapPeer(m_nodesConfiguration.getOwnNodeID());
+				setBootstrapPeer(m_nodes.getOwnNodeID());
 
 				// #if LOGGER >= DEBUG
 				m_logger.debug(getClass(), "Failed node " + NodeID.toHexString(p_nodeID)
@@ -353,7 +365,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				status = zookeeperGetStatus("nodes/peers/" + p_nodeID);
 				if (null != status) {
 					zookeeperDelete("nodes/peers/" + p_nodeID, status.getVersion());
-					if (!m_nodesConfiguration.getNode(p_nodeID).readFromFile()) {
+					if (!m_nodes.getNode(p_nodeID).readFromFile()) {
 						// Enable re-usage of NodeID if failed peer was not in nodes file
 						zookeeperCreate("node/free/" + p_nodeID);
 					}
@@ -373,7 +385,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 			}
 		}
 
-		if (!m_nodesConfiguration.getNode(p_nodeID).readFromFile()) {
+		if (!m_nodes.getNode(p_nodeID).readFromFile()) {
 			try {
 				// Remove node from "new nodes"
 				status = zookeeperGetStatus("nodes/new/" + p_nodeID);
@@ -386,13 +398,13 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		}
 
 		// Remove failed node from nodes configuration
-		m_nodesConfiguration.removeNode(p_nodeID);
+		m_nodes.removeNode(p_nodeID);
 	}
 
 	@Override
 	public void eventTriggered(final NodeFailureEvent p_event) {
 		// Remove failed node from nodes configuration
-		m_nodesConfiguration.removeNode(p_event.getNodeID());
+		m_nodes.removeNode(p_event.getNodeID());
 	}
 
 	@Override
@@ -418,7 +430,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 					while (m_isStarting) {
 						try {
 							Thread.sleep(100);
-						} catch (final InterruptedException e) {
+						} catch (final InterruptedException ignored) {
 						}
 					}
 					if (null != path) {
@@ -429,8 +441,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 								node = new String(m_zookeeper.getData("nodes/new/" + nodeID));
 								splits = node.split("/");
 
-								m_nodesConfiguration.addNode(nodeID, new NodeEntry(splits[0],
-										Integer.parseInt(splits[1]), (short) 0, (short) 0,
+								m_nodes.addNode(nodeID, new NodeEntry(new IPV4Unit(splits[0],
+										Integer.parseInt(splits[1])), (short) 0, (short) 0,
 										NodeRole.toNodeRole(splits[2]), false));
 							}
 						}
@@ -487,69 +499,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	}
 
 	/**
-	 * Read the nodes list from the settings instance.
-	 *
-	 * @param p_settings Settings instance of the component.
-	 * @return List of node entries read from the settings.
-	 */
-	private ArrayList<NodeEntry> readNodesFromSettings(final Settings p_settings) {
-		ArrayList<NodeEntry> nodes = new ArrayList<NodeEntry>();
-
-		Map<Integer, String> nodesIP = p_settings.getValues("Nodes/Node/IP", String.class);
-		Map<Integer, Integer> nodesPort = p_settings.getValues("Nodes/Node/Port", Integer.class);
-		Map<Integer, String> nodesRole = p_settings.getValues("Nodes/Node/Role", String.class);
-		Map<Integer, Short> nodesRack = p_settings.getValues("Nodes/Node/Rack", Short.class);
-		Map<Integer, Short> nodesSwitch = p_settings.getValues("Nodes/Node/Switch", Short.class);
-
-		for (Entry<Integer, String> entry : nodesIP.entrySet()) {
-			String ip = nodesIP.get(entry.getKey());
-			if (ip == null) {
-				// #if LOGGER >= ERROR
-				m_logger.error(this.getClass(), "Settings entry for node missing ip.");
-				// #endif /* LOGGER >= ERROR */
-				continue;
-			}
-
-			Integer port = nodesPort.get(entry.getKey());
-			if (port == null) {
-				// #if LOGGER >= ERROR
-				m_logger.error(this.getClass(), "Settings entry for node missing port.");
-				// #endif /* LOGGER >= ERROR */
-				continue;
-			}
-
-			String strRole = nodesRole.get(entry.getKey());
-			if (strRole == null) {
-				// #if LOGGER >= ERROR
-				m_logger.error(this.getClass(), "Settings entry for node missing role.");
-				// #endif /* LOGGER >= ERROR */
-				continue;
-			}
-
-			Short rack = nodesRack.get(entry.getKey());
-			if (rack == null) {
-				// #if LOGGER >= ERROR
-				m_logger.error(this.getClass(), "Settings entry for node missing rack.");
-				// #endif /* LOGGER >= ERROR */
-				continue;
-			}
-
-			Short szwitch = nodesSwitch.get(entry.getKey());
-			if (szwitch == null) {
-				// #if LOGGER >= ERROR
-				m_logger.error(this.getClass(), "Settings entry for node missing switch.");
-				// #endif /* LOGGER >= ERROR */
-				continue;
-			}
-
-			NodeEntry node = new NodeEntry(ip, port, rack, szwitch, NodeRole.toNodeRole(strRole), true);
-			nodes.add(node);
-		}
-
-		return nodes;
-	}
-
-	/**
 	 * Parses the configured nodes
 	 *
 	 * @param p_nodes           the nodes to parse
@@ -562,7 +511,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		boolean parsed = false;
 
 		m_hashGenerator = new CRC16();
-		m_bloomFilter = new BloomFilter(m_zookeeperBitfieldSize, 65536);
+		m_bloomFilter = new BloomFilter((int) m_zookeeperBitfieldSize.getBytes(), 65536);
 
 		barrier = "barrier";
 
@@ -641,8 +590,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				m_bloomFilter.add(nodeID);
 
 				// assign own node entry
-				if (m_ownIP.equals(entry.getIP()) && m_ownPort == entry.getPort()) {
-					m_nodesConfiguration.setOwnNodeID(nodeID);
+				if (m_ownAddress.equals(entry.getAddress())) {
+					m_nodes.setOwnNodeID(nodeID);
 					m_bootstrap = nodeID;
 					// #if LOGGER >= INFO
 					m_logger.info(this.getClass(), "Own node assigned: " + entry);
@@ -652,7 +601,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 					numberOfSuperpeers++;
 				}
 
-				m_nodesConfiguration.addNode((short) (nodeID & 0x0000FFFF), entry);
+				m_nodes.addNode((short) (nodeID & 0x0000FFFF), entry);
 				// #if LOGGER >= INFO
 				m_logger.info(this.getClass(), "Node added: " + entry);
 				// #endif /* LOGGER >= INFO */
@@ -669,7 +618,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 			m_zookeeper.setChildrenWatch("nodes/free", this);
 
 			// check if own node entry was correctly assigned to a valid node ID
-			if (m_nodesConfiguration.getOwnNodeEntry() == null) {
+			if (m_nodes.getOwnNodeEntry() == null) {
 				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Bootstrap entry for node in nodes configuration missing");
 				// #endif /* LOGGER >= ERROR */
@@ -692,9 +641,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 			// Register superpeer
 			// register only if we are the superpeer. don't add peer as superpeer
-			if (m_nodesConfiguration.getOwnNodeEntry().getRole().equals(NodeRole.SUPERPEER)) {
+			if (m_nodes.getOwnNodeEntry().getRole().equals(NodeRole.SUPERPEER)) {
 				m_zookeeper.create("nodes/bootstrap", (m_bootstrap + "").getBytes());
-				m_zookeeper.create("nodes/superpeers/" + m_nodesConfiguration.getOwnNodeID());
+				m_zookeeper.create("nodes/superpeers/" + m_nodes.getOwnNodeID());
 			}
 		} catch (final ZooKeeperException | KeeperException | InterruptedException e) {
 			// #if LOGGER >= ERROR
@@ -743,7 +692,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 				m_bloomFilter.add(nodeID);
 
-				if (m_ownIP.equals(entry.getIP()) && m_ownPort == entry.getPort()) {
+				if (m_ownAddress.equals(entry.getAddress())) {
 					if (entry.getRole() != p_cmdLineNodeRole) {
 						// #if LOGGER >= ERROR
 						m_logger.error(getClass(),
@@ -757,14 +706,14 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 						// #endif /* LOGGER >= ERROR */
 						return false;
 					}
-					m_nodesConfiguration.setOwnNodeID(nodeID);
+					m_nodes.setOwnNodeID(nodeID);
 					m_bootstrap = nodeID;
 					// #if LOGGER >= INFO
 					m_logger.info(this.getClass(), "Own node assigned: " + entry);
 					// #endif /* LOGGER >= INFO */
 				}
 
-				m_nodesConfiguration.addNode((short) (nodeID & 0x0000FFFF), entry);
+				m_nodes.addNode((short) (nodeID & 0x0000FFFF), entry);
 				// #if LOGGER >= INFO
 				m_logger.info(this.getClass(), "Node added: " + entry);
 				// #endif /* LOGGER >= INFO */
@@ -782,32 +731,32 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				// Set routing information for that node
 				splits = node.split("/");
 
-				m_nodesConfiguration.addNode(nodeID,
-						new NodeEntry(splits[0], Integer.parseInt(splits[1]), (short) 0, (short) 0,
+				m_nodes.addNode(nodeID,
+						new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), (short) 0, (short) 0,
 								NodeRole.toNodeRole(splits[2]), false));
 
-				if (nodeID == m_nodesConfiguration.getOwnNodeID()) {
+				if (nodeID == m_nodes.getOwnNodeID()) {
 					// NodeID was already re-used
-					m_nodesConfiguration.setOwnNodeID(NodesConfiguration.INVALID_NODE_ID);
+					m_nodes.setOwnNodeID(NodeID.INVALID_ID);
 				}
 			}
 
-			if (m_nodesConfiguration.getOwnNodeID() == NodesConfiguration.INVALID_NODE_ID) {
+			if (m_nodes.getOwnNodeID() == NodeID.INVALID_ID) {
 				// Add this node if it was not in start configuration
 				// #if LOGGER >= WARN
-				m_logger.warn(this.getClass(), "node not in nodes.config (" + m_ownIP + ", " + m_ownPort + ")");
+				m_logger.warn(this.getClass(), "node not in nodes.config (" + m_ownAddress + ")");
 				// #endif /* LOGGER >= WARN */
 
-				node = m_ownIP + "/" + m_ownPort + "/" + p_cmdLineNodeRole.getAcronym() + "/" + 0 + "/" + 0;
+				node = m_ownAddress + "/" + p_cmdLineNodeRole.getAcronym() + "/" + 0 + "/" + 0;
 
 				childs = m_zookeeper.getChildren("nodes/free");
 				if (!childs.isEmpty()) {
 					nodeID = Short.parseShort(childs.get(0));
-					m_nodesConfiguration.setOwnNodeID(nodeID);
+					m_nodes.setOwnNodeID(nodeID);
 					m_zookeeper.create("nodes/new/" + nodeID, node.getBytes());
 					m_zookeeper.delete("nodes/free/" + nodeID);
 				} else {
-					splits = m_ownIP.split("\\.");
+					splits = m_ownAddress.getIP().split("\\.");
 					seed = ((Integer.parseInt(splits[1]) << 16) + (Integer.parseInt(splits[2]) << 8)
 							+ Integer.parseInt(splits[3])) * -1;
 					nodeID = m_hashGenerator.hash(seed);
@@ -816,16 +765,16 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 					}
 					m_bloomFilter.add(nodeID);
 					// Set own NodeID
-					m_nodesConfiguration.setOwnNodeID(nodeID);
+					m_nodes.setOwnNodeID(nodeID);
 					m_zookeeper.create("nodes/new/" + nodeID, node.getBytes());
 				}
 
 				// Set routing information for that node
-				m_nodesConfiguration.addNode(nodeID,
-						new NodeEntry(m_ownIP, m_ownPort, (short) 0, (short) 0, p_cmdLineNodeRole, false));
+				m_nodes.addNode(nodeID,
+						new NodeEntry(m_ownAddress, (short) 0, (short) 0, p_cmdLineNodeRole, false));
 			} else {
 				// Remove NodeID if this node failed before
-				nodeID = m_nodesConfiguration.getOwnNodeID();
+				nodeID = m_nodes.getOwnNodeID();
 				if (m_zookeeper.exists("nodes/free/" + nodeID)) {
 					m_zookeeper.delete("nodes/free/" + nodeID);
 				}
@@ -835,12 +784,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 			m_zookeeper.setChildrenWatch("nodes/free", this);
 
 			// Register peer/superpeer (a terminal node is not registered to exclude it from backup)
-			if (m_nodesConfiguration.getOwnNodeEntry().getRole().equals(NodeRole.SUPERPEER)) {
-				m_zookeeper.create("nodes/superpeers/" + m_nodesConfiguration.getOwnNodeID());
-			} else if (m_nodesConfiguration.getOwnNodeEntry().getRole().equals(NodeRole.PEER)) {
-				m_zookeeper.create("nodes/peers/" + m_nodesConfiguration.getOwnNodeID());
-			} else if (m_nodesConfiguration.getOwnNodeEntry().getRole().equals(NodeRole.TERMINAL)) {
-				m_zookeeper.create("nodes/terminals/" + m_nodesConfiguration.getOwnNodeID());
+			if (m_nodes.getOwnNodeEntry().getRole().equals(NodeRole.SUPERPEER)) {
+				m_zookeeper.create("nodes/superpeers/" + m_nodes.getOwnNodeID());
+			} else if (m_nodes.getOwnNodeEntry().getRole().equals(NodeRole.PEER)) {
+				m_zookeeper.create("nodes/peers/" + m_nodes.getOwnNodeID());
+			} else if (m_nodes.getOwnNodeEntry().getRole().equals(NodeRole.TERMINAL)) {
+				m_zookeeper.create("nodes/terminals/" + m_nodes.getOwnNodeID());
 			}
 		} catch (final ZooKeeperException | KeeperException | InterruptedException e) {
 			// #if LOGGER >= ERROR
@@ -945,12 +894,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	 */
 	private boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version)
 			throws ZooKeeperException {
-		try {
-			m_zookeeper.setData(p_path, p_data, p_version);
-			return true;
-		} catch (final ZooKeeperException e) {
-			throw e;
-		}
+		m_zookeeper.setData(p_path, p_data, p_version);
+		return true;
 	}
 
 	/**

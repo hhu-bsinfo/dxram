@@ -3,9 +3,11 @@ package de.hhu.bsinfo.dxram.failure;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
@@ -28,15 +30,16 @@ import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Handles a node failure.
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 05.10.16
  */
 public class FailureComponent extends AbstractDXRAMComponent implements MessageReceiver, EventListener<AbstractEvent> {
 
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
 	private EventComponent m_event;
-
 	private NetworkComponent m_network;
 
 	private byte[] m_events;
@@ -45,13 +48,9 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
 	/**
 	 * Creates the failure component
-	 * @param p_priorityInit
-	 *            the initialization priority
-	 * @param p_priorityShutdown
-	 *            the shutdown priority
 	 */
-	public FailureComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public FailureComponent() {
+		super(DXRAMComponentOrder.Init.FAILURE, DXRAMComponentOrder.Shutdown.FAILURE);
 
 		m_events = new byte[Short.MAX_VALUE * 2];
 		m_eventLock = new ReentrantLock(false);
@@ -60,8 +59,8 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
 	/**
 	 * Dispatcher for a node failure
-	 * @param p_nodeID
-	 *            NodeID of failed node
+	 *
+	 * @param p_nodeID NodeID of failed node
 	 */
 	private void failureHandling(final short p_nodeID) {
 		NodeRole ownRole;
@@ -178,8 +177,8 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
 	/**
 	 * Handles an incoming FailureRequest
-	 * @param p_request
-	 *            the FailureRequest
+	 *
+	 * @param p_request the FailureRequest
 	 */
 	private void incomingFailureRequest(final FailureRequest p_request) {
 		// Outsource failure handling to another thread to avoid blocking a message handler
@@ -210,22 +209,22 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 	// --------------------------------------------------------------------------------
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {}
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_event = p_componentAccessor.getComponent(EventComponent.class);
+	}
 
 	@Override
-	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-		m_boot = getDependentComponent(AbstractBootComponent.class);
-		m_logger = getDependentComponent(LoggerComponent.class);
-		m_lookup = getDependentComponent(LookupComponent.class);
-
-		m_network = getDependentComponent(NetworkComponent.class);
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST,
 				FailureRequest.class);
 		m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_RESPONSE,
 				FailureResponse.class);
 		m_network.register(FailureRequest.class, this);
 
-		m_event = getDependentComponent(EventComponent.class);
 		m_event.registerListener(this, ConnectionLostEvent.class);
 		m_event.registerListener(this, ResponseDelayedEvent.class);
 
