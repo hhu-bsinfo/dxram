@@ -447,41 +447,132 @@ public class OverlaySuperpeer implements MessageReceiver {
 	}
 
 	/**
-	 * Determines if this superpeer is responsible for failure handling
+	 * Handles a node failure for the superpeer overlay
 	 * @param p_failedNode
-	 *            NodeID of failed node
-	 * @return true if superpeer is responsible for failed node, false otherwise
+	 *            the failed node's NodeID
 	 */
-	public boolean isResponsibleForFailureHandling(final short p_failedNode) {
+	public boolean failureHandling(final short p_failedNode, final NodeRole p_nodeRole) {
+		if (p_nodeRole == NodeRole.SUPERPEER) {
+			return superpeerFailureHandling(p_failedNode);
+		} else if (p_nodeRole == NodeRole.PEER) {
+			return peerFailureHandling(p_failedNode);
+		} else {
+			return terminalFailureHandling(p_failedNode);
+		}
+	}
+
+	/**
+	 * Handles a superpeer failure for the superpeer overlay
+	 * @param p_failedNode
+	 *            the failed node's NodeID
+	 * @return whether this superpeer is responsible (successor) for the failed superpeer
+	 */
+	public boolean superpeerFailureHandling(final short p_failedNode) {
 		boolean ret = false;
+		short[] responsibleArea;
+		short[] backupSuperpeers;
+		int i = 0;
 
-		m_overlayLock.readLock().lock();
+		m_overlayLock.writeLock().lock();
 
-		if (0 <= Collections.binarySearch(m_superpeers, p_failedNode)) {
+		// Inform all other superpeers actively and take over peers if failed superpeer was the predecessor
+		if (p_failedNode == m_predecessor) {
+			// #if LOGGER >= DEBUG
+			m_logger.debug(getClass(), "Failed node " + NodeID.toHexString(p_failedNode)
+					+ " was my predecessor -> informing all other superpeers and taking over all peers");
+			// #endif /* LOGGER >= INFO */
+
 			ret = true;
-		} else if (0 <= Collections.binarySearch(m_peers, p_failedNode)) {
-			ret = true;
+
+			// Inform all superpeers
+			for (short superpeer : m_superpeers) {
+				if (superpeer != p_failedNode) {
+					FailureRequest request = new FailureRequest(superpeer, p_failedNode);
+					if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+						// Ignore, failure is detected by network module
+						continue;
+					}
+					request.getResponse(RecoverBackupRangeResponse.class);
+				}
+			}
+
+			// Take over failed superpeer's peers
+			takeOverPeers(m_predecessor);
 		}
 
-		m_overlayLock.readLock().unlock();
+		// Send failed superpeer's metadata to this superpeers successor if it is the last backup superpeer
+		// of the failed superpeer
+		responsibleArea = OverlayHelper.getResponsibleArea(m_nodeID, m_predecessor, m_superpeers);
+		if (m_superpeers.size() > 3
+				&& OverlayHelper.getResponsibleSuperpeer((short) (responsibleArea[0] + 1), m_superpeers,
+						m_logger) == p_failedNode) {
+			// #if LOGGER >= DEBUG
+			m_logger.debug(getClass(), "Failed node " + NodeID.toHexString(p_failedNode)
+					+ " was in my responsible area -> spreading his data");
+			// #endif /* LOGGER >= DEBUG */
+			spreadDataOfFailedSuperpeer(p_failedNode, responsibleArea);
+		}
+
+		// Send this superpeer's metadata to new backup superpeer if failed superpeer was one of its backup
+		// superpeers
+		backupSuperpeers = OverlayHelper.getBackupSuperpeers(m_nodeID, m_superpeers);
+		if (m_superpeers.size() > 3
+				&& OverlayHelper.isSuperpeerInRange(p_failedNode, backupSuperpeers[0], backupSuperpeers[2])) {
+			// #if LOGGER >= DEBUG
+			m_logger.debug(getClass(), "Failed node " + NodeID.toHexString(p_failedNode)
+					+ " was one of my backup nodes -> spreading my data");
+			// #endif /* LOGGER >= DEBUG */
+			spreadBackupsOfThisSuperpeer(backupSuperpeers[2]);
+		}
+
+		// Remove superpeer
+		final int index = OverlayHelper.removeSuperpeer(p_failedNode, m_superpeers);
+		if (index >= 0) {
+			// Set new predecessor/successor if failed superpeer was pre-/succeeding
+			if (p_failedNode == m_successor) {
+				if (m_superpeers.size() != 0) {
+					if (index < m_superpeers.size()) {
+						m_successor = m_superpeers.get(index);
+					} else {
+						m_successor = m_superpeers.get(0);
+					}
+				} else {
+					m_successor = (short) -1;
+				}
+			}
+
+			if (p_failedNode == m_predecessor) {
+				if (m_superpeers.size() != 0) {
+					if (index > 0) {
+						m_predecessor = m_superpeers.get(index - 1);
+					} else {
+						m_predecessor = m_superpeers.get(m_superpeers.size() - 1);
+					}
+				} else {
+					m_predecessor = (short) -1;
+				}
+			}
+		}
+		// #if LOGGER >= DEBUG
+		m_logger.debug(getClass(), "Removed failed node " + NodeID.toHexString(p_failedNode));
+		// #endif /* LOGGER >= DEBUG */
+
+		m_overlayLock.writeLock().unlock();
 
 		return ret;
 	}
 
 	/**
-	 * Handles a node failure for the superpeer overlay: Repairs the overlay, recovers meta-data, spreads meta-data, ...
+	 * Handles a peer failure for the superpeer overlay
 	 * @param p_failedNode
 	 *            the failed node's NodeID
-	 * @param p_role
-	 *            the failed node's role
+	 * @return whether this superpeer is responsible for the failed peer
 	 */
-	public void failureHandling(final short p_failedNode, final NodeRole p_role) {
-		short[] responsibleArea;
-		short[] backupSuperpeers;
+	public boolean peerFailureHandling(final short p_failedNode) {
+		boolean ret = false;
 		int i = 0;
 		int counter;
 		long firstChunkIDOrRangeID;
-		boolean existsInZooKeeper = false;
 		BackupRange[] backupRanges;
 		short[] backupPeers;
 
@@ -489,101 +580,22 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		m_overlayLock.writeLock().lock();
 
-		if (p_role == NodeRole.SUPERPEER) {
-			if (OverlayHelper.containsSuperpeer(p_failedNode, m_superpeers)) {
-				// Inform all other superpeers actively and take over peers if failed superpeer was the predecessor
-				if (p_failedNode == m_predecessor) {
-					// #if LOGGER >= DEBUG
-					m_logger.debug(getClass(), "Failed node " + NodeID.toHexString(p_failedNode)
-							+ " was my predecessor -> informing all other superpeers and taking over all peers");
-					// #endif /* LOGGER >= INFO */
+		if (OverlayHelper.containsPeer(p_failedNode, m_peers)) {
+			// Only the responsible superpeer executes this
 
-					// Inform all superpeers
-					for (short superpeer : m_superpeers) {
-						if (superpeer != p_failedNode) {
-							FailureRequest request = new FailureRequest(superpeer, p_failedNode);
-							if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
-								// Ignore, failure is detected by network module
-							}
-						}
-					}
+			ret = true;
 
-					// Take over failed superpeer's peers
-					takeOverPeers(m_predecessor);
-				}
-
-				// Send failed superpeer's metadata to this superpeers successor if it is the last backup superpeer
-				// of the failed superpeer
-				responsibleArea = OverlayHelper.getResponsibleArea(m_nodeID, m_predecessor, m_superpeers);
-				if (m_superpeers.size() > 3
-						&& OverlayHelper.getResponsibleSuperpeer((short) (responsibleArea[0] + 1), m_superpeers,
-								m_logger) == p_failedNode) {
-					// #if LOGGER >= DEBUG
-					m_logger.debug(getClass(), "Failed node " + NodeID.toHexString(p_failedNode)
-							+ " was in my responsible area -> spreading his data");
-					// #endif /* LOGGER >= DEBUG */
-					spreadDataOfFailedSuperpeer(p_failedNode, responsibleArea);
-				}
-
-				// Send this superpeer's metadata to new backup superpeer if failed superpeer was one of its backup
-				// superpeers
-				backupSuperpeers = OverlayHelper.getBackupSuperpeers(m_nodeID, m_superpeers);
-				if (m_superpeers.size() > 3
-						&& OverlayHelper.isSuperpeerInRange(p_failedNode, backupSuperpeers[0], backupSuperpeers[2])) {
-					// #if LOGGER >= DEBUG
-					m_logger.debug(getClass(), "Failed node " + NodeID.toHexString(p_failedNode)
-							+ " was one of my backup nodes -> spreading my data");
-					// #endif /* LOGGER >= DEBUG */
-					spreadBackupsOfThisSuperpeer(backupSuperpeers[2]);
-				}
-
-				// Remove superpeer
-				final int index = OverlayHelper.removeSuperpeer(p_failedNode, m_superpeers);
-				if (index >= 0) {
-					// Set new predecessor/successor if failed superpeer was pre-/succeeding
-					if (p_failedNode == m_successor) {
-						if (m_superpeers.size() != 0) {
-							if (index < m_superpeers.size()) {
-								m_successor = m_superpeers.get(index);
-							} else {
-								m_successor = m_superpeers.get(0);
-							}
-						} else {
-							m_successor = (short) -1;
-						}
-					}
-
-					if (p_failedNode == m_predecessor) {
-						if (m_superpeers.size() != 0) {
-							if (index > 0) {
-								m_predecessor = m_superpeers.get(index - 1);
-							} else {
-								m_predecessor = m_superpeers.get(m_superpeers.size() - 1);
-							}
-						} else {
-							m_predecessor = (short) -1;
-						}
-					}
-				}
-				// #if LOGGER >= DEBUG
-				m_logger.debug(getClass(), "Removed failed node " + NodeID.toHexString(p_failedNode));
-				// #endif /* LOGGER >= DEBUG */
-			} else {
-				// Failed superpeer was already removed because failure was detected more than once
-			}
-		} else if (p_role == NodeRole.PEER) {
-			// Only the responsible superpeer executes the following
-
-			// Inform all other superpeers about failed peer
+			// Inform all superpeers about failed peer
 			for (short superpeer : m_superpeers) {
 				// #if LOGGER >= DEBUG
 				m_logger.debug(getClass(), "Informing " + NodeID.toHexString(superpeer)
 						+ " to remove " + NodeID.toHexString(p_failedNode) + " from meta-data");
 				// #endif /* LOGGER >= DEBUG */
 
-				NotifyAboutFailedPeerRequest request = new NotifyAboutFailedPeerRequest(superpeer, p_failedNode);
+				FailureRequest request = new FailureRequest(superpeer, p_failedNode);
 				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 					// Ignore, failure is detected by network module
+					continue;
 				}
 				request.getResponse(RecoverBackupRangeResponse.class);
 			}
@@ -640,16 +652,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 				}
 			}
 
-			// Inform all peers
-			for (short peer : m_peers) {
-				if (peer != p_failedNode) {
-					FailureRequest failureRequest = new FailureRequest(peer, p_failedNode);
-					if (m_network.sendSync(failureRequest) != NetworkErrorCodes.SUCCESS) {
-						// Ignore, failure is detected by network module
-					}
-				}
-			}
-
 			// Remove peer
 			OverlayHelper.removePeer(p_failedNode, m_peers);
 
@@ -657,13 +659,40 @@ public class OverlaySuperpeer implements MessageReceiver {
 			m_logger.info(getClass(),
 					"Recovery of failed node " + NodeID.toHexString(p_failedNode) + " complete.");
 			// #endif /* LOGGER >= INFO */
-		} else {
-			// Failed node was a terminal -> remove it
-			OverlayHelper.removePeer(p_failedNode, m_peers);
+		}
+
+		// Inform all peers (this is done by all superpeers)
+		for (short peer : m_peers) {
+			if (peer != p_failedNode && m_boot.getNodeRole(peer) == NodeRole.PEER) {
+				FailureRequest failureRequest = new FailureRequest(peer, p_failedNode);
+				if (m_network.sendSync(failureRequest) != NetworkErrorCodes.SUCCESS) {
+					// Ignore, failure is detected by network module
+				}
+			}
 		}
 
 		m_overlayLock.writeLock().unlock();
 
+		return ret;
+	}
+
+	/**
+	 * Handles a terminal failure for the superpeer overlay
+	 * @param p_failedNode
+	 *            the failed node's NodeID
+	 * @return whether this superpeer is responsible for the failed terminal
+	 */
+	public boolean terminalFailureHandling(final short p_failedNode) {
+		boolean ret = false;
+
+		m_overlayLock.writeLock().lock();
+		if (OverlayHelper.containsPeer(p_failedNode, m_peers)) {
+			// Only the responsible superpeer executes this
+			ret = OverlayHelper.removePeer(p_failedNode, m_peers);
+		}
+		m_overlayLock.writeLock().unlock();
+
+		return ret;
 	}
 
 	/**
@@ -1856,37 +1885,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 	}
 
 	/**
-	 * Handles an incoming NotifyAboutFailedPeerRequest
-	 * @param p_notifyAboutFailedPeerRequest
-	 *            the NotifyAboutFailedPeerRequest
-	 */
-	private void
-			incomingNotifyAboutFailedPeerRequest(final NotifyAboutFailedPeerRequest p_notifyAboutFailedPeerRequest) {
-		short failedPeer;
-
-		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Got message: NOTIFY_ABOUT_FAILED_PEER_MESSAGE from "
-				+ NodeID.toHexString(p_notifyAboutFailedPeerRequest.getSource()));
-		// #endif /* LOGGER == TRACE */
-
-		m_network.sendMessage(new NotifyAboutFailedPeerResponse(p_notifyAboutFailedPeerRequest));
-
-		failedPeer = p_notifyAboutFailedPeerRequest.getFailedPeer();
-
-		// Outsource informing all peers to another thread to avoid blocking a message handler
-		Runnable task = () -> {
-			// Inform all peers
-			for (short peer : m_peers) {
-				FailureRequest failureRequest = new FailureRequest(peer, failedPeer);
-				if (m_network.sendSync(failureRequest) != NetworkErrorCodes.SUCCESS) {
-					// Ignore, failure is detected by network module
-				}
-			}
-		};
-		new Thread(task).start();
-	}
-
-	/**
 	 * Handles an incoming ReplaceBackupPeerRequest
 	 * @param p_replaceBackupPeerRequest
 	 *            the ReplaceBackupPeerRequest
@@ -2014,9 +2012,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 					case LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST:
 						incomingGetMetadataSummaryRequest((GetMetadataSummaryRequest) p_message);
 						break;
-					case LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_REQUEST:
-						incomingNotifyAboutFailedPeerRequest((NotifyAboutFailedPeerRequest) p_message);
-						break;
 					case LookupMessages.SUBTYPE_REPLACE_BACKUP_PEER_REQUEST:
 						incomingReplaceBackupPeerRequest((ReplaceBackupPeerRequest) p_message);
 						break;
@@ -2101,12 +2096,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
 				LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE,
 				SendBackupsMessage.class);
-		m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
-				LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_REQUEST,
-				NotifyAboutFailedPeerRequest.class);
-		m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
-				LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_RESPONSE,
-				NotifyAboutFailedPeerResponse.class);
 		m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
 				LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE,
 				StartRecoveryMessage.class);
@@ -2242,7 +2231,5 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_network.register(SuperpeerStorageStatusRequest.class, this);
 
 		m_network.register(GetMetadataSummaryRequest.class, this);
-
-		m_network.register(NotifyAboutFailedPeerRequest.class, this);
 	}
 }

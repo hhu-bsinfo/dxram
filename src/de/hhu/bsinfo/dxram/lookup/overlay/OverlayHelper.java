@@ -212,6 +212,27 @@ public final class OverlayHelper {
 	}
 
 	/**
+	 * Determines if the given peer is in given peer list
+	 * @param p_peer
+	 *            NodeID of the peer
+	 * @param p_peers
+	 *            all peers
+	 * @return true if peer was found, false otherwise
+	 * @lock overlay lock must be read-locked
+	 */
+	protected static boolean containsPeer(final short p_peer, final ArrayList<Short> p_peers) {
+		boolean ret = false;
+		int index;
+
+		index = Collections.binarySearch(p_peers, p_peer);
+		if (0 <= index) {
+			ret = true;
+		}
+
+		return ret;
+	}
+
+	/**
 	 * Removes peer
 	 * @param p_peer
 	 *            NodeID of the peer that has to be removed
