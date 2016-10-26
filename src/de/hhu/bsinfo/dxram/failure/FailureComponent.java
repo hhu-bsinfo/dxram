@@ -63,6 +63,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 	 * @param p_nodeID NodeID of failed node
 	 */
 	private void failureHandling(final short p_nodeID) {
+		boolean responsible;
 		NodeRole ownRole;
 		NodeRole roleOfFailedNode;
 
@@ -78,16 +79,16 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 			m_logger.debug(getClass(), "********** ********** Node Failure ********** **********");
 			// #endif /* LOGGER >= DEBUG */
 
-			if (m_lookup.isResponsibleForFailureHandling(p_nodeID)) {
-				// Failed node was either a superpeer or a peer/terminal this superpeer is responsible for
+			// Restore superpeer overlay and/or initiate recovery
+			responsible = m_lookup.failureHandling(p_nodeID, roleOfFailedNode);
+
+			if (responsible) {
+				// Failed node was either the predecessor superpeer or a peer/terminal this superpeer is responsible for
 
 				// #if LOGGER >= DEBUG
 				m_logger.debug(getClass(),
 						"Failed node was a " + roleOfFailedNode + ", NodeID: " + NodeID.toHexString(p_nodeID));
 				// #endif /* LOGGER >= DEBUG */
-
-				// Restore superpeer overlay and/or initiate recovery
-				m_lookup.failureHandling(p_nodeID, roleOfFailedNode);
 
 				// Clean-up zookeeper
 				m_boot.failureHandling(p_nodeID, roleOfFailedNode);
@@ -100,10 +101,6 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 		} else {
 			// This is a peer or terminal
 			if (roleOfFailedNode == NodeRole.PEER) {
-
-				// TODO: Inform BackupComponent to replace failed peer with online backup peers and to log
-				// TODO: corresponding chunks
-
 				// Notify other components/services (PeerLockService, ZooKeeperBootComponent, LookupComponent)
 				m_event.fireEvent(new NodeFailureEvent(getClass().getSimpleName(), p_nodeID, roleOfFailedNode));
 			}
