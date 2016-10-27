@@ -187,8 +187,17 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 			m_servicesShortName.put(service.getValue().getShortName(), service.getKey());
 		}
 
-		// sort list by initialization priority
 		list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());
+
+		// check list for null objects -> invalid component in list
+		for (AbstractDXRAMComponent c : list) {
+			if (c == null) {
+				LOGGER.fatal("Found null object in component list, most likely due to invalid configuration entry");
+				return false;
+			}
+		}
+
+		// sort list by initialization priority
 		comp = (p_o1, p_o2) -> (new Integer(p_o1.getPriorityInit())).compareTo(p_o2.getPriorityInit());
 		Collections.sort(list, comp);
 
@@ -210,6 +219,12 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 		// #endif /* LOGGER >= INFO */
 
 		for (AbstractDXRAMService service : m_contextHandler.getContext().getServices().values()) {
+			// check for null -> invalid service
+			if (service == null) {
+				LOGGER.fatal("Found null object in service list, most likely due to invalid configuration entry");
+				return false;
+			}
+
 			if (!service.start(this)) {
 				// #if LOGGER >= ERROR
 				LOGGER.error("Starting service '%s' failed, aborting init", service.getServiceName());
