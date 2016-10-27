@@ -13,15 +13,15 @@ function exec(nid) {
 
 	if (nid != null) {
 		if (boot.nodeAvailable(nid)) {
-			dxterm.println("Node info " + dxram.shortToHexStr(nid) + ":");
-			dxterm.println("\tRole: " + boot.getNodeRole(nid));
-			dxterm.println("\tAddress: " + boot.getNodeAddress(nid));
+			dxterm.println("Node info 0x%X:", nid);
+			dxterm.println("\tRole: %s", boot.getNodeRole(nid));
+			dxterm.println("\tAddress: %s", boot.getNodeAddress(nid));
 		} else {
 			dxterm.println("Not available.");
 		}
 	} else {
-		dxterm.println("Node info " + dxram.shortToHexStr(boot.getNodeID()) + ":");
-		dxterm.println("\tRole: " + boot.getNodeRole());
-		dxterm.println("\tAddress: " + boot.getNodeAddress(boot.getNodeID()));
+		dxterm.println("Node info 0x%X:", boot.getNodeID());
+		dxterm.println("\tRole: %s", boot.getNodeRole());
+		dxterm.println("\tAddress: %s", boot.getNodeAddress(boot.getNodeID()));
 	}
 }

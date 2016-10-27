@@ -32,15 +32,15 @@ function execCid(cid) {
 
     // don't allow removal of index chunk
     if (dxram.lidOfCid(cid) == 0) {
-        dxterm.printlnErr("Removal of index chunk is not allowed.")
+        dxterm.printlnErr("Removal of index chunk is not allowed.=")
         return;
     }
 
     var chunk = dxram.service("chunk");
 
     if (chunk.remove(cid) != 1) {
-        dxterm.printlnErr("Removing chunk with ID " + dxram.longToHexStr(cid) + " failed.");
+        dxterm.printflnErr("Removing chunk with ID 0x%X failed", cid);
     } else {
-        dxterm.println("Chunk " + dxram.longToHexStr(cid) + " removed.");
+        dxterm.printfln("Chunk 0x%X removed", cid);
     }
 }

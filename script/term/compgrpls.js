@@ -12,8 +12,8 @@ function exec(nid) {
     var mscomp = dxram.service("mscomp");
     var masters = mscomp.getMasters();
 
-    dxterm.println("List of available compute groups with master nodes (" + masters.size() + "):")
+    dxterm.printfln("List of available compute groups with master nodes (%d):", masters.size())
     for each (master in masters) {
-        dxterm.println(master.second() + ": " + dxram.shortToHexStr(entry.first()));
+        dxterm.printfln("%d: 0x%X", master.second(), entry.first());
     }
 }

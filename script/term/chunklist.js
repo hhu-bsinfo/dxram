@@ -25,11 +25,11 @@ function exec(nid, migrated) {
 	var chunkRanges = chunk.getAllLocalChunkIDRanges(nid);
 
     if (chunkRanges == null) {
-        dxterm.printlnErr("Getting chunk ranges failed.");
+        dxterm.printlnErr("Getting chunk ranges failed");
         return;
     }
 
-    dxterm.println("Locally created chunk id ranges of " + dxram.shortToHexStr(nid) + "(" + chunkRanges.size() / 2 + "):");
+    dxterm.printfln("Locally created chunk id ranges of 0x%X (%d):", nid, chunkRanges.size() / 2);
 
     for (var i = 0; i < chunkRanges.size(); i++) {
         var currRange = chunkRanges.get(i);
@@ -45,18 +45,18 @@ function exec(nid, migrated) {
         chunkRanges = chunk.getAllMigratedChunkIDRanges(nid);
 
         if (chunkRanges == null) {
-            dxterm.printlnErr("Getting migrated chunk ranges failed.");
+            dxterm.printlnErr("Getting migrated chunk ranges failed");
             return;
         }
 
-        dxterm.println("Migrated chunk id ranges of " + dxram.shortToHexStr(nid) + "(" + chunkRanges.size() / 2 + "):");
+        dxterm.printfln("Migrated chunk id ranges of 0x%X (%d):", nid, chunkRanges.size() / 2);
 
         for (var i = 0; i < chunkRanges.size(); i++) {
             var currRange = chunkRanges.get(i);
             if (i % 2 == 0) {
-                dxterm.print("[" + dxram.longToHexStr(currRange));
+                dxterm.printf("[0x%X", currRange);
             } else {
-                dxterm.println(", " + dxram.longToHexStr(currRange) + "]");
+                dxterm.printfln(", 0x%X]", currRange);
             }
         }
     }

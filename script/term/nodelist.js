@@ -16,16 +16,16 @@ function exec(role) {
 	var nodeIds = boot.getOnlineNodeIDs();
 
 	if (role != null) {
-		dxterm.println("Filtering by role " + nodeRole);
+		dxterm.printfln("Filtering by role %s", nodeRole);
 	} 
 
-	dxterm.println("Total available nodes (" + nodeIds.size() + "):");
+	dxterm.printfln("Total available nodes (%d):", nodeIds.size());
 		
 	for each(nodeId in nodeIds) {
 		var curRole = boot.getNodeRole(nodeId);
 		
 		if (role == null || role != null && nodeRole.equals(curRole)) {
-			dxterm.println("\t" + dxram.shortToHexStr(nodeId) + ", " + curRole + ", " + boot.getNodeAddress(nodeId));
+			dxterm.printfln("\t0x%X, %s, %s", nodeId, curRole, nodeId);
 		}
 	}
 }

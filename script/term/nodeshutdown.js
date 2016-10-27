@@ -22,8 +22,8 @@ function exec(nid, kill) {
 	}
 
 	if (!boot.shutdownNode(nid, kill)) {
-		dxterm.println("Shutting down node " + dxram.shortToHexStr(nid) + " failed");
+		dxterm.printfln("Shutting down node 0x%X failed", nid);
 	} else {
-		dxterm.println("Shutting down node " + dxram.shortToHexStr(nid) + "...");
+		dxterm.printfln("Shutting down node 0x%X...", nid);
 	}
 }

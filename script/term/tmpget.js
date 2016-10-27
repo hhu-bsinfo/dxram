@@ -48,7 +48,7 @@ function exec_class(id, className) {
 
     var dataStructure = dxram.newDataStructure(className);
     if (dataStructure == null) {
-        dxterm.printlnErr("Creating data structure of name '" + className + "' failed");
+        dxterm.printflnErr("Creating data structure of name '%s' failed", className);
         return;
     }
 
@@ -57,12 +57,11 @@ function exec_class(id, className) {
     var tmpstore = dxram.service("tmpstore");
 
     if (tmpstore.get(dataStructure) != 1) {
-        dxterm.printlnErr("Getting tmp data structure " + dxram.intToHexStr(id) + " failed.");
+        dxterm.printflnErr("Getting tmp data structure 0x%X failed", id);
         return;
     }
 
-    dxterm.println("DataStructure " + className + " (size " + dataStructure.sizeofObject() + "): ");
-    dxterm.println(dataStructure);
+    dxterm.printfln("DataStructure %s (size %d):\n%s", className, dataStructure.sizeofObject(), dataStructure);
 }
 
 function exec_raw(id, type, hex, offset, length) {
@@ -90,7 +89,7 @@ function exec_raw(id, type, hex, offset, length) {
     var chunk = tmpstore.get(id);
 
     if (chunk == null) {
-        dxterm.printlnErr("Getting tmp chunk " + dxram.intToHexStr(id) + " failed.");
+        dxterm.printflnErr("Getting tmp chunk 0x%X failed", id);
         return;
     }
 
@@ -156,12 +155,11 @@ function exec_raw(id, type, hex, offset, length) {
             break;
 
         default:
-            dxterm.printlnErr("Unsuported data type " + type);
+            dxterm.printflnErr("Unsuported data type %s", type);
             return;
     }
 
-    dxterm.println("Temp chunk data of " + dxram.intToHexStr(id) + " (chunksize " + chunk.sizeofObject() + "):");
-    dxterm.println(str);
+    dxterm.printfln("Temp chunk data of 0x%X (chunksize %d):\n%s", id, chunk.sizeofObject(), str);
 }
 
 function exec_raw2(id, offset, length, type, hex) {

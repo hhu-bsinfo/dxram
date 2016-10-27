@@ -19,7 +19,8 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -42,13 +43,18 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	private static final Logger LOGGER = LogManager.getFormatterLogger(JobService.class.getSimpleName());
 
+	// statistics recorder
+	private static final StatisticsOperation SOP_CREATE =
+			StatisticsRecorderManager.getOperation(JobService.class, "Submit");
+	private static final StatisticsOperation SOP_REMOTE_SUBMIT =
+			StatisticsRecorderManager.getOperation(JobService.class, "RemoteSubmit");
+	private static final StatisticsOperation SOP_INCOMING_SUBMIT =
+			StatisticsRecorderManager.getOperation(JobService.class, "IncomingSubmit");
+
 	// depdendent components
 	private AbstractBootComponent m_boot;
 	private AbstractJobComponent m_job;
-	private StatisticsComponent m_statistics;
 	private NetworkComponent m_network;
-
-	private JobStatisticsRecorderIDs m_statisticsRecorderIDs;
 
 	private AtomicLong m_jobIDCounter = new AtomicLong(0);
 
@@ -92,7 +98,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_submit);
+		SOP_CREATE.enter();
 		// #endif /* STATISTICS */
 
 		long jobId = JobID.createJobID(m_boot.getNodeID(), m_jobIDCounter.incrementAndGet());
@@ -106,7 +112,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_submit);
+		SOP_CREATE.leave();
 		// #endif /* STATISTICS */
 
 		return jobId;
@@ -130,7 +136,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteSubmit);
+		SOP_REMOTE_SUBMIT.enter();
 		// #endif /* STATISTICS */
 
 		long jobId = JobID.createJobID(m_boot.getNodeID(), m_jobIDCounter.incrementAndGet());
@@ -164,7 +170,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteSubmit);
+		SOP_REMOTE_SUBMIT.leave();
 		// #endif /* STATISTICS */
 
 		// set jobid again to mark possible failure
@@ -310,9 +316,6 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
 		m_job = p_componentAccessor.getComponent(AbstractJobComponent.class);
-		// #ifdef STATISTICS
-		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
-		// #endif /* STATISTICS */
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 	}
 
@@ -320,10 +323,6 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		registerNetworkMessages();
 		registerNetworkMessageListener();
-
-		// #ifdef STATISTICS
-		registerStatisticsOperations();
-		// #endif /* STATISTICS */
 
 		AbstractJob.registerType(JobNull.MS_TYPE_ID, JobNull.class);
 
@@ -368,28 +367,13 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	}
 
 	/**
-	 * Register statistics stuff.
-	 */
-	private void registerStatisticsOperations() {
-		m_statisticsRecorderIDs = new JobStatisticsRecorderIDs();
-		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(this.getClass());
-
-		m_statisticsRecorderIDs.m_operations.m_submit = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				JobStatisticsRecorderIDs.Operations.MS_SUBMIT);
-		m_statisticsRecorderIDs.m_operations.m_remoteSubmit = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				JobStatisticsRecorderIDs.Operations.MS_REMOTE_SUBMIT);
-		m_statisticsRecorderIDs.m_operations.m_incomingSubmit = m_statistics
-				.createOperation(m_statisticsRecorderIDs.m_id, JobStatisticsRecorderIDs.Operations.MS_INCOMING_SUBMIT);
-	}
-
-	/**
 	 * Handle incoming push queue request.
 	 *
 	 * @param p_request Incoming request.
 	 */
 	private void incomingPushJobQueueMessage(final PushJobQueueMessage p_request) {
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingSubmit);
+		SOP_INCOMING_SUBMIT.enter();
 		// #endif /* STATISTICS */
 
 		AbstractJob job = p_request.getJob();
@@ -409,7 +393,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingSubmit);
+		SOP_INCOMING_SUBMIT.leave();
 		// #endif /* STATISTICS */
 	}
 

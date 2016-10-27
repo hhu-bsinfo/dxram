@@ -22,7 +22,8 @@ import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
@@ -43,6 +44,16 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 	private static final Logger LOGGER = LogManager.getFormatterLogger(PeerLockService.class.getSimpleName());
 
+	// statistics recorder
+	private static final StatisticsOperation SOP_LOCK =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Lock");
+	private static final StatisticsOperation SOP_UNLOCK =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Unlock");
+	private static final StatisticsOperation SOP_INCOMING_LOCK =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "IncomingLock");
+	private static final StatisticsOperation SOP_INCOMING_UNLOCK =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "IncomingUnlock");
+
 	// configuration values
 	@Expose
 	private TimeUnit m_remoteLockSendInterval = new TimeUnit(10, TimeUnit.MS);
@@ -55,10 +66,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	private MemoryManagerComponent m_memoryManager;
 	private AbstractLockComponent m_lock;
 	private LookupComponent m_lookup;
-	private StatisticsComponent m_statistics;
 	private EventComponent m_event;
-
-	private LockStatisticsRecorderIDs m_statisticsRecorderIDs;
 
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
@@ -67,9 +75,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
 		m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
 		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-		// #ifdef STATISTICS
-		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
-		// #endif /* STATISTICS */
 		m_event = p_componentAccessor.getComponent(EventComponent.class);
 	}
 
@@ -94,19 +99,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		m_network.register(LockRequest.class, this);
 		m_network.register(UnlockMessage.class, this);
 		m_network.register(GetLockedListRequest.class, this);
-
-		// #ifdef STATISTICS
-		m_statisticsRecorderIDs = new LockStatisticsRecorderIDs();
-		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(getClass());
-		m_statisticsRecorderIDs.m_operations.m_lock = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				LockStatisticsRecorderIDs.Operations.MS_LOCK);
-		m_statisticsRecorderIDs.m_operations.m_unlock = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				LockStatisticsRecorderIDs.Operations.MS_UNLOCK);
-		m_statisticsRecorderIDs.m_operations.m_incomingLock = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				LockStatisticsRecorderIDs.Operations.MS_INCOMING_LOCK);
-		m_statisticsRecorderIDs.m_operations.m_incomingUnlock = m_statistics
-				.createOperation(m_statisticsRecorderIDs.m_id, LockStatisticsRecorderIDs.Operations.MS_INCOMING_UNLOCK);
-		// #endif /* STATISTICS */
 
 		return true;
 	}
@@ -161,7 +153,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_lock);
+		SOP_LOCK.enter();
 		// #endif /* STATISTICS */
 
 		ErrorCode err = ErrorCode.SUCCESS;
@@ -238,7 +230,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_lock);
+		SOP_LOCK.leave();
 		// #endif /* STATISTICS */
 
 		return err;
@@ -255,7 +247,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_unlock);
+		SOP_UNLOCK.enter();
 		// #endif /* STATISTICS */
 
 		ErrorCode err = ErrorCode.SUCCESS;
@@ -307,7 +299,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_unlock);
+		SOP_UNLOCK.leave();
 		// #endif /* STATISTICS */
 
 		return err;
@@ -367,7 +359,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		boolean success;
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingLock);
+		SOP_INCOMING_LOCK.enter();
 		// #endif /* STATISTICS */
 
 		// the host handles the timeout as we don't want to block the message receiver thread
@@ -386,7 +378,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingLock);
+		SOP_INCOMING_LOCK.leave();
 		// #endif /* STATISTICS */
 	}
 
@@ -397,13 +389,13 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	 */
 	private void incomingUnlockMessage(final UnlockMessage p_message) {
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingUnlock);
+		SOP_INCOMING_UNLOCK.enter();
 		// #endif /* STATISTICS */
 
 		m_lock.unlock(ChunkID.getLocalID(p_message.getChunkID()), m_boot.getNodeID(), p_message.isWriteLockOperation());
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingUnlock);
+		SOP_INCOMING_UNLOCK.leave();
 		// #endif /* STATISTICS */
 	}
 

@@ -15,6 +15,8 @@ import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
 import de.hhu.bsinfo.dxram.util.TimeUnitGsonSerializer;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Gson context for DXRAM handling serialization and deserialization of components and services
@@ -22,6 +24,8 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 20.10.16
  */
 class DXRAMGsonContext {
+
+	private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMGsonContext.class.getSimpleName());
 
 	static Gson createGsonInstance() {
 		return new GsonBuilder()
@@ -60,6 +64,7 @@ class DXRAMGsonContext {
 			try {
 				clazz = Class.forName(className);
 			} catch (final ClassNotFoundException e) {
+				LOGGER.fatal("Could not find component for class name '%s', check your config file", className);
 				return null;
 			}
 
@@ -67,6 +72,8 @@ class DXRAMGsonContext {
 				// check if there is an "interface"/abstract class between DXRAMComponent and the instance to
 				// create
 				if (!clazz.getSuperclass().getSuperclass().equals(AbstractDXRAMComponent.class)) {
+					LOGGER.fatal("Could class '%s' is not a subclass of AbstractDXRAMComponent, check your config file",
+							className);
 					return null;
 				}
 			}
@@ -111,6 +118,7 @@ class DXRAMGsonContext {
 			try {
 				clazz = Class.forName(className);
 			} catch (final ClassNotFoundException e) {
+				LOGGER.fatal("Could not find service for class name '%s', check your config file", className);
 				return null;
 			}
 
@@ -118,6 +126,8 @@ class DXRAMGsonContext {
 				// check if there is an "interface"/abstract class between DXRAMService and the instance to
 				// create
 				if (!clazz.getSuperclass().getSuperclass().equals(AbstractDXRAMService.class)) {
+					LOGGER.fatal("Could class '%s' is not a subclass of AbstractDXRAMService, check your config file",
+							className);
 					return null;
 				}
 			}

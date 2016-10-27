@@ -68,7 +68,7 @@ function exec_cid(cid, data, offset, type) {
 
     // don't allow put of index chunk
     if (dxram.nidOfCid(cid) == 0) {
-        dxterm.printlnErr("Put of index chunk is not allowed.");
+        dxterm.printlnErr("Put of index chunk is not allowed");
         return;
     }
 
@@ -76,7 +76,7 @@ function exec_cid(cid, data, offset, type) {
     var chunks = chunkService.get(cid);
 
     if (chunks.first() == 0) {
-        dxmterm.printlnErr("Getting chunk " + dxram.longToHexStr(cid) + " failed.");
+        dxmterm.printflnErr("Getting chunk 0x%X failed", cid);
         return;
     }
 
@@ -165,14 +165,14 @@ function exec_cid(cid, data, offset, type) {
             break;
 
         default:
-            dxterm.printlnErr("Unsupported data type " + type);
+            dxterm.printflnErr("Unsupported data type %s", type);
             return;
     }
 
     // put chunk back
     if (chunkService.put(chunk) != 1) {
-        dxterm.printlnErr("Putting chunk " + dxram.longToHexStr(cid) + " failed");
+        dxterm.printflnErr("Putting chunk 0x%X failed", cid);
     } else {
-        dxterm.println("Put to chunk " + dxram.longToHexStr(cid) + " successful.");
+        dxterm.printfln("Put to chunk 0x%X successful", cid);
     }
 }

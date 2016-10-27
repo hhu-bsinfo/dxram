@@ -41,7 +41,7 @@ function exec(id, data, offset, type) {
     var chunk = tmpstore.get(id);
 
     if (chunk == null) {
-        dxterm.printlnErr("Getting chunk " + dxram.intToHexStr(id) + " from tmp storage failed.");
+        dxterm.printflnErr("Getting chunk 0x%X from tmp storage failed", id);
         return;
     }
 
@@ -129,14 +129,14 @@ function exec(id, data, offset, type) {
             break;
 
         default:
-            dxterm.printlnErr("Unsupported data type " + type);
+            dxterm.printflnErr("Unsupported data type %s", type);
             return;
     }
 
     // put chunk back
     if (tmpstore.put(chunk) != 1) {
-        dxterm.printlnErr("Putting chunk " + dxram.intToHexStr(id) + " to tmp storage failed");
+        dxterm.printflnErr("Putting chunk 0x%X to tmp storage failed", id);
     } else {
-        dxterm.println("Put to chunk " + dxram.intToHexStr(id) + " to tmp storage successful.");
+        dxterm.printfln("Put to chunk 0x%X to tmp storage successful", id);
     }
 }

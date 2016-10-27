@@ -12,6 +12,6 @@ function exec() {
     var recorders = dxram.service("stats").getRecorders();
 
     for each (recorder in recorders) {
-        dxterm.println("> " + recorder.getName());
+        dxterm.printfln("> %s", recorder.getName());
     }
 }

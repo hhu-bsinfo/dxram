@@ -12,9 +12,9 @@ function exec(nid) {
     var mscomp = dxram.service("mscomp");
     var payloads = mscomp.getRegisteredTaskPayloads();
 
-    dxterm.println("Registered task payload classes (" + payloads.size() + "): ");
+    dxterm.printfln("Registered task payload classes (%d): ", payloads.size());
     for each (payload in payloads) {
-        dxterm.println(payload.getValue().getSimpleName() + ": " + (payload.getKey() >> 16 & 0xFFFF) + ", "
-                       							+ (payload.getKey() & 0xFFFF));
+        dxterm.printfln("%s: 0x%X, 0x%X",
+            payload.getValue().getSimpleName(), (payload.getKey() >> 16 & 0xFFFF), (payload.getKey() & 0xFFFF));
     }
 }

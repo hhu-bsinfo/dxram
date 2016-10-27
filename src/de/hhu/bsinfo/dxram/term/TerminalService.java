@@ -68,7 +68,6 @@ public class TerminalService extends AbstractDXRAMService {
 		LOGGER.info("Running terminal...");
 		// #endif /* LOGGER >= INFO */
 
-		System.out.println(">>> DXRAM Terminal <<<");
 		System.out.println(
 				"Running on node " + NodeID.toHexString(m_boot.getNodeID()) + ", role " + m_boot.getNodeRole());
 		System.out.println("Type '?' or 'help' to print the help message");

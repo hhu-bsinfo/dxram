@@ -18,20 +18,18 @@ function exec(nid) {
 
     var lookup = dxram.service("lookup");
     if (nid == "all") {
-	var boot = dxram.service("boot");
-	var nodeIds = boot.getOnlineNodeIDs();
-      
-	for each(nodeId in nodeIds) {
-	    var curRole = boot.getNodeRole(nodeId); 
-	    if (curRole == "superpeer") {
-		var summary = lookup.getMetadataSummary(nodeId);
-		dxterm.println("Metadata summary of " + dxram.shortToHexStr(nodeId) + ":");
-		dxterm.println(summary);
-	    }
-	}
+        var boot = dxram.service("boot");
+        var nodeIds = boot.getOnlineNodeIDs();
+
+        for each(nodeId in nodeIds) {
+            var curRole = boot.getNodeRole(nodeId);
+            if (curRole == "superpeer") {
+                var summary = lookup.getMetadataSummary(nodeId);
+                dxterm.printfln("Metadata summary of 0x%X:\n%s", nodeId, summary);
+            }
+        }
     } else {
-	var summary = lookup.getMetadataSummary(nid);
-	dxterm.println("Metadata summary of " + dxram.shortToHexStr(nid) + ":");
-	dxterm.println(summary);
+        var summary = lookup.getMetadataSummary(nid);
+        dxterm.printfln("Metadata summary of 0x%X:\n%s", nid, summary);
     }
 }

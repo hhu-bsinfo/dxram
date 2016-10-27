@@ -26,8 +26,8 @@ function exec(size, nid) {
 	var chunkIDs = chunk.createRemote(nid, size);
 
 	if (chunkIDs != null) {
-	    dxterm.println("Created chunk of size " + size + ": " + dxram.longToHexStr(chunkIDs[0]));
+	    dxterm.printfln("Created chunk of size %d: 0x%X", size, chunkIDs[0]);
 	} else {
-        dxterm.printlnErr("Creating chunk failed.");
+        dxterm.printlnErr("Creating chunk failed");
 	}
 }

@@ -19,7 +19,7 @@ function exec(id) {
     var tmpstore = dxram.service("tmpstore");
 
     if (tmpstore.remove(id)) {
-        dxterm.println("Removed chunk with id " + dxram.longToHexStr(id) + " from temporary storage.");
+        dxterm.println("Removed chunk with id 0x%X from temporary storage", id);
     } else {
         dxterm.printlnErr("Creating chunk in temporary storage failed");
     }

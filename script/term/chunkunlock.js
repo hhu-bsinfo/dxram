@@ -34,14 +34,14 @@ function execCid(cid) {
 
     // don't allow lock of index chunk
     if (dxram.lidOfCid(cid) == 0) {
-        dxterm.printlnErr("Locking/Unlocking of index chunk is not allowed.")
+        dxterm.printlnErr("Locking/Unlocking of index chunk is not allowed")
         return;
     }
 
     var err = dxram.service("lock").unlock(true, cid);
     if (!err.toString().equals("SUCCESS")) {
-        dxterm.printlnErr("Error unlocking chunk " + dxram.longToHexStr(cid) + ": " + err);
+        dxterm.printflnErr("Error unlocking chunk 0x%X: %s", cid, err);
     } else {
-        dxterm.println("Unlocked chunk " + dxram.longToHexStr(cid));
+        dxterm.printfln("Unlocked chunk 0x%X", cid);
     }
 }

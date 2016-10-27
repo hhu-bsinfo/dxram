@@ -12,9 +12,9 @@ function exec() {
     var nameservice = dxram.service("name");
     var entries = nameservice.getAllEntries();
 
-    dxterm.println("Nameservice entries(" + entries.size() + "):");
+    dxterm.printfln("Nameservice entries(%d):", entries.size());
 
     for each (entry in entries) {
-        dxterm.println(entry.first() + ": " + dxram.longToHexStr(entry.second()));
+        dxterm.printfln("%s: 0x%X", entry.first(), entry.second());
     }
 }

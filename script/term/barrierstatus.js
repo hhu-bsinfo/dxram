@@ -20,7 +20,7 @@ function exec(bid) {
     var status = sync.barrierGetStatus(bid);
 
     if (status == null) {
-        dxterm.printlnErr("Getting status of barrier " + dxram.intToHexStr(bid) + " failed.");
+        dxterm.printflnErr("Getting status of barrier 0x%X failed", bid);
         return;
     }
 
@@ -29,6 +29,5 @@ function exec(bid) {
         peers += dxram.shortToHexStr(status[i]) + ", ";
     }
 
-    dxterm.println("Barrier status " + dxram.intToHexStr(bid) + ", "
-            + status[0] + "/" + (status.length - 1) + ": " + peers);
+    dxterm.printfln("Barrier status 0x%X, %s/%d: %d", bid, status[0], (status.length - 1), peers);
 }

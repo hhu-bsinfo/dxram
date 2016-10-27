@@ -20,8 +20,8 @@ function exec(size) {
 
     var barrierId = sync.barrierAllocate(size);
     if (barrierId == -1) {
-        dxterm.printlnErr("Allocating barrier failed.");
+        dxterm.printlnErr("Allocating barrier failed");
     } else {
-        dxterm.println("Allocating barrier successful, barrier id: " + dxram.intToHexStr(barrierId));
+        dxterm.printfln("Allocating barrier successful, barrier id: 0x%X", barrierId);
     }
 }
