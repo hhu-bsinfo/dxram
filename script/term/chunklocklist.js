@@ -25,9 +25,9 @@ function exec(nid, id2) {
        return;
     }
 
-    dxterm.println("Locked chunks of " + dxram.longToHexStr(nid) + "(" + list.size() + "):");
+    dxterm.printfln("Locked chunks of 0x%X (%d):", nid, list.size());
     dxterm.println("<lid: nid that locked the chunk>");
     for each (entry in list) {
-        dxterm.println(dxram.longToHexStr(entry.first()) + ": " + dxram.shortToHexStr(entry.second()));
+        dxterm.printfln("0x%X: 0x%X", entry.first(), entry.second());
     }
 }

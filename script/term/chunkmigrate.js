@@ -39,7 +39,7 @@ function execCid(cid, targetNid) {
 
     // don't allow migration of index chunk
     if (dxram.lidOfCid(cid) == 0) {
-        dxterm.printlnErr("Migration of index chunk is not allowed.")
+        dxterm.printlnErr("Migration of index chunk is not allowed")
         return;
     }
 

@@ -25,7 +25,7 @@ function exec(bid, data) {
     var result = sync.barrierSignOn(bid, data);
 
     if (result == null) {
-        dxterm.printlnErr("Signing on to barrier " + dxram.intToHexStr(bid) + " failed.");
+        dxterm.printlnErr("Signing on to barrier 0x%X failed", bid);
         return;
     }
 
@@ -34,5 +34,5 @@ function exec(bid, data) {
         str += "\n" + dxram.shortToHexStr(result.first()[i]) + ": " + dxram.longToHexStr(result.second()[i]);
     }
 
-    dxterm.println("Synchronized to barrier " + dxram.intToHexStr(bid) + " custom data: " + str)
+    dxterm.printfln("Synchronized to barrier 0x%X custom data: %s", bid, str)
 }

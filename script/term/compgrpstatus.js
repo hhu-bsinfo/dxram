@@ -20,10 +20,9 @@ function exec(cgid) {
     var status = mscomp.getStatusMaster(cgid);
 
     if (status == null) {
-        dxterm.printlnErr("Getting compute group status of group " + cgid + " failed");
+        dxterm.printflnErr("Getting compute group status of group %d failed", cgid);
         return;
     }
 
-    dxterm.println("Status of group " + cgid + ":");
-    dxterm.println(status);
+    dxterm.printfln("Status of group %d:\n%s", cgid, status);
 }

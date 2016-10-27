@@ -48,25 +48,25 @@ function exec(nid, sizetype) {
         sizetype = "b";
     }
 
-    dxterm.println("Chunk service/memory status of " + dxram.shortToHexStr(nid) + ":");
+    dxterm.printfln("Chunk service/memory status of 0x%X:", nid);
     if (divisor == 1) {
-        dxterm.println("Free memory (" + sizetype + "): " + status.getFreeMemory());
-        dxterm.println("Total memory (" + sizetype + "): " + status.getTotalMemory());
-        dxterm.println("Total payload memory (" + sizetype + "): " + status.getTotalPayloadMemory());
-        dxterm.println("Total chunk payload memory (" + sizetype + "): " + status.getTotalChunkPayloadMemory());
-        dxterm.println("Total CID tables memory (NID table with 327687) (" + sizetype + "): "
-                        + status.getTotalMemoryCIDTables());
+        dxterm.printfln("Free memory (%s): %d", sizetype, status.getFreeMemory());
+        dxterm.printfln("Total memory (%s): %d", sizetype, status.getTotalMemory());
+        dxterm.printfln("Total payload memory (%s): %d", sizetype, status.getTotalPayloadMemory());
+        dxterm.printfln("Total chunk payload memory (%s): %d", sizetype, status.getTotalChunkPayloadMemory());
+        dxterm.printfln("Total CID tables memory (NID table with 327687) (%s): %d", sizetype,
+                        status.getTotalMemoryCIDTables());
     } else {
-        dxterm.println("Free memory (" + sizetype + "): " + status.getFreeMemory() / divisor);
-        dxterm.println("Total memory (" + sizetype + "): " + status.getTotalMemory() / divisor);
-        dxterm.println("Total payload memory (" + sizetype + "): " + status.getTotalPayloadMemory() / divisor);
-        dxterm.println("Total chunk payload memory (" + sizetype + "): "
-                        + status.getTotalChunkPayloadMemory() / divisor);
-        dxterm.println("Total CID tables memory (NID table with 327687) (" + sizetype + "): "
-                        + status.getTotalMemoryCIDTables() / divisor);
+        dxterm.printfln("Free memory (%s): %d", sizetype, status.getFreeMemory() / divisor);
+        dxterm.printfln("Total memory (%s): %d", sizetype, status.getTotalMemory() / divisor);
+        dxterm.printfln("Total payload memory (%s): %d", sizetype, status.getTotalPayloadMemory() / divisor);
+        dxterm.printfln("Total chunk payload memory (%s): %d", sizetype,
+                        status.getTotalChunkPayloadMemory() / divisor);
+        dxterm.printfln("Total CID tables memory (NID table with 327687) (%s): %d",
+                        sizetype, status.getTotalMemoryCIDTables() / divisor);
     }
 
-    dxterm.println("Num active memory blocks: " + status.getNumberOfActiveMemoryBlocks());
-    dxterm.println("Num active chunks: " + status.getNumberOfActiveChunks());
-    dxterm.println("Num CID tables (one is NID table): " + status.getCIDTableCount());
+    dxterm.printfln("Num active memory blocks: %d", status.getNumberOfActiveMemoryBlocks());
+    dxterm.printfln("Num active chunks: %d", status.getNumberOfActiveChunks());
+    dxterm.printfln("Num CID tables (one is NID table): %d", status.getCIDTableCount());
 }

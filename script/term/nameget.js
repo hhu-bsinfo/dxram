@@ -21,8 +21,8 @@ function exec(name) {
     var cid = nameservice.getChunkID(name, 2000);
 
     if (cid == -1) {
-        dxterm.printlnErr("Could not get name entry for " + name + ", does not exist");
+        dxterm.printflnErr("Could not get name entry for %s, does not exist", name);
     } else {
-        dxterm.println(name + ": " + dxram.longToHexStr(cid));
+        dxterm.printfln("%s: 0x%X", name, cid);
     }
 }

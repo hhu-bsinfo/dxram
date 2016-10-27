@@ -66,21 +66,21 @@ function exec_taskId(typeId, subtypeId, cgid, wait) {
     var sem = new Semaphore(0, false);
     task.registerTaskListener(new TaskListener({
         taskBeforeExecution: function(task) {
-            dxterm.println("ComputeTask: Starting execution " + task);
+            dxterm.printfln("ComputeTask: Starting execution %s", task);
         },
 
 
         taskCompleted: function(task) {
-            dxterm.println("ComputeTask: Finished execution " + task);
+            dxterm.printfln("ComputeTask: Finished execution %s", task);
             dxterm.println("Return codes of slave nodes: ");
             var results = task.getExecutionReturnCodes();
 
             for (var i = 0; i < results.length; i++) {
 
                 if (results[i] != 0) {
-                    dxterm.printErr("(" + i + "): " + results[i]);
+                    dxterm.printflnErr("(%d): %d", i, results[i]);
                 } else {
-                    dxterm.println("(" + i + "): " + results[i]);
+                    dxterm.printfln("(%d): %d", i, results[i]);
                 }
             }
 
@@ -95,7 +95,7 @@ function exec_taskId(typeId, subtypeId, cgid, wait) {
         return;
     }
 
-    dxterm.println("Task " + task + " submitted, payload id: " + payloadId);
+    dxterm.printfln("Task %s submitted, payload id: %d", task, payloadId);
 
     if (wait) {
         dxterm.println("Waiting for task to finish...");
@@ -130,14 +130,14 @@ function exec_taskFile(pathTaskFile, cgid, wait) {
     var jsonStr = dxram.readFile(pathTaskFile);
 
     if (jsonStr == null) {
-        dxterm.printlnErr("Reading file '" + pathTaskFile + "' failed");
+        dxterm.printlnErr("Reading file '%s' failed", pathTaskFile);
         return;
     }
 
     var payload = mscomp.readTaskPayloadFromJson(jsonStr);
 
     if (payload == null) {
-        dxterm.printlnErr("Reading payload from task file '" + pathTaskFile + "' failed");
+        dxterm.printflnErr("Reading payload from task file '%s' failed", pathTaskFile);
         return;
     }
 
@@ -151,21 +151,21 @@ function exec_taskFile(pathTaskFile, cgid, wait) {
     var sem = new Semaphore(0, false);
     task.registerTaskListener(new TaskListener({
         taskBeforeExecution: function(task) {
-            dxterm.println("ComputeTask: Starting execution " + task);
+            dxterm.printfln("ComputeTask: Starting execution %s", task);
         },
 
 
         taskCompleted: function(task) {
-            dxterm.println("ComputeTask: Finished execution " + task);
+            dxterm.printfln("ComputeTask: Finished execution %s", task);
             dxterm.println("Return codes of slave nodes: ");
             var results = task.getExecutionReturnCodes();
 
             for (var i = 0; i < results.length; i++) {
 
                 if (results[i] != 0) {
-                    dxterm.printErr("(" + i + "): " + results[i]);
+                    dxterm.printflnErr("(%d): %d", i, results[i]);
                 } else {
-                    dxterm.println("(" + i + "): " + results[i]);
+                    dxterm.printfln("(%d): %d", i, results[i]);
                 }
             }
 
@@ -180,7 +180,7 @@ function exec_taskFile(pathTaskFile, cgid, wait) {
         return;
     }
 
-    dxterm.println("Task " + task + " submitted, payload id: " + payloadId);
+    dxterm.printfln("Task %s submitted, payload id: %d", task, payloadId);
 
     if (wait) {
         dxterm.println("Waiting for task to finish...");

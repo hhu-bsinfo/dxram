@@ -20,11 +20,10 @@ function exec(nid) {
     var respSuperpeer = lookup.getResponsibleSuperpeer(nid);
 
     if (respSuperpeer == -1) {
-        dxterm.printlnErr("No responsible superpeer for " + dxram.shortToHexStr(nid) + " found");
+        dxterm.printflnErr("No responsible superpeer for 0x%X found", nid);
         return;
     }
 
     var tree = lookup.getLookupTreeFromSuperpeer(respSuperpeer, nid);
-    dxterm.println("Lookup tree of " + dxram.shortToHexStr(nid) + ":");
-    dxterm.println(tree);
+    dxterm.printfln("Lookup tree of 0x%X:\n%s", nid, tree);
 }

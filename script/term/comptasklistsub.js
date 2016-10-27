@@ -35,14 +35,14 @@ function exec(fileName, cgid, wait) {
     var jsonStr = dxram.readFile(fileName);
 
     if (jsonStr == null) {
-        dxterm.printlnErr("Reading file '" + pathTaskFile + "' failed");
+        dxterm.printflnErr("Reading file '%s' failed", pathTaskFile);
         return;
     }
 
     var payloadList = mscomp.readTaskPayloadListFromJson(jsonStr);
 
     if (payloadList == null) {
-        dxterm.printlnErr("Reading payloadList from task file '" + pathTaskFile + "' failed");
+        dxterm.printflnErr("Reading payloadList from task file '%s' failed");
         return;
     }
 
@@ -53,27 +53,27 @@ function exec(fileName, cgid, wait) {
         var task = new Task(payload, "Term");
 
         if (task == null) {
-            dxterm.printlnErr("Creating task for payload " + payload + " failed");
+            dxterm.printflnErr("Creating task for payload %s failed", payload);
             return;
         }
 
         task.registerTaskListener(new TaskListener({
             taskBeforeExecution: function(task) {
-                dxterm.println("ComputeTask: Starting execution " + task);
+                dxterm.printfln("ComputeTask: Starting execution %s", task);
             },
 
 
             taskCompleted: function(task) {
-                dxterm.println("ComputeTask: Finished execution " + task);
-                dxterm.println("Return codes of slave nodes: ");
+                dxterm.printfln("ComputeTask: Finished execution %s", task);
+                dxterm.println("Return codes of slave nodes:");
                 var results = task.getExecutionReturnCodes();
 
                 for (var i = 0; i < results.length; i++) {
 
                     if (results[i] != 0) {
-                        dxterm.printErr("(" + i + "): " + results[i]);
+                        dxterm.printflnErr("(%d%: %d", i, results[i]);
                     } else {
-                        dxterm.println("(" + i + "): " + results[i]);
+                        dxterm.printfln("(%d%: %d", i, results[i]);
                     }
                 }
 
@@ -84,11 +84,11 @@ function exec(fileName, cgid, wait) {
         var payloadId = mscomp.submitTask(task, cgid);
 
         if (payloadId == -1) {
-            dxterm.printlnErr("Task submission of " + task + " failed");
+            dxterm.printflnErr("Task submission of %s failed", task);
             return;
         }
 
-        dxterm.println("Task " + task + " submitted, payload id: " + payloadId);
+        dxterm.printfln("Task %s submitted, payload id: %d", task, payloadId);
     }
 
     if (wait) {

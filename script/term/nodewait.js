@@ -26,7 +26,7 @@ function exec(superpeers, peers, pollIntervalMs) {
 
 	var boot = dxram.service("boot");
 
-	dxterm.println("Waiting for at least " + superpeers + " superpeer(s) and " + peers + " peer(s)...");
+	dxterm.printfln("Waiting for at least %d superpeer(s) and %d peer(s)...", superpeers, peers);
 
 	var listSuperpeers = boot.getOnlineSuperpeerNodeIDs();
 	while (listSuperpeers.size() < superpeers) {
@@ -42,5 +42,5 @@ function exec(superpeers, peers, pollIntervalMs) {
 		listPeers = boot.getOnlinePeerNodeIDs();
 	}
 
-	dxterm.println(listSuperpeers.size() + " superpeers and " + listPeers.size() + " peers online");
+	dxterm.printfln("%d superpeers and %d peers online", listSuperpeers.size(), listPeers.size());
 }

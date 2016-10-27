@@ -25,8 +25,8 @@ function exec(bid, size) {
     var sync = dxram.service("sync");
 
     if (!sync.barrierChangeSize(bid, size)) {
-        dxterm.printlnErr("Changing barrier " + dxram.intToHexStr(bid) + " size to " + size + " failed.");
+        dxterm.printflnErr("Changing barrier 0x%X size to %d failed", bid, size);
     } else {
-        dxterm.println("Barrier " + dxram.intToHexStr(bid) + " size changed to " + size);
+        dxterm.printfln("Barrier 0x%X size changed to %d", bid, size);
     }
 }

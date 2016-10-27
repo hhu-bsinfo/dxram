@@ -21,6 +21,6 @@ function exec(bid) {
     if (!sync.barrierFree(bid)) {
         dxterm.printlnErr("Freeing barrier failed");
     } else {
-        dxterm.println("Barrier " + dxram.intToHexStr(bid) + " free'd");
+        dxterm.printfln("Barrier 0x%X free'd", bid);
     }
 }
