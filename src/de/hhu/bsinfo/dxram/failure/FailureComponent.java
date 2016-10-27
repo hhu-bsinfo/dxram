@@ -3,6 +3,9 @@ package de.hhu.bsinfo.dxram.failure;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -25,12 +28,9 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Handles a node failure.
- *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 05.10.16
  */
 public class FailureComponent extends AbstractDXRAMComponent implements MessageReceiver, EventListener<AbstractEvent> {
@@ -43,8 +43,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 	private EventComponent m_event;
 	private NetworkComponent m_network;
 
-	private byte[] m_events;
-	private ReentrantLock m_eventLock;
+	private byte[] m_nodeStatus;
 	private ReentrantLock m_failureLock;
 
 	/**
@@ -53,24 +52,19 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 	public FailureComponent() {
 		super(DXRAMComponentOrder.Init.FAILURE, DXRAMComponentOrder.Shutdown.FAILURE);
 
-		m_events = new byte[Short.MAX_VALUE * 2];
-		m_eventLock = new ReentrantLock(false);
+		m_nodeStatus = new byte[Short.MAX_VALUE * 2];
 		m_failureLock = new ReentrantLock(false);
 	}
 
 	/**
 	 * Dispatcher for a node failure
-	 *
-	 * @param p_nodeID NodeID of failed node
+	 * @param p_nodeID
+	 *            NodeID of failed node
 	 */
 	private void failureHandling(final short p_nodeID) {
 		boolean responsible;
 		NodeRole ownRole;
 		NodeRole roleOfFailedNode;
-
-		// TODO: Do not do failure handling for one node more than once
-
-		m_failureLock.lock();
 
 		ownRole = m_boot.getNodeRole();
 		roleOfFailedNode = m_boot.getNodeRole(p_nodeID);
@@ -104,20 +98,30 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 				m_event.fireEvent(new NodeFailureEvent(getClass().getSimpleName(), p_nodeID, roleOfFailedNode));
 			}
 		}
-
-		m_failureLock.unlock();
 	}
 
 	@Override
 	public void eventTriggered(final AbstractEvent p_event) {
+
 		if (p_event instanceof ConnectionLostEvent) {
 			ConnectionLostEvent event = (ConnectionLostEvent) p_event;
 			short nodeID = event.getNodeID();
 
-			m_eventLock.lock();
-			if (m_events[nodeID & 0xFFFF] == 0) {
-				m_events[nodeID & 0xFFFF] = 1;
-				m_eventLock.unlock();
+			m_failureLock.lock();
+			if (m_nodeStatus[nodeID & 0xFFFF] < 5) {
+				m_nodeStatus[nodeID & 0xFFFF] = 5;
+				m_failureLock.unlock();
+
+				/*
+				 * Section A - High priority
+				 * A connection was removed after an error -> try to re-connect
+				 * If re-connecting fails, failure will be handled
+				 *
+				 * There can only be one thread per NodeID in here, but there might be another thread in section B for
+				 * the same NodeID. All other events (ConnectionLostEvents and ResponseDelayedEvents) for given NodeID
+				 * are ignored meanwhile. If there is a thread in section B for given NodeID, this section is still
+				 * reachable.
+				 */
 
 				// #if LOGGER == DEBUG
 				LOGGER.debug("ConnectionLostEvent triggered: 0x%X", nodeID);
@@ -137,53 +141,72 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 					failureHandling(nodeID);
 				}
 
-				m_eventLock.lock();
-				m_events[nodeID & 0xFFFF] = 0;
+				m_failureLock.lock();
+				m_nodeStatus[nodeID & 0xFFFF] = 0;
+				m_failureLock.unlock();
+			} else {
+				m_failureLock.unlock();
 			}
-			m_eventLock.unlock();
 		} else {
 			ResponseDelayedEvent event = (ResponseDelayedEvent) p_event;
 			short nodeID = event.getNodeID();
 
-			m_eventLock.lock();
-			if (m_events[nodeID & 0xFFFF] == 0) {
-				m_events[nodeID & 0xFFFF] = 1;
-				m_eventLock.unlock();
+			m_failureLock.lock();
+			if (m_nodeStatus[nodeID & 0xFFFF] == 0) {
+				m_nodeStatus[nodeID & 0xFFFF]++;
+				m_failureLock.unlock();
+
+				/*
+				 * Section B - Low priority
+				 * A response was delayed -> send a message to check connection
+				 *
+				 * There can only be one thread per NodeID in here, but there might be another thread in section A for
+				 * the same NodeID. All other ResponseDelayedEvents for given NodeID are ignored meanwhile. If there is
+				 * a thread in section A for given NodeID, this section is unreachable.
+				 */
 
 				// #if LOGGER == DEBUG
-				LOGGER.debug("ResponseDelayedEvent triggered: 0x%X", nodeID);
+				LOGGER.debug("ResponseDelayedEvent triggered: 0x%X. Sending default message and return.", nodeID);
 				// #endif /* LOGGER == DEBUG */
 
 				try {
+					// Sending default message to detect connection failure. If the connection is broken,
+					// a ConnectionLostEvent will be triggered
 					m_network.sendMessage(new DefaultMessage(nodeID));
+				} catch (final NetworkException e) {}
 
-					// #if LOGGER == DEBUG
-					LOGGER.debug("Node is still reachable, continuing");
-					// #endif /* LOGGER == DEBUG */
-				} catch (final NetworkException e) {
-					// #if LOGGER == DEBUG
-					LOGGER.debug("Node is unreachable. Initiating failure handling");
-					// #endif /* LOGGER == DEBUG */
-
-					failureHandling(nodeID);
-				}
-
-				m_eventLock.lock();
-				m_events[nodeID & 0xFFFF] = 0;
+				m_failureLock.lock();
+				m_nodeStatus[nodeID & 0xFFFF]--;
+				m_failureLock.unlock();
+			} else {
+				m_failureLock.unlock();
 			}
-			m_eventLock.unlock();
 		}
 	}
 
 	/**
 	 * Handles an incoming FailureRequest
-	 *
-	 * @param p_request the FailureRequest
+	 * @param p_request
+	 *            the FailureRequest
 	 */
 	private void incomingFailureRequest(final FailureRequest p_request) {
 		// Outsource failure handling to another thread to avoid blocking a message handler
 		Runnable task = () -> {
-			failureHandling(p_request.getFailedNode());
+			short nodeID = p_request.getFailedNode();
+
+			m_failureLock.lock();
+			if (m_nodeStatus[nodeID & 0xFFFF] < 5) {
+				m_nodeStatus[nodeID & 0xFFFF] = 5;
+				m_failureLock.unlock();
+
+				failureHandling(nodeID);
+
+				m_failureLock.lock();
+				m_nodeStatus[nodeID & 0xFFFF] = 0;
+				m_failureLock.unlock();
+			} else {
+				m_failureLock.unlock();
+			}
 		};
 		new Thread(task).start();
 

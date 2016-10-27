@@ -17,6 +17,9 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 public final class BackupRange implements Importable, Exportable {
 
 	// Attributes
+	// The replication factor is set by BackupComponent and is in [1, 4]
+	private static byte m_replicationFactor;
+
 	private long m_firstChunkIDORRangeID = -1;
 	private short[] m_backupPeers;
 
@@ -38,7 +41,13 @@ public final class BackupRange implements Importable, Exportable {
 		super();
 
 		m_firstChunkIDORRangeID = p_firstChunkIDORRangeID;
-		m_backupPeers = p_backupPeers;
+
+		if (p_backupPeers == null) {
+			m_backupPeers = new short[m_replicationFactor];
+			Arrays.fill(m_backupPeers, (short) -1);
+		} else {
+			m_backupPeers = p_backupPeers;
+		}
 	}
 
 	/**
@@ -53,15 +62,29 @@ public final class BackupRange implements Importable, Exportable {
 	}
 
 	/**
+	 * Sets the replication factor
+	 * @param p_replicationFactor
+	 *            the replication factor
+	 */
+	protected static void setReplicationFactor(final byte p_replicationFactor) {
+		m_replicationFactor = p_replicationFactor;
+	}
+
+	/**
 	 * Converts backup peers from long to short[]
 	 * @param p_backupPeers
 	 *            the backup peers in long representation
 	 * @return the backup peers in short[] representation
 	 */
 	public static short[] convert(final long p_backupPeers) {
-		return new short[] {(short) (p_backupPeers & 0x000000000000FFFFL),
-				(short) ((p_backupPeers & 0x00000000FFFF0000L) >> 16),
-				(short) ((p_backupPeers & 0x0000FFFF00000000L) >> 32)};
+		short[] ret;
+
+		ret = new short[m_replicationFactor];
+		for (int i = 0; i < m_replicationFactor; i++) {
+			ret[i] = (short) ((p_backupPeers & (0x000000000000FFFFL << (i * 16))) >> (i * 16));
+		}
+
+		return ret;
 	}
 
 	/**
@@ -72,17 +95,30 @@ public final class BackupRange implements Importable, Exportable {
 	 */
 	public static long convert(final short[] p_backupPeers) {
 		long ret = -1;
-		if (null != p_backupPeers) {
-			if (p_backupPeers.length == 3) {
-				ret = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
-						+ ((p_backupPeers[1] & 0x000000000000FFFFL) << 16)
-						+ (p_backupPeers[0] & 0x000000000000FFFFL);
-			} else if (p_backupPeers.length == 2) {
-				ret = ((-1 & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16)
-						+ (p_backupPeers[0] & 0x000000000000FFFFL);
-			} else {
-				ret = ((-1 & 0x000000000000FFFFL) << 32) + ((-1 & 0x000000000000FFFFL) << 16) + (p_backupPeers[0]
-						& 0x000000000000FFFFL);
+
+		for (int i = 0; i < m_replicationFactor; i++) {
+			ret += (p_backupPeers[i] & 0x000000000000FFFFL) << (i * 16);
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Converts owner and backup peers from short + short[] to long
+	 * @param p_owner
+	 *            the owner
+	 * @param p_backupPeers
+	 *            the backup peers in short[] representation
+	 * @return the owner and backup peers in long representation or -1 if replication factor is greater than 3
+	 */
+	public static long convert(final short p_owner, final short[] p_backupPeers) {
+		long ret = -1;
+
+		if (m_replicationFactor <= 3) {
+
+			ret += p_owner & 0x000000000000FFFFL;
+			for (int i = 0; i < m_replicationFactor; i++) {
+				ret += (p_backupPeers[i] & 0x000000000000FFFFL) << ((i + 1) * 16);
 			}
 		}
 
@@ -91,7 +127,9 @@ public final class BackupRange implements Importable, Exportable {
 
 	/**
 	 * Replaces the failed backup peer
-	 * @param p_newPeer
+	 * @param p_backupPeers
+	 *            current backup peers
+	 * @param p_failedPeer
 	 *            the failed backup peer
 	 * @param p_newPeer
 	 *            the new backup peer
@@ -102,9 +140,9 @@ public final class BackupRange implements Importable, Exportable {
 		short nextBackupPeer;
 		int lastPos;
 
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < m_replicationFactor; i++) {
 			if (p_failedPeer == (short) ((backupPeers & (0xFFFF << (i * 16))) >> (i * 16))) {
-				for (lastPos = i; lastPos < 2; lastPos++) {
+				for (lastPos = i; lastPos < m_replicationFactor - 1; lastPos++) {
 					nextBackupPeer = (short) ((backupPeers & (0xFFFF << ((lastPos + 1) * 16))) >> ((lastPos + 1) * 16));
 					if (nextBackupPeer == -1) {
 						// Break if backups are incomplete
@@ -169,26 +207,6 @@ public final class BackupRange implements Importable, Exportable {
 	}
 
 	// Methods
-	/**
-	 * Replaces the failed backup peer
-	 * @param p_newPeer
-	 *            the failed backup peer
-	 * @param p_newPeer
-	 *            the new backup peer
-	 * @return all backup peers in a short array
-	 */
-	public short[] replaceBackupPeer(final short p_failedPeer, final short p_newPeer) {
-		short[] ret = null;
-
-		for (int i = 0; i < m_backupPeers.length; i++) {
-			if (m_backupPeers[i] == p_failedPeer) {
-				ret = replaceBackupPeer(i, p_newPeer);
-				break;
-			}
-		}
-
-		return ret;
-	}
 
 	/**
 	 * Replaces the failed backup peer at given index
@@ -222,17 +240,16 @@ public final class BackupRange implements Importable, Exportable {
 		String ret;
 
 		ret = "" + ChunkID.toHexString(m_firstChunkIDORRangeID);
-		if (null != m_backupPeers) {
-			if (m_backupPeers.length == 3) {
-				ret = "[" + NodeID.toHexString(m_backupPeers[0]) + ", " + NodeID.toHexString(m_backupPeers[1])
-						+ ", " + NodeID.toHexString(m_backupPeers[2]) + "]";
-			} else if (m_backupPeers.length == 2) {
-				ret = "[" + NodeID.toHexString(m_backupPeers[0]) + ", " + NodeID.toHexString(m_backupPeers[1]) + "]";
+
+		ret += "[";
+		for (int i = 0; i < m_replicationFactor; i++) {
+			ret += NodeID.toHexString(m_backupPeers[i]);
+
+			if (i == m_replicationFactor - 1) {
+				ret += "]";
 			} else {
-				ret = "[" + NodeID.toHexString(m_backupPeers[0]) + "]";
+				ret += ", ";
 			}
-		} else {
-			ret = "no backup peers";
 		}
 
 		return ret;

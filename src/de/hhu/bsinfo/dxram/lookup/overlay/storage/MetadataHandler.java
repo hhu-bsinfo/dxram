@@ -8,17 +8,17 @@ import java.util.Collections;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
 import de.hhu.bsinfo.ethnet.NodeID;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Wrapper class for all data of one superpeer
- *
  * @author Kevin Beineke
  *         06.10.2016
  */
@@ -40,12 +40,16 @@ public final class MetadataHandler {
 
 	/**
 	 * Creates an instance of SuperpeerMetadata.
-	 *
-	 * @param p_lookupTrees                   the lookup trees (owners + backups)
-	 * @param p_nameservice                   hash table for the nameservice
-	 * @param p_storage                       the superpeer storage
-	 * @param p_barriers                      the barriers
-	 * @param p_assignedPeersIncludingBackups reference to all assigned peers including backups
+	 * @param p_lookupTrees
+	 *            the lookup trees (owners + backups)
+	 * @param p_nameservice
+	 *            hash table for the nameservice
+	 * @param p_storage
+	 *            the superpeer storage
+	 * @param p_barriers
+	 *            the barriers
+	 * @param p_assignedPeersIncludingBackups
+	 *            reference to all assigned peers including backups
 	 */
 	public MetadataHandler(final LookupTree[] p_lookupTrees, final NameserviceHashTable p_nameservice,
 			final SuperpeerStorage p_storage, final BarriersTable p_barriers,
@@ -62,9 +66,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Serializes all metadata in given area.
-	 *
-	 * @param p_beginOfArea the beginning of the area
-	 * @param p_endOfArea   the end of the area
+	 * @param p_beginOfArea
+	 *            the beginning of the area
+	 * @param p_endOfArea
+	 *            the end of the area
 	 * @return all corresponding metadata in a byte array
 	 * @lock overlay lock must be read-locked
 	 */
@@ -175,7 +180,6 @@ public final class MetadataHandler {
 
 	/**
 	 * Serializes all metadata.
-	 *
 	 * @return all metadata in a byte array
 	 */
 	public byte[] receiveAllMetadata() {
@@ -247,8 +251,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Returns the number of nameservice entries in given area
-	 *
-	 * @param p_responsibleArea the area
+	 * @param p_responsibleArea
+	 *            the area
 	 * @return the number of nameservice entries
 	 */
 	public int getNumberOfNameserviceEntries(final short[] p_responsibleArea) {
@@ -263,8 +267,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Returns the number of storages in given area
-	 *
-	 * @param p_responsibleArea the area
+	 * @param p_responsibleArea
+	 *            the area
 	 * @return the number of storages
 	 */
 	public int getNumberOfStorages(final short[] p_responsibleArea) {
@@ -279,8 +283,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Returns the number of barriers in given area
-	 *
-	 * @param p_responsibleArea the area
+	 * @param p_responsibleArea
+	 *            the area
 	 * @return the number of barriers
 	 */
 	public int getNumberOfBarriers(final short[] p_responsibleArea) {
@@ -295,9 +299,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Get a summary of this superpeer's metadata
-	 *
-	 * @param p_nodeID      this superpeer's NodeID
-	 * @param p_predecessor the predecessor's NodeID
+	 * @param p_nodeID
+	 *            this superpeer's NodeID
+	 * @param p_predecessor
+	 *            the predecessor's NodeID
 	 * @return the metadata summary
 	 * @lock overlay lock must be read-locked
 	 */
@@ -334,13 +339,18 @@ public final class MetadataHandler {
 	/**
 	 * Compares given peer list with local list and returns all missing backup data between this superpeer and his
 	 * predecessor.
-	 *
-	 * @param p_peers                      all peers the requesting superpeer stores backups for
-	 * @param p_numberOfNameserviceEntries the number of expected nameservice entries
-	 * @param p_numberOfStorages           the number of expected storages
-	 * @param p_numberOfBarriers           the number of expected barriers
-	 * @param p_predecessor                the predecessor
-	 * @param p_nodeID                     the own NodeID
+	 * @param p_peers
+	 *            all peers the requesting superpeer stores backups for
+	 * @param p_numberOfNameserviceEntries
+	 *            the number of expected nameservice entries
+	 * @param p_numberOfStorages
+	 *            the number of expected storages
+	 * @param p_numberOfBarriers
+	 *            the number of expected barriers
+	 * @param p_predecessor
+	 *            the predecessor
+	 * @param p_nodeID
+	 *            the own NodeID
 	 * @return the backup data of missing peers in given peer list
 	 * @lock overlay lock must be read-locked
 	 */
@@ -495,8 +505,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Deletes all metadata that is not in the responsible area.
-	 *
-	 * @param p_responsibleArea the responsible area
+	 * @param p_responsibleArea
+	 *            the responsible area
 	 * @return all unnecessary peers in assigned peer list
 	 * @lock overlay lock must be read-locked
 	 */
@@ -557,8 +567,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Stores given metadata.
-	 *
-	 * @param p_metadata the new metadata in an byte array
+	 * @param p_metadata
+	 *            the new metadata in an byte array
 	 * @return new peers to assign
 	 */
 	public short[] storeMetadata(final byte[] p_metadata) {
@@ -628,8 +638,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Gets corresponding lookup tree.
-	 *
-	 * @param p_nodeID lookup tree's creator
+	 * @param p_nodeID
+	 *            lookup tree's creator
 	 * @return the lookup tree
 	 */
 	public LookupTree getLookupTree(final short p_nodeID) {
@@ -644,8 +654,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Gets corresponding lookup tree.
-	 *
-	 * @param p_nodeID lookup tree's creator
+	 * @param p_nodeID
+	 *            lookup tree's creator
 	 * @return the lookup tree
 	 */
 	private LookupTree getLookupTreeLocal(final short p_nodeID) {
@@ -654,8 +664,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Gets corresponding lookup range.
-	 *
-	 * @param p_chunkID the ChunkID
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @return the lookup range
 	 */
 	public LookupRange getLookupRangeFromLookupTree(final long p_chunkID) {
@@ -673,9 +683,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Puts a ChunkID.
-	 *
-	 * @param p_chunkID the ChunkID
-	 * @param p_owner   the NodeID of the new owner
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @param p_owner
+	 *            the NodeID of the new owner
 	 * @return whether the ChunkID could be put or not
 	 */
 	public boolean putChunkIDInLookupTree(final long p_chunkID, final short p_owner) {
@@ -698,10 +709,12 @@ public final class MetadataHandler {
 
 	/**
 	 * Puts a ChunkID.
-	 *
-	 * @param p_firstChunkID the first ChunkID
-	 * @param p_lastChunkID  the last ChunkID
-	 * @param p_owner        the NodeID of the new owner
+	 * @param p_firstChunkID
+	 *            the first ChunkID
+	 * @param p_lastChunkID
+	 *            the last ChunkID
+	 * @param p_owner
+	 *            the NodeID of the new owner
 	 * @return whether the ChunkID could be put or not
 	 */
 	public boolean putChunkIDRangeInLookupTree(final long p_firstChunkID, final long p_lastChunkID,
@@ -725,8 +738,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Removes a ChunkID.
-	 *
-	 * @param p_chunkID the ChunkID
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @return whether the ChunkID could be removed or not
 	 */
 	public boolean removeChunkIDFromLookupTree(final long p_chunkID) {
@@ -748,10 +761,12 @@ public final class MetadataHandler {
 
 	/**
 	 * Initializes a new backup range.
-	 *
-	 * @param p_creator               the creator of the backup range
-	 * @param p_backupPeers           the assigned backup peers for the backup range
-	 * @param p_startChunkIDOrRangeID the first ChunkID of the range or the RangeID (for migrations)
+	 * @param p_creator
+	 *            the creator of the backup range
+	 * @param p_backupPeers
+	 *            the assigned backup peers for the backup range
+	 * @param p_startChunkIDOrRangeID
+	 *            the first ChunkID of the range or the RangeID (for migrations)
 	 * @return whether a new LookupTree was added or not
 	 */
 	public boolean initBackupRangeInLookupTree(final short p_creator, final short[] p_backupPeers,
@@ -778,8 +793,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Gets corresponding lookup tree.
-	 *
-	 * @param p_nodeID lookup tree's creator
+	 * @param p_nodeID
+	 *            lookup tree's creator
 	 * @return the lookup tree
 	 */
 	public ArrayList<long[]> getBackupRangesFromLookupTree(final short p_nodeID) {
@@ -802,8 +817,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Returns all backup ranges for given node
-	 *
-	 * @param p_nodeID the NodeID
+	 * @param p_nodeID
+	 *            the NodeID
 	 * @return all backup ranges
 	 */
 	public BackupRange[] getAllBackupRangesFromLookupTree(final short p_nodeID) {
@@ -820,12 +835,12 @@ public final class MetadataHandler {
 			migrationBackupRanges = tree.getAllMigratedBackupRanges();
 
 			ret = new BackupRange[ownBackupRanges.size() + migrationBackupRanges.size()];
-			for (long[] backupRange : ownBackupRanges) {
-				ret[counter++] = new BackupRange(backupRange[0], backupRange[1]);
+			for (long[] backupArray : ownBackupRanges) {
+				ret[counter++] = new BackupRange(backupArray[0], backupArray[1]);
 			}
 			counter = 0;
-			for (long backupRange : migrationBackupRanges) {
-				ret[counter + ownBackupRanges.size()] = new BackupRange(counter, backupRange);
+			for (long backupPeers : migrationBackupRanges) {
+				ret[counter + ownBackupRanges.size()] = new BackupRange(counter, backupPeers);
 				counter++;
 			}
 		}
@@ -836,9 +851,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Sets the restorer after a recovery.
-	 *
-	 * @param p_owner  the previous owner of the data
-	 * @param p_source the new owner
+	 * @param p_owner
+	 *            the previous owner of the data
+	 * @param p_source
+	 *            the new owner
 	 */
 	public void setRestorerAfterRecoveryInLookupTree(final short p_owner, final short p_source) {
 		LookupTree tree;
@@ -852,15 +868,15 @@ public final class MetadataHandler {
 	}
 
 	/**
-<<<<<<< HEAD
+	 * <<<<<<< HEAD
 	 * Removes given peer from all backup ranges as backup peer
-	 *
-	 * @param p_failedPeer the failed peer
-=======
-	 * Replaces given peer from specific backup ranges as backup peer
 	 * @param p_failedPeer
 	 *            the failed peer
->>>>>>> master
+	 *            =======
+	 *            Replaces given peer from specific backup ranges as backup peer
+	 * @param p_failedPeer
+	 *            the failed peer
+	 *            >>>>>>> master
 	 */
 	public void replaceFailedPeerInLookupTree(final long p_firstChunkIDOrRangeID, final short p_failedPeer,
 			final short p_newBackupPeer) {
@@ -874,8 +890,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Gets nameservice entry.
-	 *
-	 * @param p_nameserviceID the nameservice ID
+	 * @param p_nameserviceID
+	 *            the nameservice ID
 	 * @return the ChunkID
 	 */
 	public long getNameserviceEntry(final int p_nameserviceID) {
@@ -890,7 +906,6 @@ public final class MetadataHandler {
 
 	/**
 	 * Gets all nameservice entries of this superpeer.
-	 *
 	 * @return all nameservice entries in a byte array
 	 */
 	public byte[] getAllNameserviceEntries() {
@@ -905,9 +920,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Puts a single nameservice entry.
-	 *
-	 * @param p_nameserviceID the nameservice ID
-	 * @param p_chunkID       the ChunkID
+	 * @param p_nameserviceID
+	 *            the nameservice ID
+	 * @param p_chunkID
+	 *            the ChunkID
 	 */
 	public void putNameserviceEntry(final int p_nameserviceID, final long p_chunkID) {
 		m_dataLock.writeLock().lock();
@@ -917,9 +933,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Counts nameservice entries within range.
-	 *
-	 * @param p_bound1 lowest NodeID
-	 * @param p_bound2 highest NodeID (might be smaller than p_bound1)
+	 * @param p_bound1
+	 *            lowest NodeID
+	 * @param p_bound2
+	 *            highest NodeID (might be smaller than p_bound1)
 	 * @return the number of nameservice entries in given NodeID range
 	 */
 	public int countNameserviceEntries(final short p_bound1, final short p_bound2) {
@@ -936,9 +953,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Creates a metadata storage.
-	 *
-	 * @param p_storageID the storage ID
-	 * @param p_size      the size of metadata storage
+	 * @param p_storageID
+	 *            the storage ID
+	 * @param p_size
+	 *            the size of metadata storage
 	 * @return 0 on success, -1 if quota reached, -2 if max num entries reached, -3 if id already in use
 	 */
 	public int createStorage(final int p_storageID, final int p_size) {
@@ -953,8 +971,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Gets a metadata storage.
-	 *
-	 * @param p_storageID the storage ID
+	 * @param p_storageID
+	 *            the storage ID
 	 * @return the data
 	 */
 	public byte[] getStorage(final int p_storageID) {
@@ -969,7 +987,6 @@ public final class MetadataHandler {
 
 	/**
 	 * Gets status of whole metadata storage.
-	 *
 	 * @return the status
 	 */
 	public SuperpeerStorage.Status getStorageStatus() {
@@ -984,9 +1001,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Puts data in metadata storage.
-	 *
-	 * @param p_storageID the storage ID
-	 * @param p_data      the data
+	 * @param p_storageID
+	 *            the storage ID
+	 * @param p_data
+	 *            the data
 	 * @return number of bytes written to the block or -1 if the block does not exist
 	 */
 	public int putStorage(final int p_storageID, final byte[] p_data) {
@@ -1001,8 +1019,8 @@ public final class MetadataHandler {
 
 	/**
 	 * Removes metadata storage.
-	 *
-	 * @param p_storageID the storage ID
+	 * @param p_storageID
+	 *            the storage ID
 	 * @return false if the block does not exist, true on success
 	 */
 	public boolean removeStorage(final int p_storageID) {
@@ -1019,9 +1037,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Creates a barrier.
-	 *
-	 * @param p_nodeID the creator
-	 * @param p_size   the number of peers to sign on
+	 * @param p_nodeID
+	 *            the creator
+	 * @param p_size
+	 *            the number of peers to sign on
 	 * @return barrier ID on success, -1 on failure
 	 */
 	public int createBarrier(final short p_nodeID, final int p_size) {
@@ -1036,10 +1055,12 @@ public final class MetadataHandler {
 
 	/**
 	 * Changes size of a barrier.
-	 *
-	 * @param p_nodeID    the creator
-	 * @param p_barrierID the barrier ID
-	 * @param p_newSize   the new size of the barrier
+	 * @param p_nodeID
+	 *            the creator
+	 * @param p_barrierID
+	 *            the barrier ID
+	 * @param p_newSize
+	 *            the new size of the barrier
 	 * @return true if changing size was successful, false otherwise
 	 */
 	public boolean changeSizeOfBarrier(final short p_nodeID, final int p_barrierID, final int p_newSize) {
@@ -1054,9 +1075,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Removes a barrier.
-	 *
-	 * @param p_nodeID    the creator
-	 * @param p_barrierID the barrier ID
+	 * @param p_nodeID
+	 *            the creator
+	 * @param p_barrierID
+	 *            the barrier ID
 	 * @return true if successful, false on failure
 	 */
 	public boolean removeBarrier(final short p_nodeID, final int p_barrierID) {
@@ -1071,9 +1093,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Resets a barrier.
-	 *
-	 * @param p_nodeID    the creator
-	 * @param p_barrierID the barrier ID
+	 * @param p_nodeID
+	 *            the creator
+	 * @param p_barrierID
+	 *            the barrier ID
 	 * @return true if successful, false otherwise
 	 */
 	public boolean resetBarrier(final short p_nodeID, final int p_barrierID) {
@@ -1088,11 +1111,14 @@ public final class MetadataHandler {
 
 	/**
 	 * Signs-on on barrier.
-	 *
-	 * @param p_nodeID         the creator
-	 * @param p_barrierID      the barrier ID
-	 * @param p_nodeIDToSignOn the NodeID
-	 * @param p_barrierData    the barrier data
+	 * @param p_nodeID
+	 *            the creator
+	 * @param p_barrierID
+	 *            the barrier ID
+	 * @param p_nodeIDToSignOn
+	 *            the NodeID
+	 * @param p_barrierData
+	 *            the barrier data
 	 * @return the number of peers left to sign on, -1 on failure
 	 */
 	public int signOnBarrier(final short p_nodeID, final int p_barrierID, final short p_nodeIDToSignOn,
@@ -1108,9 +1134,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Returns the number of peers signed-on on this barrier.
-	 *
-	 * @param p_nodeID    the creator
-	 * @param p_barrierID the barrier ID
+	 * @param p_nodeID
+	 *            the creator
+	 * @param p_barrierID
+	 *            the barrier ID
 	 * @return array with NodeIDs that already signed on. First index element is the count of signed on peers
 	 */
 	public short[] getSignedOnPeersOfBarrier(final short p_nodeID, final int p_barrierID) {
@@ -1125,9 +1152,10 @@ public final class MetadataHandler {
 
 	/**
 	 * Returns the custom data of all signed-on peers.
-	 *
-	 * @param p_nodeID    the creator
-	 * @param p_barrierID the barrier ID
+	 * @param p_nodeID
+	 *            the creator
+	 * @param p_barrierID
+	 *            the barrier ID
 	 * @return on success an array with the currently available custom data (sorted by order the peers logged in)
 	 */
 	public long[] getCustomDataOfBarrier(final short p_nodeID, final int p_barrierID) {
