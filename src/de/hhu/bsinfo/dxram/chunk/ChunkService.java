@@ -9,7 +9,21 @@ import java.util.TreeMap;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.chunk.messages.*;
+import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
+import de.hhu.bsinfo.dxram.chunk.messages.CreateRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.CreateResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.GetMigratedChunkIDRangesRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.GetMigratedChunkIDRangesResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.GetRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.GetResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.PutResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.RemoveRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.RemoveResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.StatusRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
@@ -26,7 +40,8 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -49,6 +64,26 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkService.class.getSimpleName());
 
+	// statistics recording
+	private static final StatisticsOperation SOP_CREATE =
+			StatisticsRecorderManager.getOperation(ChunkService.class, "Create");
+	private static final StatisticsOperation SOP_REMOTE_CREATE =
+			StatisticsRecorderManager.getOperation(ChunkService.class, "RemoteCreate");
+	private static final StatisticsOperation SOP_GET =
+			StatisticsRecorderManager.getOperation(ChunkService.class, "Get");
+	private static final StatisticsOperation SOP_PUT =
+			StatisticsRecorderManager.getOperation(ChunkService.class, "Put");
+	private static final StatisticsOperation SOP_REMOVE =
+			StatisticsRecorderManager.getOperation(ChunkService.class, "Remove");
+	private static final StatisticsOperation SOP_INCOMING_CREATE =
+			StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingCreate");
+	private static final StatisticsOperation SOP_INCOMING_GET =
+			StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingGet");
+	private static final StatisticsOperation SOP_INCOMING_PUT =
+			StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingPut");
+	private static final StatisticsOperation SOP_INCOMING_REMOVE =
+			StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingRemove");
+
 	// dependent components
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
@@ -56,9 +91,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	private NetworkComponent m_network;
 	private LookupComponent m_lookup;
 	private AbstractLockComponent m_lock;
-	private StatisticsComponent m_statistics;
-
-	private ChunkStatisticsRecorderIDs m_statisticsRecorderIDs;
 
 	/**
 	 * Constructor
@@ -75,18 +107,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
 		m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
-		// #ifdef STATISTICS
-		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
-		// #endif /* STATISTICS */
 	}
 
 	@Override
 	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		registerNetworkMessages();
 		registerNetworkMessageListener();
-		// #ifdef STATISTICS
-		registerStatisticsOperations();
-		// #endif /* STATISTICS */
 
 		if (m_boot.getNodeRole().equals(NodeRole.PEER)) {
 			m_backup.registerPeer();
@@ -202,7 +228,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create, p_count);
+		SOP_CREATE.enter(p_count);
 		// #endif /* STATISTICS */
 
 		chunkIDs = new long[p_count];
@@ -219,7 +245,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_memoryManager.unlockManage();
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		SOP_CREATE.leave();
 		// #endif /* STATISTICS */
 
 		// #if LOGGER == TRACE
@@ -257,8 +283,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create,
-				p_dataStructures.length);
+		SOP_CREATE.enter(p_dataStructures.length);
 		// #endif /* STATISTICS */
 
 		m_memoryManager.lockManage();
@@ -284,7 +309,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_memoryManager.unlockManage();
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		SOP_CREATE.leave();
 		// #endif /* STATISTICS */
 
 		// #if LOGGER == TRACE
@@ -320,8 +345,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create,
-				p_sizes.length);
+		SOP_CREATE.enter(p_sizes.length);
 		// #endif /* STATISTICS */
 
 		chunkIDs = new long[p_sizes.length];
@@ -338,7 +362,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_memoryManager.unlockManage();
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		SOP_CREATE.leave();
 		// #endif /* STATISTICS */
 
 		// #if LOGGER == TRACE
@@ -410,8 +434,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteCreate,
-				p_sizes.length);
+		SOP_REMOTE_CREATE.enter(p_sizes.length);
 		// #endif /* STATISTICS */
 
 		CreateRequest request = new CreateRequest(p_peer, p_sizes);
@@ -427,7 +450,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteCreate);
+		SOP_REMOTE_CREATE.leave();
 		// #endif /* STATISTICS */
 
 		if (chunkIDs != null) {
@@ -486,8 +509,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove,
-				p_chunkIDs.length);
+		SOP_REMOVE.enter(p_chunkIDs.length);
 		// #endif /* STATISTICS */
 
 		// sort by local and remote data first
@@ -634,7 +656,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
+		SOP_REMOVE.leave();
 		// #endif /* STATISTICS */
 
 		// #if LOGGER == TRACE
@@ -695,7 +717,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put, p_count);
+		SOP_PUT.enter(p_count);
 		// #endif /* STATISTICS */
 
 		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<>();
@@ -843,7 +865,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
+		SOP_PUT.leave();
 		// #endif /* STATISTICS */
 
 		// #if LOGGER == TRACE
@@ -894,7 +916,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get, p_count);
+		SOP_GET.enter(p_count);
 		// #endif /* STATISTICS */
 
 		// sort by local and remote data first
@@ -981,7 +1003,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		SOP_GET.leave();
 		// #endif /* STATISTICS */
 
 		// #if LOGGER == TRACE
@@ -1019,8 +1041,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get,
-				p_chunkIDs.length);
+		SOP_GET.enter(p_chunkIDs.length);
 		// #endif /* STATISTICS */
 
 		// sort by local and remote data first
@@ -1108,7 +1129,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		// mike foo chunk not found
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		SOP_GET.leave();
 		// #endif /* STATISTICS */
 
 		// #if LOGGER == TRACE
@@ -1162,7 +1183,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get, p_count);
+		SOP_GET.enter(p_count);
 		// #endif /* STATISTICS */
 
 		m_memoryManager.lockAccess();
@@ -1187,7 +1208,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_memoryManager.unlockAccess();
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		SOP_GET.leave();
 		// #endif /* STATISTICS */
 
 		// #if LOGGER == TRACE
@@ -1227,8 +1248,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get,
-				p_chunkIDs.length);
+		SOP_GET.enter(p_chunkIDs.length);
 		// #endif /* STATISTICS */
 
 		ret = new Pair<>(0, new Chunk[p_chunkIDs.length]);
@@ -1251,7 +1271,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		ret.m_first = totalNumberOfChunksGot;
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		SOP_GET.leave();
 		// #endif /* STATISTICS */
 
 		// #if LOGGER == TRACE
@@ -1481,42 +1501,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_network.register(GetMigratedChunkIDRangesRequest.class, this);
 	}
 
-	/**
-	 * Register statistics operations for this service.
-	 */
-	private void registerStatisticsOperations() {
-		m_statisticsRecorderIDs = new ChunkStatisticsRecorderIDs();
-		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(this.getClass());
-
-		m_statisticsRecorderIDs.m_operations.m_create =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						ChunkStatisticsRecorderIDs.Operations.MS_CREATE);
-		m_statisticsRecorderIDs.m_operations.m_remoteCreate =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						ChunkStatisticsRecorderIDs.Operations.MS_REMOTE_CREATE);
-		m_statisticsRecorderIDs.m_operations.m_size = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				ChunkStatisticsRecorderIDs.Operations.MS_SIZE);
-		m_statisticsRecorderIDs.m_operations.m_get = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				ChunkStatisticsRecorderIDs.Operations.MS_GET);
-		m_statisticsRecorderIDs.m_operations.m_put = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				ChunkStatisticsRecorderIDs.Operations.MS_PUT);
-		m_statisticsRecorderIDs.m_operations.m_remove =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						ChunkStatisticsRecorderIDs.Operations.MS_REMOVE);
-		m_statisticsRecorderIDs.m_operations.m_incomingCreate =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						ChunkStatisticsRecorderIDs.Operations.MS_INCOMING_CREATE);
-		m_statisticsRecorderIDs.m_operations.m_incomingGet =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						ChunkStatisticsRecorderIDs.Operations.MS_INCOMING_GET);
-		m_statisticsRecorderIDs.m_operations.m_incomingPut =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						ChunkStatisticsRecorderIDs.Operations.MS_INCOMING_PUT);
-		m_statisticsRecorderIDs.m_operations.m_incomingRemove =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						ChunkStatisticsRecorderIDs.Operations.MS_REMOVE);
-	}
-
 	// -----------------------------------------------------------------------------------
 
 	/**
@@ -1531,8 +1515,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		int numChunksGot = 0;
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingGet,
-				p_request.getChunkIDs().length);
+		SOP_INCOMING_GET.enter(p_request.getChunkIDs().length);
 		// #endif /* STATISTICS */
 
 		m_memoryManager.lockAccess();
@@ -1566,7 +1549,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingGet);
+		SOP_INCOMING_GET.leave();
 		// #endif /* STATISTICS */
 	}
 
@@ -1581,8 +1564,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		boolean allSuccessful = true;
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPut,
-				chunks.length);
+		SOP_INCOMING_PUT.enter(chunks.length);
 		// #endif /* STATISTICS */
 
 		Map<Long, ArrayList<DataStructure>> remoteChunksByBackupPeers = new TreeMap<>();
@@ -1673,7 +1655,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPut);
+		SOP_INCOMING_PUT.leave();
 		// #endif /* STATISTICS */
 	}
 
@@ -1684,8 +1666,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 */
 	private void incomingRemoveRequest(final RemoveRequest p_request) {
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingRemove,
-				p_request.getChunkIDs().length);
+		SOP_INCOMING_REMOVE.enter(p_request.getChunkIDs().length);
 		// #endif /* STATISTICS */
 
 		Long[] chunkIDs = p_request.getChunkIDs();
@@ -1785,7 +1766,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingRemove);
+		SOP_INCOMING_REMOVE.leave();
 		// #endif /* STATISTICS */
 	}
 
@@ -1796,8 +1777,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 */
 	private void incomingCreateRequest(final CreateRequest p_request) {
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingCreate,
-				p_request.getSizes().length);
+		SOP_INCOMING_CREATE.enter(p_request.getSizes().length);
 		// #endif /* STATISTICS */
 
 		int[] sizes = p_request.getSizes();
@@ -1822,7 +1802,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingCreate);
+		SOP_INCOMING_CREATE.leave();
 		// #endif /* STATISTICS */
 	}
 

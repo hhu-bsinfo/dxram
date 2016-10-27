@@ -5,7 +5,8 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +21,12 @@ import org.apache.logging.log4j.Logger;
 public final class CIDTable {
 
 	private static final Logger LOGGER = LogManager.getFormatterLogger(CIDTable.class.getSimpleName());
+
+	// statistics recorder
+	private static final StatisticsOperation SOP_CREATE_NID_TABLE =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateNIDTable");
+	private static final StatisticsOperation SOP_CREATE_LID_TABLE =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateLIDTable");
 
 	public static final byte ENTRY_SIZE = 5;
 	public static final byte LID_TABLE_LEVELS = 4;
@@ -45,24 +52,15 @@ public final class CIDTable {
 
 	private LIDStore m_store;
 
-	private StatisticsComponent m_statistics;
-
-	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs;
-
 	private AtomicLong m_nextLocalID;
 
 	/**
 	 * Creates an instance of CIDTable
 	 *
-	 * @param p_nodeIdHook            Instance of a class implementing the node id hook.
-	 * @param p_statistics            Statistics component for recording.
-	 * @param p_statisticsRecorderIDs Metadata for statistics recording
+	 * @param p_nodeIdHook Instance of a class implementing the node id hook.
 	 */
-	public CIDTable(final GetNodeIdHook p_nodeIdHook, final StatisticsComponent p_statistics,
-			final MemoryStatisticsRecorderIDs p_statisticsRecorderIDs) {
+	public CIDTable(final GetNodeIdHook p_nodeIdHook) {
 		m_nodeIdHook = p_nodeIdHook;
-		m_statistics = p_statistics;
-		m_statisticsRecorderIDs = p_statisticsRecorderIDs;
 	}
 
 	/**
@@ -263,14 +261,13 @@ public final class CIDTable {
 		long ret;
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable,
-				NID_TABLE_SIZE);
+		SOP_CREATE_NID_TABLE.enter(NID_TABLE_SIZE);
 
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, NID_TABLE_SIZE);
+		MemoryManagerComponent.SOP_MALLOC.enter(NID_TABLE_SIZE);
 		// #endif /* STATISTICS */
 		ret = m_rawMemory.malloc(NID_TABLE_SIZE);
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
+		MemoryManagerComponent.SOP_MALLOC.leave();
 		// #endif /* STATISTICS */
 		if (ret != -1) {
 			m_rawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
@@ -278,7 +275,7 @@ public final class CIDTable {
 			m_tableCount++;
 		}
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable);
+		SOP_CREATE_NID_TABLE.leave();
 		// #endif /* STATISTICS */
 
 		return ret;
@@ -293,14 +290,13 @@ public final class CIDTable {
 		long ret;
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable,
-				LID_TABLE_SIZE);
+		SOP_CREATE_LID_TABLE.enter(LID_TABLE_SIZE);
 
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, LID_TABLE_SIZE);
+		MemoryManagerComponent.SOP_MALLOC.enter(LID_TABLE_SIZE);
 		// #endif /* STATISTICS */
 		ret = m_rawMemory.malloc(LID_TABLE_SIZE);
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
+		MemoryManagerComponent.SOP_MALLOC.leave();
 		// #endif /* STATISTICS */
 		if (ret != -1) {
 			m_rawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
@@ -308,7 +304,7 @@ public final class CIDTable {
 			m_tableCount++;
 		}
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable);
+		SOP_CREATE_LID_TABLE.leave();
 		// #endif /* STATISTICS */
 
 		return ret;

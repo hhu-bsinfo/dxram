@@ -12,7 +12,8 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.SmallObjectHeapSegment;
@@ -37,13 +38,26 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
 	private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
 
+	// statistics recording
+	static final StatisticsOperation SOP_MALLOC =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Malloc");
+	private static final StatisticsOperation SOP_FREE =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Free");
+	private static final StatisticsOperation SOP_GET =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Get");
+	private static final StatisticsOperation SOP_PUT =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Put");
+	private static final StatisticsOperation SOP_CREATE =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Create");
+	private static final StatisticsOperation SOP_REMOVE =
+			StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Remove");
+
 	// configuration values
 	@Expose
 	private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
 
 	// dependent components
 	private AbstractBootComponent m_boot;
-	private StatisticsComponent m_statistics;
 
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
@@ -53,8 +67,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 	private long m_totalActiveChunkMemory;
 
 	private SmallObjectHeapDataStructureImExporter[] m_imexporter = new SmallObjectHeapDataStructureImExporter[65536];
-
-	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs;
 
 	/**
 	 * Error codes to be returned by some methods.
@@ -79,24 +91,17 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 	@Override
 	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-		// #ifdef STATISTICS
-		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
-		// #endif /* STATISTICS */
 	}
 
 	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		if (p_engineEngineSettings.getRole() == NodeRole.PEER) {
-			// #ifdef STATISTICS
-			registerStatisticsOperations();
-			// #endif /* STATISTICS */
-
 			// #if LOGGER == INFO
 			LOGGER.info("Allocating native memory (%d mb). This may take a while...", m_keyValueStoreSize.getMB());
 			// #endif /* LOGGER == INFO */
 			m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 			m_rawMemory.initialize(m_keyValueStoreSize.getBytes(), m_keyValueStoreSize.getBytes());
-			m_cidTable = new CIDTable(this, m_statistics, m_statisticsRecorderIDs);
+			m_cidTable = new CIDTable(this);
 			m_cidTable.initialize(m_rawMemory);
 
 			// m_lock = new ReentrantReadWriteLock(false);
@@ -358,7 +363,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		SOP_CREATE.enter();
 		// #endif /* STATISTICS */
 
 		// get new LID from CIDTable
@@ -368,11 +373,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		} else {
 			// first, try to allocate. maybe early return
 			// #ifdef STATISTICS
-			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, p_size);
+			SOP_MALLOC.enter(p_size);
 			// #endif /* STATISTICS */
 			address = m_rawMemory.malloc(p_size);
 			// #ifdef STATISTICS
-			m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
+			SOP_MALLOC.leave();
 			// #endif /* STATISTICS */
 			if (address >= 0) {
 				chunkID = ((long) m_boot.getNodeID() << 48) + lid;
@@ -399,7 +404,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		SOP_CREATE.leave();
 		// #endif /* STATISTICS */
 
 		return chunkID;
@@ -451,7 +456,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		SOP_GET.enter();
 		// #endif /* STATISTICS */
 
 		address = m_cidTable.get(p_dataStructure.getID());
@@ -469,7 +474,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		SOP_GET.leave();
 		// #endif /* STATISTICS */
 
 		return ret;
@@ -493,7 +498,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		SOP_GET.enter();
 		// #endif /* STATISTICS */
 
 		address = m_cidTable.get(p_chunkID);
@@ -515,7 +520,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		SOP_GET.leave();
 		// #endif /* STATISTICS */
 
 		return ret;
@@ -541,7 +546,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
+		SOP_PUT.enter();
 		// #endif /* STATISTICS */
 
 		address = m_cidTable.get(p_dataStructure.getID());
@@ -558,7 +563,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
+		SOP_PUT.leave();
 		// #endif /* STATISTICS */
 
 		return ret;
@@ -588,7 +593,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
+		SOP_REMOVE.enter();
 		// #endif /* STATISTICS */
 
 		// Get and delete the address from the CIDTable, mark as zombie first
@@ -609,11 +614,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 			}
 			size = m_rawMemory.getSizeBlock(addressDeletedChunk);
 			// #ifdef STATISTICS
-			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free, size);
+			SOP_FREE.enter(size);
 			// #endif /* STATISTICS */
 			m_rawMemory.free(addressDeletedChunk);
 			// #ifdef STATISTICS
-			m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free);
+			SOP_FREE.leave();
 			// #endif /* STATISTICS */
 			m_numActiveChunks--;
 			m_totalActiveChunkMemory -= size;
@@ -622,7 +627,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
+		SOP_REMOVE.leave();
 		// #endif /* STATISTICS */
 
 		return ret;
@@ -959,37 +964,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 		}
 
 		return importer;
-	}
-
-	/**
-	 * Register statistics operations for this component.
-	 */
-	private void registerStatisticsOperations() {
-		m_statisticsRecorderIDs = new MemoryStatisticsRecorderIDs();
-		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(this.getClass());
-
-		m_statisticsRecorderIDs.m_operations.m_createNIDTable =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_CREATE_NID_TABLE);
-		m_statisticsRecorderIDs.m_operations.m_createLIDTable =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_CREATE_LID_TABLE);
-		m_statisticsRecorderIDs.m_operations.m_malloc =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_MALLOC);
-		m_statisticsRecorderIDs.m_operations.m_free =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_FREE);
-		m_statisticsRecorderIDs.m_operations.m_get = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				MemoryStatisticsRecorderIDs.Operations.MS_GET);
-		m_statisticsRecorderIDs.m_operations.m_put = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				MemoryStatisticsRecorderIDs.Operations.MS_PUT);
-		m_statisticsRecorderIDs.m_operations.m_create =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_CREATE);
-		m_statisticsRecorderIDs.m_operations.m_remove =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_REMOVE);
 	}
 
 	/**

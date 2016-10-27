@@ -22,7 +22,8 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -41,15 +42,18 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 	private static final Logger LOGGER = LogManager.getFormatterLogger(AsyncChunkService.class.getSimpleName());
 
+	// statistics recording
+	private static final StatisticsOperation SOP_PUT_ASYNC =
+			StatisticsRecorderManager.getOperation(AsyncChunkService.class, "PutAsync");
+	private static final StatisticsOperation SOP_INCOMING_PUT_ASYNC =
+			StatisticsRecorderManager.getOperation(AsyncChunkService.class, "IncomingPutAsync");
+
 	// dependent components
 	private AbstractBootComponent m_boot;
 	private MemoryManagerComponent m_memoryManager;
 	private NetworkComponent m_network;
 	private LookupComponent m_lookup;
 	private AbstractLockComponent m_lock;
-	private StatisticsComponent m_statistics;
-
-	private ChunkStatisticsRecorderIDs m_statisticsRecorderIDs;
 
 	/**
 	 * Constructor
@@ -65,18 +69,12 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
 		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
 		m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
-		// #ifdef STATISTICS
-		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
-		// #endif /* STATISTICS */
 	}
 
 	@Override
 	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		registerNetworkMessages();
 		registerNetworkMessageListener();
-		// #ifdef STATISTICS
-		registerStatisticsOperations();
-		// #endif /* STATISTICS */
 
 		// if (getSystemData().getNodeRole().equals(NodeRole.PEER)) {
 		// m_backup.registerPeer();
@@ -128,8 +126,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		// #endif /* LOGGER >= ERROR */
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_putAsync,
-				p_dataStructures.length);
+		SOP_PUT_ASYNC.enter(p_dataStructures.length);
 		// #endif /* STATISTICS */
 
 		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<>();
@@ -218,7 +215,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_putAsync);
+		SOP_PUT_ASYNC.leave();
 		// #endif /* STATISTICS */
 
 		if (p_dataStructures[0] == null) {
@@ -273,19 +270,6 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		m_network.register(PutMessage.class, this);
 	}
 
-	/**
-	 * Register statistics operations for this service.
-	 */
-	private void registerStatisticsOperations() {
-		m_statisticsRecorderIDs = new ChunkStatisticsRecorderIDs();
-		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(this.getClass());
-
-		m_statisticsRecorderIDs.m_operations.m_putAsync = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				ChunkStatisticsRecorderIDs.Operations.MS_PUT_ASYNC);
-		m_statisticsRecorderIDs.m_operations.m_incomingPutAsync = m_statistics.createOperation(
-				m_statisticsRecorderIDs.m_id, ChunkStatisticsRecorderIDs.Operations.MS_INCOMING_PUT_ASYNC);
-	}
-
 	// -----------------------------------------------------------------------------------
 
 	/**
@@ -297,8 +281,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		DataStructure[] chunks = p_request.getDataStructures();
 
 		// #ifdef STATISTICS
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPutAsync,
-				chunks.length);
+		SOP_INCOMING_PUT_ASYNC.enter(chunks.length);
 		// #endif /* STATISTICS */
 
 		m_memoryManager.lockAccess();
@@ -325,7 +308,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		}
 
 		// #ifdef STATISTICS
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPutAsync);
+		SOP_INCOMING_PUT_ASYNC.leave();
 		// #endif /* STATISTICS */
 	}
 }
