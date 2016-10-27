@@ -33,12 +33,32 @@ public class ScriptTerminalContext {
 	}
 
 	/**
-	 * Print to a console + newline
+	 * Print to the console + newline
 	 *
 	 * @param p_str String to print
 	 */
 	public void println(final String p_str) {
 		System.out.println(p_str);
+	}
+
+	/**
+	 * Print to the console using a c-style formated string and arguments
+	 *
+	 * @param p_format Formating for the string
+	 * @param p_args   Optional arguments
+	 */
+	public void printf(final String p_format, final Object... p_args) {
+		System.out.printf(p_format, p_args);
+	}
+
+	/**
+	 * Print to the console using a c-style formated string and arguments + newline
+	 *
+	 * @param p_format Formating for the string
+	 * @param p_args   Optional arguments
+	 */
+	public void printfln(final String p_format, final Object... p_args) {
+		System.out.printf(p_format + "\n", p_args);
 	}
 
 	/**
@@ -60,6 +80,30 @@ public class ScriptTerminalContext {
 	public void printlnErr(final String p_str) {
 		changeConsoleColor(TerminalColor.RED, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
 		System.out.println(p_str);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+	}
+
+	/**
+	 * Print an error to the console using a c-style formated string and arguments
+	 *
+	 * @param p_format Formating for the string
+	 * @param p_args   Optional arguments
+	 */
+	public void printfErr(final String p_format, final Object... p_args) {
+		changeConsoleColor(TerminalColor.RED, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+		System.out.printf(p_format, p_args);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+	}
+
+	/**
+	 * Print an error to the console using a c-style formated string and arguments + newline
+	 *
+	 * @param p_format Formating for the string
+	 * @param p_args   Optional arguments
+	 */
+	public void printflnErr(final String p_format, final Object... p_args) {
+		changeConsoleColor(TerminalColor.RED, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+		System.out.printf(p_format + "\n", p_args);
 		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
 	}
 
