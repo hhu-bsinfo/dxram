@@ -8,13 +8,13 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxram.log.LogService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.log.LogComponent;
+
 /**
  * HashTable to store versions (Linear probing)
- *
  * @author Kevin Beineke
  *         28.11.2014
  */
@@ -26,7 +26,7 @@ public class VersionsBuffer {
 	private static final int SSD_ENTRY_SIZE = 13;
 
 	// Attributes
-	private LogService m_logService;
+	private LogComponent m_logComponent;
 
 	private int[] m_table;
 	private int m_count;
@@ -46,18 +46,21 @@ public class VersionsBuffer {
 
 	/**
 	 * Creates an instance of VersionsHashTable
-	 *
-	 * @param p_logService             the log service to enable calling access granting methods
-	 * @param p_initialElementCapacity the initial capacity of VersionsHashTable
-	 * @param p_loadFactor             the load factor of VersionsHashTable
-	 * @param p_path                   the versions file's path
+	 * @param p_logComponent
+	 *            the log component to enable calling access granting methods
+	 * @param p_initialElementCapacity
+	 *            the initial capacity of VersionsHashTable
+	 * @param p_loadFactor
+	 *            the load factor of VersionsHashTable
+	 * @param p_path
+	 *            the versions file's path
 	 */
-	protected VersionsBuffer(final LogService p_logService, final int p_initialElementCapacity,
+	protected VersionsBuffer(final LogComponent p_logComponent, final int p_initialElementCapacity,
 			final float p_loadFactor,
 			final String p_path) {
 		super();
 
-		m_logService = p_logService;
+		m_logComponent = p_logComponent;
 		m_count = 0;
 		m_elementCapacity = p_initialElementCapacity;
 		m_threshold = (int) (m_elementCapacity * p_loadFactor);
@@ -92,7 +95,6 @@ public class VersionsBuffer {
 
 	/**
 	 * Returns the number of keys in VersionsHashTable
-	 *
 	 * @return the number of keys in VersionsHashTable
 	 */
 	protected final int getEntryCount() {
@@ -101,7 +103,6 @@ public class VersionsBuffer {
 
 	/**
 	 * Returns the number of keys in VersionsHashTable
-	 *
 	 * @return the number of keys in VersionsHashTable
 	 */
 	protected final long getFileSize() {
@@ -117,7 +118,6 @@ public class VersionsBuffer {
 
 	/**
 	 * Returns the current epoch
-	 *
 	 * @return the current epoch
 	 */
 	protected final short getEpoch() {
@@ -126,7 +126,6 @@ public class VersionsBuffer {
 
 	/**
 	 * Returns the current eon
-	 *
 	 * @return the current eon
 	 */
 	protected final byte getEon() {
@@ -135,7 +134,6 @@ public class VersionsBuffer {
 
 	/**
 	 * Write all versions to SSD and clear hash table
-	 *
 	 * @return whether an overflow during incrementation of epoch occurred or not
 	 */
 	protected final boolean flush() {
@@ -198,8 +196,8 @@ public class VersionsBuffer {
 
 	/**
 	 * Read all versions from SSD, add current versions and write back
-	 *
-	 * @param p_allVersions the VersionsHashTable to put all current versions in
+	 * @param p_allVersions
+	 *            the VersionsHashTable to put all current versions in
 	 */
 	protected final void readAll(final VersionsHashTable p_allVersions) {
 		int length;
@@ -299,7 +297,6 @@ public class VersionsBuffer {
 
 	/**
 	 * Increments the epoch
-	 *
 	 * @return whether an overflow occurred or not
 	 */
 	private boolean incrementEpoch() {
@@ -318,8 +315,8 @@ public class VersionsBuffer {
 
 	/**
 	 * Returns the value to which the specified key is mapped in VersionsHashTable
-	 *
-	 * @param p_key the searched key (is incremented before insertion to avoid 0)
+	 * @param p_key
+	 *            the searched key (is incremented before insertion to avoid 0)
 	 * @return the value to which the key is mapped in VersionsHashTable
 	 */
 	protected final Version get(final long p_key) {
@@ -346,8 +343,8 @@ public class VersionsBuffer {
 
 	/**
 	 * Returns the next value to which the specified key is mapped in VersionsHashTable
-	 *
-	 * @param p_key the searched key (is incremented before insertion to avoid 0)
+	 * @param p_key
+	 *            the searched key (is incremented before insertion to avoid 0)
 	 * @return the 1 + value to which the key is mapped in VersionsHashTable
 	 */
 	protected final Version getNext(final long p_key) {
@@ -358,7 +355,7 @@ public class VersionsBuffer {
 
 		// Avoid rehashing by waiting
 		while (m_count == m_threshold) {
-			m_logService.grantAccessToWriterThread();
+			m_logComponent.grantAccessToWriterThread();
 			Thread.yield();
 		}
 
@@ -387,14 +384,15 @@ public class VersionsBuffer {
 
 	/**
 	 * Maps the given key to the given value in VersionsHashTable
-	 *
-	 * @param p_key     the key (is incremented before insertion to avoid 0)
-	 * @param p_version the version
+	 * @param p_key
+	 *            the key (is incremented before insertion to avoid 0)
+	 * @param p_version
+	 *            the version
 	 */
 	protected final void put(final long p_key, final int p_version) {
 		// Avoid rehashing by waiting
 		while (m_count == m_threshold) {
-			m_logService.grantAccessToWriterThread();
+			m_logComponent.grantAccessToWriterThread();
 			Thread.yield();
 		}
 
@@ -403,10 +401,12 @@ public class VersionsBuffer {
 
 	/**
 	 * Maps the given key to the given value in VersionsHashTable
-	 *
-	 * @param p_key     the key (is incremented before insertion to avoid 0)
-	 * @param p_epoch   the epoch
-	 * @param p_version the version
+	 * @param p_key
+	 *            the key (is incremented before insertion to avoid 0)
+	 * @param p_epoch
+	 *            the epoch
+	 * @param p_version
+	 *            the version
 	 */
 	protected void put(final long p_key, final int p_epoch, final int p_version) {
 		int index;
@@ -434,8 +434,8 @@ public class VersionsBuffer {
 
 	/**
 	 * Gets the key at given index
-	 *
-	 * @param p_index the index in table (-> 3 indices per element)
+	 * @param p_index
+	 *            the index in table (-> 3 indices per element)
 	 * @return the key
 	 */
 	private long getKey(final int p_index) {
@@ -447,8 +447,8 @@ public class VersionsBuffer {
 
 	/**
 	 * Gets the version at given index
-	 *
-	 * @param p_index the index
+	 * @param p_index
+	 *            the index
 	 * @return the version
 	 */
 	private int getVersion(final int p_index) {
@@ -457,11 +457,14 @@ public class VersionsBuffer {
 
 	/**
 	 * Sets the key-value tuple at given index
-	 *
-	 * @param p_index   the index
-	 * @param p_key     the key
-	 * @param p_epoch   the epoch
-	 * @param p_version the version
+	 * @param p_index
+	 *            the index
+	 * @param p_key
+	 *            the key
+	 * @param p_epoch
+	 *            the epoch
+	 * @param p_version
+	 *            the version
 	 */
 	private void set(final int p_index, final long p_key, final int p_epoch, final int p_version) {
 		int index;
@@ -474,8 +477,8 @@ public class VersionsBuffer {
 
 	/**
 	 * Hashes the given key with MurmurHash3
-	 *
-	 * @param p_key the key
+	 * @param p_key
+	 *            the key
 	 * @return the hash value
 	 */
 	public static int hash(final long p_key) {
