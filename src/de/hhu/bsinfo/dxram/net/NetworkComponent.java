@@ -6,7 +6,11 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.gson.annotations.Expose;
+
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -17,23 +21,14 @@ import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessages;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.AbstractRequest;
-import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler;
+import de.hhu.bsinfo.ethnet.*;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
-import de.hhu.bsinfo.ethnet.RequestMap;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Access to the network interface to send messages or requests
  * to other nodes.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class NetworkComponent extends AbstractDXRAMComponent {
@@ -88,10 +83,12 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Registers a message type
-	 *
-	 * @param p_type    the unique type
-	 * @param p_subtype the unique subtype
-	 * @param p_class   the calling class
+	 * @param p_type
+	 *            the unique type
+	 * @param p_subtype
+	 *            the unique subtype
+	 * @param p_class
+	 *            the calling class
 	 */
 	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		m_networkHandler.registerMessageType(p_type, p_subtype, p_class);
@@ -99,9 +96,10 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Connect a node.
-	 *
-	 * @param p_nodeID Node to connect
-	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
+	 * @param p_nodeID
+	 *            Node to connect
+	 * @throws NetworkDestinationUnreachableException
+	 *             If the destination is unreachable
 	 */
 	public void connectNode(final short p_nodeID) throws NetworkException {
 		// #if LOGGER == TRACE
@@ -120,10 +118,12 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Send a message.
-	 *
-	 * @param p_message Message to send
-	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
-	 * @throws NetworkException                       If sending the message failed
+	 * @param p_message
+	 *            Message to send
+	 * @throws NetworkDestinationUnreachableException
+	 *             If the destination is unreachable
+	 * @throws NetworkException
+	 *             If sending the message failed
 	 */
 	public void sendMessage(final AbstractMessage p_message) throws NetworkException {
 		// #if LOGGER == TRACE
@@ -148,11 +148,14 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Send the Request and wait for fulfillment (wait for response).
-	 *
-	 * @param p_request The request to send.
-	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
-	 * @throws NetworkResponseTimeoutException        If the max. timeout was exceed
-	 * @throws NetworkException                       If sending the message failed
+	 * @param p_request
+	 *            The request to send.
+	 * @throws NetworkDestinationUnreachableException
+	 *             If the destination is unreachable
+	 * @throws NetworkResponseTimeoutException
+	 *             If the max. timeout was exceed
+	 * @throws NetworkException
+	 *             If sending the message failed
 	 */
 	public void sendSync(final AbstractRequest p_request) throws NetworkException {
 		// #if LOGGER == TRACE
@@ -187,9 +190,10 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Registers a message receiver
-	 *
-	 * @param p_message  the message
-	 * @param p_receiver the receiver
+	 * @param p_message
+	 *            the message
+	 * @param p_receiver
+	 *            the receiver
 	 */
 	public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		m_networkHandler.register(p_message, p_receiver);
@@ -197,9 +201,10 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Unregisters a message receiver
-	 *
-	 * @param p_message  the message
-	 * @param p_receiver the receiver
+	 * @param p_message
+	 *            the message
+	 * @param p_receiver
+	 *            the receiver
 	 */
 	public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		m_networkHandler.unregister(p_message, p_receiver);
@@ -223,8 +228,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 		InetAddress myAddress = m_boot.getNodeAddress(m_boot.getNodeID()).getAddress();
 		try {
 			Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-			outerloop:
-			while (networkInterfaces.hasMoreElements()) {
+			outerloop: while (networkInterfaces.hasMoreElements()) {
 				NetworkInterface currentNetworkInterface = networkInterfaces.nextElement();
 				Enumeration<InetAddress> addresses = currentNetworkInterface.getInetAddresses();
 				while (addresses.hasMoreElements()) {

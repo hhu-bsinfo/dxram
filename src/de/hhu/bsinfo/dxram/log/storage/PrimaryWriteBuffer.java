@@ -3,21 +3,18 @@ package de.hhu.bsinfo.dxram.log.storage;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.log.LogService;
-import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.log.LogComponent;
+import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 
 /**
  * Primary log write buffer Implemented as a ring buffer in a byte array. The
@@ -30,7 +27,6 @@ import org.apache.logging.log4j.Logger;
  * buffer is extended adaptively if a threshold is passed (in (flash page size)
  * steps or doubled). Alternatively the caller can be blocked until the write
  * access is completed.
- *
  * @author Kevin Beineke 06.06.2014
  */
 public class PrimaryWriteBuffer {
@@ -44,7 +40,7 @@ public class PrimaryWriteBuffer {
 	private static final long WRITERTHREAD_TIMEOUTTIME = 100L;
 
 	// Attributes
-	private LogService m_logService;
+	private LogComponent m_logComponent;
 	private int m_writeBufferSize;
 	private int m_flashPageSize;
 	private int m_secondaryLogBufferSize;
@@ -87,22 +83,29 @@ public class PrimaryWriteBuffer {
 	/**
 	 * Creates an instance of PrimaryWriteBuffer with user-specific
 	 * configuration
-	 *
-	 * @param p_logService             the log service
-	 * @param p_primaryLog             Instance of the primary log. Used to write directly to primary log if buffer is full
-	 * @param p_writeBufferSize        the size of the write buffer
-	 * @param p_flashPageSize          the size of a flash page
-	 * @param p_secondaryLogBufferSize the secondary log buffer size
-	 * @param p_logSegmentSize         the segment size
-	 * @param p_useChecksum            whether checksums are used
-	 * @param p_sortBufferPooling      whether buffer pooling is enabled or not
+	 * @param p_logComponent
+	 *            the log component
+	 * @param p_primaryLog
+	 *            Instance of the primary log. Used to write directly to primary log if buffer is full
+	 * @param p_writeBufferSize
+	 *            the size of the write buffer
+	 * @param p_flashPageSize
+	 *            the size of a flash page
+	 * @param p_secondaryLogBufferSize
+	 *            the secondary log buffer size
+	 * @param p_logSegmentSize
+	 *            the segment size
+	 * @param p_useChecksum
+	 *            whether checksums are used
+	 * @param p_sortBufferPooling
+	 *            whether buffer pooling is enabled or not
 	 */
-	public PrimaryWriteBuffer(final LogService p_logService,
+	public PrimaryWriteBuffer(final LogComponent p_logComponent,
 			final PrimaryLog p_primaryLog,
 			final int p_writeBufferSize, final int p_flashPageSize, final int p_secondaryLogBufferSize,
 			final int p_logSegmentSize,
 			final boolean p_useChecksum, final boolean p_sortBufferPooling) {
-		m_logService = p_logService;
+		m_logComponent = p_logComponent;
 		m_primaryLog = p_primaryLog;
 		m_writeBufferSize = p_writeBufferSize;
 		m_flashPageSize = p_flashPageSize;
@@ -165,9 +168,10 @@ public class PrimaryWriteBuffer {
 
 	/**
 	 * Cleans the write buffer and resets the pointer
-	 *
-	 * @throws IOException          if buffer could not be closed
-	 * @throws InterruptedException if caller is interrupted
+	 * @throws IOException
+	 *             if buffer could not be closed
+	 * @throws InterruptedException
+	 *             if caller is interrupted
 	 */
 	public final void closeWriteBuffer() throws InterruptedException, IOException {
 		// Shutdown primary log writer-thread
@@ -206,13 +210,17 @@ public class PrimaryWriteBuffer {
 	/**
 	 * Writes log entries as a whole (max. size: write buffer) Log entry format:
 	 * /////// // CID // LEN // CRC// DATA ... ///////
-	 *
-	 * @param p_header        the log entry's header as a byte array
-	 * @param p_buffer        the message buffer (position is on payload)
-	 * @param p_payloadLength the payload length
+	 * @param p_header
+	 *            the log entry's header as a byte array
+	 * @param p_buffer
+	 *            the message buffer (position is on payload)
+	 * @param p_payloadLength
+	 *            the payload length
 	 * @return the number of written bytes
-	 * @throws IOException          if data could not be flushed to primary log
-	 * @throws InterruptedException if caller is interrupted
+	 * @throws IOException
+	 *             if data could not be flushed to primary log
+	 * @throws InterruptedException
+	 *             if caller is interrupted
 	 */
 	public final int putLogData(final byte[] p_header, final ByteBuffer p_buffer, final int p_payloadLength)
 			throws IOException, InterruptedException {
@@ -229,7 +237,7 @@ public class PrimaryWriteBuffer {
 			rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0);
 			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
 		} else {
-			rangeID = m_logService.getBackupRange(logEntryHeader.getCID(p_header, 0));
+			rangeID = m_logComponent.getBackupRange(logEntryHeader.getCID(p_header, 0));
 			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
 		}
 
@@ -330,8 +338,8 @@ public class PrimaryWriteBuffer {
 
 	/**
 	 * Wakes-up writer thread and flushes data to primary log
-	 *
-	 * @throws InterruptedException if caller is interrupted
+	 * @throws InterruptedException
+	 *             if caller is interrupted
 	 */
 	public final void signalWriterThreadAndFlushToPrimLog() throws InterruptedException {
 		grantAccessToWriterThread();
@@ -347,7 +355,6 @@ public class PrimaryWriteBuffer {
 	/**
 	 * Writer thread The writer thread flushes data from buffer to primary log
 	 * after being waked-up (signal or timer)
-	 *
 	 * @author Kevin Beineke 06.06.2014
 	 */
 	private final class PrimaryLogWriterThread extends Thread {
@@ -382,7 +389,7 @@ public class PrimaryWriteBuffer {
 
 		@Override
 		public void run() {
-			for (; ; ) {
+			for (;;) {
 				if (m_isShuttingDown) {
 					// Shutdown signal -> directly flush all data to primary log and shut down
 					flushDataToPrimaryLog();
@@ -405,15 +412,15 @@ public class PrimaryWriteBuffer {
 				}
 
 				flushDataToPrimaryLog();
-				m_logService.grantReorgThreadAccessToCurrentLog();
+				m_logComponent.grantReorgThreadAccessToCurrentLog();
 			}
 		}
 
 		/**
 		 * Flushes all data in write buffer to primary log
-		 *
 		 * @return number of copied bytes
-		 * @throws InterruptedException if caller is interrupted
+		 * @throws InterruptedException
+		 *             if caller is interrupted
 		 */
 		public int flushDataToPrimaryLog() {
 			int writtenBytes = 0;
@@ -435,7 +442,7 @@ public class PrimaryWriteBuffer {
 			// handler will know)
 			final long timeStart = System.currentTimeMillis();
 			while (!m_writerThreadAccessesBuffer) {
-				m_logService.grantReorgThreadAccessToCurrentLog();
+				m_logComponent.grantReorgThreadAccessToCurrentLog();
 				if (System.currentTimeMillis() > timeStart + WRITERTHREAD_TIMEOUTTIME) {
 					break;
 				}
@@ -479,14 +486,19 @@ public class PrimaryWriteBuffer {
 		 * Writes given data to secondary log buffers or directly to secondary logs
 		 * if longer than a flash page. Merges consecutive log entries of the same
 		 * node to limit the number of write accesses
-		 *
-		 * @param p_buffer              data block
-		 * @param p_offset              offset within the buffer
-		 * @param p_length              length of data
-		 * @param p_lengthByBackupRange length of data per node
+		 * @param p_buffer
+		 *            data block
+		 * @param p_offset
+		 *            offset within the buffer
+		 * @param p_length
+		 *            length of data
+		 * @param p_lengthByBackupRange
+		 *            length of data per node
 		 * @return the number of stored bytes
-		 * @throws IOException          if secondary log (buffer) could not be written
-		 * @throws InterruptedException if caller is interrupted
+		 * @throws IOException
+		 *             if secondary log (buffer) could not be written
+		 * @throws InterruptedException
+		 *             if caller is interrupted
 		 */
 		private int bufferAndStore(final byte[] p_buffer, final int p_offset, final int p_length,
 				final Set<Entry<Long, Integer>> p_lengthByBackupRange) throws InterruptedException, IOException {
@@ -558,7 +570,7 @@ public class PrimaryWriteBuffer {
 						if (logEntryHeader.wasMigrated()) {
 							rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_buffer, offset);
 						} else {
-							rangeID = m_logService.getBackupRange(logEntryHeader.getCID(p_buffer, offset));
+							rangeID = m_logComponent.getBackupRange(logEntryHeader.getCID(p_buffer, offset));
 						}
 
 						bufferNode = map.get(rangeID);
@@ -579,7 +591,7 @@ public class PrimaryWriteBuffer {
 						if (logEntryHeader.wasMigrated()) {
 							rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(header, 0);
 						} else {
-							rangeID = m_logService.getBackupRange(logEntryHeader.getCID(header, 0));
+							rangeID = m_logComponent.getBackupRange(logEntryHeader.getCID(header, 0));
 						}
 
 						bufferNode = map.get(rangeID);
@@ -652,15 +664,21 @@ public class PrimaryWriteBuffer {
 		/**
 		 * Buffers an log entry or log entry range in corresponding secondary log
 		 * buffer
-		 *
-		 * @param p_buffer       data block
-		 * @param p_bufferOffset position of log entry/range in data block
-		 * @param p_logEntrySize size of log entry/range
-		 * @param p_chunkID      ChunkID of log entry/range
-		 * @param p_source       the source NodeID
+		 * @param p_buffer
+		 *            data block
+		 * @param p_bufferOffset
+		 *            position of log entry/range in data block
+		 * @param p_logEntrySize
+		 *            size of log entry/range
+		 * @param p_chunkID
+		 *            ChunkID of log entry/range
+		 * @param p_source
+		 *            the source NodeID
 		 * @return whether the buffer was flushed or not
-		 * @throws IOException          if secondary log buffer could not be written
-		 * @throws InterruptedException if caller is interrupted
+		 * @throws IOException
+		 *             if secondary log buffer could not be written
+		 * @throws InterruptedException
+		 *             if caller is interrupted
 		 */
 		private boolean bufferLogEntryInSecondaryLogBuffer(final byte[] p_buffer, final int p_bufferOffset,
 				final int p_logEntrySize, final long p_chunkID,
@@ -668,10 +686,10 @@ public class PrimaryWriteBuffer {
 			boolean ret;
 
 			if (ChunkID.getCreatorID(p_chunkID) == -1) {
-				ret = m_logService.getSecondaryLogBuffer(p_chunkID, p_source, (byte) p_chunkID)
+				ret = m_logComponent.getSecondaryLogBuffer(p_chunkID, p_source, (byte) p_chunkID)
 						.bufferData(p_buffer, p_bufferOffset, p_logEntrySize);
 			} else {
-				ret = m_logService.getSecondaryLogBuffer(p_chunkID, p_source, (byte) -1)
+				ret = m_logComponent.getSecondaryLogBuffer(p_chunkID, p_source, (byte) -1)
 						.bufferData(p_buffer, p_bufferOffset, p_logEntrySize);
 			}
 			return ret;
@@ -681,24 +699,30 @@ public class PrimaryWriteBuffer {
 		 * Writes a log entry/range directly to secondary log buffer if longer than
 		 * secondary log buffer size Has to flush the corresponding secondary log buffer if not
 		 * empty to maintain order
-		 *
-		 * @param p_buffer       data block
-		 * @param p_bufferOffset position of log entry/range in data block
-		 * @param p_logEntrySize size of log entry/range
-		 * @param p_chunkID      ChunkID of log entry/range
-		 * @param p_source       the source NodeID
-		 * @throws IOException          if secondary log could not be written
-		 * @throws InterruptedException if caller is interrupted
+		 * @param p_buffer
+		 *            data block
+		 * @param p_bufferOffset
+		 *            position of log entry/range in data block
+		 * @param p_logEntrySize
+		 *            size of log entry/range
+		 * @param p_chunkID
+		 *            ChunkID of log entry/range
+		 * @param p_source
+		 *            the source NodeID
+		 * @throws IOException
+		 *             if secondary log could not be written
+		 * @throws InterruptedException
+		 *             if caller is interrupted
 		 */
 		private void writeDirectlyToSecondaryLog(final byte[] p_buffer, final int p_bufferOffset,
 				final int p_logEntrySize, final long p_chunkID,
 				final short p_source) throws IOException, InterruptedException {
 
 			if (ChunkID.getCreatorID(p_chunkID) == -1) {
-				m_logService.getSecondaryLogBuffer(p_chunkID, p_source, (byte) p_chunkID)
+				m_logComponent.getSecondaryLogBuffer(p_chunkID, p_source, (byte) p_chunkID)
 						.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
 			} else {
-				m_logService.getSecondaryLogBuffer(p_chunkID, p_source, (byte) -1)
+				m_logComponent.getSecondaryLogBuffer(p_chunkID, p_source, (byte) -1)
 						.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
 			}
 		}
@@ -706,7 +730,6 @@ public class PrimaryWriteBuffer {
 
 	/**
 	 * BufferNode
-	 *
 	 * @author Kevin Beineke 11.08.2014
 	 */
 	private final class BufferNode {
@@ -724,10 +747,11 @@ public class PrimaryWriteBuffer {
 
 		/**
 		 * Creates an instance of BufferNode
-		 *
-		 * @param p_length  the buffer length (the length might change after converting the headers and fitting the data into
-		 *                  segments)
-		 * @param p_convert wether the log entry headers have to be converted or not
+		 * @param p_length
+		 *            the buffer length (the length might change after converting the headers and fitting the data into
+		 *            segments)
+		 * @param p_convert
+		 *            wether the log entry headers have to be converted or not
 		 */
 		private BufferNode(final int p_length, final boolean p_convert) {
 			int length = p_length;
@@ -785,7 +809,6 @@ public class PrimaryWriteBuffer {
 
 		/**
 		 * Returns the size of the unprocessed data
-		 *
 		 * @return the size of the unprocessed data
 		 */
 		private int getBufferLength() {
@@ -794,8 +817,8 @@ public class PrimaryWriteBuffer {
 
 		/**
 		 * Returns the number of written bytes per segment
-		 *
-		 * @param p_index the index
+		 * @param p_index
+		 *            the index
 		 * @return the number of written bytes per segment
 		 */
 		private int getSegmentLength(final int p_index) {
@@ -810,8 +833,8 @@ public class PrimaryWriteBuffer {
 
 		/**
 		 * Returns the buffer
-		 *
-		 * @param p_index the index
+		 * @param p_index
+		 *            the index
 		 * @return the buffer
 		 */
 		private byte[] getData(final int p_index) {
@@ -826,7 +849,6 @@ public class PrimaryWriteBuffer {
 
 		/**
 		 * Returns the source
-		 *
 		 * @return the NodeID
 		 */
 		private short getSource() {
@@ -837,8 +859,8 @@ public class PrimaryWriteBuffer {
 
 		/**
 		 * Puts the source
-		 *
-		 * @param p_source the NodeID
+		 * @param p_source
+		 *            the NodeID
 		 */
 		private void setSource(final short p_source) {
 			m_source = p_source;
@@ -848,12 +870,16 @@ public class PrimaryWriteBuffer {
 
 		/**
 		 * Appends data to node buffer
-		 *
-		 * @param p_buffer           the buffer
-		 * @param p_offset           the offset within the buffer
-		 * @param p_logEntrySize     the log entry size
-		 * @param p_bytesUntilEnd    the number of bytes until end
-		 * @param p_conversionOffset the conversion offset
+		 * @param p_buffer
+		 *            the buffer
+		 * @param p_offset
+		 *            the offset within the buffer
+		 * @param p_logEntrySize
+		 *            the log entry size
+		 * @param p_bytesUntilEnd
+		 *            the number of bytes until end
+		 * @param p_conversionOffset
+		 *            the conversion offset
 		 */
 		private void appendToBuffer(final byte[] p_buffer, final int p_offset,
 				final int p_logEntrySize, final int p_bytesUntilEnd, final short p_conversionOffset) {
@@ -884,13 +910,15 @@ public class PrimaryWriteBuffer {
 			}
 
 			if (m_convert) {
-				// More secondary log buffer size for this node: Convert primary log entry header to secondary log header and append
+				// More secondary log buffer size for this node: Convert primary log entry header to secondary log
+				// header and append
 				// entry to node buffer
 				m_writtenBytesPerSegment[index] +=
 						AbstractLogEntryHeader.convertAndPut(p_buffer, p_offset, m_segments[index],
 								m_writtenBytesPerSegment[index], p_logEntrySize, p_bytesUntilEnd, p_conversionOffset);
 			} else {
-				// Less secondary log buffer size for this node: Just append entry to node buffer without converting the log entry
+				// Less secondary log buffer size for this node: Just append entry to node buffer without converting the
+				// log entry
 				// header
 				if (p_logEntrySize <= p_bytesUntilEnd) {
 					System.arraycopy(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index],
