@@ -3,6 +3,9 @@ package de.hhu.bsinfo.dxgraph;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxcompute.DXCompute;
 import de.hhu.bsinfo.dxcompute.job.AbstractJob;
 import de.hhu.bsinfo.dxcompute.ms.TaskPayloadManager;
@@ -18,8 +21,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Special wrapper API (though DXRAMEngine is still accessible) providing
@@ -27,410 +28,426 @@ import org.apache.logging.log4j.Logger;
  * or wraps access to certain services to create a common API for graph related
  * tasks.
  *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 09.09.16
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 09.09.2016
  */
 public class DXGraph extends DXCompute {
 
-	private static final Logger LOGGER = LogManager.getFormatterLogger(DXGraph.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(DXGraph.class.getSimpleName());
 
-	private ChunkService m_chunkService;
+    private ChunkService m_chunkService;
 
-	/**
-	 * Constructor
-	 */
-	public DXGraph() {
+    /**
+     * Constructor
+     */
+    public DXGraph() {
 
-	}
+    }
 
-	@Override
-	protected void postInit() {
-		TaskPayloadManager.registerTaskPayloadClass(GraphTaskPayloads.TYPE,
-				GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_PART_INDEX, GraphLoadPartitionIndexTaskPayload.class);
-		TaskPayloadManager.registerTaskPayloadClass(GraphTaskPayloads.TYPE,
-				GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_OEL, GraphLoadOrderedEdgeListTaskPayload.class);
-		TaskPayloadManager.registerTaskPayloadClass(GraphTaskPayloads.TYPE,
-				GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_BFS_ROOTS, GraphLoadBFSRootListTaskPayload.class);
-		TaskPayloadManager.registerTaskPayloadClass(GraphTaskPayloads.TYPE,
-				GraphTaskPayloads.SUBTYPE_GRAPH_ALGO_BFS, GraphAlgorithmBFSTaskPayload.class);
+    @Override
+    protected void postInit() {
+        TaskPayloadManager
+            .registerTaskPayloadClass(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_PART_INDEX, GraphLoadPartitionIndexTaskPayload.class);
+        TaskPayloadManager
+            .registerTaskPayloadClass(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_OEL, GraphLoadOrderedEdgeListTaskPayload.class);
+        TaskPayloadManager
+            .registerTaskPayloadClass(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_BFS_ROOTS, GraphLoadBFSRootListTaskPayload.class);
+        TaskPayloadManager.registerTaskPayloadClass(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_ALGO_BFS, GraphAlgorithmBFSTaskPayload.class);
 
-		m_chunkService = m_engine.getService(ChunkService.class);
-	}
+        m_chunkService = getDXRAMEngine().getService(ChunkService.class);
+    }
 
-	@Override
-	protected void preShutdown() {
-		m_chunkService = null;
-	}
+    @Override
+    protected void preShutdown() {
+        m_chunkService = null;
+    }
 
-	/**
-	 * Get the DXRAMEngine. There is no restriction sticking
-	 * to the exposed graph API if low level access or other
-	 * services are needed for any task.
-	 *
-	 * @return DXRAMEngine.
-	 */
-	public DXRAMEngine getDXRAMEngine() {
-		return m_engine;
-	}
+    /**
+     * Get the DXRAMEngine. There is no restriction sticking
+     * to the exposed graph API if low level access or other
+     * services are needed for any task.
+     *
+     * @return DXRAMEngine.
+     */
+    public DXRAMEngine getDXRAMEngine() {
+        return getDXRAMEngine();
+    }
 
-	/**
-	 * Create storage on the current node for one or multiple vertices. This assigns
-	 * a valid ID to each successfully created vertex. The actual
-	 * data stored with the vertex is not stored with this call.
-	 *
-	 * @param p_vertices Vertices to create storage space for.
-	 * @return Number of successfully created storage locations.
-	 */
-	public int createVertices(final Vertex... p_vertices) {
-		return m_chunkService.create((DataStructure[]) p_vertices);
-	}
+    /**
+     * Create storage on the current node for one or multiple vertices. This assigns
+     * a valid ID to each successfully created vertex. The actual
+     * data stored with the vertex is not stored with this call.
+     *
+     * @param p_vertices
+     *     Vertices to create storage space for.
+     * @return Number of successfully created storage locations.
+     */
+    public int createVertices(final Vertex... p_vertices) {
+        return m_chunkService.create((DataStructure[]) p_vertices);
+    }
 
-	/**
-	 * Create storage on a remote node for one or multiple vertices. This assigns
-	 * a valid ID to each successfully created vertex. The actual
-	 * data stored with the vertex is not stored with this call.
-	 *
-	 * @param p_nodeId   Node id of another peer to allocate the space on.
-	 * @param p_vertices Vertices to create storage space for.
-	 * @return Number of successfully created storage locations.
-	 */
-	public int createVertices(final short p_nodeId, final Vertex... p_vertices) {
-		return m_chunkService.createRemote(p_nodeId, (DataStructure[]) p_vertices);
-	}
+    /**
+     * Create storage on a remote node for one or multiple vertices. This assigns
+     * a valid ID to each successfully created vertex. The actual
+     * data stored with the vertex is not stored with this call.
+     *
+     * @param p_nodeId
+     *     Node id of another peer to allocate the space on.
+     * @param p_vertices
+     *     Vertices to create storage space for.
+     * @return Number of successfully created storage locations.
+     */
+    public int createVertices(final short p_nodeId, final Vertex... p_vertices) {
+        return m_chunkService.createRemote(p_nodeId, (DataStructure[]) p_vertices);
+    }
 
-	/**
-	 * Create storage on the current node for one or multiple edges. This assigns
-	 * a valid ID to each successfully created edge. The actual
-	 * data stored with the edge is not stored with this call.
-	 *
-	 * @param p_edges Edges to create storage space for.
-	 * @return Number of successfully created storage locations.
-	 */
-	public int createEdges(final Edge... p_edges) {
-		return m_chunkService.create((DataStructure[]) p_edges);
-	}
+    /**
+     * Create storage on the current node for one or multiple edges. This assigns
+     * a valid ID to each successfully created edge. The actual
+     * data stored with the edge is not stored with this call.
+     *
+     * @param p_edges
+     *     Edges to create storage space for.
+     * @return Number of successfully created storage locations.
+     */
+    public int createEdges(final Edge... p_edges) {
+        return m_chunkService.create((DataStructure[]) p_edges);
+    }
 
-	/**
-	 * Create storage on a remote node for one or multiple edges. This assigns
-	 * a valid ID to each successfully created edge. The actual
-	 * data stored with the edge is not stored with this call.
-	 *
-	 * @param p_nodeId Node id of another peer to allocate the space on.
-	 * @param p_edges  VerticEdgeses to create storage space for.
-	 * @return Number of successfully created storage locations.
-	 */
-	public int createEdges(final short p_nodeId, final Edge... p_edges) {
-		return m_chunkService.createRemote(p_nodeId, (DataStructure[]) p_edges);
-	}
+    /**
+     * Create storage on a remote node for one or multiple edges. This assigns
+     * a valid ID to each successfully created edge. The actual
+     * data stored with the edge is not stored with this call.
+     *
+     * @param p_nodeId
+     *     Node id of another peer to allocate the space on.
+     * @param p_edges
+     *     VerticEdgeses to create storage space for.
+     * @return Number of successfully created storage locations.
+     */
+    public int createEdges(final short p_nodeId, final Edge... p_edges) {
+        return m_chunkService.createRemote(p_nodeId, (DataStructure[]) p_edges);
+    }
 
-	/**
-	 * Write the data of one or multiple vertices to its storage location(s).
-	 *
-	 * @param p_vertices Vertices to write the data to the storage.
-	 * @return Number of successfully written vertices.
-	 */
-	public int putVertices(final Vertex... p_vertices) {
-		return m_chunkService.put((DataStructure[]) p_vertices);
-	}
+    /**
+     * Write the data of one or multiple vertices to its storage location(s).
+     *
+     * @param p_vertices
+     *     Vertices to write the data to the storage.
+     * @return Number of successfully written vertices.
+     */
+    public int putVertices(final Vertex... p_vertices) {
+        return m_chunkService.put((DataStructure[]) p_vertices);
+    }
 
-	/**
-	 * Write the data of one or multiple dges to its storage location(s).
-	 *
-	 * @param p_edges Edges to write the data to the storage.
-	 * @return Number of successfully written edges.
-	 */
-	public int putEdges(final Edge... p_edges) {
-		return m_chunkService.put((DataStructure[]) p_edges);
-	}
+    /**
+     * Write the data of one or multiple dges to its storage location(s).
+     *
+     * @param p_edges
+     *     Edges to write the data to the storage.
+     * @return Number of successfully written edges.
+     */
+    public int putEdges(final Edge... p_edges) {
+        return m_chunkService.put((DataStructure[]) p_edges);
+    }
 
-	/**
-	 * Read the data of one or multiple vertices from its storage location(s).
-	 *
-	 * @param p_vertices Vertices to read the data from the storage.
-	 * @return Number of successfully read vertices.
-	 */
-	public int getVertices(final Vertex... p_vertices) {
-		return m_chunkService.get((DataStructure[]) p_vertices);
-	}
+    /**
+     * Read the data of one or multiple vertices from its storage location(s).
+     *
+     * @param p_vertices
+     *     Vertices to read the data from the storage.
+     * @return Number of successfully read vertices.
+     */
+    public int getVertices(final Vertex... p_vertices) {
+        return m_chunkService.get((DataStructure[]) p_vertices);
+    }
 
-	/**
-	 * Read the data of one or multiple edges from its storage location(s).
-	 *
-	 * @param p_edges Edges to read the data from the storage.
-	 * @return Number of successfully read edges.
-	 */
-	public int getEdges(final Edge... p_edges) {
-		return m_chunkService.get((DataStructure[]) p_edges);
-	}
+    /**
+     * Read the data of one or multiple edges from its storage location(s).
+     *
+     * @param p_edges
+     *     Edges to read the data from the storage.
+     * @return Number of successfully read edges.
+     */
+    public int getEdges(final Edge... p_edges) {
+        return m_chunkService.get((DataStructure[]) p_edges);
+    }
 
-	/**
-	 * Delete one or multiple stored vertices from the storage.
-	 *
-	 * @param p_vertices Vertices to delete from storage.
-	 * @return Number of successfully deleted vertices.
-	 */
-	public int deleteVertices(final Vertex... p_vertices) {
-		return m_chunkService.remove((DataStructure[]) p_vertices);
-	}
+    /**
+     * Delete one or multiple stored vertices from the storage.
+     *
+     * @param p_vertices
+     *     Vertices to delete from storage.
+     * @return Number of successfully deleted vertices.
+     */
+    public int deleteVertices(final Vertex... p_vertices) {
+        return m_chunkService.remove((DataStructure[]) p_vertices);
+    }
 
-	/**
-	 * Delete one or multiple stored edges from the storage.
-	 *
-	 * @param p_edges Edges to delete from storage.
-	 * @return Number of successfully deleted edges.
-	 */
-	public int deleteEdges(final Edge... p_edges) {
-		return m_chunkService.remove((DataStructure[]) p_edges);
-	}
+    /**
+     * Delete one or multiple stored edges from the storage.
+     *
+     * @param p_edges
+     *     Edges to delete from storage.
+     * @return Number of successfully deleted edges.
+     */
+    public int deleteEdges(final Edge... p_edges) {
+        return m_chunkService.remove((DataStructure[]) p_edges);
+    }
 
-	/**
-	 * Scan the vertex by getting all its edge objects it is connected to.
-	 * If the edges are not edge objects but direct connections to the neighbor
-	 * vertex, this call fails.
-	 *
-	 * @param p_vertex    Vertex to scan. If invalid, null is returned.
-	 * @param p_edgeClass Class of the edges to return.
-	 * @param <T>         Type of the edges to create instances of.
-	 * @return Edge objects of the scanned vertex with their data read from the storage.
-	 */
-	public <T extends Edge> T[] scanEdges(final Vertex p_vertex, final Class<T> p_edgeClass) {
-		if (p_vertex.getID() == Vertex.INVALID_ID) {
-			return null;
-		}
+    /**
+     * Scan the vertex by getting all its edge objects it is connected to.
+     * If the edges are not edge objects but direct connections to the neighbor
+     * vertex, this call fails.
+     *
+     * @param p_vertex
+     *     Vertex to scan. If invalid, null is returned.
+     * @param p_edgeClass
+     *     Class of the edges to return.
+     * @param <T>
+     *     Type of the edges to create instances of.
+     * @return Edge objects of the scanned vertex with their data read from the storage.
+     */
+    public <T extends Edge> T[] scanEdges(final Vertex p_vertex, final Class<T> p_edgeClass) {
+        if (p_vertex.getID() == Vertex.INVALID_ID) {
+            return null;
+        }
 
-		if (!p_vertex.areNeighborsEdgeObjects()) {
-			return null;
-		}
+        if (!p_vertex.areNeighborsEdgeObjects()) {
+            return null;
+        }
 
-		T[] edges = (T[]) Array.newInstance(p_edgeClass, p_vertex.getNeighborCount());
-		for (int i = 0; i < p_vertex.getNeighborCount(); i++) {
-			try {
-				edges[i] = p_edgeClass.newInstance();
-				edges[i].setID(p_vertex.getNeighbours()[i]);
-			} catch (final Exception e) {
-				throw new RuntimeException(e);
-			}
-		}
+        T[] edges = (T[]) Array.newInstance(p_edgeClass, p_vertex.getNeighborCount());
+        for (int i = 0; i < p_vertex.getNeighborCount(); i++) {
+            try {
+                edges[i] = p_edgeClass.newInstance();
+                edges[i].setID(p_vertex.getNeighbours()[i]);
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
 
-		m_chunkService.get((DataStructure[]) edges);
-		return edges;
-	}
+        m_chunkService.get((DataStructure[]) edges);
+        return edges;
+    }
 
-	/**
-	 * Scan the vertex by getting all its neighbor vertices it is connected to.
-	 * If the edges are actual objects, they are read but skipped automatically.
-	 *
-	 * @param p_vertex      Vertex to scan. If invalid, null is returned.
-	 * @param p_vertexClass Class of the vertex instances to return.
-	 * @param <T>           Type of the vertex instances to create.
-	 * @return Neighbor vertex objects of the scanned vertex with their data stored.
-	 */
-	public <T extends Vertex> T[] scanNeighborVertices(final Vertex p_vertex, final Class<T> p_vertexClass) {
-		if (p_vertex.getID() == Vertex.INVALID_ID) {
-			return null;
-		}
+    /**
+     * Scan the vertex by getting all its neighbor vertices it is connected to.
+     * If the edges are actual objects, they are read but skipped automatically.
+     *
+     * @param p_vertex
+     *     Vertex to scan. If invalid, null is returned.
+     * @param p_vertexClass
+     *     Class of the vertex instances to return.
+     * @param <T>
+     *     Type of the vertex instances to create.
+     * @return Neighbor vertex objects of the scanned vertex with their data stored.
+     */
+    public <T extends Vertex> T[] scanNeighborVertices(final Vertex p_vertex, final Class<T> p_vertexClass) {
+        if (p_vertex.getID() == Vertex.INVALID_ID) {
+            return null;
+        }
 
-		T[] vertices = (T[]) Array.newInstance(p_vertexClass, p_vertex.getNeighborCount());
-		if (p_vertex.areNeighborsEdgeObjects()) {
-			// read and skip edges
-			Edge[] edges = new Edge[p_vertex.getNeighborCount()];
-			for (int i = 0; i < p_vertex.getNeighborCount(); i++) {
-				edges[i] = new Edge(p_vertex.getNeighbours()[i]);
-			}
+        T[] vertices = (T[]) Array.newInstance(p_vertexClass, p_vertex.getNeighborCount());
+        if (p_vertex.areNeighborsEdgeObjects()) {
+            // read and skip edges
+            Edge[] edges = new Edge[p_vertex.getNeighborCount()];
+            for (int i = 0; i < p_vertex.getNeighborCount(); i++) {
+                edges[i] = new Edge(p_vertex.getNeighbours()[i]);
+            }
 
-			m_chunkService.get((DataStructure[]) edges);
+            m_chunkService.get((DataStructure[]) edges);
 
-			for (int i = 0; i < edges.length; i++) {
-				if (edges[i] != null) {
-					try {
-						vertices[i] = p_vertexClass.newInstance();
-					} catch (final Exception e) {
-						throw new RuntimeException(e);
-					}
-					vertices[i].setID(edges[i].getToId());
-				}
-			}
-		} else {
-			for (int i = 0; i < p_vertex.getNeighborCount(); i++) {
-				if (p_vertex.getNeighbours()[i] != Vertex.INVALID_ID) {
-					try {
-						vertices[i] = p_vertexClass.newInstance();
-					} catch (final Exception e) {
-						throw new RuntimeException(e);
-					}
-					vertices[i].setID(p_vertex.getNeighbours()[i]);
-				}
-			}
-		}
+            for (int i = 0; i < edges.length; i++) {
+                if (edges[i] != null) {
+                    try {
+                        vertices[i] = p_vertexClass.newInstance();
+                    } catch (final Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    vertices[i].setID(edges[i].getToId());
+                }
+            }
+        } else {
+            for (int i = 0; i < p_vertex.getNeighborCount(); i++) {
+                if (p_vertex.getNeighbours()[i] != Vertex.INVALID_ID) {
+                    try {
+                        vertices[i] = p_vertexClass.newInstance();
+                    } catch (final Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    vertices[i].setID(p_vertex.getNeighbours()[i]);
+                }
+            }
+        }
 
-		m_chunkService.get((DataStructure[]) vertices);
-		return vertices;
-	}
+        m_chunkService.get((DataStructure[]) vertices);
+        return vertices;
+    }
 
-	public long traverseBFS(final Vertex p_startVertex, final TraversalVertexCallback p_callback) {
-		// returns number of vertices traversed
-		// TODO using job system here doesn't seem to be a bad idea
-		return 0;
-	}
+    public long traverseBFS(final Vertex p_startVertex, final TraversalVertexCallback p_callback) {
+        // returns number of vertices traversed
+        // TODO using job system here doesn't seem to be a bad idea
+        return 0;
+    }
 
-	public interface TraversalVertexCallback {
-		// return false to terminate the traversal (because result found, error, ...), true to continue
-		boolean evaluateVertex(final Vertex p_vertex, final int p_depth);
-	}
+    public interface TraversalVertexCallback {
+        // return false to terminate the traversal (because result found, error, ...), true to continue
+        boolean evaluateVertex(Vertex p_vertex, int p_depth);
+    }
 
-	public interface TraversalEdgeCallback {
-		// return false to terminate the traversal (because result found, error, ...), true to continue
-		boolean evaluateEdge(final Edge p_edge, final int p_depth);
-	}
+    public interface TraversalEdgeCallback {
+        // return false to terminate the traversal (because result found, error, ...), true to continue
+        boolean evaluateEdge(Edge p_edge, int p_depth);
+    }
 
-	// TODO make this remote executable by registering traversal callback classes
-	// and assigning IDs to them for importing/exporting
-	// TODO this is doing a single threaded traversal for now...have another job that allows spawning further jobs on traversal (?)
-	// and even move the jobs to be executed on remote nodes where the vertex data is available (?) -> job explosion
-	// this is a very simple top down only version with a list of next vertices
-	private static class TraverseBFSJob extends AbstractJob {
+    // TODO make this remote executable by registering traversal callback classes
+    // and assigning IDs to them for importing/exporting
+    // TODO this is doing a single threaded traversal for now...have another job that allows spawning further jobs on traversal (?)
+    // and even move the jobs to be executed on remote nodes where the vertex data is available (?) -> job explosion
+    // this is a very simple top down only version with a list of next vertices
+    private static class TraverseBFSJob extends AbstractJob {
 
-		public static final short MS_TYPE_ID = 1;
+        public static final short MS_TYPE_ID = 1;
 
-		static {
-			registerType(MS_TYPE_ID, TraverseBFSJob.class);
-		}
+        static {
+            registerType(MS_TYPE_ID, TraverseBFSJob.class);
+        }
 
-		private long m_startVertexId = Vertex.INVALID_ID;
-		private TraversalVertexCallback m_vertexCallback;
-		private TraversalEdgeCallback m_edgeCallback;
-		private Class<? extends Vertex> m_vertexClass;
-		private Class<? extends Edge> m_edgeClass;
+        private long m_startVertexId = Vertex.INVALID_ID;
+        private TraversalVertexCallback m_vertexCallback;
+        private TraversalEdgeCallback m_edgeCallback;
+        private Class<? extends Vertex> m_vertexClass;
+        private Class<? extends Edge> m_edgeClass;
 
-		/**
-		 * Constructor
-		 */
-		public TraverseBFSJob(final long p_startVertexId,
-				final TraversalVertexCallback p_vertexCallback, final TraversalEdgeCallback p_edgeCallback,
-				final Class<? extends Vertex> p_vertexClass, final Class<? extends Edge> p_edgeClass) {
-			m_startVertexId = p_startVertexId;
-			m_vertexCallback = p_vertexCallback;
-			m_edgeCallback = p_edgeCallback;
-			m_vertexClass = p_vertexClass;
-			m_edgeClass = p_edgeClass;
-		}
+        /**
+         * Constructor
+         */
+        public TraverseBFSJob(final long p_startVertexId, final TraversalVertexCallback p_vertexCallback, final TraversalEdgeCallback p_edgeCallback,
+            final Class<? extends Vertex> p_vertexClass, final Class<? extends Edge> p_edgeClass) {
+            m_startVertexId = p_startVertexId;
+            m_vertexCallback = p_vertexCallback;
+            m_edgeCallback = p_edgeCallback;
+            m_vertexClass = p_vertexClass;
+            m_edgeClass = p_edgeClass;
+        }
 
-		@Override
-		public short getTypeID() {
-			return MS_TYPE_ID;
-		}
+        @Override
+        public short getTypeID() {
+            return MS_TYPE_ID;
+        }
 
-		@Override
-		protected void execute(final short p_nodeID, final long[] p_chunkIDs) {
-			LoggerService logger = getService(LoggerService.class);
-			ChunkService chunkService = getService(ChunkService.class);
+        @Override
+        protected void execute(final short p_nodeID, final long[] p_chunkIDs) {
+            LoggerService logger = getService(LoggerService.class);
+            ChunkService chunkService = getService(ChunkService.class);
 
-			// #if LOGGER >= DEBUG
-			LOGGER.debug("Starting BFS traversal at 0x%X", m_startVertexId);
-			// #endif /* LOGGER >= DEBUG */
+            // #if LOGGER >= DEBUG
+            LOGGER.debug("Starting BFS traversal at 0x%X", m_startVertexId);
+            // #endif /* LOGGER >= DEBUG */
 
-			int depth = 0;
-			ArrayList<Vertex> current = new ArrayList<>();
-			ArrayList<Vertex> next = new ArrayList<>();
+            int depth = 0;
+            ArrayList<Vertex> current = new ArrayList<>();
+            ArrayList<Vertex> next = new ArrayList<>();
 
-			// get root vertex
-			try {
-				Vertex rootVertex = m_vertexClass.newInstance();
-				rootVertex.setID(m_startVertexId);
-				if (chunkService.get(rootVertex) != 1) {
-					return;
-				}
-				current.add(rootVertex);
-			} catch (final Exception e) {
-				throw new RuntimeException(e);
-			}
+            // get root vertex
+            try {
+                Vertex rootVertex = m_vertexClass.newInstance();
+                rootVertex.setID(m_startVertexId);
+                if (chunkService.get(rootVertex) != 1) {
+                    return;
+                }
+                current.add(rootVertex);
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
 
-			do {
-				depth++;
+            do {
+                depth++;
 
-				for (Vertex vertex : current) {
-					if (!evaluateVertex(vertex, depth)) {
-						break;
-					}
-				}
+                for (Vertex vertex : current) {
+                    if (!evaluateVertex(vertex, depth)) {
+                        break;
+                    }
+                }
 
-				for (Vertex vertex : current) {
-					Vertex[] neighbors;
+                for (Vertex vertex : current) {
+                    Vertex[] neighbors;
 
-					if (vertex.areNeighborsEdgeObjects()) {
-						Edge[] edges = new Edge[vertex.getNeighborCount()];
-						for (int i = 0; i < edges.length; i++) {
-							edges[i].setID(vertex.getNeighbours()[i]);
-						}
+                    if (vertex.areNeighborsEdgeObjects()) {
+                        Edge[] edges = new Edge[vertex.getNeighborCount()];
+                        for (int i = 0; i < edges.length; i++) {
+                            edges[i].setID(vertex.getNeighbours()[i]);
+                        }
 
-						chunkService.get((DataStructure[]) edges);
+                        chunkService.get((DataStructure[]) edges);
 
-						for (Edge edge : edges) {
-							if (!evaluateEdge(edge, depth)) {
-								break;
-							}
-						}
+                        for (Edge edge : edges) {
+                            if (!evaluateEdge(edge, depth)) {
+                                break;
+                            }
+                        }
 
-						neighbors = new Vertex[edges.length];
-						for (int i = 0; i < neighbors.length; i++) {
-							neighbors[i].setID(edges[i].getToId());
-						}
+                        neighbors = new Vertex[edges.length];
+                        for (int i = 0; i < neighbors.length; i++) {
+                            neighbors[i].setID(edges[i].getToId());
+                        }
 
-					} else {
-						neighbors = new Vertex[vertex.getNeighborCount()];
-						for (int i = 0; i < neighbors.length; i++) {
-							neighbors[i].setID(vertex.getNeighbours()[i]);
-						}
-					}
+                    } else {
+                        neighbors = new Vertex[vertex.getNeighborCount()];
+                        for (int i = 0; i < neighbors.length; i++) {
+                            neighbors[i].setID(vertex.getNeighbours()[i]);
+                        }
+                    }
 
-					chunkService.get((DataStructure[]) neighbors);
-					for (Vertex neighbor : neighbors) {
-						if (neighbor.getID() != Vertex.INVALID_ID) {
-							next.add(neighbor);
-						}
-					}
-				}
+                    chunkService.get((DataStructure[]) neighbors);
+                    for (Vertex neighbor : neighbors) {
+                        if (neighbor.getID() != Vertex.INVALID_ID) {
+                            next.add(neighbor);
+                        }
+                    }
+                }
 
-			} while (!next.isEmpty());
+            } while (!next.isEmpty());
 
-			// TODO resulting depth? have feature to return result values from jobs
-		}
+            // TODO resulting depth? have feature to return result values from jobs
+        }
 
-		// -------------------------------------------------------------------
+        // -------------------------------------------------------------------
 
-		@Override
-		public void importObject(final Importer p_importer) {
-			super.importObject(p_importer);
-			// TODO
-		}
+        @Override
+        public void importObject(final Importer p_importer) {
+            super.importObject(p_importer);
+            // TODO
+        }
 
-		@Override
-		public void exportObject(final Exporter p_exporter) {
-			super.exportObject(p_exporter);
-			// TODO
-		}
+        @Override
+        public void exportObject(final Exporter p_exporter) {
+            super.exportObject(p_exporter);
+            // TODO
+        }
 
-		@Override
-		public int sizeofObject() {
-			// TODO
-			return super.sizeofObject();
-		}
+        @Override
+        public int sizeofObject() {
+            // TODO
+            return super.sizeofObject();
+        }
 
-		// -------------------------------------------------------------------
+        // -------------------------------------------------------------------
 
-		private boolean evaluateVertex(final Vertex p_vertex, final int p_depth) {
-			if (m_vertexCallback != null) {
-				return m_vertexCallback.evaluateVertex(p_vertex, p_depth);
-			}
+        private boolean evaluateVertex(final Vertex p_vertex, final int p_depth) {
+            if (m_vertexCallback != null) {
+                return m_vertexCallback.evaluateVertex(p_vertex, p_depth);
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		private boolean evaluateEdge(final Edge p_edge, final int p_depth) {
-			if (m_edgeCallback != null) {
-				return m_edgeCallback.evaluateEdge(p_edge, p_depth);
-			}
+        private boolean evaluateEdge(final Edge p_edge, final int p_depth) {
+            if (m_edgeCallback != null) {
+                return m_edgeCallback.evaluateEdge(p_edge, p_depth);
+            }
 
-			return true;
-		}
-	}
+            return true;
+        }
+    }
 }

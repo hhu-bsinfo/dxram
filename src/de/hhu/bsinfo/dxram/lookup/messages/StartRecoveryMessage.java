@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -9,77 +8,79 @@ import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Start Recovery Message
- * @author Kevin Beineke
- *         06.09.2012
+ *
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 06.09.2012
  */
 public class StartRecoveryMessage extends AbstractMessage {
 
-	// Attributes
-	private short m_failedPeer;
-	private long m_beginOfRange;
+    // Attributes
+    private short m_failedPeer;
+    private long m_beginOfRange;
 
-	// Constructors
-	/**
-	 * Creates an instance of StartRecoveryMessage
-	 */
-	public StartRecoveryMessage() {
-		super();
+    // Constructors
 
-		m_failedPeer = -1;
-		m_beginOfRange = -1;
-	}
+    /**
+     * Creates an instance of StartRecoveryMessage
+     */
+    public StartRecoveryMessage() {
+        super();
 
-	/**
-	 * Creates an instance of StartRecoveryMessage
-	 * @param p_destination
-	 *            the destination
-	 * @param p_failedPeer
-	 *            the failed peer
-	 * @param p_beginOfRange
-	 *            the beginning of the range that has to be recovered
-	 */
-	public StartRecoveryMessage(final short p_destination, final short p_failedPeer, final int p_beginOfRange) {
-		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE);
+        m_failedPeer = (short) -1;
+        m_beginOfRange = -1;
+    }
 
-		assert p_failedPeer != NodeID.INVALID_ID;
+    /**
+     * Creates an instance of StartRecoveryMessage
+     *
+     * @param p_destination
+     *         the destination
+     * @param p_failedPeer
+     *         the failed peer
+     * @param p_beginOfRange
+     *         the beginning of the range that has to be recovered
+     */
+    public StartRecoveryMessage(final short p_destination, final short p_failedPeer, final int p_beginOfRange) {
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE);
 
-		m_failedPeer = p_failedPeer;
-		m_beginOfRange = p_beginOfRange;
-	}
+        assert p_failedPeer != NodeID.INVALID_ID;
 
-	// Getters
-	/**
-	 * Get the failed peer
-	 * @return the NodeID
-	 */
-	public final short getFailedPeer() {
-		return m_failedPeer;
-	}
+        m_failedPeer = p_failedPeer;
+        m_beginOfRange = p_beginOfRange;
+    }
 
-	/**
-	 * Get the beginning of range
-	 * @return the beginning of the range that has to be recovered
-	 */
-	public final long getBeginOfRange() {
-		return m_beginOfRange;
-	}
+    // Getters
 
-	// Methods
-	@Override
-	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putShort(m_failedPeer);
-		p_buffer.putLong(m_beginOfRange);
-	}
+    /**
+     * Get the failed peer
+     *
+     * @return the NodeID
+     */
+    public final short getFailedPeer() {
+        return m_failedPeer;
+    }
 
-	@Override
-	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_failedPeer = p_buffer.getShort();
-		m_beginOfRange = p_buffer.getLong();
-	}
+    /**
+     * Get the beginning of range
+     *
+     * @return the beginning of the range that has to be recovered
+     */
+    public final long getBeginOfRange() {
+        return m_beginOfRange;
+    }
 
-	@Override
-	protected final int getPayloadLength() {
-		return Short.BYTES + Long.BYTES;
-	}
+    // Methods
+    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+        p_buffer.putShort(m_failedPeer);
+        p_buffer.putLong(m_beginOfRange);
+    }
+
+    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+        m_failedPeer = p_buffer.getShort();
+        m_beginOfRange = p_buffer.getLong();
+    }
+
+    @Override protected final int getPayloadLength() {
+        return Short.BYTES + Long.BYTES;
+    }
 
 }

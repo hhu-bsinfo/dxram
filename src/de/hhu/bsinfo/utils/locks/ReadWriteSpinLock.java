@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.utils.locks;
 
 import java.util.concurrent.TimeUnit;
@@ -7,200 +6,200 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import sun.misc.Unsafe;
+
 import de.hhu.bsinfo.utils.UnsafeHandler;
 
 /**
  * Represents a spinlock
- * @author Florian Klein 05.04.2014
+ *
+ * @author Florian Klein, florian.klein@hhu.de, 05.04.2014
  */
 public final class ReadWriteSpinLock implements ReadWriteLock {
 
-	// Constants
-	private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
-	private static final long OFFSET = getLockOffset();
+    // Constants
+    private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
+    private static final long OFFSET = getLockOffset();
 
-	private static final int READER_BITMASK = 0x7FFFFFFF;
-	private static final int WRITER_FLAG = 0x80000000;
+    private static final int READER_BITMASK = 0x7FFFFFFF;
+    private static final int WRITER_FLAG = 0x80000000;
 
-	// Attributes
-	private volatile int m_lock;
-	private ReadLock m_readLock;
-	private WriteLock m_writeLock;
+    // Attributes
+    private volatile int m_lock;
+    private ReadLock m_readLock;
+    private WriteLock m_writeLock;
 
-	// Constructors
-	/**
-	 * Creates an instance of ReadWriteSpinLock
-	 */
-	public ReadWriteSpinLock() {
-		m_lock = 0;
-		m_readLock = new ReadLock();
-		m_writeLock = new WriteLock();
-	}
+    // Constructors
 
-	// Methods
-	/**
-	 * Gets the offset of the lock field
-	 * @return the offset of the lock field
-	 */
-	private static long getLockOffset() {
-		try {
-			return UNSAFE.objectFieldOffset(ReadWriteSpinLock.class.getDeclaredField("m_lock"));
-		} catch (final Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+    /**
+     * Creates an instance of ReadWriteSpinLock
+     */
+    public ReadWriteSpinLock() {
+        m_lock = 0;
+        m_readLock = new ReadLock();
+        m_writeLock = new WriteLock();
+    }
 
-	@Override
-	public Lock readLock() {
-		return m_readLock;
-	}
+    // Methods
 
-	@Override
-	public Lock writeLock() {
-		return m_writeLock;
-	}
+    /**
+     * Gets the offset of the lock field
+     *
+     * @return the offset of the lock field
+     */
+    private static long getLockOffset() {
+        try {
+            return UNSAFE.objectFieldOffset(ReadWriteSpinLock.class.getDeclaredField("m_lock"));
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	// Classes
-	/**
-	 * Represent the ReadLock part
-	 * @author Florian Klein 27.10.2014
-	 */
-	private final class ReadLock implements Lock {
+    @Override public Lock readLock() {
+        return m_readLock;
+    }
 
-		// Constructors
-		/**
-		 * Creates an instance of ReadLock
-		 */
-		private ReadLock() {}
+    @Override public Lock writeLock() {
+        return m_writeLock;
+    }
 
-		// Methods
-		@Override
-		public void lock() {
-			int lock;
+    // Classes
 
-			while ((m_lock & WRITER_FLAG) != 0) {}
+    /**
+     * Represent the ReadLock part
+     *
+     * @author Florian Klein 27.10.2014
+     */
+    private final class ReadLock implements Lock {
 
-			do {
-				lock = m_lock & READER_BITMASK;
-			} while (!UNSAFE.compareAndSwapInt(this, OFFSET, lock, lock + 1));
-		}
+        // Constructors
 
-		@Override
-		public void unlock() {
-			int lock;
+        /**
+         * Creates an instance of ReadLock
+         */
+        private ReadLock() {
+        }
 
-			do {
-				lock = m_lock;
-			} while (!UNSAFE.compareAndSwapInt(this, OFFSET, lock, lock - 1));
-		}
+        // Methods
+        @Override public void lock() {
+            int lock;
 
-		@Override
-		public void lockInterruptibly() throws InterruptedException {
-			throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
-		}
+            while ((m_lock & WRITER_FLAG) != 0) {
+            }
 
-		@Override
-		public boolean tryLock() {
-			boolean ret = false;
-			int lock;
+            do {
+                lock = m_lock & READER_BITMASK;
+            } while (!UNSAFE.compareAndSwapInt(this, OFFSET, lock, lock + 1));
+        }
 
-			if ((m_lock & WRITER_FLAG) == 0) {
-				lock = m_lock & READER_BITMASK;
-				ret = UNSAFE.compareAndSwapInt(this, OFFSET, lock, lock + 1);
-			}
+        @Override public void unlock() {
+            int lock;
 
-			return ret;
-		}
+            do {
+                lock = m_lock;
+            } while (!UNSAFE.compareAndSwapInt(this, OFFSET, lock, lock - 1));
+        }
 
-		@Override
-		public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
-			boolean ret;
-			long time;
-			long nanos;
+        @Override public void lockInterruptibly() throws InterruptedException {
+            throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
+        }
 
-			ret = tryLock();
-			if (!ret) {
-				nanos = p_unit.toNanos(p_time);
-				time = System.nanoTime();
+        @Override public boolean tryLock() {
+            boolean ret = false;
+            int lock;
 
-				while (!ret && System.nanoTime() < time + nanos) {
-					ret = tryLock();
-				}
-			}
+            if ((m_lock & WRITER_FLAG) == 0) {
+                lock = m_lock & READER_BITMASK;
+                ret = UNSAFE.compareAndSwapInt(this, OFFSET, lock, lock + 1);
+            }
 
-			return ret;
-		}
+            return ret;
+        }
 
-		@Override
-		public Condition newCondition() {
-			throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
-		}
+        @Override public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
+            boolean ret;
+            long time;
+            long nanos;
 
-	}
+            ret = tryLock();
+            if (!ret) {
+                nanos = p_unit.toNanos(p_time);
+                time = System.nanoTime();
 
-	/**
-	 * Represent the WriteLock part
-	 * @author Florian Klein 27.10.2014
-	 */
-	private final class WriteLock implements Lock {
+                while (!ret && System.nanoTime() < time + nanos) {
+                    ret = tryLock();
+                }
+            }
 
-		// Constructors
-		/**
-		 * Creates an instance of WriteLock
-		 */
-		private WriteLock() {}
+            return ret;
+        }
 
-		// Methods
-		@Override
-		public void lock() {
-			int lock;
+        @Override public Condition newCondition() {
+            throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
+        }
 
-			do {
-				lock = m_lock & READER_BITMASK;
-			} while (!UNSAFE.compareAndSwapInt(this, OFFSET, lock, lock | WRITER_FLAG));
+    }
 
-			while ((m_lock & READER_BITMASK) != 0) {}
-		}
+    /**
+     * Represent the WriteLock part
+     *
+     * @author Florian Klein 27.10.2014
+     */
+    private final class WriteLock implements Lock {
 
-		@Override
-		public void unlock() {
-			UNSAFE.compareAndSwapInt(this, OFFSET, WRITER_FLAG, 0);
-		}
+        // Constructors
 
-		@Override
-		public void lockInterruptibly() throws InterruptedException {
-			throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
-		}
+        /**
+         * Creates an instance of WriteLock
+         */
+        private WriteLock() {
+        }
 
-		@Override
-		public boolean tryLock() {
-			return UNSAFE.compareAndSwapInt(this, OFFSET, 0, WRITER_FLAG);
-		}
+        // Methods
+        @Override public void lock() {
+            int lock;
 
-		@Override
-		public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
-			boolean ret;
-			long time;
-			long nanos;
+            do {
+                lock = m_lock & READER_BITMASK;
+            } while (!UNSAFE.compareAndSwapInt(this, OFFSET, lock, lock | WRITER_FLAG));
 
-			ret = tryLock();
-			if (!ret) {
-				nanos = p_unit.toNanos(p_time);
-				time = System.nanoTime();
+            while ((m_lock & READER_BITMASK) != 0) {
+            }
+        }
 
-				while (!ret && System.nanoTime() < time + nanos) {
-					ret = tryLock();
-				}
-			}
+        @Override public void unlock() {
+            UNSAFE.compareAndSwapInt(this, OFFSET, WRITER_FLAG, 0);
+        }
 
-			return ret;
-		}
+        @Override public void lockInterruptibly() throws InterruptedException {
+            throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
+        }
 
-		@Override
-		public Condition newCondition() {
-			throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
-		}
+        @Override public boolean tryLock() {
+            return UNSAFE.compareAndSwapInt(this, OFFSET, 0, WRITER_FLAG);
+        }
 
-	}
+        @Override public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
+            boolean ret;
+            long time;
+            long nanos;
+
+            ret = tryLock();
+            if (!ret) {
+                nanos = p_unit.toNanos(p_time);
+                time = System.nanoTime();
+
+                while (!ret && System.nanoTime() < time + nanos) {
+                    ret = tryLock();
+                }
+            }
+
+            return ret;
+        }
+
+        @Override public Condition newCondition() {
+            throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
+        }
+
+    }
 
 }

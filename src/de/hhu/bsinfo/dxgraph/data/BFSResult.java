@@ -8,102 +8,93 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Data structure holding results of a single BFS run.
- *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 20.05.16
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 20.05.2016
  */
 public class BFSResult implements DataStructure {
 
-	private long m_id = ChunkID.INVALID_ID;
-	public long m_rootVertexId = ChunkID.INVALID_ID;
-	public long m_graphFullSizeVertices = 0;
-	public long m_graphFullSizeEdges = 0;
-	public long m_graphPartitionSizeVertices = 0;
-	public long m_graphPartitionSizeEdges = 0;
-	public long m_totalVisitedVertices = 0;
-	public long m_totalVisitedEdges = 0;
-	public long m_totalVerticesTraversed = 0;
-	public long m_totalEdgesTraversed = 0;
-	public long m_maxTraversedVertsPerSecond = 0;
-	public long m_maxTraversedEdgesPerSecond = 0;
-	public long m_avgTraversedVertsPerSecond = 0;
-	public long m_avgTraversedEdgesPerSecond = 0;
-	public long m_totalTimeMs = 0;
-	public int m_totalBFSDepth = 0;
+    private long m_id = ChunkID.INVALID_ID;
+    public long m_rootVertexId = ChunkID.INVALID_ID;
+    public long m_graphFullSizeVertices = 0;
+    public long m_graphFullSizeEdges = 0;
+    public long m_graphPartitionSizeVertices = 0;
+    public long m_graphPartitionSizeEdges = 0;
+    public long m_totalVisitedVertices = 0;
+    public long m_totalVisitedEdges = 0;
+    public long m_totalVerticesTraversed = 0;
+    public long m_totalEdgesTraversed = 0;
+    public long m_maxTraversedVertsPerSecond = 0;
+    public long m_maxTraversedEdgesPerSecond = 0;
+    public long m_avgTraversedVertsPerSecond = 0;
+    public long m_avgTraversedEdgesPerSecond = 0;
+    public long m_totalTimeMs = 0;
+    public int m_totalBFSDepth = 0;
 
-	public BFSResult() {
+    public BFSResult() {
 
-	}
+    }
 
-	@Override
-	public long getID() {
-		return m_id;
-	}
+    @Override
+    public long getID() {
+        return m_id;
+    }
 
-	@Override
-	public void setID(final long p_id) {
-		m_id = p_id;
-	}
+    @Override
+    public void setID(final long p_id) {
+        m_id = p_id;
+    }
 
-	@Override
-	public void importObject(final Importer p_importer) {
-		m_rootVertexId = p_importer.readLong();
-		m_graphFullSizeVertices = p_importer.readLong();
-		m_graphFullSizeEdges = p_importer.readLong();
-		m_graphPartitionSizeVertices = p_importer.readLong();
-		m_graphPartitionSizeEdges = p_importer.readLong();
-		m_totalVisitedVertices = p_importer.readLong();
-		m_totalVisitedEdges = p_importer.readLong();
-		m_totalVerticesTraversed = p_importer.readLong();
-		m_totalEdgesTraversed = p_importer.readLong();
-		m_maxTraversedVertsPerSecond = p_importer.readLong();
-		m_maxTraversedEdgesPerSecond = p_importer.readLong();
-		m_avgTraversedVertsPerSecond = p_importer.readLong();
-		m_avgTraversedEdgesPerSecond = p_importer.readLong();
-		m_totalTimeMs = p_importer.readLong();
-		m_totalBFSDepth = p_importer.readInt();
-	}
+    @Override
+    public void importObject(final Importer p_importer) {
+        m_rootVertexId = p_importer.readLong();
+        m_graphFullSizeVertices = p_importer.readLong();
+        m_graphFullSizeEdges = p_importer.readLong();
+        m_graphPartitionSizeVertices = p_importer.readLong();
+        m_graphPartitionSizeEdges = p_importer.readLong();
+        m_totalVisitedVertices = p_importer.readLong();
+        m_totalVisitedEdges = p_importer.readLong();
+        m_totalVerticesTraversed = p_importer.readLong();
+        m_totalEdgesTraversed = p_importer.readLong();
+        m_maxTraversedVertsPerSecond = p_importer.readLong();
+        m_maxTraversedEdgesPerSecond = p_importer.readLong();
+        m_avgTraversedVertsPerSecond = p_importer.readLong();
+        m_avgTraversedEdgesPerSecond = p_importer.readLong();
+        m_totalTimeMs = p_importer.readLong();
+        m_totalBFSDepth = p_importer.readInt();
+    }
 
-	@Override
-	public int sizeofObject() {
-		return Long.BYTES * 14 + Integer.BYTES;
-	}
+    @Override
+    public int sizeofObject() {
+        return Long.BYTES * 14 + Integer.BYTES;
+    }
 
-	@Override
-	public void exportObject(final Exporter p_exporter) {
-		p_exporter.writeLong(m_rootVertexId);
-		p_exporter.writeLong(m_graphFullSizeVertices);
-		p_exporter.writeLong(m_graphFullSizeEdges);
-		p_exporter.writeLong(m_graphPartitionSizeVertices);
-		p_exporter.writeLong(m_graphPartitionSizeEdges);
-		p_exporter.writeLong(m_totalVisitedVertices);
-		p_exporter.writeLong(m_totalVisitedEdges);
-		p_exporter.writeLong(m_totalVerticesTraversed);
-		p_exporter.writeLong(m_totalEdgesTraversed);
-		p_exporter.writeLong(m_maxTraversedVertsPerSecond);
-		p_exporter.writeLong(m_maxTraversedEdgesPerSecond);
-		p_exporter.writeLong(m_avgTraversedVertsPerSecond);
-		p_exporter.writeLong(m_avgTraversedEdgesPerSecond);
-		p_exporter.writeLong(m_totalTimeMs);
-		p_exporter.writeInt(m_totalBFSDepth);
-	}
+    @Override
+    public void exportObject(final Exporter p_exporter) {
+        p_exporter.writeLong(m_rootVertexId);
+        p_exporter.writeLong(m_graphFullSizeVertices);
+        p_exporter.writeLong(m_graphFullSizeEdges);
+        p_exporter.writeLong(m_graphPartitionSizeVertices);
+        p_exporter.writeLong(m_graphPartitionSizeEdges);
+        p_exporter.writeLong(m_totalVisitedVertices);
+        p_exporter.writeLong(m_totalVisitedEdges);
+        p_exporter.writeLong(m_totalVerticesTraversed);
+        p_exporter.writeLong(m_totalEdgesTraversed);
+        p_exporter.writeLong(m_maxTraversedVertsPerSecond);
+        p_exporter.writeLong(m_maxTraversedEdgesPerSecond);
+        p_exporter.writeLong(m_avgTraversedVertsPerSecond);
+        p_exporter.writeLong(m_avgTraversedEdgesPerSecond);
+        p_exporter.writeLong(m_totalTimeMs);
+        p_exporter.writeInt(m_totalBFSDepth);
+    }
 
-	@Override
-	public String toString() {
-		return "BFSResult " + ChunkID.toHexString(m_id) + ":\n"
-				+ "m_rootVertexId " + ChunkID.toHexString(m_rootVertexId) + "\n"
-				+ "m_graphFullSizeVertices " + m_graphFullSizeVertices + "\n"
-				+ "m_graphFullSizeEdges " + m_graphFullSizeEdges + "\n"
-				+ "m_graphPartitionSizeVertices " + m_graphPartitionSizeVertices + "\n"
-				+ "m_graphPartitionSizeEdges " + m_graphPartitionSizeEdges + "\n"
-				+ "m_totalVisitedVertices " + m_totalVisitedVertices + "\n"
-				+ "m_totalVisitedEdges " + m_totalVisitedEdges + "\n"
-				+ "m_totalVerticesTraversed " + m_totalVerticesTraversed + "\n"
-				+ "m_totalEdgesTraversed " + m_totalEdgesTraversed + "\n"
-				+ "m_maxTraversedVertsPerSecond " + m_maxTraversedVertsPerSecond + "\n"
-				+ "m_maxTraversedEdgesPerSecond " + m_maxTraversedEdgesPerSecond + "\n"
-				+ "m_avgTraversedVertsPerSecond " + m_avgTraversedVertsPerSecond + "\n"
-				+ "m_avgTraversedEdgesPerSecond " + m_avgTraversedEdgesPerSecond + "\n"
-				+ "m_totalTimeMs " + m_totalTimeMs + "\n"
-				+ "m_totalBFSDepth " + m_totalBFSDepth;
-	}
+    @Override
+    public String toString() {
+        return "BFSResult " + ChunkID.toHexString(m_id) + ":\n" + "m_rootVertexId " + ChunkID.toHexString(m_rootVertexId) + "\n" + "m_graphFullSizeVertices " +
+                m_graphFullSizeVertices + "\n" + "m_graphFullSizeEdges " + m_graphFullSizeEdges + "\n" + "m_graphPartitionSizeVertices " +
+                m_graphPartitionSizeVertices + "\n" + "m_graphPartitionSizeEdges " + m_graphPartitionSizeEdges + "\n" + "m_totalVisitedVertices " +
+                m_totalVisitedVertices + "\n" + "m_totalVisitedEdges " + m_totalVisitedEdges + "\n" + "m_totalVerticesTraversed " + m_totalVerticesTraversed +
+                "\n" + "m_totalEdgesTraversed " + m_totalEdgesTraversed + "\n" + "m_maxTraversedVertsPerSecond " + m_maxTraversedVertsPerSecond + "\n" +
+                "m_maxTraversedEdgesPerSecond " + m_maxTraversedEdgesPerSecond + "\n" + "m_avgTraversedVertsPerSecond " + m_avgTraversedVertsPerSecond + "\n" +
+                "m_avgTraversedEdgesPerSecond " + m_avgTraversedEdgesPerSecond + "\n" + "m_totalTimeMs " + m_totalTimeMs + "\n" + "m_totalBFSDepth " +
+                m_totalBFSDepth;
+    }
 }

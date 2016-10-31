@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -9,144 +8,147 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Init Range Request
- * @author Kevin Beineke
- *         03.06.2013
+ *
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 03.06.2013
  */
 public class InitRangeRequest extends AbstractRequest {
 
-	// Attributes
-	private long m_startChunkIDOrRangeID;
-	private short m_owner;
-	private short[] m_backupPeers;
-	private boolean m_isBackup;
+    // Attributes
+    private long m_startChunkIDOrRangeID;
+    private short m_owner;
+    private short[] m_backupPeers;
+    private boolean m_isBackup;
 
-	// Constructors
-	/**
-	 * Creates an instance of InitRangeRequest
-	 */
-	public InitRangeRequest() {
-		super();
+    // Constructors
 
-		m_startChunkIDOrRangeID = -1;
-		m_owner = -1;
-		m_backupPeers = null;
-		m_isBackup = false;
-	}
+    /**
+     * Creates an instance of InitRangeRequest
+     */
+    public InitRangeRequest() {
+        super();
 
-	/**
-	 * Creates an instance of InitRangeRequest
-	 * @param p_destination
-	 *            the destination
-	 * @param p_startChunkID
-	 *            the first object
-	 * @param p_owner
-	 *            the owner
-	 * @param p_backupPeers
-	 *            the backup peers
-	 * @param p_isBackup
-	 *            whether this is a backup message or not
-	 */
-	public InitRangeRequest(final short p_destination, final long p_startChunkID, final short p_owner,
-			final short[] p_backupPeers, final boolean p_isBackup) {
-		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST);
+        m_startChunkIDOrRangeID = -1;
+        m_owner = -1;
+        m_backupPeers = null;
+        m_isBackup = false;
+    }
 
-		m_startChunkIDOrRangeID = p_startChunkID;
-		m_owner = p_owner;
-		m_backupPeers = p_backupPeers;
-		m_isBackup = p_isBackup;
-	}
+    /**
+     * Creates an instance of InitRangeRequest
+     *
+     * @param p_destination
+     *         the destination
+     * @param p_startChunkID
+     *         the first object
+     * @param p_owner
+     *         the owner
+     * @param p_backupPeers
+     *         the backup peers
+     * @param p_isBackup
+     *         whether this is a backup message or not
+     */
+    public InitRangeRequest(final short p_destination, final long p_startChunkID, final short p_owner, final short[] p_backupPeers, final boolean p_isBackup) {
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST);
 
-	// Getters
-	/**
-	 * Get the last ChunkID
-	 * @return the ID
-	 */
-	public final long getStartChunkIDOrRangeID() {
-		return m_startChunkIDOrRangeID;
-	}
+        m_startChunkIDOrRangeID = p_startChunkID;
+        m_owner = p_owner;
+        m_backupPeers = p_backupPeers;
+        m_isBackup = p_isBackup;
+    }
 
-	/**
-	 * Get owner
-	 * @return the owner
-	 */
-	public final short getOwner() {
-		return m_owner;
-	}
+    // Getters
 
-	/**
-	 * Get the backup peers
-	 * @return the backup peers
-	 */
-	public final short[] getBackupPeers() {
-		return m_backupPeers;
-	}
+    /**
+     * Get the last ChunkID
+     *
+     * @return the ID
+     */
+    public final long getStartChunkIDOrRangeID() {
+        return m_startChunkIDOrRangeID;
+    }
 
-	/**
-	 * Returns whether this is a backup message or not
-	 * @return whether this is a backup message or not
-	 */
-	public final boolean isBackup() {
-		return m_isBackup;
-	}
+    /**
+     * Get owner
+     *
+     * @return the owner
+     */
+    public final short getOwner() {
+        return m_owner;
+    }
 
-	// Methods
-	@Override
-	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putLong(m_startChunkIDOrRangeID);
+    /**
+     * Get the backup peers
+     *
+     * @return the backup peers
+     */
+    public final short[] getBackupPeers() {
+        return m_backupPeers;
+    }
 
-		p_buffer.put((byte) m_backupPeers.length);
-		if (m_backupPeers.length <= 3) {
-			p_buffer.putLong(BackupRange.convert(m_owner, m_backupPeers));
-		} else {
-			p_buffer.putShort(m_owner);
-			for (int i = 0; i < m_backupPeers.length; i++) {
-				p_buffer.putShort(m_backupPeers[i]);
-			}
-		}
+    /**
+     * Returns whether this is a backup message or not
+     *
+     * @return whether this is a backup message or not
+     */
+    public final boolean isBackup() {
+        return m_isBackup;
+    }
 
-		if (m_isBackup) {
-			p_buffer.put((byte) 1);
-		} else {
-			p_buffer.put((byte) 0);
-		}
-	}
+    // Methods
+    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+        p_buffer.putLong(m_startChunkIDOrRangeID);
 
-	@Override
-	protected final void readPayload(final ByteBuffer p_buffer) {
-		byte size;
+        p_buffer.put((byte) m_backupPeers.length);
+        if (m_backupPeers.length <= 3) {
+            p_buffer.putLong(BackupRange.convert(m_owner, m_backupPeers));
+        } else {
+            p_buffer.putShort(m_owner);
+            for (int i = 0; i < m_backupPeers.length; i++) {
+                p_buffer.putShort(m_backupPeers[i]);
+            }
+        }
 
-		m_startChunkIDOrRangeID = p_buffer.getLong();
+        if (m_isBackup) {
+            p_buffer.put((byte) 1);
+        } else {
+            p_buffer.put((byte) 0);
+        }
+    }
 
-		size = p_buffer.get();
-		if (size <= 3) {
-			long tmp = p_buffer.getLong();
-			m_owner = (short) tmp;
-			m_backupPeers = BackupRange.convert(tmp);
-		} else {
-			m_owner = p_buffer.getShort();
-			m_backupPeers = new short[size];
-			for (int i = 0; i < size; i++) {
-				m_backupPeers[i] = p_buffer.getShort();
-			}
-		}
+    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+        byte size;
 
-		final byte b = p_buffer.get();
-		if (b == 1) {
-			m_isBackup = true;
-		}
-	}
+        m_startChunkIDOrRangeID = p_buffer.getLong();
 
-	@Override
-	protected final int getPayloadLength() {
-		int ret;
+        size = p_buffer.get();
+        if (size <= 3) {
+            long tmp = p_buffer.getLong();
+            m_owner = (short) tmp;
+            m_backupPeers = BackupRange.convert(tmp);
+        } else {
+            m_owner = p_buffer.getShort();
+            m_backupPeers = new short[size];
+            for (int i = 0; i < size; i++) {
+                m_backupPeers[i] = p_buffer.getShort();
+            }
+        }
 
-		if (m_backupPeers.length <= 3) {
-			ret = 2 * Long.BYTES + 2 * Byte.BYTES;
-		} else {
-			ret = Long.BYTES + (1 + m_backupPeers.length) * Short.BYTES + 2 * Byte.BYTES;
-		}
+        final byte b = p_buffer.get();
+        if (b == 1) {
+            m_isBackup = true;
+        }
+    }
 
-		return ret;
-	}
+    @Override protected final int getPayloadLength() {
+        int ret;
+
+        if (m_backupPeers.length <= 3) {
+            ret = 2 * Long.BYTES + 2 * Byte.BYTES;
+        } else {
+            ret = Long.BYTES + (1 + m_backupPeers.length) * Short.BYTES + 2 * Byte.BYTES;
+        }
+
+        return ret;
+    }
 
 }

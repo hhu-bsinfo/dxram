@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -7,59 +6,61 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response to a GetMappingCountRequest
- * @author klein 26.03.2015
+ *
+ * @author Florian Klein, florian.klein@hhu.de, 26.03.2015
  */
 public class GetNameserviceEntryCountResponse extends AbstractResponse {
 
-	// Attributes
-	private int m_count;
+    // Attributes
+    private int m_count;
 
-	// Constructors
-	/**
-	 * Creates an instance of GetMappingCountResponse
-	 */
-	public GetNameserviceEntryCountResponse() {
-		super();
+    // Constructors
 
-		m_count = 0;
-	}
+    /**
+     * Creates an instance of GetMappingCountResponse
+     */
+    public GetNameserviceEntryCountResponse() {
+        super();
 
-	/**
-	 * Creates an instance of GetMappingCountResponse
-	 * @param p_request
-	 *            the request
-	 * @param p_count
-	 *            the count
-	 */
-	public GetNameserviceEntryCountResponse(final GetNameserviceEntryCountRequest p_request, final int p_count) {
-		super(p_request, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE);
+        m_count = 0;
+    }
 
-		m_count = p_count;
-	}
+    /**
+     * Creates an instance of GetMappingCountResponse
+     *
+     * @param p_request
+     *         the request
+     * @param p_count
+     *         the count
+     */
+    public GetNameserviceEntryCountResponse(final GetNameserviceEntryCountRequest p_request, final int p_count) {
+        super(p_request, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE);
 
-	// Getters
-	/**
-	 * Get the count
-	 * @return the count
-	 */
-	public final int getCount() {
-		return m_count;
-	}
+        m_count = p_count;
+    }
 
-	// Methods
-	@Override
-	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putInt(m_count);
-	}
+    // Getters
 
-	@Override
-	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_count = p_buffer.getInt();
-	}
+    /**
+     * Get the count
+     *
+     * @return the count
+     */
+    public final int getCount() {
+        return m_count;
+    }
 
-	@Override
-	protected final int getPayloadLength() {
-		return Integer.BYTES;
-	}
+    // Methods
+    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+        p_buffer.putInt(m_count);
+    }
+
+    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+        m_count = p_buffer.getInt();
+    }
+
+    @Override protected final int getPayloadLength() {
+        return Integer.BYTES;
+    }
 
 }

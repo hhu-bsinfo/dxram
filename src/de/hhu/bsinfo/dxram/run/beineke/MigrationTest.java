@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.run.beineke;
 
 import de.hhu.bsinfo.dxram.DXRAM;
@@ -8,94 +7,102 @@ import de.hhu.bsinfo.dxram.migration.MigrationService;
 
 /**
  * Test case for the distributed Chunk handling and migrations.
- * @author Kevin Beineke <kevin.beineke@hhu.de> 07.04.2016
+ *
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 07.04.2016
  */
 public final class MigrationTest {
 
-	// Constants
-	protected static final int CHUNK_SIZE = 100;
-	protected static final int NUMBER_OF_CHUNKS = 100;
-	protected static final int NUMBER_OF_MIGRATIONS = 100;
-	protected static final int CHUNKS_PER_PUT = 100;
-	protected static final int CHUNKS_PER_MIGRATION = 1;
+    // Constants
+    protected static final int CHUNK_SIZE = 100;
+    protected static final int NUMBER_OF_CHUNKS = 100;
+    protected static final int NUMBER_OF_MIGRATIONS = 100;
+    protected static final int CHUNKS_PER_PUT = 100;
+    protected static final int CHUNKS_PER_MIGRATION = 1;
 
-	// Constructors
-	/**
-	 * Creates an instance of MigrationTest
-	 */
-	private MigrationTest() {}
+    // Constructors
 
-	/**
-	 * Program entry point
-	 * @param p_arguments
-	 *            The program arguments
-	 */
-	public static void main(final String[] p_arguments) {
-		new Master().start();
-	}
+    /**
+     * Creates an instance of MigrationTest
+     */
+    private MigrationTest() {
+    }
 
-	/**
-	 * The Master creates a fixed number of chunks and migrates some of them.
-	 * @author Kevin Beineke <kevin.beineke@hhu.de> 07.04.2016
-	 */
-	private static class Master {
+    /**
+     * Program entry point
+     *
+     * @param p_arguments
+     *         The program arguments
+     */
+    public static void main(final String[] p_arguments) {
+        new Master().start();
+    }
 
-		// Constants
-		private static final short DEST = (short) -15999;
+    /**
+     * The Master creates a fixed number of chunks and migrates some of them.
+     *
+     * @author Kevin Beineke, kevin.beineke@hhu.de, 07.04.202016
+     */
+    private static class Master {
 
-		// Constructors
-		/**
-		 * Creates an instance of Master
-		 */
-		Master() {}
+        // Constants
+        private static final short DEST = (short) -15999;
 
-		// Methods
-		/**
-		 * Starts the Master
-		 */
-		public void start() {
-			long counter = 0;
-			long start;
-			Chunk[] chunks;
+        // Constructors
 
-			// Initialize DXRAM
-			final DXRAM dxram = new DXRAM();
-			dxram.initialize("config/dxram.conf");
-			final ChunkService chunkService = dxram.getService(ChunkService.class);
-			final MigrationService migrationService = dxram.getService(MigrationService.class);
+        /**
+         * Creates an instance of Master
+         */
+        Master() {
+        }
 
-			// Create array of Chunks
-			chunks = new Chunk[CHUNKS_PER_PUT];
-			for (int i = 0; i < CHUNKS_PER_PUT; i++) {
-				chunks[i] = new Chunk(CHUNK_SIZE);
-				chunks[i].getData().put("Test!".getBytes());
-			}
+        // Methods
 
-			start = System.currentTimeMillis();
-			while (counter < NUMBER_OF_CHUNKS) {
-				// Create new chunks in MemoryManagement
-				chunkService.create(chunks);
+        /**
+         * Starts the Master
+         */
+        public void start() {
+            long counter = 0;
+            long start;
+            Chunk[] chunks;
 
-				// Store them in-memory and replicate them on backups' SSD
-				chunkService.put(chunks);
+            // Initialize DXRAM
+            final DXRAM dxram = new DXRAM();
+            dxram.initialize("config/dxram.conf");
+            final ChunkService chunkService = dxram.getService(ChunkService.class);
+            final MigrationService migrationService = dxram.getService(MigrationService.class);
 
-				counter += CHUNKS_PER_PUT;
-			}
-			System.out.println("Time to create " + NUMBER_OF_CHUNKS + " chunks: " + (System.currentTimeMillis() - start) + " ms");
+            // Create array of Chunks
+            chunks = new Chunk[CHUNKS_PER_PUT];
+            for (int i = 0; i < CHUNKS_PER_PUT; i++) {
+                chunks[i] = new Chunk(CHUNK_SIZE);
+                chunks[i].getData().put("Test!".getBytes());
+            }
 
-			// Single migrate
-			/*-migrationService.migrate(chunks[0].getID(), DEST);
-			System.out.println(new String(chunks[0].getData().array()));*/
+            start = System.currentTimeMillis();
+            while (counter < NUMBER_OF_CHUNKS) {
+                // Create new chunks in MemoryManagement
+                chunkService.create(chunks);
 
-			// Multi migrate
-			migrationService.migrateRange(chunks[0].getID(), chunks[CHUNKS_PER_PUT - 1].getID(), DEST);
+                // Store them in-memory and replicate them on backups' SSD
+                chunkService.put(chunks);
 
-			// Chunk chunk = new Chunk(chunks[0].getID(), chunks[0].getDataSize());
-			chunkService.get(chunks);
-			for (int i = 0; i < CHUNKS_PER_PUT; i++) {
-				System.out.println(new String(chunks[i].getData().array()));
-			}
-		}
-	}
+                counter += CHUNKS_PER_PUT;
+            }
+            System.out.println("Time to create " + NUMBER_OF_CHUNKS + " chunks: " + (System.currentTimeMillis() - start) + " ms");
+
+            // Single migrate
+            /*-migrationService.migrate(chunks[0].getID(), DEST);
+            System.out.println(new String(chunks[0].getData().array()));*/
+
+            // Multi migrate
+            migrationService.migrateRange(chunks[0].getID(), chunks[CHUNKS_PER_PUT - 1].getID(), DEST);
+
+            // Chunk chunk = new Chunk(chunks[0].getID(), chunks[0].getDataSize());
+            chunkService.get(chunks);
+            for (int i = 0; i < CHUNKS_PER_PUT; i++) {
+                System.out.println(new String(chunks[i].getData().array()));
+            }
+        }
+    }
 
 }

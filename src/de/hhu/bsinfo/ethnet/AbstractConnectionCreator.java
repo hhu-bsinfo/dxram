@@ -1,139 +1,157 @@
-
 package de.hhu.bsinfo.ethnet;
 
 import java.io.IOException;
 
 /**
  * Creates new network connections
- * @author Florian Klein
- *         18.03.2012
+ *
+ * @author Florian Klein, florian.klein@hhu.de, 18.03.2012
  */
 abstract class AbstractConnectionCreator {
 
-	// Attributes
-	private ConnectionCreatorListener m_listener;
+    // Attributes
+    private ConnectionCreatorListener m_listener;
 
-	// Constructors
-	/**
-	 * Creates an instance of AbstractConnectionCreator
-	 */
-	protected AbstractConnectionCreator() {
-		m_listener = null;
-	}
+    // Constructors
 
-	// Setters
-	/**
-	 * Sets the ConnectionCreatorListener
-	 * @param p_listener
-	 *            the ConnectionCreatorListener
-	 */
-	public final void setListener(final ConnectionCreatorListener p_listener) {
-		m_listener = p_listener;
-	}
+    /**
+     * Creates an instance of AbstractConnectionCreator
+     */
+    protected AbstractConnectionCreator() {
+        m_listener = null;
+    }
 
-	// Methods
-	/**
-	 * Initializes the creator
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_listenPort
-	 *            the listen port
-	 */
-	protected void initialize(final short p_nodeID, final int p_listenPort) {}
+    // Setters
 
-	/**
-	 * Closes the creator and frees unused resources
-	 */
-	public void close() {}
+    /**
+     * Sets the ConnectionCreatorListener
+     *
+     * @param p_listener
+     *         the ConnectionCreatorListener
+     */
+    public final void setListener(final ConnectionCreatorListener p_listener) {
+        m_listener = p_listener;
+    }
 
-	/**
-	 * Creates a new connection to the given destination
-	 * @param p_destination
-	 *            the destination
-	 * @return a new connection
-	 * @throws IOException
-	 *             if the connection could not be created
-	 */
-	public abstract AbstractConnection createConnection(short p_destination) throws IOException;
+    // Methods
 
-	/**
-	 * Returns the selector status
-	 * @return the selector status
-	 */
-	public abstract String getSelectorStatus();
+    /**
+     * Initializes the creator
+     *
+     * @param p_nodeID
+     *         the NodeID
+     * @param p_listenPort
+     *         the listen port
+     */
+    protected void initialize(final short p_nodeID, final int p_listenPort) {
+    }
 
-	/**
-	 * Check if there a remote node tries to open a connection currently
-	 * @return whether a remote node opens a connection to this node currently or not
-	 */
-	public boolean keyIsPending() {
-		return true;
-	}
+    /**
+     * Closes the creator and frees unused resources
+     */
+    public void close() {
+    }
 
-	/**
-	 * Informs the ConnectionCreatorListener about a new connection
-	 * @param p_connection
-	 *            the new connection
-	 */
-	protected final void fireConnectionCreated(final AbstractConnection p_connection) {
-		if (m_listener != null) {
-			m_listener.connectionCreated(p_connection);
-			p_connection.setConnected(true);
-		}
-	}
+    /**
+     * Creates a new connection to the given destination
+     *
+     * @param p_destination
+     *         the destination
+     * @return a new connection
+     * @throws IOException
+     *         if the connection could not be created
+     */
+    public abstract AbstractConnection createConnection(short p_destination) throws IOException;
 
-	/**
-	 * Informs the ConnectionCreatorListener to create a new connection
-	 * @param p_destination
-	 *            the remote NodeID
-	 */
-	protected final void fireCreateConnection(final short p_destination) {
-		if (m_listener != null) {
-			m_listener.createConnection(p_destination);
-		}
-	}
+    /**
+     * Returns the selector status
+     *
+     * @return the selector status
+     */
+    public abstract String getSelectorStatus();
 
-	/**
-	 * Informs the ConnectionCreatorListener about a closed connection
-	 * @param p_connection
-	 *            the closed connection
-	 */
-	protected final void fireConnectionClosed(final AbstractConnection p_connection) {
-		if (m_listener != null) {
-			m_listener.connectionClosed(p_connection);
-		}
-	}
+    /**
+     * Check if there a remote node tries to open a connection currently
+     *
+     * @return whether a remote node opens a connection to this node currently or not
+     */
+    public boolean keyIsPending() {
+        return true;
+    }
 
-	// Classes
-	/**
-	 * Methods for reacting to new or closed connections
-	 * @author Florian Klein
-	 *         18.03.2012
-	 */
-	public interface ConnectionCreatorListener {
+    /**
+     * Informs the ConnectionCreatorListener about a new connection
+     *
+     * @param p_connection
+     *         the new connection
+     */
+    protected final void fireConnectionCreated(final AbstractConnection p_connection) {
+        if (m_listener != null) {
+            m_listener.connectionCreated(p_connection);
+            p_connection.setConnected(true);
+        }
+    }
 
-		// Methods
-		/**
-		 * A new connection was created
-		 * @param p_connection
-		 *            the new connection
-		 */
-		void connectionCreated(AbstractConnection p_connection);
+    /**
+     * Informs the ConnectionCreatorListener to create a new connection
+     *
+     * @param p_destination
+     *         the remote NodeID
+     */
+    protected final void fireCreateConnection(final short p_destination) {
+        if (m_listener != null) {
+            m_listener.createConnection(p_destination);
+        }
+    }
 
-		/**
-		 * A new connection must be created
-		 * @param p_destination
-		 *            the remote NodeID
-		 */
-		void createConnection(short p_destination);
+    /**
+     * Informs the ConnectionCreatorListener about a closed connection
+     *
+     * @param p_connection
+     *         the closed connection
+     */
+    protected final void fireConnectionClosed(final AbstractConnection p_connection) {
+        if (m_listener != null) {
+            m_listener.connectionClosed(p_connection);
+        }
+    }
 
-		/**
-		 * A connection was closed
-		 * @param p_connection
-		 *            the closed connection
-		 */
-		void connectionClosed(AbstractConnection p_connection);
+    // Classes
 
-	}
+    /**
+     * Methods for reacting to new or closed connections
+     *
+     * @author Florian Klein
+     *         18.03.2012
+     */
+    public interface ConnectionCreatorListener {
+
+        // Methods
+
+        /**
+         * A new connection was created
+         *
+         * @param p_connection
+         *         the new connection
+         */
+        void connectionCreated(AbstractConnection p_connection);
+
+        /**
+         * A new connection must be created
+         *
+         * @param p_destination
+         *         the remote NodeID
+         */
+        void createConnection(short p_destination);
+
+        /**
+         * A connection was closed
+         *
+         * @param p_connection
+         *         the closed connection
+         */
+        void connectionClosed(AbstractConnection p_connection);
+
+    }
 
 }

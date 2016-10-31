@@ -1,13 +1,13 @@
 package de.hhu.bsinfo.utils.unit;
 
-import com.google.gson.annotations.Expose;
-
 import java.net.InetSocketAddress;
+
+import com.google.gson.annotations.Expose;
 
 /**
  * Wrapper for handling an IPV4 address
  *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.10.16
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.10.2016
  */
 public class IPV4Unit {
 
@@ -26,8 +26,10 @@ public class IPV4Unit {
     /**
      * Constructor
      *
-     * @param p_ip IPV4 address, format xxx.xxx.xxx.xxx
-     * @param p_port Port
+     * @param p_ip
+     *         IPV4 address, format xxx.xxx.xxx.xxx
+     * @param p_port
+     *         Port
      */
     public IPV4Unit(final String p_ip, final int p_port) {
         m_ip = p_ip;
@@ -36,6 +38,7 @@ public class IPV4Unit {
 
     /**
      * Get the ip address as a string
+     *
      * @return IP address as string
      */
     public String getIP() {
@@ -53,6 +56,7 @@ public class IPV4Unit {
 
     /**
      * Get the ip address and port as a string of format xxx.xxx.xxx.xxx:xxxxx
+     *
      * @return Ip address and port as string
      */
     public String getAddressStr() {
@@ -86,5 +90,10 @@ public class IPV4Unit {
         IPV4Unit obj = (IPV4Unit) p_obj;
 
         return m_ip.equals(obj.getIP()) && m_port == obj.getPort();
+    }
+
+    @Override
+    public int hashCode() {
+        return (m_ip + "/" + m_port).hashCode();
     }
 }

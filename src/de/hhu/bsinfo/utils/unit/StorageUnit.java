@@ -3,7 +3,7 @@ package de.hhu.bsinfo.utils.unit;
 /**
  * Wrapper for handling and converting storage units (byte, kb, mb, gb, tb)
  *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.10.16
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.10.2016
  */
 public class StorageUnit {
 
@@ -18,8 +18,10 @@ public class StorageUnit {
     /**
      * Constructor
      *
-     * @param p_value Value
-     * @param p_unit Unit of the value (b, kb, mb, gb, tb)
+     * @param p_value
+     *         Value
+     * @param p_unit
+     *         Unit of the value (b, kb, mb, gb, tb)
      */
     public StorageUnit(final long p_value, final String p_unit) {
         parse(p_value, p_unit.toLowerCase());
@@ -27,6 +29,7 @@ public class StorageUnit {
 
     /**
      * Get as bytes
+     *
      * @return Bytes
      */
     public long getBytes() {
@@ -35,6 +38,7 @@ public class StorageUnit {
 
     /**
      * Get as KB
+     *
      * @return KB
      */
     public long getKB() {
@@ -43,6 +47,7 @@ public class StorageUnit {
 
     /**
      * Get as MB
+     *
      * @return MB
      */
     public long getMB() {
@@ -51,6 +56,7 @@ public class StorageUnit {
 
     /**
      * Get as GB
+     *
      * @return GB
      */
     public long getGB() {
@@ -59,6 +65,7 @@ public class StorageUnit {
 
     /**
      * Get as TB
+     *
      * @return TB
      */
     public long getTB() {
@@ -73,8 +80,10 @@ public class StorageUnit {
     /**
      * Parse the value with the specified unit
      *
-     * @param p_value Value
-     * @param p_unit Unit of the value
+     * @param p_value
+     *         Value
+     * @param p_unit
+     *         Unit of the value
      */
     private void parse(final long p_value, final String p_unit) {
         switch (p_unit) {

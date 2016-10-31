@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.ethnet;
 
 import java.util.concurrent.Semaphore;
@@ -8,195 +7,210 @@ import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
 
 /**
  * Represents a Request
- * @author Florian Klein 09.03.2012
+ *
+ * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  */
 public abstract class AbstractRequest extends AbstractMessage {
 
-	// Constants
-	private static final long WAITING_TIMEOUT = 20;
+    // Constants
+    private static final long WAITING_TIMEOUT = 20;
 
-	// Attributes
-	private boolean m_fulfilled;
+    // Attributes
+    private boolean m_fulfilled;
 
-	private boolean m_aborted;
+    private boolean m_aborted;
 
-	private boolean m_ignoreTimeout;
+    private boolean m_ignoreTimeout;
 
-	private Semaphore m_wait;
+    private Semaphore m_wait;
 
-	private AbstractResponse m_response;
+    private AbstractResponse m_response;
 
-	// Constructors
-	/**
-	 * Creates an instance of Request
-	 */
-	protected AbstractRequest() {
-		super();
+    // Constructors
 
-		m_wait = new Semaphore(0, false);
+    /**
+     * Creates an instance of Request
+     */
+    protected AbstractRequest() {
+        super();
 
-		m_response = null;
-	}
+        m_wait = new Semaphore(0, false);
 
-	/**
-	 * Creates an instance of Request
-	 * @param p_destination
-	 *            the destination
-	 * @param p_type
-	 *            the message type
-	 * @param p_subtype
-	 *            the message subtype
-	 */
-	public AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype) {
-		this(p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE);
-	}
+        m_response = null;
+    }
 
-	/**
-	 * Creates an instance of Request
-	 * @param p_destination
-	 *            the destination
-	 * @param p_type
-	 *            the message type
-	 * @param p_subtype
-	 *            the message subtype
-	 * @param p_exclusivity
-	 *            whether this request type allows parallel execution
-	 */
-	public AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
-		super(p_destination, p_type, p_subtype, p_exclusivity);
+    /**
+     * Creates an instance of Request
+     *
+     * @param p_destination
+     *         the destination
+     * @param p_type
+     *         the message type
+     * @param p_subtype
+     *         the message subtype
+     */
+    public AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype) {
+        this(p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE);
+    }
 
-		m_wait = new Semaphore(0, false);
+    /**
+     * Creates an instance of Request
+     *
+     * @param p_destination
+     *         the destination
+     * @param p_type
+     *         the message type
+     * @param p_subtype
+     *         the message subtype
+     * @param p_exclusivity
+     *         whether this request type allows parallel execution
+     */
+    public AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
+        super(p_destination, p_type, p_subtype, p_exclusivity);
 
-		m_response = null;
-	}
+        m_wait = new Semaphore(0, false);
 
-	// Getters
-	/**
-	 * Checks if the network timeout for the request should be ignored
-	 * @return true if the timeout should be ignored, false otherwise
-	 */
-	public final boolean isIgnoreTimeout() {
-		return m_ignoreTimeout;
-	}
+        m_response = null;
+    }
 
-	/**
-	 * Get the requestID
-	 * @return the requestID
-	 */
-	public final int getRequestID() {
-		return getMessageID();
-	}
+    // Getters
 
-	/**
-	 * Get the Response
-	 * @return the Response
-	 */
-	public final AbstractResponse getResponse() {
-		return m_response;
-	}
+    /**
+     * Checks if the network timeout for the request should be ignored
+     *
+     * @return true if the timeout should be ignored, false otherwise
+     */
+    public final boolean isIgnoreTimeout() {
+        return m_ignoreTimeout;
+    }
 
-	/**
-	 * Get the Response
-	 * @param <T>
-	 *            the Response type
-	 * @param p_class
-	 *            the Class of the Response
-	 * @return the Response
-	 */
-	public final <T extends AbstractResponse> T getResponse(final Class<T> p_class) {
-		T ret = null;
+    /**
+     * Get the requestID
+     *
+     * @return the requestID
+     */
+    public final int getRequestID() {
+        return getMessageID();
+    }
 
-		assert p_class != null;
+    /**
+     * Get the Response
+     *
+     * @return the Response
+     */
+    public final AbstractResponse getResponse() {
+        return m_response;
+    }
 
-		if (m_response != null && p_class.isAssignableFrom(m_response.getClass())) {
-			ret = p_class.cast(m_response);
-			m_response.setCorrespondingRequest(this);
-		}
+    /**
+     * Get the Response
+     *
+     * @param <T>
+     *         the Response type
+     * @param p_class
+     *         the Class of the Response
+     * @return the Response
+     */
+    public final <T extends AbstractResponse> T getResponse(final Class<T> p_class) {
+        T ret = null;
 
-		return ret;
-	}
+        assert p_class != null;
 
-	/**
-	 * Checks if the Request is fulfilled
-	 * @return true if the Request is fulfilled, false otherwise
-	 */
-	public final boolean isFulfilled() {
-		return m_fulfilled;
-	}
+        if (m_response != null && p_class.isAssignableFrom(m_response.getClass())) {
+            ret = p_class.cast(m_response);
+            m_response.setCorrespondingRequest(this);
+        }
 
-	/**
-	 * Checks if the Request is aborted
-	 * @return true if the Request is aborted, false otherwise
-	 */
-	public final boolean isAborted() {
-		return m_aborted;
-	}
+        return ret;
+    }
 
-	// Setters
-	/**
-	 * Set the ignore timeout option
-	 * @param p_ignoreTimeout
-	 *            if true the request ignores the network timeout
-	 */
-	public final void setIgnoreTimeout(final boolean p_ignoreTimeout) {
-		m_ignoreTimeout = p_ignoreTimeout;
-	}
+    /**
+     * Checks if the Request is fulfilled
+     *
+     * @return true if the Request is fulfilled, false otherwise
+     */
+    public final boolean isFulfilled() {
+        return m_fulfilled;
+    }
 
-	// Methods
-	/**
-	 * Wait until the Request is fulfilled or aborted
-	 * @param p_timeoutMs
-	 *            Max amount of time to wait for response.
-	 * @return False if message timed out, true if response received.
-	 */
-	public final boolean waitForResponses(final int p_timeoutMs) {
-		long timeStart;
-		long timeNow;
+    /**
+     * Checks if the Request is aborted
+     *
+     * @return true if the Request is aborted, false otherwise
+     */
+    public final boolean isAborted() {
+        return m_aborted;
+    }
 
-		timeStart = System.currentTimeMillis();
+    // Setters
 
-		while (!m_fulfilled && !m_aborted) {
-			timeNow = System.currentTimeMillis();
-			if (timeNow - timeStart > p_timeoutMs && !m_ignoreTimeout) {
-				// RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
-				break;
-			}
-			try {
-				m_wait.tryAcquire(WAITING_TIMEOUT, TimeUnit.MILLISECONDS);
-			} catch (final InterruptedException e) {}
-		}
+    /**
+     * Set the ignore timeout option
+     *
+     * @param p_ignoreTimeout
+     *         if true the request ignores the network timeout
+     */
+    public final void setIgnoreTimeout(final boolean p_ignoreTimeout) {
+        m_ignoreTimeout = p_ignoreTimeout;
+    }
 
-		if (!m_fulfilled && !m_aborted) {
-			NetworkHandler.getEventHandler().fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), super.getDestination()));
-		}
+    // Methods
 
-		return m_fulfilled;
-	}
+    /**
+     * Wait until the Request is fulfilled or aborted
+     *
+     * @param p_timeoutMs
+     *         Max amount of time to wait for response.
+     * @return False if message timed out, true if response received.
+     */
+    public final boolean waitForResponses(final int p_timeoutMs) {
+        long timeStart;
+        long timeNow;
 
-	/**
-	 * Fulfill the Request
-	 * @param p_response
-	 *            the Response
-	 */
-	final void fulfill(final AbstractResponse p_response) {
-		assert p_response != null;
+        timeStart = System.currentTimeMillis();
 
-		// RequestStatistic.getInstance().responseReceived(getRequestID(), getClass());
+        while (!m_fulfilled && !m_aborted) {
+            timeNow = System.currentTimeMillis();
+            if (timeNow - timeStart > p_timeoutMs && !m_ignoreTimeout) {
+                // RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
+                break;
+            }
+            try {
+                m_wait.tryAcquire(WAITING_TIMEOUT, TimeUnit.MILLISECONDS);
+            } catch (final InterruptedException e) {
+            }
+        }
 
-		m_response = p_response;
+        if (!m_fulfilled && !m_aborted) {
+            NetworkHandler.getEventHandler().fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), super.getDestination()));
+        }
 
-		m_fulfilled = true;
-		m_wait.release();
-	}
+        return m_fulfilled;
+    }
 
-	@Override
-	protected final void beforeSend() {
-		RequestMap.put(this);
-	}
+    /**
+     * Fulfill the Request
+     *
+     * @param p_response
+     *         the Response
+     */
+    final void fulfill(final AbstractResponse p_response) {
+        assert p_response != null;
 
-	@Override
-	protected final void afterSend() {
-		// RequestStatistic.getInstance().requestSend(getRequestID());
-	}
+        // RequestStatistic.getInstance().responseReceived(getRequestID(), getClass());
+
+        m_response = p_response;
+
+        m_fulfilled = true;
+        m_wait.release();
+    }
+
+    @Override protected final void beforeSend() {
+        RequestMap.put(this);
+    }
+
+    @Override protected final void afterSend() {
+        // RequestStatistic.getInstance().requestSend(getRequestID());
+    }
 
 }

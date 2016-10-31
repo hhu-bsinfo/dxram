@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram;
 
 import java.net.InetSocketAddress;
@@ -43,239 +42,257 @@ import de.hhu.bsinfo.utils.ManifestHelper;
 /**
  * Main class/entry point for any application to work with DXRAM and its services.
  *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class DXRAM {
 
-	protected DXRAMEngine m_engine;
+    private DXRAMEngine m_engine;
 
-	/**
-	 * Constructor
-	 */
-	public DXRAM() {
-		m_engine = new DXRAMEngine();
-		registerComponents(m_engine);
-		registerServices(m_engine);
-	}
+    /**
+     * Constructor
+     */
+    public DXRAM() {
+        m_engine = new DXRAMEngine();
+        registerComponents(m_engine);
+        registerServices(m_engine);
+    }
 
-	/**
-	 * Initialize the instance.
-	 *
-	 * @param p_autoShutdown True to have DXRAM shut down automatically when the application quits.
-	 *                       If false, the caller has to take care of shutting down the instance by calling shutdown when done.
-	 * @return True if initializing was successful, false otherwise.
-	 */
-	public boolean initialize(final boolean p_autoShutdown) {
-		boolean ret = m_engine.init();
-		if (!ret) {
-			return false;
-		}
+    /**
+     * Returns the DXRAM engine
+     *
+     * @return the DXRAMEngine
+     */
+    protected DXRAMEngine getDXRAMEngine() {
+        return m_engine;
+    }
 
-		printNodeInfo();
-		if (p_autoShutdown) {
-			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
-		}
-		postInit();
+    /**
+     * Initialize the instance.
+     *
+     * @param p_autoShutdown
+     *     True to have DXRAM shut down automatically when the application quits.
+     *     If false, the caller has to take care of shutting down the instance by calling shutdown when done.
+     * @return True if initializing was successful, false otherwise.
+     */
+    public boolean initialize(final boolean p_autoShutdown) {
+        boolean ret = m_engine.init();
+        if (!ret) {
+            return false;
+        }
 
-		return true;
-	}
+        printNodeInfo();
+        if (p_autoShutdown) {
+            Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
+        }
+        postInit();
 
-	/**
-	 * Initialize the instance.
-	 *
-	 * @param p_configurationFile Absolute or relative path to a configuration file
-	 * @return True if initializing was successful, false otherwise.
-	 */
-	public boolean initialize(final String p_configurationFile) {
-		preInit();
-		boolean ret = m_engine.init(p_configurationFile);
-		if (ret) {
-			printNodeInfo();
-			postInit();
-		}
-		return ret;
-	}
+        return true;
+    }
 
-	/**
-	 * Initialize the instance.
-	 *
-	 * @param p_autoShutdown      True to have DXRAM shut down automatically when the application quits.
-	 *                            If false, the caller has to take care of shutting down the instance by calling shutdown when done.
-	 * @param p_configurationFile Absolute or relative path to a configuration file
-	 * @return True if initializing was successful, false otherwise.
-	 */
-	public boolean initialize(final boolean p_autoShutdown, final String p_configurationFile) {
-		preInit();
-		boolean ret = initialize(p_configurationFile);
-		if (ret & p_autoShutdown) {
-			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
-		}
-		if (ret) {
-			printNodeInfo();
-			postInit();
-		}
+    /**
+     * Initialize the instance.
+     *
+     * @param p_configurationFile
+     *     Absolute or relative path to a configuration file
+     * @return True if initializing was successful, false otherwise.
+     */
+    public boolean initialize(final String p_configurationFile) {
+        preInit();
+        boolean ret = m_engine.init(p_configurationFile);
+        if (ret) {
+            printNodeInfo();
+            postInit();
+        }
+        return ret;
+    }
 
-		return ret;
-	}
+    /**
+     * Initialize the instance.
+     *
+     * @param p_autoShutdown
+     *     True to have DXRAM shut down automatically when the application quits.
+     *     If false, the caller has to take care of shutting down the instance by calling shutdown when done.
+     * @param p_configurationFile
+     *     Absolute or relative path to a configuration file
+     * @return True if initializing was successful, false otherwise.
+     */
+    public boolean initialize(final boolean p_autoShutdown, final String p_configurationFile) {
+        preInit();
+        boolean ret = initialize(p_configurationFile);
+        if (ret & p_autoShutdown) {
+            Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
+        }
+        if (ret) {
+            printNodeInfo();
+            postInit();
+        }
 
-	/**
-	 * Get a service from DXRAM.
-	 *
-	 * @param <T>     Type of service to get
-	 * @param p_class Class of the service to get. If one service has multiple implementations, use
-	 *                the common super class here.
-	 * @return Service requested or null if the service is not enabled/available.
-	 */
-	public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
-		return m_engine.getService(p_class);
-	}
+        return ret;
+    }
 
-	/**
-	 * Shut down DXRAM. Call this if you have not enabled auto shutdown on init.
-	 */
-	public void shutdown() {
-		preShutdown();
-		m_engine.shutdown();
-		postShutdown();
-	}
+    /**
+     * Get a service from DXRAM.
+     *
+     * @param <T>
+     *     Type of service to get
+     * @param p_class
+     *     Class of the service to get. If one service has multiple implementations, use
+     *     the common super class here.
+     * @return Service requested or null if the service is not enabled/available.
+     */
+    public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
+        return m_engine.getService(p_class);
+    }
 
-	/**
-	 * Print some information after init about our current node.
-	 */
-	private void printNodeInfo() {
-		String str = ">>> DXRAM Node <<<\n";
-		String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
-		if (buildDate != null) {
-			str += "BuildDate: " + buildDate + "\n";
-		}
-		String buildUser = ManifestHelper.getProperty(getClass(), "BuildUser");
-		if (buildUser != null) {
-			str += "BuildUser: " + buildUser + "\n";
-		}
+    /**
+     * Shut down DXRAM. Call this if you have not enabled auto shutdown on init.
+     */
+    public void shutdown() {
+        preShutdown();
+        m_engine.shutdown();
+        postShutdown();
+    }
 
-		str += "Cwd: " + System.getProperty("user.dir") + "\n";
+    /**
+     * Print some information after init about our current node.
+     */
+    private void printNodeInfo() {
+        String str = ">>> DXRAM Node <<<\n";
+        String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
+        if (buildDate != null) {
+            str += "BuildDate: " + buildDate + "\n";
+        }
+        String buildUser = ManifestHelper.getProperty(getClass(), "BuildUser");
+        if (buildUser != null) {
+            str += "BuildUser: " + buildUser + "\n";
+        }
 
-		BootService bootService = m_engine.getService(BootService.class);
+        str += "Cwd: " + System.getProperty("user.dir") + "\n";
 
-		if (bootService != null) {
-			short nodeId = bootService.getNodeID();
-			str += "NodeID: " + NodeID.toHexString(nodeId) + "\n";
-			str += "Role: " + bootService.getNodeRole(nodeId) + "\n";
+        BootService bootService = m_engine.getService(BootService.class);
 
-			InetSocketAddress address = bootService.getNodeAddress(nodeId);
-			str += "Address: " + address;
+        if (bootService != null) {
+            short nodeId = bootService.getNodeID();
+            str += "NodeID: " + NodeID.toHexString(nodeId) + "\n";
+            str += "Role: " + bootService.getNodeRole(nodeId) + "\n";
 
-			System.out.println(str);
-		}
-	}
+            InetSocketAddress address = bootService.getNodeAddress(nodeId);
+            str += "Address: " + address;
 
-	/**
-	 * Register all default DXRAM components. If you want to register further components,
-	 * override this method but make sure to call it using super
-	 *
-	 * @param p_engine DXRAM engine instance to register components at
-	 */
-	protected void registerComponents(final DXRAMEngine p_engine) {
-		p_engine.registerComponent(BackupComponent.class);
-		p_engine.registerComponent(ZookeeperBootComponent.class);
-		p_engine.registerComponent(ChunkComponent.class);
-		p_engine.registerComponent(EventComponent.class);
-		p_engine.registerComponent(FailureComponent.class);
-		p_engine.registerComponent(PeerLockComponent.class);
-		p_engine.registerComponent(LogComponent.class);
-		p_engine.registerComponent(LookupComponent.class);
-		p_engine.registerComponent(MemoryManagerComponent.class);
-		p_engine.registerComponent(NameserviceComponent.class);
-		p_engine.registerComponent(NetworkComponent.class);
-		p_engine.registerComponent(NullComponent.class);
-		p_engine.registerComponent(ScriptEngineComponent.class);
-		p_engine.registerComponent(TerminalComponent.class);
-	}
+            System.out.println(str);
+        }
+    }
 
-	/**
-	 * Register all default DXRAM services. If you want to register further services,
-	 * override this method but make sure to call it using super
-	 *
-	 * @param p_engine DXRAM engine instance to register services at
-	 */
-	protected void registerServices(final DXRAMEngine p_engine) {
-		p_engine.registerService(AsyncChunkService.class);
-		p_engine.registerService(BootService.class);
-		p_engine.registerService(ChunkMemoryService.class);
-		p_engine.registerService(ChunkService.class);
-		p_engine.registerService(LogService.class);
-		p_engine.registerService(LoggerService.class);
-		p_engine.registerService(LookupService.class);
-		p_engine.registerService(MigrationService.class);
-		p_engine.registerService(NameserviceService.class);
-		p_engine.registerService(NetworkService.class);
-		p_engine.registerService(NullService.class);
-		p_engine.registerService(PeerLockService.class);
-		p_engine.registerService(RecoveryService.class);
-		p_engine.registerService(ScriptEngineService.class);
-		p_engine.registerService(SynchronizationService.class);
-		p_engine.registerService(TerminalService.class);
-		p_engine.registerService(TemporaryStorageService.class);
-		p_engine.registerService(StatisticsService.class);
-	}
+    /**
+     * Register all default DXRAM components. If you want to register further components,
+     * override this method but make sure to call it using super
+     *
+     * @param p_engine
+     *     DXRAM engine instance to register components at
+     */
+    protected void registerComponents(final DXRAMEngine p_engine) {
+        p_engine.registerComponent(BackupComponent.class);
+        p_engine.registerComponent(ZookeeperBootComponent.class);
+        p_engine.registerComponent(ChunkComponent.class);
+        p_engine.registerComponent(EventComponent.class);
+        p_engine.registerComponent(FailureComponent.class);
+        p_engine.registerComponent(PeerLockComponent.class);
+        p_engine.registerComponent(LogComponent.class);
+        p_engine.registerComponent(LookupComponent.class);
+        p_engine.registerComponent(MemoryManagerComponent.class);
+        p_engine.registerComponent(NameserviceComponent.class);
+        p_engine.registerComponent(NetworkComponent.class);
+        p_engine.registerComponent(NullComponent.class);
+        p_engine.registerComponent(ScriptEngineComponent.class);
+        p_engine.registerComponent(TerminalComponent.class);
+    }
 
-	/**
-	 * Stub method for any class extending this class.
-	 * Override this to run some tasks like initializing variables before
-	 * DXRAM has booted.
-	 */
-	protected void preInit() {
-		// stub
-	}
+    /**
+     * Register all default DXRAM services. If you want to register further services,
+     * override this method but make sure to call it using super
+     *
+     * @param p_engine
+     *     DXRAM engine instance to register services at
+     */
+    protected void registerServices(final DXRAMEngine p_engine) {
+        p_engine.registerService(AsyncChunkService.class);
+        p_engine.registerService(BootService.class);
+        p_engine.registerService(ChunkMemoryService.class);
+        p_engine.registerService(ChunkService.class);
+        p_engine.registerService(LogService.class);
+        p_engine.registerService(LoggerService.class);
+        p_engine.registerService(LookupService.class);
+        p_engine.registerService(MigrationService.class);
+        p_engine.registerService(NameserviceService.class);
+        p_engine.registerService(NetworkService.class);
+        p_engine.registerService(NullService.class);
+        p_engine.registerService(PeerLockService.class);
+        p_engine.registerService(RecoveryService.class);
+        p_engine.registerService(ScriptEngineService.class);
+        p_engine.registerService(SynchronizationService.class);
+        p_engine.registerService(TerminalService.class);
+        p_engine.registerService(TemporaryStorageService.class);
+        p_engine.registerService(StatisticsService.class);
+    }
 
-	/**
-	 * Stub method for any class extending this class.
-	 * Override this to run some tasks like initializing variables after
-	 * DXRAM has booted.
-	 */
-	protected void postInit() {
-		// stub
-	}
+    /**
+     * Stub method for any class extending this class.
+     * Override this to run some tasks like initializing variables before
+     * DXRAM has booted.
+     */
+    protected void preInit() {
+        // stub
+    }
 
-	/**
-	 * Stub method for any class extending this class.
-	 * Override this to run cleanup before DXRAM shuts down.
-	 */
-	protected void preShutdown() {
-		// stub
-	}
+    /**
+     * Stub method for any class extending this class.
+     * Override this to run some tasks like initializing variables after
+     * DXRAM has booted.
+     */
+    protected void postInit() {
+        // stub
+    }
 
-	/**
-	 * Stub method for any class extending this class.
-	 * Override this to run cleanup after DXRAM shuts down.
-	 */
-	protected void postShutdown() {
-		// stub
-	}
+    /**
+     * Stub method for any class extending this class.
+     * Override this to run cleanup before DXRAM shuts down.
+     */
+    protected void preShutdown() {
+        // stub
+    }
 
-	/**
-	 * Shuts down DXRAM in case of the system exits
-	 *
-	 * @author Florian Klein 03.09.2013
-	 */
-	private static final class ShutdownThread extends Thread {
+    /**
+     * Stub method for any class extending this class.
+     * Override this to run cleanup after DXRAM shuts down.
+     */
+    protected void postShutdown() {
+        // stub
+    }
 
-		private DXRAM m_dxram;
+    /**
+     * Shuts down DXRAM in case of the system exits
+     *
+     * @author Florian Klein 03.09.2013
+     */
+    private static final class ShutdownThread extends Thread {
 
-		/**
-		 * Creates an instance of ShutdownThread
-		 *
-		 * @param p_dxram Reference to DXRAM instance.
-		 */
-		private ShutdownThread(final DXRAM p_dxram) {
-			super(ShutdownThread.class.getSimpleName());
-			m_dxram = p_dxram;
-		}
+        private DXRAM m_dxram;
 
-		@Override
-		public void run() {
-			m_dxram.shutdown();
-		}
+        /**
+         * Creates an instance of ShutdownThread
+         *
+         * @param p_dxram
+         *     Reference to DXRAM instance.
+         */
+        private ShutdownThread(final DXRAM p_dxram) {
+            super(ShutdownThread.class.getSimpleName());
+            m_dxram = p_dxram;
+        }
 
-	}
+        @Override
+        public void run() {
+            m_dxram.shutdown();
+        }
+
+    }
 }

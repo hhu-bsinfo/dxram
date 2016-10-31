@@ -3,7 +3,7 @@ package de.hhu.bsinfo.utils.unit;
 /**
  * Wrapper for handling and converting time units (ns, us, ms, sec, min, h)
  *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.10.16
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.10.2016
  */
 public class TimeUnit {
 
@@ -19,8 +19,10 @@ public class TimeUnit {
     /**
      * Constructor
      *
-     * @param p_value Value
-     * @param p_unit Unit of the value (ns, us, ms, sec, min, h)
+     * @param p_value
+     *         Value
+     * @param p_unit
+     *         Unit of the value (ns, us, ms, sec, min, h)
      */
     public TimeUnit(final long p_value, final String p_unit) {
         parse(p_value, p_unit);
@@ -28,6 +30,7 @@ public class TimeUnit {
 
     /**
      * Get as ns
+     *
      * @return Ns
      */
     public long getNs() {
@@ -36,6 +39,7 @@ public class TimeUnit {
 
     /**
      * Get as us
+     *
      * @return Us
      */
     public long getUs() {
@@ -44,6 +48,7 @@ public class TimeUnit {
 
     /**
      * Get as ms
+     *
      * @return Ms
      */
     public long getMs() {
@@ -52,6 +57,7 @@ public class TimeUnit {
 
     /**
      * Get as sec
+     *
      * @return Sec
      */
     public long getSec() {
@@ -60,6 +66,7 @@ public class TimeUnit {
 
     /**
      * Get as min
+     *
      * @return Min
      */
     public long getMin() {
@@ -68,6 +75,7 @@ public class TimeUnit {
 
     /**
      * Get as hours
+     *
      * @return Hours
      */
     public long getHours() {
@@ -77,8 +85,10 @@ public class TimeUnit {
     /**
      * Parse the value with the specified unit
      *
-     * @param p_value Value
-     * @param p_unit Unit of the value
+     * @param p_value
+     *         Value
+     * @param p_unit
+     *         Unit of the value
      */
     private void parse(final long p_value, final String p_unit) {
         switch (p_unit) {

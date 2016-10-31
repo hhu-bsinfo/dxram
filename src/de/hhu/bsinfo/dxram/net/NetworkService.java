@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.net;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -6,96 +5,99 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
-import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
 
 /**
  * Service to access the backend network service for sending messages
  * to other participating nodes in the system.
  *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class NetworkService extends AbstractDXRAMService {
 
-	// dependent components
-	private NetworkComponent m_network;
+    // dependent components
+    private NetworkComponent m_network;
 
-	/**
-	 * Constructor
-	 */
-	public NetworkService() {
-		super("net");
-	}
+    /**
+     * Constructor
+     */
+    public NetworkService() {
+        super("net");
+    }
 
-	/**
-	 * Registers a message type
-	 *
-	 * @param p_type    the unique type
-	 * @param p_subtype the unique subtype
-	 * @param p_class   the calling class
-	 */
-	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
-		m_network.registerMessageType(p_type, p_subtype, p_class);
-	}
+    /**
+     * Registers a message type
+     *
+     * @param p_type
+     *         the unique type
+     * @param p_subtype
+     *         the unique subtype
+     * @param p_class
+     *         the calling class
+     */
+    public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
+        m_network.registerMessageType(p_type, p_subtype, p_class);
+    }
 
-	/**
-	 * Registers a message receiver
-	 *
-	 * @param p_message  the message
-	 * @param p_receiver the receiver
-	 */
-	public void registerReceiver(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
-		m_network.register(p_message, p_receiver);
-	}
+    /**
+     * Registers a message receiver
+     *
+     * @param p_message
+     *         the message
+     * @param p_receiver
+     *         the receiver
+     */
+    public void registerReceiver(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
+        m_network.register(p_message, p_receiver);
+    }
 
-	/**
-	 * Unregisters a message receiver
-	 *
-	 * @param p_message  the message
-	 * @param p_receiver the receiver
-	 */
-	public void unregisterReceiver(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
-		m_network.unregister(p_message, p_receiver);
-	}
+    /**
+     * Unregisters a message receiver
+     *
+     * @param p_message
+     *         the message
+     * @param p_receiver
+     *         the receiver
+     */
+    public void unregisterReceiver(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
+        m_network.unregister(p_message, p_receiver);
+    }
 
-	/**
-	 * Send a message.
-	 *
-	 * @param p_message Message to send
-	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
-	 * @throws NetworkException                       If sending the message failed
-	 */
-	public void sendMessage(final AbstractMessage p_message) throws NetworkException {
-		m_network.sendMessage(p_message);
-	}
+    /**
+     * Send a message.
+     *
+     * @param p_message
+     *         Message to send
+     * @throws NetworkException
+     *         If sending the message failed
+     */
+    public void sendMessage(final AbstractMessage p_message) throws NetworkException {
+        m_network.sendMessage(p_message);
+    }
 
-	/**
-	 * Send the Request and wait for fulfillment (wait for response).
-	 *
-	 * @param p_request The request to send.
-	 * @throws NetworkDestinationUnreachableException If the destination is unreachable
-	 * @throws NetworkResponseTimeoutException        If the max. timeout was exceed
-	 * @throws NetworkException                       If sending the message failed
-	 */
-	public void sendSync(final AbstractRequest p_request) throws NetworkException {
-		m_network.sendSync(p_request);
-	}
+    /**
+     * Send the Request and wait for fulfillment (wait for response).
+     *
+     * @param p_request
+     *         The request to send.
+     * @throws NetworkException
+     *         If sending the message failed
+     */
+    public void sendSync(final AbstractRequest p_request) throws NetworkException {
+        m_network.sendSync(p_request);
+    }
 
-	@Override
-	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-	}
+    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+    }
 
-	@Override
-	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		return true;
-	}
+    @Override protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        return true;
+    }
 
-	@Override
-	protected boolean shutdownService() {
-		return true;
-	}
+    @Override protected boolean shutdownService() {
+        return true;
+    }
 
 }

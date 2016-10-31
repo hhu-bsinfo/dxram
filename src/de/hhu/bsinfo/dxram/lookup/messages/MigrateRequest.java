@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -8,99 +7,101 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Migrate Request
- * @author Kevin Beineke
- *         03.06.2013
+ *
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 03.06.2013
  */
 public class MigrateRequest extends AbstractRequest {
 
-	// Attributes
-	private long m_chunkID;
-	private short m_nodeID;
-	private boolean m_isBackup;
+    // Attributes
+    private long m_chunkID;
+    private short m_nodeID;
+    private boolean m_isBackup;
 
-	// Constructors
-	/**
-	 * Creates an instance of MigrateRequest
-	 */
-	public MigrateRequest() {
-		super();
+    // Constructors
 
-		m_chunkID = -1;
-		m_nodeID = -1;
-		m_isBackup = false;
-	}
+    /**
+     * Creates an instance of MigrateRequest
+     */
+    public MigrateRequest() {
+        super();
 
-	/**
-	 * Creates an instance of MigrateRequest
-	 * @param p_destination
-	 *            the destination
-	 * @param p_chunkID
-	 *            the object that has to be migrated
-	 * @param p_nodeID
-	 *            the peer where the object has to be migrated
-	 * @param p_isBackup
-	 *            whether this is a backup message or not
-	 */
-	public MigrateRequest(final short p_destination, final long p_chunkID, final short p_nodeID,
-			final boolean p_isBackup) {
-		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST);
+        m_chunkID = -1;
+        m_nodeID = -1;
+        m_isBackup = false;
+    }
 
-		m_chunkID = p_chunkID;
-		m_nodeID = p_nodeID;
-		m_isBackup = p_isBackup;
-	}
+    /**
+     * Creates an instance of MigrateRequest
+     *
+     * @param p_destination
+     *         the destination
+     * @param p_chunkID
+     *         the object that has to be migrated
+     * @param p_nodeID
+     *         the peer where the object has to be migrated
+     * @param p_isBackup
+     *         whether this is a backup message or not
+     */
+    public MigrateRequest(final short p_destination, final long p_chunkID, final short p_nodeID, final boolean p_isBackup) {
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST);
 
-	// Getters
-	/**
-	 * Get the ChunkID
-	 * @return the ID
-	 */
-	public final long getChunkID() {
-		return m_chunkID;
-	}
+        m_chunkID = p_chunkID;
+        m_nodeID = p_nodeID;
+        m_isBackup = p_isBackup;
+    }
 
-	/**
-	 * Get the NodeID
-	 * @return the NodeID
-	 */
-	public final short getNodeID() {
-		return m_nodeID;
-	}
+    // Getters
 
-	/**
-	 * Returns whether this is a backup message or not
-	 * @return whether this is a backup message or not
-	 */
-	public final boolean isBackup() {
-		return m_isBackup;
-	}
+    /**
+     * Get the ChunkID
+     *
+     * @return the ID
+     */
+    public final long getChunkID() {
+        return m_chunkID;
+    }
 
-	// Methods
-	@Override
-	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putLong(m_chunkID);
-		p_buffer.putShort(m_nodeID);
-		if (m_isBackup) {
-			p_buffer.put((byte) 1);
-		} else {
-			p_buffer.put((byte) 0);
-		}
-	}
+    /**
+     * Get the NodeID
+     *
+     * @return the NodeID
+     */
+    public final short getNodeID() {
+        return m_nodeID;
+    }
 
-	@Override
-	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_chunkID = p_buffer.getLong();
-		m_nodeID = p_buffer.getShort();
+    /**
+     * Returns whether this is a backup message or not
+     *
+     * @return whether this is a backup message or not
+     */
+    public final boolean isBackup() {
+        return m_isBackup;
+    }
 
-		final byte b = p_buffer.get();
-		if (b == 1) {
-			m_isBackup = true;
-		}
-	}
+    // Methods
+    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+        p_buffer.putLong(m_chunkID);
+        p_buffer.putShort(m_nodeID);
+        if (m_isBackup) {
+            p_buffer.put((byte) 1);
+        } else {
+            p_buffer.put((byte) 0);
+        }
+    }
 
-	@Override
-	protected final int getPayloadLength() {
-		return Long.BYTES + Short.BYTES + Byte.BYTES;
-	}
+    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+        m_chunkID = p_buffer.getLong();
+        m_nodeID = p_buffer.getShort();
+
+        final byte b = p_buffer.get();
+        if (b == 1) {
+            m_isBackup = true;
+        }
+    }
+
+    @Override protected final int getPayloadLength() {
+        return Long.BYTES + Short.BYTES + Byte.BYTES;
+    }
 
 }

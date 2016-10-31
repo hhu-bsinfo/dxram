@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxcompute;
 
 /**
@@ -24,7 +25,6 @@ public class DXComputeComponentOrder {
     public final class Shutdown {
         public static final short JOB_WORK_STEALING = -100;
 
-
         /**
          * Static class
          */
@@ -32,7 +32,6 @@ public class DXComputeComponentOrder {
 
         }
     }
-
 
     /**
      * Static class

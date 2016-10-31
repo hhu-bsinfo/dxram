@@ -5,139 +5,159 @@
     This configuration file was written by the eclipse-cs plugin configuration editor
 -->
 <!--
-    Checkstyle-Configuration: dxram
+    Checkstyle-Configuration: DXRAM
     Description: none
 -->
 <module name="Checker">
-  <property name="severity" value="warning"/>
-  <module name="TreeWalker">
-    <property name="tabWidth" value="4"/>
-    <module name="JavadocMethod">
-      <property name="suppressLoadErrors" value="true"/>
+    <property name="severity" value="warning"/>
+    <module name="TreeWalker">
+        <property name="tabWidth" value="4"/>
+        <module name="JavadocMethod">
+            <property name="validateThrows" value="true"/>
+            <property name="logLoadErrors" value="false"/>
+        </module>
+        <module name="JavadocType">
+            <metadata name="net.sf.eclipsecs.core.comment" value="Vorname Nachname, Email, DD.MM.YYYY"/>
+            <property name="authorFormat" value="^[A-Z][a-z]{1,} [A-Z][a-z]{1,}, [a-z0-9\.\-_]{1,}@[a-z0-9\.\-_]{1,}, [0-9.]{8,10}$"/>
+        </module>
+        <module name="JavadocStyle">
+            <property name="checkEmptyJavadoc" value="true"/>
+            <property name="checkFirstSentence" value="false"/>
+        </module>
+        <module name="ConstantName"/>
+        <module name="LocalFinalVariableName"/>
+        <module name="LocalVariableName">
+            <property name="tokens" value="VARIABLE_DEF"/>
+        </module>
+        <module name="MemberName">
+            <property name="format" value="^m_[a-z][a-zA-Z0-9]*$"/>
+        </module>
+        <module name="MethodName"/>
+        <module name="PackageName">
+            <property name="format" value="^[a-z]+(\.[a-z]*)*$"/>
+        </module>
+        <module name="ParameterName">
+            <property name="format" value="^p_[a-z][a-zA-Z0-9]*$"/>
+        </module>
+        <module name="StaticVariableName">
+            <property name="format" value="^ms_[a-z][a-zA-Z0-9]*$"/>
+        </module>
+        <module name="TypeName"/>
+        <module name="AvoidStarImport"/>
+        <module name="RedundantImport"/>
+        <module name="UnusedImports"/>
+        <module name="EmptyForIteratorPad"/>
+        <module name="MethodParamPad">
+            <property name="allowLineBreaks" value="true"/>
+        </module>
+        <module name="NoWhitespaceAfter">
+            <property name="tokens" value="ARRAY_INIT,BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS"/>
+        </module>
+        <module name="NoWhitespaceBefore">
+            <property name="tokens" value="COMMA,SEMI,POST_DEC,POST_INC,GENERIC_END"/>
+        </module>
+        <module name="OperatorWrap">
+            <property name="option" value="eol"/>
+        </module>
+        <module name="ParenPad"/>
+        <module name="WhitespaceAfter">
+            <property name="tokens" value="COMMA,TYPECAST"/>
+        </module>
+        <module name="ModifierOrder"/>
+        <module name="RedundantModifier"/>
+        <module name="LeftCurly">
+            <property name="maxLineLength" value="160"/>
+        </module>
+        <module name="NeedBraces"/>
+        <module name="RightCurly"/>
+        <module name="EmptyStatement"/>
+        <module name="EqualsHashCode"/>
+        <module name="HiddenField"/>
+        <module name="InnerAssignment"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+        <module name="FinalClass"/>
+        <module name="HideUtilityClassConstructor"/>
+        <module name="VisibilityModifier"/>
+        <module name="ArrayTypeStyle"/>
+        <module name="FinalParameters">
+            <property name="tokens" value="METHOD_DEF,CTOR_DEF,LITERAL_CATCH"/>
+        </module>
+        <module name="UpperEll"/>
+        <module name="MissingDeprecated"/>
+        <module name="MissingOverride"/>
+        <module name="AbstractClassName">
+            <property name="format" value="^Abstract[A-Z][a-zA-Z0-9]*$"/>
+        </module>
+        <module name="ClassTypeParameterName">
+            <property name="format" value="^[A-Z][a-zA-Z0-9]*$"/>
+        </module>
+        <module name="MethodTypeParameterName">
+            <property name="format" value="^[A-Z][a-zA-Z0-9]*$"/>
+        </module>
+        <module name="AvoidStaticImport"/>
+        <module name="ImportOrder">
+            <property name="groups" value="java, javax, sun, com, org, de.hhu.bsinf"/>
+            <property name="separated" value="true"/>
+        </module>
+        <module name="LineLength">
+            <property name="max" value="160"/>
+            <property name="tabWidth" value="4"/>
+        </module>
+        <module name="OuterTypeNumber"/>
+        <module name="EmptyForInitializerPad"/>
+        <module name="CovariantEquals"/>
+        <module name="DefaultComesLast"/>
+        <module name="DeclarationOrder">
+            <property name="ignoreModifiers" value="true"/>
+        </module>
+        <module name="IllegalThrows">
+            <property name="illegalClassNames" value="java.lang.Throwable, java.lang.Error, java.lang.RuntimeException, java.lang.Exception"/>
+        </module>
+        <module name="MultipleVariableDeclarations"/>
+        <module name="ParameterAssignment"/>
+        <module name="StringLiteralEquality"/>
+        <module name="UnnecessaryParentheses"/>
+        <module name="OneStatementPerLine"/>
+        <module name="InnerTypeLast"/>
+        <module name="MutableException"/>
+        <module name="TrailingComment"/>
+        <module name="OuterTypeFilename"/>
+        <module name="PackageDeclaration"/>
+        <module name="InterfaceIsType"/>
+        <module name="NonEmptyAtclauseDescription"/>
+        <module name="JavadocTagContinuationIndentation"/>
+        <module name="AtclauseOrder"/>
+        <module name="WhitespaceAround">
+            <property name="tokens"
+                      value="ASSIGN,BAND,BAND_ASSIGN,BOR,BOR_ASSIGN,BSR,BSR_ASSIGN,BXOR,BXOR_ASSIGN,COLON,DIV,DIV_ASSIGN,DO_WHILE,EQUAL,GE,GT,LAND,LCURLY,LE,LITERAL_ASSERT,LITERAL_CATCH,LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_FOR,LITERAL_IF,LITERAL_RETURN,LITERAL_SYNCHRONIZED,LITERAL_TRY,LITERAL_WHILE,LOR,LT,MINUS,MINUS_ASSIGN,MOD,MOD_ASSIGN,NOT_EQUAL,PLUS,PLUS_ASSIGN,RCURLY,SL,SLIST,SL_ASSIGN,SR,SR_ASSIGN,STAR,STAR_ASSIGN,TYPE_EXTENSION_AND"/>
+            <property name="allowEmptyConstructors" value="true"/>
+            <property name="allowEmptyMethods" value="true"/>
+            <property name="allowEmptyLoops" value="true"/>
+        </module>
+        <module name="EmptyLineSeparator">
+            <property name="tokens" value="PACKAGE_DEF,IMPORT,CLASS_DEF,ENUM_DEF,INTERFACE_DEF,CTOR_DEF,METHOD_DEF,STATIC_INIT,INSTANCE_INIT"/>
+            <property name="allowMultipleEmptyLines" value="false"/>
+        </module>
+        <module name="SeparatorWrap">
+            <property name="option" value="nl"/>
+            <property name="tokens" value="DOT"/>
+        </module>
+        <module name="SeparatorWrap">
+            <property name="tokens" value="COMMA,SEMI,ELLIPSIS"/>
+        </module>
+        <module name="Indentation"/>
+        <module name="CommentsIndentation"/>
+        <module name="NoClone"/>
+        <module name="GenericWhitespace"/>
+        <module name="TypecastParenPad">
+            <property name="tokens" value="RPAREN,TYPECAST"/>
+        </module>
     </module>
-    <module name="JavadocType"/>
-    <module name="JavadocStyle">
-      <property name="checkEmptyJavadoc" value="true"/>
-      <property name="checkFirstSentence" value="false"/>
+    <module name="RegexpSingleline">
+        <property name="format" value="\s+$"/>
+        <property name="message" value="Line has trailing spaces."/>
     </module>
-    <module name="ConstantName"/>
-    <module name="LocalFinalVariableName"/>
-    <module name="LocalVariableName">
-      <property name="tokens" value="VARIABLE_DEF"/>
-    </module>
-    <module name="MemberName">
-      <property name="format" value="^m_[a-z][a-zA-Z0-9]*$"/>
-    </module>
-    <module name="MethodName"/>
-    <module name="PackageName">
-      <property name="format" value="^[a-z]+(\.[a-z]*)*$"/>
-    </module>
-    <module name="ParameterName">
-      <property name="format" value="^p_[a-z][a-zA-Z0-9]*$"/>
-    </module>
-    <module name="StaticVariableName">
-      <property name="format" value="^m_[a-z][a-zA-Z0-9]*$"/>
-    </module>
-    <module name="TypeName"/>
-    <module name="AvoidStarImport"/>
-    <module name="RedundantImport"/>
-    <module name="UnusedImports"/>
-    <module name="EmptyForIteratorPad"/>
-    <module name="MethodParamPad">
-      <property name="allowLineBreaks" value="true"/>
-    </module>
-    <module name="NoWhitespaceAfter"/>
-    <module name="NoWhitespaceBefore"/>
-    <module name="OperatorWrap"/>
-    <module name="ParenPad"/>
-    <module name="TypecastParenPad">
-      <property name="tokens" value="RPAREN,TYPECAST"/>
-    </module>
-    <module name="WhitespaceAfter">
-      <property name="tokens" value="COMMA"/>
-    </module>
-    <module name="ModifierOrder"/>
-    <module name="RedundantModifier"/>
-    <module name="LeftCurly">
-      <property name="maxLineLength" value="160"/>
-    </module>
-    <module name="NeedBraces"/>
-    <module name="RightCurly"/>
-    <module name="EmptyStatement"/>
-    <module name="EqualsHashCode"/>
-    <module name="HiddenField"/>
-    <module name="InnerAssignment"/>
-    <module name="MissingSwitchDefault"/>
-    <module name="SimplifyBooleanExpression"/>
-    <module name="SimplifyBooleanReturn"/>
-    <module name="FinalClass"/>
-    <module name="HideUtilityClassConstructor"/>
-    <module name="VisibilityModifier"/>
-    <module name="ArrayTypeStyle"/>
-    <module name="FinalParameters">
-      <property name="tokens" value="METHOD_DEF,CTOR_DEF,LITERAL_CATCH"/>
-    </module>
-    <module name="UpperEll"/>
-    <module name="MissingDeprecated"/>
-    <module name="MissingOverride"/>
-    <module name="SuppressWarnings"/>
-    <module name="AbstractClassName">
-      <property name="format" value="^Abstract[A-Z][a-zA-Z0-9]*$"/>
-    </module>
-    <module name="ClassTypeParameterName">
-      <property name="format" value="^[A-Z][a-zA-Z0-9]*$"/>
-    </module>
-    <module name="MethodTypeParameterName">
-      <property name="format" value="^[A-Z][a-zA-Z0-9]*$"/>
-    </module>
-    <module name="AvoidStaticImport"/>
-    <module name="ImportOrder">
-      <property name="groups" value="java, javax, sun, org, com, de.uniduesseldorf.dxram"/>
-      <property name="separated" value="true"/>
-    </module>
-    <module name="LineLength">
-      <property name="max" value="160"/>
-      <property name="tabWidth" value="4"/>
-    </module>
-    <module name="OuterTypeNumber"/>
-    <module name="OperatorWrap">
-      <property name="option" value="eol"/>
-      <property name="tokens" value="ASSIGN,BAND_ASSIGN,BOR_ASSIGN,BSR_ASSIGN,BXOR_ASSIGN,DIV_ASSIGN,MINUS_ASSIGN,MOD_ASSIGN,PLUS_ASSIGN,SL_ASSIGN,SR_ASSIGN,STAR_ASSIGN"/>
-    </module>
-    <module name="EmptyForInitializerPad"/>
-    <module name="GenericWhitespace"/>
-    <module name="CovariantEquals"/>
-    <module name="DefaultComesLast"/>
-    <module name="DeclarationOrder">
-      <property name="ignoreModifiers" value="true"/>
-    </module>
-    <module name="ExplicitInitialization"/>
-    <module name="FallThrough">
-      <property name="checkLastCaseGroup" value="true"/>
-    </module>
-    <module name="IllegalThrows">
-      <property name="illegalClassNames" value="java.lang.Throwable, java.lang.Error, java.lang.RuntimeException, java.lang.Exception"/>
-    </module>
-    <module name="MultipleVariableDeclarations"/>
-    <module name="ParameterAssignment"/>
-    <module name="StringLiteralEquality"/>
-    <module name="UnnecessaryParentheses"/>
-    <module name="OneStatementPerLine"/>
-    <module name="InnerTypeLast"/>
-    <module name="MutableException"/>
-    <module name="TrailingComment"/>
-    <module name="OuterTypeFilename"/>
-    <module name="PackageDeclaration"/>
-    <module name="InterfaceIsType"/>
-    <module name="NoWhitespaceBefore">
-      <property name="allowLineBreaks" value="true"/>
-      <property name="tokens" value="DOT"/>
-    </module>
-  </module>
-  <module name="NewlineAtEndOfFile"/>
-  <module name="RegexpSingleline">
-    <property name="format" value="\s+$"/>
-    <property name="message" value="Line has trailing spaces."/>
-  </module>
+    <module name="FileTabCharacter"/>
 </module>
-

@@ -1,13 +1,13 @@
+
 package de.hhu.bsinfo.dxcompute.ms;
 
 /**
  * Signal codes the slave can send to the master and vice versa
- *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.07.16
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.07.2016
  */
 public enum Signal {
-	/**
-	 * Abort task execution
-	 */
-	SIGNAL_ABORT,
+    /**
+     * Abort task execution
+     */
+    SIGNAL_ABORT,
 }

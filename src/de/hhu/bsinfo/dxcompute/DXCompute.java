@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxcompute;
 
 import de.hhu.bsinfo.dxcompute.job.JobService;
@@ -8,8 +9,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 
 /**
  * Main class/entry point for any application to work with DXCompute and its services.
- *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.10.16
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.10.2016
  */
 public class DXCompute extends DXRAM {
 

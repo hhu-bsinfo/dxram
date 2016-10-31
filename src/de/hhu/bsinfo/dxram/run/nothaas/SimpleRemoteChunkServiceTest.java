@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.run.nothaas;
 
 import de.hhu.bsinfo.dxram.DXRAM;
@@ -14,91 +13,90 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  * Minimal remote ChunkService test.
  * Run this as a peer with one superpeer and another peer
  * to receive the remote calls of the ChunkService.
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
  */
 public class SimpleRemoteChunkServiceTest extends AbstractMain {
-	public static final Argument ARG_REMOTE_PEER_ID =
-			new Argument("remotePeerID", "-15999", true, "NodeID of the remote peer to create chunks on");
+    public static final Argument ARG_REMOTE_PEER_ID = new Argument("remotePeerID", "-15999", true, "NodeID of the remote peer to create chunks on");
 
-	private DXRAM m_dxram;
-	private ChunkService m_chunkService;
-	private NameserviceService m_nameserviceService;
+    private DXRAM m_dxram;
+    private ChunkService m_chunkService;
+    private NameserviceService m_nameserviceService;
 
-	/**
-	 * Constructor
-	 */
-	public SimpleRemoteChunkServiceTest() {
-		super("Test creating chunks on a remote peer");
+    /**
+     * Constructor
+     */
+    public SimpleRemoteChunkServiceTest() {
+        super("Test creating chunks on a remote peer");
 
-		m_dxram = new DXRAM();
-		m_dxram.initialize("config/dxram.conf");
-		m_chunkService = m_dxram.getService(ChunkService.class);
-		m_nameserviceService = m_dxram.getService(NameserviceService.class);
-	}
+        m_dxram = new DXRAM();
+        m_dxram.initialize("config/dxram.conf");
+        m_chunkService = m_dxram.getService(ChunkService.class);
+        m_nameserviceService = m_dxram.getService(NameserviceService.class);
+    }
 
-	/**
-	 * Java main entry point.
-	 * @param p_args
-	 *            Main arguments.
-	 */
-	public static void main(final String[] p_args) {
-		AbstractMain main = new SimpleRemoteChunkServiceTest();
-		main.run(p_args);
-	}
+    /**
+     * Java main entry point.
+     *
+     * @param p_args
+     *         Main arguments.
+     */
+    public static void main(final String[] p_args) {
+        AbstractMain main = new SimpleRemoteChunkServiceTest();
+        main.run(p_args);
+    }
 
-	@Override
-	protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
-		p_arguments.setArgument(ARG_REMOTE_PEER_ID);
-	}
+    @Override protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
+        p_arguments.setArgument(ARG_REMOTE_PEER_ID);
+    }
 
-	@Override
-	protected int main(final ArgumentList p_arguments) {
-		final short remotePeerID = (short) (p_arguments.getArgument(ARG_REMOTE_PEER_ID).getValue(Short.class) & 0xFFFF);
+    @Override protected int main(final ArgumentList p_arguments) {
+        final short remotePeerID = (short) (p_arguments.getArgument(ARG_REMOTE_PEER_ID).getValue(Short.class) & 0xFFFF);
 
-		int[] sizes = new int[] {155, 543, 99, 65, 233};
-		System.out.println("Creating remote chunks...");
-		long[] chunkIDs = m_chunkService.createRemote(remotePeerID, sizes);
-		if (chunkIDs == null) {
-			System.out.println("Creating remote chunks failed.");
-			return -1;
-		}
-		Chunk[] chunks = new Chunk[chunkIDs.length];
-		Chunk[] chunksCopy = new Chunk[chunkIDs.length];
-		for (int i = 0; i < chunkIDs.length; i++) {
-			chunks[i] = new Chunk(chunkIDs[i], sizes[i]);
-			chunksCopy[i] = new Chunk(chunkIDs[i], sizes[i]);
-		}
+        int[] sizes = new int[] {155, 543, 99, 65, 233};
+        System.out.println("Creating remote chunks...");
+        long[] chunkIDs = m_chunkService.createRemote(remotePeerID, sizes);
+        if (chunkIDs == null) {
+            System.out.println("Creating remote chunks failed.");
+            return -1;
+        }
+        Chunk[] chunks = new Chunk[chunkIDs.length];
+        Chunk[] chunksCopy = new Chunk[chunkIDs.length];
+        for (int i = 0; i < chunkIDs.length; i++) {
+            chunks[i] = new Chunk(chunkIDs[i], sizes[i]);
+            chunksCopy[i] = new Chunk(chunkIDs[i], sizes[i]);
+        }
 
-		System.out.println("Remote chunks created: ");
-		for (int i = 0; i < chunkIDs.length; i++) {
-			System.out.println(ChunkID.toHexString(chunkIDs[i]));
-		}
+        System.out.println("Remote chunks created: ");
+        for (int i = 0; i < chunkIDs.length; i++) {
+            System.out.println(ChunkID.toHexString(chunkIDs[i]));
+        }
 
-		System.out.println("Setting chunk payload...");
-		for (Chunk chunk : chunks) {
-			m_nameserviceService.register(chunk, "C" + ChunkID.getLocalID(chunk.getID()));
-			System.out.println(ChunkID.toHexString(chunk.getID()) + ": " + ChunkID.toHexString(chunk.getID()));
-			chunk.getData().putLong(chunk.getID());
-		}
+        System.out.println("Setting chunk payload...");
+        for (Chunk chunk : chunks) {
+            m_nameserviceService.register(chunk, "C" + ChunkID.getLocalID(chunk.getID()));
+            System.out.println(ChunkID.toHexString(chunk.getID()) + ": " + ChunkID.toHexString(chunk.getID()));
+            chunk.getData().putLong(chunk.getID());
+        }
 
-		System.out.println("Putting chunks...");
-		int ret = m_chunkService.put(chunks);
-		System.out.println("Putting chunks results: " + ret);
+        System.out.println("Putting chunks...");
+        int ret = m_chunkService.put(chunks);
+        System.out.println("Putting chunks results: " + ret);
 
-		System.out.println("Getting chunks...");
-		for (int i = 0; i < chunkIDs.length; i++) {
-			long chunkid = m_nameserviceService.getChunkID("C" + (i + 1), -1);
-			Chunk chunk = new Chunk(chunkid, sizes[i]);
-			if (m_chunkService.get(chunk) != 1) {
-				System.out.println("Getting chunk failed.");
-				return -1;
-			}
-			System.out.println(ChunkID.toHexString(chunk.getData().getLong()));
-		}
+        System.out.println("Getting chunks...");
+        for (int i = 0; i < chunkIDs.length; i++) {
+            long chunkid = m_nameserviceService.getChunkID("C" + (i + 1), -1);
+            Chunk chunk = new Chunk(chunkid, sizes[i]);
+            if (m_chunkService.get(chunk) != 1) {
+                System.out.println("Getting chunk failed.");
+                return -1;
+            }
+            System.out.println(ChunkID.toHexString(chunk.getData().getLong()));
+        }
 
-		System.out.println("Removing chunks...");
-		int removeCount = m_chunkService.remove(chunks);
-		System.out.println("Removed chunks: " + removeCount);
-		return 0;
-	}
+        System.out.println("Removing chunks...");
+        int removeCount = m_chunkService.remove(chunks);
+        System.out.println("Removed chunks: " + removeCount);
+        return 0;
+    }
 }

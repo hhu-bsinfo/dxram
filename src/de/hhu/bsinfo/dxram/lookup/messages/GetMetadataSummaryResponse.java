@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -7,64 +6,66 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response to a GetMetadataSummaryRequest
- * @author Kevin Beineke 12.10.2016
+ *
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 12.10.2016
  */
 public class GetMetadataSummaryResponse extends AbstractResponse {
 
-	// Attributes
-	private String m_summary;
+    // Attributes
+    private String m_summary;
 
-	// Constructors
-	/**
-	 * Creates an instance of GetMetadataSummaryResponse
-	 */
-	public GetMetadataSummaryResponse() {
-		super();
-	}
+    // Constructors
 
-	/**
-	 * Creates an instance of SendBackupsMessage
-	 * @param p_request
-	 *            the corresponding GetMetadataSummaryRequest
-	 * @param p_summary
-	 *            the metadata summary
-	 */
-	public GetMetadataSummaryResponse(final GetMetadataSummaryRequest p_request, final String p_summary) {
-		super(p_request, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_RESPONSE);
+    /**
+     * Creates an instance of GetMetadataSummaryResponse
+     */
+    public GetMetadataSummaryResponse() {
+        super();
+    }
 
-		m_summary = p_summary;
-	}
+    /**
+     * Creates an instance of SendBackupsMessage
+     *
+     * @param p_request
+     *         the corresponding GetMetadataSummaryRequest
+     * @param p_summary
+     *         the metadata summary
+     */
+    public GetMetadataSummaryResponse(final GetMetadataSummaryRequest p_request, final String p_summary) {
+        super(p_request, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_RESPONSE);
 
-	// Getters
-	/**
-	 * Get metadata summary
-	 * @return the metadata summary
-	 */
-	public final String getMetadataSummary() {
-		return m_summary;
-	}
+        m_summary = p_summary;
+    }
 
-	// Methods
-	@Override
-	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putInt(m_summary.getBytes().length);
-		p_buffer.put(m_summary.getBytes());
-	}
+    // Getters
 
-	@Override
-	protected final void readPayload(final ByteBuffer p_buffer) {
-		int length;
-		byte[] data;
+    /**
+     * Get metadata summary
+     *
+     * @return the metadata summary
+     */
+    public final String getMetadataSummary() {
+        return m_summary;
+    }
 
-		length = p_buffer.getInt();
-		data = new byte[length];
-		p_buffer.get(data);
-		m_summary = new String(data);
-	}
+    // Methods
+    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+        p_buffer.putInt(m_summary.getBytes().length);
+        p_buffer.put(m_summary.getBytes());
+    }
 
-	@Override
-	protected final int getPayloadLength() {
-		return m_summary.getBytes().length + Integer.BYTES;
-	}
+    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+        int length;
+        byte[] data;
+
+        length = p_buffer.getInt();
+        data = new byte[length];
+        p_buffer.get(data);
+        m_summary = new String(data);
+    }
+
+    @Override protected final int getPayloadLength() {
+        return m_summary.getBytes().length + Integer.BYTES;
+    }
 
 }

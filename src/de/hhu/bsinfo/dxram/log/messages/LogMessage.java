@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
@@ -11,102 +10,105 @@ import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * Message for logging a Chunk on a remote node
- * @author Kevin Beineke 20.04.2014
+ *
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 20.04.2016
  */
 public class LogMessage extends AbstractMessage {
 
-	// Attributes
-	private byte m_rangeID;
-	private DataStructure[] m_dataStructures;
-	private ByteBuffer m_buffer;
+    // Attributes
+    private byte m_rangeID;
+    private DataStructure[] m_dataStructures;
+    private ByteBuffer m_buffer;
 
-	// Constructors
-	/**
-	 * Creates an instance of LogMessage
-	 */
-	public LogMessage() {
-		super();
+    // Constructors
 
-		m_rangeID = -1;
-		m_dataStructures = null;
-		m_buffer = null;
-	}
+    /**
+     * Creates an instance of LogMessage
+     */
+    public LogMessage() {
+        super();
 
-	/**
-	 * Creates an instance of LogMessage
-	 * @param p_destination
-	 *            the destination
-	 * @param p_dataStructures
-	 *            the data structures to store
-	 */
-	public LogMessage(final short p_destination, final DataStructure... p_dataStructures) {
-		super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
+        m_rangeID = -1;
+        m_dataStructures = null;
+        m_buffer = null;
+    }
 
-		m_rangeID = -1;
-		m_dataStructures = p_dataStructures;
-	}
+    /**
+     * Creates an instance of LogMessage
+     *
+     * @param p_destination
+     *         the destination
+     * @param p_dataStructures
+     *         the data structures to store
+     */
+    public LogMessage(final short p_destination, final DataStructure... p_dataStructures) {
+        super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
 
-	/**
-	 * Creates an instance of LogMessage
-	 * @param p_destination
-	 *            the destination
-	 * @param p_dataStructures
-	 *            the data structures to store
-	 * @param p_rangeID
-	 *            the RangeID
-	 */
-	public LogMessage(final short p_destination, final byte p_rangeID, final DataStructure... p_dataStructures) {
-		super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
+        m_rangeID = -1;
+        m_dataStructures = p_dataStructures;
+    }
 
-		m_rangeID = p_rangeID;
-		m_dataStructures = p_dataStructures;
-	}
+    /**
+     * Creates an instance of LogMessage
+     *
+     * @param p_destination
+     *         the destination
+     * @param p_dataStructures
+     *         the data structures to store
+     * @param p_rangeID
+     *         the RangeID
+     */
+    public LogMessage(final short p_destination, final byte p_rangeID, final DataStructure... p_dataStructures) {
+        super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
 
-	// Getters
-	/**
-	 * Get the message buffer
-	 * @return the message buffer
-	 */
-	public final ByteBuffer getMessageBuffer() {
-		return m_buffer;
-	}
+        m_rangeID = p_rangeID;
+        m_dataStructures = p_dataStructures;
+    }
 
-	// Methods
-	@Override
-	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.put(m_rangeID);
+    // Getters
 
-		p_buffer.putInt(m_dataStructures.length);
-		final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
-		for (DataStructure dataStructure : m_dataStructures) {
-			final int size = dataStructure.sizeofObject();
+    /**
+     * Get the message buffer
+     *
+     * @return the message buffer
+     */
+    public final ByteBuffer getMessageBuffer() {
+        return m_buffer;
+    }
 
-			p_buffer.putLong(dataStructure.getID());
-			exporter.setPayloadSize(size);
-			p_buffer.putInt(size);
-			p_buffer.order(ByteOrder.nativeOrder());
-			exporter.exportObject(dataStructure);
-			p_buffer.order(ByteOrder.BIG_ENDIAN);
-		}
-	}
+    // Methods
+    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+        p_buffer.put(m_rangeID);
 
-	@Override
-	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_buffer = p_buffer;
-	}
+        p_buffer.putInt(m_dataStructures.length);
+        final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        for (DataStructure dataStructure : m_dataStructures) {
+            final int size = dataStructure.sizeofObject();
 
-	@Override
-	protected final int getPayloadLength() {
-		if (m_dataStructures != null) {
-			int ret = Byte.BYTES + Integer.BYTES;
+            p_buffer.putLong(dataStructure.getID());
+            exporter.setPayloadSize(size);
+            p_buffer.putInt(size);
+            p_buffer.order(ByteOrder.nativeOrder());
+            exporter.exportObject(dataStructure);
+            p_buffer.order(ByteOrder.BIG_ENDIAN);
+        }
+    }
 
-			for (DataStructure dataStructure : m_dataStructures) {
-				ret += Long.BYTES + Integer.BYTES + dataStructure.sizeofObject();
-			}
+    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+        m_buffer = p_buffer;
+    }
 
-			return ret;
-		} else {
-			return 0;
-		}
-	}
+    @Override protected final int getPayloadLength() {
+        if (m_dataStructures != null) {
+            int ret = Byte.BYTES + Integer.BYTES;
+
+            for (DataStructure dataStructure : m_dataStructures) {
+                ret += Long.BYTES + Integer.BYTES + dataStructure.sizeofObject();
+            }
+
+            return ret;
+        } else {
+            return 0;
+        }
+    }
 }

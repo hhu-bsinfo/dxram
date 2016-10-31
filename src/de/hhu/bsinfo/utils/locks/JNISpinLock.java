@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.utils.locks;
 
 import java.util.concurrent.TimeUnit;
@@ -6,77 +5,73 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 import sun.misc.Unsafe;
+
 import de.hhu.bsinfo.utils.UnsafeHandler;
 
 /**
  * Represents a spinlock
- * @author Florian Klein 05.04.2014
+ *
+ * @author Florian Klein, florian.klein@hhu.de, 05.04.2014
  */
 public final class JNISpinLock implements Lock {
 
-	// Constants
-	private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
+    // Constants
+    private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
 
-	// Attributes
-	private long m_lock;
+    // Attributes
+    private long m_lock;
 
-	// Constructors
-	/**
-	 * Creates an instance of SpinLock
-	 */
-	public JNISpinLock() {
-		m_lock = UNSAFE.allocateMemory(4);
-		UNSAFE.putInt(m_lock, 0);
-	}
+    // Constructors
 
-	// Methods
-	@Override
-	public void lock() {
-		JNILock.lock(m_lock);
-	}
+    /**
+     * Creates an instance of SpinLock
+     */
+    public JNISpinLock() {
+        m_lock = UNSAFE.allocateMemory(4);
+        UNSAFE.putInt(m_lock, 0);
+    }
 
-	@Override
-	public void unlock() {
-		JNILock.unlock(m_lock);
-	}
+    // Methods
+    @Override public void lock() {
+        JNILock.lock(m_lock);
+    }
 
-	@Override
-	public void lockInterruptibly() throws InterruptedException {
-		throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
-	}
+    @Override public void unlock() {
+        JNILock.unlock(m_lock);
+    }
 
-	@Override
-	public boolean tryLock() {
-		return JNILock.tryLock(m_lock);
-	}
+    @Override public void lockInterruptibly() throws InterruptedException {
+        throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
+    }
 
-	@Override
-	public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
-		boolean ret;
-		long time;
-		long nanos;
+    @Override public boolean tryLock() {
+        return JNILock.tryLock(m_lock);
+    }
 
-		ret = tryLock();
-		if (!ret) {
-			nanos = p_unit.toNanos(p_time);
-			time = System.nanoTime();
+    @Override public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
+        boolean ret;
+        long time;
+        long nanos;
 
-			while (!ret && System.nanoTime() < time + nanos) {
-				ret = tryLock();
-			}
-		}
+        ret = tryLock();
+        if (!ret) {
+            nanos = p_unit.toNanos(p_time);
+            time = System.nanoTime();
 
-		return ret;
-	}
+            while (!ret && System.nanoTime() < time + nanos) {
+                ret = tryLock();
+            }
+        }
 
-	@Override
-	public Condition newCondition() {
-		throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
-	}
+        return ret;
+    }
 
-	@Override
-	protected void finalize() {
-		UNSAFE.freeMemory(m_lock);
-	}
+    @Override public Condition newCondition() {
+        throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
+    }
+
+    @Override protected void finalize() {
+        UNSAFE.freeMemory(m_lock);
+    }
 
 }

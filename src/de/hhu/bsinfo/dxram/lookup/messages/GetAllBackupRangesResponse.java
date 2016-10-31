@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -9,73 +8,74 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response to a GetBackupRangesRequest
- * @author Kevin Beineke
- *         08.10.2015
+ *
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 08.10.2015
  */
 public class GetAllBackupRangesResponse extends AbstractResponse {
 
-	// Attributes
-	private BackupRange[] m_backupRanges;
+    // Attributes
+    private BackupRange[] m_backupRanges;
 
-	// Constructors
-	/**
-	 * Creates an instance of GetBackupRangesResponse
-	 */
-	public GetAllBackupRangesResponse() {
-		super();
+    // Constructors
 
-		m_backupRanges = null;
-	}
+    /**
+     * Creates an instance of GetBackupRangesResponse
+     */
+    public GetAllBackupRangesResponse() {
+        super();
 
-	/**
-	 * Creates an instance of GetBackupRangesResponse
-	 * @param p_request
-	 *            the corresponding GetBackupRangesRequest
-	 * @param p_backupRanges
-	 *            all backup ranges for requested NodeID
-	 */
-	public GetAllBackupRangesResponse(final GetAllBackupRangesRequest p_request, final BackupRange[] p_backupRanges) {
-		super(p_request, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE);
+        m_backupRanges = null;
+    }
 
-		m_backupRanges = p_backupRanges;
-	}
+    /**
+     * Creates an instance of GetBackupRangesResponse
+     *
+     * @param p_request
+     *         the corresponding GetBackupRangesRequest
+     * @param p_backupRanges
+     *         all backup ranges for requested NodeID
+     */
+    public GetAllBackupRangesResponse(final GetAllBackupRangesRequest p_request, final BackupRange[] p_backupRanges) {
+        super(p_request, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE);
 
-	// Getters
-	/**
-	 * Get all backup ranges
-	 * @return all backup ranges
-	 */
-	public final BackupRange[] getBackupRanges() {
-		return m_backupRanges;
-	}
+        m_backupRanges = p_backupRanges;
+    }
 
-	// Methods
-	@Override
-	protected final void writePayload(final ByteBuffer p_buffer) {
-		final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+    // Getters
 
-		p_buffer.putInt(m_backupRanges.length);
-		for (BackupRange backupRange : m_backupRanges) {
-			exporter.setPayloadSize(backupRange.sizeofObject());
-			exporter.exportObject(backupRange);
-		}
-	}
+    /**
+     * Get all backup ranges
+     *
+     * @return all backup ranges
+     */
+    public final BackupRange[] getBackupRanges() {
+        return m_backupRanges;
+    }
 
-	@Override
-	protected final void readPayload(final ByteBuffer p_buffer) {
-		final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+    // Methods
+    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+        final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 
-		m_backupRanges = new BackupRange[p_buffer.getInt()];
-		for (int i = 0; i < m_backupRanges.length; i++) {
-			m_backupRanges[i] = new BackupRange();
-			importer.setPayloadSize(BackupRange.sizeofObjectStatic());
-			importer.importObject(m_backupRanges[i]);
-		}
-	}
+        p_buffer.putInt(m_backupRanges.length);
+        for (BackupRange backupRange : m_backupRanges) {
+            exporter.setPayloadSize(backupRange.sizeofObject());
+            exporter.exportObject(backupRange);
+        }
+    }
 
-	@Override
-	protected final int getPayloadLength() {
-		return Integer.BYTES + BackupRange.sizeofObjectStatic() * m_backupRanges.length;
-	}
+    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+        final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+
+        m_backupRanges = new BackupRange[p_buffer.getInt()];
+        for (int i = 0; i < m_backupRanges.length; i++) {
+            m_backupRanges[i] = new BackupRange();
+            importer.setPayloadSize(BackupRange.sizeofObjectStatic());
+            importer.importObject(m_backupRanges[i]);
+        }
+    }
+
+    @Override protected final int getPayloadLength() {
+        return Integer.BYTES + BackupRange.sizeofObjectStatic() * m_backupRanges.length;
+    }
 
 }
