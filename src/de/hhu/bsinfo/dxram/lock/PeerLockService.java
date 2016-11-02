@@ -52,8 +52,10 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     private static final StatisticsOperation SOP_INCOMING_UNLOCK = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "IncomingUnlock");
 
     // configuration values
-    @Expose private TimeUnit m_remoteLockSendInterval = new TimeUnit(10, TimeUnit.MS);
-    @Expose private TimeUnit m_remoteLockTryTimeout = new TimeUnit(100, TimeUnit.MS);
+    @Expose
+    private TimeUnit m_remoteLockSendInterval = new TimeUnit(10, TimeUnit.MS);
+    @Expose
+    private TimeUnit m_remoteLockTryTimeout = new TimeUnit(100, TimeUnit.MS);
 
     // dependent components
     private AbstractBootComponent m_boot;
@@ -63,7 +65,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     private LookupComponent m_lookup;
     private EventComponent m_event;
 
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
@@ -72,7 +75,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         m_event = p_componentAccessor.getComponent(EventComponent.class);
     }
 
-    @Override protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    @Override
+    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
         m_event.registerListener(this, NodeFailureEvent.class);
 
@@ -89,11 +93,13 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         return true;
     }
 
-    @Override protected boolean shutdownService() {
+    @Override
+    protected boolean shutdownService() {
         return true;
     }
 
-    @Override public ArrayList<Pair<Long, Short>> getLockedList() {
+    @Override
+    public ArrayList<Pair<Long, Short>> getLockedList() {
         if (!m_boot.getNodeRole().equals(NodeRole.PEER)) {
             // #if LOGGER >= ERROR
             LOGGER.error("A %s must not lock chunks", m_boot.getNodeRole());
@@ -104,7 +110,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         return m_lock.getLockedList();
     }
 
-    @Override public ArrayList<Pair<Long, Short>> getLockedList(final short p_nodeId) {
+    @Override
+    public ArrayList<Pair<Long, Short>> getLockedList(final short p_nodeId) {
         if (p_nodeId == m_boot.getNodeID()) {
             return getLockedList();
         }
@@ -123,7 +130,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         return ((GetLockedListResponse) request.getResponse()).getList();
     }
 
-    @Override public ErrorCode lock(final boolean p_writeLock, final int p_timeout, final long p_chunkID) {
+    @Override
+    public ErrorCode lock(final boolean p_writeLock, final int p_timeout, final long p_chunkID) {
         assert p_timeout >= 0;
         assert p_chunkID != ChunkID.INVALID_ID;
 
@@ -218,7 +226,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         return err;
     }
 
-    @Override public ErrorCode unlock(final boolean p_writeLock, final long p_chunkID) {
+    @Override
+    public ErrorCode unlock(final boolean p_writeLock, final long p_chunkID) {
         // early returns
         if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
             // #if LOGGER >= ERROR
@@ -286,7 +295,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         return err;
     }
 
-    @Override public void eventTriggered(final NodeFailureEvent p_event) {
+    @Override
+    public void eventTriggered(final NodeFailureEvent p_event) {
         if (p_event.getRole() == NodeRole.PEER) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("Connection to peer 0x%X lost, unlocking all chunks locked by lost instance", p_event.getNodeID());
@@ -300,7 +310,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         }
     }
 
-    @Override public void onIncomingMessage(final AbstractMessage p_message) {
+    @Override
+    public void onIncomingMessage(final AbstractMessage p_message) {
         // #if LOGGER == TRACE
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */
@@ -332,7 +343,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
      * Handles an incoming LockRequest
      *
      * @param p_request
-     *         the LockRequest
+     *     the LockRequest
      */
     private void incomingLockRequest(final LockRequest p_request) {
         boolean success;
@@ -343,8 +354,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
         // the host handles the timeout as we don't want to block the message receiver thread
         // for too long, execute a tryLock instead
-        success = m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(), p_request.isWriteLockOperation(),
-                (int) m_remoteLockTryTimeout.getMs());
+        success =
+            m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(), p_request.isWriteLockOperation(), (int) m_remoteLockTryTimeout.getMs());
 
         try {
             if (success) {
@@ -352,7 +363,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
             } else {
                 m_network.sendMessage(new LockResponse(p_request, (byte) -1));
             }
-        } catch (final NetworkException e) {
+        } catch (final NetworkException ignore) {
 
         }
 
@@ -365,7 +376,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
      * Handles an incoming UnlockMessage
      *
      * @param p_message
-     *         the UnlockMessage
+     *     the UnlockMessage
      */
     private void incomingUnlockMessage(final UnlockMessage p_message) {
         // #ifdef STATISTICS
@@ -383,7 +394,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
      * Handles an incoming GetLockedListRequest
      *
      * @param p_request
-     *         the GetLockedListRequest
+     *     the GetLockedListRequest
      */
     private void incomingLockedListRequest(final GetLockedListRequest p_request) {
         ArrayList<Pair<Long, Short>> list = m_lock.getLockedList();

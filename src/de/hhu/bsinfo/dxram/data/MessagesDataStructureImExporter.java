@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.data;
 
 import java.nio.ByteBuffer;
@@ -12,6 +11,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * Implementation of an Importer/Exporter for DataStructure objects for
  * network messages. Use this if a network message has to send an object,
  * which implements the DataStructure interface.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class MessagesDataStructureImExporter implements Importer, Exporter {
@@ -21,8 +21,9 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
 
     /**
      * Constructor
+     *
      * @param p_messageBuffer
-     *            Buffer the message has to write to/read from.
+     *     Buffer the message has to write to/read from.
      */
     public MessagesDataStructureImExporter(final ByteBuffer p_messageBuffer) {
         m_messageBuffer = p_messageBuffer;
@@ -33,8 +34,9 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
      * (for dynamic sized objects) or the amount of bytes in the buffer available
      * when exporting an object.
      * Use case: Generic chunk data with dynamic size (see Chunk object).
+     *
      * @param p_size
-     *            Payload size to set.
+     *     Payload size to set.
      */
     public void setPayloadSize(final int p_size) {
         m_payloadSize = p_size;
@@ -42,9 +44,10 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
 
     /**
      * Get the payload size that was set previously indicating the total size of the data strcture.
+     *
      * @return Payload size.
      */
-    public int getPayloadSize() {
+    int getPayloadSize() {
         return m_payloadSize;
     }
 

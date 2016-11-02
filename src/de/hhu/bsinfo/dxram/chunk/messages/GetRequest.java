@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -10,6 +9,7 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Request for getting a Chunk from a remote node
+ *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
@@ -33,10 +33,11 @@ public class GetRequest extends AbstractRequest {
     /**
      * Creates an instance of GetRequest.
      * This constructor is used when sending this message.
+     *
      * @param p_destination
-     *            the destination node id.
+     *     the destination node id.
      * @param p_dataStructures
-     *            Data structure with the ID of the chunk to get.
+     *     Data structure with the ID of the chunk to get.
      */
     public GetRequest(final short p_destination, final DataStructure... p_dataStructures) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
@@ -49,6 +50,7 @@ public class GetRequest extends AbstractRequest {
 
     /**
      * Get the chunk IDs of this request (when receiving it).
+     *
      * @return Chunk ID.
      */
     public long[] getChunkIDs() {
@@ -59,9 +61,10 @@ public class GetRequest extends AbstractRequest {
      * Get the data structures stored with this request.
      * This is used to write the received data to the provided object to avoid
      * using multiple buffers.
+     *
      * @return Data structures to store data to when the response arrived.
      */
-    public DataStructure[] getDataStructures() {
+    DataStructure[] getDataStructures() {
         return m_dataStructures;
     }
 

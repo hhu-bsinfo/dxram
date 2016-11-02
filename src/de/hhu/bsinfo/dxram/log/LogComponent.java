@@ -52,15 +52,24 @@ public class LogComponent extends AbstractDXRAMComponent {
     private static final int PAYLOAD_PRINT_LENGTH = 128;
 
     // configuration values
-    @Expose private boolean m_useChecksum = true;
-    @Expose private StorageUnit m_flashPageSize = new StorageUnit(4, StorageUnit.KB);
-    @Expose private StorageUnit m_logSegmentSize = new StorageUnit(8, StorageUnit.MB);
-    @Expose private StorageUnit m_primaryLogSize = new StorageUnit(256, StorageUnit.MB);
-    @Expose private StorageUnit m_secondaryLogSize = new StorageUnit(512, StorageUnit.MB);
-    @Expose private StorageUnit m_writeBufferSize = new StorageUnit(256, StorageUnit.MB);
-    @Expose private StorageUnit m_secondaryLogBufferSize = new StorageUnit(128, StorageUnit.KB);
-    @Expose private int m_reorgUtilizationThreshold = 70;
-    @Expose private boolean m_sortBufferPooling = true;
+    @Expose
+    private boolean m_useChecksum = true;
+    @Expose
+    private StorageUnit m_flashPageSize = new StorageUnit(4, StorageUnit.KB);
+    @Expose
+    private StorageUnit m_logSegmentSize = new StorageUnit(8, StorageUnit.MB);
+    @Expose
+    private StorageUnit m_primaryLogSize = new StorageUnit(256, StorageUnit.MB);
+    @Expose
+    private StorageUnit m_secondaryLogSize = new StorageUnit(512, StorageUnit.MB);
+    @Expose
+    private StorageUnit m_writeBufferSize = new StorageUnit(256, StorageUnit.MB);
+    @Expose
+    private StorageUnit m_secondaryLogBufferSize = new StorageUnit(128, StorageUnit.KB);
+    @Expose
+    private int m_reorgUtilizationThreshold = 70;
+    @Expose
+    private boolean m_sortBufferPooling = true;
 
     // dependent components
     private NetworkComponent m_network;
@@ -97,11 +106,11 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Returns the header size
      *
      * @param p_nodeID
-     *         the NodeID
+     *     the NodeID
      * @param p_localID
-     *         the LocalID
+     *     the LocalID
      * @param p_size
-     *         the size of the Chunk
+     *     the size of the Chunk
      * @return the header size
      */
     public short getAproxHeaderSize(final short p_nodeID, final long p_localID, final int p_size) {
@@ -112,9 +121,9 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Initializes a new backup range
      *
      * @param p_firstChunkIDOrRangeID
-     *         the beginning of the range
+     *     the beginning of the range
      * @param p_backupPeers
-     *         the backup peers
+     *     the backup peers
      */
     public void initBackupRange(final long p_firstChunkIDOrRangeID, final short[] p_backupPeers) {
         InitRequest request;
@@ -153,11 +162,11 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Recovers all Chunks of given backup range
      *
      * @param p_owner
-     *         the NodeID of the node whose Chunks have to be restored
+     *     the NodeID of the node whose Chunks have to be restored
      * @param p_chunkID
-     *         the ChunkID
+     *     the ChunkID
      * @param p_rangeID
-     *         the RangeID
+     *     the RangeID
      * @return the recovered Chunks
      */
     public Chunk[] recoverBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) {
@@ -185,9 +194,9 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Recovers all Chunks of given backup range
      *
      * @param p_fileName
-     *         the file name
+     *     the file name
      * @param p_path
-     *         the path of the folder the file is in
+     *     the path of the folder the file is in
      * @return the recovered Chunks
      */
     public Chunk[] recoverBackupRangeFromFile(final String p_fileName, final String p_path) {
@@ -208,16 +217,16 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Returns the secondary log buffer
      *
      * @param p_chunkID
-     *         the ChunkID
+     *     the ChunkID
      * @param p_source
-     *         the source NodeID
+     *     the source NodeID
      * @param p_rangeID
-     *         the RangeID for migrations or -1
+     *     the RangeID for migrations or -1
      * @return the secondary log buffer
      * @throws IOException
-     *         if the secondary log buffer could not be returned
+     *     if the secondary log buffer could not be returned
      * @throws InterruptedException
-     *         if the secondary log buffer could not be returned
+     *     if the secondary log buffer could not be returned
      */
     public SecondaryLogBuffer getSecondaryLogBuffer(final long p_chunkID, final short p_source, final byte p_rangeID) throws IOException, InterruptedException {
         SecondaryLogBuffer ret = null;
@@ -243,7 +252,7 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Returns the backup range
      *
      * @param p_chunkID
-     *         the ChunkID
+     *     the ChunkID
      * @return the first ChunkID of the range
      */
     public long getBackupRange(final long p_chunkID) {
@@ -280,9 +289,9 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Flushes all secondary log buffers
      *
      * @throws IOException
-     *         if at least one secondary log could not be flushed
+     *     if at least one secondary log could not be flushed
      * @throws InterruptedException
-     *         if caller is interrupted
+     *     if caller is interrupted
      */
     public void flushDataToSecondaryLogs() throws IOException, InterruptedException {
         LogCatalog cat;
@@ -312,13 +321,15 @@ public class LogComponent extends AbstractDXRAMComponent {
         }
     }
 
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
     }
 
-    @Override protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    @Override
+    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
         m_loggingIsActive = (m_boot.getNodeRole() == NodeRole.PEER) && m_backup.isActive();
         if (m_loggingIsActive) {
@@ -344,7 +355,7 @@ public class LogComponent extends AbstractDXRAMComponent {
 
             // Create primary log buffer
             m_writeBuffer = new PrimaryWriteBuffer(this, m_primaryLog, (int) m_writeBufferSize.getBytes(), (int) m_flashPageSize.getBytes(),
-                    (int) m_secondaryLogBufferSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_useChecksum, m_sortBufferPooling);
+                (int) m_secondaryLogBufferSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_useChecksum, m_sortBufferPooling);
 
             // Create secondary log and secondary log buffer catalogs
             m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
@@ -363,7 +374,8 @@ public class LogComponent extends AbstractDXRAMComponent {
         return true;
     }
 
-    @Override protected boolean shutdownComponent() {
+    @Override
+    protected boolean shutdownComponent() {
         LogCatalog cat;
 
         if (m_loggingIsActive) {
@@ -427,9 +439,9 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Removes Chunks from log
      *
      * @param p_firstChunkIDOrRangeID
-     *         the first ChunkID of the range or the RangeID (for migrations)
+     *     the first ChunkID of the range or the RangeID (for migrations)
      * @param p_owner
-     *         the Chunks' owner
+     *     the Chunks' owner
      * @return whether the operation was successful or not
      */
     protected boolean initBackupRange(final long p_firstChunkIDOrRangeID, final short p_owner) {
@@ -448,9 +460,9 @@ public class LogComponent extends AbstractDXRAMComponent {
                 if (!cat.exists(p_firstChunkIDOrRangeID, (byte) -1)) {
                     // Create new secondary log
                     secLog =
-                            new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, ChunkID.getLocalID(p_firstChunkIDOrRangeID), cat.getNewID(false), false,
-                                    m_backupDirectory, m_secondaryLogSize.getBytes(), (int) m_flashPageSize.getBytes(), (int) m_logSegmentSize.getBytes(),
-                                    m_reorgUtilizationThreshold, m_useChecksum);
+                        new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, ChunkID.getLocalID(p_firstChunkIDOrRangeID), cat.getNewID(false), false,
+                            m_backupDirectory, m_secondaryLogSize.getBytes(), (int) m_flashPageSize.getBytes(), (int) m_logSegmentSize.getBytes(),
+                            m_reorgUtilizationThreshold, m_useChecksum);
                     // Insert range in log catalog
                     cat.insertRange(p_firstChunkIDOrRangeID, secLog, (int) m_secondaryLogBufferSize.getBytes(), (int) m_logSegmentSize.getBytes());
                 }
@@ -458,8 +470,8 @@ public class LogComponent extends AbstractDXRAMComponent {
                 if (!cat.exists(-1, (byte) p_firstChunkIDOrRangeID)) {
                     // Create new secondary log for migrations
                     secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_firstChunkIDOrRangeID, cat.getNewID(true), true, m_backupDirectory,
-                            m_secondaryLogSize.getBytes(), (int) m_flashPageSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_reorgUtilizationThreshold,
-                            m_useChecksum);
+                        m_secondaryLogSize.getBytes(), (int) m_flashPageSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_reorgUtilizationThreshold,
+                        m_useChecksum);
                     // Insert range in log catalog
                     cat.insertRange(p_firstChunkIDOrRangeID, secLog, (int) m_secondaryLogBufferSize.getBytes(), (int) m_logSegmentSize.getBytes());
                 }
@@ -479,9 +491,9 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Logs a buffer with Chunks on SSD
      *
      * @param p_buffer
-     *         the Chunk buffer
+     *     the Chunk buffer
      * @param p_owner
-     *         the Chunks' owner
+     *     the Chunks' owner
      */
     protected void logChunks(final ByteBuffer p_buffer, final short p_owner) {
         long chunkID;
@@ -518,9 +530,9 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Removes Chunks from log
      *
      * @param p_buffer
-     *         the ChunkID buffer
+     *     the ChunkID buffer
      * @param p_owner
-     *         the Chunks' owner
+     *     the Chunks' owner
      */
     protected void removeChunks(final ByteBuffer p_buffer, final short p_owner) {
         long chunkID;
@@ -554,8 +566,9 @@ public class LogComponent extends AbstractDXRAMComponent {
         LogCatalog cat;
 
         if (m_loggingIsActive) {
-            ret = "***********************************************************************\n" + "*Primary log: " + m_primaryLog.getOccupiedSpace() +
-                    " bytes\n" + "***********************************************************************\n\n" +
+            ret =
+                "***********************************************************************\n" + "*Primary log: " + m_primaryLog.getOccupiedSpace() + " bytes\n" +
+                    "***********************************************************************\n\n" +
                     "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" + "+Secondary logs:\n";
 
             for (int i = 0; i < m_logCatalogs.length; i++) {
@@ -615,7 +628,7 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Get access to secondary log for reorganization thread
      *
      * @param p_secLog
-     *         the Secondary Log
+     *     the Secondary Log
      */
     protected void getAccessToSecLog(final SecondaryLog p_secLog) {
         if (!p_secLog.isAccessed()) {
@@ -633,7 +646,7 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Get access to secondary log for reorganization thread
      *
      * @param p_secLog
-     *         the Secondary Log
+     *     the Secondary Log
      */
     protected void leaveSecLog(final SecondaryLog p_secLog) {
         if (p_secLog.isAccessed()) {
@@ -645,16 +658,16 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Returns the secondary log
      *
      * @param p_chunkID
-     *         the ChunkID
+     *     the ChunkID
      * @param p_source
-     *         the source NodeID
+     *     the source NodeID
      * @param p_rangeID
-     *         the RangeID for migrations or -1
+     *     the RangeID for migrations or -1
      * @return the secondary log
      * @throws IOException
-     *         if the secondary log could not be returned
+     *     if the secondary log could not be returned
      * @throws InterruptedException
-     *         if the secondary log could not be returned
+     *     if the secondary log could not be returned
      */
     private SecondaryLog getSecondaryLog(final long p_chunkID, final short p_source, final byte p_rangeID) throws IOException, InterruptedException {
         SecondaryLog ret;
@@ -677,9 +690,9 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Flushes the primary log write buffer
      *
      * @throws IOException
-     *         if primary log could not be flushed
+     *     if primary log could not be flushed
      * @throws InterruptedException
-     *         if caller is interrupted
+     *     if caller is interrupted
      */
     private void flushDataToPrimaryLog() throws IOException, InterruptedException {
         m_writeBuffer.signalWriterThreadAndFlushToPrimLog();
@@ -689,11 +702,11 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Reads the local data of one log
      *
      * @param p_owner
-     *         the NodeID
+     *     the NodeID
      * @param p_chunkID
-     *         the ChunkID
+     *     the ChunkID
      * @param p_rangeID
-     *         the RangeID
+     *     the RangeID
      * @return the local data
      * @note for testing only
      */
@@ -721,11 +734,11 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Prints the metadata of one node's log
      *
      * @param p_owner
-     *         the NodeID
+     *     the NodeID
      * @param p_chunkID
-     *         the ChunkID
+     *     the ChunkID
      * @param p_rangeID
-     *         the RangeID
+     *     the RangeID
      * @note for testing only
      */
     private void printBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) {
@@ -764,49 +777,50 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Prints the metadata of one log entry
      *
      * @param p_nodeID
-     *         the NodeID
+     *     the NodeID
      * @param p_localID
-     *         the LocalID
+     *     the LocalID
      * @param p_payload
-     *         buffer with payload
+     *     buffer with payload
      * @param p_offset
-     *         offset within buffer
+     *     offset within buffer
      * @param p_length
-     *         length of payload
+     *     length of payload
      * @param p_version
-     *         version of chunk
+     *     version of chunk
      * @param p_index
-     *         index of log entry
+     *     index of log entry
      * @param p_logEntryHeader
-     *         the log entry header
+     *     the log entry header
      */
     private void printMetadata(final short p_nodeID, final long p_localID, final byte[] p_payload, final int p_offset, final int p_length,
-            final Version p_version, final int p_index, final AbstractLogEntryHeader p_logEntryHeader) {
+        final Version p_version, final int p_index, final AbstractLogEntryHeader p_logEntryHeader) {
         final long chunkID = ((long) p_nodeID << 48) + p_localID;
         byte[] array;
 
         try {
             if (p_version.getVersion() != -1) {
                 array = new String(Arrays.copyOfRange(p_payload, p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset),
-                        p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH)).trim().getBytes();
+                    p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH)).trim().getBytes();
 
                 if (Tools.looksLikeUTF8(array)) {
                     System.out.println(
-                            "Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length +
-                                    "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload - " + new String(array, "UTF-8"));
+                        "Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length +
+                            "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload - " + new String(array, "UTF-8"));
                 } else {
                     System.out.println(
-                            "Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length +
-                                    "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload is no String");
+                        "Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length +
+                            "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload is no String");
                 }
             } else {
                 System.out.println(
-                        "Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length +
-                                "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Tombstones have no payload");
+                    "Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length +
+                        "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Tombstones have no payload");
             }
         } catch (final UnsupportedEncodingException | IllegalArgumentException e) {
-            System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length +
-                    "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload is no String");
+            System.out.println(
+                "Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length + "\t Version - " +
+                    p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload is no String");
         }
         // p_localID: -1 can only be printed as an int
     }

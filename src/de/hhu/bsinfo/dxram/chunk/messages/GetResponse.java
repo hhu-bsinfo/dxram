@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -11,6 +10,7 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response to a GetRequest
+ *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
@@ -38,12 +38,13 @@ public class GetResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      * Make sure to include all the chunks with IDs from the request in the correct order. If a chunk does
      * not exist, no data and a length of 0 indicates this situation.
+     *
      * @param p_request
-     *            the corresponding GetRequest
+     *     the corresponding GetRequest
      * @param p_numChunksGot
-     *            Number of chunks successfully read from memory.
+     *     Number of chunks successfully read from memory.
      * @param p_dataStructures
-     *            Data structures filled with the read data from memory
+     *     Data structures filled with the read data from memory
      */
     public GetResponse(final GetRequest p_request, final int p_numChunksGot, final DataStructure... p_dataStructures) {
         super(p_request, ChunkMessages.SUBTYPE_GET_RESPONSE);
@@ -54,6 +55,7 @@ public class GetResponse extends AbstractResponse {
 
     /**
      * Tells how many chunks have successfully been retrieved from the remote machine.
+     *
      * @return Number of chunks retrieved from remote machine.
      */
     public int getNumberOfChunksGot() {

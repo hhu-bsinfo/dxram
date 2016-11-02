@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.failure;
 
 import java.util.concurrent.locks.ReentrantLock;
@@ -31,6 +30,7 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 
 /**
  * Handles a node failure.
+ *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 05.10.2016
  */
 public class FailureComponent extends AbstractDXRAMComponent implements MessageReceiver, EventListener<AbstractEvent> {
@@ -58,8 +58,9 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
     /**
      * Dispatcher for a node failure
+     *
      * @param p_nodeID
-     *            NodeID of failed node
+     *     NodeID of failed node
      */
     private void failureHandling(final short p_nodeID) {
         boolean responsible;
@@ -187,8 +188,9 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
     /**
      * Handles an incoming FailureRequest
+     *
      * @param p_request
-     *            the FailureRequest
+     *     the FailureRequest
      */
     private void incomingFailureRequest(final FailureRequest p_request) {
         // Outsource failure handling to another thread to avoid blocking a message handler

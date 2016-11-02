@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.boot;
 
 import java.io.IOException;
@@ -27,6 +26,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
 /**
  * Service providing information about the bootstrapping process like
  * node ids, node roles, addresses etc.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class BootService extends AbstractDXRAMService implements MessageReceiver {
@@ -46,8 +46,9 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Check if a specific node is online.
+     *
      * @param p_nodeID
-     *            Node to check.
+     *     Node to check.
      * @return True if online, false offline.
      */
     public boolean isNodeOnline(final short p_nodeID) {
@@ -56,6 +57,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Get the ID of the node, you are currently running on.
+     *
      * @return NodeID.
      */
     public short getNodeID() {
@@ -64,6 +66,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Get IDs of all available (online) nodes including own.
+     *
      * @return List of IDs of nodes available.
      */
     public List<Short> getOnlineNodeIDs() {
@@ -72,6 +75,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Get the node role of the current node.
+     *
      * @return Node role of current node.
      */
     public NodeRole getNodeRole() {
@@ -80,8 +84,9 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Get the role of another nodeID.
+     *
      * @param p_nodeID
-     *            Node id to get the role of.
+     *     Node id to get the role of.
      * @return Role of other nodeID or null if node does not exist.
      */
     public NodeRole getNodeRole(final short p_nodeID) {
@@ -90,8 +95,9 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Get the IP and port of another node.
+     *
      * @param p_nodeID
-     *            Node ID of the node.
+     *     Node ID of the node.
      * @return IP and port of the specified node or an invalid address if not available.
      */
     public InetSocketAddress getNodeAddress(final short p_nodeID) {
@@ -100,6 +106,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Get IDs of all available (online) peer nodes exception our own.
+     *
      * @return List of IDs of nodes available.
      */
     public List<Short> getOnlineSuperpeerNodeIDs() {
@@ -108,6 +115,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Get IDs of all available (online) peer nodes exception our own.
+     *
      * @return List of IDs of nodes available.
      */
     public List<Short> getOnlinePeerNodeIDs() {
@@ -116,8 +124,9 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Check if a node is available/exists.
+     *
      * @param p_nodeID
-     *            Node ID to check.
+     *     Node ID to check.
      * @return True if available, false otherwise.
      */
     public boolean nodeAvailable(final short p_nodeID) {
@@ -126,10 +135,11 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Shutdown a single node or all nodes.
+     *
      * @param p_nodeID
-     *            Node id to shut down or -1/0xFFFF to shut down all nodes.
+     *     Node id to shut down or -1/0xFFFF to shut down all nodes.
      * @param p_hardShutdown
-     *            If true this will kill the process instead of shutting down DXRAM properly.
+     *     If true this will kill the process instead of shutting down DXRAM properly.
      * @return True if successful, false on failure.
      */
     public boolean shutdownNode(final short p_nodeID, final boolean p_hardShutdown) {
@@ -206,8 +216,9 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * (Soft) reboot a DXRAM node.
+     *
      * @param p_nodeID
-     *            Node to reboot.
+     *     Node to reboot.
      * @return True if successful, false otherwise.
      */
     public boolean rebootNode(final short p_nodeID) {
@@ -285,8 +296,9 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Handler an incoming RebootMessage.
+     *
      * @param p_message
-     *            Message to handle.
+     *     Message to handle.
      */
     private void incomingRebootMessage(final RebootMessage p_message) {
         DXRAMEngine parentEngine = getParentEngine();
@@ -306,8 +318,9 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Handler an incoming ShutdownMessage.
+     *
      * @param p_message
-     *            Message to handle.
+     *     Message to handle.
      */
     private void incomingShutdownMessage(final ShutdownMessage p_message) {
         shutdown(p_message.isHardShutdown());
@@ -315,8 +328,9 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     /**
      * Shutdown the current node.
+     *
      * @param p_hardShutdown
-     *            True to kill the node without shutting down DXRAM, false for proper DXRAM shutdown.
+     *     True to kill the node without shutting down DXRAM, false for proper DXRAM shutdown.
      */
     private void shutdown(final boolean p_hardShutdown) {
         if (p_hardShutdown) {

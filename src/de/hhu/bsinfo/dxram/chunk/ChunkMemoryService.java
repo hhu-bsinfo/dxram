@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk;
 
 import org.apache.logging.log4j.LogManager;
@@ -20,6 +19,7 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
  * algorithms that are already aware of their data locality.
  * We also don't have batch methods i.e. combining multiple read/write requests to
  * multiple chunks. So use this wisely if accessing many chunks this way.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 14.06.2016
  */
 public class ChunkMemoryService extends AbstractDXRAMService {
@@ -56,10 +56,11 @@ public class ChunkMemoryService extends AbstractDXRAMService {
     /**
      * Read a single byte from a chunk. Use this if you need to access a very specific value
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
+     *
      * @param p_chunkID
-     *            Chunk id of the chunk to read.
+     *     Chunk id of the chunk to read.
      * @param p_offset
-     *            Offset within the chunk to read.
+     *     Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public byte readByte(final long p_chunkID, final int p_offset) {
@@ -77,10 +78,11 @@ public class ChunkMemoryService extends AbstractDXRAMService {
     /**
      * Read a single short from a chunk. Use this if you need to access a very specific value
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
+     *
      * @param p_chunkID
-     *            Chunk id of the chunk to read.
+     *     Chunk id of the chunk to read.
      * @param p_offset
-     *            Offset within the chunk to read.
+     *     Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public short readShort(final long p_chunkID, final int p_offset) {
@@ -98,10 +100,11 @@ public class ChunkMemoryService extends AbstractDXRAMService {
     /**
      * Read a single int from a chunk. Use this if you need to access a very specific value
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
+     *
      * @param p_chunkID
-     *            Chunk id of the chunk to read.
+     *     Chunk id of the chunk to read.
      * @param p_offset
-     *            Offset within the chunk to read.
+     *     Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public int readInt(final long p_chunkID, final int p_offset) {
@@ -119,10 +122,11 @@ public class ChunkMemoryService extends AbstractDXRAMService {
     /**
      * Read a single long from a chunk. Use this if you need to access a very specific value
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
+     *
      * @param p_chunkID
-     *            Chunk id of the chunk to read.
+     *     Chunk id of the chunk to read.
      * @param p_offset
-     *            Offset within the chunk to read.
+     *     Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public long readLong(final long p_chunkID, final int p_offset) {
@@ -140,12 +144,13 @@ public class ChunkMemoryService extends AbstractDXRAMService {
     /**
      * Write a single byte to a chunk. Use this if you need to access a very specific value
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
+     *
      * @param p_chunkID
-     *            Chunk id of the chunk to write.
+     *     Chunk id of the chunk to write.
      * @param p_offset
-     *            Offset within the chunk to write.
+     *     Offset within the chunk to write.
      * @param p_value
-     *            Value to write.
+     *     Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeByte(final long p_chunkID, final int p_offset, final byte p_value) {
@@ -163,12 +168,13 @@ public class ChunkMemoryService extends AbstractDXRAMService {
     /**
      * Write a single short to a chunk. Use this if you need to access a very specific value
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
+     *
      * @param p_chunkID
-     *            Chunk id of the chunk to write.
+     *     Chunk id of the chunk to write.
      * @param p_offset
-     *            Offset within the chunk to write.
+     *     Offset within the chunk to write.
      * @param p_value
-     *            Value to write.
+     *     Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeShort(final long p_chunkID, final int p_offset, final short p_value) {
@@ -186,12 +192,13 @@ public class ChunkMemoryService extends AbstractDXRAMService {
     /**
      * Write a single int to a chunk. Use this if you need to access a very specific value
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
+     *
      * @param p_chunkID
-     *            Chunk id of the chunk to write.
+     *     Chunk id of the chunk to write.
      * @param p_offset
-     *            Offset within the chunk to write.
+     *     Offset within the chunk to write.
      * @param p_value
-     *            Value to write.
+     *     Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeInt(final long p_chunkID, final int p_offset, final int p_value) {
@@ -209,12 +216,13 @@ public class ChunkMemoryService extends AbstractDXRAMService {
     /**
      * Write a single long to a chunk. Use this if you need to access a very specific value
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
+     *
      * @param p_chunkID
-     *            Chunk id of the chunk to write.
+     *     Chunk id of the chunk to write.
      * @param p_offset
-     *            Offset within the chunk to write.
+     *     Offset within the chunk to write.
      * @param p_value
-     *            Value to write.
+     *     Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeLong(final long p_chunkID, final int p_offset, final long p_value) {

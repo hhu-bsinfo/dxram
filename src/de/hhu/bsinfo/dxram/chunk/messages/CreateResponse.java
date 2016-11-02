@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -8,6 +7,7 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Reponse message to the create request.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class CreateResponse extends AbstractResponse {
@@ -27,10 +27,11 @@ public class CreateResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      * Make sure to include all the chunks with IDs from the request in the correct order. If a chunk does
      * not exist, no data and a length of 0 indicates this situation.
+     *
      * @param p_request
-     *            the corresponding GetRequest
+     *     the corresponding GetRequest
      * @param p_chunkIDs
-     *            The chunk IDs requested
+     *     The chunk IDs requested
      */
     public CreateResponse(final CreateRequest p_request, final long... p_chunkIDs) {
         super(p_request, ChunkMessages.SUBTYPE_CREATE_RESPONSE);
@@ -41,6 +42,7 @@ public class CreateResponse extends AbstractResponse {
 
     /**
      * Get the chunk IDs of the created chunks.
+     *
      * @return ChunkIDs.
      */
     public final long[] getChunkIDs() {

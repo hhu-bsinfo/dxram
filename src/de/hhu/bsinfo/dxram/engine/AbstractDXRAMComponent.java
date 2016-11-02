@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.engine;
 
 import com.google.gson.annotations.Expose;
@@ -12,6 +11,7 @@ import org.apache.logging.log4j.Logger;
  * across multiple components allows introducing a clearer structure and higher flexibility
  * for the whole system. Components are allowed to depend on other components i.e. directly
  * interact with each other.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public abstract class AbstractDXRAMComponent {
@@ -32,10 +32,11 @@ public abstract class AbstractDXRAMComponent {
 
     /**
      * Constructor
+     *
      * @param p_priorityInit
-     *            Default init priority for this component
+     *     Default init priority for this component
      * @param p_priorityShutdown
-     *            Default shutdown priority for this component
+     *     Default shutdown priority for this component
      */
     public AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown) {
         LOGGER = LogManager.getFormatterLogger(this.getClass().getSimpleName());
@@ -45,32 +46,36 @@ public abstract class AbstractDXRAMComponent {
 
     /**
      * Get the name of this component.
+     *
      * @return Name of this component.
      */
-    public String getComponentName() {
+    String getComponentName() {
         return this.getClass().getSimpleName();
     }
 
     /**
      * Get the init priority.
+     *
      * @return Init priority.
      */
-    public int getPriorityInit() {
+    int getPriorityInit() {
         return m_priorityInit;
     }
 
     /**
      * Get the shutdown priority.
+     *
      * @return Shutdown priority.
      */
-    public int getPriorityShutdown() {
+    int getPriorityShutdown() {
         return m_priorityShutdown;
     }
 
     /**
      * Initialize this component.
+     *
      * @param p_engine
-     *            Engine this component is part of (parent).
+     *     Engine this component is part of (parent).
      * @return True if initializing was successful, false otherwise.
      */
     public boolean init(final DXRAMEngine p_engine) {
@@ -108,6 +113,7 @@ public abstract class AbstractDXRAMComponent {
 
     /**
      * Shut down this component.
+     *
      * @return True if shutting down was successful, false otherwise.
      */
     public boolean shutdown() {
@@ -134,21 +140,24 @@ public abstract class AbstractDXRAMComponent {
 
     /**
      * Called before the component is initialized. Get all the components your own component depends on.
+     *
      * @param p_componentAccessor
-     *            Component accessor that provides access to other components
+     *     Component accessor that provides access to other components
      */
-    protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
+    protected abstract void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor);
 
     /**
      * Called when the component is initialized. Setup data structures, get dependent components, read settings etc.
+     *
      * @param p_engineEngineSettings
-     *            EngineSettings instance provided by the engine.
+     *     EngineSettings instance provided by the engine.
      * @return True if initialing was successful, false otherwise.
      */
-    protected abstract boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings);
+    protected abstract boolean initComponent(DXRAMContext.EngineSettings p_engineEngineSettings);
 
     /**
      * Called when the component gets shut down. Cleanup your component in here.
+     *
      * @return True if shutdown was successful, false otherwise.
      */
     protected abstract boolean shutdownComponent();
@@ -157,6 +166,7 @@ public abstract class AbstractDXRAMComponent {
      * Check if this class is an engine accessor i.e. breaking the rules of
      * not knowing the engine. Override this if this feature is used.
      * Do not override this if you do not know what you are doing.
+     *
      * @return True if accessor, false otherwise.
      */
     protected boolean isEngineAccessor() {
@@ -167,6 +177,7 @@ public abstract class AbstractDXRAMComponent {
      * Get the engine within the component.
      * If you don't know what you are doing, do not use this.
      * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
+     *
      * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
      */
     protected DXRAMEngine getParentEngine() {

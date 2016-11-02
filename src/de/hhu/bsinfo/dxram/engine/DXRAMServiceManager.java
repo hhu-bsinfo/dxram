@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.engine;
 
 import java.util.HashMap;
@@ -7,9 +6,10 @@ import java.util.Map;
 /**
  * Manager for all services in DXRAM.
  * All services used in DXRAM must be registered here to create a default configuration with all services listed.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 21.10.2016
  */
-public class DXRAMServiceManager {
+class DXRAMServiceManager {
 
     private Map<String, Class<? extends AbstractDXRAMService>> m_registeredServices = new HashMap<>();
 
@@ -22,8 +22,9 @@ public class DXRAMServiceManager {
 
     /**
      * Register a service
+     *
      * @param p_class
-     *            Serivce class to register
+     *     Serivce class to register
      */
     public void register(final Class<? extends AbstractDXRAMService> p_class) {
         m_registeredServices.put(p_class.getSimpleName(), p_class);
@@ -31,8 +32,9 @@ public class DXRAMServiceManager {
 
     /**
      * Create an instance of a service
+     *
      * @param p_className
-     *            Name of the class (without package path)
+     *     Name of the class (without package path)
      * @return Instance of the service
      */
     AbstractDXRAMService createInstance(final String p_className) {
@@ -48,6 +50,7 @@ public class DXRAMServiceManager {
 
     /**
      * Create instances of all registered services
+     *
      * @return List of instances of all registered services
      */
     AbstractDXRAMService[] createAllInstances() {

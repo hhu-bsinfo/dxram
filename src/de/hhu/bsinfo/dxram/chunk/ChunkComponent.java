@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk;
 
 import org.apache.logging.log4j.LogManager;
@@ -24,6 +23,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Component for chunk handling.
+ *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class ChunkComponent extends AbstractDXRAMComponent {
@@ -46,12 +46,13 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
     /**
      * Create the index chunk for the nameservice.
+     *
      * @param p_size
-     *            Size of the index chunk.
+     *     Size of the index chunk.
      * @return Chunkid of the index chunk.
      */
     public long createIndexChunk(final int p_size) {
-        long chunkId = -1;
+        long chunkId;
 
         m_memoryManager.lockManage();
         chunkId = m_memoryManager.createIndex(p_size);
@@ -65,12 +66,13 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
     /**
      * Internal chunk create for management data
+     *
      * @param p_size
-     *            Size of the chunk
+     *     Size of the chunk
      * @return Chunkid of the created chunk.
      */
     public long createChunk(final int p_size) {
-        long chunkId = -1;
+        long chunkId;
 
         m_memoryManager.lockManage();
         chunkId = m_memoryManager.create(p_size);
@@ -84,8 +86,9 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
     /**
      * Internal chunk put for management data.
+     *
      * @param p_dataStructure
-     *            Data structure to put
+     *     Data structure to put
      * @return True if successful, false otherwise
      */
     public boolean putChunk(final DataStructure p_dataStructure) {
@@ -110,7 +113,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
                         try {
                             m_network.sendMessage(new LogMessage(peer, p_dataStructure));
-                        } catch (final NetworkException e) {
+                        } catch (final NetworkException ignore) {
 
                         }
                     }
@@ -123,12 +126,13 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
     /**
      * Replicates all local Chunks of given range to a specific backup peer
+     *
      * @param p_backupPeer
-     *            the new backup peer
+     *     the new backup peer
      * @param p_firstChunkID
-     *            the first ChunkID
+     *     the first ChunkID
      * @param p_lastChunkID
-     *            the last ChunkID
+     *     the last ChunkID
      */
     public void replicateBackupRange(final short p_backupPeer, final long p_firstChunkID, final long p_lastChunkID) {
         int counter = 0;
@@ -161,19 +165,20 @@ public class ChunkComponent extends AbstractDXRAMComponent {
         // Send all chunks to backup peer
         try {
             m_network.sendMessage(new LogMessage(p_backupPeer, chunks));
-        } catch (final NetworkException e) {
+        } catch (final NetworkException ignore) {
 
         }
     }
 
     /**
      * Replicates all local Chunks to a specific backup peer
+     *
      * @param p_backupPeer
-     *            the new backup peer
+     *     the new backup peer
      * @param p_chunkIDs
-     *            the ChunkIDs of the Chunks to replicate
+     *     the ChunkIDs of the Chunks to replicate
      * @param p_rangeID
-     *            the RangeID
+     *     the RangeID
      */
     public void replicateBackupRange(final short p_backupPeer, final long[] p_chunkIDs, final byte p_rangeID) {
         int counter = 0;
@@ -207,15 +212,16 @@ public class ChunkComponent extends AbstractDXRAMComponent {
         // Send all chunks to backup peer
         try {
             m_network.sendMessage(new LogMessage(p_backupPeer, chunks));
-        } catch (final NetworkException e) {
+        } catch (final NetworkException ignore) {
 
         }
     }
 
     /**
      * Put a recovered chunks into local memory.
+     *
      * @param p_chunks
-     *            Chunks to put.
+     *     Chunks to put.
      */
     public void putRecoveredChunks(final Chunk[] p_chunks) {
 
@@ -234,8 +240,9 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
     /**
      * Puts migrated or recovered Chunks
+     *
      * @param p_chunks
-     *            the Chunks
+     *     the Chunks
      * @return whether storing foreign chunks was successful or not
      */
     public boolean putForeignChunks(final Chunk[] p_chunks) {
@@ -257,8 +264,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
             if (m_backup.isActive()) {
                 logEntrySize =
-                        chunk.getDataSize() +
-                        m_log.getAproxHeaderSize(ChunkID.getCreatorID(chunk.getID()), ChunkID.getLocalID(chunk.getID()), chunk.getDataSize());
+                    chunk.getDataSize() + m_log.getAproxHeaderSize(ChunkID.getCreatorID(chunk.getID()), ChunkID.getLocalID(chunk.getID()), chunk.getDataSize());
                 if (m_backup.fitsInCurrentMigrationBackupRange(size, logEntrySize)) {
                     // Chunk fits in current migration backup range
                     size += logEntrySize;
@@ -288,7 +294,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
                         if (backupPeer != m_boot.getNodeID() && backupPeer != -1) {
                             try {
                                 m_network.sendMessage(new LogMessage(backupPeer, rangeID, new Chunk[] {chunk}));
-                            } catch (final NetworkException e) {
+                            } catch (final NetworkException ignore) {
 
                             }
                         }

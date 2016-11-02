@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -8,6 +7,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Index data chunk for the nameservice.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class NameServiceIndexData implements DataStructure {
@@ -29,10 +29,11 @@ public class NameServiceIndexData implements DataStructure {
 
     /**
      * Insert a new mapping into the index.
+     *
      * @param p_key
-     *            Key of the mapping.
+     *     Key of the mapping.
      * @param p_chunkId
-     *            Chunk id to map to the key.
+     *     Chunk id to map to the key.
      * @return True if adding successful, false if index is full.
      */
     public boolean insertMapping(final int p_key, final long p_chunkId) {
@@ -48,8 +49,9 @@ public class NameServiceIndexData implements DataStructure {
 
     /**
      * Chain multiple indices for expansion creating a linked list.
+     *
      * @param p_chunkID
-     *            ChunkID of the next data index to chain to this one.
+     *     ChunkID of the next data index to chain to this one.
      */
     public void setNextIndexDataChunk(final long p_chunkID) {
         m_nextIndexDataChunkId = p_chunkID;

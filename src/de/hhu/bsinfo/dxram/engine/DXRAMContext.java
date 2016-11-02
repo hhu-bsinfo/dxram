@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.engine;
 
 import java.util.HashMap;
@@ -11,6 +10,7 @@ import de.hhu.bsinfo.utils.unit.IPV4Unit;
 
 /**
  * Context object with settings for the engine as well as component and service instances
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 20.10.2016
  */
 public class DXRAMContext {
@@ -30,6 +30,7 @@ public class DXRAMContext {
 
     /**
      * Get the engine settings
+     *
      * @return Engine settings
      */
     EngineSettings getEngineSettings() {
@@ -38,6 +39,7 @@ public class DXRAMContext {
 
     /**
      * Get all component instances
+     *
      * @return Component instances
      */
     Map<String, AbstractDXRAMComponent> getComponents() {
@@ -46,6 +48,7 @@ public class DXRAMContext {
 
     /**
      * Get all service instances
+     *
      * @return Service instances
      */
     Map<String, AbstractDXRAMService> getServices() {
@@ -54,8 +57,9 @@ public class DXRAMContext {
 
     /**
      * Fill the context with all components that registered at the DXRAMComponentManager
+     *
      * @param p_manager
-     *            Manager to use
+     *     Manager to use
      */
     void fillDefaultComponents(final DXRAMComponentManager p_manager) {
 
@@ -66,8 +70,9 @@ public class DXRAMContext {
 
     /**
      * Fill the context with all services that registered at the DXRAMServiceManager
+     *
      * @param p_manager
-     *            Manager to use
+     *     Manager to use
      */
     void fillDefaultServices(final DXRAMServiceManager p_manager) {
 
@@ -97,6 +102,7 @@ public class DXRAMContext {
 
         /**
          * Get the address assigned to the DXRAM instance
+         *
          * @return Address
          */
         public IPV4Unit getAddress() {
@@ -105,6 +111,7 @@ public class DXRAMContext {
 
         /**
          * Role assigned for this DXRAM instance
+         *
          * @return Role
          */
         public NodeRole getRole() {
@@ -113,6 +120,7 @@ public class DXRAMContext {
 
         /**
          * Get the path to the folder with the JNI compiled libraries
+         *
          * @return Path to JNI libraries
          */
         String getJNIPath() {

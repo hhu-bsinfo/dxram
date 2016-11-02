@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.failure.messages;
 
 import java.nio.ByteBuffer;
@@ -8,6 +7,7 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Failure Request
+ *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 18.10.2016
  */
 public class FailureRequest extends AbstractRequest {
@@ -16,6 +16,7 @@ public class FailureRequest extends AbstractRequest {
     private short m_failedNode;
 
     // Constructors
+
     /**
      * Creates an instance of FailureRequest
      */
@@ -27,10 +28,11 @@ public class FailureRequest extends AbstractRequest {
 
     /**
      * Creates an instance of FailureRequest
+     *
      * @param p_destination
-     *            the destination
+     *     the destination
      * @param p_failedNode
-     *            the NodeID of the failed node
+     *     the NodeID of the failed node
      */
     public FailureRequest(final short p_destination, final short p_failedNode) {
         super(p_destination, DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST);
@@ -39,8 +41,10 @@ public class FailureRequest extends AbstractRequest {
     }
 
     // Getters
+
     /**
      * Get the failed node
+     *
      * @return the NodeID
      */
     public final short getFailedNode() {

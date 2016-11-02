@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -8,6 +7,7 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response to a PutRequest
+ *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
@@ -26,10 +26,11 @@ public class PutResponse extends AbstractResponse {
     /**
      * Creates an instance of PutResponse.
      * This constructor is used when sending this message.
+     *
      * @param p_request
-     *            the request
+     *     the request
      * @param p_statusCodes
-     *            Status code for every single chunk put.
+     *     Status code for every single chunk put.
      */
     public PutResponse(final PutRequest p_request, final byte... p_statusCodes) {
         super(p_request, ChunkMessages.SUBTYPE_PUT_RESPONSE);
@@ -41,6 +42,7 @@ public class PutResponse extends AbstractResponse {
 
     /**
      * Get the status
+     *
      * @return true if put was successful
      */
     public final byte[] getStatusCodes() {

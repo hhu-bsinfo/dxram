@@ -36,18 +36,21 @@ public class PeerLockComponent extends AbstractLockComponent {
         super(DXRAMComponentOrder.Init.PEER_LOCK, DXRAMComponentOrder.Shutdown.PEER_LOCK);
     }
 
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         // no dependencies
     }
 
-    @Override protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    @Override
+    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         m_lockedChunks = new ConcurrentHashMap<>();
         m_mapEntryCreationLock = new AtomicBoolean(false);
 
         return true;
     }
 
-    @Override protected boolean shutdownComponent() {
+    @Override
+    protected boolean shutdownComponent() {
         m_lockedChunks.clear();
         m_lockedChunks = null;
         m_mapEntryCreationLock = null;
@@ -55,7 +58,8 @@ public class PeerLockComponent extends AbstractLockComponent {
         return true;
     }
 
-    @Override public ArrayList<Pair<Long, Short>> getLockedList() {
+    @Override
+    public ArrayList<Pair<Long, Short>> getLockedList() {
         ArrayList<Pair<Long, Short>> ret = new ArrayList<>();
         for (Entry<Long, LockEntry> entry : m_lockedChunks.entrySet()) {
 
@@ -69,7 +73,8 @@ public class PeerLockComponent extends AbstractLockComponent {
         return ret;
     }
 
-    @Override public boolean lock(final long p_chunkId, final short p_lockingNodeID, final boolean p_writeLock, final int p_timeoutMs) {
+    @Override
+    public boolean lock(final long p_chunkId, final short p_lockingNodeID, final boolean p_writeLock, final int p_timeoutMs) {
         boolean success = false;
 
         // sanity masking of localID
@@ -115,7 +120,8 @@ public class PeerLockComponent extends AbstractLockComponent {
         return success;
     }
 
-    @Override public boolean unlock(final long p_chunkId, final short p_unlockingNodeID, final boolean p_writeLock) {
+    @Override
+    public boolean unlock(final long p_chunkId, final short p_unlockingNodeID, final boolean p_writeLock) {
 
         // sanity masking of localID
         LockEntry lockEntry = m_lockedChunks.get(ChunkID.getLocalID(p_chunkId));
@@ -142,7 +148,8 @@ public class PeerLockComponent extends AbstractLockComponent {
         return true;
     }
 
-    @Override public boolean unlockAllByNodeID(final short p_nodeID) {
+    @Override
+    public boolean unlockAllByNodeID(final short p_nodeID) {
         // because the node crashed, we can assume that no further locks by this node are added
         for (Entry<Long, LockEntry> entry : m_lockedChunks.entrySet()) {
             LockEntry lockEntry = entry.getValue();

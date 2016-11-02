@@ -128,14 +128,16 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
         MemoryManagerComponent.Status memManStatus = m_memoryManager.getStatus();
 
-        status.m_freeMemoryBytes = memManStatus.getFreeMemory();
-        status.m_totalMemoryBytes = memManStatus.getTotalMemory();
-        status.m_totalPayloadMemoryBytes = memManStatus.getTotalPayloadMemory();
-        status.m_numberOfActiveMemoryBlocks = memManStatus.getNumberOfActiveMemoryBlocks();
-        status.m_numberOfActiveChunks = memManStatus.getNumberOfActiveChunks();
-        status.m_totalChunkPayloadMemory = memManStatus.getTotalChunkMemory();
-        status.m_cidTableCount = memManStatus.getCIDTableCount();
-        status.m_totalMemoryCIDTables = memManStatus.getTotalMemoryCIDTables();
+        if (memManStatus != null) {
+            status.m_freeMemoryBytes = memManStatus.getFreeMemory();
+            status.m_totalMemoryBytes = memManStatus.getTotalMemory();
+            status.m_totalPayloadMemoryBytes = memManStatus.getTotalPayloadMemory();
+            status.m_numberOfActiveMemoryBlocks = memManStatus.getNumberOfActiveMemoryBlocks();
+            status.m_numberOfActiveChunks = memManStatus.getNumberOfActiveChunks();
+            status.m_totalChunkPayloadMemory = memManStatus.getTotalChunkMemory();
+            status.m_cidTableCount = memManStatus.getCIDTableCount();
+            status.m_totalMemoryCIDTables = memManStatus.getTotalMemoryCIDTables();
+        }
 
         return status;
     }
@@ -184,7 +186,15 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      * @return Total amount of memory in bytes.
      */
     public long getTotalMemory() {
-        return m_memoryManager.getStatus().getTotalMemory();
+        MemoryManagerComponent.Status memManStatus;
+
+        memManStatus = m_memoryManager.getStatus();
+
+        if (memManStatus != null) {
+            return memManStatus.getTotalMemory();
+        } else {
+            return -1;
+        }
     }
 
     /**
@@ -193,7 +203,15 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      * @return Amount of free memory in bytes.
      */
     public long getFreeMemory() {
-        return m_memoryManager.getStatus().getFreeMemory();
+        MemoryManagerComponent.Status memManStatus;
+
+        memManStatus = m_memoryManager.getStatus();
+
+        if (memManStatus != null) {
+            return memManStatus.getFreeMemory();
+        } else {
+            return -1;
+        }
     }
 
     /**
@@ -543,9 +561,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 LookupRange lookupRange;
 
                 lookupRange = m_lookup.getLookupRange(p_chunkIDs[i]);
-                if (lookupRange == null) {
-                    continue;
-                } else {
+                if (lookupRange != null) {
                     short peer = lookupRange.getPrimaryPeer();
 
                     ArrayList<Long> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
@@ -631,7 +647,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         }
 
         // Inform backups
-        if (m_backup.isActive() && remoteChunksByBackupPeers != null) {
+        if (m_backup.isActive()) {
             long backupPeersAsLong;
             short[] backupPeers;
             Long[] ids;
@@ -644,7 +660,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                     if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
                         try {
                             m_network.sendMessage(new RemoveMessage(backupPeers[i], ids));
-                        } catch (final NetworkException e) {
+                        } catch (final NetworkException ignore) {
 
                         }
                     }
@@ -762,9 +778,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             } else {
                 // remote or migrated, figure out location and sort by peers
                 LookupRange location = m_lookup.getLookupRange(p_dataStructures[i + p_offset].getID());
-                if (location == null) {
-                    continue;
-                } else {
+                if (location != null) {
                     short peer = location.getPrimaryPeer();
 
                     ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
@@ -835,13 +849,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         }
 
         // Send backups
-        if (m_backup.isActive() && remoteChunksByBackupPeers != null) {
+        if (m_backup.isActive()) {
             long backupPeersAsLong;
             short[] backupPeers;
             DataStructure[] dataStructures;
             for (Entry<Long, ArrayList<DataStructure>> entry : remoteChunksByBackupPeers.entrySet()) {
                 backupPeersAsLong = entry.getKey();
-                dataStructures = entry.getValue().toArray(new Chunk[entry.getValue().size()]);
+                dataStructures = entry.getValue().toArray(new DataStructure[entry.getValue().size()]);
 
                 backupPeers = BackupRange.convert(backupPeersAsLong);
                 for (int i = 0; i < backupPeers.length; i++) {
@@ -852,7 +866,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
                         try {
                             m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
-                        } catch (final NetworkException e) {
+                        } catch (final NetworkException ignore) {
 
                         }
                     }
@@ -938,9 +952,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 LookupRange lookupRange;
 
                 lookupRange = m_lookup.getLookupRange(p_dataStructures[i + p_offset].getID());
-                if (lookupRange == null) {
-                    continue;
-                } else {
+                if (lookupRange != null) {
                     short peer = lookupRange.getPrimaryPeer();
 
                     ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
@@ -1020,11 +1032,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      * @return Int telling how many chunks were successful retrieved and a chunk array with the chunk data
      */
     public Pair<Integer, Chunk[]> get(final long... p_chunkIDs) {
-        Pair<Integer, Chunk[]> ret = null;
+        Pair<Integer, Chunk[]> ret;
         int totalNumberOfChunksGot = 0;
 
         if (p_chunkIDs.length == 0) {
-            return ret;
+            return null;
         }
 
         // #if LOGGER == TRACE
@@ -1036,7 +1048,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             // #if LOGGER >= ERROR
             LOGGER.error("A %s must not get chunks", role);
             // #endif /* LOGGER >= ERROR */
-            return ret;
+            return null;
         }
 
         // #ifdef STATISTICS
@@ -1060,9 +1072,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 LookupRange lookupRange;
 
                 lookupRange = m_lookup.getLookupRange(p_chunkIDs[i]);
-                if (lookupRange == null) {
-                    continue;
-                } else {
+                if (lookupRange != null) {
                     short peer = lookupRange.getPrimaryPeer();
 
                     ArrayList<Integer> remoteChunkIDsOfPeer = remoteChunkIDsByPeers.get(peer);
@@ -1289,7 +1299,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      *
      * @return List of local chunk ID ranges with blocks of start ID and end ID.
      */
-    public ArrayList<Long> getAllLocalChunkIDRanges() {
+    private ArrayList<Long> getAllLocalChunkIDRanges() {
         ArrayList<Long> list;
 
         m_memoryManager.lockAccess();
@@ -1618,13 +1628,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         }
 
         // Send backups
-        if (m_backup.isActive() && remoteChunksByBackupPeers != null) {
+        if (m_backup.isActive()) {
             long backupPeersAsLong;
             short[] backupPeers;
             DataStructure[] dataStructures;
             for (Entry<Long, ArrayList<DataStructure>> entry : remoteChunksByBackupPeers.entrySet()) {
                 backupPeersAsLong = entry.getKey();
-                dataStructures = entry.getValue().toArray(new Chunk[entry.getValue().size()]);
+                dataStructures = entry.getValue().toArray(new DataStructure[entry.getValue().size()]);
 
                 backupPeers = BackupRange.convert(backupPeersAsLong);
                 for (int i = 0; i < backupPeers.length; i++) {
@@ -1635,7 +1645,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
                         try {
                             m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
-                        } catch (final NetworkException e) {
+                        } catch (final NetworkException ignore) {
 
                         }
                     }
@@ -1732,7 +1742,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // }
 
         // Inform backups
-        if (m_backup.isActive() && remoteChunksByBackupPeers != null) {
+        if (m_backup.isActive()) {
             long backupPeersAsLong;
             short[] backupPeers;
             Long[] ids;
@@ -1745,7 +1755,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                     if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
                         try {
                             m_network.sendMessage(new RemoveMessage(backupPeers[i], ids));
-                        } catch (final NetworkException e) {
+                        } catch (final NetworkException ignore) {
 
                         }
                     }

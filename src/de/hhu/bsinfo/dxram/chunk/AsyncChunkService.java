@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk;
 
 import java.util.ArrayList;
@@ -36,6 +35,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
 /**
  * This service provides access to the backend storage system.
  * It does not replace the normal ChunkService, but extends it capabilities with async operations.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.02.2016
  */
 public class AsyncChunkService extends AbstractDXRAMService implements MessageReceiver {
@@ -88,8 +88,9 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
     /**
      * Put/Update the contents of the provided data structures in the backend storage.
+     *
      * @param p_dataStructres
-     *            Data structures to put/update.
+     *     Data structures to put/update.
      */
     public void put(final DataStructure... p_dataStructres) {
         put(ChunkLockOperation.NO_LOCK_OPERATION, p_dataStructres);
@@ -97,10 +98,11 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
     /**
      * Put/Update the contents of the provided data structures in the backend storage.
+     *
      * @param p_chunkUnlockOperation
-     *            Unlock operation to execute right after the put operation.
+     *     Unlock operation to execute right after the put operation.
      * @param p_dataStructures
-     *            Data structures to put/update.
+     *     Data structures to put/update.
      */
     public void put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
         if (p_dataStructures.length == 0) {
@@ -114,7 +116,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
         } else {
             // #if LOGGER == TRACE
             LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation, p_dataStructures.length,
-                    ChunkID.toHexString(p_dataStructures[0].getID()));
+                ChunkID.toHexString(p_dataStructures[0].getID()));
             // #endif /* LOGGER == TRACE */
         }
 
@@ -223,7 +225,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
         } else {
             // #if LOGGER == TRACE
             LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation, p_dataStructures.length,
-                    ChunkID.toHexString(p_dataStructures[0].getID()));
+                ChunkID.toHexString(p_dataStructures[0].getID()));
             // #endif /* LOGGER == TRACE */
         }
     }
@@ -271,8 +273,9 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
     /**
      * Handles an incoming PutRequest
+     *
      * @param p_request
-     *            the PutRequest
+     *     the PutRequest
      */
     private void incomingPutMessage(final PutMessage p_request) {
         DataStructure[] chunks = p_request.getDataStructures();

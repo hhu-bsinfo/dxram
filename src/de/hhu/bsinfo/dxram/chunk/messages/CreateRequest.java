@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -9,6 +8,7 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Request to create new chunks remotely.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 13.01.2016
  */
 public class CreateRequest extends AbstractRequest {
@@ -25,10 +25,11 @@ public class CreateRequest extends AbstractRequest {
     /**
      * Creates an instance of CreateRequest.
      * This constructor is used when sending this message.
+     *
      * @param p_destination
-     *            the destination node id.
+     *     the destination node id.
      * @param p_sizes
-     *            Sizes of the chunks to create.
+     *     Sizes of the chunks to create.
      */
     public CreateRequest(final short p_destination, final int... p_sizes) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST);
@@ -40,6 +41,7 @@ public class CreateRequest extends AbstractRequest {
 
     /**
      * Get the sizes received.
+     *
      * @return Array of sizes to create chunks of.
      */
     public int[] getSizes() {

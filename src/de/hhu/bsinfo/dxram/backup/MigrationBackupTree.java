@@ -1,13 +1,13 @@
-
 package de.hhu.bsinfo.dxram.backup;
 
 import java.io.Serializable;
 
 /**
  * Btree to store backup ranges of migrated chunks.
+ *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.06.2015
  */
-public final class MigrationBackupTree implements Serializable {
+final class MigrationBackupTree implements Serializable {
 
     // Constants
     private static final long serialVersionUID = 7565597467331239020L;
@@ -27,14 +27,16 @@ public final class MigrationBackupTree implements Serializable {
     private Entry m_changedEntry;
 
     // Constructors
+
     /**
      * Creates an instance of MigrationsTree
+     *
      * @param p_order
-     *            order of the btree
+     *     order of the btree
      * @param p_backupRangeSize
-     *            the backup range size
+     *     the backup range size
      */
-    public MigrationBackupTree(final short p_order, final long p_backupRangeSize) {
+    MigrationBackupTree(final short p_order, final long p_backupRangeSize) {
         // too small order for BTree
         assert 1 < p_order;
 
@@ -54,34 +56,37 @@ public final class MigrationBackupTree implements Serializable {
     }
 
     // Methods
+
     /**
      * Checks if the Chunk fits in current log
+     *
      * @param p_size
-     *            the size of the chunk + log header size
+     *     the size of the chunk + log header size
      * @return true if it fits
      */
-    public boolean fits(final long p_size) {
+    boolean fits(final long p_size) {
         return p_size + m_currentSecLogSize <= m_backupRangeSize;
     }
 
     /**
      * Resets the byte counter for current backup range
      */
-    public void initNewBackupRange() {
+    void initNewBackupRange() {
         m_currentSecLogSize = 0;
     }
 
     /**
      * Stores the backup range ID for a single object
+     *
      * @param p_chunkID
-     *            ChunkID of migrated object
+     *     ChunkID of migrated object
      * @param p_rangeID
-     *            the backup range ID
+     *     the backup range ID
      * @param p_size
-     *            the size of the chunk + log header size
+     *     the size of the chunk + log header size
      * @return true if insertion was successful
      */
-    public boolean putObject(final long p_chunkID, final byte p_rangeID, final long p_size) {
+    boolean putObject(final long p_chunkID, final byte p_rangeID, final long p_size) {
         Node node;
 
         node = createOrReplaceEntry(p_chunkID, p_rangeID);
@@ -97,14 +102,15 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Stores the backup range ID for a range
+     *
      * @param p_startID
-     *            ChunkID of first migrated object
+     *     ChunkID of first migrated object
      * @param p_endID
-     *            ChunkID of last migrated object
+     *     ChunkID of last migrated object
      * @param p_rangeID
-     *            the backup range ID
+     *     the backup range ID
      * @param p_rangeSize
-     *            the size of the range + log header sizes
+     *     the size of the range + log header sizes
      * @return true if insertion was successful
      */
     public boolean putRange(final long p_startID, final long p_endID, final byte p_rangeID, final long p_rangeSize) {
@@ -133,11 +139,12 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Returns ChunkIDs of all Chunks in given range
+     *
      * @param p_rangeID
-     *            the RangeID
+     *     the RangeID
      * @return all ChunkIDs
      */
-    public long[] getAllChunkIDsOfRange(final byte p_rangeID) {
+    long[] getAllChunkIDsOfRange(final byte p_rangeID) {
         long[] ret = null;
 
         if (m_root != null) {
@@ -149,19 +156,20 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Iterates the node and returns ChunkIDs of given range
+     *
      * @param p_node
-     *            the node
+     *     the node
      * @param p_rangeID
-     *            the RangeID
+     *     the RangeID
      * @return all ChunkIDs
      */
     private long[] iterateNode(final Node p_node, final byte p_rangeID) {
-        long[] ret = null;
+        long[] ret;
         int allEntriesCounter;
         int fittingEntriesCounter = 0;
         int childrenCounter;
         int fittingChildrenEntriesCounter = 0;
-        int offset = 0;
+        int offset;
         long[] myEntries;
 
         // Store all ChunkIDs of given range in an array
@@ -196,18 +204,20 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Returns the backup range ID for given object
+     *
      * @param p_chunkID
-     *            ChunkID of requested object
+     *     ChunkID of requested object
      * @return the backup range ID
      */
-    public byte getBackupRange(final long p_chunkID) {
+    byte getBackupRange(final long p_chunkID) {
         return getRangeIDOrSuccessorsRangeID(p_chunkID);
     }
 
     /**
      * Removes given object from btree
+     *
      * @param p_chunkID
-     *            ChunkID of deleted object
+     *     ChunkID of deleted object
      * @note should always be called if an object is deleted
      */
     public void removeObject(final long p_chunkID) {
@@ -221,8 +231,6 @@ public final class MigrationBackupTree implements Serializable {
         if (null != m_root) {
             node = getNodeOrSuccessorsNode(p_chunkID);
             if (null != node) {
-                currentCID = -1;
-
                 index = node.indexOf(p_chunkID);
                 if (0 <= index) {
                     // Entry was found
@@ -290,14 +298,15 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Creates a new entry or replaces the old one
+     *
      * @param p_chunkID
-     *            the ChunkID
+     *     the ChunkID
      * @param p_rangeID
-     *            the backup range ID
+     *     the backup range ID
      * @return the node in which the entry is stored
      */
     private Node createOrReplaceEntry(final long p_chunkID, final byte p_rangeID) {
-        Node ret = null;
+        Node ret;
         Node node;
         int index;
         int size;
@@ -357,12 +366,13 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Merges the object or range with predecessor
+     *
      * @param p_chunkID
-     *            the ChunkID
+     *     the ChunkID
      * @param p_rangeID
-     *            the backup range ID
+     *     the backup range ID
      * @param p_node
-     *            anchor node
+     *     anchor node
      */
     private void mergeWithPredecessorOrBound(final long p_chunkID, final byte p_rangeID, final Node p_node) {
         Entry predecessor;
@@ -397,10 +407,11 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Merges the object or range with successor
+     *
      * @param p_chunkID
-     *            the ChunkID
+     *     the ChunkID
      * @param p_rangeID
-     *            the backup range ID
+     *     the backup range ID
      */
     private void mergeWithSuccessor(final long p_chunkID, final byte p_rangeID) {
         Node node;
@@ -415,10 +426,11 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Removes all entries between start (inclusive) and end
+     *
      * @param p_start
-     *            the first object in range
+     *     the first object in range
      * @param p_end
-     *            the last object in range
+     *     the last object in range
      */
     private void removeEntriesWithinRange(final long p_start, final long p_end) {
         long successor;
@@ -434,8 +446,9 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Returns the node in which the next entry to given ChunkID (could be the ChunkID itself) is stored
+     *
      * @param p_chunkID
-     *            ChunkID whose node is searched
+     *     ChunkID whose node is searched
      * @return node in which ChunkID is stored if ChunkID is in tree or successors node, null if there is no successor
      */
     private Node getNodeOrSuccessorsNode(final long p_chunkID) {
@@ -486,8 +499,9 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Returns next ChunkID to given ChunkID (could be the ChunkID itself)
+     *
      * @param p_chunkID
-     *            the ChunkID
+     *     the ChunkID
      * @return p_chunkID if p_chunkID is in btree or successor of p_chunkID, (-1) if there is no successor
      */
     private long getCIDOrSuccessorsCID(final long p_chunkID) {
@@ -510,8 +524,9 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Returns the backup range ID of next ChunkID to given ChunkID (could be the ChunkID itself)
+     *
      * @param p_chunkID
-     *            the ChunkID whose corresponding RangeID is searched
+     *     the ChunkID whose corresponding RangeID is searched
      * @return RangeID for p_chunkID if p_chunkID is in btree or successors NodeID
      */
     private byte getRangeIDOrSuccessorsRangeID(final long p_chunkID) {
@@ -534,10 +549,11 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Returns the node in which the predecessor is
+     *
      * @param p_chunkID
-     *            ChunkID whose predecessor's node is searched
+     *     ChunkID whose predecessor's node is searched
      * @param p_node
-     *            anchor node
+     *     anchor node
      * @return the node in which the predecessor of p_chunkID is or null if there is no predecessor
      */
     private Node getPredecessorsNode(final long p_chunkID, final Node p_node) {
@@ -586,10 +602,11 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Returns the entry of the predecessor
+     *
      * @param p_chunkID
-     *            the ChunkID whose predecessor is searched
+     *     the ChunkID whose predecessor is searched
      * @param p_node
-     *            anchor node
+     *     anchor node
      * @return the entry of p_chunkID's predecessor or null if there is no predecessor
      */
     private Entry getPredecessorsEntry(final long p_chunkID, final Node p_node) {
@@ -613,10 +630,11 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Returns the node in which the successor is
+     *
      * @param p_chunkID
-     *            ChunkID whose successor's node is searched
+     *     ChunkID whose successor's node is searched
      * @param p_node
-     *            anchor node
+     *     anchor node
      * @return the node in which the successor of p_chunkID is or null if there is no successor
      */
     private Node getSuccessorsNode(final long p_chunkID, final Node p_node) {
@@ -665,10 +683,11 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Returns the entry of the successor
+     *
      * @param p_chunkID
-     *            the ChunkID whose successor is searched
+     *     the ChunkID whose successor is searched
      * @param p_node
-     *            anchor node
+     *     anchor node
      * @return the entry of p_chunkID's successor or null if there is no successor
      */
     private Entry getSuccessorsEntry(final long p_chunkID, final Node p_node) {
@@ -692,10 +711,11 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Splits down the middle if node is greater than maxEntries
+     *
      * @param p_chunkID
-     *            the new ChunkID that causes the splitting
+     *     the new ChunkID that causes the splitting
      * @param p_node
-     *            the node that has to be split
+     *     the node that has to be split
      * @return the node in which p_chunkID must be inserted
      */
     private Node split(final long p_chunkID, final Node p_node) {
@@ -766,8 +786,9 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Removes given p_chunkID
+     *
      * @param p_chunkID
-     *            the ChunkID
+     *     the ChunkID
      * @return p_chunkID or (-1) if there is no entry for p_chunkID
      */
     private long remove(final long p_chunkID) {
@@ -782,10 +803,11 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Removes the p_chunkID from given node and checks invariants
+     *
      * @param p_chunkID
-     *            the ChunkID
+     *     the ChunkID
      * @param p_node
-     *            the node in which p_chunkID should be stored
+     *     the node in which p_chunkID should be stored
      * @return p_chunkID or (-1) if there is no entry for p_chunkID
      */
     private long remove(final long p_chunkID, final Node p_node) {
@@ -836,8 +858,9 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Combines children entries with parent when size is less than minEntries
+     *
      * @param p_node
-     *            the node
+     *     the node
      */
     private void combined(final Node p_node) {
         Node parent;
@@ -953,6 +976,7 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Returns the number of entries in btree
+     *
      * @return the number of entries in btree
      */
     public int size() {
@@ -961,6 +985,7 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Validates the btree
+     *
      * @return whether the tree is valid or not
      */
     public boolean validate() {
@@ -975,8 +1000,9 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Validates the node according to the btree invariants
+     *
      * @param p_node
-     *            the node
+     *     the node
      * @return whether the node is valid or not
      */
     private boolean validateNode(final Node p_node) {
@@ -1076,6 +1102,7 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Prints the btree
+     *
      * @return String interpretation of the tree
      */
     @Override
@@ -1093,12 +1120,13 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Prints one node of the btree and walks down the btree recursively
+     *
      * @param p_node
-     *            the current node
+     *     the current node
      * @param p_prefix
-     *            the prefix to use
+     *     the prefix to use
      * @param p_isTail
-     *            defines wheter the node is the tail
+     *     defines wheter the node is the tail
      * @return String interpretation of the tree
      */
     private String getString(final Node p_node, final String p_prefix, final boolean p_isTail) {
@@ -1113,9 +1141,17 @@ public final class MigrationBackupTree implements Serializable {
         } else {
             ret.append("├── ");
         }
-        ret.append("[" + p_node.getNumberOfEntries() + ", " + p_node.getNumberOfChildren() + "] ");
+        ret.append("[");
+        ret.append(p_node.getNumberOfEntries());
+        ret.append(", ");
+        ret.append(p_node.getNumberOfChildren());
+        ret.append("] ");
         for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
-            ret.append("(ChunkID: " + p_node.getChunkID(i) + " NodeID: " + p_node.getRangeID(i) + ")");
+            ret.append("(ChunkID: ");
+            ret.append(p_node.getChunkID(i));
+            ret.append(" NodeID: ");
+            ret.append(p_node.getRangeID(i));
+            ret.append(")");
             if (i < p_node.getNumberOfEntries() - 1) {
                 ret.append(", ");
             }
@@ -1145,6 +1181,7 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * A single node of the btree
+     *
      * @author Kevin Beineke, kevin.beineke@hhu.de, 13.06.2013
      */
     private static final class Node implements Comparable<Node>, Serializable {
@@ -1162,14 +1199,16 @@ public final class MigrationBackupTree implements Serializable {
         private short m_numberOfChildren;
 
         // Constructors
+
         /**
          * Creates an instance of Node
+         *
          * @param p_parent
-         *            the parent
+         *     the parent
          * @param p_maxEntries
-         *            the number of entries that can be stored
+         *     the number of entries that can be stored
          * @param p_maxChildren
-         *            the number of children that can be stored
+         *     the number of children that can be stored
          */
         private Node(final Node p_parent, final short p_maxEntries, final int p_maxChildren) {
             m_parent = p_parent;
@@ -1182,8 +1221,9 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Compares two nodes
+         *
          * @param p_cmp
-         *            the node to compare with
+         *     the node to compare with
          * @return 0 if the nodes are equal, (-1) if p_cmp is larger, 1 otherwise
          */
         @Override
@@ -1203,6 +1243,7 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Returns the parent node
+         *
          * @return the parent node
          */
         private Node getParent() {
@@ -1211,8 +1252,9 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Returns the parent node
+         *
          * @param p_parent
-         *            the parent node
+         *     the parent node
          */
         private void setParent(final Node p_parent) {
             m_parent = p_parent;
@@ -1220,8 +1262,9 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Returns the ChunkID to given index
+         *
          * @param p_index
-         *            the index
+         *     the index
          * @return the ChunkID to given index
          */
         private long getChunkID(final int p_index) {
@@ -1230,8 +1273,9 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Returns the data leaf to given index
+         *
          * @param p_index
-         *            the index
+         *     the index
          * @return the data leaf to given index
          */
         private byte getRangeID(final int p_index) {
@@ -1241,8 +1285,9 @@ public final class MigrationBackupTree implements Serializable {
         /**
          * Returns the index for given ChunkID. Uses the binary search algorithm from
          * java.util.Arrays adapted to our needs
+         *
          * @param p_chunkID
-         *            the ChunkID
+         *     the ChunkID
          * @return the index for given ChunkID, if it is contained in the array, (-(insertion point) - 1) otherwise
          */
         private int indexOf(final long p_chunkID) {
@@ -1277,10 +1322,11 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Adds an entry
+         *
          * @param p_chunkID
-         *            the ChunkID
+         *     the ChunkID
          * @param p_rangeID
-         *            the backup range ID
+         *     the backup range ID
          */
         private void addEntry(final long p_chunkID, final byte p_rangeID) {
             int index;
@@ -1298,12 +1344,13 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Adds an entry
+         *
          * @param p_chunkID
-         *            the ChunkID
+         *     the ChunkID
          * @param p_rangeID
-         *            the backup range ID
+         *     the backup range ID
          * @param p_index
-         *            the index to store the element at
+         *     the index to store the element at
          */
         private void addEntry(final long p_chunkID, final byte p_rangeID, final int p_index) {
             System.arraycopy(m_keys, p_index, m_keys, p_index + 1, m_numberOfEntries - p_index);
@@ -1317,14 +1364,15 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Adds entries from another node
+         *
          * @param p_node
-         *            the other node
+         *     the other node
          * @param p_offsetSrc
-         *            the offset in source array
+         *     the offset in source array
          * @param p_endSrc
-         *            the end of source array
+         *     the end of source array
          * @param p_offsetDst
-         *            the offset in destination array or -1 if the source array has to be prepended
+         *     the offset in destination array or -1 if the source array has to be prepended
          */
         private void addEntries(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
             long[] aux1;
@@ -1351,12 +1399,13 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Changes an entry
+         *
          * @param p_chunkID
-         *            the ChunkID
+         *     the ChunkID
          * @param p_rangeID
-         *            the backup range ID
+         *     the backup range ID
          * @param p_index
-         *            the index of given entry in this node
+         *     the index of given entry in this node
          */
         private void changeEntry(final long p_chunkID, final byte p_rangeID, final int p_index) {
 
@@ -1368,8 +1417,9 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Removes the entry with given ChunkID
+         *
          * @param p_chunkID
-         *            ChunkID of the entry that has to be deleted
+         *     ChunkID of the entry that has to be deleted
          * @return p_chunkID or (-1) if there is no entry for p_chunkID in this node
          */
         private long removeEntry(final long p_chunkID) {
@@ -1391,8 +1441,9 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Removes the entry with given index
+         *
          * @param p_index
-         *            the index of the entry that has to be deleted
+         *     the index of the entry that has to be deleted
          * @return ChunkID or (-1) if p_index is to large
          */
         private long removeEntry(final int p_index) {
@@ -1411,6 +1462,7 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Returns the number of entries
+         *
          * @return the number of entries
          */
         private int getNumberOfEntries() {
@@ -1419,8 +1471,9 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Returns the child with given index
+         *
          * @param p_index
-         *            the index
+         *     the index
          * @return the child with given index
          */
         private Node getChild(final int p_index) {
@@ -1438,8 +1491,9 @@ public final class MigrationBackupTree implements Serializable {
         /**
          * Returns the index of the given child. Uses the binary search algorithm from
          * java.util.Arrays adapted to our needs
+         *
          * @param p_child
-         *            the child
+         *     the child
          * @return the index of the given child, if it is contained in the array, (-(insertion point) - 1) otherwise
          */
         private int indexOf(final Node p_child) {
@@ -1476,8 +1530,9 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Adds a child
+         *
          * @param p_child
-         *            the child
+         *     the child
          */
         private void addChild(final Node p_child) {
             int index;
@@ -1493,14 +1548,15 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Adds children of another node
+         *
          * @param p_node
-         *            the other node
+         *     the other node
          * @param p_offsetSrc
-         *            the offset in source array
+         *     the offset in source array
          * @param p_endSrc
-         *            the end of source array
+         *     the end of source array
          * @param p_offsetDst
-         *            the offset in destination array or -1 if the source array has to be prepended
+         *     the offset in destination array or -1 if the source array has to be prepended
          */
         private void addChildren(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
             Node[] aux;
@@ -1535,8 +1591,9 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Removes the given child
+         *
          * @param p_child
-         *            the child
+         *     the child
          * @return true if the child was found and deleted, false otherwise
          */
         private boolean removeChild(final Node p_child) {
@@ -1556,8 +1613,9 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Removes the child with given index
+         *
          * @param p_index
-         *            the index
+         *     the index
          * @return the deleted child
          */
         private Node removeChild(final int p_index) {
@@ -1575,6 +1633,7 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Returns the number of children
+         *
          * @return the number of children
          */
         private int getNumberOfChildren() {
@@ -1583,6 +1642,7 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Prints the node
+         *
          * @return String interpretation of the node
          */
         @Override
@@ -1593,7 +1653,11 @@ public final class MigrationBackupTree implements Serializable {
 
             ret.append("entries=[");
             for (int i = 0; i < getNumberOfEntries(); i++) {
-                ret.append("(ChunkID: " + getChunkID(i) + " location: " + getRangeID(i) + ")");
+                ret.append("(ChunkID: ");
+                ret.append(getChunkID(i));
+                ret.append(" location: ");
+                ret.append(getRangeID(i));
+                ret.append(")");
                 if (i < getNumberOfEntries() - 1) {
                     ret.append(", ");
                 }
@@ -1603,7 +1667,11 @@ public final class MigrationBackupTree implements Serializable {
             if (null != m_parent) {
                 ret.append("parent=[");
                 for (int i = 0; i < m_parent.getNumberOfEntries(); i++) {
-                    ret.append("(ChunkID: " + getChunkID(i) + " location: " + getRangeID(i) + ")");
+                    ret.append("(ChunkID: ");
+                    ret.append(getChunkID(i));
+                    ret.append(" location: ");
+                    ret.append(getRangeID(i));
+                    ret.append(")");
                     if (i < m_parent.getNumberOfEntries() - 1) {
                         ret.append(", ");
                     }
@@ -1625,6 +1693,7 @@ public final class MigrationBackupTree implements Serializable {
 
     /**
      * Auxiliary object to return ChunkID and backup range ID at once
+     *
      * @author Kevin Beineke
      *         13.06.2013
      */
@@ -1638,12 +1707,14 @@ public final class MigrationBackupTree implements Serializable {
         private byte m_rangeID;
 
         // Constructors
+
         /**
          * Creates an instance of Entry
+         *
          * @param p_chunkID
-         *            the ChunkID
+         *     the ChunkID
          * @param p_rangeID
-         *            the backup range ID
+         *     the backup range ID
          */
         Entry(final long p_chunkID, final byte p_rangeID) {
             m_chunkID = p_chunkID;
@@ -1652,6 +1723,7 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Returns the ChunkID
+         *
          * @return the ChunkID
          */
         public long getChunkID() {
@@ -1660,6 +1732,7 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Returns the backup range ID
+         *
          * @return the backup range ID
          */
         public byte getRangeID() {
@@ -1668,6 +1741,7 @@ public final class MigrationBackupTree implements Serializable {
 
         /**
          * Prints the entry
+         *
          * @return String interpretation of the entry
          */
         @Override

@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -14,6 +13,7 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Request for updating a Chunk on a remote node
+ *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
@@ -35,12 +35,13 @@ public class PutRequest extends AbstractRequest {
 
     /**
      * Creates an instance of PutRequest
+     *
      * @param p_destination
-     *            the destination
+     *     the destination
      * @param p_unlockOperation
-     *            if true a potential lock will be released
+     *     if true a potential lock will be released
      * @param p_dataStructures
-     *            Data structure with the data to put.
+     *     Data structure with the data to put.
      */
     public PutRequest(final short p_destination, final ChunkLockOperation p_unlockOperation, final DataStructure... p_dataStructures) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_REQUEST);
@@ -67,6 +68,7 @@ public class PutRequest extends AbstractRequest {
 
     /**
      * Get the DataStructures to put when this message is received.
+     *
      * @return the Chunk to put
      */
     public final DataStructure[] getDataStructures() {
@@ -75,6 +77,7 @@ public class PutRequest extends AbstractRequest {
 
     /**
      * Get the unlock operation to execute after the put.
+     *
      * @return Unlock operation.
      */
     public ChunkLockOperation getUnlockOperation() {

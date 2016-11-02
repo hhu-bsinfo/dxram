@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -8,6 +7,7 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response to the request sending the chunk id ranges of all migrated locally stored chunks.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class GetMigratedChunkIDRangesResponse extends AbstractResponse {
@@ -24,10 +24,11 @@ public class GetMigratedChunkIDRangesResponse extends AbstractResponse {
     /**
      * Creates an instance of GetMigratedChunkIDRangesResponse.
      * This constructor is used when sending this message.
+     *
      * @param p_request
-     *            the corresponding GetMigratedChunkIDRangesRequest
+     *     the corresponding GetMigratedChunkIDRangesRequest
      * @param p_chunkIDRanges
-     *            Chunk id ranges to send
+     *     Chunk id ranges to send
      */
     public GetMigratedChunkIDRangesResponse(final GetMigratedChunkIDRangesRequest p_request, final ArrayList<Long> p_chunkIDRanges) {
         super(p_request, ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_RESPONSE);
@@ -37,6 +38,7 @@ public class GetMigratedChunkIDRangesResponse extends AbstractResponse {
 
     /**
      * Get the chunk id ranges from this message.
+     *
      * @return List of chunk id ranges from the remote node.
      */
     public ArrayList<Long> getChunkIDRanges() {

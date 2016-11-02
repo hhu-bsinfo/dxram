@@ -1,8 +1,8 @@
-
 package de.hhu.bsinfo.dxram.failure.messages;
 
 /**
  * Type and list of subtypes for all failure messages
+ *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 18.10.2016
  */
 public final class FailureMessages {

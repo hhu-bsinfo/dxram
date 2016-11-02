@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -8,6 +7,7 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response to a RemoveRequest
+ *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
@@ -26,10 +26,11 @@ public class RemoveResponse extends AbstractResponse {
     /**
      * Creates an instance of RemoveResponse.
      * This constructor is used when sending this message.
+     *
      * @param p_request
-     *            the request
+     *     the request
      * @param p_statusCodes
-     *            status codes for every single chunk
+     *     status codes for every single chunk
      */
     public RemoveResponse(final RemoveRequest p_request, final byte... p_statusCodes) {
         super(p_request, ChunkMessages.SUBTYPE_REMOVE_RESPONSE);
@@ -41,6 +42,7 @@ public class RemoveResponse extends AbstractResponse {
 
     /**
      * Get the status codes of the removed chunks.
+     *
      * @return Status codes of chunks.
      */
     public final byte[] getStatusCodes() {

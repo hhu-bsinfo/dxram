@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -9,6 +8,7 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response with status information about a remote chunk service.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 07.04.2016
  */
 public class StatusResponse extends AbstractResponse {
@@ -26,10 +26,11 @@ public class StatusResponse extends AbstractResponse {
     /**
      * Creates an instance of StatusResponse.
      * This constructor is used when sending this message.
+     *
      * @param p_request
-     *            the corresponding StatusRequest
+     *     the corresponding StatusRequest
      * @param p_status
-     *            the requested Status
+     *     the requested Status
      */
     public StatusResponse(final StatusRequest p_request, final ChunkService.Status p_status) {
         super(p_request, ChunkMessages.SUBTYPE_STATUS_RESPONSE);
@@ -39,6 +40,7 @@ public class StatusResponse extends AbstractResponse {
 
     /**
      * Get the chunk service status.
+     *
      * @return Chunk service status.
      */
     public final ChunkService.Status getStatus() {

@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.failure.events;
 
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
@@ -7,6 +6,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * An event for node failure
+ *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class NodeFailureEvent extends AbstractEvent {
@@ -16,12 +16,13 @@ public class NodeFailureEvent extends AbstractEvent {
 
     /**
      * Creates an instance of NodeFailureEvent
+     *
      * @param p_sourceClass
-     *            the calling class
+     *     the calling class
      * @param p_nodeID
-     *            the NodeID of the failed peer
+     *     the NodeID of the failed peer
      * @param p_role
-     *            the failed peer's role
+     *     the failed peer's role
      */
     public NodeFailureEvent(final String p_sourceClass, final short p_nodeID, final NodeRole p_role) {
         super(p_sourceClass);
@@ -32,6 +33,7 @@ public class NodeFailureEvent extends AbstractEvent {
 
     /**
      * Returns the NodeID
+     *
      * @return the failed peer's NodeID
      */
     public short getNodeID() {
@@ -40,6 +42,7 @@ public class NodeFailureEvent extends AbstractEvent {
 
     /**
      * Returns the NodeRole
+     *
      * @return the failed peer's role
      */
     public NodeRole getRole() {

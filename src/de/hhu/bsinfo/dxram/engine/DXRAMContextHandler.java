@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.engine;
 
 import java.io.File;
@@ -19,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Handler for DXRAM context, loading configuration, creating default configuration, configuration overriding
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.10.2016
  */
 class DXRAMContextHandler {
@@ -33,6 +33,11 @@ class DXRAMContextHandler {
 
     /**
      * Constructor
+     *
+     * @param p_componentManager
+     *     the DXRAMComponentManager
+     * @param p_serviceManager
+     *     the DXRAMServiceManager
      */
     DXRAMContextHandler(final DXRAMComponentManager p_componentManager, final DXRAMServiceManager p_serviceManager) {
         m_componentManager = p_componentManager;
@@ -41,6 +46,7 @@ class DXRAMContextHandler {
 
     /**
      * Get the DXRAM context
+     *
      * @return DXRAM context
      */
     DXRAMContext getContext() {
@@ -49,8 +55,9 @@ class DXRAMContextHandler {
 
     /**
      * Create a default configuration file
+     *
      * @param p_configFilePath
-     *            Path for configuration file
+     *     Path for configuration file
      * @return True if creating config file successful, false otherwise
      */
     boolean createDefaultConfiguration(final String p_configFilePath) {
@@ -103,8 +110,9 @@ class DXRAMContextHandler {
 
     /**
      * Load an existing configuration
+     *
      * @param p_configFilePath
-     *            Path to existing configuration file
+     *     Path to existing configuration file
      * @return True if loading successful, false on error
      */
     boolean loadConfiguration(final String p_configFilePath) {
@@ -134,8 +142,9 @@ class DXRAMContextHandler {
 
     /**
      * Override current configuration with further values provided via VM arguments
+     *
      * @param p_object
-     *            Root object of JSON configuration tree
+     *     Root object of JSON configuration tree
      */
     private void overrideConfigurationWithVMArguments(final JsonObject p_object) {
 
@@ -195,8 +204,8 @@ class DXRAMContextHandler {
                 String propertyKey = props.getProperty(key);
 
                 // try to determine type, not a very nice way =/
-                if (propertyKey.matches("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-                        + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$")) {
+                if (propertyKey.matches("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$")) {
                     // ip address
                     parent.addProperty(tokens[tokens.length - 1], propertyKey);
                 } else if (propertyKey.matches("[-+]?\\d*\\.?\\d+")) {

@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.engine;
 
 import java.lang.reflect.Type;
@@ -23,6 +22,7 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * Gson context for DXRAM handling serialization and deserialization of components and services
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 20.10.2016
  */
 class DXRAMGsonContext {
@@ -31,10 +31,9 @@ class DXRAMGsonContext {
 
     static Gson createGsonInstance() {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation()
-                .registerTypeAdapter(AbstractDXRAMComponent.class, new ComponentSerializer())
-                .registerTypeAdapter(AbstractDXRAMService.class, new ServiceSerializer())
-                .registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer()).registerTypeAdapter(TimeUnit.class, new TimeUnitGsonSerializer())
-                .create();
+            .registerTypeAdapter(AbstractDXRAMComponent.class, new ComponentSerializer())
+            .registerTypeAdapter(AbstractDXRAMService.class, new ServiceSerializer()).registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer())
+            .registerTypeAdapter(TimeUnit.class, new TimeUnitGsonSerializer()).create();
     }
 
     /**
@@ -43,7 +42,7 @@ class DXRAMGsonContext {
     private static class ComponentSerializer implements JsonDeserializer<AbstractDXRAMComponent>, JsonSerializer<AbstractDXRAMComponent> {
         @Override
         public AbstractDXRAMComponent deserialize(final JsonElement p_jsonElement, final Type p_type,
-                final JsonDeserializationContext p_jsonDeserializationContext) throws JsonParseException {
+            final JsonDeserializationContext p_jsonDeserializationContext) throws JsonParseException {
 
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
             String className = jsonObj.get("m_class").getAsString();
@@ -76,7 +75,7 @@ class DXRAMGsonContext {
 
         @Override
         public JsonElement serialize(final AbstractDXRAMComponent p_abstractDXRAMComponent, final Type p_type,
-                final JsonSerializationContext p_jsonSerializationContext) {
+            final JsonSerializationContext p_jsonSerializationContext) {
 
             Class<?> clazz;
             try {
@@ -95,7 +94,7 @@ class DXRAMGsonContext {
     private static class ServiceSerializer implements JsonDeserializer<AbstractDXRAMService>, JsonSerializer<AbstractDXRAMService> {
         @Override
         public AbstractDXRAMService deserialize(final JsonElement p_jsonElement, final Type p_type,
-                final JsonDeserializationContext p_jsonDeserializationContext) throws JsonParseException {
+            final JsonDeserializationContext p_jsonDeserializationContext) throws JsonParseException {
 
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
             String className = jsonObj.get("m_class").getAsString();
@@ -128,7 +127,7 @@ class DXRAMGsonContext {
 
         @Override
         public JsonElement serialize(final AbstractDXRAMService p_abstractDXRAMService, final Type p_type,
-                final JsonSerializationContext p_jsonSerializationContext) {
+            final JsonSerializationContext p_jsonSerializationContext) {
 
             Class<?> clazz;
             try {

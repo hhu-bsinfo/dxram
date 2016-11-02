@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.backup;
 
 import java.util.ArrayList;
@@ -35,6 +34,7 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
  * Component for managing backup ranges.
+ *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class BackupComponent extends AbstractDXRAMComponent implements EventListener<NodeFailureEvent> {
@@ -86,6 +86,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
     /**
      * Returns whether backup is enabled or not
+     *
      * @return whether backup is enabled or not
      */
     public boolean isActive() {
@@ -94,6 +95,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
     /**
      * Return the path to all logs
+     *
      * @return the backup directory
      */
     public String getBackupDirectory() {
@@ -113,10 +115,11 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     /**
      * Initializes the backup range for current locations
      * and determines new backup peers if necessary
+     *
      * @param p_chunkID
-     *            the current ChunkID
+     *     the current ChunkID
      * @param p_size
-     *            the size of the new created chunk
+     *     the size of the new created chunk
      * @note must be serialized by MemoryManager
      */
     public void initBackupRange(final long p_chunkID, final int p_size) {
@@ -156,8 +159,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
     /**
      * Returns the corresponding backup peers
+     *
      * @param p_chunkID
-     *            the ChunkID
+     *     the ChunkID
      * @return the backup peers
      */
     public short[] getCopyOfBackupPeersForLocalChunks(final long p_chunkID) {
@@ -181,8 +185,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
     /**
      * Returns the corresponding backup peers
+     *
      * @param p_chunkID
-     *            the ChunkID
+     *     the ChunkID
      * @return the backup peers
      */
     public long getBackupPeersForLocalChunks(final long p_chunkID) {
@@ -221,6 +226,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
     /**
      * Returns the backup peers for current migration backup range
+     *
      * @return the backup peers for current migration backup range
      */
     public short[] getCopyOfCurrentMigrationBackupPeers() {
@@ -235,8 +241,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
     /**
      * Puts a migrated chunk into the migration tree
+     *
      * @param p_chunk
-     *            the migrated chunk
+     *     the migrated chunk
      * @return the RangeID of the migration backup range the chunk was put in
      */
     public byte addMigratedChunk(final Chunk p_chunk) {
@@ -251,10 +258,11 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
     /**
      * Checks if given log entry fits in current migration backup range
+     *
      * @param p_size
-     *            the range size
+     *     the range size
      * @param p_logEntrySize
-     *            the log entry size
+     *     the log entry size
      * @return whether the entry and range fits in backup range
      */
     public boolean fitsInCurrentMigrationBackupRange(final long p_size, final int p_logEntrySize) {
@@ -358,6 +366,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_log = p_componentAccessor.getComponent(LogComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
@@ -402,12 +411,13 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
     /**
      * Determines a new backup peer to replace a failed one
+     *
      * @param p_currentBackupPeers
-     *            all current backup peers
+     *     all current backup peers
      * @param p_failedPeer
-     *            the NodeID of the failed backup peer
+     *     the NodeID of the failed backup peer
      * @param p_firstChunkIDOrRangeID
-     *            the first ChunkID of a backup range or the RangeID for a migration backup range
+     *     the first ChunkID of a backup range or the RangeID for a migration backup range
      * @return the replacement
      * @lock m_lock must be write-locked
      */
@@ -416,7 +426,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         short currentPeer;
         short numberOfPeers;
 
-        List<Short> peers = null;
+        List<Short> peers;
         // Get all other online peers
         peers = m_boot.getIDsOfOnlinePeers();
         numberOfPeers = (short) peers.size();
@@ -449,7 +459,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
             if (currentPeer != -1) {
                 // #if LOGGER >= INFO
                 LOGGER.info("Determined new backup peer for range 0x%X to replace 0x%X: 0x%X", ((long) m_nodeID << 48) + p_firstChunkIDOrRangeID, p_failedPeer,
-                        currentPeer);
+                    currentPeer);
                 // #endif /* LOGGER >= INFO */
 
                 ret = currentPeer;
@@ -462,8 +472,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
     /**
      * Determines backup peers
+     *
      * @param p_localID
-     *            the current LocalID
+     *     the current LocalID
      * @return the backup peers
      */
     private BackupRange determineBackupPeers(final long p_localID) {
@@ -472,10 +483,10 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         boolean insufficientPeers = false;
         short index = 0;
         short[] oldBackupPeers = null;
-        short[] newBackupPeers = null;
-        short numberOfPeers = 0;
+        short[] newBackupPeers;
+        short numberOfPeers;
 
-        List<Short> peers = null;
+        List<Short> peers;
         // Get all other online peers
         peers = m_boot.getIDsOfOnlinePeers();
         numberOfPeers = (short) peers.size();
@@ -535,7 +546,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
                     }
                     // #if LOGGER >= INFO
                     LOGGER.info("%d. backup peer determined for new range %s: %s", i + 1, ChunkID.toHexString(((long) m_nodeID << 48) + p_localID),
-                            NodeID.toHexString(peers.get(index)));
+                        NodeID.toHexString(peers.get(index)));
                     // #endif /* LOGGER >= INFO */
                     newBackupPeers[i] = peers.get(index);
                     ready = false;
@@ -567,7 +578,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
                 }
                 // #if LOGGER >= INFO
                 LOGGER.info("%d. backup peer determined for new range %s: %s", i + 1, ChunkID.toHexString(((long) m_nodeID << 48) + p_localID),
-                        NodeID.toHexString(peers.get(index)));
+                    NodeID.toHexString(peers.get(index)));
                 // #endif /* LOGGER >= INFO */
                 newBackupPeers[i] = peers.get(index);
                 ready = false;

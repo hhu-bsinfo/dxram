@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.engine;
 
 import java.io.File;
@@ -15,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Main class to run DXRAM with components and services.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor {
@@ -41,8 +41,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
     /**
      * Register a DXRAM component
+     *
      * @param p_class
-     *            Class of the component to register
+     *     Class of the component to register
      */
     public void registerComponent(final Class<? extends AbstractDXRAMComponent> p_class) {
         m_componentManager.register(p_class);
@@ -50,8 +51,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
     /**
      * Register a DXRAM service
+     *
      * @param p_class
-     *            Class of the service to register
+     *     Class of the service to register
      */
     public void registerService(final Class<? extends AbstractDXRAMService> p_class) {
         m_serviceManager.register(p_class);
@@ -139,6 +141,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
     /**
      * Get the settings instance of the engine.
+     *
      * @return EngineSettings instance or null if engine is not initialized.
      */
     DXRAMContext.EngineSettings getSettings() {
@@ -148,6 +151,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     /**
      * Initialize DXRAM without configuration. This creates a default configuration
      * and stores it in the default configuration path
+     *
      * @return This will always return false because it will just generate the configuration and not start DXRAM.
      */
     public boolean init() {
@@ -156,9 +160,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
     /**
      * Initialize DXRAM with a configuration file
+     *
      * @param p_configurationFile
-     *            Path to configuration file. If the file does not exist, a default configuration is
-     *            created.
+     *     Path to configuration file. If the file does not exist, a default configuration is
+     *     created.
      * @return True if initialization successful, false on error or if a new configuration was generated
      */
     public boolean init(final String p_configurationFile) {
@@ -172,7 +177,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         // #endif /* LOGGER >= INFO */
 
         if (!bootstrap(p_configurationFile)) {
-            // false indicates here that a configuration files was created
+            // false indicates here that a configuration file was created
             return false;
         }
 
@@ -238,6 +243,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
     /**
      * Shut down the engine.
+     *
      * @return True if successful, false otherwise.
      */
     public boolean shutdown() {
@@ -292,8 +298,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
     /**
      * Execute bootstrapping tasks for the engine.
+     *
      * @param p_configurationFile
-     *            Configuration file to use
+     *     Configuration file to use
+     * @return false if a configuration file had to be created, true if not
      */
     private boolean bootstrap(final String p_configurationFile) {
         String config = p_configurationFile;

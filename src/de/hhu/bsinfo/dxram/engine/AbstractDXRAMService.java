@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.engine;
 
 import com.google.gson.annotations.Expose;
@@ -12,6 +11,7 @@ import org.apache.logging.log4j.Logger;
  * for different applications, create a clearer structure and higher flexibility. Services
  * use components to implement their functionality. A service is not allowed to depend on
  * another service and services can not interact with each other.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2016
  */
 public abstract class AbstractDXRAMService {
@@ -29,8 +29,9 @@ public abstract class AbstractDXRAMService {
 
     /**
      * Constructor
+     *
      * @param p_shortName
-     *            Short name of the service (used for terminal)
+     *     Short name of the service (used for terminal)
      */
     public AbstractDXRAMService(final String p_shortName) {
         LOGGER = LogManager.getFormatterLogger(this.getClass().getSimpleName());
@@ -39,24 +40,27 @@ public abstract class AbstractDXRAMService {
 
     /**
      * Get the short name/identifier for this service.
+     *
      * @return Identifier/name for this service.
      */
-    public String getShortName() {
+    String getShortName() {
         return m_shortName;
     }
 
     /**
      * Get the name of this service.
+     *
      * @return Name of this service.
      */
-    public String getServiceName() {
+    String getServiceName() {
         return this.getClass().getSimpleName();
     }
 
     /**
      * Start this service.
+     *
      * @param p_engine
-     *            Engine this service is part of (parent).
+     *     Engine this service is part of (parent).
      * @return True if initializing was successful, false otherwise.
      */
     public boolean start(final DXRAMEngine p_engine) {
@@ -95,6 +99,7 @@ public abstract class AbstractDXRAMService {
 
     /**
      * Shut down this service.
+     *
      * @return True if shutting down was successful, false otherwise.
      */
     public boolean shutdown() {
@@ -119,21 +124,24 @@ public abstract class AbstractDXRAMService {
 
     /**
      * Called before the service is initialized. Get all the components your service depends on.
+     *
      * @param p_componentAccessor
-     *            Component accessor that provides access to the components
+     *     Component accessor that provides access to the components
      */
-    protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
+    protected abstract void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor);
 
     /**
      * Called when the service is initialized. Setup data structures, get components for operation, read settings etc.
+     *
      * @param p_engineEngineSettings
-     *            EngineSettings instance provided by the engine.
+     *     EngineSettings instance provided by the engine.
      * @return True if initialing was successful, false otherwise.
      */
-    protected abstract boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings);
+    protected abstract boolean startService(DXRAMContext.EngineSettings p_engineEngineSettings);
 
     /**
      * Called when the service gets shut down. Cleanup your service in here.
+     *
      * @return True if shutdown was successful, false otherwise.
      */
     protected abstract boolean shutdownService();
@@ -141,6 +149,7 @@ public abstract class AbstractDXRAMService {
     /**
      * Check if this class is a service accessor i.e. breaking the rules of
      * not knowing other services. Override this if this feature is used.
+     *
      * @return True if accessor, false otherwise.
      */
     protected boolean isServiceAccessor() {
@@ -151,6 +160,7 @@ public abstract class AbstractDXRAMService {
      * Check if this class is an engine accessor i.e. breaking the rules of
      * not knowing the engine. Override this if this feature is used.
      * Do not override this if you do not know what you are doing.
+     *
      * @return True if accessor, false otherwise.
      */
     protected boolean isEngineAccessor() {
@@ -159,6 +169,7 @@ public abstract class AbstractDXRAMService {
 
     /**
      * Get the proxy class to access other services.
+     *
      * @return This returns a valid accessor only if the class is declared a service accessor.
      */
     protected DXRAMServiceAccessor getServiceAccessor() {
@@ -173,6 +184,7 @@ public abstract class AbstractDXRAMService {
      * Get the engine within the service.
      * If you don't know what you are doing, do not use this.
      * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
+     *
      * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
      */
     protected DXRAMEngine getParentEngine() {

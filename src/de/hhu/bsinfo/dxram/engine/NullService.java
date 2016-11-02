@@ -1,8 +1,8 @@
-
 package de.hhu.bsinfo.dxram.engine;
 
 /**
  * Dummy service implementation for testing.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class NullService extends AbstractDXRAMService {
