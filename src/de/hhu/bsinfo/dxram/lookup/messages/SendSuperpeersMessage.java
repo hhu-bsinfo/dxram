@@ -31,9 +31,9 @@ public class SendSuperpeersMessage extends AbstractMessage {
      * Creates an instance of SendSuperpeersMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_superpeers
-     *         the superpeers
+     *     the superpeers
      */
     public SendSuperpeersMessage(final short p_destination, final ArrayList<Short> p_superpeers) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE);
@@ -54,9 +54,22 @@ public class SendSuperpeersMessage extends AbstractMessage {
         return m_superpeers;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        int ret;
+
+        ret = Integer.BYTES;
+        if (m_superpeers != null && !m_superpeers.isEmpty()) {
+            ret += Short.BYTES * m_superpeers.size();
+        }
+
+        return ret;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
-        if (m_superpeers == null || m_superpeers.size() == 0) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
+        if (m_superpeers == null || m_superpeers.isEmpty()) {
             p_buffer.putInt(0);
         } else {
             p_buffer.putInt(m_superpeers.size());
@@ -66,7 +79,8 @@ public class SendSuperpeersMessage extends AbstractMessage {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         int length;
 
         m_superpeers = new ArrayList<Short>();
@@ -74,17 +88,6 @@ public class SendSuperpeersMessage extends AbstractMessage {
         for (int i = 0; i < length; i++) {
             m_superpeers.add(p_buffer.getShort());
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        int ret;
-
-        ret = Integer.BYTES;
-        if (m_superpeers != null && m_superpeers.size() > 0) {
-            ret += Short.BYTES * m_superpeers.size();
-        }
-
-        return ret;
     }
 
 }

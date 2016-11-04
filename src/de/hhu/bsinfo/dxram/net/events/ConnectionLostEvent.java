@@ -17,9 +17,9 @@ public class ConnectionLostEvent extends AbstractEvent {
      * Creates an instance of NodeFailureEvent
      *
      * @param p_sourceClass
-     *         the calling class
+     *     the calling class
      * @param p_nodeID
-     *         the NodeID of the failed peer
+     *     the NodeID of the failed peer
      */
     public ConnectionLostEvent(final String p_sourceClass, final short p_nodeID) {
         super(p_sourceClass);

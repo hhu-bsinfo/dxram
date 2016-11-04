@@ -20,7 +20,7 @@ public class BarrierChangeSizeResponse extends AbstractResponse {
      * Creates an instance of BarrierChangeSizeReBarrierChangeSizeResponsesponse
      *
      * @param p_request
-     *         the corresponding BarrierAllocRequest
+     *     the corresponding BarrierAllocRequest
      */
     public BarrierChangeSizeResponse(final BarrierChangeSizeRequest p_request) {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE);

@@ -27,6 +27,26 @@ public class NameServiceIndexData implements DataStructure {
 
     }
 
+    @Override
+    public long getID() {
+        return m_id;
+    }
+
+    @Override
+    public void setID(final long p_id) {
+        m_id = p_id;
+    }
+
+    /**
+     * Chain multiple indices for expansion creating a linked list.
+     *
+     * @param p_chunkID
+     *     ChunkID of the next data index to chain to this one.
+     */
+    public void setNextIndexDataChunk(final long p_chunkID) {
+        m_nextIndexDataChunkId = p_chunkID;
+    }
+
     /**
      * Insert a new mapping into the index.
      *
@@ -45,26 +65,6 @@ public class NameServiceIndexData implements DataStructure {
         m_chunkIDs[m_numEntries] = p_chunkId;
         m_numEntries++;
         return true;
-    }
-
-    /**
-     * Chain multiple indices for expansion creating a linked list.
-     *
-     * @param p_chunkID
-     *     ChunkID of the next data index to chain to this one.
-     */
-    public void setNextIndexDataChunk(final long p_chunkID) {
-        m_nextIndexDataChunkId = p_chunkID;
-    }
-
-    @Override
-    public long getID() {
-        return m_id;
-    }
-
-    @Override
-    public void setID(final long p_id) {
-        m_id = p_id;
     }
 
     @Override

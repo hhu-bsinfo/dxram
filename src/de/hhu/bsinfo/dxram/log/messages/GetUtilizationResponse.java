@@ -30,9 +30,9 @@ public class GetUtilizationResponse extends AbstractResponse {
      * Creates an instance of GetUtilizationResponse
      *
      * @param p_request
-     *         the corresponding GetUtilizationRequest
+     *     the corresponding GetUtilizationRequest
      * @param p_utilization
-     *         the utilization as a String
+     *     the utilization as a String
      */
     public GetUtilizationResponse(final GetUtilizationRequest p_request, final String p_utilization) {
         super(p_request, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE);
@@ -55,8 +55,18 @@ public class GetUtilizationResponse extends AbstractResponse {
         }
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        if (m_utilization != null) {
+            return Integer.BYTES + m_utilization.getBytes(StandardCharsets.UTF_8).length;
+        } else {
+            return Integer.BYTES;
+        }
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         if (m_utilization != null) {
             byte[] data = m_utilization.getBytes(StandardCharsets.UTF_8);
 
@@ -67,7 +77,8 @@ public class GetUtilizationResponse extends AbstractResponse {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         int length;
         byte[] data;
 
@@ -76,14 +87,6 @@ public class GetUtilizationResponse extends AbstractResponse {
             data = new byte[length];
             p_buffer.get(data);
             m_utilization = new String(data, StandardCharsets.UTF_8);
-        }
-    }
-
-    @Override protected final int getPayloadLength() {
-        if (m_utilization != null) {
-            return Integer.BYTES + m_utilization.getBytes(StandardCharsets.UTF_8).length;
-        } else {
-            return Integer.BYTES;
         }
     }
 

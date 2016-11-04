@@ -21,7 +21,7 @@ public class SuperpeerStoragePutResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *         the request
+     *     the request
      */
     public SuperpeerStoragePutResponse(final SuperpeerStoragePutRequest p_request) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE);

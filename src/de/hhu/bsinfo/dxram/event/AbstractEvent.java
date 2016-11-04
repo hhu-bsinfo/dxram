@@ -14,12 +14,12 @@ public abstract class AbstractEvent {
      * @param p_sourceClass
      *     Source class this event originates from.
      */
-    public AbstractEvent(final String p_sourceClass) {
+    protected AbstractEvent(final String p_sourceClass) {
         m_sourceClass = p_sourceClass;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + m_sourceClass + "]";
+        return getClass().getSimpleName() + '[' + m_sourceClass + ']';
     }
 }

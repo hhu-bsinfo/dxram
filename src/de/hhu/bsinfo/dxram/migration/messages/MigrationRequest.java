@@ -33,9 +33,9 @@ public class MigrationRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_dataStructure
-     *         The data structure to migrate.
+     *     The data structure to migrate.
      */
     public MigrationRequest(final short p_destination, final DataStructure p_dataStructure) {
         super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST);
@@ -47,9 +47,9 @@ public class MigrationRequest extends AbstractRequest {
      * Creates an instance of DataRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_dataStructures
-     *         Multiple data structures to migrate
+     *     Multiple data structures to migrate
      */
     public MigrationRequest(final short p_destination, final DataStructure[] p_dataStructures) {
         super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST);
@@ -66,7 +66,19 @@ public class MigrationRequest extends AbstractRequest {
         return m_dataStructures;
     }
 
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final int getPayloadLength() {
+        int length = Integer.BYTES;
+        length += (Long.BYTES + Integer.BYTES) * m_dataStructures.length;
+        for (DataStructure dataStructure : m_dataStructures) {
+            length += dataStructure.sizeofObject();
+        }
+
+        return length;
+    }
+
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         int size;
 
         final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
@@ -82,7 +94,8 @@ public class MigrationRequest extends AbstractRequest {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         int size;
         long id;
 
@@ -97,16 +110,6 @@ public class MigrationRequest extends AbstractRequest {
             m_dataStructures[i] = new Chunk(id, size);
             importer.importObject(m_dataStructures[i]);
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        int length = Integer.BYTES;
-        length += (Long.BYTES + Integer.BYTES) * m_dataStructures.length;
-        for (DataStructure dataStructure : m_dataStructures) {
-            length += dataStructure.sizeofObject();
-        }
-
-        return length;
     }
 
 }

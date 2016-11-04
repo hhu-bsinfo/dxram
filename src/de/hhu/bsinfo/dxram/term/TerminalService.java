@@ -40,7 +40,7 @@ public class TerminalService extends AbstractDXRAMService {
     private AbstractBootComponent m_boot;
     private TerminalComponent m_terminal;
 
-    private boolean m_loop = true;
+    private volatile boolean m_loop = true;
     private BufferedWriter m_historyFile;
 
     /**
@@ -57,13 +57,13 @@ public class TerminalService extends AbstractDXRAMService {
     public void loop() {
         byte[] arr;
 
-        if (!m_boot.getNodeRole().equals(NodeRole.TERMINAL)) {
+        if (m_boot.getNodeRole() != NodeRole.TERMINAL) {
             System.out.println("A Terminal node must have the NodeRole \"terminal\". Aborting");
             return;
         }
 
         // register commands for auto completion
-        JNIconsole.autocompleteCommands(m_terminal.getRegisteredCommands().keySet().toArray(new String[0]));
+        JNIconsole.autocompleteCommands(m_terminal.getRegisteredCommands().keySet().toArray(new String[m_terminal.getRegisteredCommands().size()]));
 
         // #if LOGGER >= INFO
         LOGGER.info("Running terminal...");
@@ -83,13 +83,13 @@ public class TerminalService extends AbstractDXRAMService {
         }
 
         while (m_loop) {
-            arr = JNIconsole.readline("$" + NodeID.toHexString(m_boot.getNodeID()) + "> ");
+            arr = JNIconsole.readline('$' + NodeID.toHexString(m_boot.getNodeID()) + "> ");
             if (arr != null) {
                 String command = new String(arr, 0, arr.length);
 
                 try {
                     if (m_historyFile != null) {
-                        m_historyFile.write(command + "\n");
+                        m_historyFile.write(command + '\n');
                     }
                 } catch (final IOException e) {
                     // #if LOGGER >= ERROR
@@ -104,83 +104,6 @@ public class TerminalService extends AbstractDXRAMService {
         // #if LOGGER >= INFO
         LOGGER.info("Exiting terminal...");
         // #endif /* LOGGER >= INFO */
-    }
-
-    /**
-     * Evaluate the text entered in the terminal.
-     *
-     * @param p_text
-     *     Text to evaluate
-     */
-    private void evaluate(final String p_text) {
-
-        // skip empty
-        if (p_text.isEmpty()) {
-            return;
-        }
-
-        if (p_text.startsWith("?")) {
-            m_terminal.getScriptTerminalContext().help();
-        } else if (p_text.equals("exit")) {
-            m_loop = false;
-        } else if (p_text.equals("clear")) {
-            // ANSI escape codes (clear screen, move cursor to first row and first column)
-            System.out.print("\033[H\033[2J");
-            System.out.flush();
-        } else {
-            eveluateCommand(p_text);
-        }
-    }
-
-    /**
-     * Evaluate the terminal command
-     *
-     * @param p_text
-     *     Text to evaluate as terminal command
-     */
-    private void eveluateCommand(final String p_text) {
-        // resolve terminal cmd "macros"
-        String[] tokensFunc = p_text.split("\\(");
-        String[] tokensHelp = p_text.split(" ");
-
-        // print help for cmd
-        if (tokensHelp.length > 1 && tokensHelp[0].equals("help")) {
-            de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(tokensHelp[1]);
-            if (scriptCtx != null) {
-                m_terminal.getScriptContext().eval("dxterm.cmd(\"" + tokensHelp[1] + "\").help()");
-            } else {
-                System.out.println("Could not find help for terminal command '" + tokensHelp[1] + "'");
-            }
-        } else if (tokensFunc.length > 1) {
-
-            // resolve cmd call
-            de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(tokensFunc[0]);
-            if (scriptCtx != null) {
-                // load imports
-                m_terminal.getScriptContext().eval("dxterm.cmd(\"" + tokensFunc[0] + "\").imports()");
-
-                // assemble long call
-                String call = "dxterm.cmd(\"" + tokensFunc[0] + "\").exec(";
-
-                // prepare parameters
-                if (tokensFunc[1].length() > 1) {
-                    call += tokensFunc[1];
-                } else {
-                    call += ")";
-                }
-
-                m_terminal.getScriptContext().eval(call);
-            } else {
-                m_terminal.getScriptContext().eval(p_text);
-            }
-        } else {
-            // filter some generic "macros"
-            if (p_text.equals("help")) {
-                m_terminal.getScriptTerminalContext().help();
-            } else {
-                m_terminal.getScriptContext().eval(p_text);
-            }
-        }
     }
 
     @Override
@@ -211,6 +134,83 @@ public class TerminalService extends AbstractDXRAMService {
     }
 
     /**
+     * Evaluate the text entered in the terminal.
+     *
+     * @param p_text
+     *     Text to evaluate
+     */
+    private void evaluate(final String p_text) {
+
+        // skip empty
+        if (p_text.isEmpty()) {
+            return;
+        }
+
+        if (p_text.startsWith("?")) {
+            ScriptTerminalContext.help();
+        } else if ("exit".equals(p_text)) {
+            m_loop = false;
+        } else if ("clear".equals(p_text)) {
+            // ANSI escape codes (clear screen, move cursor to first row and first column)
+            System.out.print("\033[H\033[2J");
+            System.out.flush();
+        } else {
+            eveluateCommand(p_text);
+        }
+    }
+
+    /**
+     * Evaluate the terminal command
+     *
+     * @param p_text
+     *     Text to evaluate as terminal command
+     */
+    private void eveluateCommand(final String p_text) {
+        // resolve terminal cmd "macros"
+        String[] tokensFunc = p_text.split("\\(");
+        String[] tokensHelp = p_text.split(" ");
+
+        // print help for cmd
+        if (tokensHelp.length > 1 && "help".equals(tokensHelp[0])) {
+            de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(tokensHelp[1]);
+            if (scriptCtx != null) {
+                m_terminal.getScriptContext().eval("dxterm.cmd(\"" + tokensHelp[1] + "\").help()");
+            } else {
+                System.out.println("Could not find help for terminal command '" + tokensHelp[1] + '\'');
+            }
+        } else if (tokensFunc.length > 1) {
+
+            // resolve cmd call
+            de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(tokensFunc[0]);
+            if (scriptCtx != null) {
+                // load imports
+                m_terminal.getScriptContext().eval("dxterm.cmd(\"" + tokensFunc[0] + "\").imports()");
+
+                // assemble long call
+                String call = "dxterm.cmd(\"" + tokensFunc[0] + "\").exec(";
+
+                // prepare parameters
+                if (tokensFunc[1].length() > 1) {
+                    call += tokensFunc[1];
+                } else {
+                    call += ")";
+                }
+
+                m_terminal.getScriptContext().eval(call);
+            } else {
+                m_terminal.getScriptContext().eval(p_text);
+            }
+        } else {
+            // filter some generic "macros"
+            if ("help".equals(p_text)) {
+                ScriptTerminalContext.help();
+            } else {
+                m_terminal.getScriptContext().eval(p_text);
+            }
+        }
+    }
+
+    /**
      * Load terminal command history from a file.
      *
      * @param p_file
@@ -226,7 +226,7 @@ public class TerminalService extends AbstractDXRAMService {
             while (true) {
                 try {
                     str = reader.readLine();
-                } catch (final IOException e) {
+                } catch (final IOException ignored) {
                     break;
                 }
 
@@ -240,7 +240,7 @@ public class TerminalService extends AbstractDXRAMService {
             reader.close();
         } catch (final FileNotFoundException e) {
             // #if LOGGER >= DEBUG
-            LOGGER.debug("No history found: %s", p_file);
+            // LOGGER.debug("No history found: %s", p_file);
             // #endif /* LOGGER >= DEBUG */
         } catch (final IOException e) {
             // #if LOGGER >= ERROR

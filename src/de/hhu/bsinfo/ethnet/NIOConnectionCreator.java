@@ -43,24 +43,24 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
      * Creates an instance of NIOConnectionCreator
      *
      * @param p_messageDirectory
-     *         the message directory
+     *     the message directory
      * @param p_nodeMap
-     *         the node map
+     *     the node map
      * @param p_ownNodeID
-     *         the NodeID of this node
+     *     the NodeID of this node
      * @param p_incomingBufferSize
-     *         the size of incoming buffer
+     *     the size of incoming buffer
      * @param p_outgoingBufferSize
-     *         the size of outgoing buffer
+     *     the size of outgoing buffer
      * @param p_numberOfBuffersPerConnection
-     *         the number of bytes until a flow control message must be received to continue sending
+     *     the number of bytes until a flow control message must be received to continue sending
      * @param p_flowControlWindowSize
-     *         the maximal number of ByteBuffer to schedule for sending/receiving
+     *     the maximal number of ByteBuffer to schedule for sending/receiving
      * @param p_connectionTimeout
-     *         the connection timeout
+     *     the connection timeout
      */
-    protected NIOConnectionCreator(final MessageDirectory p_messageDirectory, final NodeMap p_nodeMap, final short p_ownNodeID, final int p_incomingBufferSize,
-            final int p_outgoingBufferSize, final int p_numberOfBuffersPerConnection, final int p_flowControlWindowSize, final int p_connectionTimeout) {
+    NIOConnectionCreator(final MessageDirectory p_messageDirectory, final NodeMap p_nodeMap, final short p_ownNodeID, final int p_incomingBufferSize,
+        final int p_outgoingBufferSize, final int p_numberOfBuffersPerConnection, final int p_flowControlWindowSize, final int p_connectionTimeout) {
         super();
 
         m_nioSelector = null;
@@ -81,16 +81,21 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
     // Methods
 
+    @Override
+    public String getSelectorStatus() {
+        return m_nioSelector.toString();
+    }
+
     /**
      * Initializes the creator
      */
-    @Override public void initialize(final short p_nodeID, final int p_listenPort) {
+    @Override
+    public void initialize(final short p_nodeID, final int p_listenPort) {
         // #if LOGGER >= INFO
         LOGGER.info("Network: MessageCreator");
         // #endif /* LOGGER >= INFO */
         m_messageCreator = new MessageCreator(m_numberOfBuffersPerConnection);
         m_messageCreator.setName("Network: MessageCreator");
-        m_messageCreator.setPriority(Thread.MAX_PRIORITY);
         m_messageCreator.start();
 
         // #if LOGGER >= INFO
@@ -98,14 +103,14 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
         // #endif /* LOGGER >= INFO */
         m_nioSelector = new NIOSelector(this, m_nioInterface, p_listenPort, m_connectionTimeout);
         m_nioSelector.setName("Network: NIOSelector");
-        m_nioSelector.setPriority(Thread.MAX_PRIORITY);
         m_nioSelector.start();
     }
 
     /**
      * Closes the creator and frees unused resources
      */
-    @Override public void close() {
+    @Override
+    public void close() {
         m_nioSelector.close();
         m_nioSelector = null;
 
@@ -113,11 +118,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
         m_messageCreator = null;
     }
 
-    @Override public String getSelectorStatus() {
-        return m_nioSelector.toString();
-    }
-
-    @Override public boolean keyIsPending() {
+    @Override
+    public boolean keyIsPending() {
         byte counter = 0;
 
         try {
@@ -139,12 +141,13 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
      * Creates a new connection to the given destination
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @return a new connection
      * @throws IOException
-     *         if the connection could not be created
+     *     if the connection could not be created
      */
-    @Override public NIOConnection createConnection(final short p_destination) throws IOException {
+    @Override
+    public NIOConnection createConnection(final short p_destination) throws IOException {
         NIOConnection ret;
         ReentrantLock condLock;
         Condition cond;
@@ -154,7 +157,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
         condLock = new ReentrantLock(false);
         cond = condLock.newCondition();
         ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, condLock, cond, m_messageCreator, m_nioSelector, m_numberOfBuffersPerConnection,
-                m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
+            m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
 
         ret.connect();
 
@@ -164,7 +167,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
             timeNow = System.currentTimeMillis();
             if (timeNow - timeStart > m_connectionTimeout) {
                 // #if LOGGER >= DEBUG
-                LOGGER.debug("connection creation time-out. Interval %d ms might be to small", m_connectionTimeout);
+                // LOGGER.debug("connection creation time-out. Interval %d ms might be to small", m_connectionTimeout);
                 // #endif /* LOGGER >= DEBUG */
 
                 condLock.unlock();
@@ -190,15 +193,42 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
     }
 
     /**
+     * Closes the given connection
+     *
+     * @param p_connection
+     *     the connection
+     * @param p_informConnectionManager
+     *     whether to inform the connection manager or not
+     */
+    void closeConnection(final NIOConnection p_connection, final boolean p_informConnectionManager) {
+        SelectionKey key;
+        key = p_connection.getChannel().keyFor(m_nioSelector.getSelector());
+        if (key != null) {
+            key.cancel();
+
+            try {
+                p_connection.getChannel().close();
+            } catch (final IOException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not close connection to %s!", p_connection.getDestination());
+                // #endif /* LOGGER >= ERROR */
+            }
+            if (p_informConnectionManager) {
+                fireConnectionClosed(p_connection);
+            }
+        }
+    }
+
+    /**
      * Creates a new connection, triggered by incoming key
      * m_buffer needs to be synchronized externally
      *
      * @param p_channel
-     *         the channel of the connection
+     *     the channel of the connection
      * @throws IOException
-     *         if the connection could not be created
+     *     if the connection could not be created
      */
-    protected void createConnection(final SocketChannel p_channel) throws IOException {
+    void createConnection(final SocketChannel p_channel) throws IOException {
         NIOConnection connection;
         short remoteNodeID;
 
@@ -208,7 +238,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
                 if (remoteNodeID > m_ownNodeID) {
                     // Remote node is allowed to open this connection -> proceed
                     connection = new NIOConnection(remoteNodeID, m_nodeMap, m_messageDirectory, p_channel, m_messageCreator, m_nioSelector,
-                            m_numberOfBuffersPerConnection, m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
+                        m_numberOfBuffersPerConnection, m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
                     // Register connection as attachment
                     p_channel.register(m_nioSelector.getSelector(), SelectionKey.OP_READ, connection);
 
@@ -227,33 +257,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
             LOGGER.error("Could not create connection!");
             // #endif /* LOGGER >= ERROR */
             throw e;
-        }
-    }
-
-    /**
-     * Closes the given connection
-     *
-     * @param p_connection
-     *         the connection
-     * @param p_informConnectionManager
-     *         whether to inform the connection manager or not
-     */
-    protected void closeConnection(final NIOConnection p_connection, final boolean p_informConnectionManager) {
-        SelectionKey key;
-        key = p_connection.getChannel().keyFor(m_nioSelector.getSelector());
-        if (key != null) {
-            key.cancel();
-
-            try {
-                p_connection.getChannel().close();
-            } catch (final IOException e) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Could not close connection to %s!", p_connection.getDestination());
-                // #endif /* LOGGER >= ERROR */
-            }
-            if (p_informConnectionManager) {
-                fireConnectionClosed(p_connection);
-            }
         }
     }
 

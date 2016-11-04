@@ -25,9 +25,9 @@ public class SetLogLevelMessage extends AbstractMessage {
      * Creates an instance of UnlockRequest as a sender
      *
      * @param p_destination
-     *         the destination node ID.
+     *     the destination node ID.
      * @param p_logLevel
-     *         Log level to set on remote node
+     *     Log level to set on remote node
      */
     public SetLogLevelMessage(final short p_destination, final String p_logLevel) {
         super(p_destination, DXRAMMessageTypes.LOGGER_MESSAGES_TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE);
@@ -44,23 +44,26 @@ public class SetLogLevelMessage extends AbstractMessage {
         return m_logLevel;
     }
 
-    // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
-        byte[] b = m_logLevel.getBytes();
-
-        p_buffer.putInt(b.length);
-        p_buffer.put(b);
-    }
-
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
-
-        byte[] b = new byte[p_buffer.getInt()];
-        p_buffer.get(b);
-        m_logLevel = new String(b);
-    }
-
-    @Override protected final int getPayloadLength() {
+    @Override
+    protected final int getPayloadLength() {
         return Integer.BYTES + m_logLevel.getBytes().length;
+    }
+
+    // Methods
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
+        byte[] array = m_logLevel.getBytes();
+
+        p_buffer.putInt(array.length);
+        p_buffer.put(array);
+    }
+
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
+
+        byte[] array = new byte[p_buffer.getInt()];
+        p_buffer.get(array);
+        m_logLevel = new String(array);
     }
 
 }

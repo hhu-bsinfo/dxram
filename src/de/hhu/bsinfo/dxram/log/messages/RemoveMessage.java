@@ -34,9 +34,9 @@ public class RemoveMessage extends AbstractMessage {
      * Creates an instance of RemoveMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_chunkIDs
-     *         the ChunkIDs of the Chunks to remove
+     *     the ChunkIDs of the Chunks to remove
      */
     public RemoveMessage(final short p_destination, final Long[] p_chunkIDs) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
@@ -49,9 +49,9 @@ public class RemoveMessage extends AbstractMessage {
      * Creates an instance of RemoveMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_chunkIDs
-     *         the ChunkIDs of the Chunks to remove
+     *     the ChunkIDs of the Chunks to remove
      */
     public RemoveMessage(final short p_destination, final long[] p_chunkIDs) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
@@ -68,11 +68,11 @@ public class RemoveMessage extends AbstractMessage {
      * Creates an instance of RemoveMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_chunkIDs
-     *         the ChunkIDs of the Chunks to remove
+     *     the ChunkIDs of the Chunks to remove
      * @param p_rangeID
-     *         the RangeID
+     *     the RangeID
      */
     public RemoveMessage(final short p_destination, final Long[] p_chunkIDs, final byte p_rangeID) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
@@ -92,8 +92,18 @@ public class RemoveMessage extends AbstractMessage {
         return m_buffer;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        if (m_chunkIDs != null) {
+            return Byte.BYTES + Integer.BYTES + Long.BYTES * m_chunkIDs.length;
+        } else {
+            return 0;
+        }
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.put(m_rangeID);
         p_buffer.putInt(m_chunkIDs.length);
         for (int i = 0; i < m_chunkIDs.length; i++) {
@@ -101,16 +111,9 @@ public class RemoveMessage extends AbstractMessage {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_buffer = p_buffer;
-    }
-
-    @Override protected final int getPayloadLength() {
-        if (m_chunkIDs != null) {
-            return Byte.BYTES + Integer.BYTES + Long.BYTES * m_chunkIDs.length;
-        } else {
-            return 0;
-        }
     }
 
 }

@@ -16,7 +16,7 @@ public enum NodeRole {
     public static final String TERMINAL_STR = "terminal";
 
     // Attributes
-    private char m_acronym;
+    private final char m_acronym;
 
     // Constructors
 
@@ -24,31 +24,11 @@ public enum NodeRole {
      * Creates an instance of Role
      *
      * @param p_acronym
-     *         the role's acronym
+     *     the role's acronym
      */
     NodeRole(final char p_acronym) {
         m_acronym = p_acronym;
     }
-
-    /**
-     * Get the node role from a full string.
-     *
-     * @param p_str
-     *         String to parse.
-     * @return Role node of string.
-     */
-    public static NodeRole toNodeRole(final String p_str) {
-        String str = p_str.toLowerCase();
-        if (str.equals(SUPERPEER_STR) || str.equals("s")) {
-            return NodeRole.SUPERPEER;
-        } else if (str.equals(TERMINAL_STR) || str.equals("t")) {
-            return NodeRole.TERMINAL;
-        } else {
-            return NodeRole.PEER;
-        }
-    }
-
-    // Getters
 
     /**
      * Gets the acronym of the role
@@ -59,23 +39,31 @@ public enum NodeRole {
         return m_acronym;
     }
 
-    @Override public String toString() {
-        if (equals(PEER)) {
-            return PEER_STR;
-        } else if (equals(TERMINAL)) {
-            return TERMINAL_STR;
+    // Getters
+
+    /**
+     * Get the node role from a full string.
+     *
+     * @param p_str
+     *     String to parse.
+     * @return Role node of string.
+     */
+    public static NodeRole toNodeRole(final String p_str) {
+        String str = p_str.toLowerCase();
+        if (str.equals(SUPERPEER_STR) || "s".equals(str)) {
+            return NodeRole.SUPERPEER;
+        } else if (str.equals(TERMINAL_STR) || "t".equals(str)) {
+            return NodeRole.TERMINAL;
         } else {
-            return SUPERPEER_STR;
+            return NodeRole.PEER;
         }
     }
-
-    // Methods
 
     /**
      * Gets the role for the given acronym
      *
      * @param p_acronym
-     *         the acronym
+     *     the acronym
      * @return the corresponding role
      */
     public static NodeRole getRoleByAcronym(final char p_acronym) {
@@ -90,5 +78,18 @@ public enum NodeRole {
         }
 
         return ret;
+    }
+
+    // Methods
+
+    @Override
+    public String toString() {
+        if (equals(PEER)) {
+            return PEER_STR;
+        } else if (equals(TERMINAL)) {
+            return TERMINAL_STR;
+        } else {
+            return SUPERPEER_STR;
+        }
     }
 }

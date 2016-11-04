@@ -56,7 +56,7 @@ public final class ChunkID {
      * @return Full Chunk ID.
      */
     public static long getChunkID(final short p_nid, final long p_lid) {
-        return (((long) p_nid) << 48) | p_lid & LOCALID_BITMASK;
+        return (long) p_nid << 48 | p_lid & LOCALID_BITMASK;
     }
 
     /**

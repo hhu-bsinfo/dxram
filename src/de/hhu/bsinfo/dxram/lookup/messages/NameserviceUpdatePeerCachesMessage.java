@@ -33,11 +33,11 @@ public class NameserviceUpdatePeerCachesMessage extends AbstractRequest {
      * Creates an instance of NameserviceUpdatePeerCachesMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_id
-     *         the id to store
+     *     the id to store
      * @param p_chunkID
-     *         the ChunkID to store
+     *     the ChunkID to store
      */
     public NameserviceUpdatePeerCachesMessage(final short p_destination, final int p_id, final long p_chunkID) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE);
@@ -66,19 +66,22 @@ public class NameserviceUpdatePeerCachesMessage extends AbstractRequest {
         return m_chunkID;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES + Long.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt(m_id);
         p_buffer.putLong(m_chunkID);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_id = p_buffer.getInt();
         m_chunkID = p_buffer.getLong();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES + Long.BYTES;
     }
 
 }

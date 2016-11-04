@@ -32,11 +32,11 @@ public class JoinRequest extends AbstractRequest {
      * Creates an instance of JoinRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_newNode
-     *         the NodeID of the new node
+     *     the NodeID of the new node
      * @param p_nodeIsSuperpeer
-     *         wether the new node is a superpeer or not
+     *     wether the new node is a superpeer or not
      */
     public JoinRequest(final short p_destination, final short p_newNode, final boolean p_nodeIsSuperpeer) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_JOIN_REQUEST);
@@ -58,6 +58,11 @@ public class JoinRequest extends AbstractRequest {
         return m_newNode;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Short.BYTES + Byte.BYTES;
+    }
+
     /**
      * Get role of new node
      *
@@ -68,7 +73,8 @@ public class JoinRequest extends AbstractRequest {
     }
 
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putShort(m_newNode);
 
         if (m_nodeIsSuperpeer) {
@@ -78,17 +84,14 @@ public class JoinRequest extends AbstractRequest {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_newNode = p_buffer.getShort();
 
         final byte b = p_buffer.get();
         if (b == 1) {
             m_nodeIsSuperpeer = true;
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Short.BYTES + Byte.BYTES;
     }
 
 }

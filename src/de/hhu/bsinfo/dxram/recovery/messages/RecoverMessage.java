@@ -31,11 +31,11 @@ public class RecoverMessage extends AbstractMessage {
      * Creates an instance of RecoverMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_useLiveData
-     *         whether the recover should use current logs or log files
+     *     whether the recover should use current logs or log files
      * @param p_owner
-     *         the NodeID of the owner
+     *     the NodeID of the owner
      */
     public RecoverMessage(final short p_destination, final short p_owner, final boolean p_useLiveData) {
         super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_MESSAGE);
@@ -55,6 +55,11 @@ public class RecoverMessage extends AbstractMessage {
         return m_owner;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Short.BYTES + Byte.BYTES;
+    }
+
     /**
      * Returns whether the recover should use current logs or log files
      *
@@ -65,7 +70,8 @@ public class RecoverMessage extends AbstractMessage {
     }
 
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putShort(m_owner);
         if (m_useLiveData) {
             p_buffer.put((byte) 1);
@@ -74,17 +80,14 @@ public class RecoverMessage extends AbstractMessage {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_owner = p_buffer.getShort();
 
         final byte b = p_buffer.get();
         if (b == 1) {
             m_useLiveData = true;
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Short.BYTES + Byte.BYTES;
     }
 
 }

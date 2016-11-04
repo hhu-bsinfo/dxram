@@ -43,9 +43,9 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
      * Set the log level for the logger.
      *
      * @param p_logLevel
-     *         Log level to set.
+     *     Log level to set.
      */
-    public void setLogLevel(final String p_logLevel) {
+    private static void setLogLevel(final String p_logLevel) {
 
         setLogLevel(Level.getLevel(p_logLevel.toUpperCase()));
     }
@@ -54,9 +54,9 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
      * Set the log level for the logger.
      *
      * @param p_logLevel
-     *         Log level to set.
+     *     Log level to set.
      */
-    public void setLogLevel(final Level p_logLevel) {
+    private static void setLogLevel(final Level p_logLevel) {
 
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         Configuration config = ctx.getConfiguration();
@@ -67,41 +67,29 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
     }
 
     /**
-     * Set the log level for the logger on another node
+     * Handles an incoming SetLogLevelMessage
      *
-     * @param p_logLevel
-     *         Log level to set.
-     * @param p_nodeId
-     *         Id of the node to change the log level on
+     * @param p_message
+     *     the SetLogLevelMessage
      */
-    public void setLogLevel(final String p_logLevel, final Short p_nodeId) {
-        setLogLevel(Level.getLevel(p_logLevel.toUpperCase()), p_nodeId);
+    private static void incomingSetLogLevelMessage(final SetLogLevelMessage p_message) {
+        setLogLevel(p_message.getLogLevel());
     }
 
     /**
      * Set the log level for the logger on another node
      *
      * @param p_logLevel
-     *         Log level to set.
+     *     Log level to set.
      * @param p_nodeId
-     *         Id of the node to change the log level on
+     *     Id of the node to change the log level on
      */
-    public void setLogLevel(final Level p_logLevel, final Short p_nodeId) {
-        if (m_boot.getNodeID() == p_nodeId) {
-            setLogLevel(p_logLevel);
-        } else {
-            SetLogLevelMessage message = new SetLogLevelMessage(p_nodeId, p_logLevel.name());
-            try {
-                m_network.sendMessage(message);
-            } catch (final NetworkException e) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Setting log level of node 0x%X failed: %s", p_nodeId, e);
-                // #endif /* LOGGER >= ERROR */
-            }
-        }
+    public void setLogLevel(final String p_logLevel, final Short p_nodeId) {
+        setLogLevel(Level.getLevel(p_logLevel.toUpperCase()), p_nodeId);
     }
 
-    @Override public void onIncomingMessage(final AbstractMessage p_message) {
+    @Override
+    public void onIncomingMessage(final AbstractMessage p_message) {
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.LOGGER_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
@@ -115,12 +103,14 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
         }
     }
 
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
     }
 
-    @Override protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    @Override
+    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         m_network.registerMessageType(DXRAMMessageTypes.LOGGER_MESSAGES_TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE, SetLogLevelMessage.class);
 
         m_network.register(SetLogLevelMessage.class, this);
@@ -128,17 +118,31 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
         return true;
     }
 
-    @Override protected boolean shutdownService() {
+    @Override
+    protected boolean shutdownService() {
         return true;
     }
 
     /**
-     * Handles an incoming SetLogLevelMessage
+     * Set the log level for the logger on another node
      *
-     * @param p_message
-     *         the SetLogLevelMessage
+     * @param p_logLevel
+     *     Log level to set.
+     * @param p_nodeId
+     *     Id of the node to change the log level on
      */
-    private void incomingSetLogLevelMessage(final SetLogLevelMessage p_message) {
-        setLogLevel(p_message.getLogLevel());
+    private void setLogLevel(final Level p_logLevel, final Short p_nodeId) {
+        if (m_boot.getNodeID() == p_nodeId) {
+            setLogLevel(p_logLevel);
+        } else {
+            SetLogLevelMessage message = new SetLogLevelMessage(p_nodeId, p_logLevel.name());
+            try {
+                m_network.sendMessage(message);
+            } catch (final NetworkException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Setting log level of node 0x%X failed: %s", p_nodeId, e);
+                // #endif /* LOGGER >= ERROR */
+            }
+        }
     }
 }

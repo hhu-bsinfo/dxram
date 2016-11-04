@@ -52,9 +52,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Creates an instance of LookupTree
      *
      * @param p_order
-     *         order of the btree
+     *     order of the btree
      */
-    public LookupTree(final short p_order) {
+    LookupTree(final short p_order) {
         // too small order for BTree
         assert p_order > 1;
 
@@ -76,10 +76,66 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
+     * Returns the creator
+     *
+     * @return the creator
+     */
+    public short getCreator() {
+        return m_creator;
+    }
+
+    /**
+     * Get the status of this peer
+     *
+     * @return whether this node is online or not
+     */
+    public boolean getStatus() {
+        return m_status;
+    }
+
+    /**
+     * Set the status of this peer
+     *
+     * @param p_status
+     *     whether this node is online or not
+     */
+    public void setStatus(final boolean p_status) {
+        m_status = p_status;
+    }
+
+    /**
+     * Returns the backup peers for every range
+     *
+     * @return an ArrayList with all backup peers
+     */
+    ArrayList<long[]> getAllBackupRanges() {
+        return m_backupRanges;
+    }
+
+    /**
+     * Returns the backup peers for migrated chunks
+     *
+     * @return an ArrayList with all backup peers for migrated
+     */
+    ArrayList<Long> getAllMigratedBackupRanges() {
+        return m_migrationBackupRanges;
+    }
+
+    /**
+     * Set the restorer
+     *
+     * @param p_nodeID
+     *     the NodeID of the peer that restored this peer
+     */
+    void setRestorer(final short p_nodeID) {
+        m_restorer = p_nodeID;
+    }
+
+    /**
      * Reads an CIDTree from ByteBuffer
      *
      * @param p_buffer
-     *         the ByteBuffer
+     *     the ByteBuffer
      * @return the CIDTree
      */
     // TODO stefan: delete this when done implementing importer/exporter interface
@@ -97,45 +153,12 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Parses binary data into an CIDTree
-     *
-     * @param p_data
-     *         the binary data
-     * @return the CIDTree
-     */
-    // TODO stefan: delete this when done implementing importer/exporter interface
-    public static LookupTree parseLookupTree(final byte[] p_data) {
-        LookupTree ret = null;
-        ByteArrayInputStream byteArrayInputStream;
-        ObjectInput objectInput = null;
-
-        if (p_data != null && p_data.length > 0) {
-            byteArrayInputStream = new ByteArrayInputStream(p_data);
-            try {
-                objectInput = new ObjectInputStream(byteArrayInputStream);
-                ret = (LookupTree) objectInput.readObject();
-            } catch (final Exception e) {
-            } finally {
-                try {
-                    if (objectInput != null) {
-                        objectInput.close();
-                    }
-                    byteArrayInputStream.close();
-                } catch (final IOException e) {
-                }
-            }
-        }
-
-        return ret;
-    }
-
-    /**
      * Writes an CIDTree
      *
      * @param p_buffer
-     *         the buffer
+     *     the buffer
      * @param p_tree
-     *         the CIDTree
+     *     the CIDTree
      */
     // TODO stefan: delete this when done implementing importer/exporter interface
     public static void writeLookupTree(final ByteBuffer p_buffer, final LookupTree p_tree) {
@@ -159,43 +182,13 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         }
     }
 
-    /**
-     * Parses an CIDTree to a byte array
-     *
-     * @param p_tree
-     *         the CIDTree
-     * @return the byte array
-     */
-    // TODO stefan: delete this when done implementing importer/exporter interface
-    private static byte[] parseLookupTree(final LookupTree p_tree) {
-        byte[] ret = null;
-        ByteArrayOutputStream byteArrayOutputStream;
-        ObjectOutput objectOutput = null;
-
-        byteArrayOutputStream = new ByteArrayOutputStream();
-        try {
-            objectOutput = new ObjectOutputStream(byteArrayOutputStream);
-            objectOutput.writeObject(p_tree);
-            ret = byteArrayOutputStream.toByteArray();
-        } catch (final IOException e) {
-        } finally {
-            try {
-                if (objectOutput != null) {
-                    objectOutput.close();
-                }
-                byteArrayOutputStream.close();
-            } catch (final IOException e) {
-            }
-        }
-
-        return ret;
-    }
+    // Getters
 
     /**
      * Get the lenth of a CIDTree
      *
      * @param p_tree
-     *         the CIDTree
+     *     the CIDTree
      * @return the lenght of the CIDTree
      */
     // TODO stefan: delete this when done implementing importer/exporter interface
@@ -216,176 +209,98 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         return ret;
     }
 
-    @Override public void importObject(final Importer p_importer) {
-        // TODO stefan: replace java serializable interface with importer/exporter interface
-        throw new RuntimeException("Not implemented.");
-    }
-
-    @Override public void exportObject(final Exporter p_exporter) {
-        // TODO stefan: replace java serializable interface with importer/exporter interface
-        throw new RuntimeException("Not implemented.");
-    }
-
-    @Override public int sizeofObject() {
-        // TODO stefan: replace java serializable interface with importer/exporter interface
-        throw new RuntimeException("Not implemented.");
-    }
-
-    // Getters
-
     /**
-     * Returns the creator
+     * Parses binary data into an CIDTree
      *
-     * @return the creator
+     * @param p_data
+     *     the binary data
+     * @return the CIDTree
      */
-    public short getCreator() {
-        return m_creator;
-    }
+    // TODO stefan: delete this when done implementing importer/exporter interface
+    private static LookupTree parseLookupTree(final byte[] p_data) {
+        LookupTree ret = null;
+        ByteArrayInputStream byteArrayInputStream;
+        ObjectInput objectInput = null;
 
-    /**
-     * Get the status of this peer
-     *
-     * @return whether this node is online or not
-     */
-    public boolean getStatus() {
-        return m_status;
+        if (p_data != null && p_data.length > 0) {
+            byteArrayInputStream = new ByteArrayInputStream(p_data);
+            try {
+                objectInput = new ObjectInputStream(byteArrayInputStream);
+                ret = (LookupTree) objectInput.readObject();
+            } catch (final Exception ignored) {
+            } finally {
+                try {
+                    if (objectInput != null) {
+                        objectInput.close();
+                    }
+                    byteArrayInputStream.close();
+                } catch (final IOException ignored) {
+                }
+            }
+        }
+
+        return ret;
     }
 
     // Setters
 
     /**
-     * Set the status of this peer
+     * Parses an CIDTree to a byte array
      *
-     * @param p_status
-     *         whether this node is online or not
+     * @param p_tree
+     *     the CIDTree
+     * @return the byte array
      */
-    public void setStatus(final boolean p_status) {
-        m_status = p_status;
+    // TODO stefan: delete this when done implementing importer/exporter interface
+    private static byte[] parseLookupTree(final LookupTree p_tree) {
+        byte[] ret = null;
+        ByteArrayOutputStream byteArrayOutputStream;
+        ObjectOutput objectOutput = null;
+
+        byteArrayOutputStream = new ByteArrayOutputStream();
+        try {
+            objectOutput = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutput.writeObject(p_tree);
+            ret = byteArrayOutputStream.toByteArray();
+        } catch (final IOException ignored) {
+        } finally {
+            try {
+                if (objectOutput != null) {
+                    objectOutput.close();
+                }
+                byteArrayOutputStream.close();
+            } catch (final IOException ignored) {
+            }
+        }
+
+        return ret;
     }
 
-    /**
-     * Set the restorer
-     *
-     * @param p_nodeID
-     *         the NodeID of the peer that restored this peer
-     */
-    public void setRestorer(final short p_nodeID) {
-        m_restorer = p_nodeID;
+    @Override
+    public void importObject(final Importer p_importer) {
+        // TODO stefan: replace java serializable interface with importer/exporter interface
+        throw new RuntimeException("Not implemented.");
     }
 
     // Methods
 
-    /**
-     * Stores the migration for a single object
-     *
-     * @param p_chunkID
-     *         ChunkID of migrated object
-     * @param p_nodeID
-     *         new primary peer
-     * @return true if insertion was successful
-     */
-    public boolean migrateObject(final long p_chunkID, final short p_nodeID) {
-        long localID;
-        Node node;
-
-        localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
-
-        assert localID >= 0;
-
-        node = createOrReplaceEntry(localID, p_nodeID);
-
-        mergeWithPredecessorOrBound(localID, p_nodeID, node);
-
-        mergeWithSuccessor(localID, p_nodeID);
-
-        return true;
+    @Override
+    public void exportObject(final Exporter p_exporter) {
+        // TODO stefan: replace java serializable interface with importer/exporter interface
+        throw new RuntimeException("Not implemented.");
     }
 
-    /**
-     * Stores the migration for a range
-     *
-     * @param p_startCID
-     *         ChunkID of first migrated object
-     * @param p_endCID
-     *         ChunkID of last migrated object
-     * @param p_nodeID
-     *         new primary peer
-     * @return true if insertion was successful
-     */
-    public boolean migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
-        long startLID;
-        long endLID;
-        Node startNode;
-
-        startLID = p_startCID & 0x0000FFFFFFFFFFFFL;
-        endLID = p_endCID & 0x0000FFFFFFFFFFFFL;
-        // end larger than start or start smaller than 1
-        assert startLID <= endLID && 0 < startLID;
-
-        if (startLID == endLID) {
-            migrateObject(p_startCID, p_nodeID);
-        } else {
-            startNode = createOrReplaceEntry(startLID, p_nodeID);
-
-            mergeWithPredecessorOrBound(startLID, p_nodeID, startNode);
-
-            createOrReplaceEntry(endLID, p_nodeID);
-
-            removeEntriesWithinRange(startLID, endLID);
-
-            mergeWithSuccessor(endLID, p_nodeID);
-        }
-        return true;
-    }
-
-    /**
-     * Initializes a range
-     *
-     * @param p_startID
-     *         ChunkID of first chunk
-     * @param p_creator
-     *         the creator
-     * @param p_backupPeers
-     *         the backup peers
-     * @return true if insertion was successful
-     */
-    public boolean initRange(final long p_startID, final short p_creator, final short[] p_backupPeers) {
-        long backupPeers;
-
-        if (0 == p_startID) {
-            m_creator = p_creator;
-        } else {
-            if (null == m_root) {
-                createOrReplaceEntry((long) Math.pow(2, 48), p_creator);
-            }
-            backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
-            m_backupRanges.add(new long[] {p_startID, backupPeers});
-        }
-        return true;
-    }
-
-    /**
-     * Initializes a range for migrated chunks
-     *
-     * @param p_rangeID
-     *         the RangeID
-     * @param p_backupPeers
-     *         the backup peers
-     * @return true if insertion was successful
-     */
-    public boolean initMigrationRange(final int p_rangeID, final short[] p_backupPeers) {
-
-        m_migrationBackupRanges.add(p_rangeID,
-                ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF));
-
-        return true;
+    @Override
+    public int sizeofObject() {
+        // TODO stefan: replace java serializable interface with importer/exporter interface
+        throw new RuntimeException("Not implemented.");
     }
 
     /**
      * Returns the primary peer for given object
      *
      * @param p_chunkID
-     *         ChunkID of requested object
+     *     ChunkID of requested object
      * @return the NodeID of the primary peer for given object
      */
     public short getPrimaryPeer(final long p_chunkID) {
@@ -397,59 +312,12 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Returns the range given ChunkID is in
-     *
-     * @param p_chunkID
-     *         ChunkID of requested object
-     * @return the first and last ChunkID of the range
-     */
-    public LookupRange getMetadata(final long p_chunkID) {
-        LookupRange ret = null;
-        long[] range;
-        short nodeID;
-        int index;
-        long localID;
-        Node node;
-        Entry predecessorEntry;
-
-        if (m_root != null) {
-            localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
-            node = getNodeOrSuccessorsNode(localID);
-            if (node != null) {
-                index = node.indexOf(localID);
-                if (0 <= index) {
-                    // LocalID was found: Store NodeID and determine successor
-                    range = new long[2];
-                    nodeID = node.getNodeID(index);
-                    range[1] = localID;
-                    // range[1] = getSuccessorsEntry(localID, node).getLocalID();
-                } else {
-                    // LocalID was not found, but successor: Store NodeID and LocalID of successor
-                    range = new long[2];
-                    nodeID = node.getNodeID(index * -1 - 1);
-                    range[1] = node.getLocalID(index * -1 - 1);
-                }
-                // Determine LocalID of predecessor
-                predecessorEntry = getPredecessorsEntry(range[1], node);
-                if (predecessorEntry != null) {
-                    range[0] = predecessorEntry.getLocalID() + 1;
-                } else {
-                    range[0] = 0;
-                }
-                ret = new LookupRange(nodeID, range);
-            }
-        }
-
-        return ret;
-    }
-
-    /**
      * Returns all the backup peers for given object
      *
      * @param p_chunkID
-     *         ChunkID of requested object
+     *     ChunkID of requested object
      * @param p_wasMigrated
-     *         whether this Chunk was migrated or not
+     *     whether this Chunk was migrated or not
      * @return the NodeIDs of all backup peers for given object
      */
     public short[] getBackupPeers(final long p_chunkID, final boolean p_wasMigrated) {
@@ -485,13 +353,208 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
+     * Returns the number of entries in btree
+     *
+     * @return the number of entries in btree
+     */
+    public int size() {
+        return m_size;
+    }
+
+    /**
+     * Validates the btree
+     *
+     * @return whether the tree is valid or not
+     */
+    public boolean validate() {
+        boolean ret = true;
+
+        if (m_root != null) {
+            ret = validateNode(m_root);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Prints the btree
+     *
+     * @return String interpretation of the tree
+     */
+    @Override
+    public String toString() {
+        String ret;
+
+        if (m_root == null) {
+            ret = "Btree has no nodes";
+        } else {
+            ret = "Size: " + m_size + '\n' + getString(m_root, "", true);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Stores the migration for a single object
+     *
+     * @param p_chunkID
+     *     ChunkID of migrated object
+     * @param p_nodeID
+     *     new primary peer
+     * @return true if insertion was successful
+     */
+    boolean migrateObject(final long p_chunkID, final short p_nodeID) {
+        long localID;
+        Node node;
+
+        localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
+
+        assert localID >= 0;
+
+        node = createOrReplaceEntry(localID, p_nodeID);
+
+        mergeWithPredecessorOrBound(localID, p_nodeID, node);
+
+        mergeWithSuccessor(localID, p_nodeID);
+
+        return true;
+    }
+
+    /**
+     * Stores the migration for a range
+     *
+     * @param p_startCID
+     *     ChunkID of first migrated object
+     * @param p_endCID
+     *     ChunkID of last migrated object
+     * @param p_nodeID
+     *     new primary peer
+     * @return true if insertion was successful
+     */
+    boolean migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
+        long startLID;
+        long endLID;
+        Node startNode;
+
+        startLID = p_startCID & 0x0000FFFFFFFFFFFFL;
+        endLID = p_endCID & 0x0000FFFFFFFFFFFFL;
+        // end larger than start or start smaller than 1
+        assert startLID <= endLID && startLID > 0;
+
+        if (startLID == endLID) {
+            migrateObject(p_startCID, p_nodeID);
+        } else {
+            startNode = createOrReplaceEntry(startLID, p_nodeID);
+
+            mergeWithPredecessorOrBound(startLID, p_nodeID, startNode);
+
+            createOrReplaceEntry(endLID, p_nodeID);
+
+            removeEntriesWithinRange(startLID, endLID);
+
+            mergeWithSuccessor(endLID, p_nodeID);
+        }
+        return true;
+    }
+
+    /**
+     * Initializes a range
+     *
+     * @param p_startID
+     *     ChunkID of first chunk
+     * @param p_creator
+     *     the creator
+     * @param p_backupPeers
+     *     the backup peers
+     * @return true if insertion was successful
+     */
+    boolean initRange(final long p_startID, final short p_creator, final short[] p_backupPeers) {
+        long backupPeers;
+
+        if (p_startID == 0) {
+            m_creator = p_creator;
+        } else {
+            if (m_root == null) {
+                createOrReplaceEntry((long) Math.pow(2, 48), p_creator);
+            }
+            backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
+            m_backupRanges.add(new long[] {p_startID, backupPeers});
+        }
+        return true;
+    }
+
+    /**
+     * Initializes a range for migrated chunks
+     *
+     * @param p_rangeID
+     *     the RangeID
+     * @param p_backupPeers
+     *     the backup peers
+     * @return true if insertion was successful
+     */
+    boolean initMigrationRange(final int p_rangeID, final short[] p_backupPeers) {
+
+        m_migrationBackupRanges.add(p_rangeID,
+            ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF));
+
+        return true;
+    }
+
+    /**
+     * Returns the range given ChunkID is in
+     *
+     * @param p_chunkID
+     *     ChunkID of requested object
+     * @return the first and last ChunkID of the range
+     */
+    LookupRange getMetadata(final long p_chunkID) {
+        LookupRange ret = null;
+        long[] range;
+        short nodeID;
+        int index;
+        long localID;
+        Node node;
+        Entry predecessorEntry;
+
+        if (m_root != null) {
+            localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
+            node = getNodeOrSuccessorsNode(localID);
+            if (node != null) {
+                index = node.indexOf(localID);
+                if (index >= 0) {
+                    // LocalID was found: Store NodeID and determine successor
+                    range = new long[2];
+                    nodeID = node.getNodeID(index);
+                    range[1] = localID;
+                    // range[1] = getSuccessorsEntry(localID, node).getLocalID();
+                } else {
+                    // LocalID was not found, but successor: Store NodeID and LocalID of successor
+                    range = new long[2];
+                    nodeID = node.getNodeID(index * -1 - 1);
+                    range[1] = node.getLocalID(index * -1 - 1);
+                }
+                // Determine LocalID of predecessor
+                predecessorEntry = getPredecessorsEntry(range[1], node);
+                if (predecessorEntry != null) {
+                    range[0] = predecessorEntry.getLocalID() + 1;
+                } else {
+                    range[0] = 0;
+                }
+                ret = new LookupRange(nodeID, range);
+            }
+        }
+
+        return ret;
+    }
+
+    /**
      * Removes given object from btree
      *
      * @param p_chunkID
-     *         ChunkID of deleted object
+     *     ChunkID of deleted object
      * @note should always be called if an object is deleted
      */
-    public void removeObject(final long p_chunkID) {
+    void removeObject(final long p_chunkID) {
         short creatorOrRestorer;
         int index;
         Node node;
@@ -502,24 +565,22 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         Entry successor;
 
         localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
-        if (null != m_root) {
+        if (m_root != null) {
             if (m_restorer == -1) {
                 creatorOrRestorer = m_creator;
             } else {
                 creatorOrRestorer = m_restorer;
             }
             node = getNodeOrSuccessorsNode(localID);
-            if (null != node) {
-                currentLID = -1;
-
+            if (node != null) {
                 index = node.indexOf(localID);
-                if (0 <= index) {
+                if (index >= 0) {
                     // Entry was found
                     currentLID = node.getLocalID(index);
                     predecessor = getPredecessorsEntry(localID, node);
                     currentEntry = new Entry(currentLID, node.getNodeID(index));
                     successor = getSuccessorsEntry(localID, node);
-                    if (creatorOrRestorer != currentEntry.getNodeID() && null != predecessor) {
+                    if (creatorOrRestorer != currentEntry.getNodeID() && predecessor != null) {
                         if (localID - 1 == predecessor.getLocalID()) {
                             // Predecessor is direct neighbor: AB
                             // Successor might be direct neighbor or not: ABC or AB___C
@@ -554,7 +615,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                     index = index * -1 - 1;
                     successor = new Entry(node.getLocalID(index), node.getNodeID(index));
                     predecessor = getPredecessorsEntry(successor.getLocalID(), node);
-                    if (creatorOrRestorer != successor.getNodeID() && null != predecessor) {
+                    if (creatorOrRestorer != successor.getNodeID() && predecessor != null) {
                         // Entry is in range
                         if (localID - 1 == predecessor.getLocalID()) {
                             // Predecessor is direct neighbor: A'B'
@@ -578,34 +639,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Returns the backup peers for every range
-     *
-     * @return an ArrayList with all backup peers
-     */
-    public ArrayList<long[]> getAllBackupRanges() {
-        return m_backupRanges;
-    }
-
-    /**
-     * Returns the backup peers for migrated chunks
-     *
-     * @return an ArrayList with all backup peers for migrated
-     */
-    public ArrayList<Long> getAllMigratedBackupRanges() {
-        return m_migrationBackupRanges;
-    }
-
-    /**
      * Replaces given peer from all backup ranges
      *
      * @param p_firstChunkIDOrRangeID
-     *         first ChunkID or RangeID
+     *     first ChunkID or RangeID
      * @param p_failedPeer
-     *         NodeID of failed peer
+     *     NodeID of failed peer
      * @param p_replacement
-     *         NodeID of new backup peer
+     *     NodeID of new backup peer
      */
-    public void replaceBackupPeer(final long p_firstChunkIDOrRangeID, final short p_failedPeer, final short p_replacement) {
+    void replaceBackupPeer(final long p_firstChunkIDOrRangeID, final short p_failedPeer, final short p_replacement) {
         long backupPeers;
 
         if (ChunkID.getCreatorID(p_firstChunkIDOrRangeID) != -1) {
@@ -627,27 +670,27 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Creates a new entry or replaces the old one
      *
      * @param p_localID
-     *         the LocalID
+     *     the LocalID
      * @param p_nodeID
-     *         the NodeID
+     *     the NodeID
      * @return the node in which the entry is stored
      */
     private Node createOrReplaceEntry(final long p_localID, final short p_nodeID) {
-        Node ret = null;
+        Node ret;
         Node node;
         int index;
         int size;
 
-        if (null == m_root) {
+        if (m_root == null) {
             m_root = new Node(null, m_maxEntries, m_maxChildren);
             m_root.addEntry(p_localID, p_nodeID);
             ret = m_root;
         } else {
             node = m_root;
             while (true) {
-                if (0 == node.getNumberOfChildren()) {
+                if (node.getNumberOfChildren() == 0) {
                     index = node.indexOf(p_localID);
-                    if (0 <= index) {
+                    if (index >= 0) {
                         m_changedEntry = new Entry(node.getLocalID(index), node.getNodeID(index));
                         node.changeEntry(p_localID, p_nodeID, index);
                     } else {
@@ -672,7 +715,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                     }
 
                     index = node.indexOf(p_localID);
-                    if (0 <= index) {
+                    if (index >= 0) {
                         m_changedEntry = new Entry(node.getLocalID(index), node.getNodeID(index));
                         node.changeEntry(p_localID, p_nodeID, index);
                         break;
@@ -695,18 +738,18 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Merges the object or range with predecessor
      *
      * @param p_localID
-     *         the LocalID
+     *     the LocalID
      * @param p_nodeID
-     *         the NodeID
+     *     the NodeID
      * @param p_node
-     *         anchor node
+     *     anchor node
      */
     private void mergeWithPredecessorOrBound(final long p_localID, final short p_nodeID, final Node p_node) {
         Entry predecessor;
         Entry successor;
 
         predecessor = getPredecessorsEntry(p_localID, p_node);
-        if (null == predecessor) {
+        if (predecessor == null) {
             createOrReplaceEntry(p_localID - 1, m_creator);
         } else {
             if (p_localID - 1 == predecessor.getLocalID()) {
@@ -715,7 +758,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                 }
             } else {
                 successor = getSuccessorsEntry(p_localID, p_node);
-                if (null == m_changedEntry) {
+                if (m_changedEntry == null) {
                     // Successor is end of range
                     if (p_nodeID != successor.getNodeID()) {
                         createOrReplaceEntry(p_localID - 1, successor.getNodeID());
@@ -736,9 +779,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Merges the object or range with successor
      *
      * @param p_localID
-     *         the LocalID
+     *     the LocalID
      * @param p_nodeID
-     *         the NodeID
+     *     the NodeID
      */
     private void mergeWithSuccessor(final long p_localID, final short p_nodeID) {
         Node node;
@@ -746,7 +789,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         node = getNodeOrSuccessorsNode(p_localID);
         successor = getSuccessorsEntry(p_localID, node);
-        if (null != successor && p_nodeID == successor.getNodeID()) {
+        if (successor != null && p_nodeID == successor.getNodeID()) {
             remove(p_localID, node);
         }
     }
@@ -755,9 +798,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Removes all entries between start (inclusive) and end
      *
      * @param p_start
-     *         the first object in range
+     *     the first object in range
      * @param p_end
-     *         the last object in range
+     *     the last object in range
      */
     private void removeEntriesWithinRange(final long p_start, final long p_end) {
         long successor;
@@ -765,7 +808,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         remove(p_start, getNodeOrSuccessorsNode(p_start));
 
         successor = getLIDOrSuccessorsLID(p_start);
-        while (-1 != successor && successor < p_end) {
+        while (successor != -1 && successor < p_end) {
             remove(successor);
             successor = getLIDOrSuccessorsLID(p_start);
         }
@@ -775,7 +818,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the node in which the next entry to given LocalID (could be the LocalID itself) is stored
      *
      * @param p_localID
-     *         LocalID whose node is searched
+     *     LocalID whose node is searched
      * @return node in which LocalID is stored if LocalID is in tree or successors node, null if there is no successor
      */
     private Node getNodeOrSuccessorsNode(final long p_localID) {
@@ -788,7 +831,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         while (true) {
             if (p_localID < ret.getLocalID(0)) {
-                if (0 < ret.getNumberOfChildren()) {
+                if (ret.getNumberOfChildren() > 0) {
                     ret = ret.getChild(0);
                     continue;
                 } else {
@@ -809,7 +852,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
             }
 
             index = ret.indexOf(p_localID);
-            if (0 <= index) {
+            if (index >= 0) {
                 break;
             } else {
                 index = index * -1 - 1;
@@ -828,7 +871,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns next LocalID to given LocalID (could be the LocalID itself)
      *
      * @param p_localID
-     *         the LocalID
+     *     the LocalID
      * @return p_localID if p_localID is in btree or successor of p_localID, (-1) if there is no successor
      */
     private long getLIDOrSuccessorsLID(final long p_localID) {
@@ -839,7 +882,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         node = getNodeOrSuccessorsNode(p_localID);
         if (node != null) {
             index = node.indexOf(p_localID);
-            if (0 <= index) {
+            if (index >= 0) {
                 ret = node.getLocalID(index);
             } else {
                 ret = node.getLocalID(index * -1 - 1);
@@ -853,7 +896,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the location and backup nodes of next LocalID to given LocalID (could be the LocalID itself)
      *
      * @param p_localID
-     *         the LocalID whose corresponding NodeID is searched
+     *     the LocalID whose corresponding NodeID is searched
      * @return NodeID for p_localID if p_localID is in btree or successors NodeID
      */
     private short getNodeIDOrSuccessorsNodeID(final long p_localID) {
@@ -864,7 +907,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         node = getNodeOrSuccessorsNode(p_localID);
         if (node != null) {
             index = node.indexOf(p_localID);
-            if (0 <= index) {
+            if (index >= 0) {
                 ret = node.getNodeID(index);
             } else {
                 ret = node.getNodeID(index * -1 - 1);
@@ -878,9 +921,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the node in which the predecessor is
      *
      * @param p_localID
-     *         LocalID whose predecessor's node is searched
+     *     LocalID whose predecessor's node is searched
      * @param p_node
-     *         anchor node
+     *     anchor node
      * @return the node in which the predecessor of p_localID is or null if there is no predecessor
      */
     private Node getPredecessorsNode(final long p_localID, final Node p_node) {
@@ -894,7 +937,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         node = p_node;
 
         if (p_localID == node.getLocalID(0)) {
-            if (0 < node.getNumberOfChildren()) {
+            if (node.getNumberOfChildren() > 0) {
                 // Get maximum in child tree
                 node = node.getChild(0);
                 while (node.getNumberOfEntries() < node.getNumberOfChildren()) {
@@ -912,7 +955,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
             }
         } else {
             index = node.indexOf(p_localID);
-            if (0 <= index) {
+            if (index >= 0) {
                 if (index <= node.getNumberOfChildren()) {
                     // Get maximum in child tree
                     node = node.getChild(index);
@@ -931,9 +974,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the entry of the predecessor
      *
      * @param p_localID
-     *         the LocalID whose predecessor is searched
+     *     the LocalID whose predecessor is searched
      * @param p_node
-     *         anchor node
+     *     anchor node
      * @return the entry of p_localID's predecessor or null if there is no predecessor
      */
     private Entry getPredecessorsEntry(final long p_localID, final Node p_node) {
@@ -959,9 +1002,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the node in which the successor is
      *
      * @param p_localID
-     *         LocalID whose successor's node is searched
+     *     LocalID whose successor's node is searched
      * @param p_node
-     *         anchor node
+     *     anchor node
      * @return the node in which the successor of p_localID is or null if there is no successor
      */
     private Node getSuccessorsNode(final long p_localID, final Node p_node) {
@@ -978,7 +1021,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
             if (node.getNumberOfEntries() < node.getNumberOfChildren()) {
                 // Get minimum in child tree
                 node = node.getChild(node.getNumberOfEntries());
-                while (0 < node.getNumberOfChildren()) {
+                while (node.getNumberOfChildren() > 0) {
                     node = node.getChild(0);
                 }
                 ret = node;
@@ -993,11 +1036,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
             }
         } else {
             index = node.indexOf(p_localID);
-            if (0 <= index) {
+            if (index >= 0) {
                 if (index < node.getNumberOfChildren()) {
                     // Get minimum in child tree
                     node = node.getChild(index + 1);
-                    while (0 < node.getNumberOfChildren()) {
+                    while (node.getNumberOfChildren() > 0) {
                         node = node.getChild(0);
                     }
                 }
@@ -1012,9 +1055,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the entry of the successor
      *
      * @param p_localID
-     *         the LocalID whose successor is searched
+     *     the LocalID whose successor is searched
      * @param p_node
-     *         anchor node
+     *     anchor node
      * @return the entry of p_localID's successor or null if there is no successor
      */
     private Entry getSuccessorsEntry(final long p_localID, final Node p_node) {
@@ -1040,9 +1083,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Splits down the middle if node is greater than maxEntries
      *
      * @param p_localID
-     *         the new LocalID that causes the splitting
+     *     the new LocalID that causes the splitting
      * @param p_node
-     *         the node that has to be split
+     *     the node that has to be split
      * @return the node in which p_localID must be inserted
      */
     private Node split(final long p_localID, final Node p_node) {
@@ -1068,16 +1111,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         left = new Node(null, m_maxEntries, m_maxChildren);
         left.addEntries(node, 0, medianIndex, 0);
-        if (0 < node.getNumberOfChildren()) {
+        if (node.getNumberOfChildren() > 0) {
             left.addChildren(node, 0, medianIndex + 1, 0);
         }
 
         right = new Node(null, m_maxEntries, m_maxChildren);
         right.addEntries(node, medianIndex + 1, size, 0);
-        if (0 < node.getNumberOfChildren()) {
+        if (node.getNumberOfChildren() > 0) {
             right.addChildren(node, medianIndex + 1, node.getNumberOfChildren(), 0);
         }
-        if (null == node.getParent()) {
+        if (node.getParent() == null) {
             // New root, height of tree is increased
             newRoot = new Node(null, m_maxEntries, m_maxChildren);
             newRoot.addEntry(medianLID, medianNodeID, 0);
@@ -1115,7 +1158,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Removes given p_localID
      *
      * @param p_localID
-     *         the LocalID
+     *     the LocalID
      * @return p_localID or (-1) if there is no entry for p_localID
      */
     private long remove(final long p_localID) {
@@ -1132,9 +1175,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Removes the p_localID from given node and checks invariants
      *
      * @param p_localID
-     *         the LocalID
+     *     the LocalID
      * @param p_node
-     *         the node in which p_localID should be stored
+     *     the node in which p_localID should be stored
      * @return p_localID or (-1) if there is no entry for p_localID
      */
     private long remove(final long p_localID, final Node p_node) {
@@ -1147,30 +1190,30 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         assert p_node != null;
 
         index = p_node.indexOf(p_localID);
-        if (0 <= index) {
+        if (index >= 0) {
             ret = p_node.removeEntry(p_localID);
-            if (0 == p_node.getNumberOfChildren()) {
+            if (p_node.getNumberOfChildren() == 0) {
                 // Leaf node
-                if (null != p_node.getParent() && p_node.getNumberOfEntries() < m_minEntries) {
+                if (p_node.getParent() != null && p_node.getNumberOfEntries() < m_minEntries) {
                     combined(p_node);
-                } else if (null == p_node.getParent() && 0 == p_node.getNumberOfEntries()) {
+                } else if (p_node.getParent() == null && p_node.getNumberOfEntries() == 0) {
                     // Removing root node with no keys or children
                     m_root = null;
                 }
             } else {
                 // Internal node
                 greatest = p_node.getChild(index);
-                while (0 < greatest.getNumberOfChildren()) {
+                while (greatest.getNumberOfChildren() > 0) {
                     greatest = greatest.getChild(greatest.getNumberOfChildren() - 1);
                 }
                 replaceLID = -1;
                 replaceNodeID = -1;
-                if (0 < greatest.getNumberOfEntries()) {
+                if (greatest.getNumberOfEntries() > 0) {
                     replaceNodeID = greatest.getNodeID(greatest.getNumberOfEntries() - 1);
                     replaceLID = greatest.removeEntry(greatest.getNumberOfEntries() - 1);
                 }
                 p_node.addEntry(replaceLID, replaceNodeID);
-                if (null != greatest.getParent() && greatest.getNumberOfEntries() < m_minEntries) {
+                if (greatest.getParent() != null && greatest.getNumberOfEntries() < m_minEntries) {
                     combined(greatest);
                 }
                 if (greatest.getNumberOfChildren() > m_maxChildren) {
@@ -1187,7 +1230,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Combines children entries with parent when size is less than minEntries
      *
      * @param p_node
-     *         the node
+     *     the node
      */
     private void combined(final Node p_node) {
         Node parent;
@@ -1220,7 +1263,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         }
 
         // Try to borrow neighbor
-        if (null != rightNeighbor && rightNeighborSize > m_minEntries) {
+        if (rightNeighbor != null && rightNeighborSize > m_minEntries) {
             // Try to borrow from right neighbor
             removeLID = rightNeighbor.getLocalID(0);
             prev = parent.indexOf(removeLID) * -1 - 2;
@@ -1232,18 +1275,18 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
             p_node.addEntry(parentLID, parentNodeID);
             parent.addEntry(neighborLID, neighborNodeID);
-            if (0 < rightNeighbor.getNumberOfChildren()) {
+            if (rightNeighbor.getNumberOfChildren() > 0) {
                 p_node.addChild(rightNeighbor.removeChild(0));
             }
         } else {
             leftNeighbor = null;
             leftNeighborSize = -m_minChildren;
-            if (0 <= indexOfLeftNeighbor) {
+            if (indexOfLeftNeighbor >= 0) {
                 leftNeighbor = parent.getChild(indexOfLeftNeighbor);
                 leftNeighborSize = leftNeighbor.getNumberOfEntries();
             }
 
-            if (null != leftNeighbor && leftNeighborSize > m_minEntries) {
+            if (leftNeighbor != null && leftNeighborSize > m_minEntries) {
                 // Try to borrow from left neighbor
                 removeLID = leftNeighbor.getLocalID(leftNeighbor.getNumberOfEntries() - 1);
                 prev = parent.indexOf(removeLID) * -1 - 1;
@@ -1255,10 +1298,10 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
                 p_node.addEntry(parentLID, parentNodeID);
                 parent.addEntry(neighborLID, neighborNodeID);
-                if (0 < leftNeighbor.getNumberOfChildren()) {
+                if (leftNeighbor.getNumberOfChildren() > 0) {
                     p_node.addChild(leftNeighbor.removeChild(leftNeighbor.getNumberOfChildren() - 1));
                 }
-            } else if (null != rightNeighbor && 0 < parent.getNumberOfEntries()) {
+            } else if (rightNeighbor != null && parent.getNumberOfEntries() > 0) {
                 // Cannot borrow from neighbors, try to combined with right neighbor
                 removeLID = rightNeighbor.getLocalID(0);
                 prev = parent.indexOf(removeLID) * -1 - 2;
@@ -1270,15 +1313,15 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                 p_node.addEntries(rightNeighbor, 0, rightNeighbor.getNumberOfEntries(), p_node.getNumberOfEntries());
                 p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(), p_node.getNumberOfChildren());
 
-                if (null != parent.getParent() && parent.getNumberOfEntries() < m_minEntries) {
+                if (parent.getParent() != null && parent.getNumberOfEntries() < m_minEntries) {
                     // Removing key made parent too small, combined up tree
                     combined(parent);
-                } else if (0 == parent.getNumberOfEntries()) {
+                } else if (parent.getNumberOfEntries() == 0) {
                     // Parent no longer has keys, make this node the new root which decreases the height of the tree
                     p_node.setParent(null);
                     m_root = p_node;
                 }
-            } else if (null != leftNeighbor && 0 < parent.getNumberOfEntries()) {
+            } else if (leftNeighbor != null && parent.getNumberOfEntries() > 0) {
                 // Cannot borrow from neighbors, try to combined with left neighbor
                 removeLID = leftNeighbor.getLocalID(leftNeighbor.getNumberOfEntries() - 1);
                 prev = parent.indexOf(removeLID) * -1 - 1;
@@ -1289,10 +1332,10 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                 p_node.addEntries(leftNeighbor, 0, leftNeighbor.getNumberOfEntries(), -1);
                 p_node.addChildren(leftNeighbor, 0, leftNeighbor.getNumberOfChildren(), -1);
 
-                if (null != parent.getParent() && parent.getNumberOfEntries() < m_minEntries) {
+                if (parent.getParent() != null && parent.getNumberOfEntries() < m_minEntries) {
                     // Removing key made parent too small, combined up tree
                     combined(parent);
-                } else if (0 == parent.getNumberOfEntries()) {
+                } else if (parent.getNumberOfEntries() == 0) {
                     // Parent no longer has keys, make this node the new root which decreases the height of the tree
                     p_node.setParent(null);
                     m_root = p_node;
@@ -1302,34 +1345,10 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Returns the number of entries in btree
-     *
-     * @return the number of entries in btree
-     */
-    public int size() {
-        return m_size;
-    }
-
-    /**
-     * Validates the btree
-     *
-     * @return whether the tree is valid or not
-     */
-    public boolean validate() {
-        boolean ret = true;
-
-        if (m_root != null) {
-            ret = validateNode(m_root);
-        }
-
-        return ret;
-    }
-
-    /**
      * Validates the node according to the btree invariants
      *
      * @param p_node
-     *         the node
+     *     the node
      * @return whether the node is valid or not
      */
     private boolean validateNode(final Node p_node) {
@@ -1344,7 +1363,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         numberOfEntries = p_node.getNumberOfEntries();
 
-        if (1 < numberOfEntries) {
+        if (numberOfEntries > 1) {
             // Make sure the keys are sorted
             for (int i = 1; i < numberOfEntries; i++) {
                 prev = p_node.getLocalID(i - 1);
@@ -1356,15 +1375,15 @@ public final class LookupTree implements Serializable, Importable, Exportable {
             }
         } else {
             childrenSize = p_node.getNumberOfChildren();
-            if (null == p_node.getParent()) {
+            if (p_node.getParent() == null) {
                 // Root
                 if (numberOfEntries > m_maxEntries) {
                     // Check max key size. Root does not have a minimum key size
                     ret = false;
-                } else if (0 == childrenSize) {
+                } else if (childrenSize == 0) {
                     // If root, no children, and keys are valid
                     ret = true;
-                } else if (2 > childrenSize) {
+                } else if (childrenSize < 2) {
                     // Root should have zero or at least two children
                     ret = false;
                 } else if (childrenSize > m_maxChildren) {
@@ -1376,7 +1395,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                     ret = false;
                 } else if (numberOfEntries > m_maxEntries) {
                     ret = false;
-                } else if (0 == childrenSize) {
+                } else if (childrenSize == 0) {
                     ret = true;
                 } else if (numberOfEntries != childrenSize - 1) {
                     // If there are children, there should be one more child then keys
@@ -1428,31 +1447,14 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Prints the btree
-     *
-     * @return String interpretation of the tree
-     */
-    @Override public String toString() {
-        String ret;
-
-        if (null == m_root) {
-            ret = "Btree has no nodes";
-        } else {
-            ret = "Size: " + m_size + "\n" + getString(m_root, "", true);
-        }
-
-        return ret;
-    }
-
-    /**
      * Prints one node of the btree and walks down the btree recursively
      *
      * @param p_node
-     *         the current node
+     *     the current node
      * @param p_prefix
-     *         the prefix to use
+     *     the prefix to use
      * @param p_isTail
-     *         defines wheter the node is the tail
+     *     defines wheter the node is the tail
      * @return String interpretation of the tree
      */
     private String getString(final Node p_node, final String p_prefix, final boolean p_isTail) {
@@ -1467,16 +1469,24 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         } else {
             ret.append("├── ");
         }
-        ret.append("[" + p_node.getNumberOfEntries() + ", " + p_node.getNumberOfChildren() + "] ");
+        ret.append('[');
+        ret.append(p_node.getNumberOfEntries());
+        ret.append(", ");
+        ret.append(p_node.getNumberOfChildren());
+        ret.append("] ");
         for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
-            ret.append("(LocalID: " + ChunkID.toHexString(p_node.getLocalID(i)) + " NodeID: " + NodeID.toHexString(p_node.getNodeID(i)) + ")");
+            ret.append("(LocalID: ");
+            ret.append(ChunkID.toHexString(p_node.getLocalID(i)));
+            ret.append(" NodeID: ");
+            ret.append(NodeID.toHexString(p_node.getNodeID(i)));
+            ret.append(')');
             if (i < p_node.getNumberOfEntries() - 1) {
                 ret.append(", ");
             }
         }
-        ret.append("\n");
+        ret.append('\n');
 
-        if (null != p_node.getChild(0)) {
+        if (p_node.getChild(0) != null) {
             for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
                 obj = p_node.getChild(i);
                 if (p_isTail) {
@@ -1485,7 +1495,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                     ret.append(getString(obj, p_prefix + "│   ", false));
                 }
             }
-            if (1 <= p_node.getNumberOfChildren()) {
+            if (p_node.getNumberOfChildren() >= 1) {
                 obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
                 if (p_isTail) {
                     ret.append(getString(obj, p_prefix + "    ", true));
@@ -1498,522 +1508,12 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * A single node of the btree
-     *
-     * @author Kevin Beineke
-     *         13.06.2013
-     */
-    private final class Node implements Comparable<Node>, Serializable {
-
-        private static final long serialVersionUID = 7768073624509268941L;
-
-        private Node m_parent;
-
-        private long[] m_keys;
-        private short[] m_dataLeafs;
-        private short m_numberOfEntries;
-
-        private Node[] m_children;
-        private short m_numberOfChildren;
-
-        // Constructors
-
-        /**
-         * Creates an instance of Node
-         *
-         * @param p_parent
-         *         the parent
-         * @param p_maxEntries
-         *         the number of entries that can be stored
-         * @param p_maxChildren
-         *         the number of children that can be stored
-         */
-        private Node(final Node p_parent, final short p_maxEntries, final int p_maxChildren) {
-            m_parent = p_parent;
-            m_keys = new long[p_maxEntries + 1];
-            m_dataLeafs = new short[p_maxEntries + 1];
-            m_numberOfEntries = 0;
-            m_children = new Node[p_maxChildren + 1];
-            m_numberOfChildren = 0;
-        }
-
-        /**
-         * Compares two nodes
-         *
-         * @param p_cmp
-         *         the node to compare with
-         * @return 0 if the nodes are equal, (-1) if p_cmp is larger, 1 otherwise
-         */
-        @Override public int compareTo(final Node p_cmp) {
-            int ret;
-
-            if (getLocalID(0) < p_cmp.getLocalID(0)) {
-                ret = -1;
-            } else if (getLocalID(0) > p_cmp.getLocalID(0)) {
-                ret = 1;
-            } else {
-                ret = 0;
-            }
-
-            return ret;
-        }
-
-        /**
-         * Returns the parent node
-         *
-         * @return the parent node
-         */
-        private Node getParent() {
-            return m_parent;
-        }
-
-        /**
-         * Returns the parent node
-         *
-         * @param p_parent
-         *         the parent node
-         */
-        private void setParent(final Node p_parent) {
-            m_parent = p_parent;
-        }
-
-        /**
-         * Returns the LocalID to given index
-         *
-         * @param p_index
-         *         the index
-         * @return the LocalID to given index
-         */
-        private long getLocalID(final int p_index) {
-            return m_keys[p_index];
-        }
-
-        /**
-         * Returns the data leaf to given index
-         *
-         * @param p_index
-         *         the index
-         * @return the data leaf to given index
-         */
-        private short getNodeID(final int p_index) {
-            short ret;
-
-            ret = m_dataLeafs[p_index];
-            if (m_restorer != -1 && ret == m_creator) {
-                m_dataLeafs[p_index] = m_restorer;
-                ret = m_restorer;
-            }
-
-            return ret;
-        }
-
-        /**
-         * Returns the index for given LocalID. Uses the binary search algorithm from
-         * java.util.Arrays adapted to our needs
-         *
-         * @param p_localID
-         *         the LocalID
-         * @return the index for given LocalID, if it is contained in the array, (-(insertion point) - 1) otherwise
-         */
-        private int indexOf(final long p_localID) {
-            int ret = -1;
-            int low;
-            int high;
-            int mid;
-            long midVal;
-
-            low = 0;
-            high = m_numberOfEntries - 1;
-
-            while (low <= high) {
-                mid = low + high >>> 1;
-                midVal = m_keys[mid];
-
-                if (midVal < p_localID) {
-                    low = mid + 1;
-                } else if (midVal > p_localID) {
-                    high = mid - 1;
-                } else {
-                    ret = mid;
-                    break;
-                }
-            }
-            if (-1 == ret) {
-                ret = -(low + 1);
-            }
-
-            return ret;
-        }
-
-        /**
-         * Adds an entry
-         *
-         * @param p_localID
-         *         the LocalID
-         * @param p_nodeID
-         *         the NodeID
-         */
-        private void addEntry(final long p_localID, final short p_nodeID) {
-            int index;
-
-            index = this.indexOf(p_localID) * -1 - 1;
-
-            System.arraycopy(m_keys, index, m_keys, index + 1, m_numberOfEntries - index);
-            System.arraycopy(m_dataLeafs, index, m_dataLeafs, index + 1, m_numberOfEntries - index);
-
-            m_keys[index] = p_localID;
-            m_dataLeafs[index] = p_nodeID;
-
-            m_numberOfEntries++;
-        }
-
-        /**
-         * Adds an entry
-         *
-         * @param p_localID
-         *         the LocalID
-         * @param p_nodeID
-         *         the NodeID
-         * @param p_index
-         *         the index to store the element at
-         */
-        private void addEntry(final long p_localID, final short p_nodeID, final int p_index) {
-            System.arraycopy(m_keys, p_index, m_keys, p_index + 1, m_numberOfEntries - p_index);
-            System.arraycopy(m_dataLeafs, p_index, m_dataLeafs, p_index + 1, m_numberOfEntries - p_index);
-
-            m_keys[p_index] = p_localID;
-            m_dataLeafs[p_index] = p_nodeID;
-
-            m_numberOfEntries++;
-        }
-
-        /**
-         * Adds entries from another node
-         *
-         * @param p_node
-         *         the other node
-         * @param p_offsetSrc
-         *         the offset in source array
-         * @param p_endSrc
-         *         the end of source array
-         * @param p_offsetDst
-         *         the offset in destination array or -1 if the source array has to be prepended
-         */
-        private void addEntries(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
-            long[] aux1;
-            short[] aux2;
-
-            if (-1 != p_offsetDst) {
-                System.arraycopy(p_node.m_keys, p_offsetSrc, m_keys, p_offsetDst, p_endSrc - p_offsetSrc);
-                System.arraycopy(p_node.m_dataLeafs, p_offsetSrc, m_dataLeafs, p_offsetDst, p_endSrc - p_offsetSrc);
-                m_numberOfEntries = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
-            } else {
-                aux1 = new long[m_keys.length];
-                System.arraycopy(p_node.m_keys, 0, aux1, 0, p_node.m_numberOfEntries);
-                System.arraycopy(m_keys, 0, aux1, p_node.m_numberOfEntries, m_numberOfEntries);
-                m_keys = aux1;
-
-                aux2 = new short[m_dataLeafs.length];
-                System.arraycopy(p_node.m_dataLeafs, 0, aux2, 0, p_node.m_numberOfEntries);
-                System.arraycopy(m_dataLeafs, 0, aux2, p_node.m_numberOfEntries, m_numberOfEntries);
-                m_dataLeafs = aux2;
-
-                m_numberOfEntries += p_node.m_numberOfEntries;
-            }
-        }
-
-        /**
-         * Changes an entry
-         *
-         * @param p_localID
-         *         the LocalID
-         * @param p_nodeID
-         *         the NodeID
-         * @param p_index
-         *         the index of given entry in this node
-         */
-        private void changeEntry(final long p_localID, final short p_nodeID, final int p_index) {
-
-            if (p_localID == getLocalID(p_index)) {
-                m_keys[p_index] = p_localID;
-                m_dataLeafs[p_index] = p_nodeID;
-            }
-        }
-
-        /**
-         * Removes the entry with given LocalID
-         *
-         * @param p_localID
-         *         LocalID of the entry that has to be deleted
-         * @return p_localID or (-1) if there is no entry for p_localID in this node
-         */
-        private long removeEntry(final long p_localID) {
-            long ret = -1;
-            int index;
-
-            index = this.indexOf(p_localID);
-            if (0 <= index) {
-                ret = getLocalID(index);
-
-                System.arraycopy(m_keys, index + 1, m_keys, index, m_numberOfEntries - index - 1);
-                System.arraycopy(m_dataLeafs, index + 1, m_dataLeafs, index, m_numberOfEntries - index - 1);
-
-                m_numberOfEntries--;
-            }
-
-            return ret;
-        }
-
-        /**
-         * Removes the entry with given index
-         *
-         * @param p_index
-         *         the index of the entry that has to be deleted
-         * @return p_localID or (-1) if p_index is to large
-         */
-        private long removeEntry(final int p_index) {
-            long ret = -1;
-
-            if (p_index < m_numberOfEntries) {
-                ret = getLocalID(p_index);
-
-                System.arraycopy(m_keys, p_index + 1, m_keys, p_index, m_numberOfEntries - p_index);
-                System.arraycopy(m_dataLeafs, p_index + 1, m_dataLeafs, p_index, m_numberOfEntries - p_index);
-                m_numberOfEntries--;
-            }
-
-            return ret;
-        }
-
-        /**
-         * Returns the number of entries
-         *
-         * @return the number of entries
-         */
-        private int getNumberOfEntries() {
-            return m_numberOfEntries;
-        }
-
-        /**
-         * Returns the child with given index
-         *
-         * @param p_index
-         *         the index
-         * @return the child with given index
-         */
-        private Node getChild(final int p_index) {
-            Node ret;
-
-            if (p_index >= m_numberOfChildren) {
-                ret = null;
-            } else {
-                ret = m_children[p_index];
-            }
-
-            return ret;
-        }
-
-        /**
-         * Returns the index of the given child. Uses the binary search algorithm from
-         * java.util.Arrays adapted to our needs
-         *
-         * @param p_child
-         *         the child
-         * @return the index of the given child, if it is contained in the array, (-(insertion point) - 1) otherwise
-         */
-        private int indexOf(final Node p_child) {
-            int ret = -1;
-            int low;
-            int high;
-            int mid;
-            long localID;
-            long midVal;
-
-            localID = p_child.getLocalID(0);
-            low = 0;
-            high = m_numberOfChildren - 1;
-
-            while (low <= high) {
-                mid = low + high >>> 1;
-                midVal = m_children[mid].getLocalID(0);
-
-                if (midVal < localID) {
-                    low = mid + 1;
-                } else if (midVal > localID) {
-                    high = mid - 1;
-                } else {
-                    ret = mid;
-                    break;
-                }
-            }
-            if (-1 == ret) {
-                ret = -(low + 1);
-            }
-
-            return ret;
-        }
-
-        /**
-         * Adds a child
-         *
-         * @param p_child
-         *         the child
-         */
-        private void addChild(final Node p_child) {
-            int index;
-
-            index = this.indexOf(p_child) * -1 - 1;
-
-            System.arraycopy(m_children, index, m_children, index + 1, m_numberOfChildren - index);
-            m_children[index] = p_child;
-            p_child.setParent(this);
-
-            m_numberOfChildren++;
-        }
-
-        /**
-         * Adds children of another node
-         *
-         * @param p_node
-         *         the other node
-         * @param p_offsetSrc
-         *         the offset in source array
-         * @param p_endSrc
-         *         the end of source array
-         * @param p_offsetDst
-         *         the offset in destination array or -1 if the source array has to be prepended
-         */
-        private void addChildren(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
-            Node[] aux;
-
-            if (-1 != p_offsetDst) {
-                System.arraycopy(p_node.m_children, p_offsetSrc, m_children, p_offsetDst, p_endSrc - p_offsetSrc);
-
-                for (final Node child : m_children) {
-                    if (null == child) {
-                        break;
-                    }
-                    child.setParent(this);
-                }
-                m_numberOfChildren = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
-            } else {
-                aux = new Node[m_children.length];
-                System.arraycopy(p_node.m_children, 0, aux, 0, p_node.m_numberOfChildren);
-
-                for (final Node child : aux) {
-                    if (null == child) {
-                        break;
-                    }
-                    child.setParent(this);
-                }
-
-                System.arraycopy(m_children, 0, aux, p_node.m_numberOfChildren, m_numberOfChildren);
-                m_children = aux;
-
-                m_numberOfChildren += p_node.m_numberOfChildren;
-            }
-        }
-
-        /**
-         * Removes the given child
-         *
-         * @param p_child
-         *         the child
-         * @return true if the child was found and deleted, false otherwise
-         */
-        private boolean removeChild(final Node p_child) {
-            boolean ret = false;
-            int index;
-
-            index = this.indexOf(p_child);
-            if (0 <= index) {
-                System.arraycopy(m_children, index + 1, m_children, index, m_numberOfChildren - index);
-
-                m_numberOfChildren--;
-                ret = true;
-            }
-
-            return ret;
-        }
-
-        /**
-         * Removes the child with given index
-         *
-         * @param p_index
-         *         the index
-         * @return the deleted child
-         */
-        private Node removeChild(final int p_index) {
-            Node ret = null;
-
-            if (p_index < m_numberOfChildren) {
-                ret = m_children[p_index];
-                System.arraycopy(m_children, p_index + 1, m_children, p_index, m_numberOfChildren - p_index);
-
-                m_numberOfChildren--;
-            }
-
-            return ret;
-        }
-
-        /**
-         * Returns the number of children
-         *
-         * @return the number of children
-         */
-        private int getNumberOfChildren() {
-            return m_numberOfChildren;
-        }
-
-        /**
-         * Prints the node
-         *
-         * @return String interpretation of the node
-         */
-        @Override public String toString() {
-            StringBuilder ret;
-
-            ret = new StringBuilder();
-
-            ret.append("entries=[");
-            for (int i = 0; i < getNumberOfEntries(); i++) {
-                ret.append("(LocalID: " + getLocalID(i) + " location: " + getNodeID(i) + ")");
-                if (i < getNumberOfEntries() - 1) {
-                    ret.append(", ");
-                }
-            }
-            ret.append("]\n");
-
-            if (null != m_parent) {
-                ret.append("parent=[");
-                for (int i = 0; i < m_parent.getNumberOfEntries(); i++) {
-                    ret.append("(LocalID: " + getLocalID(i) + " location: " + getNodeID(i) + ")");
-                    if (i < m_parent.getNumberOfEntries() - 1) {
-                        ret.append(", ");
-                    }
-                }
-                ret.append("]\n");
-            }
-
-            if (null != m_children) {
-                ret.append("numberOfEntries=");
-                ret.append(getNumberOfEntries());
-                ret.append(" children=");
-                ret.append(getNumberOfChildren());
-                ret.append("\n");
-            }
-
-            return ret.toString();
-        }
-    }
-
-    /**
      * Auxiliary object to return LocalID and NodeID at once
      *
      * @author Kevin Beineke
      *         13.06.2013
      */
-    private final class Entry implements Serializable {
+    private static final class Entry implements Serializable {
 
         private static final long serialVersionUID = -3247514337685593792L;
 
@@ -2027,9 +1527,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Creates an instance of Entry
          *
          * @param p_localID
-         *         the LocalID
+         *     the LocalID
          * @param p_nodeID
-         *         the NodeID
+         *     the NodeID
          */
         Entry(final long p_localID, final short p_nodeID) {
             m_localID = p_localID;
@@ -2059,8 +1559,535 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          *
          * @return String interpretation of the entry
          */
-        @Override public String toString() {
-            return "(LocalID: " + m_localID + ", location: " + m_nodeID + ")";
+        @Override
+        public String toString() {
+            return "(LocalID: " + m_localID + ", location: " + m_nodeID + ')';
+        }
+    }
+
+    /**
+     * A single node of the btree
+     *
+     * @author Kevin Beineke
+     *         13.06.2013
+     */
+    private final class Node implements Comparable<Node>, Serializable {
+
+        private static final long serialVersionUID = 7768073624509268941L;
+
+        private Node m_parent;
+
+        private long[] m_keys;
+        private short[] m_dataLeafs;
+        private short m_numberOfEntries;
+
+        private Node[] m_children;
+        private short m_numberOfChildren;
+
+        // Constructors
+
+        /**
+         * Creates an instance of Node
+         *
+         * @param p_parent
+         *     the parent
+         * @param p_maxEntries
+         *     the number of entries that can be stored
+         * @param p_maxChildren
+         *     the number of children that can be stored
+         */
+        private Node(final Node p_parent, final short p_maxEntries, final int p_maxChildren) {
+            m_parent = p_parent;
+            m_keys = new long[p_maxEntries + 1];
+            m_dataLeafs = new short[p_maxEntries + 1];
+            m_numberOfEntries = 0;
+            m_children = new Node[p_maxChildren + 1];
+            m_numberOfChildren = 0;
+        }
+
+        /**
+         * Returns the parent node
+         *
+         * @return the parent node
+         */
+        private Node getParent() {
+            return m_parent;
+        }
+
+        /**
+         * Returns the parent node
+         *
+         * @param p_parent
+         *     the parent node
+         */
+        private void setParent(final Node p_parent) {
+            m_parent = p_parent;
+        }
+
+        /**
+         * Returns the number of entries
+         *
+         * @return the number of entries
+         */
+        private int getNumberOfEntries() {
+            return m_numberOfEntries;
+        }
+
+        /**
+         * Returns the number of children
+         *
+         * @return the number of children
+         */
+        private int getNumberOfChildren() {
+            return m_numberOfChildren;
+        }
+
+        /**
+         * Compares two nodes
+         *
+         * @param p_cmp
+         *     the node to compare with
+         * @return 0 if the nodes are equal, (-1) if p_cmp is larger, 1 otherwise
+         */
+        @Override
+        public int compareTo(final Node p_cmp) {
+            int ret;
+
+            if (getLocalID(0) < p_cmp.getLocalID(0)) {
+                ret = -1;
+            } else if (getLocalID(0) > p_cmp.getLocalID(0)) {
+                ret = 1;
+            } else {
+                ret = 0;
+            }
+
+            return ret;
+        }
+
+        @Override
+        public boolean equals(final Object p_cmp) {
+
+            return p_cmp instanceof Node && compareTo((Node) p_cmp) == 0;
+        }
+
+        /**
+         * Prints the node
+         *
+         * @return String interpretation of the node
+         */
+        @Override
+        public String toString() {
+            StringBuilder ret;
+
+            ret = new StringBuilder();
+
+            ret.append("entries=[");
+            for (int i = 0; i < getNumberOfEntries(); i++) {
+                ret.append("(LocalID: ");
+                ret.append(getLocalID(i));
+                ret.append(" location: ");
+                ret.append(getNodeID(i));
+                ret.append(')');
+                if (i < getNumberOfEntries() - 1) {
+                    ret.append(", ");
+                }
+            }
+            ret.append("]\n");
+
+            if (m_parent != null) {
+                ret.append("parent=[");
+                for (int i = 0; i < m_parent.getNumberOfEntries(); i++) {
+                    ret.append("(LocalID: ");
+                    ret.append(getLocalID(i));
+                    ret.append(" location: ");
+                    ret.append(getNodeID(i));
+                    ret.append(')');
+                    if (i < m_parent.getNumberOfEntries() - 1) {
+                        ret.append(", ");
+                    }
+                }
+                ret.append("]\n");
+            }
+
+            if (m_children != null) {
+                ret.append("numberOfEntries=");
+                ret.append(getNumberOfEntries());
+                ret.append(" children=");
+                ret.append(getNumberOfChildren());
+                ret.append('\n');
+            }
+
+            return ret.toString();
+        }
+
+        /**
+         * Returns the LocalID to given index
+         *
+         * @param p_index
+         *     the index
+         * @return the LocalID to given index
+         */
+        private long getLocalID(final int p_index) {
+            return m_keys[p_index];
+        }
+
+        /**
+         * Returns the data leaf to given index
+         *
+         * @param p_index
+         *     the index
+         * @return the data leaf to given index
+         */
+        private short getNodeID(final int p_index) {
+            short ret;
+
+            ret = m_dataLeafs[p_index];
+            if (m_restorer != -1 && ret == m_creator) {
+                m_dataLeafs[p_index] = m_restorer;
+                ret = m_restorer;
+            }
+
+            return ret;
+        }
+
+        /**
+         * Returns the index for given LocalID. Uses the binary search algorithm from
+         * java.util.Arrays adapted to our needs
+         *
+         * @param p_localID
+         *     the LocalID
+         * @return the index for given LocalID, if it is contained in the array, (-(insertion point) - 1) otherwise
+         */
+        private int indexOf(final long p_localID) {
+            int ret = -1;
+            int low;
+            int high;
+            int mid;
+            long midVal;
+
+            low = 0;
+            high = m_numberOfEntries - 1;
+
+            while (low <= high) {
+                mid = low + high >>> 1;
+                midVal = m_keys[mid];
+
+                if (midVal < p_localID) {
+                    low = mid + 1;
+                } else if (midVal > p_localID) {
+                    high = mid - 1;
+                } else {
+                    ret = mid;
+                    break;
+                }
+            }
+            if (ret == -1) {
+                ret = -(low + 1);
+            }
+
+            return ret;
+        }
+
+        /**
+         * Adds an entry
+         *
+         * @param p_localID
+         *     the LocalID
+         * @param p_nodeID
+         *     the NodeID
+         */
+        private void addEntry(final long p_localID, final short p_nodeID) {
+            int index;
+
+            index = indexOf(p_localID) * -1 - 1;
+
+            System.arraycopy(m_keys, index, m_keys, index + 1, m_numberOfEntries - index);
+            System.arraycopy(m_dataLeafs, index, m_dataLeafs, index + 1, m_numberOfEntries - index);
+
+            m_keys[index] = p_localID;
+            m_dataLeafs[index] = p_nodeID;
+
+            m_numberOfEntries++;
+        }
+
+        /**
+         * Adds an entry
+         *
+         * @param p_localID
+         *     the LocalID
+         * @param p_nodeID
+         *     the NodeID
+         * @param p_index
+         *     the index to store the element at
+         */
+        private void addEntry(final long p_localID, final short p_nodeID, final int p_index) {
+            System.arraycopy(m_keys, p_index, m_keys, p_index + 1, m_numberOfEntries - p_index);
+            System.arraycopy(m_dataLeafs, p_index, m_dataLeafs, p_index + 1, m_numberOfEntries - p_index);
+
+            m_keys[p_index] = p_localID;
+            m_dataLeafs[p_index] = p_nodeID;
+
+            m_numberOfEntries++;
+        }
+
+        /**
+         * Adds entries from another node
+         *
+         * @param p_node
+         *     the other node
+         * @param p_offsetSrc
+         *     the offset in source array
+         * @param p_endSrc
+         *     the end of source array
+         * @param p_offsetDst
+         *     the offset in destination array or -1 if the source array has to be prepended
+         */
+        private void addEntries(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
+            long[] aux1;
+            short[] aux2;
+
+            if (p_offsetDst != -1) {
+                System.arraycopy(p_node.m_keys, p_offsetSrc, m_keys, p_offsetDst, p_endSrc - p_offsetSrc);
+                System.arraycopy(p_node.m_dataLeafs, p_offsetSrc, m_dataLeafs, p_offsetDst, p_endSrc - p_offsetSrc);
+                m_numberOfEntries = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
+            } else {
+                aux1 = new long[m_keys.length];
+                System.arraycopy(p_node.m_keys, 0, aux1, 0, p_node.m_numberOfEntries);
+                System.arraycopy(m_keys, 0, aux1, p_node.m_numberOfEntries, m_numberOfEntries);
+                m_keys = aux1;
+
+                aux2 = new short[m_dataLeafs.length];
+                System.arraycopy(p_node.m_dataLeafs, 0, aux2, 0, p_node.m_numberOfEntries);
+                System.arraycopy(m_dataLeafs, 0, aux2, p_node.m_numberOfEntries, m_numberOfEntries);
+                m_dataLeafs = aux2;
+
+                m_numberOfEntries += p_node.m_numberOfEntries;
+            }
+        }
+
+        /**
+         * Changes an entry
+         *
+         * @param p_localID
+         *     the LocalID
+         * @param p_nodeID
+         *     the NodeID
+         * @param p_index
+         *     the index of given entry in this node
+         */
+        private void changeEntry(final long p_localID, final short p_nodeID, final int p_index) {
+
+            if (p_localID == getLocalID(p_index)) {
+                m_keys[p_index] = p_localID;
+                m_dataLeafs[p_index] = p_nodeID;
+            }
+        }
+
+        /**
+         * Removes the entry with given LocalID
+         *
+         * @param p_localID
+         *     LocalID of the entry that has to be deleted
+         * @return p_localID or (-1) if there is no entry for p_localID in this node
+         */
+        private long removeEntry(final long p_localID) {
+            long ret = -1;
+            int index;
+
+            index = indexOf(p_localID);
+            if (index >= 0) {
+                ret = getLocalID(index);
+
+                System.arraycopy(m_keys, index + 1, m_keys, index, m_numberOfEntries - index - 1);
+                System.arraycopy(m_dataLeafs, index + 1, m_dataLeafs, index, m_numberOfEntries - index - 1);
+
+                m_numberOfEntries--;
+            }
+
+            return ret;
+        }
+
+        /**
+         * Removes the entry with given index
+         *
+         * @param p_index
+         *     the index of the entry that has to be deleted
+         * @return p_localID or (-1) if p_index is to large
+         */
+        private long removeEntry(final int p_index) {
+            long ret = -1;
+
+            if (p_index < m_numberOfEntries) {
+                ret = getLocalID(p_index);
+
+                System.arraycopy(m_keys, p_index + 1, m_keys, p_index, m_numberOfEntries - p_index);
+                System.arraycopy(m_dataLeafs, p_index + 1, m_dataLeafs, p_index, m_numberOfEntries - p_index);
+                m_numberOfEntries--;
+            }
+
+            return ret;
+        }
+
+        /**
+         * Returns the child with given index
+         *
+         * @param p_index
+         *     the index
+         * @return the child with given index
+         */
+        private Node getChild(final int p_index) {
+            Node ret;
+
+            if (p_index >= m_numberOfChildren) {
+                ret = null;
+            } else {
+                ret = m_children[p_index];
+            }
+
+            return ret;
+        }
+
+        /**
+         * Returns the index of the given child. Uses the binary search algorithm from
+         * java.util.Arrays adapted to our needs
+         *
+         * @param p_child
+         *     the child
+         * @return the index of the given child, if it is contained in the array, (-(insertion point) - 1) otherwise
+         */
+        private int indexOf(final Node p_child) {
+            int ret = -1;
+            int low;
+            int high;
+            int mid;
+            long localID;
+            long midVal;
+
+            localID = p_child.getLocalID(0);
+            low = 0;
+            high = m_numberOfChildren - 1;
+
+            while (low <= high) {
+                mid = low + high >>> 1;
+                midVal = m_children[mid].getLocalID(0);
+
+                if (midVal < localID) {
+                    low = mid + 1;
+                } else if (midVal > localID) {
+                    high = mid - 1;
+                } else {
+                    ret = mid;
+                    break;
+                }
+            }
+            if (ret == -1) {
+                ret = -(low + 1);
+            }
+
+            return ret;
+        }
+
+        /**
+         * Adds a child
+         *
+         * @param p_child
+         *     the child
+         */
+        private void addChild(final Node p_child) {
+            int index;
+
+            index = indexOf(p_child) * -1 - 1;
+
+            System.arraycopy(m_children, index, m_children, index + 1, m_numberOfChildren - index);
+            m_children[index] = p_child;
+            p_child.m_parent = this;
+
+            m_numberOfChildren++;
+        }
+
+        /**
+         * Adds children of another node
+         *
+         * @param p_node
+         *     the other node
+         * @param p_offsetSrc
+         *     the offset in source array
+         * @param p_endSrc
+         *     the end of source array
+         * @param p_offsetDst
+         *     the offset in destination array or -1 if the source array has to be prepended
+         */
+        private void addChildren(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
+            Node[] aux;
+
+            if (p_offsetDst != -1) {
+                System.arraycopy(p_node.m_children, p_offsetSrc, m_children, p_offsetDst, p_endSrc - p_offsetSrc);
+
+                for (final Node child : m_children) {
+                    if (child == null) {
+                        break;
+                    }
+                    child.m_parent = this;
+                }
+                m_numberOfChildren = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
+            } else {
+                aux = new Node[m_children.length];
+                System.arraycopy(p_node.m_children, 0, aux, 0, p_node.m_numberOfChildren);
+
+                for (final Node child : aux) {
+                    if (child == null) {
+                        break;
+                    }
+                    child.m_parent = this;
+                }
+
+                System.arraycopy(m_children, 0, aux, p_node.m_numberOfChildren, m_numberOfChildren);
+                m_children = aux;
+
+                m_numberOfChildren += p_node.m_numberOfChildren;
+            }
+        }
+
+        /**
+         * Removes the given child
+         *
+         * @param p_child
+         *     the child
+         * @return true if the child was found and deleted, false otherwise
+         */
+        private boolean removeChild(final Node p_child) {
+            boolean ret = false;
+            int index;
+
+            index = indexOf(p_child);
+            if (index >= 0) {
+                System.arraycopy(m_children, index + 1, m_children, index, m_numberOfChildren - index);
+
+                m_numberOfChildren--;
+                ret = true;
+            }
+
+            return ret;
+        }
+
+        /**
+         * Removes the child with given index
+         *
+         * @param p_index
+         *     the index
+         * @return the deleted child
+         */
+        private Node removeChild(final int p_index) {
+            Node ret = null;
+
+            if (p_index < m_numberOfChildren) {
+                ret = m_children[p_index];
+                System.arraycopy(m_children, p_index + 1, m_children, p_index, m_numberOfChildren - p_index);
+
+                m_numberOfChildren--;
+            }
+
+            return ret;
         }
     }
 }

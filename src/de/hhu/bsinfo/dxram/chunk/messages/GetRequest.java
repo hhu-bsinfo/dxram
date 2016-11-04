@@ -69,6 +69,15 @@ public class GetRequest extends AbstractRequest {
     }
 
     @Override
+    protected final int getPayloadLength() {
+        if (m_dataStructures != null) {
+            return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_dataStructures.length;
+        } else {
+            return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_chunkIDs.length;
+        }
+    }
+
+    @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
         ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
 
@@ -84,15 +93,6 @@ public class GetRequest extends AbstractRequest {
         m_chunkIDs = new long[numChunks];
         for (int i = 0; i < m_chunkIDs.length; i++) {
             m_chunkIDs[i] = p_buffer.getLong();
-        }
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        if (m_dataStructures != null) {
-            return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_dataStructures.length;
-        } else {
-            return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_chunkIDs.length;
         }
     }
 }

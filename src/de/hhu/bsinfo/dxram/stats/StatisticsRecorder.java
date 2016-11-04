@@ -23,9 +23,9 @@ public class StatisticsRecorder {
      * Constructor
      *
      * @param p_recorderName
-     *         Recorder name
+     *     Recorder name
      */
-    public StatisticsRecorder(final String p_recorderName) {
+    StatisticsRecorder(final String p_recorderName) {
         m_recorderName = p_recorderName;
     }
 
@@ -39,13 +39,34 @@ public class StatisticsRecorder {
     }
 
     /**
+     * Enable/disable all operations
+     *
+     * @param p_val
+     *     True to enable, false to disable
+     */
+    public void setAllOperationsEnabled(final boolean p_val) {
+        for (StatisticsOperation op : m_operations.values()) {
+            op.setEnabled(p_val);
+        }
+    }
+
+    @Override
+    public String toString() {
+        String str = '[' + m_recorderName + ']';
+        for (StatisticsOperation op : m_operations.values()) {
+            str += "\n\t" + op;
+        }
+        return str;
+    }
+
+    /**
      * Get an operation from the recorder (non existing operations are created on demand)
      *
      * @param p_name
-     *         Name of the operation
+     *     Name of the operation
      * @return StatisticsOperation
      */
-    public StatisticsOperation getOperation(final String p_name) {
+    StatisticsOperation getOperation(final String p_name) {
 
         StatisticsOperation operation = m_operations.get(p_name);
         if (operation == null) {
@@ -59,25 +80,5 @@ public class StatisticsRecorder {
         }
 
         return operation;
-    }
-
-    /**
-     * Enable/disable all operations
-     *
-     * @param p_val
-     *         True to enable, false to disable
-     */
-    public void setAllOperationsEnabled(final boolean p_val) {
-        for (StatisticsOperation op : m_operations.values()) {
-            op.setEnabled(p_val);
-        }
-    }
-
-    @Override public String toString() {
-        String str = "[" + m_recorderName + "]";
-        for (StatisticsOperation op : m_operations.values()) {
-            str += "\n\t" + op;
-        }
-        return str;
     }
 }

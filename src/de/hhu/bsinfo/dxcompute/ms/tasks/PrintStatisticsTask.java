@@ -42,7 +42,7 @@ abstract class PrintStatisticsTask extends TaskPayload {
      * @param p_statisticsService
      *            StatisticsService
      */
-    void printStatisticsToOutput(final PrintStream p_outputStream, final BootService p_bootService, final StatisticsService p_statisticsService) {
+    static void printStatisticsToOutput(final PrintStream p_outputStream, final BootService p_bootService, final StatisticsService p_statisticsService) {
         DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         Date date = new Date();
         p_outputStream.println("---------------------------------------------------------");
@@ -54,7 +54,7 @@ abstract class PrintStatisticsTask extends TaskPayload {
         p_outputStream.println("Role: " + p_bootService.getNodeRole(nodeId));
         p_outputStream.println("---------------------------------------------------------");
 
-        Collection<StatisticsRecorder> recorders = p_statisticsService.getRecorders();
+        Collection<StatisticsRecorder> recorders = StatisticsService.getRecorders();
         for (StatisticsRecorder recorder : recorders) {
             p_outputStream.println(recorder.toString());
             p_outputStream.println("---------------------------------------------------------");

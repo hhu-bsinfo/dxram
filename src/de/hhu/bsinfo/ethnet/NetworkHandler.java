@@ -81,7 +81,7 @@ public final class NetworkHandler implements DataReceiver {
      *
      * @return the EventInterface
      */
-    protected static EventInterface getEventHandler() {
+    static EventInterface getEventHandler() {
         return ms_eventInterface;
     }
 
@@ -91,7 +91,7 @@ public final class NetworkHandler implements DataReceiver {
      * @param p_event
      *     the EventInterface
      */
-    public void setEventHandler(final EventInterface p_event) {
+    public static void setEventHandler(final EventInterface p_event) {
         ms_eventInterface = p_event;
 
     }
@@ -134,7 +134,7 @@ public final class NetworkHandler implements DataReceiver {
      *     the calling class
      */
     public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
-        boolean ret = false;
+        boolean ret;
 
         ret = m_messageDirectory.register(p_type, p_subtype, p_class);
 
@@ -170,7 +170,7 @@ public final class NetworkHandler implements DataReceiver {
         final int p_numberOfBuffersPerConnection, final int p_flowControlWindowSize, final int p_connectionTimeout) {
 
         // #if LOGGER == TRACE
-        LOGGER.trace("Entering initialize");
+        // LOGGER.trace("Entering initialize");
         // #endif /* LOGGER == TRACE */
 
         m_nodeMap = p_nodeMap;
@@ -182,7 +182,7 @@ public final class NetworkHandler implements DataReceiver {
         m_manager = new ConnectionManager(m_connectionCreator, this);
 
         // #if LOGGER == TRACE
-        LOGGER.trace("Exiting initialize");
+        // LOGGER.trace("Exiting initialize");
         // #endif /* LOGGER == TRACE */
 
         // (new PrintThread()).start();
@@ -289,20 +289,20 @@ public final class NetworkHandler implements DataReceiver {
      */
     public void connectNode(final short p_nodeID) throws NetworkException {
         // #if LOGGER == TRACE
-        LOGGER.trace("Entering connectNode with: p_nodeID=0x%X", p_nodeID);
+        // LOGGER.trace("Entering connectNode with: p_nodeID=0x%X", p_nodeID);
         // #endif /* LOGGER == TRACE */
 
         try {
             m_manager.getConnection(p_nodeID);
         } catch (final IOException e) {
             // #if LOGGER >= DEBUG
-            LOGGER.debug("IOException during connection lookup", e);
+            // LOGGER.debug("IOException during connection lookup", e);
             // #endif /* LOGGER >= DEBUG */
             throw new NetworkDestinationUnreachableException(p_nodeID);
         }
 
         // #if LOGGER == TRACE
-        LOGGER.trace("Exiting connectNode");
+        // LOGGER.trace("Exiting connectNode");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -320,57 +320,55 @@ public final class NetworkHandler implements DataReceiver {
         p_message.beforeSend();
 
         // #if LOGGER == TRACE
-        LOGGER.trace("Entering sendMessage with: p_message=%s", p_message);
+        // LOGGER.trace("Entering sendMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */
 
-        if (p_message != null) {
-            /*
-             * NOTE:
-             * The following if statement is necessary to support looping back messages.
-             * Next to increasing performance it is not supported by the ConnectionManager
-             * to handle connections to itself. The problem is that in the loop-back-case
-             * there will be 2 connections to the local node ID:
-             * 1. The initial opened connection to the local server port and
-             * 2. The new incoming connection.
-             * So the ConnectionManager thinks he already has a connection to itself and
-             * the incoming connection will be discarded. Further, the incoming Messages
-             * can never be delivered.
-             */
-            if (p_message.getDestination() == m_nodeMap.getOwnNodeID()) {
-                // source is never set otherwise for loop back
-                p_message.setSource(p_message.getDestination());
-                newMessage(p_message);
-            } else {
-                try {
-                    connection = m_manager.getConnection(p_message.getDestination());
-                } catch (final IOException e) {
+        /*
+         * NOTE:
+         * The following if statement is necessary to support looping back messages.
+         * Next to increasing performance it is not supported by the ConnectionManager
+         * to handle connections to itself. The problem is that in the loop-back-case
+         * there will be 2 connections to the local node ID:
+         * 1. The initial opened connection to the local server port and
+         * 2. The new incoming connection.
+         * So the ConnectionManager thinks he already has a connection to itself and
+         * the incoming connection will be discarded. Further, the incoming Messages
+         * can never be delivered.
+         */
+        if (p_message.getDestination() == m_nodeMap.getOwnNodeID()) {
+            // source is never set otherwise for loop back
+            p_message.setSource(p_message.getDestination());
+            newMessage(p_message);
+        } else {
+            try {
+                connection = m_manager.getConnection(p_message.getDestination());
+            } catch (final IOException e) {
+                // #if LOGGER >= DEBUG
+                // LOGGER.debug("Connection invalid", e);
+                // #endif /* LOGGER >= DEBUG */
+                throw new NetworkDestinationUnreachableException(p_message.getDestination());
+            }
+            try {
+                if (connection != null) {
+                    connection.write(p_message);
+                } else {
                     // #if LOGGER >= DEBUG
-                    LOGGER.debug("Connection invalid", e);
+                    // LOGGER.debug("Connection invalid");
                     // #endif /* LOGGER >= DEBUG */
                     throw new NetworkDestinationUnreachableException(p_message.getDestination());
                 }
-                try {
-                    if (null != connection) {
-                        connection.write(p_message);
-                    } else {
-                        // #if LOGGER >= DEBUG
-                        LOGGER.debug("Connection invalid");
-                        // #endif /* LOGGER >= DEBUG */
-                        throw new NetworkDestinationUnreachableException(p_message.getDestination());
-                    }
-                } catch (final NetworkException e) {
-                    // #if LOGGER >= DEBUG
-                    LOGGER.debug("Sending data failed, Message invalid", e);
-                    // #endif /* LOGGER >= DEBUG */
-                    throw new NetworkException("Sending data failed, invalid message", e);
-                }
+            } catch (final NetworkException e) {
+                // #if LOGGER >= DEBUG
+                // LOGGER.debug("Sending data failed, Message invalid", e);
+                // #endif /* LOGGER >= DEBUG */
+                throw new NetworkException("Sending data failed, invalid message", e);
             }
         }
 
         p_message.afterSend();
 
         // #if LOGGER == TRACE
-        LOGGER.trace("Exiting sendMessage");
+        // LOGGER.trace("Exiting sendMessage");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -383,7 +381,7 @@ public final class NetworkHandler implements DataReceiver {
     @Override
     public void newMessage(final AbstractMessage p_message) {
         // #if LOGGER == TRACE
-        LOGGER.trace("Received new message: %s", p_message);
+        // LOGGER.trace("Received new message: %s", p_message);
         // #endif /* LOGGER == TRACE */
 
         if (p_message instanceof AbstractResponse) {
@@ -420,15 +418,70 @@ public final class NetworkHandler implements DataReceiver {
     // Classes
 
     /**
+     * Wrapper class for message type - MessageReceiver pairs
+     *
+     * @author Florian Klein 23.07.2013
+     * @author Marc Ewert 14.08.2014
+     */
+    private static class Entry {
+
+        // Attributes
+        private final CopyOnWriteArrayList<MessageReceiver> m_receivers;
+
+        // Constructors
+
+        /**
+         * Creates an instance of Entry
+         */
+        Entry() {
+            m_receivers = new CopyOnWriteArrayList<>();
+        }
+
+        // Methods
+
+        /**
+         * Adds a MessageReceiver
+         *
+         * @param p_receiver
+         *     the MessageReceiver
+         */
+        public void add(final MessageReceiver p_receiver) {
+            m_receivers.add(p_receiver);
+        }
+
+        /**
+         * Removes a MessageReceiver
+         *
+         * @param p_receiver
+         *     the MessageReceiver
+         */
+        public void remove(final MessageReceiver p_receiver) {
+            m_receivers.remove(p_receiver);
+        }
+
+        /**
+         * Informs all MessageReceivers about a new message
+         *
+         * @param p_message
+         *     the message
+         */
+        void newMessage(final AbstractMessage p_message) {
+            for (int i = 0; i < m_receivers.size(); i++) {
+                m_receivers.get(i).onIncomingMessage(p_message);
+            }
+        }
+    }
+
+    /**
      * Distributes incoming default messages
      *
      * @author Kevin Beineke 19.07.2016
      */
     private final class DefaultMessageHandlerPool {
 
+        private final ArrayDeque<AbstractMessage> m_defaultMessages;
         // Attributes
         private DefaultMessageHandler[] m_threads;
-        private final ArrayDeque<AbstractMessage> m_defaultMessages;
         private ReentrantLock m_defaultMessagesLock;
         private Condition m_messageAvailable;
 
@@ -503,7 +556,7 @@ public final class NetworkHandler implements DataReceiver {
             } else {
                 m_defaultMessages.offer(p_message);
 
-                m_messageAvailable.signal();
+                m_messageAvailable.signalAll();
                 m_defaultMessagesLock.unlock();
             }
 
@@ -522,7 +575,7 @@ public final class NetworkHandler implements DataReceiver {
         private ArrayDeque<AbstractMessage> m_defaultMessages;
         private ReentrantLock m_defaultMessagesLock;
         private Condition m_messageAvailable;
-        private boolean m_shutdown;
+        private volatile boolean m_shutdown;
 
         // Constructors
 
@@ -544,13 +597,6 @@ public final class NetworkHandler implements DataReceiver {
 
         // Methods
 
-        /**
-         * Closes the handler
-         */
-        private void shutdown() {
-            m_shutdown = true;
-        }
-
         @Override
         public void run() {
             AbstractMessage message = null;
@@ -559,10 +605,10 @@ public final class NetworkHandler implements DataReceiver {
             while (!m_shutdown) {
                 while (message == null) {
                     m_defaultMessagesLock.lock();
-                    if (m_defaultMessages.size() == 0) {
+                    if (m_defaultMessages.isEmpty()) {
                         try {
                             m_messageAvailable.await();
-                        } catch (final InterruptedException e) {
+                        } catch (final InterruptedException ignored) {
                             m_defaultMessagesLock.unlock();
                             return;
                         }
@@ -588,6 +634,13 @@ public final class NetworkHandler implements DataReceiver {
                 message = null;
             }
         }
+
+        /**
+         * Closes the handler
+         */
+        private void shutdown() {
+            m_shutdown = true;
+        }
     }
 
     /**
@@ -601,7 +654,7 @@ public final class NetworkHandler implements DataReceiver {
         private final ArrayDeque<AbstractMessage> m_exclusiveMessages;
         private ReentrantLock m_exclusiveMessagesLock;
         private Condition m_messageAvailable;
-        private boolean m_shutdown;
+        private volatile boolean m_shutdown;
 
         // Constructors
 
@@ -623,33 +676,6 @@ public final class NetworkHandler implements DataReceiver {
             m_shutdown = true;
         }
 
-        /**
-         * Enqueue a new message for delivering
-         *
-         * @param p_message
-         *     the message
-         * @param p_maxMessages
-         *     the maximal number of pending messages
-         * @return whether the message was appended or not
-         */
-        public boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
-            boolean ret = true;
-
-            m_exclusiveMessagesLock.lock();
-            if (m_exclusiveMessages.size() > p_maxMessages) {
-                ret = false;
-                m_exclusiveMessagesLock.unlock();
-            } else {
-                m_exclusiveMessages.offer(p_message);
-                if (m_exclusiveMessages.size() == 1) {
-                    m_messageAvailable.signal();
-                }
-                m_exclusiveMessagesLock.unlock();
-            }
-
-            return ret;
-        }
-
         @Override
         public void run() {
             AbstractMessage message = null;
@@ -659,10 +685,10 @@ public final class NetworkHandler implements DataReceiver {
                 while (message == null) {
                     m_exclusiveMessagesLock.lock();
 
-                    if (m_exclusiveMessages.size() == 0) {
+                    if (m_exclusiveMessages.isEmpty()) {
                         try {
                             m_messageAvailable.await();
-                        } catch (final InterruptedException e) {
+                        } catch (final InterruptedException ignored) {
                             m_exclusiveMessagesLock.unlock();
                             return;
                         }
@@ -684,6 +710,33 @@ public final class NetworkHandler implements DataReceiver {
                 message = null;
             }
         }
+
+        /**
+         * Enqueue a new message for delivering
+         *
+         * @param p_message
+         *     the message
+         * @param p_maxMessages
+         *     the maximal number of pending messages
+         * @return whether the message was appended or not
+         */
+        boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
+            boolean ret = true;
+
+            m_exclusiveMessagesLock.lock();
+            if (m_exclusiveMessages.size() > p_maxMessages) {
+                ret = false;
+                m_exclusiveMessagesLock.unlock();
+            } else {
+                m_exclusiveMessages.offer(p_message);
+                if (m_exclusiveMessages.size() == 1) {
+                    m_messageAvailable.signalAll();
+                }
+                m_exclusiveMessagesLock.unlock();
+            }
+
+            return ret;
+        }
     }
 
     /**
@@ -703,60 +756,5 @@ public final class NetworkHandler implements DataReceiver {
          */
         void onIncomingMessage(AbstractMessage p_message);
 
-    }
-
-    /**
-     * Wrapper class for message type - MessageReceiver pairs
-     *
-     * @author Florian Klein 23.07.2013
-     * @author Marc Ewert 14.08.2014
-     */
-    private class Entry {
-
-        // Attributes
-        private final CopyOnWriteArrayList<MessageReceiver> m_receivers;
-
-        // Constructors
-
-        /**
-         * Creates an instance of Entry
-         */
-        Entry() {
-            m_receivers = new CopyOnWriteArrayList<>();
-        }
-
-        // Methods
-
-        /**
-         * Adds a MessageReceiver
-         *
-         * @param p_receiver
-         *     the MessageReceiver
-         */
-        public void add(final MessageReceiver p_receiver) {
-            m_receivers.add(p_receiver);
-        }
-
-        /**
-         * Removes a MessageReceiver
-         *
-         * @param p_receiver
-         *     the MessageReceiver
-         */
-        public void remove(final MessageReceiver p_receiver) {
-            m_receivers.remove(p_receiver);
-        }
-
-        /**
-         * Informs all MessageReceivers about a new message
-         *
-         * @param p_message
-         *     the message
-         */
-        public void newMessage(final AbstractMessage p_message) {
-            for (int i = 0; i < m_receivers.size(); i++) {
-                m_receivers.get(i).onIncomingMessage(p_message);
-            }
-        }
     }
 }

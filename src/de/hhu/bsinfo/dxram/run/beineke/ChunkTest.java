@@ -45,14 +45,14 @@ public final class ChunkTest {
      * Program entry point
      *
      * @param p_arguments
-     *         The program arguments
+     *     The program arguments
      */
     public static void main(final String[] p_arguments) {
         if (p_arguments.length < 2) {
             System.out.println("Missing program argument: Role (master, client) and/or ZooKeeperString");
-        } else if (p_arguments[0].equals("master")) {
-            new Master().start(p_arguments[1]);
-        } else if (p_arguments[0].equals("client")) {
+        } else if ("master".equals(p_arguments[0])) {
+            Master.start(p_arguments[1]);
+        } else if ("client".equals(p_arguments[0])) {
             // Initialize DXRAM
             final DXRAM dxram = new DXRAM();
             dxram.initialize("config/dxram.conf");
@@ -62,7 +62,7 @@ public final class ChunkTest {
             ZooKeeper zookeeper = null;
             try {
                 zookeeper = new ZooKeeper(p_arguments[1], 10000, null);
-            } catch (final IOException e1) {
+            } catch (final IOException ignored) {
                 System.out.println("Cannot connect to ZooKeeper! Aborting.");
                 System.exit(-1);
             }
@@ -114,10 +114,11 @@ public final class ChunkTest {
          * Starts the master
          *
          * @param p_zookeeperString
-         *         the ZooKeeper connection string (IP:port)
+         *     the ZooKeeper connection string (IP:port)
          */
-        public void start(final String p_zookeeperString) {
+        public static void start(final String p_zookeeperString) {
             Chunk[] chunks;
+            ByteBuffer data;
 
             // Initialize DXRAM
             final DXRAM dxram = new DXRAM();
@@ -128,7 +129,10 @@ public final class ChunkTest {
             chunks = new Chunk[CHUNKS_PER_MASTER];
             for (int i = 0; i < CHUNKS_PER_MASTER; i++) {
                 chunks[i] = new Chunk(CHUNK_SIZE);
-                chunks[i].getData().put("Test!".getBytes());
+                data = chunks[i].getData();
+                if (data != null) {
+                    data.put("Test!".getBytes());
+                }
             }
             chunkService.create(chunks);
 
@@ -140,7 +144,7 @@ public final class ChunkTest {
             ZooKeeper zookeeper = null;
             try {
                 zookeeper = new ZooKeeper(p_zookeeperString, 10000, null);
-            } catch (final IOException e1) {
+            } catch (final IOException ignored) {
                 System.out.println("Cannot connect to ZooKeeper! Aborting.");
                 System.exit(-1);
             }
@@ -150,9 +154,9 @@ public final class ChunkTest {
                     zookeeper.create("/dxram/nodes/masters", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
                 }
                 // Add master
-                zookeeper.create("/dxram/nodes/masters/" + dxram.getService(BootService.class).getNodeID(), new byte[0], Ids.OPEN_ACL_UNSAFE,
-                        CreateMode.PERSISTENT);
-            } catch (final KeeperException | InterruptedException e) {
+                zookeeper
+                    .create("/dxram/nodes/masters/" + dxram.getService(BootService.class).getNodeID(), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            } catch (final KeeperException | InterruptedException ignored) {
                 System.out.println("Cannot write to ZooKeeper! Aborting.");
                 System.exit(-1);
             }
@@ -186,9 +190,9 @@ public final class ChunkTest {
          * Creates an instance of Client
          *
          * @param p_chunkService
-         *         the initialized ChunkService
+         *     the initialized ChunkService
          * @param p_masters
-         *         all masters' NodeIDs
+         *     all masters' NodeIDs
          */
         private Client(final ChunkService p_chunkService, final short[] p_masters) {
             m_chunkService = p_chunkService;
@@ -200,7 +204,8 @@ public final class ChunkTest {
         /**
          * Starts the client
          */
-        @Override public void run() {
+        @Override
+        public void run() {
             short nodeID;
             int offset;
             Chunk[] chunks;

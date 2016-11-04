@@ -25,9 +25,9 @@ public class BarrierSignOnResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *         the request to respond to.
+     *     the request to respond to.
      * @param p_status
-     *         Status code of the sign on
+     *     Status code of the sign on
      */
     public BarrierSignOnResponse(final BarrierSignOnRequest p_request, final byte p_status) {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_RESPONSE);
@@ -45,15 +45,18 @@ public class BarrierSignOnResponse extends AbstractResponse {
         return m_barrierIdentifier;
     }
 
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES;
+    }
+
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt(m_barrierIdentifier);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_barrierIdentifier = p_buffer.getInt();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES;
     }
 }

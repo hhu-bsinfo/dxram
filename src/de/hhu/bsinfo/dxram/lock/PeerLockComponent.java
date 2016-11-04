@@ -37,28 +37,6 @@ public class PeerLockComponent extends AbstractLockComponent {
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        // no dependencies
-    }
-
-    @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        m_lockedChunks = new ConcurrentHashMap<>();
-        m_mapEntryCreationLock = new AtomicBoolean(false);
-
-        return true;
-    }
-
-    @Override
-    protected boolean shutdownComponent() {
-        m_lockedChunks.clear();
-        m_lockedChunks = null;
-        m_mapEntryCreationLock = null;
-
-        return true;
-    }
-
-    @Override
     public ArrayList<Pair<Long, Short>> getLockedList() {
         ArrayList<Pair<Long, Short>> ret = new ArrayList<>();
         for (Entry<Long, LockEntry> entry : m_lockedChunks.entrySet()) {
@@ -83,6 +61,7 @@ public class PeerLockComponent extends AbstractLockComponent {
             // create on demand
 
             while (!m_mapEntryCreationLock.compareAndSet(false, true)) {
+                // Wait
             }
 
             LockEntry prev = m_lockedChunks.get(ChunkID.getLocalID(p_chunkId));
@@ -99,6 +78,7 @@ public class PeerLockComponent extends AbstractLockComponent {
         if (p_timeoutMs == MS_TIMEOUT_UNLIMITED) {
             // unlimited timeout, lock
             while (!lockEntry.m_lock.compareAndSet(false, true)) {
+                // Wait
             }
             lockEntry.m_nodeID = p_lockingNodeID;
             success = true;
@@ -160,6 +140,28 @@ public class PeerLockComponent extends AbstractLockComponent {
                 lockEntry.m_lock.set(false);
             }
         }
+
+        return true;
+    }
+
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        // no dependencies
+    }
+
+    @Override
+    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        m_lockedChunks = new ConcurrentHashMap<>();
+        m_mapEntryCreationLock = new AtomicBoolean(false);
+
+        return true;
+    }
+
+    @Override
+    protected boolean shutdownComponent() {
+        m_lockedChunks.clear();
+        m_lockedChunks = null;
+        m_mapEntryCreationLock = null;
 
         return true;
     }

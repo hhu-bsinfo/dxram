@@ -31,9 +31,9 @@ public class NotifyAboutNewPredecessorMessage extends AbstractMessage {
      * Creates an instance of NotifyAboutNewPredecessorMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_newPredecessor
-     *         the new predecessor
+     *     the new predecessor
      */
     public NotifyAboutNewPredecessorMessage(final short p_destination, final short p_newPredecessor) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE);
@@ -54,17 +54,20 @@ public class NotifyAboutNewPredecessorMessage extends AbstractMessage {
         return m_newPredecessor;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Short.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putShort(m_newPredecessor);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_newPredecessor = p_buffer.getShort();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Short.BYTES;
     }
 
 }

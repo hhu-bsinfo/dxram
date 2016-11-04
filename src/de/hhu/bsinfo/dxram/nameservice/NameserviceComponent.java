@@ -34,7 +34,8 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceComponent.class.getSimpleName());
 
     // configuration values
-    @Expose private String m_type = "NAME";
+    @Expose
+    private String m_type = "NAME";
 
     // dependent components
     private AbstractBootComponent m_boot;
@@ -54,12 +55,38 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
     }
 
     /**
+     * Remove the name of a registered DataStructure from lookup.
+     *
+     * @return the number of entries in name service
+     */
+    int getEntryCount() {
+        return m_lookup.getNameserviceEntryCount();
+    }
+
+    /**
+     * Get all available name mappings
+     *
+     * @return List of available name mappings
+     */
+    ArrayList<Pair<String, Long>> getAllEntries() {
+        ArrayList<Pair<String, Long>> list = new ArrayList<>();
+
+        ArrayList<Pair<Integer, Long>> entries = m_lookup.getNameserviceEntries();
+        // convert index representation
+        for (Pair<Integer, Long> entry : entries) {
+            list.add(new Pair<>(m_converter.convert(entry.first()), entry.second()));
+        }
+
+        return list;
+    }
+
+    /**
      * Register a DataStructure for a specific name.
      *
      * @param p_dataStructure
-     *         DataStructure to register.
+     *     DataStructure to register.
      * @param p_name
-     *         Name to associate with the ID of the DataStructure.
+     *     Name to associate with the ID of the DataStructure.
      */
     public void register(final DataStructure p_dataStructure, final String p_name) {
         register(p_dataStructure.getID(), p_name);
@@ -69,15 +96,15 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
      * Register a chunk id for a specific name.
      *
      * @param p_chunkId
-     *         Chunk id to register.
+     *     Chunk id to register.
      * @param p_name
-     *         Name to associate with the ID of the DataStructure.
+     *     Name to associate with the ID of the DataStructure.
      */
     public void register(final long p_chunkId, final String p_name) {
         try {
             final int id = m_converter.convert(p_name);
             // #if LOGGER == TRACE
-            LOGGER.trace("Registering chunkID 0x%X, name %s, id %d", p_chunkId, p_name, id);
+            // LOGGER.trace("Registering chunkID 0x%X, name %s, id %d", p_chunkId, p_name, id);
             // #endif /* LOGGER == TRACE */
 
             m_lookup.insertNameserviceEntry(id, p_chunkId);
@@ -93,10 +120,10 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
      * Get the chunk ID of the specific name from the service.
      *
      * @param p_name
-     *         Registered name to get the chunk ID for.
+     *     Registered name to get the chunk ID for.
      * @param p_timeoutMs
-     *         Timeout for trying to get the entry (if it does not exist, yet).
-     *         set this to -1 for infinite loop if you know for sure, that the entry has to exist
+     *     Timeout for trying to get the entry (if it does not exist, yet).
+     *     set this to -1 for infinite loop if you know for sure, that the entry has to exist
      * @return If the name was registered with a chunk ID before, returns the chunk ID, -1 otherwise.
      */
     public long getChunkID(final String p_name, final int p_timeoutMs) {
@@ -104,13 +131,13 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
         try {
             final int id = m_converter.convert(p_name);
             // #if LOGGER == TRACE
-            LOGGER.trace("Lookup name %s, id %d", p_name, id);
+            // LOGGER.trace("Lookup name %s, id %d", p_name, id);
             // #endif /* LOGGER == TRACE */
 
             ret = m_lookup.getChunkIDForNameserviceEntry(id, p_timeoutMs);
 
             // #if LOGGER == TRACE
-            LOGGER.trace("Lookup name %s, resulting chunkID 0x%X", p_name, ret);
+            // LOGGER.trace("Lookup name %s, resulting chunkID 0x%X", p_name, ret);
             // #endif /* LOGGER == TRACE */
         } catch (final IllegalArgumentException e) {
             // #if LOGGER >= ERROR
@@ -121,41 +148,15 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
         return ret;
     }
 
-    /**
-     * Remove the name of a registered DataStructure from lookup.
-     *
-     * @return the number of entries in name service
-     */
-    public int getEntryCount() {
-        return m_lookup.getNameserviceEntryCount();
-    }
-
-    /**
-     * Get all available name mappings
-     *
-     * @return List of available name mappings
-     */
-    public ArrayList<Pair<String, Long>> getAllEntries() {
-        ArrayList<Pair<String, Long>> list = new ArrayList<>();
-
-        ArrayList<Pair<Integer, Long>> entries = m_lookup.getNameserviceEntries();
-        if (list != null) {
-            // convert index representation
-            for (Pair<Integer, Long> entry : entries) {
-                list.add(new Pair<>(m_converter.convert(entry.first()), entry.second()));
-            }
-        }
-
-        return list;
-    }
-
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
     }
 
-    @Override protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    @Override
+    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         m_converter = new NameServiceStringConverter(m_type);
 
         m_indexData = new NameServiceIndexData();
@@ -175,7 +176,8 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
         return true;
     }
 
-    @Override protected boolean shutdownComponent() {
+    @Override
+    protected boolean shutdownComponent() {
         m_converter = null;
 
         m_indexData = null;
@@ -188,9 +190,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
      * Inserts the nameservice entry to chunk with LocalID 0 for backup
      *
      * @param p_key
-     *         the key
+     *     the key
      * @param p_chunkID
-     *         the ChunkID
+     *     the ChunkID
      * @return whether this operation was successful
      */
     private boolean insertMapping(final int p_key, final long p_chunkID) {

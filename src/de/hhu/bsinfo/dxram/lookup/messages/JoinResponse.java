@@ -40,22 +40,22 @@ public class JoinResponse extends AbstractResponse {
      * Creates an instance of JoinResponse
      *
      * @param p_request
-     *         the corresponding JoinRequest
+     *     the corresponding JoinRequest
      * @param p_newContactSuperpeer
-     *         the superpeer that has to be asked next
+     *     the superpeer that has to be asked next
      * @param p_predecessor
-     *         the predecessor
+     *     the predecessor
      * @param p_successor
-     *         the successor
+     *     the successor
      * @param p_superpeers
-     *         the finger superpeers
+     *     the finger superpeers
      * @param p_peers
-     *         the peers the superpeer is responsible for
+     *     the peers the superpeer is responsible for
      * @param p_metadata
-     *         the metadata
+     *     the metadata
      */
     public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer, final short p_predecessor, final short p_successor,
-            final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final byte[] p_metadata) {
+        final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final byte[] p_metadata) {
         super(p_request, LookupMessages.SUBTYPE_JOIN_RESPONSE);
 
         m_newContactSuperpeer = p_newContactSuperpeer;
@@ -122,14 +122,43 @@ public class JoinResponse extends AbstractResponse {
         return m_metadata;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        int ret;
+
+        if (m_newContactSuperpeer == -1) {
+            ret = Byte.BYTES + Short.BYTES * 2;
+
+            ret += Integer.BYTES;
+            if (m_superpeers != null && !m_superpeers.isEmpty()) {
+                ret += Short.BYTES * m_superpeers.size();
+            }
+
+            ret += Integer.BYTES;
+            if (m_peers != null && !m_peers.isEmpty()) {
+                ret += Short.BYTES * m_peers.size();
+            }
+
+            ret += Integer.BYTES;
+            if (m_metadata != null && m_metadata.length > 0) {
+                ret += m_metadata.length;
+            }
+        } else {
+            ret = Byte.BYTES + Short.BYTES;
+        }
+
+        return ret;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         if (m_newContactSuperpeer == -1) {
             p_buffer.put((byte) 1);
             p_buffer.putShort(m_predecessor);
             p_buffer.putShort(m_successor);
 
-            if (m_superpeers == null || m_superpeers.size() == 0) {
+            if (m_superpeers == null || m_superpeers.isEmpty()) {
                 p_buffer.putInt(0);
             } else {
                 p_buffer.putInt(m_superpeers.size());
@@ -138,7 +167,7 @@ public class JoinResponse extends AbstractResponse {
                 }
             }
 
-            if (m_peers == null || m_peers.size() == 0) {
+            if (m_peers == null || m_peers.isEmpty()) {
                 p_buffer.putInt(0);
             } else {
                 p_buffer.putInt(m_peers.size());
@@ -159,7 +188,8 @@ public class JoinResponse extends AbstractResponse {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         int length;
 
         if (p_buffer.get() != 0) {
@@ -186,33 +216,6 @@ public class JoinResponse extends AbstractResponse {
         } else {
             m_newContactSuperpeer = p_buffer.getShort();
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        int ret;
-
-        if (m_newContactSuperpeer == -1) {
-            ret = Byte.BYTES + Short.BYTES * 2;
-
-            ret += Integer.BYTES;
-            if (m_superpeers != null && m_superpeers.size() > 0) {
-                ret += Short.BYTES * m_superpeers.size();
-            }
-
-            ret += Integer.BYTES;
-            if (m_peers != null && m_peers.size() > 0) {
-                ret += Short.BYTES * m_peers.size();
-            }
-
-            ret += Integer.BYTES;
-            if (m_metadata != null && m_metadata.length > 0) {
-                ret += m_metadata.length;
-            }
-        } else {
-            ret = Byte.BYTES + Short.BYTES;
-        }
-
-        return ret;
     }
 
 }

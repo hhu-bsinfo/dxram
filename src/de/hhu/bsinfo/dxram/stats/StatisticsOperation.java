@@ -13,12 +13,10 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public final class StatisticsOperation {
     public static final int INVALID_ID = -1;
-
-    private String m_name;
-    private boolean m_enabled = true;
-
     // stats per thread, avoids having locks
     private static int ms_blockSizeStatsMap = 100;
+    private String m_name;
+    private boolean m_enabled = true;
     private Stats[][] m_statsMap = new Stats[ms_blockSizeStatsMap][];
     private int m_statsMapBlockPos;
     private Lock m_mapLock = new ReentrantLock(false);
@@ -27,7 +25,7 @@ public final class StatisticsOperation {
      * Constructor
      *
      * @param p_name
-     *         Name of the operation.
+     *     Name of the operation.
      */
     StatisticsOperation(final String p_name) {
         m_name = p_name;
@@ -58,7 +56,7 @@ public final class StatisticsOperation {
      * Enable/disable recording of the operation
      *
      * @param p_val
-     *         True to enable, false to disable
+     *     True to enable, false to disable
      */
     public void setEnabled(final boolean p_val) {
         m_enabled = p_val;
@@ -97,7 +95,7 @@ public final class StatisticsOperation {
      * to record.
      *
      * @param p_val
-     *         Value to added to the long counter.
+     *     Value to added to the long counter.
      */
     public void enter(final long p_val) {
         if (!m_enabled) {
@@ -129,7 +127,7 @@ public final class StatisticsOperation {
      * to record.
      *
      * @param p_val
-     *         Value to added to the double counter.
+     *     Value to added to the double counter.
      */
     public void enter(final double p_val) {
         if (!m_enabled) {
@@ -185,8 +183,9 @@ public final class StatisticsOperation {
         }
     }
 
-    @Override public String toString() {
-        String str = "[" + m_name + " (enabled " + m_enabled + "): ";
+    @Override
+    public String toString() {
+        String str = '[' + m_name + " (enabled " + m_enabled + "): ";
         for (int i = 0; i < m_statsMapBlockPos; i++) {
             for (int j = 0; j < ms_blockSizeStatsMap; j++) {
                 if (m_statsMap[i][j] != null) {
@@ -203,7 +202,7 @@ public final class StatisticsOperation {
      *
      * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
      */
-    public static final class Stats {
+    private static final class Stats {
         private String m_threadName = "";
 
         private long m_opCount;
@@ -220,7 +219,7 @@ public final class StatisticsOperation {
          * Constructor
          *
          * @param p_threadName
-         *         Name of the thread
+         *     Name of the thread
          */
         private Stats(final String p_threadName) {
             m_threadName = p_threadName;
@@ -267,7 +266,7 @@ public final class StatisticsOperation {
          *
          * @return Avarage time in ns.
          */
-        public long getAvarageTimeNs() {
+        long getAvarageTimeNs() {
             return m_totalTimeNs / m_opCount;
         }
 
@@ -294,15 +293,16 @@ public final class StatisticsOperation {
          *
          * @return Number of operations per second.
          */
-        public float getOpsPerSecond() {
+        float getOpsPerSecond() {
 
-            return (float) ((1000.0 * 1000.0 * 1000.0) / (((double) m_totalTimeNs) / m_opCount));
+            return (float) (1000.0 * 1000.0 * 1000.0 / ((double) m_totalTimeNs / m_opCount));
         }
 
-        @Override public String toString() {
+        @Override
+        public String toString() {
             return "Stats[" + m_threadName + "](m_opCount, " + m_opCount + ")(m_totalTimeNs, " + m_totalTimeNs + ")(m_shortestTimeNs, " + m_shortestTimeNs +
-                    ")(m_longestTimeNs, " + m_longestTimeNs + ")(avgTimeNs, " + getAvarageTimeNs() + ")(opsPerSecond, " + getOpsPerSecond() + ")(m_counter, " +
-                    m_counter + ")(m_counter2, " + m_counter2 + ")";
+                ")(m_longestTimeNs, " + m_longestTimeNs + ")(avgTimeNs, " + getAvarageTimeNs() + ")(opsPerSecond, " + getOpsPerSecond() + ")(m_counter, " +
+                m_counter + ")(m_counter2, " + m_counter2 + ')';
         }
     }
 }

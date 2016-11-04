@@ -36,18 +36,18 @@ public class ReplaceBackupPeerRequest extends AbstractRequest {
      * Creates an instance of ReplaceBackupPeerRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_firstChunkIDOrRangeID
-     *         the first ChunkID or RangeID
+     *     the first ChunkID or RangeID
      * @param p_failedBackupPeer
-     *         the failed backup peer
+     *     the failed backup peer
      * @param p_newBackupPeer
-     *         the replacement
+     *     the replacement
      * @param p_isBackup
-     *         whether this is a backup or not
+     *     whether this is a backup or not
      */
     public ReplaceBackupPeerRequest(final short p_destination, final long p_firstChunkIDOrRangeID, final short p_failedBackupPeer, final short p_newBackupPeer,
-            final boolean p_isBackup) {
+        final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REPLACE_BACKUP_PEER_REQUEST);
 
         m_firstChunkIDOrRangeID = p_firstChunkIDOrRangeID;
@@ -94,23 +94,26 @@ public class ReplaceBackupPeerRequest extends AbstractRequest {
         return m_isBackup;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Long.BYTES + Short.BYTES * 2 + Byte.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putLong(m_firstChunkIDOrRangeID);
         p_buffer.putShort(m_failedBackupPeer);
         p_buffer.putShort(m_newBackupPeer);
-        p_buffer.put(m_isBackup ? (byte) 1 : (byte) 0);
+        p_buffer.put((byte) (m_isBackup ? 1 : 0));
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_firstChunkIDOrRangeID = p_buffer.getLong();
         m_failedBackupPeer = p_buffer.getShort();
         m_newBackupPeer = p_buffer.getShort();
         m_isBackup = p_buffer.get() == 1;
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Long.BYTES + Short.BYTES * 2 + Byte.BYTES;
     }
 
 }

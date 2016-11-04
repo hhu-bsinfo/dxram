@@ -13,9 +13,9 @@ import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 public final class NameserviceTest {
 
     // Constants
-    protected static final int CHUNK_SIZE = 100;
-    protected static final int NUMBER_OF_CHUNKS = 1000;
-    protected static final int CHUNKS_PER_PUT = 100;
+    private static final int CHUNK_SIZE = 100;
+    private static final int NUMBER_OF_CHUNKS = 1000;
+    private static final int CHUNKS_PER_PUT = 100;
 
     // Constructors
 
@@ -29,10 +29,10 @@ public final class NameserviceTest {
      * Program entry point
      *
      * @param p_arguments
-     *         The program arguments
+     *     The program arguments
      */
     public static void main(final String[] p_arguments) {
-        new Master().start();
+        Master.start();
     }
 
     /**
@@ -40,7 +40,7 @@ public final class NameserviceTest {
      *
      * @author Kevin Beineke, kevin.beineke@hhu.de, 07.04.202016
      */
-    private static class Master {
+    private static final class Master {
 
         // Constructors
 
@@ -55,7 +55,7 @@ public final class NameserviceTest {
         /**
          * Starts the Master
          */
-        public void start() {
+        public static void start() {
             int j = 0;
             long counter = 0;
             long start;
@@ -84,15 +84,15 @@ public final class NameserviceTest {
 
                 counter += CHUNKS_PER_PUT;
 
-                for (Chunk c : chunks) {
-                    nameService.register(c, (j++) + "");
+                for (Chunk chunk : chunks) {
+                    nameService.register(chunk, String.valueOf(j++));
                 }
             }
             System.out.println("Time to create " + NUMBER_OF_CHUNKS + " chunks: " + (System.currentTimeMillis() - start) + " ms");
 
             start = System.currentTimeMillis();
             for (int i = 0; i < NUMBER_OF_CHUNKS; i++) {
-                nameService.getChunkID(i + "", -1);
+                nameService.getChunkID(String.valueOf(i), -1);
             }
             System.out.println("Time to get ChunkIDs of " + NUMBER_OF_CHUNKS + " chunks: " + (System.currentTimeMillis() - start) + " ms");
 

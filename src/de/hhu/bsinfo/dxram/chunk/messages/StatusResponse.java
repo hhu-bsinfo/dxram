@@ -48,6 +48,11 @@ public class StatusResponse extends AbstractResponse {
     }
 
     @Override
+    protected final int getPayloadLength() {
+        return m_status.sizeofObject();
+    }
+
+    @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
         MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
         exporter.exportObject(m_status);
@@ -58,10 +63,5 @@ public class StatusResponse extends AbstractResponse {
         MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
         m_status = new ChunkService.Status();
         importer.importObject(m_status);
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        return m_status.sizeofObject();
     }
 }

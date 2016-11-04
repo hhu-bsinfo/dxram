@@ -24,18 +24,9 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
      * @param p_priorityShutdown
      *     Default shutdown priority for this component
      */
-    public AbstractBootComponent(final short p_priorityInit, final short p_priorityShutdown) {
+    protected AbstractBootComponent(final short p_priorityInit, final short p_priorityShutdown) {
         super(p_priorityInit, p_priorityShutdown);
     }
-
-    /**
-     * Check if a specific node is online.
-     *
-     * @param p_nodeID
-     *     Node to check.
-     * @return True if online, false offline.
-     */
-    public abstract boolean isNodeOnline(short p_nodeID);
 
     /**
      * Get IDs of all available (online) nodes including the own.
@@ -73,6 +64,29 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
     public abstract NodeRole getNodeRole();
 
     /**
+     * Get the number of currently available superpeers.
+     *
+     * @return Number of currently available superpeers.
+     */
+    public abstract int getNumberOfAvailableSuperpeers();
+
+    /**
+     * Get the node ID of the currently set bootstrap node.
+     *
+     * @return Node ID assigned for bootstrapping or -1 if no bootstrap assigned/available.
+     */
+    public abstract short getNodeIDBootstrap();
+
+    /**
+     * Check if a specific node is online.
+     *
+     * @param p_nodeID
+     *     Node to check.
+     * @return True if online, false offline.
+     */
+    public abstract boolean isNodeOnline(short p_nodeID);
+
+    /**
      * Get the role of another nodeID.
      *
      * @param p_nodeID
@@ -89,20 +103,6 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
      * @return IP and port of the specified node or an invalid address if not available.
      */
     public abstract InetSocketAddress getNodeAddress(short p_nodeID);
-
-    /**
-     * Get the number of currently available superpeers.
-     *
-     * @return Number of currently available superpeers.
-     */
-    public abstract int getNumberOfAvailableSuperpeers();
-
-    /**
-     * Get the node ID of the currently set bootstrap node.
-     *
-     * @return Node ID assigned for bootstrapping or -1 if no bootstrap assigned/available.
-     */
-    public abstract short getNodeIDBootstrap();
 
     /**
      * Check if a node is available/exists.

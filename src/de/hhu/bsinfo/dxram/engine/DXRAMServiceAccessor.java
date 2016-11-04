@@ -15,6 +15,13 @@ import java.util.List;
  */
 public interface DXRAMServiceAccessor {
     /**
+     * Get a list of short names of all available services.
+     *
+     * @return List of (short) service names.
+     */
+    List<String> getServiceShortNames();
+
+    /**
      * Get a service from DXRAM.
      *
      * @param p_class
@@ -34,11 +41,4 @@ public interface DXRAMServiceAccessor {
      * @return Service or null if no service exists for that name.
      */
     AbstractDXRAMService getService(String p_shortName);
-
-    /**
-     * Get a list of short names of all available services.
-     *
-     * @return List of (short) service names.
-     */
-    List<String> getServiceShortNames();
 }

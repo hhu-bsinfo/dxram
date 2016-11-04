@@ -23,7 +23,7 @@ public class GetNameserviceEntriesRequest extends AbstractRequest {
      * Creates an instance of GetMappingCountRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      */
     public GetNameserviceEntriesRequest(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST);

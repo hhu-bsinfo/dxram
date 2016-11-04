@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Marc Ewert, marc.ewert@hhu.de, 03.09.2014
  */
-final class NIOInterface {
+class NIOInterface {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(NIOInterface.class.getSimpleName());
 
@@ -27,9 +27,9 @@ final class NIOInterface {
      * Creates an instance of NIOInterface
      *
      * @param p_incomingBufferSize
-     *         the size of incoming buffer
+     *     the size of incoming buffer
      * @param p_outgoingBufferSize
-     *         the size of outgoing buffer
+     *     the size of outgoing buffer
      */
     NIOInterface(final int p_incomingBufferSize, final int p_outgoingBufferSize) {
         m_outgoingBufferSize = p_outgoingBufferSize;
@@ -39,39 +39,18 @@ final class NIOInterface {
     }
 
     /**
-     * Reads the NodeID of the remote node that creates this new connection
+     * Finishes the connection process for the given connection
      *
-     * @param p_channel
-     *         the channel of the connection
-     * @param p_nioSelector
-     *         the NIOSelector
-     * @return the NodeID
-     * @throws IOException
-     *         if the connection could not be created
+     * @param p_connection
+     *     the connection
      */
-    protected short readRemoteNodeID(final SocketChannel p_channel, final NIOSelector p_nioSelector) throws IOException {
-        short ret = -1;
-        int bytes = 0;
-        int counter = 0;
-        ByteBuffer buffer = ByteBuffer.allocate(2);
-
-        m_readBuffer.clear();
-        while (counter < buffer.capacity()) {
-            bytes = p_channel.read(buffer);
-            if (bytes == -1) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Could not read remote NodeID from new incoming connection!");
-                // #endif /* LOGGER >= ERROR */
-                p_channel.keyFor(p_nioSelector.getSelector()).cancel();
-                p_channel.close();
-                return -1;
+    protected static void connect(final NIOConnection p_connection) {
+        try {
+            if (p_connection.getChannel().isConnectionPending()) {
+                p_connection.getChannel().finishConnect();
+                p_connection.connected();
             }
-            counter += bytes;
-        }
-        buffer.flip();
-        ret = buffer.getShort();
-
-        return ret;
+        } catch (final IOException e) { /* ignore */ }
     }
 
     /**
@@ -79,14 +58,14 @@ final class NIOInterface {
      * m_buffer needs to be synchronized externally
      *
      * @param p_connection
-     *         the Connection
+     *     the Connection
      * @return whether reading from channel was successful or not (connection is closed then)
      * @throws IOException
-     *         if the data could not be read
+     *     if the data could not be read
      */
     protected boolean read(final NIOConnection p_connection) throws IOException {
         boolean ret = true;
-        long readBytes = 0;
+        long readBytes;
         ByteBuffer buffer;
 
         m_readBuffer.clear();
@@ -121,10 +100,10 @@ final class NIOInterface {
      * Writes to the given connection
      *
      * @param p_connection
-     *         the connection
+     *     the connection
      * @return whether all data could be written or data is left
      * @throws IOException
-     *         if the data could not be written
+     *     if the data could not be written
      */
     protected boolean write(final NIOConnection p_connection) throws IOException {
         boolean ret = true;
@@ -155,7 +134,7 @@ final class NIOInterface {
                                     // Read-buffer on the other side is full. Abort writing and schedule buffer for next write
                                     buffer.position(buffer.position() + size - view.remaining());
 
-                                    if (buffer == m_writeBuffer) {
+                                    if (buffer.equals(m_writeBuffer)) {
                                         // Copy buffer to avoid manipulation of scheduled data
                                         slice = buffer.slice();
                                         buf = ByteBuffer.allocateDirect(slice.remaining());
@@ -187,7 +166,7 @@ final class NIOInterface {
                         if (bytes == 0) {
                             if (++tries == 1000) {
                                 // Read-buffer on the other side is full. Abort writing and schedule buffer for next write
-                                if (buffer == m_writeBuffer) {
+                                if (buffer.equals(m_writeBuffer)) {
                                     // Copy buffer to avoid manipulation of scheduled data
                                     slice = buffer.slice();
                                     buf = ByteBuffer.allocateDirect(slice.remaining());
@@ -220,18 +199,39 @@ final class NIOInterface {
     }
 
     /**
-     * Finishes the connection process for the given connection
+     * Reads the NodeID of the remote node that creates this new connection
      *
-     * @param p_connection
-     *         the connection
+     * @param p_channel
+     *     the channel of the connection
+     * @param p_nioSelector
+     *     the NIOSelector
+     * @return the NodeID
+     * @throws IOException
+     *     if the connection could not be created
      */
-    protected static void connect(final NIOConnection p_connection) {
-        try {
-            if (p_connection.getChannel().isConnectionPending()) {
-                p_connection.getChannel().finishConnect();
-                p_connection.connected();
+    short readRemoteNodeID(final SocketChannel p_channel, final NIOSelector p_nioSelector) throws IOException {
+        short ret;
+        int bytes;
+        int counter = 0;
+        ByteBuffer buffer = ByteBuffer.allocate(2);
+
+        m_readBuffer.clear();
+        while (counter < buffer.capacity()) {
+            bytes = p_channel.read(buffer);
+            if (bytes == -1) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not read remote NodeID from new incoming connection!");
+                // #endif /* LOGGER >= ERROR */
+                p_channel.keyFor(p_nioSelector.getSelector()).cancel();
+                p_channel.close();
+                return -1;
             }
-        } catch (final IOException e) { /* ignore */ }
+            counter += bytes;
+        }
+        buffer.flip();
+        ret = buffer.getShort();
+
+        return ret;
     }
 
 }

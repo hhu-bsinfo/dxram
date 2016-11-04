@@ -19,28 +19,30 @@ public class ChunkServiceBenchmarkPeer extends DXRAMMain {
 
     private static final Argument ARG_NUM_CHUNKS = new Argument("numChunks", "1000", true, "Total number of chunks involved in the test");
     private static final Argument ARG_BATCHES =
-            new Argument("batches", "10", true, "Split the total number of chunks into a number of batches for get and put operations");
+        new Argument("batches", "10", true, "Split the total number of chunks into a number of batches for get and put operations");
     private static final Argument ARG_CHUNK_SIZE = new Argument("chunkSize", "128", true, "Size of a chunk in bytes");
 
     /**
      * Java main entry point.
      *
      * @param p_args
-     *         Main arguments.
+     *     Main arguments.
      */
     public static void main(final String[] p_args) {
         DXRAMMain main = new ChunkServiceBenchmarkPeer();
         main.run(p_args);
     }
 
-    @Override protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
+    @Override
+    protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
         super.registerDefaultProgramArguments(p_arguments);
         p_arguments.setArgument(ARG_NUM_CHUNKS);
         p_arguments.setArgument(ARG_BATCHES);
         p_arguments.setArgument(ARG_CHUNK_SIZE);
     }
 
-    @Override protected int mainApplication(final ArgumentList p_arguments) {
+    @Override
+    protected int mainApplication(final ArgumentList p_arguments) {
         int numChunks = p_arguments.getArgument(ARG_NUM_CHUNKS).getValue(Integer.class);
         int numBatches = p_arguments.getArgument(ARG_BATCHES).getValue(Integer.class);
         int chunkSize = p_arguments.getArgument(ARG_CHUNK_SIZE).getValue(Integer.class);
@@ -76,7 +78,7 @@ public class ChunkServiceBenchmarkPeer extends DXRAMMain {
             return -4;
         }
 
-        statisticsService.printStatistics();
+        StatisticsService.printStatistics();
 
         return 0;
     }

@@ -58,7 +58,6 @@ public class PutMessage extends AbstractMessage {
                 ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
                 break;
             default:
-                assert 1 == 2;
                 break;
         }
 
@@ -89,6 +88,20 @@ public class PutMessage extends AbstractMessage {
         } else {
             return ChunkLockOperation.NO_LOCK_OPERATION;
         }
+    }
+
+    @Override
+    protected final int getPayloadLength() {
+        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+
+        size += m_dataStructures.length * Long.BYTES;
+        size += m_dataStructures.length * Integer.BYTES;
+
+        for (DataStructure dataStructure : m_dataStructures) {
+            size += dataStructure.sizeofObject();
+        }
+
+        return size;
     }
 
     // Methods
@@ -126,20 +139,6 @@ public class PutMessage extends AbstractMessage {
             importer.importObject(m_dataStructures[i]);
             p_buffer.order(ByteOrder.BIG_ENDIAN);
         }
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
-
-        size += m_dataStructures.length * Long.BYTES;
-        size += m_dataStructures.length * Integer.BYTES;
-
-        for (DataStructure dataStructure : m_dataStructures) {
-            size += dataStructure.sizeofObject();
-        }
-
-        return size;
     }
 
 }

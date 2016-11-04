@@ -20,7 +20,7 @@ public interface NodeMap {
      * Returns the address
      *
      * @param p_nodeID
-     *         the NodeID
+     *     the NodeID
      * @return the address
      */
     InetSocketAddress getAddress(short p_nodeID);

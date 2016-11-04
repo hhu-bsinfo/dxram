@@ -1,8 +1,8 @@
-
 package de.hhu.bsinfo.dxram.lock.messages;
 
 /**
  * Network message types for the lock package
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 05.01.2016
  */
 public final class LockMessages {

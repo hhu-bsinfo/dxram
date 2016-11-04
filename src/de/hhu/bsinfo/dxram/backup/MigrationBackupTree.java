@@ -1,16 +1,13 @@
 package de.hhu.bsinfo.dxram.backup;
 
-import java.io.Serializable;
-
 /**
  * Btree to store backup ranges of migrated chunks.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.06.2015
  */
-final class MigrationBackupTree implements Serializable {
+final class MigrationBackupTree {
 
     // Constants
-    private static final long serialVersionUID = 7565597467331239020L;
     private static final byte INVALID = -1;
 
     // Attributes
@@ -37,9 +34,6 @@ final class MigrationBackupTree implements Serializable {
      *     the backup range size
      */
     MigrationBackupTree(final short p_order, final long p_backupRangeSize) {
-        // too small order for BTree
-        assert 1 < p_order;
-
         m_minEntries = p_order;
         m_backupRangeSize = p_backupRangeSize;
         m_minChildren = (short) (m_minEntries + 1);
@@ -56,6 +50,439 @@ final class MigrationBackupTree implements Serializable {
     }
 
     // Methods
+
+    /**
+     * Iterates the node and returns ChunkIDs of given range
+     *
+     * @param p_node
+     *     the node
+     * @param p_rangeID
+     *     the RangeID
+     * @return all ChunkIDs
+     */
+    private static long[] iterateNode(final Node p_node, final byte p_rangeID) {
+        long[] ret;
+        int allEntriesCounter;
+        int fittingEntriesCounter = 0;
+        int childrenCounter;
+        int fittingChildrenEntriesCounter = 0;
+        int offset;
+        long[] myEntries;
+
+        // Store all ChunkIDs of given range in an array
+        allEntriesCounter = p_node.getNumberOfEntries();
+        myEntries = new long[allEntriesCounter];
+        for (int i = 0; i < allEntriesCounter; i++) {
+            if (p_node.getRangeID(i) == p_rangeID) {
+                myEntries[fittingEntriesCounter++] = p_node.getChunkID(i);
+            }
+        }
+
+        // Get all fitting ChunkIDs of all children
+        childrenCounter = p_node.getNumberOfChildren();
+        long[][] res = new long[childrenCounter][];
+        for (int i = 0; i < childrenCounter; i++) {
+            res[i] = iterateNode(p_node.getChild(i), p_rangeID);
+            fittingChildrenEntriesCounter += res[i].length;
+        }
+
+        // Copy this node's entries to result array
+        ret = new long[fittingEntriesCounter + fittingChildrenEntriesCounter];
+        System.arraycopy(myEntries, 0, ret, 0, fittingEntriesCounter);
+        offset = fittingEntriesCounter;
+        // Copy all children's entries to result array
+        for (long[] array : res) {
+            System.arraycopy(array, 0, ret, offset, array.length);
+            offset += array.length;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the node in which the predecessor is
+     *
+     * @param p_chunkID
+     *     ChunkID whose predecessor's node is searched
+     * @param p_node
+     *     anchor node
+     * @return the node in which the predecessor of p_chunkID is or null if there is no predecessor
+     */
+    private static Node getPredecessorsNode(final long p_chunkID, final Node p_node) {
+        int index;
+        Node ret = null;
+        Node node;
+        Node parent;
+
+        assert p_node != null;
+
+        node = p_node;
+
+        if (p_chunkID == node.getChunkID(0)) {
+            if (node.getNumberOfChildren() > 0) {
+                // Get maximum in child tree
+                node = node.getChild(0);
+                while (node.getNumberOfEntries() < node.getNumberOfChildren()) {
+                    node = node.getChild(node.getNumberOfChildren() - 1);
+                }
+                ret = node;
+            } else {
+                parent = node.getParent();
+                if (parent != null) {
+                    while (parent != null && p_chunkID < parent.getChunkID(0)) {
+                        parent = parent.getParent();
+                    }
+                    ret = parent;
+                }
+            }
+        } else {
+            index = node.indexOf(p_chunkID);
+            if (index >= 0) {
+                if (index <= node.getNumberOfChildren()) {
+                    // Get maximum in child tree
+                    node = node.getChild(index);
+                    while (node.getNumberOfEntries() < node.getNumberOfChildren()) {
+                        node = node.getChild(node.getNumberOfChildren() - 1);
+                    }
+                }
+                ret = node;
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the entry of the predecessor
+     *
+     * @param p_chunkID
+     *     the ChunkID whose predecessor is searched
+     * @param p_node
+     *     anchor node
+     * @return the entry of p_chunkID's predecessor or null if there is no predecessor
+     */
+    private static Entry getPredecessorsEntry(final long p_chunkID, final Node p_node) {
+        Entry ret = null;
+        Node predecessorsNode;
+        long predecessorsCID;
+
+        predecessorsNode = getPredecessorsNode(p_chunkID, p_node);
+        if (predecessorsNode != null) {
+            for (int i = predecessorsNode.getNumberOfEntries() - 1; i >= 0; i--) {
+                predecessorsCID = predecessorsNode.getChunkID(i);
+                if (p_chunkID > predecessorsCID) {
+                    ret = new Entry(predecessorsCID, predecessorsNode.getRangeID(i));
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the node in which the successor is
+     *
+     * @param p_chunkID
+     *     ChunkID whose successor's node is searched
+     * @param p_node
+     *     anchor node
+     * @return the node in which the successor of p_chunkID is or null if there is no successor
+     */
+    private static Node getSuccessorsNode(final long p_chunkID, final Node p_node) {
+        int index;
+        Node ret = null;
+        Node node;
+        Node parent;
+
+        assert p_node != null;
+
+        node = p_node;
+
+        if (p_chunkID == node.getChunkID(node.getNumberOfEntries() - 1)) {
+            if (node.getNumberOfEntries() < node.getNumberOfChildren()) {
+                // Get minimum in child tree
+                node = node.getChild(node.getNumberOfEntries());
+                while (node.getNumberOfChildren() > 0) {
+                    node = node.getChild(0);
+                }
+                ret = node;
+            } else {
+                parent = node.getParent();
+                if (parent != null) {
+                    while (parent != null && p_chunkID > parent.getChunkID(parent.getNumberOfEntries() - 1)) {
+                        parent = parent.getParent();
+                    }
+                    ret = parent;
+                }
+            }
+        } else {
+            index = node.indexOf(p_chunkID);
+            if (index >= 0) {
+                if (index < node.getNumberOfChildren()) {
+                    // Get minimum in child tree
+                    node = node.getChild(index + 1);
+                    while (node.getNumberOfChildren() > 0) {
+                        node = node.getChild(0);
+                    }
+                }
+                ret = node;
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the entry of the successor
+     *
+     * @param p_chunkID
+     *     the ChunkID whose successor is searched
+     * @param p_node
+     *     anchor node
+     * @return the entry of p_chunkID's successor or null if there is no successor
+     */
+    private static Entry getSuccessorsEntry(final long p_chunkID, final Node p_node) {
+        Entry ret = null;
+        Node successorsNode;
+        long successorsCID;
+
+        successorsNode = getSuccessorsNode(p_chunkID, p_node);
+        if (successorsNode != null) {
+            for (int i = 0; i < successorsNode.getNumberOfEntries(); i++) {
+                successorsCID = successorsNode.getChunkID(i);
+                if (p_chunkID < successorsCID) {
+                    ret = new Entry(successorsCID, successorsNode.getRangeID(i));
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Prints one node of the btree and walks down the btree recursively
+     *
+     * @param p_node
+     *     the current node
+     * @param p_prefix
+     *     the prefix to use
+     * @param p_isTail
+     *     defines wheter the node is the tail
+     * @return String interpretation of the tree
+     */
+    private static String getString(final Node p_node, final String p_prefix, final boolean p_isTail) {
+        StringBuilder ret;
+        Node obj;
+
+        ret = new StringBuilder();
+
+        ret.append(p_prefix);
+        if (p_isTail) {
+            ret.append("└── ");
+        } else {
+            ret.append("├── ");
+        }
+        ret.append('[');
+        ret.append(p_node.getNumberOfEntries());
+        ret.append(", ");
+        ret.append(p_node.getNumberOfChildren());
+        ret.append("] ");
+        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
+            ret.append("(ChunkID: ");
+            ret.append(p_node.getChunkID(i));
+            ret.append(" NodeID: ");
+            ret.append(p_node.getRangeID(i));
+            ret.append(')');
+            if (i < p_node.getNumberOfEntries() - 1) {
+                ret.append(", ");
+            }
+        }
+        ret.append('\n');
+
+        if (p_node.getChild(0) != null) {
+            for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
+                obj = p_node.getChild(i);
+                if (p_isTail) {
+                    ret.append(getString(obj, p_prefix + "    ", false));
+                } else {
+                    ret.append(getString(obj, p_prefix + "│   ", false));
+                }
+            }
+            if (p_node.getNumberOfChildren() >= 1) {
+                obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
+                if (p_isTail) {
+                    ret.append(getString(obj, p_prefix + "    ", true));
+                } else {
+                    ret.append(getString(obj, p_prefix + "│   ", true));
+                }
+            }
+        }
+        return ret.toString();
+    }
+
+    /**
+     * Stores the backup range ID for a range
+     *
+     * @param p_startID
+     *     ChunkID of first migrated object
+     * @param p_endID
+     *     ChunkID of last migrated object
+     * @param p_rangeID
+     *     the backup range ID
+     * @param p_rangeSize
+     *     the size of the range + log header sizes
+     * @return true if insertion was successful
+     */
+    public boolean putRange(final long p_startID, final long p_endID, final byte p_rangeID, final long p_rangeSize) {
+        // end larger than start
+        assert p_startID <= p_endID;
+
+        Node startNode;
+
+        if (p_startID == p_endID) {
+            putObject(p_startID, p_rangeID, p_rangeSize);
+        } else {
+            startNode = createOrReplaceEntry(p_startID, p_rangeID);
+
+            mergeWithPredecessorOrBound(p_startID, p_rangeID, startNode);
+
+            createOrReplaceEntry(p_endID, p_rangeID);
+
+            removeEntriesWithinRange(p_startID, p_endID);
+
+            mergeWithSuccessor(p_endID, p_rangeID);
+
+            m_currentSecLogSize += p_rangeSize;
+        }
+        return true;
+    }
+
+    /**
+     * Removes given object from btree
+     *
+     * @param p_chunkID
+     *     ChunkID of deleted object
+     * @note should always be called if an object is deleted
+     */
+    public void removeObject(final long p_chunkID) {
+        int index;
+        Node node;
+        long currentCID;
+        Entry currentEntry;
+        Entry predecessor;
+        Entry successor;
+
+        if (m_root != null) {
+            node = getNodeOrSuccessorsNode(p_chunkID);
+            if (node != null) {
+                index = node.indexOf(p_chunkID);
+                if (index >= 0) {
+                    // Entry was found
+                    currentCID = node.getChunkID(index);
+                    predecessor = getPredecessorsEntry(p_chunkID, node);
+                    currentEntry = new Entry(currentCID, node.getRangeID(index));
+                    successor = getSuccessorsEntry(p_chunkID, node);
+                    if (currentEntry.getRangeID() != INVALID && predecessor != null) {
+                        if (p_chunkID - 1 == predecessor.getChunkID()) {
+                            // Predecessor is direct neighbor: AB
+                            // Successor might be direct neighbor or not: ABC or AB___C
+                            if (successor.getRangeID() == INVALID) {
+                                // Successor is barrier: ABC -> A_C or AB___C -> A___C
+                                remove(p_chunkID);
+                            } else {
+                                // Successor is no barrier: ABC -> AXC or AB___C -> AX___C
+                                node.changeEntry(p_chunkID, INVALID, index);
+                            }
+                            if (predecessor.getRangeID() == INVALID) {
+                                // Predecessor is barrier: A_C -> ___C or AXC -> ___XC
+                                // or A___C -> ___C or AX___C -> ___X___C
+                                remove(predecessor.getChunkID());
+                            }
+                        } else {
+                            // Predecessor is no direct neighbor: A___B
+                            if (successor.getRangeID() == INVALID) {
+                                // Successor is barrier: A___BC -> A___C or A___B___C -> A___'___C
+                                remove(p_chunkID);
+                            } else {
+                                // Successor is no barrier: A___BC -> A___XC or A___B___C -> A___X___C
+                                node.changeEntry(p_chunkID, INVALID, index);
+                            }
+                            // Predecessor is barrier: A___C -> A___(B-1)_C or A___XC -> ___(B-1)XC
+                            // or A___'___C -> A___(B-1)___C or A___X___C -> A___(B-1)X___C
+                            createOrReplaceEntry(p_chunkID - 1, currentEntry.getRangeID());
+                        }
+                    }
+                } else {
+                    // Entry was not found
+                    index = index * -1 - 1;
+                    successor = new Entry(node.getChunkID(index), node.getRangeID(index));
+                    predecessor = getPredecessorsEntry(successor.getChunkID(), node);
+                    if (successor.getRangeID() != INVALID && predecessor != null) {
+                        // Entry is in range
+                        if (p_chunkID - 1 == predecessor.getChunkID()) {
+                            // Predecessor is direct neighbor: A'B'
+                            // Successor might be direct neighbor or not: A'B'C -> AXC or A'B'___C -> AX___C
+                            createOrReplaceEntry(p_chunkID, INVALID);
+                            if (predecessor.getRangeID() == INVALID) {
+                                // Predecessor is barrier: AXC -> ___XC or AX___C -> ___X___C
+                                remove(p_chunkID - 1);
+                            }
+                        } else {
+                            // Predecessor is no direct neighbor: A___'B'
+                            // Successor might be direct neighbor or not: A___'B'C -> A___(B-1)XC
+                            // or A___'B'___C -> A___(B-1)X___C
+                            createOrReplaceEntry(p_chunkID, INVALID);
+                            createOrReplaceEntry(p_chunkID - 1, successor.getRangeID());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the number of entries in btree
+     *
+     * @return the number of entries in btree
+     */
+    public int size() {
+        return m_entrySize;
+    }
+
+    /**
+     * Validates the btree
+     *
+     * @return whether the tree is valid or not
+     */
+    public boolean validate() {
+        boolean ret = true;
+
+        if (m_root != null) {
+            ret = validateNode(m_root);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Prints the btree
+     *
+     * @return String interpretation of the tree
+     */
+    @Override
+    public String toString() {
+        String ret;
+
+        if (m_root == null) {
+            ret = "Btree has no nodes";
+        } else {
+            ret = "Size: " + m_entrySize + '\n' + getString(m_root, "", true);
+        }
+
+        return ret;
+    }
 
     /**
      * Checks if the Chunk fits in current log
@@ -101,43 +528,6 @@ final class MigrationBackupTree implements Serializable {
     }
 
     /**
-     * Stores the backup range ID for a range
-     *
-     * @param p_startID
-     *     ChunkID of first migrated object
-     * @param p_endID
-     *     ChunkID of last migrated object
-     * @param p_rangeID
-     *     the backup range ID
-     * @param p_rangeSize
-     *     the size of the range + log header sizes
-     * @return true if insertion was successful
-     */
-    public boolean putRange(final long p_startID, final long p_endID, final byte p_rangeID, final long p_rangeSize) {
-        // end larger than start
-        assert p_startID <= p_endID;
-
-        Node startNode;
-
-        if (p_startID == p_endID) {
-            putObject(p_startID, p_rangeID, p_rangeSize);
-        } else {
-            startNode = createOrReplaceEntry(p_startID, p_rangeID);
-
-            mergeWithPredecessorOrBound(p_startID, p_rangeID, startNode);
-
-            createOrReplaceEntry(p_endID, p_rangeID);
-
-            removeEntriesWithinRange(p_startID, p_endID);
-
-            mergeWithSuccessor(p_endID, p_rangeID);
-
-            m_currentSecLogSize += p_rangeSize;
-        }
-        return true;
-    }
-
-    /**
      * Returns ChunkIDs of all Chunks in given range
      *
      * @param p_rangeID
@@ -155,54 +545,6 @@ final class MigrationBackupTree implements Serializable {
     }
 
     /**
-     * Iterates the node and returns ChunkIDs of given range
-     *
-     * @param p_node
-     *     the node
-     * @param p_rangeID
-     *     the RangeID
-     * @return all ChunkIDs
-     */
-    private long[] iterateNode(final Node p_node, final byte p_rangeID) {
-        long[] ret;
-        int allEntriesCounter;
-        int fittingEntriesCounter = 0;
-        int childrenCounter;
-        int fittingChildrenEntriesCounter = 0;
-        int offset;
-        long[] myEntries;
-
-        // Store all ChunkIDs of given range in an array
-        allEntriesCounter = p_node.getNumberOfEntries();
-        myEntries = new long[allEntriesCounter];
-        for (int i = 0; i < allEntriesCounter; i++) {
-            if (p_node.getRangeID(i) == p_rangeID) {
-                myEntries[fittingEntriesCounter++] = p_node.getChunkID(i);
-            }
-        }
-
-        // Get all fitting ChunkIDs of all children
-        childrenCounter = p_node.getNumberOfChildren();
-        long[][] res = new long[childrenCounter][];
-        for (int i = 0; i < childrenCounter; i++) {
-            res[i] = iterateNode(p_node.getChild(i), p_rangeID);
-            fittingChildrenEntriesCounter += res[i].length;
-        }
-
-        // Copy this node's entries to result array
-        ret = new long[fittingEntriesCounter + fittingChildrenEntriesCounter];
-        System.arraycopy(myEntries, 0, ret, 0, fittingEntriesCounter);
-        offset = fittingEntriesCounter;
-        // Copy all children's entries to result array
-        for (long[] array : res) {
-            System.arraycopy(array, 0, ret, offset, array.length);
-            offset += array.length;
-        }
-
-        return ret;
-    }
-
-    /**
      * Returns the backup range ID for given object
      *
      * @param p_chunkID
@@ -211,89 +553,6 @@ final class MigrationBackupTree implements Serializable {
      */
     byte getBackupRange(final long p_chunkID) {
         return getRangeIDOrSuccessorsRangeID(p_chunkID);
-    }
-
-    /**
-     * Removes given object from btree
-     *
-     * @param p_chunkID
-     *     ChunkID of deleted object
-     * @note should always be called if an object is deleted
-     */
-    public void removeObject(final long p_chunkID) {
-        int index;
-        Node node;
-        long currentCID;
-        Entry currentEntry;
-        Entry predecessor;
-        Entry successor;
-
-        if (null != m_root) {
-            node = getNodeOrSuccessorsNode(p_chunkID);
-            if (null != node) {
-                index = node.indexOf(p_chunkID);
-                if (0 <= index) {
-                    // Entry was found
-                    currentCID = node.getChunkID(index);
-                    predecessor = getPredecessorsEntry(p_chunkID, node);
-                    currentEntry = new Entry(currentCID, node.getRangeID(index));
-                    successor = getSuccessorsEntry(p_chunkID, node);
-                    if (INVALID != currentEntry.getRangeID() && null != predecessor) {
-                        if (p_chunkID - 1 == predecessor.getChunkID()) {
-                            // Predecessor is direct neighbor: AB
-                            // Successor might be direct neighbor or not: ABC or AB___C
-                            if (INVALID == successor.getRangeID()) {
-                                // Successor is barrier: ABC -> A_C or AB___C -> A___C
-                                remove(p_chunkID);
-                            } else {
-                                // Successor is no barrier: ABC -> AXC or AB___C -> AX___C
-                                node.changeEntry(p_chunkID, INVALID, index);
-                            }
-                            if (INVALID == predecessor.getRangeID()) {
-                                // Predecessor is barrier: A_C -> ___C or AXC -> ___XC
-                                // or A___C -> ___C or AX___C -> ___X___C
-                                remove(predecessor.getChunkID());
-                            }
-                        } else {
-                            // Predecessor is no direct neighbor: A___B
-                            if (INVALID == successor.getRangeID()) {
-                                // Successor is barrier: A___BC -> A___C or A___B___C -> A___'___C
-                                remove(p_chunkID);
-                            } else {
-                                // Successor is no barrier: A___BC -> A___XC or A___B___C -> A___X___C
-                                node.changeEntry(p_chunkID, INVALID, index);
-                            }
-                            // Predecessor is barrier: A___C -> A___(B-1)_C or A___XC -> ___(B-1)XC
-                            // or A___'___C -> A___(B-1)___C or A___X___C -> A___(B-1)X___C
-                            createOrReplaceEntry(p_chunkID - 1, currentEntry.getRangeID());
-                        }
-                    }
-                } else {
-                    // Entry was not found
-                    index = index * -1 - 1;
-                    successor = new Entry(node.getChunkID(index), node.getRangeID(index));
-                    predecessor = getPredecessorsEntry(successor.getChunkID(), node);
-                    if (INVALID != successor.getRangeID() && null != predecessor) {
-                        // Entry is in range
-                        if (p_chunkID - 1 == predecessor.getChunkID()) {
-                            // Predecessor is direct neighbor: A'B'
-                            // Successor might be direct neighbor or not: A'B'C -> AXC or A'B'___C -> AX___C
-                            createOrReplaceEntry(p_chunkID, INVALID);
-                            if (INVALID == predecessor.getRangeID()) {
-                                // Predecessor is barrier: AXC -> ___XC or AX___C -> ___X___C
-                                remove(p_chunkID - 1);
-                            }
-                        } else {
-                            // Predecessor is no direct neighbor: A___'B'
-                            // Successor might be direct neighbor or not: A___'B'C -> A___(B-1)XC
-                            // or A___'B'___C -> A___(B-1)X___C
-                            createOrReplaceEntry(p_chunkID, INVALID);
-                            createOrReplaceEntry(p_chunkID - 1, successor.getRangeID());
-                        }
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -311,16 +570,16 @@ final class MigrationBackupTree implements Serializable {
         int index;
         int size;
 
-        if (null == m_root) {
+        if (m_root == null) {
             m_root = new Node(null, m_maxEntries, m_maxChildren);
             m_root.addEntry(p_chunkID, p_rangeID);
             ret = m_root;
         } else {
             node = m_root;
             while (true) {
-                if (0 == node.getNumberOfChildren()) {
+                if (node.getNumberOfChildren() == 0) {
                     index = node.indexOf(p_chunkID);
-                    if (0 <= index) {
+                    if (index >= 0) {
                         m_changedEntry = new Entry(node.getChunkID(index), node.getRangeID(index));
                         node.changeEntry(p_chunkID, p_rangeID, index);
                     } else {
@@ -345,7 +604,7 @@ final class MigrationBackupTree implements Serializable {
                     }
 
                     index = node.indexOf(p_chunkID);
-                    if (0 <= index) {
+                    if (index >= 0) {
                         m_changedEntry = new Entry(node.getChunkID(index), node.getRangeID(index));
                         node.changeEntry(p_chunkID, p_rangeID, index);
                         break;
@@ -379,7 +638,7 @@ final class MigrationBackupTree implements Serializable {
         Entry successor;
 
         predecessor = getPredecessorsEntry(p_chunkID, p_node);
-        if (null == predecessor) {
+        if (predecessor == null) {
             createOrReplaceEntry(p_chunkID - 1, INVALID);
         } else {
             if (p_chunkID - 1 == predecessor.getChunkID()) {
@@ -388,7 +647,7 @@ final class MigrationBackupTree implements Serializable {
                 }
             } else {
                 successor = getSuccessorsEntry(p_chunkID, p_node);
-                if (null == m_changedEntry) {
+                if (m_changedEntry == null) {
                     // Successor is end of range
                     if (p_rangeID != successor.getRangeID()) {
                         createOrReplaceEntry(p_chunkID - 1, successor.getRangeID());
@@ -419,7 +678,7 @@ final class MigrationBackupTree implements Serializable {
 
         node = getNodeOrSuccessorsNode(p_chunkID);
         successor = getSuccessorsEntry(p_chunkID, node);
-        if (null != successor && p_rangeID == successor.getRangeID()) {
+        if (successor != null && p_rangeID == successor.getRangeID()) {
             remove(p_chunkID, node);
         }
     }
@@ -438,7 +697,7 @@ final class MigrationBackupTree implements Serializable {
         remove(p_start, getNodeOrSuccessorsNode(p_start));
 
         successor = getCIDOrSuccessorsCID(p_start);
-        while (-1 != successor && successor < p_end) {
+        while (successor != -1 && successor < p_end) {
             remove(successor);
             successor = getCIDOrSuccessorsCID(p_start);
         }
@@ -461,7 +720,7 @@ final class MigrationBackupTree implements Serializable {
 
         while (true) {
             if (p_chunkID < ret.getChunkID(0)) {
-                if (0 < ret.getNumberOfChildren()) {
+                if (ret.getNumberOfChildren() > 0) {
                     ret = ret.getChild(0);
                     continue;
                 } else {
@@ -482,7 +741,7 @@ final class MigrationBackupTree implements Serializable {
             }
 
             index = ret.indexOf(p_chunkID);
-            if (0 <= index) {
+            if (index >= 0) {
                 break;
             } else {
                 index = index * -1 - 1;
@@ -512,7 +771,7 @@ final class MigrationBackupTree implements Serializable {
         node = getNodeOrSuccessorsNode(p_chunkID);
         if (node != null) {
             index = node.indexOf(p_chunkID);
-            if (0 <= index) {
+            if (index >= 0) {
                 ret = node.getChunkID(index);
             } else {
                 ret = node.getChunkID(index * -1 - 1);
@@ -537,172 +796,10 @@ final class MigrationBackupTree implements Serializable {
         node = getNodeOrSuccessorsNode(p_chunkID);
         if (node != null) {
             index = node.indexOf(p_chunkID);
-            if (0 <= index) {
+            if (index >= 0) {
                 ret = node.getRangeID(index);
             } else {
                 ret = node.getRangeID(index * -1 - 1);
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the node in which the predecessor is
-     *
-     * @param p_chunkID
-     *     ChunkID whose predecessor's node is searched
-     * @param p_node
-     *     anchor node
-     * @return the node in which the predecessor of p_chunkID is or null if there is no predecessor
-     */
-    private Node getPredecessorsNode(final long p_chunkID, final Node p_node) {
-        int index;
-        Node ret = null;
-        Node node;
-        Node parent;
-
-        assert p_node != null;
-
-        node = p_node;
-
-        if (p_chunkID == node.getChunkID(0)) {
-            if (0 < node.getNumberOfChildren()) {
-                // Get maximum in child tree
-                node = node.getChild(0);
-                while (node.getNumberOfEntries() < node.getNumberOfChildren()) {
-                    node = node.getChild(node.getNumberOfChildren() - 1);
-                }
-                ret = node;
-            } else {
-                parent = node.getParent();
-                if (parent != null) {
-                    while (parent != null && p_chunkID < parent.getChunkID(0)) {
-                        parent = parent.getParent();
-                    }
-                    ret = parent;
-                }
-            }
-        } else {
-            index = node.indexOf(p_chunkID);
-            if (0 <= index) {
-                if (index <= node.getNumberOfChildren()) {
-                    // Get maximum in child tree
-                    node = node.getChild(index);
-                    while (node.getNumberOfEntries() < node.getNumberOfChildren()) {
-                        node = node.getChild(node.getNumberOfChildren() - 1);
-                    }
-                }
-                ret = node;
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the entry of the predecessor
-     *
-     * @param p_chunkID
-     *     the ChunkID whose predecessor is searched
-     * @param p_node
-     *     anchor node
-     * @return the entry of p_chunkID's predecessor or null if there is no predecessor
-     */
-    private Entry getPredecessorsEntry(final long p_chunkID, final Node p_node) {
-        Entry ret = null;
-        Node predecessorsNode;
-        long predecessorsCID;
-
-        predecessorsNode = getPredecessorsNode(p_chunkID, p_node);
-        if (predecessorsNode != null) {
-            for (int i = predecessorsNode.getNumberOfEntries() - 1; i >= 0; i--) {
-                predecessorsCID = predecessorsNode.getChunkID(i);
-                if (p_chunkID > predecessorsCID) {
-                    ret = new Entry(predecessorsCID, predecessorsNode.getRangeID(i));
-                    break;
-                }
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the node in which the successor is
-     *
-     * @param p_chunkID
-     *     ChunkID whose successor's node is searched
-     * @param p_node
-     *     anchor node
-     * @return the node in which the successor of p_chunkID is or null if there is no successor
-     */
-    private Node getSuccessorsNode(final long p_chunkID, final Node p_node) {
-        int index;
-        Node ret = null;
-        Node node;
-        Node parent;
-
-        assert p_node != null;
-
-        node = p_node;
-
-        if (p_chunkID == node.getChunkID(node.getNumberOfEntries() - 1)) {
-            if (node.getNumberOfEntries() < node.getNumberOfChildren()) {
-                // Get minimum in child tree
-                node = node.getChild(node.getNumberOfEntries());
-                while (0 < node.getNumberOfChildren()) {
-                    node = node.getChild(0);
-                }
-                ret = node;
-            } else {
-                parent = node.getParent();
-                if (parent != null) {
-                    while (parent != null && p_chunkID > parent.getChunkID(parent.getNumberOfEntries() - 1)) {
-                        parent = parent.getParent();
-                    }
-                    ret = parent;
-                }
-            }
-        } else {
-            index = node.indexOf(p_chunkID);
-            if (0 <= index) {
-                if (index < node.getNumberOfChildren()) {
-                    // Get minimum in child tree
-                    node = node.getChild(index + 1);
-                    while (0 < node.getNumberOfChildren()) {
-                        node = node.getChild(0);
-                    }
-                }
-                ret = node;
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the entry of the successor
-     *
-     * @param p_chunkID
-     *     the ChunkID whose successor is searched
-     * @param p_node
-     *     anchor node
-     * @return the entry of p_chunkID's successor or null if there is no successor
-     */
-    private Entry getSuccessorsEntry(final long p_chunkID, final Node p_node) {
-        Entry ret = null;
-        Node successorsNode;
-        long successorsCID;
-
-        successorsNode = getSuccessorsNode(p_chunkID, p_node);
-        if (successorsNode != null) {
-            for (int i = 0; i < successorsNode.getNumberOfEntries(); i++) {
-                successorsCID = successorsNode.getChunkID(i);
-                if (p_chunkID < successorsCID) {
-                    ret = new Entry(successorsCID, successorsNode.getRangeID(i));
-                    break;
-                }
             }
         }
 
@@ -741,16 +838,16 @@ final class MigrationBackupTree implements Serializable {
 
         left = new Node(null, m_maxEntries, m_maxChildren);
         left.addEntries(node, 0, medianIndex, 0);
-        if (0 < node.getNumberOfChildren()) {
+        if (node.getNumberOfChildren() > 0) {
             left.addChildren(node, 0, medianIndex + 1, 0);
         }
 
         right = new Node(null, m_maxEntries, m_maxChildren);
         right.addEntries(node, medianIndex + 1, size, 0);
-        if (0 < node.getNumberOfChildren()) {
+        if (node.getNumberOfChildren() > 0) {
             right.addChildren(node, medianIndex + 1, node.getNumberOfChildren(), 0);
         }
-        if (null == node.getParent()) {
+        if (node.getParent() == null) {
             // New root, height of tree is increased
             newRoot = new Node(null, m_maxEntries, m_maxChildren);
             newRoot.addEntry(medianCID, medianRangeID, 0);
@@ -820,30 +917,30 @@ final class MigrationBackupTree implements Serializable {
         assert p_node != null;
 
         index = p_node.indexOf(p_chunkID);
-        if (0 <= index) {
+        if (index >= 0) {
             ret = p_node.removeEntry(p_chunkID);
-            if (0 == p_node.getNumberOfChildren()) {
+            if (p_node.getNumberOfChildren() == 0) {
                 // Leaf node
-                if (null != p_node.getParent() && p_node.getNumberOfEntries() < m_minEntries) {
+                if (p_node.getParent() != null && p_node.getNumberOfEntries() < m_minEntries) {
                     combined(p_node);
-                } else if (null == p_node.getParent() && 0 == p_node.getNumberOfEntries()) {
+                } else if (p_node.getParent() == null && p_node.getNumberOfEntries() == 0) {
                     // Removing root node with no keys or children
                     m_root = null;
                 }
             } else {
                 // Internal node
                 greatest = p_node.getChild(index);
-                while (0 < greatest.getNumberOfChildren()) {
+                while (greatest.getNumberOfChildren() > 0) {
                     greatest = greatest.getChild(greatest.getNumberOfChildren() - 1);
                 }
                 replaceCID = -1;
                 replaceRangeID = INVALID;
-                if (0 < greatest.getNumberOfEntries()) {
+                if (greatest.getNumberOfEntries() > 0) {
                     replaceRangeID = greatest.getRangeID(greatest.getNumberOfEntries() - 1);
                     replaceCID = greatest.removeEntry(greatest.getNumberOfEntries() - 1);
                 }
                 p_node.addEntry(replaceCID, replaceRangeID);
-                if (null != greatest.getParent() && greatest.getNumberOfEntries() < m_minEntries) {
+                if (greatest.getParent() != null && greatest.getNumberOfEntries() < m_minEntries) {
                     combined(greatest);
                 }
                 if (greatest.getNumberOfChildren() > m_maxChildren) {
@@ -893,7 +990,7 @@ final class MigrationBackupTree implements Serializable {
         }
 
         // Try to borrow neighbor
-        if (null != rightNeighbor && rightNeighborSize > m_minEntries) {
+        if (rightNeighbor != null && rightNeighborSize > m_minEntries) {
             // Try to borrow from right neighbor
             removeCID = rightNeighbor.getChunkID(0);
             prev = parent.indexOf(removeCID) * -1 - 2;
@@ -905,18 +1002,18 @@ final class MigrationBackupTree implements Serializable {
 
             p_node.addEntry(parentCID, parentRangeID);
             parent.addEntry(neighborCID, neighborRangeID);
-            if (0 < rightNeighbor.getNumberOfChildren()) {
+            if (rightNeighbor.getNumberOfChildren() > 0) {
                 p_node.addChild(rightNeighbor.removeChild(0));
             }
         } else {
             leftNeighbor = null;
             leftNeighborSize = -m_minChildren;
-            if (0 <= indexOfLeftNeighbor) {
+            if (indexOfLeftNeighbor >= 0) {
                 leftNeighbor = parent.getChild(indexOfLeftNeighbor);
                 leftNeighborSize = leftNeighbor.getNumberOfEntries();
             }
 
-            if (null != leftNeighbor && leftNeighborSize > m_minEntries) {
+            if (leftNeighbor != null && leftNeighborSize > m_minEntries) {
                 // Try to borrow from left neighbor
                 removeCID = leftNeighbor.getChunkID(leftNeighbor.getNumberOfEntries() - 1);
                 prev = parent.indexOf(removeCID) * -1 - 1;
@@ -928,10 +1025,10 @@ final class MigrationBackupTree implements Serializable {
 
                 p_node.addEntry(parentCID, parentRangeID);
                 parent.addEntry(neighborCID, neighborRangeID);
-                if (0 < leftNeighbor.getNumberOfChildren()) {
+                if (leftNeighbor.getNumberOfChildren() > 0) {
                     p_node.addChild(leftNeighbor.removeChild(leftNeighbor.getNumberOfChildren() - 1));
                 }
-            } else if (null != rightNeighbor && 0 < parent.getNumberOfEntries()) {
+            } else if (rightNeighbor != null && parent.getNumberOfEntries() > 0) {
                 // Cannot borrow from neighbors, try to combined with right neighbor
                 removeCID = rightNeighbor.getChunkID(0);
                 prev = parent.indexOf(removeCID) * -1 - 2;
@@ -943,15 +1040,15 @@ final class MigrationBackupTree implements Serializable {
                 p_node.addEntries(rightNeighbor, 0, rightNeighbor.getNumberOfEntries(), p_node.getNumberOfEntries());
                 p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(), p_node.getNumberOfChildren());
 
-                if (null != parent.getParent() && parent.getNumberOfEntries() < m_minEntries) {
+                if (parent.getParent() != null && parent.getNumberOfEntries() < m_minEntries) {
                     // Removing key made parent too small, combined up tree
                     combined(parent);
-                } else if (0 == parent.getNumberOfEntries()) {
+                } else if (parent.getNumberOfEntries() == 0) {
                     // Parent no longer has keys, make this node the new root which decreases the height of the tree
                     p_node.setParent(null);
                     m_root = p_node;
                 }
-            } else if (null != leftNeighbor && 0 < parent.getNumberOfEntries()) {
+            } else if (leftNeighbor != null && parent.getNumberOfEntries() > 0) {
                 // Cannot borrow from neighbors, try to combined with left neighbor
                 removeCID = leftNeighbor.getChunkID(leftNeighbor.getNumberOfEntries() - 1);
                 prev = parent.indexOf(removeCID) * -1 - 1;
@@ -962,40 +1059,16 @@ final class MigrationBackupTree implements Serializable {
                 p_node.addEntries(leftNeighbor, 0, leftNeighbor.getNumberOfEntries(), -1);
                 p_node.addChildren(leftNeighbor, 0, leftNeighbor.getNumberOfChildren(), -1);
 
-                if (null != parent.getParent() && parent.getNumberOfEntries() < m_minEntries) {
+                if (parent.getParent() != null && parent.getNumberOfEntries() < m_minEntries) {
                     // Removing key made parent too small, combined up tree
                     combined(parent);
-                } else if (0 == parent.getNumberOfEntries()) {
+                } else if (parent.getNumberOfEntries() == 0) {
                     // Parent no longer has keys, make this node the new root which decreases the height of the tree
                     p_node.setParent(null);
                     m_root = p_node;
                 }
             }
         }
-    }
-
-    /**
-     * Returns the number of entries in btree
-     *
-     * @return the number of entries in btree
-     */
-    public int size() {
-        return m_entrySize;
-    }
-
-    /**
-     * Validates the btree
-     *
-     * @return whether the tree is valid or not
-     */
-    public boolean validate() {
-        boolean ret = true;
-
-        if (m_root != null) {
-            ret = validateNode(m_root);
-        }
-
-        return ret;
     }
 
     /**
@@ -1017,7 +1090,7 @@ final class MigrationBackupTree implements Serializable {
 
         numberOfEntries = p_node.getNumberOfEntries();
 
-        if (1 < numberOfEntries) {
+        if (numberOfEntries > 1) {
             // Make sure the keys are sorted
             for (int i = 1; i < numberOfEntries; i++) {
                 prev = p_node.getChunkID(i - 1);
@@ -1029,15 +1102,15 @@ final class MigrationBackupTree implements Serializable {
             }
         } else {
             childrenSize = p_node.getNumberOfChildren();
-            if (null == p_node.getParent()) {
+            if (p_node.getParent() == null) {
                 // Root
                 if (numberOfEntries > m_maxEntries) {
                     // Check max key size. Root does not have a minimum key size
                     ret = false;
-                } else if (0 == childrenSize) {
+                } else if (childrenSize == 0) {
                     // If root, no children, and keys are valid
                     ret = true;
-                } else if (2 > childrenSize) {
+                } else if (childrenSize < 2) {
                     // Root should have zero or at least two children
                     ret = false;
                 } else if (childrenSize > m_maxChildren) {
@@ -1049,7 +1122,7 @@ final class MigrationBackupTree implements Serializable {
                     ret = false;
                 } else if (numberOfEntries > m_maxEntries) {
                     ret = false;
-                } else if (0 == childrenSize) {
+                } else if (childrenSize == 0) {
                     ret = true;
                 } else if (numberOfEntries != childrenSize - 1) {
                     // If there are children, there should be one more child then keys
@@ -1101,93 +1174,11 @@ final class MigrationBackupTree implements Serializable {
     }
 
     /**
-     * Prints the btree
-     *
-     * @return String interpretation of the tree
-     */
-    @Override
-    public String toString() {
-        String ret;
-
-        if (null == m_root) {
-            ret = "Btree has no nodes";
-        } else {
-            ret = "Size: " + m_entrySize + "\n" + getString(m_root, "", true);
-        }
-
-        return ret;
-    }
-
-    /**
-     * Prints one node of the btree and walks down the btree recursively
-     *
-     * @param p_node
-     *     the current node
-     * @param p_prefix
-     *     the prefix to use
-     * @param p_isTail
-     *     defines wheter the node is the tail
-     * @return String interpretation of the tree
-     */
-    private String getString(final Node p_node, final String p_prefix, final boolean p_isTail) {
-        StringBuilder ret;
-        Node obj;
-
-        ret = new StringBuilder();
-
-        ret.append(p_prefix);
-        if (p_isTail) {
-            ret.append("└── ");
-        } else {
-            ret.append("├── ");
-        }
-        ret.append("[");
-        ret.append(p_node.getNumberOfEntries());
-        ret.append(", ");
-        ret.append(p_node.getNumberOfChildren());
-        ret.append("] ");
-        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
-            ret.append("(ChunkID: ");
-            ret.append(p_node.getChunkID(i));
-            ret.append(" NodeID: ");
-            ret.append(p_node.getRangeID(i));
-            ret.append(")");
-            if (i < p_node.getNumberOfEntries() - 1) {
-                ret.append(", ");
-            }
-        }
-        ret.append("\n");
-
-        if (null != p_node.getChild(0)) {
-            for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
-                obj = p_node.getChild(i);
-                if (p_isTail) {
-                    ret.append(getString(obj, p_prefix + "    ", false));
-                } else {
-                    ret.append(getString(obj, p_prefix + "│   ", false));
-                }
-            }
-            if (1 <= p_node.getNumberOfChildren()) {
-                obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
-                if (p_isTail) {
-                    ret.append(getString(obj, p_prefix + "    ", true));
-                } else {
-                    ret.append(getString(obj, p_prefix + "│   ", true));
-                }
-            }
-        }
-        return ret.toString();
-    }
-
-    /**
      * A single node of the btree
      *
      * @author Kevin Beineke, kevin.beineke@hhu.de, 13.06.2013
      */
-    private static final class Node implements Comparable<Node>, Serializable {
-
-        // Attributes
-        private static final long serialVersionUID = 8096853988906422021L;
+    private static final class Node implements Comparable<Node> {
 
         private Node m_parent;
 
@@ -1220,6 +1211,43 @@ final class MigrationBackupTree implements Serializable {
         }
 
         /**
+         * Returns the parent node
+         *
+         * @return the parent node
+         */
+        private Node getParent() {
+            return m_parent;
+        }
+
+        /**
+         * Returns the parent node
+         *
+         * @param p_parent
+         *     the parent node
+         */
+        private void setParent(final Node p_parent) {
+            m_parent = p_parent;
+        }
+
+        /**
+         * Returns the number of entries
+         *
+         * @return the number of entries
+         */
+        private int getNumberOfEntries() {
+            return m_numberOfEntries;
+        }
+
+        /**
+         * Returns the number of children
+         *
+         * @return the number of children
+         */
+        private int getNumberOfChildren() {
+            return m_numberOfChildren;
+        }
+
+        /**
          * Compares two nodes
          *
          * @param p_cmp
@@ -1241,23 +1269,60 @@ final class MigrationBackupTree implements Serializable {
             return ret;
         }
 
-        /**
-         * Returns the parent node
-         *
-         * @return the parent node
-         */
-        private Node getParent() {
-            return m_parent;
+        @Override
+        public boolean equals(final Object p_cmp) {
+
+            return p_cmp instanceof Node && compareTo((Node) p_cmp) == 0;
         }
 
         /**
-         * Returns the parent node
+         * Prints the node
          *
-         * @param p_parent
-         *     the parent node
+         * @return String interpretation of the node
          */
-        private void setParent(final Node p_parent) {
-            m_parent = p_parent;
+        @Override
+        public String toString() {
+            StringBuilder ret;
+
+            ret = new StringBuilder();
+
+            ret.append("entries=[");
+            for (int i = 0; i < getNumberOfEntries(); i++) {
+                ret.append("(ChunkID: ");
+                ret.append(getChunkID(i));
+                ret.append(" location: ");
+                ret.append(getRangeID(i));
+                ret.append(')');
+                if (i < getNumberOfEntries() - 1) {
+                    ret.append(", ");
+                }
+            }
+            ret.append("]\n");
+
+            if (m_parent != null) {
+                ret.append("parent=[");
+                for (int i = 0; i < m_parent.getNumberOfEntries(); i++) {
+                    ret.append("(ChunkID: ");
+                    ret.append(getChunkID(i));
+                    ret.append(" location: ");
+                    ret.append(getRangeID(i));
+                    ret.append(')');
+                    if (i < m_parent.getNumberOfEntries() - 1) {
+                        ret.append(", ");
+                    }
+                }
+                ret.append("]\n");
+            }
+
+            if (m_children != null) {
+                ret.append("numberOfEntries=");
+                ret.append(getNumberOfEntries());
+                ret.append(" children=");
+                ret.append(getNumberOfChildren());
+                ret.append('\n');
+            }
+
+            return ret.toString();
         }
 
         /**
@@ -1313,7 +1378,7 @@ final class MigrationBackupTree implements Serializable {
                     break;
                 }
             }
-            if (-1 == ret) {
+            if (ret == -1) {
                 ret = -(low + 1);
             }
 
@@ -1331,7 +1396,7 @@ final class MigrationBackupTree implements Serializable {
         private void addEntry(final long p_chunkID, final byte p_rangeID) {
             int index;
 
-            index = this.indexOf(p_chunkID) * -1 - 1;
+            index = indexOf(p_chunkID) * -1 - 1;
 
             System.arraycopy(m_keys, index, m_keys, index + 1, m_numberOfEntries - index);
             System.arraycopy(m_dataLeafs, index, m_dataLeafs, index + 1, m_numberOfEntries - index);
@@ -1378,7 +1443,7 @@ final class MigrationBackupTree implements Serializable {
             long[] aux1;
             byte[] aux2;
 
-            if (-1 != p_offsetDst) {
+            if (p_offsetDst != -1) {
                 System.arraycopy(p_node.m_keys, p_offsetSrc, m_keys, p_offsetDst, p_endSrc - p_offsetSrc);
                 System.arraycopy(p_node.m_dataLeafs, p_offsetSrc, m_dataLeafs, p_offsetDst, p_endSrc - p_offsetSrc);
                 m_numberOfEntries = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
@@ -1426,8 +1491,8 @@ final class MigrationBackupTree implements Serializable {
             long ret = -1;
             int index;
 
-            index = this.indexOf(p_chunkID);
-            if (0 <= index) {
+            index = indexOf(p_chunkID);
+            if (index >= 0) {
                 ret = getChunkID(index);
 
                 System.arraycopy(m_keys, index + 1, m_keys, index, m_numberOfEntries - index - 1);
@@ -1458,15 +1523,6 @@ final class MigrationBackupTree implements Serializable {
             }
 
             return ret;
-        }
-
-        /**
-         * Returns the number of entries
-         *
-         * @return the number of entries
-         */
-        private int getNumberOfEntries() {
-            return m_numberOfEntries;
         }
 
         /**
@@ -1521,7 +1577,7 @@ final class MigrationBackupTree implements Serializable {
                     break;
                 }
             }
-            if (-1 == ret) {
+            if (ret == -1) {
                 ret = -(low + 1);
             }
 
@@ -1537,11 +1593,11 @@ final class MigrationBackupTree implements Serializable {
         private void addChild(final Node p_child) {
             int index;
 
-            index = this.indexOf(p_child) * -1 - 1;
+            index = indexOf(p_child) * -1 - 1;
 
             System.arraycopy(m_children, index, m_children, index + 1, m_numberOfChildren - index);
             m_children[index] = p_child;
-            p_child.setParent(this);
+            p_child.m_parent = this;
 
             m_numberOfChildren++;
         }
@@ -1561,14 +1617,14 @@ final class MigrationBackupTree implements Serializable {
         private void addChildren(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
             Node[] aux;
 
-            if (-1 != p_offsetDst) {
+            if (p_offsetDst != -1) {
                 System.arraycopy(p_node.m_children, p_offsetSrc, m_children, p_offsetDst, p_endSrc - p_offsetSrc);
 
                 for (final Node child : m_children) {
-                    if (null == child) {
+                    if (child == null) {
                         break;
                     }
-                    child.setParent(this);
+                    child.m_parent = this;
                 }
                 m_numberOfChildren = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
             } else {
@@ -1576,10 +1632,10 @@ final class MigrationBackupTree implements Serializable {
                 System.arraycopy(p_node.m_children, 0, aux, 0, p_node.m_numberOfChildren);
 
                 for (final Node child : aux) {
-                    if (null == child) {
+                    if (child == null) {
                         break;
                     }
-                    child.setParent(this);
+                    child.m_parent = this;
                 }
 
                 System.arraycopy(m_children, 0, aux, p_node.m_numberOfChildren, m_numberOfChildren);
@@ -1600,8 +1656,8 @@ final class MigrationBackupTree implements Serializable {
             boolean ret = false;
             int index;
 
-            index = this.indexOf(p_child);
-            if (0 <= index) {
+            index = indexOf(p_child);
+            if (index >= 0) {
                 System.arraycopy(m_children, index + 1, m_children, index, m_numberOfChildren - index);
 
                 m_numberOfChildren--;
@@ -1630,65 +1686,6 @@ final class MigrationBackupTree implements Serializable {
 
             return ret;
         }
-
-        /**
-         * Returns the number of children
-         *
-         * @return the number of children
-         */
-        private int getNumberOfChildren() {
-            return m_numberOfChildren;
-        }
-
-        /**
-         * Prints the node
-         *
-         * @return String interpretation of the node
-         */
-        @Override
-        public String toString() {
-            StringBuilder ret;
-
-            ret = new StringBuilder();
-
-            ret.append("entries=[");
-            for (int i = 0; i < getNumberOfEntries(); i++) {
-                ret.append("(ChunkID: ");
-                ret.append(getChunkID(i));
-                ret.append(" location: ");
-                ret.append(getRangeID(i));
-                ret.append(")");
-                if (i < getNumberOfEntries() - 1) {
-                    ret.append(", ");
-                }
-            }
-            ret.append("]\n");
-
-            if (null != m_parent) {
-                ret.append("parent=[");
-                for (int i = 0; i < m_parent.getNumberOfEntries(); i++) {
-                    ret.append("(ChunkID: ");
-                    ret.append(getChunkID(i));
-                    ret.append(" location: ");
-                    ret.append(getRangeID(i));
-                    ret.append(")");
-                    if (i < m_parent.getNumberOfEntries() - 1) {
-                        ret.append(", ");
-                    }
-                }
-                ret.append("]\n");
-            }
-
-            if (null != m_children) {
-                ret.append("numberOfEntries=");
-                ret.append(getNumberOfEntries());
-                ret.append(" children=");
-                ret.append(getNumberOfChildren());
-                ret.append("\n");
-            }
-
-            return ret.toString();
-        }
     }
 
     /**
@@ -1697,11 +1694,7 @@ final class MigrationBackupTree implements Serializable {
      * @author Kevin Beineke
      *         13.06.2013
      */
-    private static final class Entry implements Serializable {
-
-        // Constants
-        private static final long serialVersionUID = -7000053901808777917L;
-
+    private static final class Entry {
         // Attributes
         private long m_chunkID;
         private byte m_rangeID;
@@ -1746,7 +1739,7 @@ final class MigrationBackupTree implements Serializable {
          */
         @Override
         public String toString() {
-            return "(ChunkID: " + m_chunkID + ", location: " + m_rangeID + ")";
+            return "(ChunkID: " + m_chunkID + ", location: " + m_rangeID + ')';
         }
     }
 }

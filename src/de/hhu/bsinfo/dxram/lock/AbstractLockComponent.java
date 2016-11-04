@@ -12,17 +12,17 @@ import de.hhu.bsinfo.utils.Pair;
  */
 public abstract class AbstractLockComponent extends AbstractDXRAMComponent {
 
-    protected static final int MS_TIMEOUT_UNLIMITED = -1;
+    static final int MS_TIMEOUT_UNLIMITED = -1;
 
     /**
      * Constructor
      *
      * @param p_priorityInit
-     *         Default init priority for this component
+     *     Default init priority for this component
      * @param p_priorityShutdown
-     *         Default shutdown priority for this component
+     *     Default shutdown priority for this component
      */
-    protected AbstractLockComponent(final short p_priorityInit, final short p_priorityShutdown) {
+    AbstractLockComponent(final short p_priorityInit, final short p_priorityShutdown) {
         super(p_priorityInit, p_priorityShutdown);
     }
 
@@ -36,36 +36,36 @@ public abstract class AbstractLockComponent extends AbstractDXRAMComponent {
     /**
      * Lock a chunk with the specified id (nodeID + localID).
      *
-     * @param p_localID
-     *         Local ID of the chunk to lock.
+     * @param p_chunkId
+     *     ChunkID of the chunk to lock.
      * @param p_lockingNodeID
-     *         ID of the node that wants to lock
+     *     ID of the node that wants to lock
      * @param p_writeLock
-     *         True to acquire a write lock, false for a read lock.
+     *     True to acquire a write lock, false for a read lock.
      * @param p_timeoutMs
-     *         Timeout in ms for the lock operation. -1 for unlimited.
+     *     Timeout in ms for the lock operation. -1 for unlimited.
      * @return True if locking was successful, false for timeout.
      */
-    public abstract boolean lock(long p_localID, short p_lockingNodeID, boolean p_writeLock, int p_timeoutMs);
+    public abstract boolean lock(long p_chunkId, short p_lockingNodeID, boolean p_writeLock, int p_timeoutMs);
 
     /**
      * Unlock a chunk with the specified ID (nodeID + localID).
      *
-     * @param p_localID
-     *         Local ID of the chunk to lock
+     * @param p_chunkId
+     *     ChunkID of the chunk to lock
      * @param p_unlockingNodeID
-     *         ID of the node that wants to unlock the chunk
+     *     ID of the node that wants to unlock the chunk
      * @param p_writeLock
-     *         True to unlock a write lock, false for a read lock.
+     *     True to unlock a write lock, false for a read lock.
      * @return True if unlocking was successful, false otherwise.
      */
-    public abstract boolean unlock(long p_localID, short p_unlockingNodeID, boolean p_writeLock);
+    public abstract boolean unlock(long p_chunkId, short p_unlockingNodeID, boolean p_writeLock);
 
     /**
      * Unlock all chunks locked by a specific node ID.
      *
      * @param p_nodeID
-     *         Node ID of the chunks to unlock.
+     *     Node ID of the chunks to unlock.
      * @return True if unlocking chunks was successful, false otherwise.
      * @note This is only used in special scenarios (i.e. if a node has crashed).
      */

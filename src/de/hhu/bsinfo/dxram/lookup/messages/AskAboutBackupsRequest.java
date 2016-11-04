@@ -34,18 +34,18 @@ public class AskAboutBackupsRequest extends AbstractRequest {
      * Creates an instance of AskAboutBackupsRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_peers
-     *         all peers for which this superpeer stores backups
+     *     all peers for which this superpeer stores backups
      * @param p_numberOfNameserviceEntries
-     *         the number of expected nameservice entries
+     *     the number of expected nameservice entries
      * @param p_numberOfStorages
-     *         the number of expected storages
+     *     the number of expected storages
      * @param p_numberOfBarriers
-     *         the number of expected barriers
+     *     the number of expected barriers
      */
     public AskAboutBackupsRequest(final short p_destination, final ArrayList<Short> p_peers, final int p_numberOfNameserviceEntries,
-            final int p_numberOfStorages, final int p_numberOfBarriers) {
+        final int p_numberOfStorages, final int p_numberOfBarriers) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST);
 
         m_peers = p_peers;
@@ -92,9 +92,23 @@ public class AskAboutBackupsRequest extends AbstractRequest {
         return m_numberOfBarriers;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        int ret;
+
+        ret = Integer.BYTES;
+        if (m_peers != null && !m_peers.isEmpty()) {
+            ret += Short.BYTES * m_peers.size();
+        }
+        ret += 3 * Integer.BYTES;
+
+        return ret;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
-        if (m_peers == null || m_peers.size() == 0) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
+        if (m_peers == null || m_peers.isEmpty()) {
             p_buffer.putInt(0);
         } else {
             p_buffer.putInt(m_peers.size());
@@ -107,7 +121,8 @@ public class AskAboutBackupsRequest extends AbstractRequest {
         p_buffer.putInt(m_numberOfBarriers);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         int length;
 
         m_peers = new ArrayList<Short>();
@@ -118,18 +133,6 @@ public class AskAboutBackupsRequest extends AbstractRequest {
         m_numberOfNameserviceEntries = p_buffer.getInt();
         m_numberOfStorages = p_buffer.getInt();
         m_numberOfBarriers = p_buffer.getInt();
-    }
-
-    @Override protected final int getPayloadLength() {
-        int ret;
-
-        ret = Integer.BYTES;
-        if (m_peers != null && m_peers.size() > 0) {
-            ret += Short.BYTES * m_peers.size();
-        }
-        ret += 3 * Integer.BYTES;
-
-        return ret;
     }
 
 }

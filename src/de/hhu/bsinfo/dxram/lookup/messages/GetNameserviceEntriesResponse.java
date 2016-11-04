@@ -26,9 +26,9 @@ public class GetNameserviceEntriesResponse extends AbstractResponse {
      * Creates an instance of GetNameserviceEntriesResponse
      *
      * @param p_request
-     *         the request
+     *     the request
      * @param p_entries
-     *         the count
+     *     the count
      */
     public GetNameserviceEntriesResponse(final GetNameserviceEntriesRequest p_request, final byte[] p_entries) {
         super(p_request, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_RESPONSE);
@@ -47,8 +47,14 @@ public class GetNameserviceEntriesResponse extends AbstractResponse {
         return m_entries;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES + m_entries.length;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         if (m_entries.length == 0) {
             p_buffer.putInt(0);
         } else {
@@ -57,16 +63,13 @@ public class GetNameserviceEntriesResponse extends AbstractResponse {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         int length = p_buffer.getInt();
         if (length != 0) {
             m_entries = new byte[length];
             p_buffer.get(m_entries);
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES + m_entries.length;
     }
 
 }

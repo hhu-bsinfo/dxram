@@ -29,9 +29,9 @@ public class GetNameserviceEntryCountResponse extends AbstractResponse {
      * Creates an instance of GetMappingCountResponse
      *
      * @param p_request
-     *         the request
+     *     the request
      * @param p_count
-     *         the count
+     *     the count
      */
     public GetNameserviceEntryCountResponse(final GetNameserviceEntryCountRequest p_request, final int p_count) {
         super(p_request, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE);
@@ -50,17 +50,20 @@ public class GetNameserviceEntryCountResponse extends AbstractResponse {
         return m_count;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt(m_count);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_count = p_buffer.getInt();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES;
     }
 
 }

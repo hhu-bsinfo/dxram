@@ -30,23 +30,72 @@ public final class RequestMap {
     // Methods
 
     /**
-     * Initializes the request map
+     * Remove the Request of the given requestID from the store
      *
-     * @param p_size
-     *         the number of entries in request map
+     * @param p_requestID
+     *     the requestID
+     * @return the removed Request
      */
-    protected static void initialize(final int p_size) {
-        ms_pendingRequests = new AbstractRequest[p_size];
-        ms_lock = new ReentrantLock(false);
+    public static AbstractRequest remove(final int p_requestID) {
+        int index;
+
+        AbstractRequest ret;
+
+        ms_lock.lock();
+
+        index = p_requestID % ms_pendingRequests.length;
+        ret = ms_pendingRequests[index];
+        ms_pendingRequests[index] = null;
+
+        ms_lock.unlock();
+
+        return ret;
+    }
+
+    /**
+     * Returns the corresponding request
+     *
+     * @param p_resonse
+     *     the response
+     * @return the request
+     */
+    static AbstractRequest getRequest(final AbstractResponse p_resonse) {
+        AbstractRequest req;
+
+        ms_lock.lock();
+
+        req = ms_pendingRequests[p_resonse.getRequestID() % ms_pendingRequests.length];
+
+        ms_lock.unlock();
+
+        return req;
+    }
+
+    /**
+     * Fulfill a Request by the given Response
+     *
+     * @param p_response
+     *     the Response
+     */
+    static void fulfill(final AbstractResponse p_response) {
+        AbstractRequest request;
+
+        if (p_response != null) {
+            request = remove(p_response.getRequestID());
+
+            if (request != null) {
+                request.fulfill(p_response);
+            }
+        }
     }
 
     /**
      * Put a Request in the store
      *
      * @param p_request
-     *         the Request
+     *     the Request
      */
-    protected static void put(final AbstractRequest p_request) {
+    static void put(final AbstractRequest p_request) {
         int index;
 
         assert p_request != null;
@@ -65,63 +114,14 @@ public final class RequestMap {
     }
 
     /**
-     * Remove the Request of the given requestID from the store
+     * Initializes the request map
      *
-     * @param p_requestID
-     *         the requestID
-     * @return the removed Request
+     * @param p_size
+     *     the number of entries in request map
      */
-    public static AbstractRequest remove(final int p_requestID) {
-        int index;
-
-        AbstractRequest ret = null;
-
-        ms_lock.lock();
-
-        index = p_requestID % ms_pendingRequests.length;
-        ret = ms_pendingRequests[index];
-        ms_pendingRequests[index] = null;
-
-        ms_lock.unlock();
-
-        return ret;
-    }
-
-    /**
-     * Returns the corresponding request
-     *
-     * @param p_resonse
-     *         the response
-     * @return the request
-     */
-    static AbstractRequest getRequest(final AbstractResponse p_resonse) {
-        AbstractRequest req = null;
-
-        ms_lock.lock();
-
-        req = ms_pendingRequests[p_resonse.getRequestID() % ms_pendingRequests.length];
-
-        ms_lock.unlock();
-
-        return req;
-    }
-
-    /**
-     * Fulfill a Request by the given Response
-     *
-     * @param p_response
-     *         the Response
-     */
-    static void fulfill(final AbstractResponse p_response) {
-        AbstractRequest request;
-
-        if (p_response != null) {
-            request = remove(p_response.getRequestID());
-
-            if (request != null) {
-                request.fulfill(p_response);
-            }
-        }
+    static void initialize(final int p_size) {
+        ms_pendingRequests = new AbstractRequest[p_size];
+        ms_lock = new ReentrantLock(false);
     }
 
 }

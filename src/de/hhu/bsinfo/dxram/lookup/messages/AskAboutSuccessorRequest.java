@@ -23,7 +23,7 @@ public class AskAboutSuccessorRequest extends AbstractRequest {
      * Creates an instance of AskAboutSuccessorRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      */
     public AskAboutSuccessorRequest(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST);

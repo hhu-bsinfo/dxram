@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.engine;
 
 import org.apache.logging.log4j.LogManager;
@@ -9,31 +8,33 @@ import de.hhu.bsinfo.utils.OSValidator;
 
 /**
  * Separate class to avoid further bloating of DXRAMEngine to setup JNI related things (used by DXRAMEngine).
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class DXRAMJNIManager {
+final class DXRAMJNIManager {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMJNIManager.class.getSimpleName());
 
     /**
      * Constructor
      */
-    public DXRAMJNIManager() {
+    private DXRAMJNIManager() {
     }
 
     /**
      * Setup JNI related things for DXRAM according to the provided profile via settings.
+     *
      * @param p_engineSettings
-     *            EngineSettings data for setup.
+     *     EngineSettings data for setup.
      */
-    public void setup(final DXRAMContext.EngineSettings p_engineSettings) {
+    public static void setup(final DXRAMContext.EngineSettings p_engineSettings) {
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Setting up JNI classes...");
+        // LOGGER.debug("Setting up JNI classes...");
         // #endif /* LOGGER >= DEBUG */
 
         String path;
         final String cwd = System.getProperty("user.dir");
-        String extension = null;
+        String extension;
 
         if (OSValidator.isUnix()) {
             extension = "so";
@@ -46,10 +47,10 @@ public class DXRAMJNIManager {
             return;
         }
 
-        path = cwd + "/" + p_engineSettings.getJNIPath() + "/libJNIconsole." + extension;
+        path = cwd + '/' + p_engineSettings.getJNIPath() + "/libJNIconsole." + extension;
 
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Loading JNIconsole: " + path);
+        // LOGGER.debug("Loading JNIconsole: %s", path);
         // #endif /* LOGGER >= DEBUG */
 
         JNIconsole.load(path);

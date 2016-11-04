@@ -22,9 +22,18 @@ public class StatisticsService extends AbstractDXRAMService {
     }
 
     /**
+     * Get all available statistic recorders
+     *
+     * @return Get recorders
+     */
+    public static Collection<StatisticsRecorder> getRecorders() {
+        return StatisticsRecorderManager.getRecorders();
+    }
+
+    /**
      * Print the statistics of all created recorders to the console.
      */
-    public void printStatistics() {
+    public static void printStatistics() {
         StatisticsRecorderManager.getRecorders().forEach(System.out::println);
     }
 
@@ -32,9 +41,9 @@ public class StatisticsService extends AbstractDXRAMService {
      * Print the statistics of a specific recorder to the console.
      *
      * @param p_className
-     *         Fully qualified name of the class including package location (or relative to de.hhu.bsinfo)
+     *     Fully qualified name of the class including package location (or relative to de.hhu.bsinfo)
      */
-    public void printStatistics(final String p_className) {
+    public static void printStatistics(final String p_className) {
         Class<?> clss;
         try {
             clss = Class.forName(p_className);
@@ -42,7 +51,7 @@ public class StatisticsService extends AbstractDXRAMService {
             // check again with longest common prefix of package names
             try {
                 clss = Class.forName("de.hhu.bsinfo." + p_className);
-            } catch (final ClassNotFoundException e1) {
+            } catch (final ClassNotFoundException ignored) {
                 return;
             }
         }
@@ -54,33 +63,27 @@ public class StatisticsService extends AbstractDXRAMService {
      * Print the statistics of a specific recorder to the console.
      *
      * @param p_class
-     *         Class this recorder was created for.
+     *     Class this recorder was created for.
      */
-    public void printStatistics(final Class<?> p_class) {
+    private static void printStatistics(final Class<?> p_class) {
         StatisticsRecorder recorder = StatisticsRecorderManager.getRecorder(p_class);
         if (recorder != null) {
             System.out.println(recorder);
         }
     }
 
-    /**
-     * Get all available statistic recorders
-     *
-     * @return Get recorders
-     */
-    public Collection<StatisticsRecorder> getRecorders() {
-        return StatisticsRecorderManager.getRecorders();
-    }
-
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         // no dependencies
     }
 
-    @Override protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    @Override
+    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         return true;
     }
 
-    @Override protected boolean shutdownService() {
+    @Override
+    protected boolean shutdownService() {
         return true;
     }
 

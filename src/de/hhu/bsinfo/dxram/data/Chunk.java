@@ -115,17 +115,6 @@ public class Chunk implements DataStructure {
     }
 
     /**
-     * Change the ID of this chunk. This can be used to re-use pre-allocated chunks (pooling).
-     *
-     * @param p_id
-     *     New ID to set for this chunk.
-     */
-    @Override
-    public void setID(final long p_id) {
-        m_chunkID = p_id;
-    }
-
-    /**
      * Gets the size of the data/payload.
      *
      * @return Payload size in bytes.
@@ -139,14 +128,25 @@ public class Chunk implements DataStructure {
     }
 
     @Override
-    public final String toString() {
-        return this.getClass().getSimpleName() + "[" + ChunkID.toHexString(m_chunkID) + ", " + getDataSize() + "]";
-    }
-
-    @Override
     public long getID() {
 
         return m_chunkID;
+    }
+
+    /**
+     * Change the ID of this chunk. This can be used to re-use pre-allocated chunks (pooling).
+     *
+     * @param p_id
+     *     New ID to set for this chunk.
+     */
+    @Override
+    public void setID(final long p_id) {
+        m_chunkID = p_id;
+    }
+
+    @Override
+    public final String toString() {
+        return getClass().getSimpleName() + '[' + ChunkID.toHexString(m_chunkID) + ", " + getDataSize() + ']';
     }
 
     @Override

@@ -27,9 +27,9 @@ public class GetMetadataSummaryResponse extends AbstractResponse {
      * Creates an instance of SendBackupsMessage
      *
      * @param p_request
-     *         the corresponding GetMetadataSummaryRequest
+     *     the corresponding GetMetadataSummaryRequest
      * @param p_summary
-     *         the metadata summary
+     *     the metadata summary
      */
     public GetMetadataSummaryResponse(final GetMetadataSummaryRequest p_request, final String p_summary) {
         super(p_request, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_RESPONSE);
@@ -48,13 +48,20 @@ public class GetMetadataSummaryResponse extends AbstractResponse {
         return m_summary;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return m_summary.getBytes().length + Integer.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt(m_summary.getBytes().length);
         p_buffer.put(m_summary.getBytes());
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         int length;
         byte[] data;
 
@@ -62,10 +69,6 @@ public class GetMetadataSummaryResponse extends AbstractResponse {
         data = new byte[length];
         p_buffer.get(data);
         m_summary = new String(data);
-    }
-
-    @Override protected final int getPayloadLength() {
-        return m_summary.getBytes().length + Integer.BYTES;
     }
 
 }

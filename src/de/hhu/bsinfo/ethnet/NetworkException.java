@@ -16,7 +16,7 @@ public class NetworkException extends Exception {
      * Creates an instance of NetworkException
      *
      * @param p_message
-     *         the message
+     *     the message
      */
     protected NetworkException(final String p_message) {
         super(p_message);
@@ -26,9 +26,9 @@ public class NetworkException extends Exception {
      * Creates an instance of NetworkException
      *
      * @param p_message
-     *         the message
+     *     the message
      * @param p_cause
-     *         the cause
+     *     the cause
      */
     protected NetworkException(final String p_message, final Throwable p_cause) {
         super(p_message, p_cause);

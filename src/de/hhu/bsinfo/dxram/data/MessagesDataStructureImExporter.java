@@ -30,6 +30,15 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
     }
 
     /**
+     * Get the payload size that was set previously indicating the total size of the data strcture.
+     *
+     * @return Payload size.
+     */
+    int getPayloadSize() {
+        return m_payloadSize;
+    }
+
+    /**
      * Set the size of the payload to analyze when importing an object
      * (for dynamic sized objects) or the amount of bytes in the buffer available
      * when exporting an object.
@@ -40,15 +49,6 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
      */
     public void setPayloadSize(final int p_size) {
         m_payloadSize = p_size;
-    }
-
-    /**
-     * Get the payload size that was set previously indicating the total size of the data strcture.
-     *
-     * @return Payload size.
-     */
-    int getPayloadSize() {
-        return m_payloadSize;
     }
 
     @Override

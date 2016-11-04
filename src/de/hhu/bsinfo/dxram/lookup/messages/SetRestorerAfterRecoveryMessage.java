@@ -30,9 +30,9 @@ public class SetRestorerAfterRecoveryMessage extends AbstractMessage {
      * Creates an instance of UpdateAllMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_owner
-     *         the failed peer
+     *     the failed peer
      */
     public SetRestorerAfterRecoveryMessage(final short p_destination, final short p_owner) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE);
@@ -51,17 +51,20 @@ public class SetRestorerAfterRecoveryMessage extends AbstractMessage {
         return m_owner;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Short.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putShort(m_owner);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_owner = p_buffer.getShort();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Short.BYTES;
     }
 
 }

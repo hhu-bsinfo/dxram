@@ -23,7 +23,7 @@ public class GetUtilizationRequest extends AbstractRequest {
      * Creates an instance of GetUtilizationRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      */
     public GetUtilizationRequest(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST);

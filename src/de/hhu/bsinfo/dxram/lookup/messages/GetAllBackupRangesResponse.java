@@ -31,9 +31,9 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
      * Creates an instance of GetBackupRangesResponse
      *
      * @param p_request
-     *         the corresponding GetBackupRangesRequest
+     *     the corresponding GetBackupRangesRequest
      * @param p_backupRanges
-     *         all backup ranges for requested NodeID
+     *     all backup ranges for requested NodeID
      */
     public GetAllBackupRangesResponse(final GetAllBackupRangesRequest p_request, final BackupRange[] p_backupRanges) {
         super(p_request, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE);
@@ -52,8 +52,14 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
         return m_backupRanges;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES + BackupRange.sizeofObjectStatic() * m_backupRanges.length;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 
         p_buffer.putInt(m_backupRanges.length);
@@ -63,7 +69,8 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
         m_backupRanges = new BackupRange[p_buffer.getInt()];
@@ -72,10 +79,6 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
             importer.setPayloadSize(BackupRange.sizeofObjectStatic());
             importer.importObject(m_backupRanges[i]);
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES + BackupRange.sizeofObjectStatic() * m_backupRanges.length;
     }
 
 }

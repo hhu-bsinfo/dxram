@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.log.LogComponent;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 23.02.2016
  */
-public class VersionsBuffer {
+class VersionsBuffer {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(VersionsBuffer.class.getSimpleName());
 
@@ -44,18 +44,18 @@ public class VersionsBuffer {
     // Constructors
 
     /**
-     * Creates an instance of VersionsHashTable
+     * Creates an instance of VersionsBuffer
      *
      * @param p_logComponent
-     *         the log component to enable calling access granting methods
+     *     the log component to enable calling access granting methods
      * @param p_initialElementCapacity
-     *         the initial capacity of VersionsHashTable
+     *     the initial capacity of VersionsBuffer
      * @param p_loadFactor
-     *         the load factor of VersionsHashTable
+     *     the load factor of VersionsBuffer
      * @param p_path
-     *         the versions file's path
+     *     the versions file's path
      */
-    protected VersionsBuffer(final LogComponent p_logComponent, final int p_initialElementCapacity, final float p_loadFactor, final String p_path) {
+    VersionsBuffer(final LogComponent p_logComponent, final int p_initialElementCapacity, final float p_loadFactor, final String p_path) {
         super();
 
         m_logComponent = p_logComponent;
@@ -76,7 +76,9 @@ public class VersionsBuffer {
         try {
             final File file = new File(p_path);
             if (file.exists()) {
-                file.delete();
+                if (!file.delete()) {
+                    throw new FileNotFoundException();
+                }
             }
             m_versionsFile = new RandomAccessFile(file, "rw");
         } catch (final FileNotFoundException e) {
@@ -92,20 +94,20 @@ public class VersionsBuffer {
     // Getter
 
     /**
-     * Returns the number of keys in VersionsHashTable
+     * Returns the number of keys in VersionsBuffer
      *
-     * @return the number of keys in VersionsHashTable
+     * @return the number of keys in VersionsBuffer
      */
-    protected final int getEntryCount() {
+    final int getEntryCount() {
         return m_count;
     }
 
     /**
-     * Returns the number of keys in VersionsHashTable
+     * Returns the number of keys in VersionsBuffer
      *
-     * @return the number of keys in VersionsHashTable
+     * @return the number of keys in VersionsBuffer
      */
-    protected final long getFileSize() {
+    final long getFileSize() {
         try {
             return m_versionsFile.length();
         } catch (final IOException e) {
@@ -121,7 +123,7 @@ public class VersionsBuffer {
      *
      * @return the current epoch
      */
-    protected final short getEpoch() {
+    final short getEpoch() {
         return m_epoch;
     }
 
@@ -130,8 +132,47 @@ public class VersionsBuffer {
      *
      * @return the current eon
      */
-    protected final byte getEon() {
+    final byte getEon() {
         return m_eon;
+    }
+
+    /**
+     * Hashes the given key with MurmurHash3
+     *
+     * @param p_key
+     *     the key
+     * @return the hash value
+     */
+    public static int hash(final long p_key) {
+        final int c1 = 0xcc9e2d51;
+        final int c2 = 0x1b873593;
+        int h1 = 0x9747b28c;
+        int k1;
+
+        k1 = ((short) p_key & 0xff) + ((int) p_key & 0xff00) + ((int) p_key & 0xff0000) + ((int) p_key & 0xff000000);
+        k1 *= c1;
+        k1 = k1 << 15 | k1 >>> 17;
+        k1 *= c2;
+        h1 ^= k1;
+        h1 = h1 << 13 | h1 >>> 19;
+        h1 = h1 * 5 + 0xe6546b64;
+
+        k1 = (int) ((p_key & 0xff00000000L) + (p_key & 0xff0000000000L) + (p_key & 0xff000000000000L) + (p_key & 0xff000000000000L));
+        k1 *= c1;
+        k1 = k1 << 15 | k1 >>> 17;
+        k1 *= c2;
+        h1 ^= k1;
+        h1 = h1 << 13 | h1 >>> 19;
+        h1 = h1 * 5 + 0xe6546b64;
+
+        h1 ^= 8;
+        h1 ^= h1 >>> 16;
+        h1 *= 0x85ebca6b;
+        h1 ^= h1 >>> 13;
+        h1 *= 0xc2b2ae35;
+        h1 ^= h1 >>> 16;
+
+        return h1;
     }
 
     /**
@@ -171,7 +212,7 @@ public class VersionsBuffer {
                         if (chunkID != 0) {
                             // ChunkID (-1 because 1 is added before putting to avoid LID 0)
                             buffer.putLong(chunkID - 1);
-                            // Epoch (4 Bytes in hashtable, 2 in persistent table; was incremented before!)
+                            // Epoch (2 Bytes in persistent table; was incremented before!)
                             buffer.putShort((short) (m_epoch - 1 + (m_eon << 15)));
                             // Version (4 Bytes in hashtable, 3 in persistent table)
                             version = oldTable[i + 2];
@@ -197,13 +238,91 @@ public class VersionsBuffer {
         return ret;
     }
 
+    // Methods
+
+    /**
+     * Returns the value to which the specified key is mapped in VersionsBuffer
+     *
+     * @param p_key
+     *     the searched key (is incremented before insertion to avoid 0)
+     * @return the value to which the key is mapped in VersionsBuffer
+     */
+    protected final Version get(final long p_key) {
+        Version ret = null;
+        int index;
+        long iter;
+        final long key = p_key + 1;
+
+        index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
+
+        m_accessLock.lock();
+        iter = getKey(index);
+        while (iter != 0) {
+            if (iter == key) {
+                ret = new Version((short) (m_epoch + (m_eon << 15)), getVersion(index));
+                break;
+            }
+            iter = getKey(++index);
+        }
+        m_accessLock.unlock();
+
+        return ret;
+    }
+
+    /**
+     * Maps the given key to the given value in VersionsBuffer
+     *
+     * @param p_key
+     *     the key (is incremented before insertion to avoid 0)
+     * @param p_version
+     *     the version
+     */
+    protected final void put(final long p_key, final int p_version) {
+        int index;
+        long iter;
+        final long key = p_key + 1;
+
+        // Avoid rehashing by waiting
+        while (m_count == m_threshold) {
+            m_logComponent.grantAccessToWriterThread();
+            Thread.yield();
+        }
+
+        putInternal(p_key, p_version);
+    }
+
+    /**
+     * Maps the given key to the given value in VersionsBuffer if VersionBuffer is not completely filled
+     *
+     * @param p_key
+     *     the key (is incremented before insertion to avoid 0)
+     * @param p_version
+     *     the version
+     */
+    final void tryPut(final long p_key, final int p_version) {
+        int index;
+        long iter;
+        final long key = p_key + 1;
+
+        // Avoid rehashing by waiting
+        if (m_count == m_threshold) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Could not transfer log entry to new eon as current epoch is full");
+            // #endif /* LOGGER >= WARN */
+
+            return;
+        }
+
+        putInternal(p_key, p_version);
+    }
+
     /**
      * Read all versions from SSD, add current versions and write back
      *
      * @param p_allVersions
-     *         the VersionsHashTable to put all current versions in
+     *     the VersionsHashTable to put all current versions in
      */
-    protected final void readAll(final VersionsHashTable p_allVersions) {
+    final void readAll(final VersionsHashTable p_allVersions) {
         int length;
         int version;
         boolean update = false;
@@ -296,64 +415,14 @@ public class VersionsBuffer {
         m_flushLock.unlock();
     }
 
-    // Methods
-
     /**
-     * Increments the epoch
-     *
-     * @return whether an overflow occurred or not
-     */
-    private boolean incrementEpoch() {
-        boolean ret = false;
-
-        m_epoch++;
-
-        // Overflow
-        if (m_epoch == 0) {
-            m_eon = (byte) (m_eon ^ 1);
-            ret = true;
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the value to which the specified key is mapped in VersionsHashTable
+     * Returns the next value to which the specified key is mapped in VersionsBuffer
      *
      * @param p_key
-     *         the searched key (is incremented before insertion to avoid 0)
-     * @return the value to which the key is mapped in VersionsHashTable
+     *     the searched key (is incremented before insertion to avoid 0)
+     * @return the 1 + value to which the key is mapped in VersionsBuffer
      */
-    protected final Version get(final long p_key) {
-        Version ret = null;
-        int index;
-        long iter;
-        final long key = p_key + 1;
-
-        index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
-
-        m_accessLock.lock();
-        iter = getKey(index);
-        while (iter != 0) {
-            if (iter == key) {
-                ret = new Version((short) (m_epoch + (m_eon << 15)), getVersion(index));
-                break;
-            }
-            iter = getKey(++index);
-        }
-        m_accessLock.unlock();
-
-        return ret;
-    }
-
-    /**
-     * Returns the next value to which the specified key is mapped in VersionsHashTable
-     *
-     * @param p_key
-     *         the searched key (is incremented before insertion to avoid 0)
-     * @return the 1 + value to which the key is mapped in VersionsHashTable
-     */
-    protected final Version getNext(final long p_key) {
+    final Version getNext(final long p_key) {
         Version ret = null;
         int index;
         long iter;
@@ -372,7 +441,7 @@ public class VersionsBuffer {
         while (iter != 0) {
             if (iter == key) {
                 ret = new Version((short) (m_epoch + (m_eon << 15)), getVersion(index) + 1);
-                set(index, key, ret.getEpoch(), ret.getVersion());
+                set(index, key, ret.getVersion());
                 break;
             }
             iter = getKey(++index);
@@ -380,7 +449,7 @@ public class VersionsBuffer {
         if (iter == 0) {
             // First version for this epoch
             ret = new Version((short) (m_epoch + (m_eon << 15)), 1);
-            set(index, key, ret.getEpoch(), ret.getVersion());
+            set(index, key, ret.getVersion());
             m_count++;
         }
         m_accessLock.unlock();
@@ -389,37 +458,23 @@ public class VersionsBuffer {
     }
 
     /**
-     * Maps the given key to the given value in VersionsHashTable
+     * Maps the given key to the given value in VersionsBuffer
      *
      * @param p_key
-     *         the key (is incremented before insertion to avoid 0)
+     *     the key (is incremented before insertion to avoid 0)
      * @param p_version
-     *         the version
+     *     the version
      */
-    protected final void put(final long p_key, final int p_version) {
+    private void putInternal(final long p_key, final int p_version) {
+        int index;
+        long iter;
+        final long key = p_key + 1;
+
         // Avoid rehashing by waiting
         while (m_count == m_threshold) {
             m_logComponent.grantAccessToWriterThread();
             Thread.yield();
         }
-
-        put(p_key, (short) (m_epoch + (m_eon << 15)), p_version);
-    }
-
-    /**
-     * Maps the given key to the given value in VersionsHashTable
-     *
-     * @param p_key
-     *         the key (is incremented before insertion to avoid 0)
-     * @param p_epoch
-     *         the epoch
-     * @param p_version
-     *         the version
-     */
-    protected void put(final long p_key, final int p_epoch, final int p_version) {
-        int index;
-        long iter;
-        final long key = p_key + 1;
 
         index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
@@ -427,24 +482,43 @@ public class VersionsBuffer {
         iter = getKey(index);
         while (iter != 0) {
             if (iter == key) {
-                set(index, key, p_epoch, p_version);
+                set(index, key, p_version);
                 break;
             }
             iter = getKey(++index);
         }
         if (iter == 0) {
             // Key unknown until now
-            set(index, key, p_epoch, p_version);
+            set(index, key, p_version);
             m_count++;
         }
         m_accessLock.unlock();
     }
 
     /**
+     * Increments the epoch
+     *
+     * @return whether an overflow occurred or not
+     */
+    private boolean incrementEpoch() {
+        boolean ret = false;
+
+        m_epoch++;
+
+        // Overflow
+        if (m_epoch == 0) {
+            m_eon ^= 1;
+            ret = true;
+        }
+
+        return ret;
+    }
+
+    /**
      * Gets the key at given index
      *
      * @param p_index
-     *         the index in table (-> 3 indices per element)
+     *     the index in table (-> 3 indices per element)
      * @return the key
      */
     private long getKey(final int p_index) {
@@ -458,7 +532,7 @@ public class VersionsBuffer {
      * Gets the version at given index
      *
      * @param p_index
-     *         the index
+     *     the index
      * @return the version
      */
     private int getVersion(final int p_index) {
@@ -469,60 +543,19 @@ public class VersionsBuffer {
      * Sets the key-value tuple at given index
      *
      * @param p_index
-     *         the index
+     *     the index
      * @param p_key
-     *         the key
-     * @param p_epoch
-     *         the epoch
+     *     the key
      * @param p_version
-     *         the version
+     *     the version
      */
-    private void set(final int p_index, final long p_key, final int p_epoch, final int p_version) {
+    private void set(final int p_index, final long p_key, final int p_version) {
         int index;
 
         index = p_index % m_elementCapacity * 3;
         m_table[index] = (int) (p_key >> 32);
         m_table[index + 1] = (int) p_key;
         m_table[index + 2] = p_version;
-    }
-
-    /**
-     * Hashes the given key with MurmurHash3
-     *
-     * @param p_key
-     *         the key
-     * @return the hash value
-     */
-    public static int hash(final long p_key) {
-        final int c1 = 0xcc9e2d51;
-        final int c2 = 0x1b873593;
-        int h1 = 0x9747b28c;
-        int k1;
-
-        k1 = ((short) p_key & 0xff) + ((int) p_key & 0xff00) + ((int) p_key & 0xff0000) + ((int) p_key & 0xff000000);
-        k1 *= c1;
-        k1 = k1 << 15 | k1 >>> 17;
-        k1 *= c2;
-        h1 ^= k1;
-        h1 = h1 << 13 | h1 >>> 19;
-        h1 = h1 * 5 + 0xe6546b64;
-
-        k1 = (int) ((p_key & 0xff00000000L) + (p_key & 0xff0000000000L) + (p_key & 0xff000000000000L) + (p_key & 0xff000000000000L));
-        k1 *= c1;
-        k1 = k1 << 15 | k1 >>> 17;
-        k1 *= c2;
-        h1 ^= k1;
-        h1 = h1 << 13 | h1 >>> 19;
-        h1 = h1 * 5 + 0xe6546b64;
-
-        h1 ^= 8;
-        h1 ^= h1 >>> 16;
-        h1 *= 0x85ebca6b;
-        h1 ^= h1 >>> 13;
-        h1 *= 0xc2b2ae35;
-        h1 ^= h1 >>> 16;
-
-        return h1;
     }
 
 }

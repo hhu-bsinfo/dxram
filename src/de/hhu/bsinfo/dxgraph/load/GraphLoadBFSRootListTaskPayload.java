@@ -214,12 +214,12 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 
         // add filtered files
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Setting up root oel, iterating files in %s", p_path);
+        // LOGGER.debug("Setting up root oel, iterating files in %s", p_path);
         // #endif /* LOGGER >= DEBUG */
 
         for (File file : files) {
             // #if LOGGER >= DEBUG
-            LOGGER.debug("Found root list: %s", file);
+            // LOGGER.debug("Found root list: %s", file);
             // #endif /* LOGGER >= DEBUG */
 
             orderedEdgeListRoots = new OrderedEdgeListRootsBinaryFile(file.getAbsolutePath());

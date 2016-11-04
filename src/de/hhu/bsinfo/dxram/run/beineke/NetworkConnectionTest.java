@@ -37,7 +37,7 @@ public final class NetworkConnectionTest {
      * Program entry point
      *
      * @param p_arguments
-     *         The program arguments
+     *     The program arguments
      */
     public static void main(final String[] p_arguments) {
         int barrierID = -1;
@@ -80,7 +80,7 @@ public final class NetworkConnectionTest {
         while (true) {
             try {
                 Thread.sleep(1000);
-            } catch (final InterruptedException e) {
+            } catch (final InterruptedException ignored) {
             }
         }
 

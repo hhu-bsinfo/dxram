@@ -90,6 +90,24 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
     }
 
     @Override
+    public void onIncomingMessage(final AbstractMessage p_message) {
+        if (p_message != null) {
+            if (p_message.getType() == DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE) {
+                switch (p_message.getSubtype()) {
+                    case RecoveryMessages.SUBTYPE_RECOVER_MESSAGE:
+                        incomingRecoverMessage((RecoverMessage) p_message);
+                        break;
+                    case RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST:
+                        incomingRecoverBackupRangeRequest((RecoverBackupRangeRequest) p_message);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+
+    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
@@ -127,10 +145,10 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      */
     private void recoverLocally(final short p_owner) {
         long firstChunkIDOrRangeID;
-        short[] backupPeers;
-        Chunk[] chunks = null;
-        BackupRange[] backupRanges = null;
-        RecoverBackupRangeRequest request;
+        //short[] backupPeers;
+        Chunk[] chunks;
+        BackupRange[] backupRanges;
+        //RecoverBackupRangeRequest request;
 
         if (!m_backup.isActive()) {
             // #if LOGGER >= WARN
@@ -140,7 +158,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
             backupRanges = m_lookup.getAllBackupRanges(p_owner);
             if (backupRanges != null) {
                 for (BackupRange backupRange : backupRanges) {
-                    backupPeers = backupRange.getBackupPeers();
+                    //backupPeers = backupRange.getBackupPeers();
                     firstChunkIDOrRangeID = backupRange.getRangeID();
 
                     // Get Chunks from backup peers (or locally if this is the primary backup peer)
@@ -201,7 +219,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
         String fileName;
         File folderToScan;
         File[] listOfFiles;
-        Chunk[] chunks = null;
+        Chunk[] chunks;
 
         if (!m_backup.isActive()) {
             // #if LOGGER >= WARN
@@ -210,6 +228,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
         } else {
             folderToScan = new File(m_backupDirectory);
             listOfFiles = folderToScan.listFiles();
+            assert listOfFiles != null;
             for (int i = 0; i < listOfFiles.length; i++) {
                 if (listOfFiles[i].isFile()) {
                     fileName = listOfFiles[i].getName();
@@ -259,8 +278,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      * @return the number of recovered chunks
      */
     private int recoverBackupRange(final short p_owner, final long p_firstChunkIDOrRangeID) {
-        int ret = 0;
-        Chunk[] chunks = null;
+        int ret;
+        Chunk[] chunks;
 
         if (ChunkID.getCreatorID(p_firstChunkIDOrRangeID) == p_owner) {
             // Failed peer was the creator -> recover normal backup range
@@ -313,29 +332,11 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
             int recoveredChunks = recoverBackupRange(p_request.getOwner(), p_request.getFirstChunkIDOrRangeID());
             try {
                 m_network.sendMessage(new RecoverBackupRangeResponse(p_request, recoveredChunks));
-            } catch (final NetworkException e) {
+            } catch (final NetworkException ignored) {
 
             }
         };
         new Thread(task).start();
-    }
-
-    @Override
-    public void onIncomingMessage(final AbstractMessage p_message) {
-        if (p_message != null) {
-            if (p_message.getType() == DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE) {
-                switch (p_message.getSubtype()) {
-                    case RecoveryMessages.SUBTYPE_RECOVER_MESSAGE:
-                        incomingRecoverMessage((RecoverMessage) p_message);
-                        break;
-                    case RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST:
-                        incomingRecoverBackupRangeRequest((RecoverBackupRangeRequest) p_message);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
     }
 
     // -----------------------------------------------------------------------------------

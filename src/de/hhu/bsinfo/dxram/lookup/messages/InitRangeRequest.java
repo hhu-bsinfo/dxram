@@ -37,15 +37,15 @@ public class InitRangeRequest extends AbstractRequest {
      * Creates an instance of InitRangeRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_startChunkID
-     *         the first object
+     *     the first object
      * @param p_owner
-     *         the owner
+     *     the owner
      * @param p_backupPeers
-     *         the backup peers
+     *     the backup peers
      * @param p_isBackup
-     *         whether this is a backup message or not
+     *     whether this is a backup message or not
      */
     public InitRangeRequest(final short p_destination, final long p_startChunkID, final short p_owner, final short[] p_backupPeers, final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST);
@@ -94,8 +94,22 @@ public class InitRangeRequest extends AbstractRequest {
         return m_isBackup;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        int ret;
+
+        if (m_backupPeers.length <= 3) {
+            ret = 2 * Long.BYTES + 2 * Byte.BYTES;
+        } else {
+            ret = Long.BYTES + (1 + m_backupPeers.length) * Short.BYTES + 2 * Byte.BYTES;
+        }
+
+        return ret;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putLong(m_startChunkIDOrRangeID);
 
         p_buffer.put((byte) m_backupPeers.length);
@@ -115,7 +129,8 @@ public class InitRangeRequest extends AbstractRequest {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         byte size;
 
         m_startChunkIDOrRangeID = p_buffer.getLong();
@@ -137,18 +152,6 @@ public class InitRangeRequest extends AbstractRequest {
         if (b == 1) {
             m_isBackup = true;
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        int ret;
-
-        if (m_backupPeers.length <= 3) {
-            ret = 2 * Long.BYTES + 2 * Byte.BYTES;
-        } else {
-            ret = Long.BYTES + (1 + m_backupPeers.length) * Short.BYTES + 2 * Byte.BYTES;
-        }
-
-        return ret;
     }
 
 }

@@ -8,9 +8,16 @@ package de.hhu.bsinfo.dxram;
 public final class DXRAMComponentOrder {
 
     /**
+     * Static class
+     */
+    private DXRAMComponentOrder() {
+
+    }
+
+    /**
      * Init order of components
      */
-    public final class Init {
+    public static final class Init {
         public static final short NULL = 1;
         public static final short LOGGER = 2;
         public static final short EVENT = 3;
@@ -38,7 +45,7 @@ public final class DXRAMComponentOrder {
     /**
      * Shutdown order of components
      */
-    public final class Shutdown {
+    public static final class Shutdown {
         public static final short BOOT = Short.MIN_VALUE;
         public static final short TERMINAL = -14;
         public static final short SCRIPT = -13;
@@ -61,12 +68,5 @@ public final class DXRAMComponentOrder {
         private Shutdown() {
 
         }
-    }
-
-    /**
-     * Static class
-     */
-    private DXRAMComponentOrder() {
-
     }
 }

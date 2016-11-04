@@ -30,9 +30,9 @@ public class GetChunkIDForNameserviceEntryRequest extends AbstractRequest {
      * Creates an instance of GetChunkIDRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_id
-     *         the id
+     *     the id
      */
     public GetChunkIDForNameserviceEntryRequest(final short p_destination, final int p_id) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST);
@@ -51,17 +51,20 @@ public class GetChunkIDForNameserviceEntryRequest extends AbstractRequest {
         return m_id;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt(m_id);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_id = p_buffer.getInt();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES;
     }
 
 }

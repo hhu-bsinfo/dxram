@@ -28,13 +28,13 @@ public class BarrierReleaseMessage extends AbstractMessage {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *         the destination node id.
+     *     the destination node id.
      * @param p_barrierId
-     *         Id of the barrier that got released
+     *     Id of the barrier that got released
      * @param p_signedOnPeers
-     *         List of peers that signed on for the barrier
+     *     List of peers that signed on for the barrier
      * @param p_customData
-     *         Custom data (ordered by signed on list) of the peers
+     *     Custom data (ordered by signed on list) of the peers
      */
     public BarrierReleaseMessage(final short p_destination, final int p_barrierId, final short[] p_signedOnPeers, final long[] p_customData) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE);
@@ -73,7 +73,13 @@ public class BarrierReleaseMessage extends AbstractMessage {
         return m_customData;
     }
 
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES + Integer.BYTES + Short.BYTES * (m_signedOnPeers.length - 1) + Integer.BYTES + Long.BYTES * m_customData.length;
+    }
+
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt(m_barrierId);
         // drop the first index of the peer list, which is the number of signed on peers (obsolete here)
         p_buffer.putInt(m_signedOnPeers.length - 1);
@@ -86,7 +92,8 @@ public class BarrierReleaseMessage extends AbstractMessage {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_barrierId = p_buffer.getInt();
 
         m_signedOnPeers = new short[p_buffer.getInt()];
@@ -98,9 +105,5 @@ public class BarrierReleaseMessage extends AbstractMessage {
         for (int i = 0; i < m_customData.length; i++) {
             m_customData[i] = p_buffer.getLong();
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES + Integer.BYTES + Short.BYTES * (m_signedOnPeers.length - 1) + Integer.BYTES + Long.BYTES * m_customData.length;
     }
 }

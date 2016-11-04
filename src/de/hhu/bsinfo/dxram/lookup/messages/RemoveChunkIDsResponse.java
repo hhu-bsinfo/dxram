@@ -29,9 +29,9 @@ public class RemoveChunkIDsResponse extends AbstractResponse {
      * Creates an instance of RemoveResponse
      *
      * @param p_request
-     *         the corresponding RemoveRequest
+     *     the corresponding RemoveRequest
      * @param p_backupSuperpeers
-     *         the backup superpeers
+     *     the backup superpeers
      */
     public RemoveChunkIDsResponse(final RemoveChunkIDsRequest p_request, final short[] p_backupSuperpeers) {
         super(p_request, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_RESPONSE);
@@ -50,8 +50,22 @@ public class RemoveChunkIDsResponse extends AbstractResponse {
         return m_backupSuperpeers;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        int ret;
+
+        if (m_backupSuperpeers == null) {
+            ret = Byte.BYTES;
+        } else {
+            ret = Byte.BYTES + Integer.BYTES + Short.BYTES * m_backupSuperpeers.length;
+        }
+
+        return ret;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         if (m_backupSuperpeers == null) {
             p_buffer.put((byte) 0);
         } else {
@@ -62,24 +76,13 @@ public class RemoveChunkIDsResponse extends AbstractResponse {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         if (p_buffer.get() != 0) {
             m_backupSuperpeers = new short[p_buffer.getInt()];
             p_buffer.asShortBuffer().get(m_backupSuperpeers);
             p_buffer.position(p_buffer.position() + Short.BYTES * m_backupSuperpeers.length);
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        int ret;
-
-        if (m_backupSuperpeers == null) {
-            ret = Byte.BYTES;
-        } else {
-            ret = Byte.BYTES + Integer.BYTES + Short.BYTES * m_backupSuperpeers.length;
-        }
-
-        return ret;
     }
 
 }

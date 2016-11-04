@@ -30,11 +30,11 @@ public class ScriptContext {
      * Constructor
      *
      * @param p_scriptEngineContext
-     *         DXRAM script context to be exposed to the java script engine
+     *     DXRAM script context to be exposed to the java script engine
      * @param p_scriptEngine
-     *         The (java) script engine to use
+     *     The (java) script engine to use
      * @param p_name
-     *         Name of this context
+     *     Name of this context
      */
     ScriptContext(final ScriptDXRAMContext p_scriptEngineContext, final ScriptEngine p_scriptEngine, final String p_name) {
         m_scriptEngine = p_scriptEngine;
@@ -58,7 +58,7 @@ public class ScriptContext {
      * Load a script file into this context
      *
      * @param p_path
-     *         Path to the script file
+     *     Path to the script file
      * @return True if loading successful, false on error.
      */
     public boolean load(final String p_path) {
@@ -94,9 +94,9 @@ public class ScriptContext {
      * Bind an object to this context.
      *
      * @param p_key
-     *         Key for the binding
+     *     Key for the binding
      * @param p_val
-     *         Object to bind
+     *     Object to bind
      * @return True if sucessful, false on error
      */
     public boolean bind(final String p_key, final Object p_val) {
@@ -111,7 +111,7 @@ public class ScriptContext {
      * Evaluate the given string for this context
      *
      * @param p_text
-     *         Text to evaluate
+     *     Text to evaluate
      * @return True on success, false on error
      */
     public boolean eval(final String p_text) {
@@ -142,7 +142,7 @@ public class ScriptContext {
      * Check if a specific function exists in this context
      *
      * @param p_name
-     *         Name of the function to check
+     *     Name of the function to check
      * @return True if function exists, false otherwise
      */
     public boolean functionExists(final String p_name) {
@@ -151,7 +151,7 @@ public class ScriptContext {
 
         try {
             return (Boolean) m_scriptEngine.eval("typeof " + p_name + " === 'function' ? java.lang.Boolean.TRUE : java.lang.Boolean.FALSE");
-        } catch (final ScriptException e) {
+        } catch (final ScriptException ignored) {
             return false;
         }
     }
@@ -160,9 +160,9 @@ public class ScriptContext {
      * Call a function that is defined in this context
      *
      * @param p_name
-     *         Name of the function
+     *     Name of the function
      * @param p_args
-     *         Arguments for the function
+     *     Arguments for the function
      * @return Return value of the function (and also null on error but can be return value of function as welL)
      */
     public Object call(final String p_name, final Object... p_args) {
@@ -191,7 +191,7 @@ public class ScriptContext {
      * Set the default bindings for this context i.e. bind the dxram context to it.
      *
      * @param p_ctx
-     *         Java script context
+     *     Java script context
      */
     private void initContext(final javax.script.ScriptContext p_ctx) {
         m_scriptEngine.setContext(p_ctx);

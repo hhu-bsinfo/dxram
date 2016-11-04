@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author Marc Ewert, marc.ewert@hhu.de, 21.10.14
  */
-final class MessageDirectory {
+class MessageDirectory {
 
     // Attributes
     private Constructor<?>[][] m_constructors = new Constructor[0][0];
@@ -21,18 +21,18 @@ final class MessageDirectory {
     /**
      * MessageDirectory is not designated to be instantiable
      */
-    protected MessageDirectory() {
+    MessageDirectory() {
     }
 
     /**
      * Registers a Message Type for receiving
      *
      * @param p_type
-     *         the type of the Message
+     *     the type of the Message
      * @param p_subtype
-     *         the subtype of the Message
+     *     the subtype of the Message
      * @param p_class
-     *         Message class
+     *     Message class
      * @return True if successful, false if the specified type and subtype are already in use.
      */
     protected boolean register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
@@ -85,25 +85,48 @@ final class MessageDirectory {
     }
 
     /**
+     * Creates a Message instance for the type and subtype
+     *
+     * @param p_type
+     *     the type of the Message
+     * @param p_subtype
+     *     the subtype of the Message
+     * @return a new Message instance
+     */
+    protected AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
+        AbstractMessage ret;
+        Constructor<?> constructor;
+
+        constructor = getConstructor(p_type, p_subtype);
+
+        if (constructor == null) {
+            throw new NetworkRuntimeException("Could not create message instance: Message type (" + p_type + ':' + p_subtype + ") not registered");
+        }
+
+        try {
+            ret = (AbstractMessage) constructor.newInstance();
+        } catch (final Exception e) {
+            throw new NetworkRuntimeException("Could not create message instance", e);
+        }
+
+        return ret;
+    }
+
+    /**
      * Lookup, if a specific message type is already registered
      *
      * @param p_type
-     *         the type of the Message
+     *     the type of the Message
      * @param p_subtype
-     *         the subtype of the Message
+     *     the subtype of the Message
      * @return true if registered
      */
     private boolean contains(final byte p_type, final byte p_subtype) {
         boolean result;
         final Constructor<?>[][] constructors = m_constructors;
 
-        if (constructors.length <= p_type) {
-            result = false;
-        } else if (constructors[p_type] == null || constructors[p_type].length <= p_subtype) {
-            result = false;
-        } else {
-            result = constructors[p_type][p_subtype] != null;
-        }
+        result = constructors.length > p_type && !(constructors[p_type] == null || constructors[p_type].length <= p_subtype) &&
+            constructors[p_type][p_subtype] != null;
 
         return result;
     }
@@ -112,9 +135,9 @@ final class MessageDirectory {
      * Returns the constructor for a message class by its type and subtype
      *
      * @param p_type
-     *         the type of the Message
+     *     the type of the Message
      * @param p_subtype
-     *         the subtype of the Message
+     *     the subtype of the Message
      * @return message class constructor
      */
     private Constructor<?> getConstructor(final byte p_type, final byte p_subtype) {
@@ -125,33 +148,5 @@ final class MessageDirectory {
         }
 
         return result;
-    }
-
-    /**
-     * Creates a Message instance for the type and subtype
-     *
-     * @param p_type
-     *         the type of the Message
-     * @param p_subtype
-     *         the subtype of the Message
-     * @return a new Message instance
-     */
-    protected AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
-        AbstractMessage ret;
-        Constructor<?> constructor;
-
-        constructor = getConstructor(p_type, p_subtype);
-
-        if (constructor == null) {
-            throw new NetworkRuntimeException("Could not create message instance: Message type (" + p_type + ":" + p_subtype + ") not registered");
-        }
-
-        try {
-            ret = (AbstractMessage) constructor.newInstance();
-        } catch (final Exception e) {
-            throw new NetworkRuntimeException("Could not create message instance", e);
-        }
-
-        return ret;
     }
 }

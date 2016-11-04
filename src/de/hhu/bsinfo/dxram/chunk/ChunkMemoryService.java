@@ -37,22 +37,6 @@ public class ChunkMemoryService extends AbstractDXRAMService {
         super("chunkmem");
     }
 
-    @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
-    }
-
-    @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        return true;
-    }
-
-    @Override
-    protected boolean shutdownService() {
-        return true;
-    }
-
     /**
      * Read a single byte from a chunk. Use this if you need to access a very specific value
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
@@ -235,5 +219,21 @@ public class ChunkMemoryService extends AbstractDXRAMService {
         boolean ret = m_memoryManager.writeLong(p_chunkID, p_offset, p_value);
         m_memoryManager.unlockAccess();
         return ret;
+    }
+
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
+    }
+
+    @Override
+    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        return true;
+    }
+
+    @Override
+    protected boolean shutdownService() {
+        return true;
     }
 }

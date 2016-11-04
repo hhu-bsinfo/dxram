@@ -8,7 +8,6 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
@@ -25,9 +24,15 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 20.10.2016
  */
-class DXRAMGsonContext {
+final class DXRAMGsonContext {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMGsonContext.class.getSimpleName());
+
+    /**
+     * Hidden constructor
+     */
+    private DXRAMGsonContext() {
+    }
 
     static Gson createGsonInstance() {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation()
@@ -37,12 +42,12 @@ class DXRAMGsonContext {
     }
 
     /**
-     * Gson serializer and deserizlier for components
+     * Gson serializer and deserializer for components
      */
     private static class ComponentSerializer implements JsonDeserializer<AbstractDXRAMComponent>, JsonSerializer<AbstractDXRAMComponent> {
         @Override
         public AbstractDXRAMComponent deserialize(final JsonElement p_jsonElement, final Type p_type,
-            final JsonDeserializationContext p_jsonDeserializationContext) throws JsonParseException {
+            final JsonDeserializationContext p_jsonDeserializationContext) {
 
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
             String className = jsonObj.get("m_class").getAsString();
@@ -56,7 +61,7 @@ class DXRAMGsonContext {
             Class<?> clazz;
             try {
                 clazz = Class.forName(className);
-            } catch (final ClassNotFoundException e) {
+            } catch (final ClassNotFoundException ignore) {
                 LOGGER.fatal("Could not find component for class name '%s', check your config file", className);
                 return null;
             }
@@ -80,7 +85,7 @@ class DXRAMGsonContext {
             Class<?> clazz;
             try {
                 clazz = Class.forName(p_abstractDXRAMComponent.getClass().getName());
-            } catch (final ClassNotFoundException e) {
+            } catch (final ClassNotFoundException ignore) {
                 return null;
             }
 
@@ -94,7 +99,7 @@ class DXRAMGsonContext {
     private static class ServiceSerializer implements JsonDeserializer<AbstractDXRAMService>, JsonSerializer<AbstractDXRAMService> {
         @Override
         public AbstractDXRAMService deserialize(final JsonElement p_jsonElement, final Type p_type,
-            final JsonDeserializationContext p_jsonDeserializationContext) throws JsonParseException {
+            final JsonDeserializationContext p_jsonDeserializationContext) {
 
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
             String className = jsonObj.get("m_class").getAsString();
@@ -108,7 +113,7 @@ class DXRAMGsonContext {
             Class<?> clazz;
             try {
                 clazz = Class.forName(className);
-            } catch (final ClassNotFoundException e) {
+            } catch (final ClassNotFoundException ignore) {
                 LOGGER.fatal("Could not find service for class name '%s', check your config file", className);
                 return null;
             }
@@ -132,7 +137,7 @@ class DXRAMGsonContext {
             Class<?> clazz;
             try {
                 clazz = Class.forName(p_abstractDXRAMService.getClass().getName());
-            } catch (final ClassNotFoundException e) {
+            } catch (final ClassNotFoundException ignore) {
                 return null;
             }
 

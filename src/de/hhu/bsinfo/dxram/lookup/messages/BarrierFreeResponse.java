@@ -19,7 +19,7 @@ public class BarrierFreeResponse extends AbstractResponse {
      * Creates an instance of BarrierFreeRequest
      *
      * @param p_request
-     *         The request to respond to
+     *     The request to respond to
      */
     public BarrierFreeResponse(final BarrierFreeRequest p_request) {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_FREE_RESPONSE);

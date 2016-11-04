@@ -46,12 +46,30 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
     }
 
     /**
+     * Remove the name of a registered DataStructure from lookup.
+     *
+     * @return the number of entries in name service
+     */
+    public int getEntryCount() {
+        return m_nameservice.getEntryCount();
+    }
+
+    /**
+     * Get all available name mappings
+     *
+     * @return List of available name mappings
+     */
+    public ArrayList<Pair<String, Long>> getAllEntries() {
+        return m_nameservice.getAllEntries();
+    }
+
+    /**
      * Register a chunk id for a specific name.
      *
      * @param p_chunkId
-     *         Chunk id to register.
+     *     Chunk id to register.
      * @param p_name
-     *         Name to associate with the ID of the DataStructure.
+     *     Name to associate with the ID of the DataStructure.
      */
     public void register(final long p_chunkId, final String p_name) {
 
@@ -95,9 +113,9 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
      * Register a DataStructure for a specific name.
      *
      * @param p_dataStructure
-     *         DataStructure to register.
+     *     DataStructure to register.
      * @param p_name
-     *         Name to associate with the ID of the DataStructure.
+     *     Name to associate with the ID of the DataStructure.
      */
     public void register(final DataStructure p_dataStructure, final String p_name) {
         register(p_dataStructure.getID(), p_name);
@@ -107,35 +125,18 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
      * Get the chunk ID of the specific name from the service.
      *
      * @param p_name
-     *         Registered name to get the chunk ID for.
+     *     Registered name to get the chunk ID for.
      * @param p_timeoutMs
-     *         Timeout for trying to get the entry (if it does not exist, yet).
-     *         set this to -1 for infinite loop if you know for sure, that the entry has to exist
+     *     Timeout for trying to get the entry (if it does not exist, yet).
+     *     set this to -1 for infinite loop if you know for sure, that the entry has to exist
      * @return If the name was registered with a chunk ID before, returns the chunk ID, -1 otherwise.
      */
     public long getChunkID(final String p_name, final int p_timeoutMs) {
         return m_nameservice.getChunkID(p_name, p_timeoutMs);
     }
 
-    /**
-     * Remove the name of a registered DataStructure from lookup.
-     *
-     * @return the number of entries in name service
-     */
-    public int getEntryCount() {
-        return m_nameservice.getEntryCount();
-    }
-
-    /**
-     * Get all available name mappings
-     *
-     * @return List of available name mappings
-     */
-    public ArrayList<Pair<String, Long>> getAllEntries() {
-        return m_nameservice.getAllEntries();
-    }
-
-    @Override public void onIncomingMessage(final AbstractMessage p_message) {
+    @Override
+    public void onIncomingMessage(final AbstractMessage p_message) {
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.NAMESERVICE_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
@@ -149,13 +150,15 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
         }
     }
 
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
-    @Override protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    @Override
+    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         m_network.registerMessageType(DXRAMMessageTypes.NAMESERVICE_MESSAGES_TYPE, NameserviceMessages.SUBTYPE_REGISTER_MESSAGE, ForwardRegisterMessage.class);
 
         m_network.register(ForwardRegisterMessage.class, this);
@@ -163,7 +166,8 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
         return true;
     }
 
-    @Override protected boolean shutdownService() {
+    @Override
+    protected boolean shutdownService() {
         return true;
     }
 
@@ -171,7 +175,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
      * Process an incoming RegisterMessage
      *
      * @param p_message
-     *         Message to process
+     *     Message to process
      */
     private void incomingRegisterMessage(final ForwardRegisterMessage p_message) {
         // Outsource registering to another thread to avoid blocking a message handler

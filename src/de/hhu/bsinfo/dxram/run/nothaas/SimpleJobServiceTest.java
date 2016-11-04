@@ -25,7 +25,7 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.02.2016
  */
-public class SimpleJobServiceTest extends AbstractMain implements JobEventListener {
+public final class SimpleJobServiceTest extends AbstractMain implements JobEventListener {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(SimpleJobServiceTest.class.getSimpleName());
 
@@ -44,7 +44,7 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
     /**
      * Constructor
      */
-    public SimpleJobServiceTest() {
+    private SimpleJobServiceTest() {
         super("Testing the JobService and its remote job execution");
 
         m_dxram = new DXRAM();
@@ -52,6 +52,11 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
         m_jobService = m_dxram.getService(JobService.class);
         m_bootService = m_dxram.getService(BootService.class);
         m_jobService.registerJobType(JobTest.MS_TYPE_ID, JobTest.class);
+    }
+
+    @Override
+    public byte getJobEventBitMask() {
+        return JobEvents.MS_JOB_SCHEDULED_FOR_EXECUTION_EVENT_ID | JobEvents.MS_JOB_STARTED_EXECUTION_EVENT_ID | JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID;
     }
 
     /**
@@ -63,11 +68,6 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
     public static void main(final String[] p_args) {
         AbstractMain main = new SimpleJobServiceTest();
         main.run(p_args);
-    }
-
-    @Override
-    public byte getJobEventBitMask() {
-        return JobEvents.MS_JOB_SCHEDULED_FOR_EXECUTION_EVENT_ID | JobEvents.MS_JOB_STARTED_EXECUTION_EVENT_ID | JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID;
     }
 
     @Override
@@ -119,7 +119,7 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
             System.out.println("All jobs finished.");
         } else {
             while (true) {
-
+                // Wait forever
             }
         }
 
@@ -131,15 +131,8 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
      *
      * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.02.2016
      */
-    public static class JobTest extends AbstractJob {
-        public static final short MS_TYPE_ID = 1;
-
-        /**
-         * Constructor
-         */
-        public JobTest() {
-            super();
-        }
+    private static class JobTest extends AbstractJob {
+        static final short MS_TYPE_ID = 1;
 
         /**
          * Constructor
@@ -147,8 +140,15 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
          * @param p_parameterChunkIDs
          *     ChunkIDs to pass to the job.
          */
-        public JobTest(final long... p_parameterChunkIDs) {
+        JobTest(final long... p_parameterChunkIDs) {
             super(p_parameterChunkIDs);
+        }
+
+        /**
+         * Constructor
+         */
+        private JobTest() {
+            super();
         }
 
         @Override
@@ -161,7 +161,7 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
             try {
                 // abusing chunkID for time to wait
                 // #if LOGGER >= DEBUG
-                LOGGER.debug("Sleeping %d", p_chunkIDs[0]);
+                // LOGGER.debug("Sleeping %d", p_chunkIDs[0]);
                 // #endif /* LOGGER >= DEBUG */
 
                 Thread.sleep(p_chunkIDs[0]);

@@ -22,7 +22,7 @@ public class ReplaceBackupPeerResponse extends AbstractResponse {
      * Creates an instance of ReplaceBackupPeerResponse
      *
      * @param p_request
-     *         the corresponding ReplaceBackupPeerRequest
+     *     the corresponding ReplaceBackupPeerRequest
      */
     public ReplaceBackupPeerResponse(final ReplaceBackupPeerRequest p_request) {
         super(p_request, LookupMessages.SUBTYPE_REPLACE_BACKUP_PEER_RESPONSE);

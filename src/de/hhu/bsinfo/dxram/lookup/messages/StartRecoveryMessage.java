@@ -33,11 +33,11 @@ public class StartRecoveryMessage extends AbstractMessage {
      * Creates an instance of StartRecoveryMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_failedPeer
-     *         the failed peer
+     *     the failed peer
      * @param p_beginOfRange
-     *         the beginning of the range that has to be recovered
+     *     the beginning of the range that has to be recovered
      */
     public StartRecoveryMessage(final short p_destination, final short p_failedPeer, final int p_beginOfRange) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE);
@@ -68,19 +68,22 @@ public class StartRecoveryMessage extends AbstractMessage {
         return m_beginOfRange;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Short.BYTES + Long.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putShort(m_failedPeer);
         p_buffer.putLong(m_beginOfRange);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_failedPeer = p_buffer.getShort();
         m_beginOfRange = p_buffer.getLong();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Short.BYTES + Long.BYTES;
     }
 
 }

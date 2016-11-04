@@ -15,11 +15,11 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
  */
-public class SimpleLocalLockServiceTest extends AbstractMain {
+public final class SimpleLocalLockServiceTest extends AbstractMain {
 
-    public static final Argument ARG_CHUNK_SIZE = new Argument("chunkSize", "76", true, "Size of the chunks for allocation");
-    public static final Argument ARG_CHUNK_COUNT = new Argument("chunkCount", "10", true, "Number of chunks to allocate");
-    public static final Argument ARG_THREAD_COUNT = new Argument("threadCount", "2", true, "Number of threads to run");
+    private static final Argument ARG_CHUNK_SIZE = new Argument("chunkSize", "76", true, "Size of the chunks for allocation");
+    private static final Argument ARG_CHUNK_COUNT = new Argument("chunkCount", "10", true, "Number of chunks to allocate");
+    private static final Argument ARG_THREAD_COUNT = new Argument("threadCount", "2", true, "Number of threads to run");
 
     private DXRAM m_dxram;
     private ChunkService m_chunkService;
@@ -28,7 +28,7 @@ public class SimpleLocalLockServiceTest extends AbstractMain {
     /**
      * Constructor
      */
-    public SimpleLocalLockServiceTest() {
+    private SimpleLocalLockServiceTest() {
         super("Simple test to verify if the local lock service is working");
 
         m_dxram = new DXRAM();
@@ -41,20 +41,22 @@ public class SimpleLocalLockServiceTest extends AbstractMain {
      * Java main entry point.
      *
      * @param p_args
-     *         Main arguments.
+     *     Main arguments.
      */
     public static void main(final String[] p_args) {
         AbstractMain main = new SimpleLocalLockServiceTest();
         main.run(p_args);
     }
 
-    @Override protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
+    @Override
+    protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
         p_arguments.setArgument(ARG_CHUNK_SIZE);
         p_arguments.setArgument(ARG_CHUNK_COUNT);
         p_arguments.setArgument(ARG_THREAD_COUNT);
     }
 
-    @Override protected int main(final ArgumentList p_arguments) {
+    @Override
+    protected int main(final ArgumentList p_arguments) {
         final int size = p_arguments.getArgument(ARG_CHUNK_SIZE).getValue(Integer.class);
         final int chunkCount = p_arguments.getArgument(ARG_CHUNK_COUNT).getValue(Integer.class);
         final int threadCount = p_arguments.getArgument(ARG_THREAD_COUNT).getValue(Integer.class);
@@ -83,7 +85,7 @@ public class SimpleLocalLockServiceTest extends AbstractMain {
         for (Thread thread : threads) {
             try {
                 thread.join();
-            } catch (final InterruptedException e) {
+            } catch (final InterruptedException ignored) {
             }
         }
 
@@ -106,16 +108,17 @@ public class SimpleLocalLockServiceTest extends AbstractMain {
          * Constructor
          *
          * @param p_lockService
-         *         LockService to execute lock operations on.
+         *     LockService to execute lock operations on.
          * @param p_chunks
-         *         List of chunks to lock.
+         *     List of chunks to lock.
          */
         LockerThread(final AbstractLockService p_lockService, final Chunk[] p_chunks) {
             m_lockService = p_lockService;
             m_chunks = p_chunks;
         }
 
-        @Override public void run() {
+        @Override
+        public void run() {
             for (Chunk chunk : m_chunks) {
                 AbstractLockService.ErrorCode err = m_lockService.lock(true, 1000, chunk);
                 if (err != AbstractLockService.ErrorCode.SUCCESS) {
@@ -129,7 +132,7 @@ public class SimpleLocalLockServiceTest extends AbstractMain {
                 // wait a little before unlocking again
                 try {
                     Thread.sleep(waitMs);
-                } catch (final InterruptedException e) {
+                } catch (final InterruptedException ignored) {
                 }
 
                 err = m_lockService.unlock(true, chunk);

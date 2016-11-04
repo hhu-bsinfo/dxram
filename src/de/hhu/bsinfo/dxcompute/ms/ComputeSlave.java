@@ -153,7 +153,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      */
     private void stateSetup() {
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Setting up slave for compute group %d", m_computeGroupId);
+        // LOGGER.debug("Setting up slave for compute group %d", m_computeGroupId);
         // #endif /* LOGGER >= DEBUG */
 
         // bootstrap: get master node id from nameservice
@@ -197,7 +197,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
                 m_state = State.STATE_IDLE;
 
                 // #if LOGGER >= DEBUG
-                LOGGER.debug("Entering idle state");
+                // LOGGER.debug("Entering idle state");
                 // #endif /* LOGGER >= DEBUG */
             }
         } catch (final NetworkException e) {
@@ -237,7 +237,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
                 m_lastPingMs = System.currentTimeMillis();
 
                 // #if LOGGER == TRACE
-                LOGGER.trace("Pinging master 0x%X: online", m_masterNodeId);
+                // LOGGER.trace("Pinging master 0x%X: online", m_masterNodeId);
                 // #endif /* LOGGER == TRACE */
             }
 
@@ -270,7 +270,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
         m_handleSignalLock.unlock();
 
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Syncing with master 0x%X ...", m_masterNodeId);
+        // LOGGER.debug("Syncing with master 0x%X ...", m_masterNodeId);
         // #endif /* LOGGER >= DEBUG */
 
         // set idle state before sync to avoid race condition with master sending
@@ -281,11 +281,11 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
         m_lookup.barrierSignOn(m_masterExecutionBarrierId, result);
 
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Syncing done");
+        // LOGGER.debug("Syncing done");
         // #endif /* LOGGER >= DEBUG */
 
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Entering idle state");
+        // LOGGER.debug("Entering idle state");
         // #endif /* LOGGER >= DEBUG */
     }
 

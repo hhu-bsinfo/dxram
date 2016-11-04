@@ -29,11 +29,11 @@ public class MigrationRemoteMessage extends AbstractMessage {
      * Creates an instance of MigrationRemoteMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_cid
-     *         the ChunkID
+     *     the ChunkID
      * @param p_target
-     *         the target peer to get the chunk
+     *     the target peer to get the chunk
      */
     public MigrationRemoteMessage(final short p_destination, final long p_cid, final short p_target) {
         super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE);
@@ -61,23 +61,26 @@ public class MigrationRemoteMessage extends AbstractMessage {
         return m_target;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+
+        return Long.BYTES + Short.BYTES;
+    }
+
     // Network Data Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
 
         p_buffer.putLong(m_chunkID);
         p_buffer.putShort(m_target);
 
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
 
         m_chunkID = p_buffer.getLong();
         m_target = p_buffer.getShort();
 
-    }
-
-    @Override protected final int getPayloadLength() {
-
-        return Long.BYTES + Short.BYTES;
     }
 }

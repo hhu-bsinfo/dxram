@@ -20,7 +20,7 @@ public abstract class AbstractDXRAMService {
 
     // config values
     @Expose
-    private final String m_class = this.getClass().getName();
+    private final String m_class = getClass().getName();
     @Expose
     private final boolean m_enabled = true;
 
@@ -33,8 +33,8 @@ public abstract class AbstractDXRAMService {
      * @param p_shortName
      *     Short name of the service (used for terminal)
      */
-    public AbstractDXRAMService(final String p_shortName) {
-        LOGGER = LogManager.getFormatterLogger(this.getClass().getSimpleName());
+    protected AbstractDXRAMService(final String p_shortName) {
+        LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_shortName = p_shortName;
     }
 
@@ -53,7 +53,56 @@ public abstract class AbstractDXRAMService {
      * @return Name of this service.
      */
     String getServiceName() {
-        return this.getClass().getSimpleName();
+        return getClass().getSimpleName();
+    }
+
+    /**
+     * Check if this class is a service accessor i.e. breaking the rules of
+     * not knowing other services. Override this if this feature is used.
+     *
+     * @return True if accessor, false otherwise.
+     */
+    protected boolean isServiceAccessor() {
+        return false;
+    }
+
+    /**
+     * Check if this class is an engine accessor i.e. breaking the rules of
+     * not knowing the engine. Override this if this feature is used.
+     * Do not override this if you do not know what you are doing.
+     *
+     * @return True if accessor, false otherwise.
+     */
+    protected boolean isEngineAccessor() {
+        return false;
+    }
+
+    /**
+     * Get the proxy class to access other services.
+     *
+     * @return This returns a valid accessor only if the class is declared a service accessor.
+     */
+    protected DXRAMServiceAccessor getServiceAccessor() {
+        if (isServiceAccessor()) {
+            return m_parentEngine;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Get the engine within the service.
+     * If you don't know what you are doing, do not use this.
+     * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
+     *
+     * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
+     */
+    protected DXRAMEngine getParentEngine() {
+        if (isEngineAccessor()) {
+            return m_parentEngine;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -145,53 +194,4 @@ public abstract class AbstractDXRAMService {
      * @return True if shutdown was successful, false otherwise.
      */
     protected abstract boolean shutdownService();
-
-    /**
-     * Check if this class is a service accessor i.e. breaking the rules of
-     * not knowing other services. Override this if this feature is used.
-     *
-     * @return True if accessor, false otherwise.
-     */
-    protected boolean isServiceAccessor() {
-        return false;
-    }
-
-    /**
-     * Check if this class is an engine accessor i.e. breaking the rules of
-     * not knowing the engine. Override this if this feature is used.
-     * Do not override this if you do not know what you are doing.
-     *
-     * @return True if accessor, false otherwise.
-     */
-    protected boolean isEngineAccessor() {
-        return false;
-    }
-
-    /**
-     * Get the proxy class to access other services.
-     *
-     * @return This returns a valid accessor only if the class is declared a service accessor.
-     */
-    protected DXRAMServiceAccessor getServiceAccessor() {
-        if (isServiceAccessor()) {
-            return m_parentEngine;
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Get the engine within the service.
-     * If you don't know what you are doing, do not use this.
-     * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
-     *
-     * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
-     */
-    protected DXRAMEngine getParentEngine() {
-        if (isEngineAccessor()) {
-            return m_parentEngine;
-        } else {
-            return null;
-        }
-    }
 }

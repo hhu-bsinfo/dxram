@@ -9,7 +9,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 14.10.2016
  */
-public interface ScriptDXRAMContext {
+interface ScriptDXRAMContext {
 
     /**
      * List all available services (their short names)
@@ -20,7 +20,7 @@ public interface ScriptDXRAMContext {
      * Get a DXRAM service by its short name.
      *
      * @param p_serviceName
-     *         DXRAM service short name
+     *     DXRAM service short name
      * @return DXRAM service or null if the service does not exist
      */
     AbstractDXRAMService service(String p_serviceName);
@@ -29,7 +29,7 @@ public interface ScriptDXRAMContext {
      * Convert a short value to an unsigned hex string.
      *
      * @param p_val
-     *         Short value to convert
+     *     Short value to convert
      * @return Unsigned hex string (e.g. 0x1234)
      */
     String shortToHexStr(short p_val);
@@ -38,7 +38,7 @@ public interface ScriptDXRAMContext {
      * Convert an int value to an unsigned int hex string.
      *
      * @param p_val
-     *         Value to convert
+     *     Value to convert
      * @return Unsigned hex string (e.g. 0x12345678)
      */
     String intToHexStr(int p_val);
@@ -47,7 +47,7 @@ public interface ScriptDXRAMContext {
      * Convert a long value to an unsigned long hex string
      *
      * @param p_val
-     *         Value to convert
+     *     Value to convert
      * @return Unsigned hex string (e.g. 0x1234567812345678)
      */
     String longToHexStr(long p_val);
@@ -56,7 +56,7 @@ public interface ScriptDXRAMContext {
      * Convert a long string to a long value.
      *
      * @param p_str
-     *         String to convert (e.g. 0x1234)
+     *     String to convert (e.g. 0x1234)
      * @return Long value of the long string
      * @note Java script does not support 64 bit values (max is 56 bit). Use strings instead and use this method to convert them to long objects
      */
@@ -66,7 +66,7 @@ public interface ScriptDXRAMContext {
      * Convert a node role string to a node role object
      *
      * @param p_str
-     *         String node role representation
+     *     String node role representation
      * @return NodeRole object
      */
     NodeRole nodeRole(String p_str);
@@ -75,7 +75,7 @@ public interface ScriptDXRAMContext {
      * Sleep for a specified time in ms.
      *
      * @param p_timeMs
-     *         Number of ms to sleep
+     *     Number of ms to sleep
      */
     void sleep(int p_timeMs);
 
@@ -83,9 +83,9 @@ public interface ScriptDXRAMContext {
      * Create a cid of a separate nid and lid.
      *
      * @param p_nid
-     *         Nid
+     *     Nid
      * @param p_lid
-     *         Lid
+     *     Lid
      * @return Cid
      */
     long cid(short p_nid, long p_lid);
@@ -94,7 +94,7 @@ public interface ScriptDXRAMContext {
      * Get the nid part of the cid.
      *
      * @param p_cid
-     *         Cid
+     *     Cid
      * @return Nid
      */
     short nidOfCid(long p_cid);
@@ -103,7 +103,7 @@ public interface ScriptDXRAMContext {
      * Get the lid part of the cid
      *
      * @param p_cid
-     *         Cid
+     *     Cid
      * @return Lid
      */
     long lidOfCid(long p_cid);
@@ -113,7 +113,7 @@ public interface ScriptDXRAMContext {
      * available in the dxram package.
      *
      * @param p_className
-     *         Fully qualified class name with package path
+     *     Fully qualified class name with package path
      * @return New data structure instance
      */
     DataStructure newDataStructure(String p_className);
@@ -122,7 +122,7 @@ public interface ScriptDXRAMContext {
      * Read the contents of a (text) file.
      *
      * @param p_path
-     *         Path of the file to read.
+     *     Path of the file to read.
      * @return String containing the text of the file or null on error.
      */
     String readFile(String p_path);

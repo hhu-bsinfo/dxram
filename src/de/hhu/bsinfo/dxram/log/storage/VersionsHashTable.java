@@ -24,7 +24,7 @@ public class VersionsHashTable {
      * Creates an instance of VersionsHashTable
      *
      * @param p_initialElementCapacity
-     *         the initial capacity of VersionsHashTable
+     *     the initial capacity of VersionsHashTable
      */
     public VersionsHashTable(final int p_initialElementCapacity) {
         super();
@@ -35,14 +35,29 @@ public class VersionsHashTable {
             m_elementCapacity = 100;
         }
 
-        if (m_elementCapacity == 0) {
-            m_table = new int[4];
-        } else {
-            m_table = new int[m_elementCapacity * 4];
-        }
+        m_table = new int[m_elementCapacity * 4];
     }
 
     // Getter
+
+    /**
+     * Returns all entries
+     *
+     * @return the array
+     */
+    protected final int[] getTable() {
+        return m_table;
+    }
+
+    /**
+     * Clears VersionsHashTable
+     */
+    public final void clear() {
+        Arrays.fill(m_table, 0);
+        m_count = 0;
+    }
+
+    // Methods
 
     /**
      * Returns the number of keys in VersionsHashTable
@@ -54,29 +69,10 @@ public class VersionsHashTable {
     }
 
     /**
-     * Returns all entries
-     *
-     * @return the array
-     */
-    protected final int[] getTable() {
-        return m_table;
-    }
-
-    // Methods
-
-    /**
-     * Clears VersionsHashTable
-     */
-    public final void clear() {
-        Arrays.fill(m_table, 0);
-        m_count = 0;
-    }
-
-    /**
      * Returns the value to which the specified key is mapped in VersionsHashTable
      *
      * @param p_key
-     *         the searched key (is incremented before insertion to avoid 0)
+     *     the searched key (is incremented before insertion to avoid 0)
      * @return the value to which the key is mapped in VersionsHashTable
      */
     protected final Version get(final long p_key) {
@@ -103,11 +99,11 @@ public class VersionsHashTable {
      * Maps the given key to the given value in VersionsHashTable
      *
      * @param p_key
-     *         the key (is incremented before insertion to avoid 0)
+     *     the key (is incremented before insertion to avoid 0)
      * @param p_epoch
-     *         the epoch
+     *     the epoch
      * @param p_version
-     *         the version
+     *     the version
      */
     protected void put(final long p_key, final int p_epoch, final int p_version) {
         int index;
@@ -141,7 +137,7 @@ public class VersionsHashTable {
      * Gets the key at given index
      *
      * @param p_index
-     *         the index
+     *     the index
      * @return the key
      */
     private long getKey(final int p_index) {
@@ -155,7 +151,7 @@ public class VersionsHashTable {
      * Gets the epoch at given index
      *
      * @param p_index
-     *         the index
+     *     the index
      * @return the epoch
      */
     private int getEpoch(final int p_index) {
@@ -166,7 +162,7 @@ public class VersionsHashTable {
      * Gets the version at given index
      *
      * @param p_index
-     *         the index
+     *     the index
      * @return the version
      */
     private int getVersion(final int p_index) {
@@ -177,13 +173,13 @@ public class VersionsHashTable {
      * Sets the key-value tuple at given index
      *
      * @param p_index
-     *         the index
+     *     the index
      * @param p_key
-     *         the key
+     *     the key
      * @param p_epoch
-     *         the epoch
+     *     the epoch
      * @param p_version
-     *         the version
+     *     the version
      */
     private void set(final int p_index, final long p_key, final int p_epoch, final int p_version) {
         int index;

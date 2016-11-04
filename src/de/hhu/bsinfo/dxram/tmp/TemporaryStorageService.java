@@ -34,11 +34,20 @@ public class TemporaryStorageService extends AbstractDXRAMService {
     }
 
     /**
+     * Get the status of the superpeer storage.
+     *
+     * @return Status of the superpeer storage.
+     */
+    public SuperpeerStorage.Status getStatus() {
+        return m_lookup.superpeerStorageGetStatus();
+    }
+
+    /**
      * Create a unique storage id using the nameservice string converter. This limits the string
      * length to 5 digits.
      *
      * @param p_name
-     *         Name to convert to a storage id.
+     *     Name to convert to a storage id.
      * @return Storage id.
      */
     public int generateStorageId(final String p_name) {
@@ -49,9 +58,9 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      * Create a block of memory in the superpeer storage.
      *
      * @param p_id
-     *         Storage id to use to identify the block.
+     *     Storage id to use to identify the block.
      * @param p_size
-     *         Size of the block to allocate
+     *     Size of the block to allocate
      * @return True if successful, false on failure (no space, element count exceeded or id used).
      */
     public boolean create(final int p_id, final int p_size) {
@@ -62,7 +71,7 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      * Create a block of memory in the superpeer storage.
      *
      * @param p_dataStructure
-     *         Data structure with the storage id assigned to allocate memory for.
+     *     Data structure with the storage id assigned to allocate memory for.
      * @return True if successful, false on failure (no space, element count exceeded or id used).
      */
     public boolean create(final DataStructure p_dataStructure) {
@@ -73,7 +82,7 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      * Put data into an allocated block of memory in the superpeer storage.
      *
      * @param p_dataStructure
-     *         Data structure to put with the storage id assigned.
+     *     Data structure to put with the storage id assigned.
      * @return True if successful, false otherwise.
      */
     public boolean put(final DataStructure p_dataStructure) {
@@ -84,7 +93,7 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      * Get data from the superpeer storage.
      *
      * @param p_id
-     *         Id of an allocated block to get the data from.
+     *     Id of an allocated block to get the data from.
      * @return Chunk with the data other null on error.
      */
     public Chunk get(final int p_id) {
@@ -95,7 +104,7 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      * Get data from the superpeer storage.
      *
      * @param p_dataStructure
-     *         Data structure with the storage id assigned to read the data into.
+     *     Data structure with the storage id assigned to read the data into.
      * @return True on success, false on failure.
      */
     public boolean get(final DataStructure p_dataStructure) {
@@ -106,7 +115,7 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      * Remove an allocated block from the superpeer storage.
      *
      * @param p_id
-     *         Storage id identifying the block to remove.
+     *     Storage id identifying the block to remove.
      * @return True if successful, false otherwise.
      */
     public boolean remove(final int p_id) {
@@ -117,31 +126,25 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      * Remove an allocated block from the superpeer storage.
      *
      * @param p_dataStructure
-     *         Data structure with the storage id assigned to remove.
+     *     Data structure with the storage id assigned to remove.
      * @return True if successful, false otherwise.
      */
     public boolean remove(final DataStructure p_dataStructure) {
         return m_lookup.superpeerStorageRemove(p_dataStructure);
     }
 
-    /**
-     * Get the status of the superpeer storage.
-     *
-     * @return Status of the superpeer storage.
-     */
-    public SuperpeerStorage.Status getStatus() {
-        return m_lookup.superpeerStorageGetStatus();
-    }
-
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 
-    @Override protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    @Override
+    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         return true;
     }
 
-    @Override protected boolean shutdownService() {
+    @Override
+    protected boolean shutdownService() {
         return true;
     }
 }

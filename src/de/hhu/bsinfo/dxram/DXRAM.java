@@ -154,36 +154,6 @@ public class DXRAM {
     }
 
     /**
-     * Print some information after init about our current node.
-     */
-    private void printNodeInfo() {
-        String str = ">>> DXRAM Node <<<\n";
-        String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
-        if (buildDate != null) {
-            str += "BuildDate: " + buildDate + "\n";
-        }
-        String buildUser = ManifestHelper.getProperty(getClass(), "BuildUser");
-        if (buildUser != null) {
-            str += "BuildUser: " + buildUser + "\n";
-        }
-
-        str += "Cwd: " + System.getProperty("user.dir") + "\n";
-
-        BootService bootService = m_engine.getService(BootService.class);
-
-        if (bootService != null) {
-            short nodeId = bootService.getNodeID();
-            str += "NodeID: " + NodeID.toHexString(nodeId) + "\n";
-            str += "Role: " + bootService.getNodeRole(nodeId) + "\n";
-
-            InetSocketAddress address = bootService.getNodeAddress(nodeId);
-            str += "Address: " + address;
-
-            System.out.println(str);
-        }
-    }
-
-    /**
      * Register all default DXRAM components. If you want to register further components,
      * override this method but make sure to call it using super
      *
@@ -237,15 +207,6 @@ public class DXRAM {
 
     /**
      * Stub method for any class extending this class.
-     * Override this to run some tasks like initializing variables before
-     * DXRAM has booted.
-     */
-    protected void preInit() {
-        // stub
-    }
-
-    /**
-     * Stub method for any class extending this class.
      * Override this to run some tasks like initializing variables after
      * DXRAM has booted.
      */
@@ -263,10 +224,49 @@ public class DXRAM {
 
     /**
      * Stub method for any class extending this class.
+     * Override this to run some tasks like initializing variables before
+     * DXRAM has booted.
+     */
+    private void preInit() {
+        // stub
+    }
+
+    /**
+     * Stub method for any class extending this class.
      * Override this to run cleanup after DXRAM shuts down.
      */
-    protected void postShutdown() {
+    private void postShutdown() {
         // stub
+    }
+
+    /**
+     * Print some information after init about our current node.
+     */
+    private void printNodeInfo() {
+        String str = ">>> DXRAM Node <<<\n";
+        String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
+        if (buildDate != null) {
+            str += "BuildDate: " + buildDate + '\n';
+        }
+        String buildUser = ManifestHelper.getProperty(getClass(), "BuildUser");
+        if (buildUser != null) {
+            str += "BuildUser: " + buildUser + '\n';
+        }
+
+        str += "Cwd: " + System.getProperty("user.dir") + '\n';
+
+        BootService bootService = m_engine.getService(BootService.class);
+
+        if (bootService != null) {
+            short nodeId = bootService.getNodeID();
+            str += "NodeID: " + NodeID.toHexString(nodeId) + '\n';
+            str += "Role: " + bootService.getNodeRole(nodeId) + '\n';
+
+            InetSocketAddress address = bootService.getNodeAddress(nodeId);
+            str += "Address: " + address;
+
+            System.out.println(str);
+        }
     }
 
     /**

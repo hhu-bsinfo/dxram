@@ -26,9 +26,9 @@ public class BarrierGetStatusRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *         the destination node id.
+     *     the destination node id.
      * @param p_barrierId
-     *         Id of the barrier to get the status of
+     *     Id of the barrier to get the status of
      */
     public BarrierGetStatusRequest(final short p_destination, final int p_barrierId) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_STATUS_REQUEST);
@@ -45,15 +45,18 @@ public class BarrierGetStatusRequest extends AbstractRequest {
         return m_barrierId;
     }
 
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES;
+    }
+
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt(m_barrierId);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_barrierId = p_buffer.getInt();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES;
     }
 }

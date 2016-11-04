@@ -74,25 +74,6 @@ public final class ChunkMessagesMetadataUtils {
     }
 
     /**
-     * Extract the number of items sent from the provided status code.
-     *
-     * @param p_statusCode
-     *     Status code from a message (see class header description for structure).
-     * @return 0-32 items sent or -1 if the status code does not contain the number of items anymore (> 32).
-     */
-    private static int getNumberOfItemsSent(final byte p_statusCode) {
-        int size = 0;
-
-        if ((p_statusCode & (1 << BIT_OFFSET_FLAG_LENGTH_FIELD)) > 0) {
-            size = -1;
-        } else {
-            size = (p_statusCode >> BIT_OFFSET_LENGTH_FIELD) & BIT_MASK_LENGTH_FIELD;
-        }
-
-        return size;
-    }
-
-    /**
      * Get the size of the additional length field in the message payload from the status code.
      *
      * @param p_statusCode
@@ -102,8 +83,8 @@ public final class ChunkMessagesMetadataUtils {
     public static int getSizeOfAdditionalLengthField(final byte p_statusCode) {
         int size = 0;
 
-        if ((p_statusCode & (1 << BIT_OFFSET_FLAG_LENGTH_FIELD)) > 0) {
-            size = ((p_statusCode >> BIT_OFFSET_LENGTH_FIELD) & BIT_MASK_LENGTH_FIELD) / 8;
+        if ((p_statusCode & 1 << BIT_OFFSET_FLAG_LENGTH_FIELD) > 0) {
+            size = (p_statusCode >> BIT_OFFSET_LENGTH_FIELD & BIT_MASK_LENGTH_FIELD) / 8;
             // 0 counts as 1 byte length field
             size++;
         }
@@ -137,18 +118,18 @@ public final class ChunkMessagesMetadataUtils {
                 break;
             case 3:
                 if (Endianness.getEndianness() > 0) {
-                    p_buffer.putShort((short) ((p_numItems >> 8) & 0xFFFF));
+                    p_buffer.putShort((short) (p_numItems >> 8 & 0xFFFF));
                     p_buffer.put((byte) (p_numItems & 0xFF));
                 } else {
                     p_buffer.put((byte) (p_numItems & 0xFF));
-                    p_buffer.putShort((short) ((p_numItems >> 8) & 0xFFFF));
+                    p_buffer.putShort((short) (p_numItems >> 8 & 0xFFFF));
                 }
                 break;
             case 4:
                 p_buffer.putInt(p_numItems);
                 break;
             default:
-                assert 1 == 2;
+                assert false;
                 break;
         }
     }
@@ -180,16 +161,16 @@ public final class ChunkMessagesMetadataUtils {
                 break;
             case 3:
                 if (Endianness.getEndianness() > 0) {
-                    numChunks = ((p_buffer.getShort() & 0xFFFF) << 8) | (p_buffer.get() & 0xFF);
+                    numChunks = (p_buffer.getShort() & 0xFFFF) << 8 | p_buffer.get() & 0xFF;
                 } else {
-                    numChunks = ((p_buffer.get() & 0xFF) << 16) | p_buffer.getShort();
+                    numChunks = (p_buffer.get() & 0xFF) << 16 | p_buffer.getShort();
                 }
                 break;
             case 4:
                 numChunks = p_buffer.getInt();
                 break;
             default:
-                assert 1 == 2;
+                assert false;
                 break;
         }
 
@@ -248,7 +229,7 @@ public final class ChunkMessagesMetadataUtils {
      * @return True if lock acquire flag is set, false otherwise.
      */
     public static boolean isLockAcquireFlagSet(final byte p_statusCode) {
-        return (p_statusCode & (1 << BIT_OFFSET_FLAG_LOCK_ACQUIRE)) > 0;
+        return (p_statusCode & 1 << BIT_OFFSET_FLAG_LOCK_ACQUIRE) > 0;
     }
 
     /**
@@ -259,7 +240,7 @@ public final class ChunkMessagesMetadataUtils {
      * @return True if read lock flag is set, false if either write lock set or lock acquire cleared.
      */
     public static boolean isReadLockFlagSet(final byte p_statusCode) {
-        return ((p_statusCode & (1 << BIT_OFFSET_FLAG_LOCK_ACQUIRE)) > 0) && ((p_statusCode & (1 << BIT_OFFSET_FLAG_LOCK_TYPE)) == 0);
+        return (p_statusCode & 1 << BIT_OFFSET_FLAG_LOCK_ACQUIRE) > 0 && (p_statusCode & 1 << BIT_OFFSET_FLAG_LOCK_TYPE) == 0;
     }
 
     /**
@@ -270,7 +251,7 @@ public final class ChunkMessagesMetadataUtils {
      * @return True if write lock flag is set, false if either read lock set or lock acquire cleared.
      */
     public static boolean isWriteLockFlagSet(final byte p_statusCode) {
-        return ((p_statusCode & (1 << BIT_OFFSET_FLAG_LOCK_ACQUIRE)) > 0) && ((p_statusCode & (1 << BIT_OFFSET_FLAG_LOCK_TYPE)) > 0);
+        return (p_statusCode & 1 << BIT_OFFSET_FLAG_LOCK_ACQUIRE) > 0 && (p_statusCode & 1 << BIT_OFFSET_FLAG_LOCK_TYPE) > 0;
     }
 
     /**
@@ -282,5 +263,24 @@ public final class ChunkMessagesMetadataUtils {
      */
     public static byte clearLockFlag(final byte p_statusCode) {
         return (byte) (p_statusCode & ~(BIT_MASK_LOCK_AREA << BIT_OFFSET_FLAG_LOCK_ACQUIRE));
+    }
+
+    /**
+     * Extract the number of items sent from the provided status code.
+     *
+     * @param p_statusCode
+     *     Status code from a message (see class header description for structure).
+     * @return 0-32 items sent or -1 if the status code does not contain the number of items anymore (> 32).
+     */
+    private static int getNumberOfItemsSent(final byte p_statusCode) {
+        int size;
+
+        if ((p_statusCode & 1 << BIT_OFFSET_FLAG_LENGTH_FIELD) > 0) {
+            size = -1;
+        } else {
+            size = p_statusCode >> BIT_OFFSET_LENGTH_FIELD & BIT_MASK_LENGTH_FIELD;
+        }
+
+        return size;
     }
 }

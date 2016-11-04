@@ -92,6 +92,20 @@ public class PutRequest extends AbstractRequest {
         }
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+
+        size += m_dataStructures.length * Long.BYTES;
+        size += m_dataStructures.length * Integer.BYTES;
+
+        for (DataStructure dataStructure : m_dataStructures) {
+            size += dataStructure.sizeofObject();
+        }
+
+        return size;
+    }
+
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
@@ -127,20 +141,6 @@ public class PutRequest extends AbstractRequest {
             importer.importObject(m_dataStructures[i]);
             p_buffer.order(ByteOrder.BIG_ENDIAN);
         }
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
-
-        size += m_dataStructures.length * Long.BYTES;
-        size += m_dataStructures.length * Integer.BYTES;
-
-        for (DataStructure dataStructure : m_dataStructures) {
-            size += dataStructure.sizeofObject();
-        }
-
-        return size;
     }
 
 }

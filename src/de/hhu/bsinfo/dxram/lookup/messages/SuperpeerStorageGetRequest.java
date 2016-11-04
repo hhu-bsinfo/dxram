@@ -32,9 +32,9 @@ public class SuperpeerStorageGetRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *         the destination node id.
+     *     the destination node id.
      * @param p_dataStructure
-     *         Data structure with the ID of the chunk to get.
+     *     Data structure with the ID of the chunk to get.
      */
     public SuperpeerStorageGetRequest(final short p_destination, final DataStructure p_dataStructure) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST);
@@ -62,15 +62,18 @@ public class SuperpeerStorageGetRequest extends AbstractRequest {
         return m_dataStructure;
     }
 
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES;
+    }
+
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt((int) m_dataStructure.getID());
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_storageID = p_buffer.getInt();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES;
     }
 }

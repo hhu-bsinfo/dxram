@@ -10,14 +10,14 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.02.2016
  */
-public class SimpleDXRAMTest extends AbstractMain {
+public final class SimpleDXRAMTest extends AbstractMain {
 
     private DXRAM m_dxram;
 
     /**
      * Constructor
      */
-    public SimpleDXRAMTest() {
+    private SimpleDXRAMTest() {
         super("Simple test to verify if DXRAM starts and shuts down properly");
 
         m_dxram = new DXRAM();
@@ -28,18 +28,20 @@ public class SimpleDXRAMTest extends AbstractMain {
      * Java main entry point.
      *
      * @param p_args
-     *         Main arguments.
+     *     Main arguments.
      */
     public static void main(final String[] p_args) {
         AbstractMain main = new SimpleDXRAMTest();
         main.run(p_args);
     }
 
-    @Override protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
+    @Override
+    protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
 
     }
 
-    @Override protected int main(final ArgumentList p_arguments) {
+    @Override
+    protected int main(final ArgumentList p_arguments) {
         return 0;
     }
 

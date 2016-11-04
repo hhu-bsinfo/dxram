@@ -25,9 +25,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     private DXRAMServiceManager m_serviceManager;
     private DXRAMContextHandler m_contextHandler;
 
-    private boolean m_isInitilized;
-
-    private DXRAMJNIManager m_jniManager;
+    private boolean m_isInitialized;
 
     private Map<String, String> m_servicesShortName = new HashMap<>();
 
@@ -37,6 +35,20 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     public DXRAMEngine() {
         m_componentManager = new DXRAMComponentManager();
         m_serviceManager = new DXRAMServiceManager();
+    }
+
+    @Override
+    public List<String> getServiceShortNames() {
+        return new ArrayList<>(m_servicesShortName.keySet());
+    }
+
+    /**
+     * Get the settings instance of the engine.
+     *
+     * @return EngineSettings instance or null if engine is not initialized.
+     */
+    DXRAMContext.EngineSettings getSettings() {
+        return m_contextHandler.getContext().getEngineSettings();
     }
 
     /**
@@ -63,7 +75,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
         T service = null;
 
-        if (m_isInitilized) {
+        if (m_isInitialized) {
             AbstractDXRAMService tmpService = m_contextHandler.getContext().getServices().get(p_class.getSimpleName());
             if (tmpService == null) {
                 // check for any kind of instance of the specified class
@@ -95,16 +107,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
     @Override
     public AbstractDXRAMService getService(final String p_shortName) {
-        if (m_isInitilized) {
+        if (m_isInitialized) {
             return m_contextHandler.getContext().getServices().get(m_servicesShortName.get(p_shortName));
         }
 
         return null;
-    }
-
-    @Override
-    public List<String> getServiceShortNames() {
-        return new ArrayList<>(m_servicesShortName.keySet());
     }
 
     @Override
@@ -140,15 +147,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     }
 
     /**
-     * Get the settings instance of the engine.
-     *
-     * @return EngineSettings instance or null if engine is not initialized.
-     */
-    DXRAMContext.EngineSettings getSettings() {
-        return m_contextHandler.getContext().getEngineSettings();
-    }
-
-    /**
      * Initialize DXRAM without configuration. This creates a default configuration
      * and stores it in the default configuration path
      *
@@ -167,7 +165,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      * @return True if initialization successful, false on error or if a new configuration was generated
      */
     public boolean init(final String p_configurationFile) {
-        assert !m_isInitilized;
+        assert !m_isInitialized;
 
         final List<AbstractDXRAMComponent> list;
         final Comparator<AbstractDXRAMComponent> comp;
@@ -189,15 +187,15 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());
 
         // check list for null objects -> invalid component in list
-        for (AbstractDXRAMComponent c : list) {
-            if (c == null) {
+        for (AbstractDXRAMComponent component : list) {
+            if (component == null) {
                 LOGGER.fatal("Found null object in component list, most likely due to invalid configuration entry");
                 return false;
             }
         }
 
         // sort list by initialization priority
-        comp = (p_o1, p_o2) -> (new Integer(p_o1.getPriorityInit())).compareTo(p_o2.getPriorityInit());
+        comp = (p_o1, p_o2) -> new Integer(p_o1.getPriorityInit()).compareTo(p_o2.getPriorityInit());
         Collections.sort(list, comp);
 
         // #if LOGGER >= INFO
@@ -236,7 +234,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         //
         LOGGER.info("Initializing engine done");
         // #endif /* LOGGER >= INFO */
-        m_isInitilized = true;
+        m_isInitialized = true;
 
         return true;
     }
@@ -247,7 +245,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      * @return True if successful, false otherwise.
      */
     public boolean shutdown() {
-        assert m_isInitilized;
+        assert m_isInitialized;
 
         final List<AbstractDXRAMComponent> list;
         final Comparator<AbstractDXRAMComponent> comp;
@@ -272,7 +270,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());
 
-        comp = (p_o1, p_o2) -> (new Integer(p_o1.getPriorityShutdown())).compareTo(p_o2.getPriorityShutdown());
+        comp = (p_o1, p_o2) -> new Integer(p_o1.getPriorityShutdown()).compareTo(p_o2.getPriorityShutdown());
 
         Collections.sort(list, comp);
 
@@ -291,7 +289,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         m_contextHandler = null;
 
-        m_isInitilized = false;
+        m_isInitialized = false;
 
         return true;
     }
@@ -316,7 +314,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         }
 
         // check if a config needs to be created
-        if (config.isEmpty() || !(new File(config)).exists()) {
+        if (config.isEmpty() || !new File(config).exists()) {
             m_contextHandler.createDefaultConfiguration(config);
             return false;
         }
@@ -335,7 +333,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      * Setup JNI related stuff.
      */
     private void setupJNI() {
-        m_jniManager = new DXRAMJNIManager();
-        m_jniManager.setup(m_contextHandler.getContext().getEngineSettings());
+        DXRAMJNIManager.setup(m_contextHandler.getContext().getEngineSettings());
     }
 }

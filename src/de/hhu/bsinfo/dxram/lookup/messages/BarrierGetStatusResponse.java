@@ -26,9 +26,9 @@ public class BarrierGetStatusResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *         The request for the response
+     *     The request for the response
      * @param p_barrierStatus
-     *         Status of the barrier
+     *     Status of the barrier
      */
     public BarrierGetStatusResponse(final BarrierGetStatusRequest p_request, final short[] p_barrierStatus) {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_STATUS_RESPONSE);
@@ -56,7 +56,13 @@ public class BarrierGetStatusResponse extends AbstractResponse {
         return m_barrierStatus;
     }
 
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES + Integer.BYTES + m_barrierStatus.length * Short.BYTES;
+    }
+
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt(m_barrierId);
         p_buffer.putInt(m_barrierStatus.length);
         for (short barrierStatus : m_barrierStatus) {
@@ -64,15 +70,12 @@ public class BarrierGetStatusResponse extends AbstractResponse {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_barrierId = p_buffer.getInt();
         m_barrierStatus = new short[p_buffer.getInt()];
         for (int i = 0; i < m_barrierStatus.length; i++) {
             m_barrierStatus[i] = p_buffer.getShort();
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES + Integer.BYTES + m_barrierStatus.length * Short.BYTES;
     }
 }

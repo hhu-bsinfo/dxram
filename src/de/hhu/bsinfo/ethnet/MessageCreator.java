@@ -16,7 +16,7 @@ class MessageCreator extends Thread {
     private static final long MAX_PENDING_BYTES = Integer.MAX_VALUE;
 
     // Attributes
-    private boolean m_shutdown;
+    private volatile boolean m_shutdown;
 
     private Object[] m_buffer;
     private int m_size;
@@ -31,7 +31,7 @@ class MessageCreator extends Thread {
      * Creates an instance of IncomingBufferStorageAndMessageCreator
      *
      * @param p_incomingBufferLimitPerConnection
-     *         the maximal number of pending incoming buffers
+     *     the maximal number of pending incoming buffers
      */
     MessageCreator(final int p_incomingBufferLimitPerConnection) {
         m_size = p_incomingBufferLimitPerConnection * ConnectionManager.MAX_CONNECTIONS;
@@ -42,122 +42,6 @@ class MessageCreator extends Thread {
         m_posBack = 0;
         m_lock = new ReentrantLock(false);
         m_cond = m_lock.newCondition();
-    }
-
-    /**
-     * Shutdown
-     */
-    protected void shutdown() {
-        m_shutdown = true;
-    }
-
-    /**
-     * When an object implementing interface <code>Runnable</code> is used
-     * to create a thread, starting the thread causes the object's <code>run</code> method to be called in that
-     * separately executing
-     * thread.
-     * The general contract of the method <code>run</code> is that it may take any action whatsoever.
-     *
-     * @see java.lang.Thread#run()
-     */
-    @Override public void run() {
-        Object[] job;
-        NIOConnection connection;
-        ByteBuffer buffer;
-
-        job = new Object[2];
-        while (!m_shutdown) {
-            m_lock.lock();
-            if (popJob(job)) {
-                m_lock.unlock();
-                connection = (NIOConnection) job[0];
-                buffer = (ByteBuffer) job[1];
-                connection.processBuffer(buffer);
-            } else {
-                try {
-                    m_cond.await();
-                } catch (final InterruptedException e) {
-                    break;
-                }
-                m_lock.unlock();
-            }
-        }
-    }
-
-    /**
-     * Adds a job (connection and incoming buffer) at the end of the buffer.
-     *
-     * @param p_connection
-     *         the connection associated with the buffer
-     * @param p_buffer
-     *         the incoming buffer
-     * @return whether the job was added or not
-     */
-    protected boolean pushJob(final NIOConnection p_connection, final ByteBuffer p_buffer) {
-        m_lock.lock();
-        int posBack = m_posBack;
-
-        if (((posBack + 1) % m_size) == (m_posFront % m_size) || m_currentBytes >= MAX_PENDING_BYTES) {
-            // Return without adding the job if queue is full or too many bytes are pending
-            m_lock.unlock();
-            return false;
-        }
-
-        int posBack2 = posBack % m_size;
-        m_buffer[(posBack2 * 2) % m_buffer.length] = p_connection;
-        m_buffer[(posBack2 * 2 + 1) % m_buffer.length] = p_buffer;
-        m_posBack = posBack + 1;
-
-        m_currentBytes += p_buffer.remaining();
-
-        m_cond.signal();
-        m_lock.unlock();
-
-        return true;
-    }
-
-    /**
-     * Gets a job (connection and incoming buffer) from the beginning of the buffer.
-     *
-     * @param p_job
-     *         the job array to be filled
-     * @return whether the job array was filled or not
-     */
-    private boolean popJob(final Object[] p_job) {
-        int posFront = m_posFront;
-        int posFront2 = posFront % m_size;
-
-        if (posFront2 == (m_posBack % m_size)) {
-            // Ring-buffer is empty.
-            return false;
-        }
-
-        p_job[0] = m_buffer[(posFront2 * 2) % m_buffer.length];
-        p_job[1] = m_buffer[(posFront2 * 2 + 1) % m_buffer.length];
-        m_posFront = posFront + 1;
-
-        m_currentBytes -= ((ByteBuffer) p_job[1]).remaining();
-
-        return true;
-    }
-
-    /**
-     * Returns the number of pending buffers.
-     *
-     * @return the number of pending buffers
-     */
-    protected int size() {
-        int ret;
-
-        m_lock.lock();
-        if (m_posFront <= m_posBack) {
-            ret = (m_posBack - m_posFront) / 2;
-        } else {
-            ret = ((m_buffer.length - m_posFront) + m_posBack) / 2;
-        }
-        m_lock.unlock();
-
-        return ret;
     }
 
     /**
@@ -184,7 +68,7 @@ class MessageCreator extends Thread {
         boolean ret;
 
         m_lock.lock();
-        ret = ((m_posBack + 1) % m_size) == (m_posFront % m_size);
+        ret = (m_posBack + 1) % m_size == m_posFront % m_size;
         m_lock.unlock();
 
         return ret;
@@ -196,7 +80,124 @@ class MessageCreator extends Thread {
      *
      * @return whether the ring-buffer is full or not
      */
-    public boolean isFullLazy() {
-        return ((m_posBack + 1) % m_size) == (m_posFront % m_size);
+    boolean isFullLazy() {
+        return (m_posBack + 1) % m_size == m_posFront % m_size;
+    }
+
+    /**
+     * When an object implementing interface {@code Runnable} is used
+     * to create a thread, starting the thread causes the object's {@code run} method to be called in that
+     * separately executing
+     * thread.
+     * The general contract of the method {@code run} is that it may take any action whatsoever.
+     *
+     * @see java.lang.Thread#run()
+     */
+    @Override
+    public void run() {
+        Object[] job;
+        NIOConnection connection;
+        ByteBuffer buffer;
+
+        job = new Object[2];
+        while (!m_shutdown) {
+            m_lock.lock();
+            if (popJob(job)) {
+                m_lock.unlock();
+                connection = (NIOConnection) job[0];
+                buffer = (ByteBuffer) job[1];
+                connection.processBuffer(buffer);
+            } else {
+                try {
+                    m_cond.await();
+                } catch (final InterruptedException ignored) {
+                    break;
+                }
+                m_lock.unlock();
+            }
+        }
+    }
+
+    /**
+     * Shutdown
+     */
+    protected void shutdown() {
+        m_shutdown = true;
+    }
+
+    /**
+     * Returns the number of pending buffers.
+     *
+     * @return the number of pending buffers
+     */
+    protected int size() {
+        int ret;
+
+        m_lock.lock();
+        if (m_posFront <= m_posBack) {
+            ret = (m_posBack - m_posFront) / 2;
+        } else {
+            ret = (m_buffer.length - m_posFront + m_posBack) / 2;
+        }
+        m_lock.unlock();
+
+        return ret;
+    }
+
+    /**
+     * Adds a job (connection and incoming buffer) at the end of the buffer.
+     *
+     * @param p_connection
+     *     the connection associated with the buffer
+     * @param p_buffer
+     *     the incoming buffer
+     * @return whether the job was added or not
+     */
+    boolean pushJob(final NIOConnection p_connection, final ByteBuffer p_buffer) {
+        m_lock.lock();
+        int posBack = m_posBack;
+
+        if ((posBack + 1) % m_size == m_posFront % m_size || m_currentBytes >= MAX_PENDING_BYTES) {
+            // Return without adding the job if queue is full or too many bytes are pending
+            m_lock.unlock();
+            return false;
+        }
+
+        int posBack2 = posBack % m_size;
+        m_buffer[posBack2 * 2 % m_buffer.length] = p_connection;
+        m_buffer[(posBack2 * 2 + 1) % m_buffer.length] = p_buffer;
+        m_posBack = posBack + 1;
+
+        m_currentBytes += p_buffer.remaining();
+
+        m_cond.signalAll();
+        m_lock.unlock();
+
+        return true;
+    }
+
+    /**
+     * Gets a job (connection and incoming buffer) from the beginning of the buffer.
+     *
+     * @param p_job
+     *     the job array to be filled
+     * @return whether the job array was filled or not
+     */
+    private boolean popJob(final Object[] p_job) {
+        int posFront = m_posFront;
+        int posFront2 = posFront % m_size;
+
+        if (posFront2 == m_posBack % m_size) {
+            // Ring-buffer is empty.
+            return false;
+        }
+
+        p_job[0] = m_buffer[posFront2 * 2 % m_buffer.length];
+        p_job[1] = m_buffer[(posFront2 * 2 + 1) % m_buffer.length];
+        m_posFront = posFront + 1;
+
+        m_currentBytes -= ((ByteBuffer) p_job[1]).remaining();
+
+        return true;
     }
 }

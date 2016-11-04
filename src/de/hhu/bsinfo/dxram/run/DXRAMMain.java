@@ -46,6 +46,15 @@ public class DXRAMMain extends AbstractMain {
     }
 
     /**
+     * Get the DXRAM instance.
+     *
+     * @return DXRAM instance.
+     */
+    protected DXRAM getDXRAM() {
+        return m_dxram;
+    }
+
+    /**
      * Main entry point
      *
      * @param p_args
@@ -125,20 +134,11 @@ public class DXRAMMain extends AbstractMain {
     }
 
     /**
-     * Get the DXRAM instance.
-     *
-     * @return DXRAM instance.
-     */
-    protected DXRAM getDXRAM() {
-        return m_dxram;
-    }
-
-    /**
      * Run the built in terminal. The calling thread will be used for this.
      *
      * @return True if execution was successful and finished, false if starting the terminal failed.
      */
-    protected boolean runTerminal() {
+    private boolean runTerminal() {
         TerminalService term = getService(TerminalService.class);
         if (term == null) {
             System.out.println("ERROR: Cannot run terminal, missing service.");

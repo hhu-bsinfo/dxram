@@ -63,6 +63,19 @@ public class GetResponse extends AbstractResponse {
     }
 
     @Override
+    protected final int getPayloadLength() {
+        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+
+        size += m_dataStructures.length * Integer.BYTES;
+
+        for (DataStructure dataStructure : m_dataStructures) {
+            size += dataStructure.sizeofObject();
+        }
+
+        return size;
+    }
+
+    @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
         ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
 
@@ -95,19 +108,6 @@ public class GetResponse extends AbstractResponse {
             p_buffer.order(ByteOrder.BIG_ENDIAN);
         }
         m_dataStructures = request.getDataStructures();
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
-
-        size += m_dataStructures.length * Integer.BYTES;
-
-        for (DataStructure dataStructure : m_dataStructures) {
-            size += dataStructure.sizeofObject();
-        }
-
-        return size;
     }
 
 }

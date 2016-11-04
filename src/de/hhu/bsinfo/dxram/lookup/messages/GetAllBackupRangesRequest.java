@@ -30,9 +30,9 @@ public class GetAllBackupRangesRequest extends AbstractRequest {
      * Creates an instance of GetBackupRangesRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_nodeID
-     *         the NodeID
+     *     the NodeID
      */
     public GetAllBackupRangesRequest(final short p_destination, final short p_nodeID) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST);
@@ -51,17 +51,20 @@ public class GetAllBackupRangesRequest extends AbstractRequest {
         return m_nodeID;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Short.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putShort(m_nodeID);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_nodeID = p_buffer.getShort();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Short.BYTES;
     }
 
 }

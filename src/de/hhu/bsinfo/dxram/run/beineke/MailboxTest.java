@@ -36,13 +36,13 @@ public final class MailboxTest {
      * Program entry point
      *
      * @param p_arguments
-     *         The program arguments
+     *     The program arguments
      */
     public static void main(final String[] p_arguments) {
-        if (p_arguments.length == 2 && p_arguments[0].equals("server")) {
+        if (p_arguments.length == 2 && "server".equals(p_arguments[0])) {
             new Server(Integer.parseInt(p_arguments[1])).start();
         } else {
-            new Client().start();
+            Client.start();
         }
     }
 
@@ -64,7 +64,7 @@ public final class MailboxTest {
          * Creates an instance of Server
          *
          * @param p_amount
-         *         the amount of Chunks to create
+         *     the amount of Chunks to create
          */
         Server(final int p_amount) {
             m_amount = p_amount;
@@ -82,7 +82,7 @@ public final class MailboxTest {
             // Wait a moment
             try {
                 Thread.sleep(500);
-            } catch (final InterruptedException e) {
+            } catch (final InterruptedException ignored) {
             }
 
             // Initialize DXRAM
@@ -119,7 +119,7 @@ public final class MailboxTest {
                 // Wait a moment
                 try {
                     Thread.sleep(1000);
-                } catch (final InterruptedException e) {
+                } catch (final InterruptedException ignored) {
                 }
                 i++;
             }
@@ -142,7 +142,7 @@ public final class MailboxTest {
                 // Wait a moment
                 try {
                     Thread.sleep(1000);
-                } catch (final InterruptedException e) {
+                } catch (final InterruptedException ignored) {
                 }
             }
         }
@@ -154,14 +154,14 @@ public final class MailboxTest {
      * @author Florian Klein
      *         22.07.2013
      */
-    private static class Client {
+    private static final class Client {
 
         // Constructors
 
         /**
          * Creates an instance of Client
          */
-        Client() {
+        private Client() {
         }
 
         // Methods
@@ -169,18 +169,18 @@ public final class MailboxTest {
         /**
          * Starts the client
          */
-        public void start() {
+        public static void start() {
             int i = 0;
             long chunkID;
             long[] chunkIDs;
             ByteBuffer data;
-            Chunk anchor = null;
+            Chunk anchor;
             Chunk chunk;
 
             // Wait a moment
             try {
                 Thread.sleep(1000);
-            } catch (final InterruptedException e) {
+            } catch (final InterruptedException ignored) {
             }
 
             // Initialize DXRAM
@@ -196,6 +196,7 @@ public final class MailboxTest {
             chunkService.get(anchor);
 
             data = anchor.getData();
+            assert data != null;
             chunkIDs = new long[data.capacity() / Long.BYTES];
             while (data.remaining() >= Long.BYTES) {
                 chunkIDs[i++] = data.getLong();
@@ -209,13 +210,13 @@ public final class MailboxTest {
                 for (long id : chunkIDs) {
                     chunk.setID(id);
                     chunkService.get(chunk);
-                    System.out.println(new String(chunk.getData().array()) + "\t" + chunk.getID());
+                    System.out.println(new String(chunk.getData().array()) + '\t' + chunk.getID());
                 }
 
                 // Wait a moment
                 try {
                     Thread.sleep(1000);
-                } catch (final InterruptedException e) {
+                } catch (final InterruptedException ignored) {
                 }
             }
         }

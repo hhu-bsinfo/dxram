@@ -36,37 +36,33 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  */
 public final class MemoryManagerComponent extends AbstractDXRAMComponent implements CIDTable.GetNodeIdHook {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
-
-    // statistics recording
-    static final StatisticsOperation SOP_MALLOC = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Malloc");
-    private static final StatisticsOperation SOP_FREE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Free");
-    private static final StatisticsOperation SOP_GET = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Get");
-    private static final StatisticsOperation SOP_PUT = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Put");
-    private static final StatisticsOperation SOP_CREATE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Create");
-    private static final StatisticsOperation SOP_REMOVE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Remove");
-
-    // configuration values
-    @Expose private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
-
-    // dependent components
-    private AbstractBootComponent m_boot;
-
-    private SmallObjectHeap m_rawMemory;
-    private CIDTable m_cidTable;
-    // private ReentrantReadWriteLock m_lock;
-    private AtomicInteger m_lock;
-    private long m_numActiveChunks;
-    private long m_totalActiveChunkMemory;
-
-    private SmallObjectHeapDataStructureImExporter[] m_imexporter = new SmallObjectHeapDataStructureImExporter[65536];
-
     /**
      * Error codes to be returned by some methods.
      */
     public enum MemoryErrorCodes {
         SUCCESS, UNKNOWN, DOES_NOT_EXIST, READ, WRITE, OUT_OF_MEMORY, INVALID_NODE_ROLE,
     }
+
+    // statistics recording
+    static final StatisticsOperation SOP_MALLOC = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Malloc");
+    private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
+    private static final StatisticsOperation SOP_FREE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Free");
+    private static final StatisticsOperation SOP_GET = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Get");
+    private static final StatisticsOperation SOP_PUT = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Put");
+    private static final StatisticsOperation SOP_CREATE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Create");
+    private static final StatisticsOperation SOP_REMOVE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Remove");
+    // configuration values
+    @Expose
+    private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
+    // dependent components
+    private AbstractBootComponent m_boot;
+    private SmallObjectHeap m_rawMemory;
+    private CIDTable m_cidTable;
+    // private ReentrantReadWriteLock m_lock;
+    private AtomicInteger m_lock;
+    private long m_numActiveChunks;
+    private long m_totalActiveChunkMemory;
+    private SmallObjectHeapDataStructureImExporter[] m_imexporter = new SmallObjectHeapDataStructureImExporter[65536];
 
     /**
      * Constructor
@@ -75,41 +71,73 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         super(DXRAMComponentOrder.Init.MEMORY, DXRAMComponentOrder.Shutdown.MEMORY);
     }
 
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-    }
+    /**
+     * Get some status information about the memory manager (free, total amount of memory).
+     *
+     * @return Status information.
+     */
+    public Status getStatus() {
+        Status status = new Status();
 
-    @Override protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        if (p_engineEngineSettings.getRole() == NodeRole.PEER) {
-            // #if LOGGER == INFO
-            LOGGER.info("Allocating native memory (%d mb). This may take a while...", m_keyValueStoreSize.getMB());
-            // #endif /* LOGGER == INFO */
-            m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
-            m_rawMemory.initialize(m_keyValueStoreSize.getBytes(), m_keyValueStoreSize.getBytes());
-            m_cidTable = new CIDTable(this);
-            m_cidTable.initialize(m_rawMemory);
-
-            // m_lock = new ReentrantReadWriteLock(false);
-            m_lock = new AtomicInteger(0);
-
-            m_numActiveChunks = 0;
-            m_totalActiveChunkMemory = 0;
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+            status.m_freeMemoryBytes = 0;
+            status.m_totalMemoryBytes = 0;
+            // #if LOGGER >= ERROR
+            LOGGER.error("A %s does not have any memory", role);
+            // #endif /* LOGGER >= ERROR */
+            return null;
         }
 
-        return true;
+        status.m_freeMemoryBytes = m_rawMemory.getFreeMemory();
+        status.m_totalMemoryBytes = m_rawMemory.getTotalMemory();
+        status.m_totalPayloadMemoryBytes = m_rawMemory.getTotalPayloadMemory();
+        status.m_numberOfActiveMemoryBlocks = m_rawMemory.getNumberOfActiveMemoryBlocks();
+        status.m_totalChunkPayloadMemory = m_totalActiveChunkMemory;
+        status.m_numberOfActiveChunks = m_numActiveChunks;
+        status.m_cidTableCount = m_cidTable.getTableCount();
+        status.m_totalMemoryCIDTables = m_cidTable.getTotalMemoryTables();
+
+        return status;
     }
 
-    @Override protected boolean shutdownComponent() {
-        if (m_boot.getNodeRole() == NodeRole.PEER) {
-            m_cidTable.disengage();
-            m_rawMemory.disengage();
-
-            m_cidTable = null;
-            m_rawMemory = null;
-            m_lock = null;
+    /**
+     * Returns the ChunkIDs of all migrated Chunks
+     *
+     * @return the ChunkIDs of all migrated Chunks
+     */
+    public ArrayList<Long> getCIDOfAllMigratedChunks() {
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("A %s does not store any chunks", role);
+            // #endif /* LOGGER >= ERROR */
+            return null;
         }
 
-        return true;
+        return m_cidTable.getCIDOfAllMigratedChunks();
+    }
+
+    /**
+     * Returns the ChunkID ranges of all locally stored Chunks
+     *
+     * @return the ChunkID ranges in an ArrayList
+     */
+    public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("A %s does not store any chunks", role);
+            // #endif /* LOGGER >= ERROR */
+            return null;
+        }
+
+        return m_cidTable.getCIDRangesOfAllLocalChunks();
+    }
+
+    @Override
+    public short getNodeId() {
+        return m_boot.getNodeID();
     }
 
     /**
@@ -128,7 +156,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             }
 
             while (!m_lock.compareAndSet(0x40000000, 0x80000000)) {
-
+                // Wait
             }
         }
     }
@@ -173,36 +201,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         }
     }
 
-    /**
-     * Get some status information about the memory manager (free, total amount of memory).
-     *
-     * @return Status information.
-     */
-    public Status getStatus() {
-        Status status = new Status();
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            status.m_freeMemoryBytes = 0;
-            status.m_totalMemoryBytes = 0;
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not have any memory", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
-        }
-
-        status.m_freeMemoryBytes = m_rawMemory.getFreeMemory();
-        status.m_totalMemoryBytes = m_rawMemory.getTotalMemory();
-        status.m_totalPayloadMemoryBytes = m_rawMemory.getTotalPayloadMemory();
-        status.m_numberOfActiveMemoryBlocks = m_rawMemory.getNumberOfActiveMemoryBlocks();
-        status.m_totalChunkPayloadMemory = m_totalActiveChunkMemory;
-        status.m_numberOfActiveChunks = m_numActiveChunks;
-        status.m_cidTableCount = m_cidTable.getTableCount();
-        status.m_totalMemoryCIDTables = m_cidTable.getTotalMemoryTables();
-
-        return status;
-    }
-
     // -----------------------------------------------------------------------------
 
     /**
@@ -211,13 +209,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * one and allocate a new block of memory with the same id (0).
      *
      * @param p_size
-     *         Size for the index chunk.
+     *     Size for the index chunk.
      * @return On success the chunk id 0, -1 on failure.
      */
     public long createIndex(final int p_size) {
         assert p_size > 0;
 
-        long address = -1;
+        long address;
         long chunkID = -1;
 
         NodeRole role = m_boot.getNodeRole();
@@ -266,15 +264,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * Create a chunk with a specific chunk id (used for migration/recovery).
      *
      * @param p_chunkId
-     *         Chunk id to assign to the chunk.
+     *     Chunk id to assign to the chunk.
      * @param p_size
-     *         Size of the chunk.
+     *     Size of the chunk.
      * @return The chunk id if successful, -1 if another chunk with the same id already exists or allocation memory failed.
      */
     public long create(final long p_chunkId, final int p_size) {
         assert p_size > 0;
 
-        long address = -1;
+        long address;
         long chunkID = -1;
 
         NodeRole role = m_boot.getNodeRole();
@@ -322,7 +320,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * This is a management call and has to be locked using lockManage().
      *
      * @param p_size
-     *         Size in bytes of the payload the chunk contains.
+     *     Size in bytes of the payload the chunk contains.
      * @return Address of the allocated chunk or -1 if creating the chunk failed.
      */
     public long create(final int p_size) {
@@ -379,7 +377,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 // most likely out of memory
                 // #if LOGGER >= ERROR
                 LOGGER.fatal("Creating chunk with size %d failed, most likely out of memory, free %d, total %d", p_size, m_rawMemory.getFreeMemory(),
-                        m_rawMemory.getTotalMemory());
+                    m_rawMemory.getTotalMemory());
                 // #endif /* LOGGER >= ERROR */
 
                 // put lid back
@@ -399,11 +397,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * This is an access call and has to be locked using lockAccess().
      *
      * @param p_chunkID
-     *         ChunkID of the chunk, the local id gets extracted, the node ID ignored.
+     *     ChunkID of the chunk, the local id gets extracted, the node ID ignored.
      * @return Size of the chunk or -1 if the chunkID was invalid.
      */
     public int getSize(final long p_chunkID) {
-        long address = -1;
+        long address;
         int size = -1;
 
         NodeRole role = m_boot.getNodeRole();
@@ -427,7 +425,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * This is an access call and has to be locked using lockAccess().
      *
      * @param p_dataStructure
-     *         Data structure to write the data of its specified ID to.
+     *     Data structure to write the data of its specified ID to.
      * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data structure exists.
      */
     public MemoryErrorCodes get(final DataStructure p_dataStructure) {
@@ -446,10 +444,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
         address = m_cidTable.get(p_dataStructure.getID());
         if (address > 0) {
-            int chunkSize = m_rawMemory.getSizeBlock(address);
-
             // pool the im/exporters
-            SmallObjectHeapDataStructureImExporter importer = getImExporter(address, chunkSize);
+            SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
 
             // SmallObjectHeapDataStructureImExporter importer =
             // new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
@@ -470,7 +466,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * This is an access call and has to be locked using lockAccess().
      *
      * @param p_chunkID
-     *         Data structure to write the data of its specified ID to.
+     *     Data structure to write the data of its specified ID to.
      * @return A byte array with payload if getting the chunk payload was successful, null if no chunk with the ID exists.
      */
     public byte[] get(final long p_chunkID) {
@@ -479,7 +475,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
         NodeRole role = m_boot.getNodeRole();
         if (role != NodeRole.PEER) {
-            return ret;
+            return null;
         }
 
         // #ifdef STATISTICS
@@ -492,7 +488,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             ret = new byte[chunkSize];
 
             // pool the im/exporters
-            SmallObjectHeapDataStructureImExporter importer = getImExporter(address, chunkSize);
+            SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
             // SmallObjectHeapDataStructureImExporter importer =
             // new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
             if (importer.readBytes(ret) != chunkSize) {
@@ -518,7 +514,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * The caller has to take care of proper locking to avoid consistency issue with his data.
      *
      * @param p_dataStructure
-     *         Data structure to put
+     *     Data structure to put
      * @return MemoryErrorCodes indicating success or failure
      */
     public MemoryErrorCodes put(final DataStructure p_dataStructure) {
@@ -537,10 +533,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
         address = m_cidTable.get(p_dataStructure.getID());
         if (address > 0) {
-            int chunkSize = m_rawMemory.getSizeBlock(address);
-
             // pool the im/exporters
-            SmallObjectHeapDataStructureImExporter exporter = getImExporter(address, chunkSize);
+            SmallObjectHeapDataStructureImExporter exporter = getImExporter(address);
             // SmallObjectHeapDataStructureImExporter exporter =
             // new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
             exporter.exportObject(p_dataStructure);
@@ -560,10 +554,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * This is a management call and has to be locked using lockManage().
      *
      * @param p_chunkID
-     *         the ChunkID of the Chunk
+     *     the ChunkID of the Chunk
      * @param p_wasMigrated
-     *         default value for this parameter should be false!
-     *         if chunk was deleted during migration this flag should be set to true
+     *     default value for this parameter should be false!
+     *     if chunk was deleted during migration this flag should be set to true
      * @return MemoryErrorCodes indicating success or failure
      */
     public MemoryErrorCodes remove(final long p_chunkID, final boolean p_wasMigrated) {
@@ -628,9 +622,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *         Chunk id of the chunk to read.
+     *     Chunk id of the chunk to read.
      * @param p_offset
-     *         Offset within the chunk to read.
+     *     Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public byte readByte(final long p_chunkID, final int p_offset) {
@@ -655,9 +649,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *         Chunk id of the chunk to read.
+     *     Chunk id of the chunk to read.
      * @param p_offset
-     *         Offset within the chunk to read.
+     *     Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public short readShort(final long p_chunkID, final int p_offset) {
@@ -682,9 +676,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *         Chunk id of the chunk to read.
+     *     Chunk id of the chunk to read.
      * @param p_offset
-     *         Offset within the chunk to read.
+     *     Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public int readInt(final long p_chunkID, final int p_offset) {
@@ -709,9 +703,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *         Chunk id of the chunk to read.
+     *     Chunk id of the chunk to read.
      * @param p_offset
-     *         Offset within the chunk to read.
+     *     Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public long readLong(final long p_chunkID, final int p_offset) {
@@ -736,11 +730,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *         Chunk id of the chunk to write.
+     *     Chunk id of the chunk to write.
      * @param p_offset
-     *         Offset within the chunk to write.
+     *     Offset within the chunk to write.
      * @param p_value
-     *         Value to write.
+     *     Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeByte(final long p_chunkID, final int p_offset, final byte p_value) {
@@ -767,11 +761,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *         Chunk id of the chunk to write.
+     *     Chunk id of the chunk to write.
      * @param p_offset
-     *         Offset within the chunk to write.
+     *     Offset within the chunk to write.
      * @param p_value
-     *         Value to write.
+     *     Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeShort(final long p_chunkID, final int p_offset, final short p_value) {
@@ -798,11 +792,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *         Chunk id of the chunk to write.
+     *     Chunk id of the chunk to write.
      * @param p_offset
-     *         Offset within the chunk to write.
+     *     Offset within the chunk to write.
      * @param p_value
-     *         Value to write.
+     *     Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeInt(final long p_chunkID, final int p_offset, final int p_value) {
@@ -829,11 +823,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *         Chunk id of the chunk to write.
+     *     Chunk id of the chunk to write.
      * @param p_offset
-     *         Offset within the chunk to write.
+     *     Offset within the chunk to write.
      * @param p_value
-     *         Value to write.
+     *     Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeLong(final long p_chunkID, final int p_offset, final long p_value) {
@@ -863,11 +857,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * This is an access call and has to be locked using lockAccess().
      *
      * @param p_chunkID
-     *         the ChunkID
+     *     the ChunkID
      * @return whether this Chunk is stored locally or not
      */
     public boolean exists(final long p_chunkID) {
-        long address = -1;
+        long address;
 
         NodeRole role = m_boot.getNodeRole();
         if (role != NodeRole.PEER) {
@@ -885,7 +879,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * Returns whether this Chunk was migrated here or not
      *
      * @param p_chunkID
-     *         the ChunkID
+     *     the ChunkID
      * @return whether this Chunk was migrated here or not
      */
     public boolean dataWasMigrated(final long p_chunkID) {
@@ -896,7 +890,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * Removes the ChunkID of a deleted Chunk that was migrated
      *
      * @param p_chunkID
-     *         the ChunkID
+     *     the ChunkID
      */
     public void prepareChunkIDForReuse(final long p_chunkID) {
         NodeRole role = m_boot.getNodeRole();
@@ -910,54 +904,54 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         m_cidTable.putChunkIDForReuse(p_chunkID);
     }
 
-    /**
-     * Returns the ChunkIDs of all migrated Chunks
-     *
-     * @return the ChunkIDs of all migrated Chunks
-     */
-    public ArrayList<Long> getCIDOfAllMigratedChunks() {
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
-        }
-
-        return m_cidTable.getCIDOfAllMigratedChunks();
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
     }
 
-    /**
-     * Returns the ChunkID ranges of all locally stored Chunks
-     *
-     * @return the ChunkID ranges in an ArrayList
-     */
-    public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
+    @Override
+    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        if (p_engineEngineSettings.getRole() == NodeRole.PEER) {
+            // #if LOGGER == INFO
+            LOGGER.info("Allocating native memory (%d mb). This may take a while...", m_keyValueStoreSize.getMB());
+            // #endif /* LOGGER == INFO */
+            m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
+            m_rawMemory.initialize(m_keyValueStoreSize.getBytes(), m_keyValueStoreSize.getBytes());
+            m_cidTable = new CIDTable(this);
+            m_cidTable.initialize(m_rawMemory);
+
+            // m_lock = new ReentrantReadWriteLock(false);
+            m_lock = new AtomicInteger(0);
+
+            m_numActiveChunks = 0;
+            m_totalActiveChunkMemory = 0;
         }
 
-        return m_cidTable.getCIDRangesOfAllLocalChunks();
+        return true;
     }
 
-    @Override public short getNodeId() {
-        return m_boot.getNodeID();
+    @Override
+    protected boolean shutdownComponent() {
+        if (m_boot.getNodeRole() == NodeRole.PEER) {
+            m_cidTable.disengage();
+            m_rawMemory.disengage();
+
+            m_cidTable = null;
+            m_rawMemory = null;
+            m_lock = null;
+        }
+
+        return true;
     }
 
     /**
      * Pooling the im/exporters to lower memory footprint.
      *
      * @param p_address
-     *         Start address of the chunk
-     * @param p_chunkSize
-     *         Size of the chunk
+     *     Start address of the chunk
      * @return Im/Exporter for the chunk
      */
-    private SmallObjectHeapDataStructureImExporter getImExporter(final long p_address, final int p_chunkSize) {
+    private SmallObjectHeapDataStructureImExporter getImExporter(final long p_address) {
         long tid = Thread.currentThread().getId();
         if (tid > 65536) {
             throw new RuntimeException("Exceeded max. thread id");
@@ -966,7 +960,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         // pool the im/exporters
         SmallObjectHeapDataStructureImExporter importer = m_imexporter[(int) tid];
         if (importer == null) {
-            m_imexporter[(int) tid] = new SmallObjectHeapDataStructureImExporter(m_rawMemory, p_address, 0, p_chunkSize);
+            m_imexporter[(int) tid] = new SmallObjectHeapDataStructureImExporter(m_rawMemory, p_address, 0);
             importer = m_imexporter[(int) tid];
         } else {
             importer.setAllocatedMemoryStartAddress(p_address);

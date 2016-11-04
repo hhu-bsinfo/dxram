@@ -13,11 +13,11 @@ import de.hhu.bsinfo.dxram.migration.MigrationService;
 public final class MigrationTest {
 
     // Constants
-    protected static final int CHUNK_SIZE = 100;
-    protected static final int NUMBER_OF_CHUNKS = 100;
-    protected static final int NUMBER_OF_MIGRATIONS = 100;
-    protected static final int CHUNKS_PER_PUT = 100;
-    protected static final int CHUNKS_PER_MIGRATION = 1;
+    private static final int CHUNK_SIZE = 100;
+    private static final int NUMBER_OF_CHUNKS = 100;
+    private static final int NUMBER_OF_MIGRATIONS = 100;
+    private static final int CHUNKS_PER_PUT = 100;
+    private static final int CHUNKS_PER_MIGRATION = 1;
 
     // Constructors
 
@@ -31,10 +31,10 @@ public final class MigrationTest {
      * Program entry point
      *
      * @param p_arguments
-     *         The program arguments
+     *     The program arguments
      */
     public static void main(final String[] p_arguments) {
-        new Master().start();
+        Master.start();
     }
 
     /**
@@ -42,7 +42,7 @@ public final class MigrationTest {
      *
      * @author Kevin Beineke, kevin.beineke@hhu.de, 07.04.202016
      */
-    private static class Master {
+    private static final class Master {
 
         // Constants
         private static final short DEST = (short) -15999;
@@ -60,7 +60,7 @@ public final class MigrationTest {
         /**
          * Starts the Master
          */
-        public void start() {
+        public static void start() {
             long counter = 0;
             long start;
             Chunk[] chunks;

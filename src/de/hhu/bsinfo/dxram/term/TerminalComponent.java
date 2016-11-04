@@ -26,7 +26,8 @@ public class TerminalComponent extends AbstractDXRAMComponent {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalComponent.class.getSimpleName());
 
     // configuration values
-    @Expose private String m_termCmdScriptFolder = "script/term";
+    @Expose
+    private String m_termCmdScriptFolder = "script/term";
 
     // dependent components
     private ScriptEngineComponent m_scriptEngine;
@@ -70,20 +71,33 @@ public class TerminalComponent extends AbstractDXRAMComponent {
     }
 
     /**
-     * Reload the terminal scripts
+     * Assert if a function in a script exists.
+     *
+     * @param p_ctx
+     *     Script context to search the function for
+     * @param p_name
+     *     Name of the function to search
+     * @return True if function found, false otherwise
      */
-    void reloadTerminalScripts() {
-        if (!m_termCmdScriptFolder.isEmpty()) {
-            unloadTerminalScripts();
-            loadTerminalScripts(m_termCmdScriptFolder);
+    private static boolean assertFunctionExists(final ScriptContext p_ctx, final String p_name) {
+        if (!p_ctx.functionExists(p_name)) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Loading terminal script '%s' failed: missing '%s' function", p_ctx.getName(), p_name);
+            // #endif /* LOGGER >= ERROR */
+
+            return false;
         }
+
+        return true;
     }
 
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_scriptEngine = p_componentAccessor.getComponent(ScriptEngineComponent.class);
     }
 
-    @Override protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    @Override
+    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         // create script context for terminal
         m_terminalScriptContext = m_scriptEngine.createContext("terminal");
         m_terminalContext = new ScriptTerminalContext(m_scriptEngine, this);
@@ -96,7 +110,8 @@ public class TerminalComponent extends AbstractDXRAMComponent {
         return true;
     }
 
-    @Override protected boolean shutdownComponent() {
+    @Override
+    protected boolean shutdownComponent() {
 
         unloadTerminalScripts();
 
@@ -106,10 +121,20 @@ public class TerminalComponent extends AbstractDXRAMComponent {
     }
 
     /**
+     * Reload the terminal scripts
+     */
+    void reloadTerminalScripts() {
+        if (!m_termCmdScriptFolder.isEmpty()) {
+            unloadTerminalScripts();
+            loadTerminalScripts(m_termCmdScriptFolder);
+        }
+    }
+
+    /**
      * Load all terminal scripts from a certain folder
      *
      * @param p_path
-     *         Path to the folder with terminal scripts
+     *     Path to the folder with terminal scripts
      */
     private void loadTerminalScripts(final String p_path) {
 
@@ -124,7 +149,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
             for (File file : directoryListing) {
                 if (file.getName().endsWith(".js")) {
                     // #if LOGGER >= DEBUG
-                    LOGGER.debug("Loading terminal script '%s'", file.getName());
+                    // LOGGER.debug("Loading terminal script '%s'", file.getName());
                     // #endif /* LOGGER >= DEBUG */
 
                     String name = file.getName().split("\\.")[0];
@@ -133,7 +158,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
                     if (ctx != null) {
 
                         if (ctx.load(file.getAbsolutePath()) && assertFunctionExists(ctx, "help") && assertFunctionExists(ctx, "exec") &&
-                                assertFunctionExists(ctx, "imports")) {
+                            assertFunctionExists(ctx, "imports")) {
 
                             // bind terminal context
                             ctx.bind("dxterm", m_terminalContext);
@@ -161,26 +186,5 @@ public class TerminalComponent extends AbstractDXRAMComponent {
         }
 
         m_terminalScriptCommands.clear();
-    }
-
-    /**
-     * Assert if a function in a script exists.
-     *
-     * @param p_ctx
-     *         Script context to search the function for
-     * @param p_name
-     *         Name of the function to search
-     * @return True if function found, false otherwise
-     */
-    private boolean assertFunctionExists(final ScriptContext p_ctx, final String p_name) {
-        if (!p_ctx.functionExists(p_name)) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Loading terminal script '%s' failed: missing '%s' function", p_ctx.getName(), p_name);
-            // #endif /* LOGGER >= ERROR */
-
-            return false;
-        }
-
-        return true;
     }
 }

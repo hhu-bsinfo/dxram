@@ -51,6 +51,11 @@ public class FailureRequest extends AbstractRequest {
         return m_failedNode;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Short.BYTES;
+    }
+
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
@@ -60,10 +65,5 @@ public class FailureRequest extends AbstractRequest {
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
         m_failedNode = p_buffer.getShort();
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        return Short.BYTES;
     }
 }

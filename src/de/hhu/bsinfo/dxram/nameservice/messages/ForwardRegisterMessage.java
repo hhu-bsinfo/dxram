@@ -28,11 +28,11 @@ public class ForwardRegisterMessage extends AbstractMessage {
      * Creates an instance of RegisterMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_chunkId
-     *         The chunk id to register a mapping for.
+     *     The chunk id to register a mapping for.
      * @param p_name
-     *         The name to use for the mapping of the chunk id
+     *     The name to use for the mapping of the chunk id
      */
     public ForwardRegisterMessage(final short p_destination, final long p_chunkId, final String p_name) {
         super(p_destination, DXRAMMessageTypes.NAMESERVICE_MESSAGES_TYPE, NameserviceMessages.SUBTYPE_REGISTER_MESSAGE);
@@ -59,22 +59,25 @@ public class ForwardRegisterMessage extends AbstractMessage {
         return m_name;
     }
 
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final int getPayloadLength() {
+        return Long.BYTES + Integer.BYTES + m_name.length();
+    }
+
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putLong(m_chunkId);
         p_buffer.putInt(m_name.length());
         p_buffer.put(m_name.getBytes(StandardCharsets.US_ASCII));
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_chunkId = p_buffer.getLong();
         int sizeStr = p_buffer.getInt();
         byte[] tmp = new byte[sizeStr];
         p_buffer.get(tmp);
         m_name = new String(tmp, StandardCharsets.US_ASCII);
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Long.BYTES + Integer.BYTES + m_name.length();
     }
 
 }

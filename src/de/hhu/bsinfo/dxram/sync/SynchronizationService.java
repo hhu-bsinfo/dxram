@@ -27,7 +27,7 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Allocate a barrier for synchronizing multiple peers.
      *
      * @param p_size
-     *         Size of the barrier, i.e. number of peers that have to sign on until the barrier gets released.
+     *     Size of the barrier, i.e. number of peers that have to sign on until the barrier gets released.
      * @return Barrier identifier on success, -1 on failure.
      */
     public int barrierAllocate(final int p_size) {
@@ -38,7 +38,7 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Free an allocated barrier.
      *
      * @param p_barrierId
-     *         Barrier to free.
+     *     Barrier to free.
      * @return True if successful, false otherwise.
      */
     public boolean barrierFree(final int p_barrierId) {
@@ -49,9 +49,9 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Alter the size of an existing barrier (i.e. you want to keep the barrier id but with a different size).
      *
      * @param p_barrierId
-     *         Id of an allocated barrier to change the size of.
+     *     Id of an allocated barrier to change the size of.
      * @param p_newSize
-     *         New size for the barrier.
+     *     New size for the barrier.
      * @return True if changing size was successful, false otherwise.
      */
     public boolean barrierChangeSize(final int p_barrierId, final int p_newSize) {
@@ -62,9 +62,9 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Sign on to a barrier and wait for it getting released (number of peers, barrier size, have signed on).
      *
      * @param p_barrierId
-     *         Id of the barrier to sign on to.
+     *     Id of the barrier to sign on to.
      * @param p_customData
-     *         Custom data to pass along with the sign on
+     *     Custom data to pass along with the sign on
      * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
      */
     public Pair<short[], long[]> barrierSignOn(final int p_barrierId, final long p_customData) {
@@ -75,22 +75,25 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Get the status of a specific barrier.
      *
      * @param p_barrierId
-     *         Id of the barrier.
+     *     Id of the barrier.
      * @return Array of currently signed on peers with the first index being the number of signed on peers or null on error.
      */
     public short[] barrierGetStatus(final int p_barrierId) {
         return m_lookup.barrierGetStatus(p_barrierId);
     }
 
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 
-    @Override protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    @Override
+    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         return true;
     }
 
-    @Override protected boolean shutdownService() {
+    @Override
+    protected boolean shutdownService() {
         return true;
     }
 }

@@ -36,15 +36,15 @@ public class MigrateRangeRequest extends AbstractRequest {
      * Creates an instance of MigrateRangeRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_startChunkID
-     *         the first object that has to be migrated
+     *     the first object that has to be migrated
      * @param p_endChunkID
-     *         the last object that has to be migrated
+     *     the last object that has to be migrated
      * @param p_nodeID
-     *         the peer where the object has to be migrated
+     *     the peer where the object has to be migrated
      * @param p_isBackup
-     *         whether this is a backup message or not
+     *     whether this is a backup message or not
      */
     public MigrateRangeRequest(final short p_destination, final long p_startChunkID, final long p_endChunkID, final short p_nodeID, final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST);
@@ -93,8 +93,14 @@ public class MigrateRangeRequest extends AbstractRequest {
         return m_isBackup;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Long.BYTES * 2 + Short.BYTES + Byte.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putLong(m_startChunkID);
         p_buffer.putLong(m_endChunkID);
         p_buffer.putShort(m_nodeID);
@@ -105,7 +111,8 @@ public class MigrateRangeRequest extends AbstractRequest {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_startChunkID = p_buffer.getLong();
         m_endChunkID = p_buffer.getLong();
         m_nodeID = p_buffer.getShort();
@@ -114,10 +121,6 @@ public class MigrateRangeRequest extends AbstractRequest {
         if (b == 1) {
             m_isBackup = true;
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Long.BYTES * 2 + Short.BYTES + Byte.BYTES;
     }
 
 }

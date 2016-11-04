@@ -30,9 +30,9 @@ public class GetChunkIDForNameserviceEntryResponse extends AbstractResponse {
      * Creates an instance of GetChunkIDResponse
      *
      * @param p_request
-     *         the request
+     *     the request
      * @param p_chunkID
-     *         the ChunkID
+     *     the ChunkID
      */
     public GetChunkIDForNameserviceEntryResponse(final GetChunkIDForNameserviceEntryRequest p_request, final long p_chunkID) {
         super(p_request, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_RESPONSE);
@@ -51,17 +51,20 @@ public class GetChunkIDForNameserviceEntryResponse extends AbstractResponse {
         return m_chunkID;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Long.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putLong(m_chunkID);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_chunkID = p_buffer.getLong();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Long.BYTES;
     }
 
 }

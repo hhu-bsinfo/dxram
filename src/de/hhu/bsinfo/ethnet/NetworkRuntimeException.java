@@ -12,9 +12,9 @@ class NetworkRuntimeException extends RuntimeException {
      * Creates an instance of NetworkRuntimeException
      *
      * @param p_message
-     *         the message
+     *     the message
      */
-    protected NetworkRuntimeException(final String p_message) {
+    NetworkRuntimeException(final String p_message) {
         super(p_message);
     }
 
@@ -22,11 +22,11 @@ class NetworkRuntimeException extends RuntimeException {
      * Creates an instance of NetworkRuntimeException
      *
      * @param p_message
-     *         the message
+     *     the message
      * @param p_cause
-     *         the cause
+     *     the cause
      */
-    protected NetworkRuntimeException(final String p_message, final Throwable p_cause) {
+    NetworkRuntimeException(final String p_message, final Throwable p_cause) {
         super(p_message, p_cause);
     }
 }

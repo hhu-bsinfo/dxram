@@ -22,21 +22,24 @@ public class DefaultMessage extends AbstractMessage {
      * Creates an instance of DefaultMessage
      *
      * @param p_destination
-     *         the destination nodeID
+     *     the destination nodeID
      */
     public DefaultMessage(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.DEFAULT_MESSAGES_TYPE, DefaultMessages.SUBTYPE_DEFAULT_MESSAGE);
     }
 
-    // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
-    }
-
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
-    }
-
-    @Override protected final int getPayloadLength() {
+    @Override
+    protected final int getPayloadLength() {
         return 0;
+    }
+
+    // Methods
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
+    }
+
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
     }
 
 }

@@ -16,8 +16,8 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
  */
-public class SimpleRemoteChunkServiceTest extends AbstractMain {
-    public static final Argument ARG_REMOTE_PEER_ID = new Argument("remotePeerID", "-15999", true, "NodeID of the remote peer to create chunks on");
+public final class SimpleRemoteChunkServiceTest extends AbstractMain {
+    private static final Argument ARG_REMOTE_PEER_ID = new Argument("remotePeerID", "-15999", true, "NodeID of the remote peer to create chunks on");
 
     private DXRAM m_dxram;
     private ChunkService m_chunkService;
@@ -26,7 +26,7 @@ public class SimpleRemoteChunkServiceTest extends AbstractMain {
     /**
      * Constructor
      */
-    public SimpleRemoteChunkServiceTest() {
+    private SimpleRemoteChunkServiceTest() {
         super("Test creating chunks on a remote peer");
 
         m_dxram = new DXRAM();

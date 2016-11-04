@@ -35,13 +35,13 @@ public class InsertNameserviceEntriesRequest extends AbstractRequest {
      * Creates an instance of InsertIDRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_id
-     *         the id to store
+     *     the id to store
      * @param p_chunkID
-     *         the ChunkID to store
+     *     the ChunkID to store
      * @param p_isBackup
-     *         whether this is a backup message or not
+     *     whether this is a backup message or not
      */
     public InsertNameserviceEntriesRequest(final short p_destination, final int p_id, final long p_chunkID, final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST);
@@ -80,8 +80,14 @@ public class InsertNameserviceEntriesRequest extends AbstractRequest {
         return m_isBackup;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES + Long.BYTES + Byte.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt(m_id);
         p_buffer.putLong(m_chunkID);
         if (m_isBackup) {
@@ -91,7 +97,8 @@ public class InsertNameserviceEntriesRequest extends AbstractRequest {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_id = p_buffer.getInt();
         m_chunkID = p_buffer.getLong();
 
@@ -99,10 +106,6 @@ public class InsertNameserviceEntriesRequest extends AbstractRequest {
         if (b == 1) {
             m_isBackup = true;
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES + Long.BYTES + Byte.BYTES;
     }
 
 }

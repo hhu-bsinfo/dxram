@@ -33,9 +33,9 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
      * not exist, no data and a length of 0 indicates this situation.
      *
      * @param p_request
-     *         the corresponding GetRequest
+     *     the corresponding GetRequest
      * @param p_dataStructure
-     *         Data structure filled with the read data from memory
+     *     Data structure filled with the read data from memory
      */
     public SuperpeerStorageGetResponse(final SuperpeerStorageGetRequest p_request, final DataStructure p_dataStructure) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE);
@@ -43,7 +43,13 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
         m_dataStructure = p_dataStructure;
     }
 
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES + m_dataStructure.sizeofObject();
+    }
+
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         // read the data to be sent to the remote from the chunk set for this message
         MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
         int size = m_dataStructure.sizeofObject();
@@ -54,7 +60,8 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
         p_buffer.order(ByteOrder.BIG_ENDIAN);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         // read the payload from the buffer and write it directly into
         // the data structure provided by the request to avoid further copying of data
         MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
@@ -66,9 +73,5 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
         p_buffer.order(ByteOrder.nativeOrder());
         importer.importObject(m_dataStructure);
         p_buffer.order(ByteOrder.BIG_ENDIAN);
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES + m_dataStructure.sizeofObject();
     }
 }

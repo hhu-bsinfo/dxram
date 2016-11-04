@@ -17,49 +17,54 @@ import org.apache.logging.log4j.Logger;
  */
 abstract class AbstractConnection {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractConnection.class.getSimpleName());
+    /**
+     * Represents the steps in the creation process
+     *
+     * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
+     */
+    private enum Step {
 
+        // Constants
+        READ_HEADER, READ_PAYLOAD, DONE
+
+    }
+
+    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractConnection.class.getSimpleName());
     // Attributes
     private final DataHandler m_dataHandler;
     private final ByteStreamInterpreter m_streamInterpreter;
-
     private short m_destination;
     private NodeMap m_nodeMap;
     private MessageDirectory m_messageDirectory;
-
     private boolean m_connected;
-
     private DataReceiver m_listener;
-
     private long m_creationTimestamp;
     private long m_lastAccessTimestamp;
     private long m_closingTimestamp;
-
     private ReentrantLock m_lock;
-
     private int m_unconfirmedBytes;
     private int m_receivedBytes;
     private int m_sentMessages;
     private int m_receivedMessages;
-
     private int m_flowControlWindowSize;
-
     private ReentrantLock m_flowControlCondLock;
-    private Condition m_flowControlCond;
 
     // Constructors
+    private Condition m_flowControlCond;
+
+    // Getters
 
     /**
      * Creates an instance of AbstractConnection
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_nodeMap
-     *         the node map
+     *     the node map
      * @param p_messageDirectory
-     *         the message directory
+     *     the message directory
      * @param p_flowControlWindowSize
-     *         the maximal number of ByteBuffer to schedule for sending/receiving
+     *     the maximal number of ByteBuffer to schedule for sending/receiving
      */
     AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final int p_flowControlWindowSize) {
         assert p_destination != NodeID.INVALID_ID;
@@ -84,14 +89,12 @@ abstract class AbstractConnection {
         m_lock = new ReentrantLock(false);
     }
 
-    // Getters
-
     /**
      * Checks if the connection is connected
      *
      * @return true if the connection is connected, false otherwise
      */
-    public final boolean isConnected() {
+    final boolean isConnected() {
         boolean ret;
 
         m_lock.lock();
@@ -102,15 +105,24 @@ abstract class AbstractConnection {
     }
 
     /**
+     * Marks the connection as (not) connected
+     *
+     * @param p_connected
+     *     if true the connection is marked as connected, otherwise the connections marked as not connected
+     */
+    final void setConnected(final boolean p_connected) {
+        m_lock.lock();
+        m_connected = p_connected;
+        m_lock.unlock();
+    }
+
+    /**
      * Checks if the connection is connected
      *
      * @return true if the connection is connected, false otherwise
      */
-    public final boolean isCongested() {
-        if (m_unconfirmedBytes > m_flowControlWindowSize) {
-            return true;
-        }
-        return isIncomingQueueFull();
+    final boolean isCongested() {
+        return m_unconfirmedBytes > m_flowControlWindowSize || isIncomingQueueFull();
     }
 
     /**
@@ -118,7 +130,7 @@ abstract class AbstractConnection {
      *
      * @return the NodeMap
      */
-    public final NodeMap getNodeMap() {
+    final NodeMap getNodeMap() {
         return m_nodeMap;
     }
 
@@ -140,6 +152,8 @@ abstract class AbstractConnection {
         return m_creationTimestamp;
     }
 
+    // Setters
+
     /**
      * Get the timestamp of the last access
      *
@@ -154,62 +168,62 @@ abstract class AbstractConnection {
      *
      * @return the closing timestamp
      */
-    public final long getClosingTimestamp() {
+    final long getClosingTimestamp() {
         return m_closingTimestamp;
     }
 
-    // Setters
-
     /**
-     * Set the closing timestamp
-     */
-    protected final void setClosingTimestamp() {
-        m_closingTimestamp = System.currentTimeMillis();
-    }
-
-    /**
-     * Marks the connection as (not) connected
+     * Returns whether the incoming buffer queue is full or not
      *
-     * @param p_connected
-     *         if true the connection is marked as connected, otherwise the connections marked as not connected
+     * @return whether the incoming buffer queue is full or not
      */
-    protected final void setConnected(final boolean p_connected) {
-        m_lock.lock();
-        m_connected = p_connected;
-        m_lock.unlock();
-    }
+    protected abstract boolean isIncomingQueueFull();
+
+    // Methods
+
+    /**
+     * Returns the size of input and output queues
+     *
+     * @return the queue sizes
+     */
+    protected abstract String getInputOutputQueueLength();
 
     /**
      * Set the ConnectionListener
      *
      * @param p_listener
-     *         the ConnectionListener
+     *     the ConnectionListener
      */
-    public final void setListener(final DataReceiver p_listener) {
+    final void setListener(final DataReceiver p_listener) {
         m_listener = p_listener;
     }
 
-    // Methods
-
     /**
-     * Forward buffer to DataHandler to fill byte stream and create messages.
+     * Get the String representation
      *
-     * @param p_buffer
-     *         the new buffer
+     * @return the String representation
      */
-    protected final void processBuffer(final ByteBuffer p_buffer) {
-        m_dataHandler.processBuffer(p_buffer);
+    @Override
+    public String toString() {
+        String ret;
+
+        m_flowControlCondLock.lock();
+        ret =
+            getClass().getSimpleName() + '[' + NodeID.toHexString(m_destination) + ", " + (m_connected ? "connected" : "not connected") + ", sent(messages): " +
+                m_sentMessages + ", received(messages): " + m_receivedMessages + ", unconfirmed(b): " + m_unconfirmedBytes + ", received_to_confirm(b): " +
+                m_receivedBytes + ", buffer queues: " + getInputOutputQueueLength();
+        m_flowControlCondLock.unlock();
+
+        return ret;
     }
 
     /**
      * Writes data to the connection
      *
      * @param p_message
-     *         the AbstractMessage to send
-     * @throws NetworkException
-     *         if the data could not be written
+     *     the AbstractMessage to send
      */
-    protected final void write(final AbstractMessage p_message) throws NetworkException {
+    protected final void write(final AbstractMessage p_message) {
         m_flowControlCondLock.lock();
         while (m_unconfirmedBytes > m_flowControlWindowSize) {
             try {
@@ -237,9 +251,9 @@ abstract class AbstractConnection {
      * Writes data to the connection
      *
      * @param p_message
-     *         the AbstractMessage to send
+     *     the AbstractMessage to send
      * @throws NetworkException
-     *         if message buffer is too small
+     *     if message buffer is too small
      */
     protected abstract void doWrite(AbstractMessage p_message) throws NetworkException;
 
@@ -247,9 +261,9 @@ abstract class AbstractConnection {
      * Writes data to the connection without delay
      *
      * @param p_message
-     *         the AbstractMessage to send
+     *     the AbstractMessage to send
      * @throws NetworkException
-     *         if message buffer is too small
+     *     if message buffer is too small
      */
     protected abstract void doForceWrite(AbstractMessage p_message) throws NetworkException;
 
@@ -261,35 +275,12 @@ abstract class AbstractConnection {
     protected abstract boolean dataLeftToWrite();
 
     /**
-     * Returns whether the incoming buffer queue is full or not
-     *
-     * @return whether the incoming buffer queue is full or not
-     */
-    protected abstract boolean isIncomingQueueFull();
-
-    /**
-     * Returns the size of input and output queues
-     *
-     * @return the queue sizes
-     */
-    protected abstract String getInputOutputQueueLength();
-
-    /**
      * Closes the connection immediately
      */
     protected final void close() {
         m_connected = false;
 
         doClose();
-    }
-
-    /**
-     * Closes the connection when there is no data left in transfer
-     */
-    protected final void closeGracefully() {
-        m_connected = false;
-
-        doCloseGracefully();
     }
 
     /**
@@ -309,108 +300,188 @@ abstract class AbstractConnection {
     }
 
     /**
-     * Informs the ConnectionListener about a new message
-     *
-     * @param p_message
-     *         the new message
+     * Set the closing timestamp
      */
-    private void deliverMessage(final AbstractMessage p_message) {
-        if (p_message instanceof FlowControlMessage) {
-            handleFlowControlMessage((FlowControlMessage) p_message);
-        } else {
-            if (m_listener != null) {
-                m_listener.newMessage(p_message);
-            } else {
-                // #if LOGGER >= ERROR
-                LOGGER.error("No listener registered. Message will be discarded: %s", p_message);
-                // #endif /* LOGGER >= ERROR */
-            }
-        }
+    final void setClosingTimestamp() {
+        m_closingTimestamp = System.currentTimeMillis();
     }
 
     /**
-     * Confirm received bytes for the other node
+     * Forward buffer to DataHandler to fill byte stream and create messages.
+     *
+     * @param p_buffer
+     *     the new buffer
      */
-    private void sendFlowControlMessage() {
-        FlowControlMessage message;
-        ByteBuffer messageBuffer;
-
-        message = new FlowControlMessage(m_receivedBytes);
-        try {
-            messageBuffer = message.getBuffer();
-        } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Could not send flow control message", e);
-            // #endif /* LOGGER >= ERROR */
-            return;
-        }
-
-        // add sending bytes for consistency
-        m_unconfirmedBytes += messageBuffer.remaining();
-        m_sentMessages++;
-
-        try {
-            doForceWrite(message);
-        } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Could not send flow control message", e);
-            // #endif /* LOGGER >= ERROR */
-            return;
-        }
-
-        // reset received bytes counter
-        m_receivedBytes = 0;
+    final void processBuffer(final ByteBuffer p_buffer) {
+        m_dataHandler.processBuffer(p_buffer);
     }
 
     /**
-     * Handles a received FlowControlMessage
-     *
-     * @param p_message
-     *         FlowControlMessage
+     * Closes the connection when there is no data left in transfer
      */
-    private void handleFlowControlMessage(final FlowControlMessage p_message) {
-        m_flowControlCondLock.lock();
-        m_unconfirmedBytes -= p_message.getConfirmedBytes();
+    final void closeGracefully() {
+        m_connected = false;
 
-        m_flowControlCond.signalAll();
-        m_flowControlCondLock.unlock();
-    }
-
-    /**
-     * Get the String representation
-     *
-     * @return the String representation
-     */
-    @Override public String toString() {
-        String ret;
-
-        m_flowControlCondLock.lock();
-        ret = this.getClass().getSimpleName() + "[" + NodeID.toHexString(m_destination) + ", " + (m_connected ? "connected" : "not connected") +
-                ", sent(messages): " + m_sentMessages + ", received(messages): " + m_receivedMessages + ", unconfirmed(b): " + m_unconfirmedBytes +
-                ", received_to_confirm(b): " + m_receivedBytes + ", buffer queues: " + getInputOutputQueueLength();
-        m_flowControlCondLock.unlock();
-
-        return ret;
+        doCloseGracefully();
     }
 
     // Classes
 
     /**
-     * Manages for reacting to connections
+     * Creates ByteBuffers containing AbstractMessages from ByteBuffer-Chunks
      *
-     * @author Marc Ewert 11.04.2014
+     * @author Florian Klein 09.03.2012
+     * @author Marc Ewert 28.10.2014
      */
-    protected interface DataReceiver {
+    private static class ByteStreamInterpreter {
+
+        // Attributes
+        private ByteBuffer m_headerBytes;
+        private ByteBuffer m_messageBytes;
+
+        private Step m_step;
+
+        private boolean m_exceptionOccurred;
+
+        // Constructors
+
+        /**
+         * Creates an instance of MessageCreator
+         */
+        ByteStreamInterpreter() {
+            m_headerBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE);
+            clear();
+        }
+
+        // Getters
+
+        /**
+         * Get the created Message
+         *
+         * @return the created Message
+         */
+        final ByteBuffer getMessageBuffer() {
+            return m_messageBytes;
+        }
+
+        /**
+         * Checks if Message is complete
+         *
+         * @return true if the Message is complete, false otherwise
+         */
+        boolean isMessageComplete() {
+            return m_step == Step.DONE;
+        }
 
         // Methods
 
         /**
-         * New messsage is available
-         *
-         * @param p_message
-         *         the message which has been received
+         * Clear all data
          */
-        void newMessage(AbstractMessage p_message);
+        public void clear() {
+            m_headerBytes.clear();
+            m_step = Step.READ_HEADER;
+            m_exceptionOccurred = false;
+        }
+
+        /**
+         * Updates the current data
+         *
+         * @param p_buffer
+         *     the ByteBuffer with new data
+         */
+        public void update(final ByteBuffer p_buffer) {
+            assert p_buffer != null;
+
+            while (m_step != Step.DONE && p_buffer.hasRemaining()) {
+                switch (m_step) {
+                    case READ_HEADER:
+                        readHeader(p_buffer);
+                        break;
+                    case READ_PAYLOAD:
+                        readPayload(p_buffer);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        /**
+         * Checks if an Exception occurred
+         *
+         * @return true if an Exception occurred, false otherwise
+         */
+        final boolean exceptionOccurred() {
+            return m_exceptionOccurred;
+        }
+
+        /**
+         * Reads the remaining message header
+         *
+         * @param p_buffer
+         *     the ByteBuffer with the data
+         */
+        private void readHeader(final ByteBuffer p_buffer) {
+            try {
+                final int remaining = m_headerBytes.remaining();
+
+                if (p_buffer.remaining() < remaining) {
+                    m_headerBytes.put(p_buffer);
+                    // Header partially filled
+                } else {
+                    m_headerBytes.put(p_buffer.array(), p_buffer.position(), remaining);
+                    p_buffer.position(p_buffer.position() + remaining);
+
+                    // Header complete
+
+                    // Read payload size (copied at the end of m_headerBytes before)
+                    final int payloadSize = m_headerBytes.getInt(m_headerBytes.limit() - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+
+                    // Create message buffer and copy header into (without payload size)
+                    m_messageBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + payloadSize);
+                    m_messageBytes.put(m_headerBytes.array(), 0, AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+
+                    if (payloadSize == 0) {
+                        // There is no payload -> message complete
+                        m_step = Step.DONE;
+                    } else {
+                        // Payload must be read next
+                        m_step = Step.READ_PAYLOAD;
+                    }
+                }
+            } catch (final Exception e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Unable to read message header ", e);
+                // #endif /* LOGGER >= ERROR */
+                clear();
+            }
+        }
+
+        /**
+         * Reads the message payload
+         *
+         * @param p_buffer
+         *     the ByteBuffer with the data
+         */
+        private void readPayload(final ByteBuffer p_buffer) {
+            try {
+                final int remaining = m_messageBytes.remaining();
+
+                if (p_buffer.remaining() < remaining) {
+                    m_messageBytes.put(p_buffer);
+                } else {
+                    m_messageBytes.put(p_buffer.array(), p_buffer.position(), remaining);
+                    p_buffer.position(p_buffer.position() + remaining);
+                    m_step = Step.DONE;
+                }
+            } catch (final Exception e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Unable to read message payload ", e);
+                // #endif /* LOGGER >= ERROR */
+                clear();
+            }
+        }
     }
 
     /**
@@ -433,9 +504,9 @@ abstract class AbstractConnection {
          * Adds a buffer to byte stream and creates a message if all data was gathered.
          *
          * @param p_buffer
-         *         the new buffer
+         *     the new buffer
          */
-        public void processBuffer(final ByteBuffer p_buffer) {
+        void processBuffer(final ByteBuffer p_buffer) {
             ByteBuffer messageBuffer;
             AbstractMessage message;
 
@@ -449,36 +520,102 @@ abstract class AbstractConnection {
 
             m_lastAccessTimestamp = System.currentTimeMillis();
 
-            if (p_buffer != null) {
-                while (p_buffer.hasRemaining()) {
-                    m_streamInterpreter.update(p_buffer);
+            while (p_buffer.hasRemaining()) {
+                m_streamInterpreter.update(p_buffer);
 
-                    if (m_streamInterpreter.isMessageComplete()) {
-                        if (!m_streamInterpreter.exceptionOccurred()) {
-                            messageBuffer = m_streamInterpreter.getMessageBuffer();
+                if (m_streamInterpreter.isMessageComplete()) {
+                    if (!m_streamInterpreter.exceptionOccurred()) {
+                        messageBuffer = m_streamInterpreter.getMessageBuffer();
 
-                            message = createMessage(messageBuffer);
+                        message = createMessage(messageBuffer);
 
-                            if (message != null) {
-                                message.setDestination(m_nodeMap.getOwnNodeID());
-                                message.setSource(m_destination);
-                                m_receivedMessages++;
+                        if (message != null) {
+                            message.setDestination(m_nodeMap.getOwnNodeID());
+                            message.setSource(m_destination);
+                            m_receivedMessages++;
 
-                                deliverMessage(message);
-                            }
+                            deliverMessage(message);
                         }
-
-                        m_streamInterpreter.clear();
                     }
+
+                    m_streamInterpreter.clear();
                 }
             }
+        }
+
+        /**
+         * Handles a received FlowControlMessage
+         *
+         * @param p_message
+         *     FlowControlMessage
+         */
+        private void handleFlowControlMessage(final FlowControlMessage p_message) {
+            m_flowControlCondLock.lock();
+            m_unconfirmedBytes -= p_message.getConfirmedBytes();
+
+            m_flowControlCond.signalAll();
+            m_flowControlCondLock.unlock();
+        }
+
+        /**
+         * Informs the ConnectionListener about a new message
+         *
+         * @param p_message
+         *     the new message
+         */
+        private void deliverMessage(final AbstractMessage p_message) {
+            if (p_message instanceof FlowControlMessage) {
+                handleFlowControlMessage((FlowControlMessage) p_message);
+            } else {
+                if (m_listener != null) {
+                    m_listener.newMessage(p_message);
+                } else {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("No listener registered. Message will be discarded: %s", p_message);
+                    // #endif /* LOGGER >= ERROR */
+                }
+            }
+        }
+
+        /**
+         * Confirm received bytes for the other node
+         */
+        private void sendFlowControlMessage() {
+            FlowControlMessage message;
+            ByteBuffer messageBuffer;
+
+            message = new FlowControlMessage(m_receivedBytes);
+            try {
+                messageBuffer = message.getBuffer();
+            } catch (final NetworkException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not send flow control message", e);
+                // #endif /* LOGGER >= ERROR */
+                return;
+            }
+
+            // add sending bytes for consistency
+            m_unconfirmedBytes += messageBuffer.remaining();
+            m_sentMessages++;
+
+            try {
+                doForceWrite(message);
+            } catch (final NetworkException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not send flow control message", e);
+                // #endif /* LOGGER >= ERROR */
+                return;
+            }
+
+            // reset received bytes counter
+            m_receivedBytes = 0;
         }
 
         /**
          * Create a message from a given buffer
          *
          * @param p_buffer
-         *         buffer containing a message
+         *     buffer containing a message
          * @return message
          */
         private AbstractMessage createMessage(final ByteBuffer p_buffer) {
@@ -534,171 +671,20 @@ abstract class AbstractConnection {
     }
 
     /**
-     * Creates ByteBuffers containing AbstractMessages from ByteBuffer-Chunks
+     * Manages for reacting to connections
      *
-     * @author Florian Klein 09.03.2012
-     * @author Marc Ewert 28.10.2014
+     * @author Marc Ewert 11.04.2014
      */
-    private class ByteStreamInterpreter {
-
-        // Attributes
-        private ByteBuffer m_headerBytes;
-        private ByteBuffer m_messageBytes;
-
-        private Step m_step;
-
-        private boolean m_exceptionOccurred;
-
-        // Constructors
-
-        /**
-         * Creates an instance of MessageCreator
-         */
-        ByteStreamInterpreter() {
-            m_headerBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE);
-            clear();
-        }
-
-        // Getters
-
-        /**
-         * Get the created Message
-         *
-         * @return the created Message
-         */
-        public final ByteBuffer getMessageBuffer() {
-            return m_messageBytes;
-        }
-
-        /**
-         * Checks if an Exception occurred
-         *
-         * @return true if an Exception occurred, false otherwise
-         */
-        public final boolean exceptionOccurred() {
-            return m_exceptionOccurred;
-        }
+    interface DataReceiver {
 
         // Methods
 
         /**
-         * Clear all data
-         */
-        public void clear() {
-            m_headerBytes.clear();
-            m_step = Step.READ_HEADER;
-            m_exceptionOccurred = false;
-        }
-
-        /**
-         * Updates the current data
+         * New messsage is available
          *
-         * @param p_buffer
-         *         the ByteBuffer with new data
+         * @param p_message
+         *     the message which has been received
          */
-        public void update(final ByteBuffer p_buffer) {
-            assert p_buffer != null;
-
-            while (m_step != Step.DONE && p_buffer.hasRemaining()) {
-                switch (m_step) {
-                    case READ_HEADER:
-                        readHeader(p_buffer);
-                        break;
-                    case READ_PAYLOAD:
-                        readPayload(p_buffer);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-
-        /**
-         * Reads the remaining message header
-         *
-         * @param p_buffer
-         *         the ByteBuffer with the data
-         */
-        private void readHeader(final ByteBuffer p_buffer) {
-            try {
-                final int remaining = m_headerBytes.remaining();
-
-                if (p_buffer.remaining() < remaining) {
-                    m_headerBytes.put(p_buffer);
-                    // Header partially filled
-                } else {
-                    m_headerBytes.put(p_buffer.array(), p_buffer.position(), remaining);
-                    p_buffer.position(p_buffer.position() + remaining);
-
-                    // Header complete
-
-                    // Read payload size (copied at the end of m_headerBytes before)
-                    final int payloadSize = m_headerBytes.getInt(m_headerBytes.limit() - AbstractMessage.PAYLOAD_SIZE_LENGTH);
-
-                    // Create message buffer and copy header into (without payload size)
-                    m_messageBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + payloadSize);
-                    m_messageBytes.put(m_headerBytes.array(), 0, AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
-
-                    if (payloadSize == 0) {
-                        // There is no payload -> message complete
-                        m_step = Step.DONE;
-                    } else {
-                        // Payload must be read next
-                        m_step = Step.READ_PAYLOAD;
-                    }
-                }
-            } catch (final Exception e) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Unable to read message header ", e);
-                // #endif /* LOGGER >= ERROR */
-                clear();
-            }
-        }
-
-        /**
-         * Reads the message payload
-         *
-         * @param p_buffer
-         *         the ByteBuffer with the data
-         */
-        private void readPayload(final ByteBuffer p_buffer) {
-            try {
-                final int remaining = m_messageBytes.remaining();
-
-                if (p_buffer.remaining() < remaining) {
-                    m_messageBytes.put(p_buffer);
-                } else {
-                    m_messageBytes.put(p_buffer.array(), p_buffer.position(), remaining);
-                    p_buffer.position(p_buffer.position() + remaining);
-                    m_step = Step.DONE;
-                }
-            } catch (final Exception e) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Unable to read message payload ", e);
-                // #endif /* LOGGER >= ERROR */
-                clear();
-            }
-        }
-
-        /**
-         * Checks if Message is complete
-         *
-         * @return true if the Message is complete, false otherwise
-         */
-        public boolean isMessageComplete() {
-            return m_step == Step.DONE;
-        }
-    }
-
-    /**
-     * Represents the steps in the creation process
-     *
-     * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
-     */
-    private enum Step {
-
-        // Constants
-        READ_HEADER, READ_PAYLOAD, DONE
-
+        void newMessage(AbstractMessage p_message);
     }
 }

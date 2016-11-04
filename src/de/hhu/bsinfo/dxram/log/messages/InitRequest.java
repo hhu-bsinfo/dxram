@@ -32,11 +32,11 @@ public class InitRequest extends AbstractRequest {
      * Creates an instance of InitRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_firstChunkIDOrRangeID
-     *         the beginning of the range
+     *     the beginning of the range
      * @param p_owner
-     *         the current owner
+     *     the current owner
      */
     public InitRequest(final short p_destination, final long p_firstChunkIDOrRangeID, final short p_owner) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_REQUEST, true);
@@ -65,18 +65,21 @@ public class InitRequest extends AbstractRequest {
         return m_owner;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Long.BYTES + Short.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putLong(m_firstChunkIDOrRangeID);
         p_buffer.putShort(m_owner);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_firstChunkIDOrRangeID = p_buffer.getLong();
         m_owner = p_buffer.getShort();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Long.BYTES + Short.BYTES;
     }
 }

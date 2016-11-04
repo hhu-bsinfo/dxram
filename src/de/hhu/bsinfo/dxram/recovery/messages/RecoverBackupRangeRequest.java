@@ -32,11 +32,11 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
      * Creates an instance of RecoverBackupRangeRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_owner
-     *         the NodeID of the owner
+     *     the NodeID of the owner
      * @param p_firstChunkIDOrRangeID
-     *         the first ChunkID of the backup range or the RangeID for migrations
+     *     the first ChunkID of the backup range or the RangeID for migrations
      */
     public RecoverBackupRangeRequest(final short p_destination, final short p_owner, final long p_firstChunkIDOrRangeID) {
         super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST);
@@ -65,19 +65,22 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
         return m_firstChunkIDOrRangeID;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Short.BYTES + Long.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putShort(m_owner);
         p_buffer.putLong(m_firstChunkIDOrRangeID);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_owner = p_buffer.getShort();
         m_firstChunkIDOrRangeID = p_buffer.getLong();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Short.BYTES + Long.BYTES;
     }
 
 }

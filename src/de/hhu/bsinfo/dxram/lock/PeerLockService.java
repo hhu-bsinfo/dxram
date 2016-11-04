@@ -66,41 +66,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     private EventComponent m_event;
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
-        m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_event = p_componentAccessor.getComponent(EventComponent.class);
-    }
-
-    @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-
-        m_event.registerListener(this, NodeFailureEvent.class);
-
-        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, LockRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, UnlockMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST, GetLockedListRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_RESPONSE, GetLockedListResponse.class);
-
-        m_network.register(LockRequest.class, this);
-        m_network.register(UnlockMessage.class, this);
-        m_network.register(GetLockedListRequest.class, this);
-
-        return true;
-    }
-
-    @Override
-    protected boolean shutdownService() {
-        return true;
-    }
-
-    @Override
     public ArrayList<Pair<Long, Short>> getLockedList() {
-        if (!m_boot.getNodeRole().equals(NodeRole.PEER)) {
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
             // #if LOGGER >= ERROR
             LOGGER.error("A %s must not lock chunks", m_boot.getNodeRole());
             // #endif /* LOGGER >= ERROR */
@@ -135,7 +102,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         assert p_timeout >= 0;
         assert p_chunkID != ChunkID.INVALID_ID;
 
-        if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             // #if LOGGER >= ERROR
             LOGGER.error("A superpeer must not lock chunks");
             // #endif /* LOGGER >= ERROR */
@@ -187,13 +154,13 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
                         try {
                             m_network.sendSync(request);
-                        } catch (final NetworkDestinationUnreachableException e) {
+                        } catch (final NetworkDestinationUnreachableException ignore) {
                             err = ErrorCode.PEER_NOT_AVAILABLE;
                             break;
-                        } catch (final NetworkResponseTimeoutException e) {
+                        } catch (final NetworkResponseTimeoutException ignore) {
                             err = ErrorCode.NETWORK;
                             break;
-                        } catch (final NetworkException e) {
+                        } catch (final NetworkException ignore) {
                             m_lookup.invalidate(p_chunkID);
                             err = ErrorCode.NETWORK;
                             break;
@@ -229,7 +196,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     @Override
     public ErrorCode unlock(final boolean p_writeLock, final long p_chunkID) {
         // early returns
-        if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             // #if LOGGER >= ERROR
             LOGGER.error("A superpeer must not use chunks");
             // #endif /* LOGGER >= ERROR */
@@ -277,9 +244,9 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
                         try {
                             m_network.sendMessage(message);
-                        } catch (final NetworkDestinationUnreachableException e) {
+                        } catch (final NetworkDestinationUnreachableException ignore) {
                             err = ErrorCode.PEER_NOT_AVAILABLE;
-                        } catch (final NetworkException e) {
+                        } catch (final NetworkException ignore) {
                             m_lookup.invalidate(p_chunkID);
                             err = ErrorCode.NETWORK;
                         }
@@ -299,7 +266,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     public void eventTriggered(final NodeFailureEvent p_event) {
         if (p_event.getRole() == NodeRole.PEER) {
             // #if LOGGER >= DEBUG
-            LOGGER.debug("Connection to peer 0x%X lost, unlocking all chunks locked by lost instance", p_event.getNodeID());
+            // LOGGER.debug("Connection to peer 0x%X lost, unlocking all chunks locked by lost instance", p_event.getNodeID());
             // #endif /* LOGGER >= DEBUG */
 
             if (!m_lock.unlockAllByNodeID(p_event.getNodeID())) {
@@ -313,7 +280,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     @Override
     public void onIncomingMessage(final AbstractMessage p_message) {
         // #if LOGGER == TRACE
-        LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
+        // LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */
 
         if (p_message != null) {
@@ -335,8 +302,41 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         }
 
         // #if LOGGER == TRACE
-        LOGGER.trace("Exiting incomingMessage");
+        // LOGGER.trace("Exiting incomingMessage");
         // #endif /* LOGGER == TRACE */
+    }
+
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
+        m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
+        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+        m_event = p_componentAccessor.getComponent(EventComponent.class);
+    }
+
+    @Override
+    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+
+        m_event.registerListener(this, NodeFailureEvent.class);
+
+        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, LockRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, UnlockMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST, GetLockedListRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_RESPONSE, GetLockedListResponse.class);
+
+        m_network.register(LockRequest.class, this);
+        m_network.register(UnlockMessage.class, this);
+        m_network.register(GetLockedListRequest.class, this);
+
+        return true;
+    }
+
+    @Override
+    protected boolean shutdownService() {
+        return true;
     }
 
     /**

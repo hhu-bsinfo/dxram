@@ -51,6 +51,11 @@ public class RemoveRequest extends AbstractRequest {
     }
 
     @Override
+    protected final int getPayloadLength() {
+        return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_chunkIDs.length;
+    }
+
+    @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
         ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkIDs.length);
 
@@ -68,11 +73,6 @@ public class RemoveRequest extends AbstractRequest {
         for (int i = 0; i < numChunks; i++) {
             m_chunkIDs[i] = p_buffer.getLong();
         }
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_chunkIDs.length;
     }
 
 }

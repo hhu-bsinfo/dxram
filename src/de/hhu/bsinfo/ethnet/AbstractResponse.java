@@ -14,7 +14,7 @@ public abstract class AbstractResponse extends AbstractMessage {
     /**
      * Creates an instance of Response
      */
-    public AbstractResponse() {
+    protected AbstractResponse() {
         super();
     }
 
@@ -22,11 +22,11 @@ public abstract class AbstractResponse extends AbstractMessage {
      * Creates an instance of Response
      *
      * @param p_request
-     *         the corresponding Request
+     *     the corresponding Request
      * @param p_subtype
-     *         the message subtype
+     *     the message subtype
      */
-    public AbstractResponse(final AbstractRequest p_request, final byte p_subtype) {
+    protected AbstractResponse(final AbstractRequest p_request, final byte p_subtype) {
         super(p_request.getMessageID(), p_request.getSource(), p_request.getType(), p_subtype);
 
         m_correspondingRequest = p_request;
@@ -48,7 +48,7 @@ public abstract class AbstractResponse extends AbstractMessage {
      *
      * @return the requestID
      */
-    public final int getRequestID() {
+    final int getRequestID() {
         return getMessageID();
     }
 
@@ -65,9 +65,9 @@ public abstract class AbstractResponse extends AbstractMessage {
      * Sets the corresponding request
      *
      * @param p_correspondingRequest
-     *         the corresponding request
+     *     the corresponding request
      */
-    protected void setCorrespondingRequest(final AbstractRequest p_correspondingRequest) {
+    void setCorrespondingRequest(final AbstractRequest p_correspondingRequest) {
         m_correspondingRequest = p_correspondingRequest;
     }
 }

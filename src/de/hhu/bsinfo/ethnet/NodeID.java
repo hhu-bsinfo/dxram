@@ -20,7 +20,7 @@ public final class NodeID {
      * Convert a node id to a proper string representation in hex.
      *
      * @param p_nodeId
-     *         Node id to convert.
+     *     Node id to convert.
      * @return Hex string of node id, example: 0x1111
      */
     public static String toHexString(final short p_nodeId) {

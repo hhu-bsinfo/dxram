@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.run.beineke;
 
+import java.nio.ByteBuffer;
 import java.util.NavigableMap;
 import java.util.Random;
 import java.util.TreeMap;
@@ -26,13 +27,13 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 public final class LogTest3 {
 
     // Constants
-    protected static final long BYTES_TO_LOAD = 5196002400L;
-    protected static final long BYTES_TO_UPDATE = 6000128000L;
-    protected static final int CHUNK_SIZE = 100;
-    protected static final int CHUNKS_PER_PUT = 100;
-    protected static final int CHUNKS_PER_UPDATE = 512;
-    protected static final int MASTER_THREADS = 1;
-    protected static final int BENCHMARK_THREADS = 8;
+    private static final long BYTES_TO_LOAD = 5196002400L;
+    private static final long BYTES_TO_UPDATE = 6000128000L;
+    private static final int CHUNK_SIZE = 100;
+    private static final int CHUNKS_PER_PUT = 100;
+    private static final int CHUNKS_PER_UPDATE = 512;
+    private static final int MASTER_THREADS = 1;
+    private static final int BENCHMARK_THREADS = 8;
 
     // Attributes
     private static byte ms_workload;
@@ -41,27 +42,23 @@ public final class LogTest3 {
 
     /**
      * Creates an instance of LogTest3
-     *
-     * @param p_workload
-     *         the worload (0 -> uniform, 1 -> zipfian)
      */
-    private LogTest3(final byte p_workload) {
-        ms_workload = p_workload;
+    private LogTest3() {
     }
 
     /**
      * Program entry point
      *
      * @param p_arguments
-     *         The program arguments
+     *     The program arguments
      */
     public static void main(final String[] p_arguments) {
         // Workload: 0 -> uniform, 1 -> zipfian
-        new LogTest3((byte) 0);
+        ms_workload = (byte) 0;
 
         if (p_arguments.length == 0) {
             System.out.println("Missing program argument: Role (master, benchmark)");
-        } else if (p_arguments[0].equals("master")) {
+        } else if ("master".equals(p_arguments[0])) {
             // Initialize DXRAM
             final DXRAM dxram = new DXRAM();
             dxram.initialize("config/dxram.conf");
@@ -76,9 +73,9 @@ public final class LogTest3 {
             }
             try {
                 currentThread.join();
-            } catch (final InterruptedException e) {
+            } catch (final InterruptedException ignored) {
             }
-        } else if (p_arguments[0].equals("benchmark")) {
+        } else if ("benchmark".equals(p_arguments[0])) {
             // Initialize DXRAM
             final DXRAM dxram = new DXRAM();
             dxram.initialize("config/dxram.conf");
@@ -91,7 +88,7 @@ public final class LogTest3 {
             }
             try {
                 currentThread.join();
-            } catch (final InterruptedException e) {
+            } catch (final InterruptedException ignored) {
             }
         }
     }
@@ -114,9 +111,9 @@ public final class LogTest3 {
          * Creates an instance of Master
          *
          * @param p_chunkService
-         *         the initialized ChunkService
+         *     the initialized ChunkService
          * @param p_nodeID
-         *         the NodeID
+         *     the NodeID
          */
         Master(final ChunkService p_chunkService, final short p_nodeID) {
             m_chunkService = p_chunkService;
@@ -128,21 +125,26 @@ public final class LogTest3 {
         /**
          * Starts the server
          */
-        @Override public void run() {
+        @Override
+        public void run() {
             int numberOfRequests;
             long counter = 0;
             long start;
             Chunk[] chunks;
             // Chunk[][] allChunks;
+            ByteBuffer data;
 
-            /**
+            /*
              * Phase 1: Creating chunks
              */
             // Create all chunks
             chunks = new Chunk[CHUNKS_PER_PUT];
             for (int i = 0; i < CHUNKS_PER_PUT; i++) {
                 chunks[i] = new Chunk(CHUNK_SIZE);
-                chunks[i].getData().put("Test!".getBytes());
+                data = chunks[i].getData();
+                if (data != null) {
+                    data.put("Test!".getBytes());
+                }
             }
 
             numberOfRequests = (int) (BYTES_TO_LOAD / CHUNK_SIZE / CHUNKS_PER_PUT / MASTER_THREADS);
@@ -158,7 +160,7 @@ public final class LogTest3 {
 
             System.out.println("Created all chunks. Start replication now.");
 
-            /**
+            /*
              * Phase 2: Putting/Replicating chunks
              */
             counter = 0;
@@ -234,7 +236,7 @@ public final class LogTest3 {
                     System.out.println("Created 100.000.000 bytes and replicated them. All: " + counter);
                 }
             }*/
-            System.out.println("Time to create " + (BYTES_TO_LOAD / MASTER_THREADS) + " bytes of payload: " + (System.currentTimeMillis() - start));
+            System.out.println("Time to create " + BYTES_TO_LOAD / MASTER_THREADS + " bytes of payload: " + (System.currentTimeMillis() - start));
         }
     }
 
@@ -255,7 +257,7 @@ public final class LogTest3 {
          * Creates an instance of Benchmark
          *
          * @param p_chunkService
-         *         the initialized ChunkService
+         *     the initialized ChunkService
          */
         Benchmark(final ChunkService p_chunkService) {
             m_chunkService = p_chunkService;
@@ -264,15 +266,37 @@ public final class LogTest3 {
         // Methods
 
         /**
+         * Returns a random long
+         *
+         * @param p_rng
+         *     the random number generator
+         * @param p_max
+         *     the maximum value
+         * @return a random long
+         */
+        static long nextLong(final Random p_rng, final long p_max) {
+            long bits;
+            long val;
+
+            do {
+                bits = p_rng.nextLong() << 1 >>> 1;
+                val = bits % p_max;
+            } while (bits - val + p_max - 1 < 0L);
+            return val;
+        }
+
+        /**
          * Starts the client
          */
-        @Override public void run() {
+        @Override
+        public void run() {
             final short[] nodeIDs = new short[3];
             nodeIDs[0] = 640;
             nodeIDs[1] = -15807;
             nodeIDs[2] = -14847;
             /*-final short[] nodeIDs = new short[1];
             nodeIDs[0] = 640;*/
+            ByteBuffer data;
 
             long start;
             long counter = 0;
@@ -285,7 +309,10 @@ public final class LogTest3 {
             chunks = new Chunk[CHUNKS_PER_UPDATE];
             for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
                 chunks[i] = new Chunk(CHUNK_SIZE);
-                chunks[i].getData().put("Update!".getBytes());
+                data = chunks[i].getData();
+                if (data != null) {
+                    data.put("Update".getBytes());
+                }
             }
 
             start = System.currentTimeMillis();
@@ -307,7 +334,7 @@ public final class LogTest3 {
                     counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
                     if (counter % (10 * 1024 * 1024) == 0) {
                         System.out.println(Thread.currentThread().getName() + ": Updated 10.485.760 bytes with random distribution(left: " +
-                                (BYTES_TO_UPDATE / BENCHMARK_THREADS - counter) + ").");
+                            (BYTES_TO_UPDATE / BENCHMARK_THREADS - counter) + ").");
                     }
                 }
             } else {
@@ -324,31 +351,11 @@ public final class LogTest3 {
                     counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
                     if (counter % (10 * 1024 * 1024) == 0) {
                         System.out.println(Thread.currentThread().getName() + ": Updated 10.485.760 bytes with zipfian distribution(left: " +
-                                (BYTES_TO_UPDATE / BENCHMARK_THREADS - counter) + ").");
+                            (BYTES_TO_UPDATE / BENCHMARK_THREADS - counter) + ").");
                     }
                 }
             }
             System.out.println("Time to update " + BYTES_TO_UPDATE + " bytes of payload: " + (System.currentTimeMillis() - start));
-        }
-
-        /**
-         * Returns a random long
-         *
-         * @param p_rng
-         *         the random number generator
-         * @param p_max
-         *         the maximum value
-         * @return a random long
-         */
-        long nextLong(final Random p_rng, final long p_max) {
-            long bits;
-            long val;
-
-            do {
-                bits = p_rng.nextLong() << 1 >>> 1;
-                val = bits % p_max;
-            } while (bits - val + p_max - 1 < 0L);
-            return val;
         }
     }
 
@@ -356,7 +363,7 @@ public final class LogTest3 {
      * A random number generator with zipfian distribution
      * Based on http://diveintodata.org/tag/zipf/
      */
-    static class FastZipfGenerator {
+    private static class FastZipfGenerator {
         private Random m_random = new Random(0);
         private NavigableMap<Double, Integer> m_map;
 
@@ -364,9 +371,9 @@ public final class LogTest3 {
          * Creates an instance of FastZipfGenerator
          *
          * @param p_size
-         *         the number of iterations during generation
+         *     the number of iterations during generation
          * @param p_skew
-         *         the skew
+         *     the skew
          */
         FastZipfGenerator(final int p_size, final double p_skew) {
             m_map = computeMap(p_size, p_skew);
@@ -376,12 +383,12 @@ public final class LogTest3 {
          * Computes a map with zipfian distribution
          *
          * @param p_size
-         *         the number of iterations during generation
+         *     the number of iterations during generation
          * @param p_skew
-         *         the skew
+         *     the skew
          * @return the map
          */
-        private NavigableMap<Double, Integer> computeMap(final int p_size, final double p_skew) {
+        private static NavigableMap<Double, Integer> computeMap(final int p_size, final double p_skew) {
             final NavigableMap<Double, Integer> map = new TreeMap<Double, Integer>();
 
             double div = 0;

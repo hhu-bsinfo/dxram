@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.dxram.run.beineke;
 
+import java.nio.ByteBuffer;
+
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
@@ -16,9 +18,9 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 public final class LogTest2 {
 
     // Constants
-    protected static final int THREADS = 1;
-    protected static final int CHUNK_SIZE = 100;
-    protected static final int CHUNKS_PER_PUT = 100;
+    private static final int THREADS = 1;
+    private static final int CHUNK_SIZE = 100;
+    private static final int CHUNKS_PER_PUT = 100;
 
     // Constructors
 
@@ -32,7 +34,7 @@ public final class LogTest2 {
      * Program entry point
      *
      * @param p_arguments
-     *         The program arguments
+     *     The program arguments
      */
     public static void main(final String[] p_arguments) {
         // Initialize DXRAM
@@ -47,7 +49,7 @@ public final class LogTest2 {
         }
         try {
             currentThread.join();
-        } catch (final InterruptedException e) {
+        } catch (final InterruptedException ignored) {
         }
     }
 
@@ -68,7 +70,7 @@ public final class LogTest2 {
          * Creates an instance of Master
          *
          * @param p_chunkService
-         *         the initialized ChunkService
+         *     the initialized ChunkService
          */
         Master(final ChunkService p_chunkService) {
             m_chunkService = p_chunkService;
@@ -79,16 +81,21 @@ public final class LogTest2 {
         /**
          * Starts the Master
          */
-        @Override public void run() {
+        @Override
+        public void run() {
             long counter = 0;
             long start;
             Chunk[] chunks;
+            ByteBuffer data;
 
             // Create array of Chunks
             chunks = new Chunk[CHUNKS_PER_PUT];
             for (int i = 0; i < CHUNKS_PER_PUT; i++) {
                 chunks[i] = new Chunk(CHUNK_SIZE);
-                chunks[i].getData().put("Test!".getBytes());
+                data = chunks[i].getData();
+                if (data != null) {
+                    data.put("Test!".getBytes());
+                }
             }
 
             start = System.currentTimeMillis();

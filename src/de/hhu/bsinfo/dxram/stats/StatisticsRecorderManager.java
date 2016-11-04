@@ -23,13 +23,36 @@ public final class StatisticsRecorderManager {
     }
 
     /**
+     * Returns the recorders
+     *
+     * @return the recorders
+     */
+    static Collection<StatisticsRecorder> getRecorders() {
+        return ms_recorders.values();
+    }
+
+    /**
+     * Returns the operation
+     *
+     * @param p_class
+     *     the class
+     * @param p_operationName
+     *     the operation name
+     * @return the operation
+     */
+    public static StatisticsOperation getOperation(final Class<?> p_class, final String p_operationName) {
+
+        return getRecorder(p_class).getOperation(p_operationName);
+    }
+
+    /**
      * Returns the recorder
      *
      * @param p_class
-     *         the class
+     *     the class
      * @return the recorder
      */
-    public static StatisticsRecorder getRecorder(final Class<?> p_class) {
+    static StatisticsRecorder getRecorder(final Class<?> p_class) {
 
         StatisticsRecorder recorder = ms_recorders.get(p_class.getSimpleName());
         if (recorder == null) {
@@ -43,28 +66,5 @@ public final class StatisticsRecorderManager {
         }
 
         return recorder;
-    }
-
-    /**
-     * Returns the recorders
-     *
-     * @return the recorders
-     */
-    public static Collection<StatisticsRecorder> getRecorders() {
-        return ms_recorders.values();
-    }
-
-    /**
-     * Returns the operation
-     *
-     * @param p_class
-     *         the class
-     * @param p_operationName
-     *         the operation name
-     * @return the operation
-     */
-    public static StatisticsOperation getOperation(final Class<?> p_class, final String p_operationName) {
-
-        return getRecorder(p_class).getOperation(p_operationName);
     }
 }

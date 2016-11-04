@@ -31,23 +31,21 @@ public final class PrimaryLog extends AbstractLog {
      * Creates an instance of PrimaryLog with user specific configuration
      *
      * @param p_logComponent
-     *         the log component
+     *     the log component
      * @param p_backupDirectory
-     *         the backup directory
+     *     the backup directory
      * @param p_nodeID
-     *         the NodeID
+     *     the NodeID
      * @param p_primaryLogSize
-     *         the size of a primary log
+     *     the size of a primary log
      * @param p_flashPageSize
-     *         the size of flash page
+     *     the size of flash page
      * @throws IOException
-     *         if primary log could not be created
-     * @throws InterruptedException
-     *         if the caller was interrupted
+     *     if primary log could not be created
      */
     public PrimaryLog(final LogComponent p_logComponent, final String p_backupDirectory, final short p_nodeID, final long p_primaryLogSize,
-            final int p_flashPageSize) throws IOException, InterruptedException {
-        super(new File(p_backupDirectory + "N" + p_nodeID + "_" + PRIMLOG_SUFFIX_FILENAME), p_primaryLogSize, PRIMLOG_HEADER.length);
+        final int p_flashPageSize) throws IOException {
+        super(new File(p_backupDirectory + 'N' + p_nodeID + '_' + PRIMLOG_SUFFIX_FILENAME), p_primaryLogSize, PRIMLOG_HEADER.length);
         m_primaryLogSize = p_primaryLogSize;
 
         m_writePos = 0;
@@ -59,15 +57,19 @@ public final class PrimaryLog extends AbstractLog {
             throw new IllegalArgumentException("Error: Primary log too small");
         }
 
-        createLogAndWriteHeader(PRIMLOG_HEADER);
+        if (!createLogAndWriteHeader(PRIMLOG_HEADER)) {
+            throw new IOException("Error: Primary log could not be created");
+        }
     }
 
     // Methods
-    @Override public long getOccupiedSpace() {
+    @Override
+    public long getOccupiedSpace() {
         return m_numberOfBytes;
     }
 
-    @Override public int appendData(final byte[] p_data, final int p_offset, final int p_length) throws IOException, InterruptedException {
+    @Override
+    public int appendData(final byte[] p_data, final int p_offset, final int p_length) throws IOException, InterruptedException {
         if (m_primaryLogSize - m_numberOfBytes < p_length) {
             // Not enough free space in primary log -> flush to secondary logs and reset primary log
             m_logComponent.flushDataToSecondaryLogs();

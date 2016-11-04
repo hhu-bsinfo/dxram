@@ -39,88 +39,17 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
         super("log");
     }
 
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_log = p_componentAccessor.getComponent(LogComponent.class);
-    }
-
-    @Override protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-
-        registerNetworkMessages();
-        registerNetworkMessageListener();
-
-        return true;
-    }
-
-    @Override protected boolean shutdownService() {
-        return true;
-    }
-
     /**
      * Returns the current utilization of primary log and all secondary logs
      *
      * @return the current utilization
      */
-    public String getCurrentUtilization() {
+    private String getCurrentUtilization() {
         return m_log.getCurrentUtilization();
     }
 
-    /**
-     * Handles an incoming LogMessage
-     *
-     * @param p_message
-     *         the LogMessage
-     */
-    private void incomingLogMessage(final LogMessage p_message) {
-        m_log.logChunks(p_message.getMessageBuffer(), p_message.getSource());
-    }
-
-    /**
-     * Handles an incoming RemoveMessage
-     *
-     * @param p_message
-     *         the RemoveMessage
-     */
-    private void incomingRemoveMessage(final RemoveMessage p_message) {
-        m_log.removeChunks(p_message.getMessageBuffer(), p_message.getSource());
-    }
-
-    /**
-     * Handles an incoming InitRequest
-     *
-     * @param p_request
-     *         the InitRequest
-     */
-    private void incomingInitRequest(final InitRequest p_request) {
-        boolean res;
-
-        res = m_log.initBackupRange(p_request.getFirstCIDOrRangeID(), p_request.getSource());
-
-        try {
-            m_network.sendMessage(new InitResponse(p_request, res));
-        } catch (final NetworkException e) {
-            LOGGER.error("Could not acknowledge initilization of backup range", e);
-        }
-    }
-
-    /**
-     * Handles an incoming GetUtilizationRequest
-     *
-     * @param p_request
-     *         the GetUtilizationRequest
-     */
-    private void incomingGetUtilizationRequest(final GetUtilizationRequest p_request) {
-
-        try {
-            m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
-        } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Could not answer GetUtilizationRequest", e);
-            // #endif /* LOGGER >= ERROR */
-        }
-    }
-
-    @Override public void onIncomingMessage(final AbstractMessage p_message) {
+    @Override
+    public void onIncomingMessage(final AbstractMessage p_message) {
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.LOG_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
@@ -140,6 +69,81 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
                         break;
                 }
             }
+        }
+    }
+
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_log = p_componentAccessor.getComponent(LogComponent.class);
+    }
+
+    @Override
+    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+
+        registerNetworkMessages();
+        registerNetworkMessageListener();
+
+        return true;
+    }
+
+    @Override
+    protected boolean shutdownService() {
+        return true;
+    }
+
+    /**
+     * Handles an incoming LogMessage
+     *
+     * @param p_message
+     *     the LogMessage
+     */
+    private void incomingLogMessage(final LogMessage p_message) {
+        m_log.logChunks(p_message.getMessageBuffer(), p_message.getSource());
+    }
+
+    /**
+     * Handles an incoming RemoveMessage
+     *
+     * @param p_message
+     *     the RemoveMessage
+     */
+    private void incomingRemoveMessage(final RemoveMessage p_message) {
+        m_log.removeChunks(p_message.getMessageBuffer(), p_message.getSource());
+    }
+
+    /**
+     * Handles an incoming InitRequest
+     *
+     * @param p_request
+     *     the InitRequest
+     */
+    private void incomingInitRequest(final InitRequest p_request) {
+        boolean res;
+
+        res = m_log.initBackupRange(p_request.getFirstCIDOrRangeID(), p_request.getSource());
+
+        try {
+            m_network.sendMessage(new InitResponse(p_request, res));
+        } catch (final NetworkException e) {
+            LOGGER.error("Could not acknowledge initilization of backup range", e);
+        }
+    }
+
+    /**
+     * Handles an incoming GetUtilizationRequest
+     *
+     * @param p_request
+     *     the GetUtilizationRequest
+     */
+    private void incomingGetUtilizationRequest(final GetUtilizationRequest p_request) {
+
+        try {
+            m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
+        } catch (final NetworkException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Could not answer GetUtilizationRequest", e);
+            // #endif /* LOGGER >= ERROR */
         }
     }
 

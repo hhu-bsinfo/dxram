@@ -29,9 +29,9 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
      * Creates an instance of RecoverBackupRangeResponse
      *
      * @param p_request
-     *         the corresponding RecoverBackupRangeRequest
+     *     the corresponding RecoverBackupRangeRequest
      * @param p_numberOfRecoveredChunks
-     *         number of recovered chunks
+     *     number of recovered chunks
      */
     public RecoverBackupRangeResponse(final RecoverBackupRangeRequest p_request, final int p_numberOfRecoveredChunks) {
         super(p_request, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE);
@@ -50,17 +50,20 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
         return m_numberOfRecoveredChunks;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt(m_numberOfRecoveredChunks);
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_numberOfRecoveredChunks = p_buffer.getInt();
-    }
-
-    @Override protected final int getPayloadLength() {
-        return Integer.BYTES;
     }
 
 }

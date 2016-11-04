@@ -19,28 +19,24 @@ import de.hhu.bsinfo.soh.SmallObjectHeap;
  */
 public final class CIDTable {
 
+    private static final byte ENTRY_SIZE = 5;
+    private static final byte LID_TABLE_LEVELS = 4;
+    private static final long BITMASK_ADDRESS = 0x7FFFFFFFFFL;
+    private static final long BIT_FLAG = 0x8000000000L;
+    private static final long FULL_FLAG = BIT_FLAG;
+    private static final long DELETED_FLAG = BIT_FLAG;
     private static final Logger LOGGER = LogManager.getFormatterLogger(CIDTable.class.getSimpleName());
-
     // statistics recorder
     private static final StatisticsOperation SOP_CREATE_NID_TABLE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateNIDTable");
     private static final StatisticsOperation SOP_CREATE_LID_TABLE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateLIDTable");
-
-    public static final byte ENTRY_SIZE = 5;
-    public static final byte LID_TABLE_LEVELS = 4;
     private static final byte BITS_PER_LID_LEVEL = 48 / LID_TABLE_LEVELS;
+    private static final int ENTRIES_PER_LID_LEVEL = (int) Math.pow(2.0, BITS_PER_LID_LEVEL);
+    private static final int LID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_PER_LID_LEVEL + 7;
     private static final long LID_LEVEL_BITMASK = (int) Math.pow(2.0, BITS_PER_LID_LEVEL) - 1;
-    public static final int ENTRIES_PER_LID_LEVEL = (int) Math.pow(2.0, BITS_PER_LID_LEVEL);
     private static final byte BITS_FOR_NID_LEVEL = 16;
+    private static final int ENTRIES_FOR_NID_LEVEL = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL);
+    private static final int NID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_FOR_NID_LEVEL + 7;
     private static final long NID_LEVEL_BITMASK = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL) - 1;
-    public static final int ENTRIES_FOR_NID_LEVEL = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL);
-    public static final int LID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_PER_LID_LEVEL + 7;
-    public static final int NID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_FOR_NID_LEVEL + 7;
-
-    protected static final long BITMASK_ADDRESS = 0x7FFFFFFFFFL;
-    protected static final long BIT_FLAG = 0x8000000000L;
-    protected static final long FULL_FLAG = BIT_FLAG;
-    protected static final long DELETED_FLAG = BIT_FLAG;
-
     private GetNodeIdHook m_nodeIdHook;
     private long m_addressTableDirectory = -1;
     private SmallObjectHeap m_rawMemory;
@@ -55,40 +51,10 @@ public final class CIDTable {
      * Creates an instance of CIDTable
      *
      * @param p_nodeIdHook
-     *         Instance of a class implementing the node id hook.
+     *     Instance of a class implementing the node id hook.
      */
     public CIDTable(final GetNodeIdHook p_nodeIdHook) {
         m_nodeIdHook = p_nodeIdHook;
-    }
-
-    /**
-     * Initializes the CIDTable
-     *
-     * @param p_rawMemory
-     *         The raw memory instance to use for allocation.
-     */
-    public void initialize(final SmallObjectHeap p_rawMemory) {
-        m_rawMemory = p_rawMemory;
-        m_tableCount = 0;
-        m_totalMemoryTables = 0;
-        m_addressTableDirectory = createNIDTable();
-
-        m_store = new LIDStore();
-        m_nextLocalID = new AtomicLong(1);
-
-        // #if LOGGER >= INFO
-        LOGGER.info("CIDTable: init success (page directory at: 0x%X)", m_addressTableDirectory);
-        // #endif /* LOGGER >= INFO */
-    }
-
-    /**
-     * Disengages the CIDTable
-     */
-    public void disengage() {
-        m_store = null;
-        m_nextLocalID = null;
-
-        m_addressTableDirectory = -1;
     }
 
     /**
@@ -96,7 +62,7 @@ public final class CIDTable {
      *
      * @return Number of tables currently allocated.
      */
-    public int getTableCount() {
+    int getTableCount() {
         return m_tableCount;
     }
 
@@ -105,7 +71,7 @@ public final class CIDTable {
      *
      * @return Amount of memory used by the tables (in bytes)
      */
-    public long getTotalMemoryTables() {
+    long getTotalMemoryTables() {
         return m_totalMemoryTables;
     }
 
@@ -114,7 +80,7 @@ public final class CIDTable {
      *
      * @return a free LID and version, or -1 if there is none
      */
-    public long getFreeLID() {
+    long getFreeLID() {
         long ret = -1;
 
         if (m_store != null) {
@@ -130,65 +96,11 @@ public final class CIDTable {
     }
 
     /**
-     * Gets an entry of the level 0 table
-     *
-     * @param p_chunkID
-     *         the ChunkID of the entry
-     * @return the entry. 0 for invalid/unused.
-     */
-    public long get(final long p_chunkID) {
-        long ret;
-
-        ret = getEntry(p_chunkID, m_addressTableDirectory, LID_TABLE_LEVELS);
-
-        return ret;
-    }
-
-    /**
-     * Sets an entry of the level 0 table
-     *
-     * @param p_chunkID
-     *         the ChunkID of the entry
-     * @param p_addressChunk
-     *         the address of the chunk
-     * @return True if successful, false if allocation of a new table failed, out of memory
-     */
-    public boolean set(final long p_chunkID, final long p_addressChunk) {
-        return setEntry(p_chunkID, p_addressChunk, m_addressTableDirectory, LID_TABLE_LEVELS);
-    }
-
-    /**
-     * Gets and deletes an entry of the level 0 table
-     *
-     * @param p_chunkID
-     *         the ChunkID of the entry
-     * @param p_flagZombie
-     *         Flag the deleted entry as a zombie or not zombie i.e. fully deleted.
-     * @return The address of the chunk which was removed from the table.
-     */
-    public long delete(final long p_chunkID, final boolean p_flagZombie) {
-        long ret;
-        ret = deleteEntry(p_chunkID, m_addressTableDirectory, LID_TABLE_LEVELS, p_flagZombie);
-        return ret;
-    }
-
-    /**
-     * Puts the LocalID of a deleted migrated Chunk to LIDStore
-     *
-     * @param p_chunkID
-     *         the ChunkID of the entry
-     * @return m_cidTable
-     */
-    public boolean putChunkIDForReuse(final long p_chunkID) {
-        return m_store.put(ChunkID.getLocalID(p_chunkID));
-    }
-
-    /**
      * Returns the ChunkID ranges of all locally stored Chunks
      *
      * @return the ChunkID ranges in an ArrayList
      */
-    public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
+    ArrayList<Long> getCIDRangesOfAllLocalChunks() {
         ArrayList<Long> ret = null;
         long entry;
         long intervalStart;
@@ -200,14 +112,15 @@ public final class CIDTable {
                 entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
                 if (entry > 0) {
                     if (i == (m_nodeIdHook.getNodeId() & 0xFFFF)) {
-                        ret.addAll(getAllRanges((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS,
-                                LID_TABLE_LEVELS - 1));
+                        ret.addAll(
+                            getAllRanges((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
                     }
                 }
             }
         }
 
         // compress intervals
+        assert ret != null;
         if (ret.size() >= 2) {
             if (ret.size() % 2 != 0) {
                 // throw new MemoryException("internal error in getChunkIDRangesOfAllChunks");
@@ -236,7 +149,7 @@ public final class CIDTable {
      *
      * @return the ChunkIDs of all migrated Chunks
      */
-    public ArrayList<Long> getCIDOfAllMigratedChunks() {
+    ArrayList<Long> getCIDOfAllMigratedChunks() {
         ArrayList<Long> ret = null;
         long entry;
 
@@ -246,7 +159,7 @@ public final class CIDTable {
                 entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
                 if (entry > 0 && i != (m_nodeIdHook.getNodeId() & 0xFFFF)) {
                     ret.addAll(
-                            getAllEntries((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
+                        getAllEntries((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
                 }
             }
         }
@@ -254,7 +167,115 @@ public final class CIDTable {
         return ret;
     }
 
+    /**
+     * Initializes the CIDTable
+     *
+     * @param p_rawMemory
+     *     The raw memory instance to use for allocation.
+     */
+    public void initialize(final SmallObjectHeap p_rawMemory) {
+        m_rawMemory = p_rawMemory;
+        m_tableCount = 0;
+        m_totalMemoryTables = 0;
+        m_addressTableDirectory = createNIDTable();
+
+        m_store = new LIDStore();
+        m_nextLocalID = new AtomicLong(1);
+
+        // #if LOGGER >= INFO
+        LOGGER.info("CIDTable: init success (page directory at: 0x%X)", m_addressTableDirectory);
+        // #endif /* LOGGER >= INFO */
+    }
+
+    /**
+     * Gets an entry of the level 0 table
+     *
+     * @param p_chunkID
+     *     the ChunkID of the entry
+     * @return the entry. 0 for invalid/unused.
+     */
+    public long get(final long p_chunkID) {
+        long ret;
+
+        ret = getEntry(p_chunkID, m_addressTableDirectory, LID_TABLE_LEVELS);
+
+        return ret;
+    }
+
+    /**
+     * Sets an entry of the level 0 table
+     *
+     * @param p_chunkID
+     *     the ChunkID of the entry
+     * @param p_addressChunk
+     *     the address of the chunk
+     * @return True if successful, false if allocation of a new table failed, out of memory
+     */
+    public boolean set(final long p_chunkID, final long p_addressChunk) {
+        return setEntry(p_chunkID, p_addressChunk, m_addressTableDirectory, LID_TABLE_LEVELS);
+    }
+
+    /**
+     * Gets and deletes an entry of the level 0 table
+     *
+     * @param p_chunkID
+     *     the ChunkID of the entry
+     * @param p_flagZombie
+     *     Flag the deleted entry as a zombie or not zombie i.e. fully deleted.
+     * @return The address of the chunk which was removed from the table.
+     */
+    public long delete(final long p_chunkID, final boolean p_flagZombie) {
+        long ret;
+        ret = deleteEntry(p_chunkID, m_addressTableDirectory, LID_TABLE_LEVELS, p_flagZombie);
+        return ret;
+    }
+
+    /**
+     * Prints debug informations
+     */
+    public void printDebugInfos() {
+        StringBuilder infos;
+        int[] count;
+
+        count = new int[LID_TABLE_LEVELS + 1];
+
+        countTables(m_addressTableDirectory, LID_TABLE_LEVELS, count);
+
+        infos = new StringBuilder();
+        infos.append("\nCIDTable:\n");
+        for (int i = LID_TABLE_LEVELS; i >= 0; i--) {
+            infos.append('\t');
+            infos.append(count[i]);
+            infos.append(" table(s) on level ");
+            infos.append(i);
+            infos.append('\n');
+        }
+
+        System.out.println(infos);
+    }
+
+    /**
+     * Disengages the CIDTable
+     */
+    void disengage() {
+        m_store = null;
+        m_nextLocalID = null;
+
+        m_addressTableDirectory = -1;
+    }
+
     // -----------------------------------------------------------------------------------------
+
+    /**
+     * Puts the LocalID of a deleted migrated Chunk to LIDStore
+     *
+     * @param p_chunkID
+     *     the ChunkID of the entry
+     * @return m_cidTable
+     */
+    boolean putChunkIDForReuse(final long p_chunkID) {
+        return m_store.put(ChunkID.getLocalID(p_chunkID));
+    }
 
     /**
      * Creates the NodeID table
@@ -318,9 +339,9 @@ public final class CIDTable {
      * Reads a table entry
      *
      * @param p_addressTable
-     *         the table
+     *     the table
      * @param p_index
-     *         the index of the entry
+     *     the index of the entry
      * @return the entry
      */
     private long readEntry(final long p_addressTable, final long p_index) {
@@ -339,11 +360,11 @@ public final class CIDTable {
      * Writes a table entry
      *
      * @param p_addressTable
-     *         the table
+     *     the table
      * @param p_index
-     *         the index of the entry
+     *     the index of the entry
      * @param p_entry
-     *         the entry
+     *     the entry
      */
     private void writeEntry(final long p_addressTable, final long p_index, final long p_entry) {
         long value;
@@ -358,11 +379,11 @@ public final class CIDTable {
      * Gets an entry of the level 0 table
      *
      * @param p_chunkID
-     *         the ChunkID of the entry
+     *     the ChunkID of the entry
      * @param p_addressTable
-     *         the current table
+     *     the current table
      * @param p_level
-     *         the table level
+     *     the table level
      * @return the entry
      */
     private long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) {
@@ -392,13 +413,13 @@ public final class CIDTable {
      * Sets an entry of the level 0 table
      *
      * @param p_chunkID
-     *         the ChunkID of the entry
+     *     the ChunkID of the entry
      * @param p_addressChunk
-     *         the address of the chunk
+     *     the address of the chunk
      * @param p_addressTable
-     *         the address of the current CID table
+     *     the address of the current CID table
      * @param p_level
-     *         the table level
+     *     the table level
      * @return True if successful, false if no further table could be allocated (out of memory)
      */
     private boolean setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable, final int p_level) {
@@ -438,14 +459,14 @@ public final class CIDTable {
      * Gets and deletes an entry of the level 0 table
      *
      * @param p_chunkID
-     *         the ChunkID of the entry
+     *     the ChunkID of the entry
      * @param p_addressTable
-     *         the current table
+     *     the current table
      * @param p_level
-     *         the table level
+     *     the table level
      * @param p_flagZombie
-     *         flag the deleted entry as zombie i.e. keep the chunk
-     *         allocated but remove it from the table index.
+     *     flag the deleted entry as zombie i.e. keep the chunk
+     *     allocated but remove it from the table index.
      * @return the entry
      */
     private long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level, final boolean p_flagZombie) {
@@ -492,11 +513,11 @@ public final class CIDTable {
      * Adds all ChunkID ranges to an ArrayList
      *
      * @param p_unfinishedCID
-     *         the unfinished ChunkID
+     *     the unfinished ChunkID
      * @param p_table
-     *         the current table
+     *     the current table
      * @param p_level
-     *         the current table level
+     *     the current table level
      * @return the ArrayList
      */
     private ArrayList<Long> getAllRanges(final long p_unfinishedCID, final long p_table, final int p_level) {
@@ -517,7 +538,7 @@ public final class CIDTable {
                         if (range == 0) {
                             range = 1;
                             ret.add(p_unfinishedCID + i);
-                        } else if (range == 1) {
+                        } else {
                             ret.remove(ret.size() - 1);
                         }
                         ret.add(p_unfinishedCID + i);
@@ -535,11 +556,11 @@ public final class CIDTable {
      * Adds all ChunkIDs to an ArrayList
      *
      * @param p_unfinishedCID
-     *         the unfinished ChunkID
+     *     the unfinished ChunkID
      * @param p_table
-     *         the current table
+     *     the current table
      * @param p_level
-     *         the current table level
+     *     the current table level
      * @return the ArrayList
      */
     private ArrayList<Long> getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level) {
@@ -564,34 +585,14 @@ public final class CIDTable {
     }
 
     /**
-     * Prints debug informations
-     */
-    public void printDebugInfos() {
-        StringBuilder infos;
-        int[] count;
-
-        count = new int[LID_TABLE_LEVELS + 1];
-
-        countTables(m_addressTableDirectory, LID_TABLE_LEVELS, count);
-
-        infos = new StringBuilder();
-        infos.append("\nCIDTable:\n");
-        for (int i = LID_TABLE_LEVELS; i >= 0; i--) {
-            infos.append("\t" + count[i] + " table(s) on level " + i + "\n");
-        }
-
-        System.out.println(infos);
-    }
-
-    /**
      * Counts the subtables
      *
      * @param p_addressTable
-     *         the current table
+     *     the current table
      * @param p_level
-     *         the level of the table
+     *     the level of the table
      * @param p_count
-     *         the table counts
+     *     the table counts
      */
     private void countTables(final long p_addressTable, final int p_level, final int[] p_count) {
         long entry;
@@ -689,7 +690,7 @@ public final class CIDTable {
          * Puts a free LocalID
          *
          * @param p_localID
-         *         a LocalID
+         *     a LocalID
          * @return True if adding an entry to our local ID store was successful, false otherwise.
          */
         public boolean put(final long p_localID) {
@@ -727,17 +728,15 @@ public final class CIDTable {
          * Finds free LIDs in the CIDTable
          *
          * @param p_addressTable
-         *         the table
+         *     the table
          * @param p_level
-         *         the table level
+         *     the table level
          * @param p_offset
-         *         the offset of the LID
+         *     the offset of the LID
          * @return true if free LIDs were found, false otherwise
          */
         private boolean findFreeLIDs(final long p_addressTable, final int p_level, final long p_offset) {
             boolean ret = false;
-            long chunkID;
-            long nodeID;
             long localID;
             long entry;
 
@@ -759,11 +758,7 @@ public final class CIDTable {
                 } else {
                     // check if we got an entry referencing a zombie
                     if ((entry & DELETED_FLAG) > 0 && (entry & BITMASK_ADDRESS) > 0) {
-                        nodeID = m_nodeIdHook.getNodeId();
                         localID = p_offset + i;
-
-                        chunkID = nodeID << 48;
-                        chunkID = chunkID + localID;
 
                         // cleanup zombie in table
                         writeEntry(p_addressTable, i, 0);
@@ -792,7 +787,7 @@ public final class CIDTable {
     interface GetNodeIdHook {
 
         /**
-         * Retruns the NodeID
+         * Returns the NodeID
          *
          * @return the NodeID
          */

@@ -12,8 +12,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,9 +35,6 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(ScriptEngineComponent.class.getSimpleName());
 
-    // configuration values
-    @Expose private String m_autostartScript = "";
-
     // private state
     private ScriptEngineManager m_scriptEngineManager;
     private ScriptEngine m_scriptEngine;
@@ -57,10 +52,24 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
     }
 
     /**
+     * Get the default script context
+     *
+     * @return Default script context
+     */
+    public ScriptContext getContext() {
+        return m_defaultScriptContext;
+    }
+
+    @Override
+    protected boolean isEngineAccessor() {
+        return true;
+    }
+
+    /**
      * Create a new context.
      *
      * @param p_name
-     *         Name of the context
+     *     Name of the context
      * @return Newly created context or null if a context with the name already exists
      */
     public ScriptContext createContext(final String p_name) {
@@ -82,7 +91,7 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
      * Destroy a context by name
      *
      * @param p_name
-     *         Name of the context to destroy
+     *     Name of the context to destroy
      */
     public void destroyContext(final String p_name) {
         ScriptContext ctx = getContext(p_name);
@@ -96,26 +105,19 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
      * Destroy a context
      *
      * @param p_ctx
-     *         Context to destroy
+     *     Context to destroy
      */
     public void destroyContext(final ScriptContext p_ctx) {
         m_scriptContexts.remove(p_ctx.getName());
     }
 
-    /**
-     * Get the default script context
-     *
-     * @return Default script context
-     */
-    public ScriptContext getContext() {
-        return m_defaultScriptContext;
-    }
+    // -------------------------------------------------------------------------------------------------------
 
     /**
      * Get a context by name
      *
      * @param p_name
-     *         Name of the context
+     *     Name of the context
      * @return Context assigned to the specified name or null if no context for that name exists
      */
     public ScriptContext getContext(final String p_name) {
@@ -131,44 +133,8 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
         return ctx;
     }
 
-    // -------------------------------------------------------------------------------------------------------
-
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        // no dependencies
-    }
-
-    @Override protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        m_scriptEngineManager = new ScriptEngineManager();
-        m_scriptEngine = m_scriptEngineManager.getEngineByName("JavaScript");
-
-        // create default context
-        m_defaultScriptContext = new ScriptContext(m_scriptEngineContext, m_scriptEngine, "default");
-
-        // TODO autostart script
-
-        return true;
-    }
-
-    @Override protected boolean shutdownComponent() {
-
-        m_defaultScriptContext = null;
-        m_scriptContexts.clear();
-
-        m_scriptEngine = null;
-        m_scriptEngineManager = null;
-
-        m_scriptEngineContext = null;
-
-        return true;
-    }
-
-    @Override protected boolean isEngineAccessor() {
-        return true;
-    }
-
-    // -------------------------------------------------------------------------------------------------------
-
-    @Override public void list() {
+    @Override
+    public void list() {
         List<String> list = getParentEngine().getServiceShortNames();
 
         String str = "";
@@ -180,23 +146,30 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
         System.out.println(str.substring(0, str.length() - 2));
     }
 
-    @Override public AbstractDXRAMService service(final String p_serviceName) {
+    @Override
+    public AbstractDXRAMService service(final String p_serviceName) {
         return getParentEngine().getService(p_serviceName);
     }
 
-    @Override public String shortToHexStr(final short p_val) {
+    @Override
+    public String shortToHexStr(final short p_val) {
         return NodeID.toHexString(p_val);
     }
 
-    @Override public String intToHexStr(final int p_val) {
+    // -------------------------------------------------------------------------------------------------------
+
+    @Override
+    public String intToHexStr(final int p_val) {
         return BarrierID.toHexString(p_val);
     }
 
-    @Override public String longToHexStr(final long p_val) {
+    @Override
+    public String longToHexStr(final long p_val) {
         return ChunkID.toHexString(p_val);
     }
 
-    @Override public long longStrToLong(final String p_str) {
+    @Override
+    public long longStrToLong(final String p_str) {
 
         String str = p_str.toLowerCase();
 
@@ -205,11 +178,11 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
             // oh java...no unsigned, why?
             switch (tmp) {
                 case "0x":
-                    return (new BigInteger(str.substring(2), 16)).longValue();
+                    return new BigInteger(str.substring(2), 16).longValue();
                 case "0b":
-                    return (new BigInteger(str.substring(2), 2)).longValue();
+                    return new BigInteger(str.substring(2), 2).longValue();
                 case "0o":
-                    return (new BigInteger(str.substring(2), 8)).longValue();
+                    return new BigInteger(str.substring(2), 8).longValue();
                 default:
                     break;
             }
@@ -218,34 +191,40 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
         return java.lang.Long.parseLong(str);
     }
 
-    @Override public NodeRole nodeRole(final String p_str) {
+    @Override
+    public NodeRole nodeRole(final String p_str) {
         return NodeRole.toNodeRole(p_str);
     }
 
-    @Override public void sleep(final int p_timeMs) {
+    @Override
+    public void sleep(final int p_timeMs) {
         try {
             Thread.sleep(p_timeMs);
         } catch (final InterruptedException ignored) {
         }
     }
 
-    @Override public long cid(final short p_nid, final long p_lid) {
+    @Override
+    public long cid(final short p_nid, final long p_lid) {
         return ChunkID.getChunkID(p_nid, p_lid);
     }
 
-    @Override public short nidOfCid(final long p_cid) {
+    @Override
+    public short nidOfCid(final long p_cid) {
         return ChunkID.getCreatorID(p_cid);
     }
 
-    @Override public long lidOfCid(final long p_cid) {
+    @Override
+    public long lidOfCid(final long p_cid) {
         return ChunkID.getLocalID(p_cid);
     }
 
-    @Override public DataStructure newDataStructure(final String p_className) {
+    @Override
+    public DataStructure newDataStructure(final String p_className) {
         Class<?> clazz;
         try {
             clazz = Class.forName(p_className);
-        } catch (final ClassNotFoundException e) {
+        } catch (final ClassNotFoundException ignored) {
             LOGGER.error("Cannot find class with name %s", p_className);
             return null;
         }
@@ -266,11 +245,44 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
         return dataStructure;
     }
 
-    @Override public String readFile(final String p_path) {
+    @Override
+    public String readFile(final String p_path) {
         try {
             return new String(Files.readAllBytes(Paths.get(p_path)));
         } catch (final IOException ignored) {
             return null;
         }
+    }
+
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        // no dependencies
+    }
+
+    @Override
+    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        m_scriptEngineManager = new ScriptEngineManager();
+        m_scriptEngine = m_scriptEngineManager.getEngineByName("JavaScript");
+
+        // create default context
+        m_defaultScriptContext = new ScriptContext(m_scriptEngineContext, m_scriptEngine, "default");
+
+        // TODO autostart script
+
+        return true;
+    }
+
+    @Override
+    protected boolean shutdownComponent() {
+
+        m_defaultScriptContext = null;
+        m_scriptContexts.clear();
+
+        m_scriptEngine = null;
+        m_scriptEngineManager = null;
+
+        m_scriptEngineContext = null;
+
+        return true;
     }
 }

@@ -37,9 +37,9 @@ public class LogMessage extends AbstractMessage {
      * Creates an instance of LogMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_dataStructures
-     *         the data structures to store
+     *     the data structures to store
      */
     public LogMessage(final short p_destination, final DataStructure... p_dataStructures) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
@@ -52,11 +52,11 @@ public class LogMessage extends AbstractMessage {
      * Creates an instance of LogMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_dataStructures
-     *         the data structures to store
+     *     the data structures to store
      * @param p_rangeID
-     *         the RangeID
+     *     the RangeID
      */
     public LogMessage(final short p_destination, final byte p_rangeID, final DataStructure... p_dataStructures) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
@@ -76,8 +76,24 @@ public class LogMessage extends AbstractMessage {
         return m_buffer;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        if (m_dataStructures != null) {
+            int ret = Byte.BYTES + Integer.BYTES;
+
+            for (DataStructure dataStructure : m_dataStructures) {
+                ret += Long.BYTES + Integer.BYTES + dataStructure.sizeofObject();
+            }
+
+            return ret;
+        } else {
+            return 0;
+        }
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.put(m_rangeID);
 
         p_buffer.putInt(m_dataStructures.length);
@@ -94,21 +110,8 @@ public class LogMessage extends AbstractMessage {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         m_buffer = p_buffer;
-    }
-
-    @Override protected final int getPayloadLength() {
-        if (m_dataStructures != null) {
-            int ret = Byte.BYTES + Integer.BYTES;
-
-            for (DataStructure dataStructure : m_dataStructures) {
-                ret += Long.BYTES + Integer.BYTES + dataStructure.sizeofObject();
-            }
-
-            return ret;
-        } else {
-            return 0;
-        }
     }
 }

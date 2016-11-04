@@ -30,9 +30,9 @@ public class GetLookupTreeResponse extends AbstractResponse {
      * Creates an instance of GetLookupTreeResponse
      *
      * @param p_request
-     *         the GetLookupTreeRequest
+     *     the GetLookupTreeRequest
      * @param p_trees
-     *         the CIDTrees
+     *     the CIDTrees
      */
     public GetLookupTreeResponse(final GetLookupTreeRequest p_request, final LookupTree p_trees) {
         super(p_request, LookupMessages.SUBTYPE_GET_LOOKUP_TREE_RESPONSE);
@@ -51,24 +51,8 @@ public class GetLookupTreeResponse extends AbstractResponse {
         return m_tree;
     }
 
-    // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
-
-        LookupTree.writeLookupTree(p_buffer, m_tree);
-
-    }
-
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
-
-        // m_trees = new ArrayList<LookupTree>(p_buffer.getInt());
-        // for (int i = 0; i < m_trees.size(); i++) {
-        // m_trees.add(LookupTree.readCIDTree(p_buffer));
-        // }
-
-        m_tree = LookupTree.readLookupTree(p_buffer);
-    }
-
-    @Override protected final int getPayloadLength() {
+    @Override
+    protected final int getPayloadLength() {
         int ret;
 
         // ret += Integer.BYTES;
@@ -80,6 +64,25 @@ public class GetLookupTreeResponse extends AbstractResponse {
         ret = LookupTree.getLookupTreeWriteLength(m_tree);
 
         return ret;
+    }
+
+    // Methods
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
+
+        LookupTree.writeLookupTree(p_buffer, m_tree);
+
+    }
+
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
+
+        // m_trees = new ArrayList<LookupTree>(p_buffer.getInt());
+        // for (int i = 0; i < m_trees.size(); i++) {
+        // m_trees.add(LookupTree.readCIDTree(p_buffer));
+        // }
+
+        m_tree = LookupTree.readLookupTree(p_buffer);
     }
 
 }

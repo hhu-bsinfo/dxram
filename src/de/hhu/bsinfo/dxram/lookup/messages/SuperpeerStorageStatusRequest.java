@@ -20,7 +20,7 @@ public class SuperpeerStorageStatusRequest extends AbstractRequest {
      * Creates an instance of SuperpeerStorageCreateRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      */
     public SuperpeerStorageStatusRequest(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST);

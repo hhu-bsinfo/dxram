@@ -45,51 +45,17 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
         super("lookup");
     }
 
-    @Override protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-    }
-
-    @Override protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        registerNetworkMessages();
-        registerNetworkMessageListener();
-
-        if (m_boot.getNodeRole().equals(NodeRole.PEER)) {
-            m_backup.registerPeer();
-        }
-
-        return true;
-    }
-
-    @Override protected boolean shutdownService() {
-
-        m_network = null;
-        m_lookup = null;
-
-        return true;
-    }
-
     /**
-     * Sends a Response to a LookupTree Request
+     * Returns all known superpeers
      *
-     * @param p_message
-     *         the LookupTreeRequest
+     * @return array with all superpeers
      */
-    private void incomingRequestLookupTreeOnServerMessage(final GetLookupTreeRequest p_message) {
-        LookupTree tree = m_lookup.superPeerGetLookUpTree(p_message.getTreeNodeID());
-
-        try {
-            m_network.sendMessage(new GetLookupTreeResponse(p_message, tree));
-        } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Could not acknowledge initilization of backup range: %s", e);
-            // #endif /* LOGGER >= ERROR */
-        }
+    public ArrayList<Short> getAllSuperpeers() {
+        return m_lookup.getAllSuperpeers();
     }
 
-    @Override public void onIncomingMessage(final AbstractMessage p_message) {
+    @Override
+    public void onIncomingMessage(final AbstractMessage p_message) {
 
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE) {
@@ -106,19 +72,10 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
     }
 
     /**
-     * Returns all known superpeers
-     *
-     * @return array with all superpeers
-     */
-    public ArrayList<Short> getAllSuperpeers() {
-        return m_lookup.getAllSuperpeers();
-    }
-
-    /**
      * Returns the responsible superpeer for given peer
      *
      * @param p_nid
-     *         node id to get responsible super peer from
+     *     node id to get responsible super peer from
      * @return node ID of superpeer
      */
     public short getResponsibleSuperpeer(final short p_nid) {
@@ -129,9 +86,9 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
      * sends a message to a superpeer to get a lookuptree from
      *
      * @param p_superPeerNid
-     *         superpeer where the lookuptree to get from
+     *     superpeer where the lookuptree to get from
      * @param p_nodeId
-     *         node id which lookuptree to get
+     *     node id which lookuptree to get
      * @return requested lookup Tree
      */
     public LookupTree getLookupTreeFromSuperpeer(final short p_superPeerNid, final short p_nodeId) {
@@ -159,7 +116,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
      * Sends a request to given superpeer to get a metadata summary
      *
      * @param p_nodeID
-     *         superpeer to get summary from
+     *     superpeer to get summary from
      * @return the metadata summary
      */
     public String getMetadataSummary(final short p_nodeID) {
@@ -171,7 +128,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
         try {
             m_network.sendSync(request);
-        } catch (final NetworkException e) {
+        } catch (final NetworkException ignored) {
             return "Error!";
         }
 
@@ -181,6 +138,53 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
         return ret;
     }
 
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+    }
+
+    @Override
+    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        registerNetworkMessages();
+        registerNetworkMessageListener();
+
+        if (m_boot.getNodeRole() == NodeRole.PEER) {
+            m_backup.registerPeer();
+        }
+
+        return true;
+    }
+
+    @Override
+    protected boolean shutdownService() {
+
+        m_network = null;
+        m_lookup = null;
+
+        return true;
+    }
+
+    /**
+     * Sends a Response to a LookupTree Request
+     *
+     * @param p_message
+     *     the LookupTreeRequest
+     */
+    private void incomingRequestLookupTreeOnServerMessage(final GetLookupTreeRequest p_message) {
+        LookupTree tree = m_lookup.superPeerGetLookUpTree(p_message.getTreeNodeID());
+
+        try {
+            m_network.sendMessage(new GetLookupTreeResponse(p_message, tree));
+        } catch (final NetworkException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Could not acknowledge initilization of backup range: %s", e);
+            // #endif /* LOGGER >= ERROR */
+        }
+    }
+
     /**
      * Register network messages we use in here.
      */
@@ -188,10 +192,10 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_TREE_RESPONSE, GetLookupTreeResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_TREE_REQUEST, GetLookupTreeRequest.class);
 
-        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST,
-                GetMetadataSummaryRequest.class);
+        m_network
+            .registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST, GetMetadataSummaryRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_RESPONSE,
-                GetMetadataSummaryResponse.class);
+            GetMetadataSummaryResponse.class);
 
     }
 

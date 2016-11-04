@@ -30,8 +30,52 @@ final class NodesConfiguration {
      *
      * @return the configured nodes
      */
-    public NodeEntry[] getNodes() {
+    public synchronized NodeEntry[] getNodes() {
         return m_nodes;
+    }
+
+    /**
+     * Get the node ID which is set for this node.
+     *
+     * @return Own node ID (or -1 if invalid).
+     */
+    synchronized short getOwnNodeID() {
+        return m_ownID;
+    }
+
+    /**
+     * Set the node ID for the current/own node.
+     *
+     * @param p_nodeID
+     *     Node id to set.
+     */
+    synchronized void setOwnNodeID(final short p_nodeID) {
+        m_ownID = p_nodeID;
+    }
+
+    /**
+     * Get the NodeEntry corresponding to our node ID.
+     *
+     * @return NodeEntry or null if invalid.
+     */
+    synchronized NodeEntry getOwnNodeEntry() {
+        return m_nodes[m_ownID & 0xFFFF];
+    }
+
+    // ---------------------------------------------------------------------------
+
+    @Override
+    public synchronized String toString() {
+        String str = "";
+
+        str += "NodesConfiguration[ownID: " + m_ownID + "]:";
+        for (int i = 0; i < m_nodes.length; i++) {
+            if (m_nodes[i] != null) {
+                str += '\n' + NodeID.toHexString((short) i) + ": " + m_nodes[i];
+            }
+        }
+
+        return str;
     }
 
     /**
@@ -41,29 +85,9 @@ final class NodesConfiguration {
      *     Node ID to get the entry of.
      * @return NodeEntry containing information about the node or null if it does not exist.
      */
-    NodeEntry getNode(final short p_nodeID) {
+    synchronized NodeEntry getNode(final short p_nodeID) {
         return m_nodes[p_nodeID & 0xFFFF];
     }
-
-    /**
-     * Get the node ID which is set for this node.
-     *
-     * @return Own node ID (or -1 if invalid).
-     */
-    short getOwnNodeID() {
-        return m_ownID;
-    }
-
-    /**
-     * Get the NodeEntry corresponding to our node ID.
-     *
-     * @return NodeEntry or null if invalid.
-     */
-    NodeEntry getOwnNodeEntry() {
-        return m_nodes[m_ownID & 0xFFFF];
-    }
-
-    // ---------------------------------------------------------------------------
 
     /**
      * Adds a node
@@ -85,30 +109,6 @@ final class NodesConfiguration {
      */
     synchronized void removeNode(final short p_nodeID) {
         m_nodes[p_nodeID & 0xFFFF] = null;
-    }
-
-    /**
-     * Set the node ID for the current/own node.
-     *
-     * @param p_nodeID
-     *     Node id to set.
-     */
-    synchronized void setOwnNodeID(final short p_nodeID) {
-        m_ownID = p_nodeID;
-    }
-
-    @Override
-    public String toString() {
-        String str = "";
-
-        str += "NodesConfiguration[ownID: " + m_ownID + "]:";
-        for (int i = 0; i < m_nodes.length; i++) {
-            if (m_nodes[i] != null) {
-                str += "\n" + NodeID.toHexString((short) i) + ": " + m_nodes[i];
-            }
-        }
-
-        return str;
     }
 
     /**
@@ -159,7 +159,7 @@ final class NodesConfiguration {
             m_rack = p_rack;
             m_switch = p_switch;
             m_role = p_role;
-            m_readFromFile = p_readFromFile ? (byte) 1 : (byte) 0;
+            m_readFromFile = (byte) (p_readFromFile ? 1 : 0);
         }
 
         /**
@@ -198,6 +198,12 @@ final class NodesConfiguration {
             return m_role;
         }
 
+        @Override
+        public String toString() {
+            return "NodesConfigurationEntry [m_address=" + m_address + ", m_rack=" + m_rack + ", m_switch=" + m_switch + ", m_role=" + m_role.getAcronym() +
+                ", m_readFromFile=" + (m_readFromFile == 1 ? "true" : "false") + ']';
+        }
+
         /**
          * Gets the source of the node's information
          *
@@ -205,12 +211,6 @@ final class NodesConfiguration {
          */
         boolean readFromFile() {
             return m_readFromFile == 1;
-        }
-
-        @Override
-        public String toString() {
-            return "NodesConfigurationEntry [m_address=" + m_address + ", m_rack=" + m_rack + ", m_switch=" + m_switch + ", m_role=" + m_role.getAcronym() +
-                ", m_readFromFile=" + (m_readFromFile == 1 ? "true" : "false") + "]";
         }
 
     }

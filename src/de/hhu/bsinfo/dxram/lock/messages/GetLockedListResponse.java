@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.lock.messages;
 
 import java.nio.ByteBuffer;
@@ -9,6 +8,7 @@ import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Response to a LockedListRequest
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 19.04.2016
  */
 public class GetLockedListResponse extends AbstractResponse {
@@ -24,10 +24,11 @@ public class GetLockedListResponse extends AbstractResponse {
 
     /**
      * Creates an instance of LockResponse as a sender.
+     *
      * @param p_request
-     *            Corresponding request to this response.
+     *     Corresponding request to this response.
      * @param p_lockedList
-     *            List of locked chunks to send
+     *     List of locked chunks to send
      */
     public GetLockedListResponse(final GetLockedListRequest p_request, final ArrayList<Pair<Long, Short>> p_lockedList) {
         super(p_request, LockMessages.SUBTYPE_GET_LOCKED_LIST_RESPONSE);
@@ -37,10 +38,16 @@ public class GetLockedListResponse extends AbstractResponse {
 
     /**
      * Get the list of locked chunks.
+     *
      * @return List of locked chunks.
      */
     public ArrayList<Pair<Long, Short>> getList() {
         return m_list;
+    }
+
+    @Override
+    protected final int getPayloadLength() {
+        return Integer.BYTES + m_list.size() * (Long.BYTES + Short.BYTES);
     }
 
     @Override
@@ -59,10 +66,5 @@ public class GetLockedListResponse extends AbstractResponse {
         for (int i = 0; i < size; i++) {
             m_list.add(new Pair<Long, Short>(p_buffer.getLong(), p_buffer.getShort()));
         }
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        return Integer.BYTES + m_list.size() * (Long.BYTES + Short.BYTES);
     }
 }

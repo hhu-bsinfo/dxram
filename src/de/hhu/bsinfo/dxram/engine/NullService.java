@@ -20,7 +20,7 @@ public class NullService extends AbstractDXRAMService {
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineSettings) {
+    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         return true;
     }
 

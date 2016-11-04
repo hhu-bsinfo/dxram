@@ -18,8 +18,15 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.10.2016
  */
 public class StorageUnitGsonSerializer implements JsonDeserializer<StorageUnit>, JsonSerializer<StorageUnit> {
-    @Override public StorageUnit deserialize(final JsonElement p_jsonElement, final Type p_type, final JsonDeserializationContext p_jsonDeserializationContext)
-            throws JsonParseException {
+    /**
+     * @param p_jsonElement
+     * @param p_type
+     * @param p_jsonDeserializationContext
+     * @return
+     * @throws JsonParseException
+     */
+    @Override
+    public StorageUnit deserialize(final JsonElement p_jsonElement, final Type p_type, final JsonDeserializationContext p_jsonDeserializationContext) {
 
         JsonObject jsonObj = p_jsonElement.getAsJsonObject();
         long value = jsonObj.get("m_value").getAsLong();
@@ -35,7 +42,8 @@ public class StorageUnitGsonSerializer implements JsonDeserializer<StorageUnit>,
         return new StorageUnit(value, unit);
     }
 
-    @Override public JsonElement serialize(final StorageUnit p_storageUnit, final Type p_type, final JsonSerializationContext p_jsonSerializationContext) {
+    @Override
+    public JsonElement serialize(final StorageUnit p_storageUnit, final Type p_type, final JsonSerializationContext p_jsonSerializationContext) {
 
         JsonObject jsonObj = new JsonObject();
 

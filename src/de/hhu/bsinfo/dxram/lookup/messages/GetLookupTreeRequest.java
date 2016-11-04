@@ -28,9 +28,9 @@ public class GetLookupTreeRequest extends AbstractRequest {
      * Creates an instance of GetLookupTreeRequest
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      * @param p_nidToGetTreeFrom
-     *         the NodeID
+     *     the NodeID
      */
     public GetLookupTreeRequest(final short p_destination, final short p_nidToGetTreeFrom) {
 
@@ -48,22 +48,25 @@ public class GetLookupTreeRequest extends AbstractRequest {
         return m_nidToGetTreeFrom;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+
+        return Short.BYTES;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
 
         p_buffer.putShort(m_nidToGetTreeFrom);
 
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
 
         m_nidToGetTreeFrom = p_buffer.getShort();
 
-    }
-
-    @Override protected final int getPayloadLength() {
-
-        return Short.BYTES;
     }
 
 }

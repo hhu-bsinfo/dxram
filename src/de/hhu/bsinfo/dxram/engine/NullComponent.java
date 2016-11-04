@@ -22,7 +22,7 @@ public class NullComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineSettings) {
+    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         return true;
     }
 

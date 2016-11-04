@@ -29,9 +29,9 @@ public class InsertNameserviceEntriesResponse extends AbstractResponse {
      * Creates an instance of InsertIDResponse
      *
      * @param p_request
-     *         the request
+     *     the request
      * @param p_backupSuperpeers
-     *         the backup superpeers
+     *     the backup superpeers
      */
     public InsertNameserviceEntriesResponse(final InsertNameserviceEntriesRequest p_request, final short[] p_backupSuperpeers) {
         super(p_request, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_RESPONSE);
@@ -50,8 +50,22 @@ public class InsertNameserviceEntriesResponse extends AbstractResponse {
         return m_backupSuperpeers;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        int ret;
+
+        if (m_backupSuperpeers == null) {
+            ret = Byte.BYTES;
+        } else {
+            ret = Byte.BYTES + Integer.BYTES + m_backupSuperpeers.length * Short.BYTES;
+        }
+
+        return ret;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         if (m_backupSuperpeers == null) {
             p_buffer.put((byte) 0);
         } else {
@@ -62,24 +76,13 @@ public class InsertNameserviceEntriesResponse extends AbstractResponse {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         if (p_buffer.get() != 0) {
             m_backupSuperpeers = new short[p_buffer.getInt()];
             p_buffer.asShortBuffer().get(m_backupSuperpeers);
             p_buffer.position(p_buffer.position() + m_backupSuperpeers.length * Short.BYTES);
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        int ret;
-
-        if (m_backupSuperpeers == null) {
-            ret = Byte.BYTES;
-        } else {
-            ret = Byte.BYTES + Integer.BYTES + m_backupSuperpeers.length * Short.BYTES;
-        }
-
-        return ret;
     }
 
 }

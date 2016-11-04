@@ -25,21 +25,24 @@ public class GetMetadataSummaryRequest extends AbstractRequest {
      * Creates an instance of LogMessage
      *
      * @param p_destination
-     *         the destination
+     *     the destination
      */
     public GetMetadataSummaryRequest(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST);
     }
 
-    // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
-    }
-
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
-    }
-
-    @Override protected final int getPayloadLength() {
+    @Override
+    protected final int getPayloadLength() {
         return 0;
+    }
+
+    // Methods
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
+    }
+
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
     }
 
 }

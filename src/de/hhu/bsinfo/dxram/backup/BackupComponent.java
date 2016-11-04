@@ -103,6 +103,21 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     /**
+     * Returns the backup peers for current migration backup range
+     *
+     * @return the backup peers for current migration backup range
+     */
+    public short[] getCopyOfCurrentMigrationBackupPeers() {
+        short[] ret;
+
+        m_lock.readLock().lock();
+        ret = m_currentMigrationBackupRange.getCopyOfBackupPeers();
+        m_lock.readLock().unlock();
+
+        return ret;
+    }
+
+    /**
      * Registers peer in superpeer overlay
      */
     public void registerPeer() {
@@ -222,21 +237,6 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
         m_lookup.initRange(((long) -1 << 48) + backupRange.getRangeID(), m_nodeID, backupRange.getBackupPeers());
         m_log.initBackupRange(((long) -1 << 48) + backupRange.getRangeID(), backupRange.getBackupPeers());
-    }
-
-    /**
-     * Returns the backup peers for current migration backup range
-     *
-     * @return the backup peers for current migration backup range
-     */
-    public short[] getCopyOfCurrentMigrationBackupPeers() {
-        short[] ret;
-
-        m_lock.readLock().lock();
-        ret = m_currentMigrationBackupRange.getCopyOfBackupPeers();
-        m_lock.readLock().unlock();
-
-        return ret;
     }
 
     /**
@@ -386,7 +386,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
         m_event.registerListener(this, NodeFailureEvent.class);
         m_nodeID = m_boot.getNodeID();
-        if (m_backupActive && m_boot.getNodeRole().equals(NodeRole.PEER)) {
+        if (m_backupActive && m_boot.getNodeRole() == NodeRole.PEER) {
             m_ownBackupRanges = new ArrayList<>();
             m_migrationBackupRanges = new ArrayList<>();
             m_migrationsTree = new MigrationBackupTree((short) 10, m_backupRangeSize.getBytes());
@@ -437,7 +437,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
             // #endif /* LOGGER >= WARN */
 
             return -1;
-        } else if (numberOfPeers < m_replicationFactor * 2) {
+        }
+
+        if (numberOfPeers < m_replicationFactor * 2) {
             // #if LOGGER >= WARN
             LOGGER.warn("Less than six peers for backup available. Some peers may store more" + " than one backup range of a node!");
             // #endif /* LOGGER >= WARN */
@@ -512,7 +514,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
             newBackupPeers = new short[m_replicationFactor];
             Arrays.fill(newBackupPeers, (short) -1);
         } else {
-            if (null != m_currentBackupRange) {
+            if (m_currentBackupRange != null) {
                 oldBackupPeers = new short[m_replicationFactor];
                 for (int i = 0; i < m_replicationFactor; i++) {
                     if (p_localID > -1) {

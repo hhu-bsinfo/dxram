@@ -29,9 +29,9 @@ public class AskAboutBackupsResponse extends AbstractResponse {
      * Creates an instance of AskAboutBackupsResponse
      *
      * @param p_request
-     *         the corresponding AskAboutBackupsRequest
+     *     the corresponding AskAboutBackupsRequest
      * @param p_missingMetadata
-     *         the missing metadata
+     *     the missing metadata
      */
     public AskAboutBackupsResponse(final AskAboutBackupsRequest p_request, final byte[] p_missingMetadata) {
         super(p_request, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE);
@@ -50,27 +50,8 @@ public class AskAboutBackupsResponse extends AbstractResponse {
         return m_missingMetadata;
     }
 
-    // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
-        if (m_missingMetadata == null || m_missingMetadata.length == 0) {
-            p_buffer.putInt(0);
-        } else {
-            p_buffer.putInt(m_missingMetadata.length);
-            p_buffer.put(m_missingMetadata);
-        }
-    }
-
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
-        int length;
-
-        length = p_buffer.getInt();
-        if (length != 0) {
-            m_missingMetadata = new byte[length];
-            p_buffer.get(m_missingMetadata);
-        }
-    }
-
-    @Override protected final int getPayloadLength() {
+    @Override
+    protected final int getPayloadLength() {
         int ret;
 
         ret = Integer.BYTES;
@@ -79,6 +60,28 @@ public class AskAboutBackupsResponse extends AbstractResponse {
         }
 
         return ret;
+    }
+
+    // Methods
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
+        if (m_missingMetadata == null || m_missingMetadata.length == 0) {
+            p_buffer.putInt(0);
+        } else {
+            p_buffer.putInt(m_missingMetadata.length);
+            p_buffer.put(m_missingMetadata);
+        }
+    }
+
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
+        int length;
+
+        length = p_buffer.getInt();
+        if (length != 0) {
+            m_missingMetadata = new byte[length];
+            p_buffer.get(m_missingMetadata);
+        }
     }
 
 }

@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -13,6 +12,7 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Request to put data into the superpeer storage.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.2015
  */
 public class SuperpeerStoragePutRequest extends AbstractRequest {
@@ -35,12 +35,13 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 
     /**
      * Creates an instance of SuperpeerStoragePutRequest
+     *
      * @param p_destination
-     *            the destination
+     *     the destination
      * @param p_dataStructure
-     *            Data structure with the data to put.
+     *     Data structure with the data to put.
      * @param p_replicate
-     *            True if this message is a replication to other superpeer message, false if normal message
+     *     True if this message is a replication to other superpeer message, false if normal message
      */
     public SuperpeerStoragePutRequest(final short p_destination, final DataStructure p_dataStructure, final boolean p_replicate) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST);
@@ -51,6 +52,7 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 
     /**
      * Get the Chunks to put when this message is received.
+     *
      * @return the Chunks to put
      */
     public final Chunk getChunk() {
@@ -59,10 +61,24 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 
     /**
      * Check if this request is a replicate message.
+     *
      * @return True if replicate message.
      */
     public boolean isReplicate() {
         return m_isReplicate;
+    }
+
+    @Override
+    protected final int getPayloadLength() {
+        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+
+        if (m_dataStructure != null) {
+            size += Long.BYTES + Integer.BYTES + m_dataStructure.sizeofObject() + Byte.BYTES;
+        } else {
+            size += Long.BYTES + Integer.BYTES + m_chunk.sizeofObject() + Byte.BYTES;
+        }
+
+        return size;
     }
 
     // Methods
@@ -95,18 +111,5 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
         importer.importObject(m_chunk);
         p_buffer.order(ByteOrder.BIG_ENDIAN);
         m_isReplicate = p_buffer.get() != 0;
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
-
-        if (m_dataStructure != null) {
-            size += Long.BYTES + Integer.BYTES + m_dataStructure.sizeofObject() + Byte.BYTES;
-        } else {
-            size += Long.BYTES + Integer.BYTES + m_chunk.sizeofObject() + Byte.BYTES;
-        }
-
-        return size;
     }
 }

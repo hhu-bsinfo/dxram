@@ -56,51 +56,6 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
         m_failureLock = new ReentrantLock(false);
     }
 
-    /**
-     * Dispatcher for a node failure
-     *
-     * @param p_nodeID
-     *     NodeID of failed node
-     */
-    private void failureHandling(final short p_nodeID) {
-        boolean responsible;
-        NodeRole ownRole;
-        NodeRole roleOfFailedNode;
-
-        ownRole = m_boot.getNodeRole();
-        roleOfFailedNode = m_boot.getNodeRole(p_nodeID);
-
-        if (ownRole == NodeRole.SUPERPEER) {
-            // #if LOGGER >= DEBUG
-            LOGGER.debug("********** ********** Node Failure ********** **********");
-            // #endif /* LOGGER >= DEBUG */
-
-            // Restore superpeer overlay and/or initiate recovery
-            responsible = m_lookup.failureHandling(p_nodeID, roleOfFailedNode);
-
-            if (responsible) {
-                // Failed node was either the predecessor superpeer or a peer/terminal this superpeer is responsible for
-
-                // #if LOGGER >= DEBUG
-                LOGGER.debug("Failed node was a %s, NodeID: 0x%X", roleOfFailedNode, p_nodeID);
-                // #endif /* LOGGER >= DEBUG */
-
-                // Clean-up zookeeper
-                m_boot.failureHandling(p_nodeID, roleOfFailedNode);
-            } else {
-                // #if LOGGER >= DEBUG
-                LOGGER.debug("Not responsible for failed node, NodeID: 0x%X", p_nodeID);
-                // #endif /* LOGGER >= DEBUG */
-            }
-        } else {
-            // This is a peer or terminal
-            if (roleOfFailedNode == NodeRole.PEER) {
-                // Notify other components/services (PeerLockService, ZooKeeperBootComponent, LookupComponent)
-                m_event.fireEvent(new NodeFailureEvent(getClass().getSimpleName(), p_nodeID, roleOfFailedNode));
-            }
-        }
-    }
-
     @Override
     public void eventTriggered(final AbstractEvent p_event) {
 
@@ -186,6 +141,94 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
         }
     }
 
+    @Override
+    public void onIncomingMessage(final AbstractMessage p_message) {
+
+        if (p_message != null) {
+            if (p_message.getType() == DXRAMMessageTypes.FAILURE_MESSAGES_TYPE) {
+                switch (p_message.getSubtype()) {
+                    case FailureMessages.SUBTYPE_FAILURE_REQUEST:
+                        incomingFailureRequest((FailureRequest) p_message);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_event = p_componentAccessor.getComponent(EventComponent.class);
+    }
+
+    @Override
+    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST, FailureRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_RESPONSE, FailureResponse.class);
+        m_network.register(FailureRequest.class, this);
+
+        m_event.registerListener(this, ConnectionLostEvent.class);
+        m_event.registerListener(this, ResponseDelayedEvent.class);
+
+        return true;
+    }
+
+    // --------------------------------------------------------------------------------
+
+    @Override
+    protected boolean shutdownComponent() {
+        return true;
+    }
+
+    /**
+     * Dispatcher for a node failure
+     *
+     * @param p_nodeID
+     *     NodeID of failed node
+     */
+    private void failureHandling(final short p_nodeID) {
+        boolean responsible;
+        NodeRole ownRole;
+        NodeRole roleOfFailedNode;
+
+        ownRole = m_boot.getNodeRole();
+        roleOfFailedNode = m_boot.getNodeRole(p_nodeID);
+
+        if (ownRole == NodeRole.SUPERPEER) {
+            // #if LOGGER >= DEBUG
+            // LOGGER.debug("********** ********** Node Failure ********** **********");
+            // #endif /* LOGGER >= DEBUG */
+
+            // Restore superpeer overlay and/or initiate recovery
+            responsible = m_lookup.failureHandling(p_nodeID, roleOfFailedNode);
+
+            if (responsible) {
+                // Failed node was either the predecessor superpeer or a peer/terminal this superpeer is responsible for
+
+                // #if LOGGER >= DEBUG
+                // LOGGER.debug("Failed node was a %s, NodeID: 0x%X", roleOfFailedNode, p_nodeID);
+                // #endif /* LOGGER >= DEBUG */
+
+                // Clean-up zookeeper
+                m_boot.failureHandling(p_nodeID, roleOfFailedNode);
+            } else {
+                // #if LOGGER >= DEBUG
+                // LOGGER.debug("Not responsible for failed node, NodeID: 0x%X", p_nodeID);
+                // #endif /* LOGGER >= DEBUG */
+            }
+        } else {
+            // This is a peer or terminal
+            if (roleOfFailedNode == NodeRole.PEER) {
+                // Notify other components/services (PeerLockService, ZooKeeperBootComponent, LookupComponent)
+                m_event.fireEvent(new NodeFailureEvent(getClass().getSimpleName(), p_nodeID, roleOfFailedNode));
+            }
+        }
+    }
+
     /**
      * Handles an incoming FailureRequest
      *
@@ -218,49 +261,6 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
         } catch (final NetworkException ignore) {
 
         }
-    }
-
-    @Override
-    public void onIncomingMessage(final AbstractMessage p_message) {
-
-        if (p_message != null) {
-            if (p_message.getType() == DXRAMMessageTypes.FAILURE_MESSAGES_TYPE) {
-                switch (p_message.getSubtype()) {
-                    case FailureMessages.SUBTYPE_FAILURE_REQUEST:
-                        incomingFailureRequest((FailureRequest) p_message);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-
-    // --------------------------------------------------------------------------------
-
-    @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_event = p_componentAccessor.getComponent(EventComponent.class);
-    }
-
-    @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST, FailureRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_RESPONSE, FailureResponse.class);
-        m_network.register(FailureRequest.class, this);
-
-        m_event.registerListener(this, ConnectionLostEvent.class);
-        m_event.registerListener(this, ResponseDelayedEvent.class);
-
-        return true;
-    }
-
-    @Override
-    protected boolean shutdownComponent() {
-        return true;
     }
 
 }

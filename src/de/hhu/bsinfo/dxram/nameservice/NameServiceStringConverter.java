@@ -19,12 +19,12 @@ public final class NameServiceStringConverter {
      * Creates an instance of StringConverter
      *
      * @param p_nameserviceType
-     *         Type of the string converter to use
+     *     Type of the string converter to use
      */
     public NameServiceStringConverter(final String p_nameserviceType) {
         m_nameserviceType = p_nameserviceType;
 
-        if (m_nameserviceType.equals("NAME")) {
+        if ("NAME".equals(m_nameserviceType)) {
             m_charMap = new HashMap<Character, Integer>();
             m_charMap.put('0', 1);
             m_charMap.put('1', 2);
@@ -168,20 +168,18 @@ public final class NameServiceStringConverter {
      * If the string is longer, all other characters are ignored.
      *
      * @param p_name
-     *         the String
+     *     the String
      * @return the integer
-     * @throws IllegalArgumentException
-     *         if name is too long (longer than 5 characters)
      */
-    public int convert(final String p_name) throws IllegalArgumentException {
+    public int convert(final String p_name) {
         int ret = 0;
-        int value = 0;
+        int value;
         char[] chars;
 
-        if (m_nameserviceType.equals("NAME")) {
+        if ("NAME".equals(m_nameserviceType)) {
             if (p_name.length() > 5) {
                 throw new IllegalArgumentException(
-                        "String " + p_name + " is too long! Only five characters are allowed. For greater numbers set configuration to ID");
+                    "String " + p_name + " is too long! Only five characters are allowed. For greater numbers set configuration to ID");
             }
 
             chars = p_name.toCharArray();
@@ -200,17 +198,17 @@ public final class NameServiceStringConverter {
      * Converts an integer index to a string. String length is is 5 chars.
      *
      * @param p_index
-     *         Index to convert
+     *     Index to convert
      * @return String representation
      */
     public String convert(final int p_index) {
-        String ret = null;
+        String ret;
 
-        if (m_nameserviceType.equals("NAME")) {
+        if ("NAME".equals(m_nameserviceType)) {
             ret = "";
 
             for (int i = 0; i < 32 / 6; i++) {
-                Character c = m_inverseCharMap.get((p_index >> i * 6) & 0x3F);
+                Character c = m_inverseCharMap.get(p_index >> i * 6 & 0x3F);
                 if (c != null) {
                     ret += c;
                 }

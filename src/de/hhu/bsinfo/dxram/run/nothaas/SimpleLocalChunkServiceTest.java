@@ -13,14 +13,14 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
  */
-public class SimpleLocalChunkServiceTest extends AbstractMain {
+public final class SimpleLocalChunkServiceTest extends AbstractMain {
     private DXRAM m_dxram;
     private ChunkService m_chunkService;
 
     /**
      * Constructor
      */
-    public SimpleLocalChunkServiceTest() {
+    private SimpleLocalChunkServiceTest() {
         super("Simple test to verify if the local chunk service is working");
         m_dxram = new DXRAM();
         m_dxram.initialize(true);
@@ -31,17 +31,19 @@ public class SimpleLocalChunkServiceTest extends AbstractMain {
      * Java main entry point.
      *
      * @param p_args
-     *         Main arguments.
+     *     Main arguments.
      */
     public static void main(final String[] p_args) {
         AbstractMain main = new SimpleLocalChunkServiceTest();
         main.run(p_args);
     }
 
-    @Override protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
+    @Override
+    protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
     }
 
-    @Override protected int main(final ArgumentList p_arguments) {
+    @Override
+    protected int main(final ArgumentList p_arguments) {
         int[] sizes = new int[] {100, 32, 432, 8};
         System.out.println("Creating chunks...");
         long[] chunkIDs = m_chunkService.createSizes(sizes);

@@ -31,9 +31,9 @@ public class GetLookupRangeResponse extends AbstractResponse {
      * Creates an instance of LookupResponse
      *
      * @param p_request
-     *         the corresponding LookupRequest
+     *     the corresponding LookupRequest
      * @param p_lookupRange
-     *         the primary peer, backup peers and range
+     *     the primary peer, backup peers and range
      */
     public GetLookupRangeResponse(final GetLookupRangeRequest p_request, final LookupRange p_lookupRange) {
         super(p_request, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_RESPONSE);
@@ -52,8 +52,22 @@ public class GetLookupRangeResponse extends AbstractResponse {
         return m_lookupRange;
     }
 
+    @Override
+    protected final int getPayloadLength() {
+        int ret;
+
+        if (m_lookupRange == null) {
+            ret = Byte.BYTES;
+        } else {
+            ret = Byte.BYTES + m_lookupRange.sizeofObject();
+        }
+
+        return ret;
+    }
+
     // Methods
-    @Override protected final void writePayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void writePayload(final ByteBuffer p_buffer) {
         if (m_lookupRange == null) {
             p_buffer.put((byte) 0);
         } else {
@@ -65,7 +79,8 @@ public class GetLookupRangeResponse extends AbstractResponse {
         }
     }
 
-    @Override protected final void readPayload(final ByteBuffer p_buffer) {
+    @Override
+    protected final void readPayload(final ByteBuffer p_buffer) {
         if (p_buffer.get() != 0) {
             final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
@@ -73,18 +88,6 @@ public class GetLookupRangeResponse extends AbstractResponse {
             importer.setPayloadSize(m_lookupRange.sizeofObject());
             importer.importObject(m_lookupRange);
         }
-    }
-
-    @Override protected final int getPayloadLength() {
-        int ret;
-
-        if (m_lookupRange == null) {
-            ret = Byte.BYTES;
-        } else {
-            ret = Byte.BYTES + m_lookupRange.sizeofObject();
-        }
-
-        return ret;
     }
 
 }
