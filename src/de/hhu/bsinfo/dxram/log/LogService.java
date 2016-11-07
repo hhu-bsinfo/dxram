@@ -72,6 +72,25 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
         }
     }
 
+    /**
+     * Handles an incoming GetUtilizationRequest
+     * Method is used in js script.
+     *
+     * @param p_request
+     *     the GetUtilizationRequest
+     */
+    @SuppressWarnings("WeakerAccess")
+    public void incomingGetUtilizationRequest(final GetUtilizationRequest p_request) {
+
+        try {
+            m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
+        } catch (final NetworkException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Could not answer GetUtilizationRequest", e);
+            // #endif /* LOGGER >= ERROR */
+        }
+    }
+
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
@@ -127,23 +146,6 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
             m_network.sendMessage(new InitResponse(p_request, res));
         } catch (final NetworkException e) {
             LOGGER.error("Could not acknowledge initilization of backup range", e);
-        }
-    }
-
-    /**
-     * Handles an incoming GetUtilizationRequest
-     *
-     * @param p_request
-     *     the GetUtilizationRequest
-     */
-    private void incomingGetUtilizationRequest(final GetUtilizationRequest p_request) {
-
-        try {
-            m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
-        } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Could not answer GetUtilizationRequest", e);
-            // #endif /* LOGGER >= ERROR */
         }
     }
 

@@ -147,7 +147,7 @@ public class TerminalService extends AbstractDXRAMService {
         }
 
         if (p_text.startsWith("?")) {
-            ScriptTerminalContext.help();
+            m_terminal.getScriptTerminalContext().help();
         } else if ("exit".equals(p_text)) {
             m_loop = false;
         } else if ("clear".equals(p_text)) {
@@ -203,7 +203,7 @@ public class TerminalService extends AbstractDXRAMService {
         } else {
             // filter some generic "macros"
             if ("help".equals(p_text)) {
-                ScriptTerminalContext.help();
+                m_terminal.getScriptTerminalContext().help();
             } else {
                 m_terminal.getScriptContext().eval(p_text);
             }

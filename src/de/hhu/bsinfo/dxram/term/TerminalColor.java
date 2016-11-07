@@ -5,6 +5,6 @@ package de.hhu.bsinfo.dxram.term;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 28.04.2016
  */
-public enum TerminalColor {
+enum TerminalColor {
     BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, DEFAULT
 }

@@ -41,22 +41,26 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
 
     /**
      * Set the log level for the logger.
+     * Method is used in js script.
      *
      * @param p_logLevel
      *     Log level to set.
      */
-    private static void setLogLevel(final String p_logLevel) {
+    @SuppressWarnings("WeakerAccess")
+    public static void setLogLevel(final String p_logLevel) {
 
         setLogLevel(Level.getLevel(p_logLevel.toUpperCase()));
     }
 
     /**
      * Set the log level for the logger.
+     * Method is used in js script.
      *
      * @param p_logLevel
      *     Log level to set.
      */
-    private static void setLogLevel(final Level p_logLevel) {
+    @SuppressWarnings("WeakerAccess")
+    public static void setLogLevel(final Level p_logLevel) {
 
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         Configuration config = ctx.getConfiguration();
