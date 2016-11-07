@@ -1304,7 +1304,7 @@ public class OverlayPeer implements MessageReceiver {
         JoinResponse joinResponse = null;
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering joinSuperpeerOverlay with: p_contactSuperpeer=0x%X", p_contactSuperpeer);
+        LOGGER.trace("Entering joinSuperpeerOverlay with: p_contactSuperpeer=0x%X", p_contactSuperpeer);
         // #endif /* LOGGER == TRACE */
 
         contactSuperpeer = p_contactSuperpeer;
@@ -1318,7 +1318,7 @@ public class OverlayPeer implements MessageReceiver {
 
         while (contactSuperpeer != -1) {
             // #if LOGGER == TRACE
-            // LOGGER.trace("Contacting 0x%X to get the responsible superpeer, I am 0x%X", contactSuperpeer, m_nodeID);
+            LOGGER.trace("Contacting 0x%X to get the responsible superpeer, I am 0x%X", contactSuperpeer, m_nodeID);
             // #endif /* LOGGER == TRACE */
 
             joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, false);
@@ -1339,7 +1339,7 @@ public class OverlayPeer implements MessageReceiver {
         OverlayHelper.insertSuperpeer(m_mySuperpeer, m_superpeers);
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting joinSuperpeerOverlay");
+        LOGGER.trace("Exiting joinSuperpeerOverlay");
         // #endif /* LOGGER == TRACE */
 
         return true;
@@ -1364,7 +1364,7 @@ public class OverlayPeer implements MessageReceiver {
         AskAboutSuccessorResponse response;
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering getResponsibleSuperpeer with: p_nodeID=0x%X", p_nodeID);
+        LOGGER.trace("Entering getResponsibleSuperpeer with: p_nodeID=0x%X", p_nodeID);
         // #endif /* LOGGER == TRACE */
 
         if (!m_superpeers.isEmpty()) {
@@ -1416,7 +1416,7 @@ public class OverlayPeer implements MessageReceiver {
             // #endif /* LOGGER >= WARN */
         }
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting getResponsibleSuperpeer");
+        LOGGER.trace("Exiting getResponsibleSuperpeer");
         // #endif /* LOGGER == TRACE */
 
         return responsibleSuperpeer;
@@ -1433,7 +1433,7 @@ public class OverlayPeer implements MessageReceiver {
 
         source = p_sendSuperpeersMessage.getSource();
         // #if LOGGER == TRACE
-        // LOGGER.trace("Got Message: SEND_SUPERPEERS_MESSAGE from 0x%X", source);
+        LOGGER.trace("Got Message: SEND_SUPERPEERS_MESSAGE from 0x%X", source);
         // #endif /* LOGGER == TRACE */
 
         m_overlayLock.writeLock().lock();

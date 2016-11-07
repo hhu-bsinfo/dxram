@@ -156,7 +156,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      */
     public void setRestorerAfterRecovery(final short p_owner) {
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering updateAllAfterRecovery with: p_owner=0x%X", p_owner);
+        LOGGER.trace("Entering updateAllAfterRecovery with: p_owner=0x%X", p_owner);
         // #endif /* LOGGER == TRACE */
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -168,7 +168,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting updateAllAfterRecovery");
+        LOGGER.trace("Exiting updateAllAfterRecovery");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -183,7 +183,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         LookupRange ret = null;
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering get with: p_chunkID=0x%X", p_chunkID);
+        LOGGER.trace("Entering get with: p_chunkID=0x%X", p_chunkID);
         // #endif /* LOGGER == TRACE */
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -210,7 +210,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting get");
+        LOGGER.trace("Exiting get");
         // #endif /* LOGGER == TRACE */
         return ret;
     }
@@ -224,7 +224,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     public void removeChunkIDs(final long[] p_chunkIDs) {
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering remove with %d chunkIDs", p_chunkIDs.length);
+        LOGGER.trace("Entering remove with %d chunkIDs", p_chunkIDs.length);
         // #endif /* LOGGER == TRACE */
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -239,7 +239,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting remove");
+        LOGGER.trace("Exiting remove");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -255,7 +255,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 
         // Insert ChunkID <-> ApplicationID mapping
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering insertID with: p_id=%d, p_chunkID=0x%X", p_id, p_chunkID);
+        LOGGER.trace("Entering insertID with: p_id=%d, p_chunkID=0x%X", p_id, p_chunkID);
         // #endif /* LOGGER == TRACE */
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -271,7 +271,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting insertID");
+        LOGGER.trace("Exiting insertID");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -290,7 +290,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 
         // Resolve ChunkID <-> ApplicationID mapping to return corresponding ChunkID
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering getChunkID with: p_id=%d", p_id);
+        LOGGER.trace("Entering getChunkID with: p_id=%d", p_id);
         // #endif /* LOGGER == TRACE */
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -305,7 +305,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
                 if (chunkID == null) {
                     // Cache miss -> ask superpeer
                     // #if LOGGER == TRACE
-                    // LOGGER.trace("Value not cached for application cache: %d", p_id);
+                    LOGGER.trace("Value not cached for application cache: %d", p_id);
                     // #endif /* LOGGER == TRACE */
 
                     ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
@@ -321,7 +321,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting getChunkID");
+        LOGGER.trace("Exiting getChunkID");
         // #endif /* LOGGER == TRACE */
 
         return ret;
@@ -340,7 +340,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     public void migrate(final long p_chunkID, final short p_nodeID) {
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering migrate with: p_chunkID=0x%X, p_nodeID=0x%X", p_chunkID, p_nodeID);
+        LOGGER.trace("Entering migrate with: p_chunkID=0x%X, p_nodeID=0x%X", p_chunkID, p_nodeID);
         // #endif /* LOGGER == TRACE */
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -356,7 +356,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting migrate");
+        LOGGER.trace("Exiting migrate");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -373,7 +373,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering migrateRange with: p_startChunkID=0x%X, p_endChunkID=0x%X, p_nodeID=0x%X", p_startCID, p_endCID, p_nodeID);
+        LOGGER.trace("Entering migrateRange with: p_startChunkID=0x%X, p_endChunkID=0x%X, p_nodeID=0x%X", p_startCID, p_endCID, p_nodeID);
         // #endif /* LOGGER == TRACE */
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -389,7 +389,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting migrateRange");
+        LOGGER.trace("Exiting migrateRange");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -406,7 +406,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     public void initRange(final long p_firstChunkIDOrRangeID, final short p_owner, final short[] p_backupPeers) {
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering initRange with: p_firstChunkIDOrRangeID=0x%X, p_owner=%s", p_firstChunkIDOrRangeID, p_owner);
+        LOGGER.trace("Entering initRange with: p_firstChunkIDOrRangeID=0x%X, p_owner=%s", p_firstChunkIDOrRangeID, p_owner);
         // #endif /* LOGGER == TRACE */
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -418,7 +418,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting initRange");
+        LOGGER.trace("Exiting initRange");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -433,7 +433,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         BackupRange[] ret = null;
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering getAllBackupRanges with: p_nodeID=0x%X", p_nodeID);
+        LOGGER.trace("Entering getAllBackupRanges with: p_nodeID=0x%X", p_nodeID);
         // #endif /* LOGGER == TRACE */
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -445,7 +445,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting getAllBackupRanges");
+        LOGGER.trace("Exiting getAllBackupRanges");
         // #endif /* LOGGER == TRACE */
         return ret;
     }

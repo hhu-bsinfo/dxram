@@ -85,12 +85,12 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
         if (p_dataStructures[0] == null) {
             // #if LOGGER == TRACE
-            // LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_dataStructures.length);
+            LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_dataStructures.length);
             // #endif /* LOGGER == TRACE */
         } else {
             // #if LOGGER == TRACE
-            // LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation, p_dataStructures.length,
-                // ChunkID.toHexString(p_dataStructures[0].getID()));
+            LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation, p_dataStructures.length,
+                ChunkID.toHexString(p_dataStructures[0].getID()));
             // #endif /* LOGGER == TRACE */
         }
 
@@ -194,12 +194,12 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
         if (p_dataStructures[0] == null) {
             // #if LOGGER == TRACE
-            // LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_dataStructures.length);
+            LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_dataStructures.length);
             // #endif /* LOGGER == TRACE */
         } else {
             // #if LOGGER == TRACE
-            // LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation, p_dataStructures.length,
-                // ChunkID.toHexString(p_dataStructures[0].getID()));
+            LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation, p_dataStructures.length,
+                ChunkID.toHexString(p_dataStructures[0].getID()));
             // #endif /* LOGGER == TRACE */
         }
     }
@@ -207,7 +207,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
     @Override
     public void onIncomingMessage(final AbstractMessage p_message) {
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
+        LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */
 
         if (p_message != null) {
@@ -223,7 +223,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting incomingMessage");
+        LOGGER.trace("Exiting incomingMessage");
         // #endif /* LOGGER == TRACE */
     }
 

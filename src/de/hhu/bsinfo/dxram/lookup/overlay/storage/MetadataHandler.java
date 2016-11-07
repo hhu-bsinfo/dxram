@@ -118,7 +118,7 @@ public final class MetadataHandler {
 
         m_dataLock.readLock().lock();
         // #if LOGGER == TRACE
-        // LOGGER.trace("Serializing metadata of area: 0x%X, 0x%X", p_beginOfArea, p_endOfArea);
+        LOGGER.trace("Serializing metadata of area: 0x%X, 0x%X", p_beginOfArea, p_endOfArea);
         // #endif /* LOGGER == TRACE */
 
         // Get all corresponding nameservice entries
@@ -172,7 +172,7 @@ public final class MetadataHandler {
             currentPeer = m_assignedPeersIncludingBackups.get(index++);
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_beginOfArea, p_endOfArea)) {
                 // #if LOGGER == TRACE
-                // LOGGER.trace("Including LookupTree of 0x%X", currentPeer);
+                LOGGER.trace("Including LookupTree of 0x%X", currentPeer);
                 // #endif /* LOGGER == TRACE */
 
                 data.putShort(currentPeer);
@@ -226,7 +226,7 @@ public final class MetadataHandler {
 
         m_dataLock.readLock().lock();
         // #if LOGGER == TRACE
-        // LOGGER.trace("Serializing all metadata");
+        LOGGER.trace("Serializing all metadata");
         // #endif /* LOGGER == TRACE */
 
         // Get all nameservice entries
@@ -264,7 +264,7 @@ public final class MetadataHandler {
             tree = getLookupTreeLocal((short) i);
             if (tree != null) {
                 // #if LOGGER == TRACE
-                // LOGGER.trace("Including LookupTree of 0x%X", (short) i);
+                LOGGER.trace("Including LookupTree of 0x%X", (short) i);
                 // #endif /* LOGGER == TRACE */
 
                 data.putShort((short) i);
@@ -406,7 +406,7 @@ public final class MetadataHandler {
 
         m_dataLock.readLock().lock();
         // #if LOGGER == TRACE
-        // LOGGER.trace("Compare and return metadata of area: 0x%X, 0x%X", p_predecessor, p_nodeID);
+        LOGGER.trace("Compare and return metadata of area: 0x%X, 0x%X", p_predecessor, p_nodeID);
         // #endif /* LOGGER == TRACE */
 
         // TODO: Inefficient to send all data (nameservice, storages, barriers) in corresponding area if quantity
@@ -489,7 +489,7 @@ public final class MetadataHandler {
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_predecessor, p_nodeID)) {
                 if (Collections.binarySearch(p_peers, currentPeer) < 0) {
                     // #if LOGGER == TRACE
-                    // LOGGER.trace("Including LookupTree of 0x%X", currentPeer);
+                    LOGGER.trace("Including LookupTree of 0x%X", currentPeer);
                     // #endif /* LOGGER == TRACE */
 
                     data.putShort(currentPeer);
@@ -558,7 +558,7 @@ public final class MetadataHandler {
 
         m_dataLock.writeLock().lock();
         // #if LOGGER == TRACE
-        // LOGGER.trace("Deleting all uneccessary metadata outside of area: 0x%X, 0x%X", p_responsibleArea[0], p_responsibleArea[1]);
+        LOGGER.trace("Deleting all uneccessary metadata outside of area: 0x%X, 0x%X", p_responsibleArea[0], p_responsibleArea[1]);
         // #endif /* LOGGER == TRACE */
 
         if (!m_assignedPeersIncludingBackups.isEmpty()) {
@@ -575,7 +575,7 @@ public final class MetadataHandler {
             while (!OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_responsibleArea[0], p_responsibleArea[1])) {
                 // Remove lookup tree
                 // #if LOGGER == TRACE
-                // LOGGER.trace("Removing LookupTree of 0x%X", currentPeer);
+                LOGGER.trace("Removing LookupTree of 0x%X", currentPeer);
                 // #endif /* LOGGER == TRACE */
 
                 m_lookupTrees[currentPeer & 0xFFFF] = null;
@@ -622,14 +622,14 @@ public final class MetadataHandler {
 
             m_dataLock.writeLock().lock();
             // #if LOGGER == TRACE
-            // LOGGER.trace("Storing metadata. Length: %d", p_metadata.length);
+            LOGGER.trace("Storing metadata. Length: %d", p_metadata.length);
             // #endif /* LOGGER == TRACE */
 
             // Put all nameservice entries
             size = data.getInt();
             pos = data.position();
             // #if LOGGER == TRACE
-            // LOGGER.trace("Storing nameservice entries. Length: %d", size);
+            LOGGER.trace("Storing nameservice entries. Length: %d", size);
             // #endif /* LOGGER == TRACE */
             m_nameservice.storeMetadata(p_metadata, pos, size);
             data.position(pos + size);
@@ -638,7 +638,7 @@ public final class MetadataHandler {
             size = data.getInt();
             pos = data.position();
             // #if LOGGER == TRACE
-            // LOGGER.trace("Storing superpeer storages. Length: %d", size);
+            LOGGER.trace("Storing superpeer storages. Length: %d", size);
             // #endif /* LOGGER == TRACE */
             m_storage.storeMetadata(p_metadata, pos, size);
             data.position(pos + size);
@@ -647,7 +647,7 @@ public final class MetadataHandler {
             size = data.getInt();
             pos = data.position();
             // #if LOGGER == TRACE
-            // LOGGER.trace("Storing barriers. Length: %d", size);
+            LOGGER.trace("Storing barriers. Length: %d", size);
             // #endif /* LOGGER == TRACE */
             m_barriers.storeMetadata(p_metadata, pos, size);
             data.position(pos + size);
@@ -656,12 +656,12 @@ public final class MetadataHandler {
             size = data.getInt();
             ret = new short[size];
             // #if LOGGER == TRACE
-            // LOGGER.trace("Storing lookup trees. Length: %d", size);
+            LOGGER.trace("Storing lookup trees. Length: %d", size);
             // #endif /* LOGGER == TRACE */
             for (int i = 0; i < size; i++) {
                 nodeID = data.getShort();
                 // #if LOGGER == TRACE
-                // LOGGER.trace("Storing lookup tree of 0x%X", nodeID);
+                LOGGER.trace("Storing lookup tree of 0x%X", nodeID);
                 // #endif /* LOGGER == TRACE */
 
                 m_lookupTrees[nodeID & 0xFFFF] = LookupTree.readLookupTree(data);

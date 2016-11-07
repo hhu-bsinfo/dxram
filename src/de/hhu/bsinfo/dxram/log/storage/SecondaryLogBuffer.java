@@ -44,7 +44,7 @@ public final class SecondaryLogBuffer {
         m_bytesInBuffer = 0;
         m_buffer = new byte[p_bufferSize];
         // #if LOGGER == TRACE
-        // LOGGER.trace("Initialized secondary log buffer (%d)", p_bufferSize);
+        LOGGER.trace("Initialized secondary log buffer (%d)", p_bufferSize);
         // #endif /* LOGGER == TRACE */
     }
 

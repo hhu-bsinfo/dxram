@@ -159,7 +159,7 @@ public class PrimaryWriteBuffer {
         m_writerThread.start();
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Initialized primary write buffer (%d)", m_writeBufferSize);
+        LOGGER.trace("Initialized primary write buffer (%d)", m_writeBufferSize);
         // #endif /* LOGGER == TRACE */
     }
 
@@ -393,7 +393,7 @@ public class PrimaryWriteBuffer {
                 }
 
                 flushDataToPrimaryLog();
-                m_logComponent.grantReorgThreadAccessToCurrentLog();
+                m_logComponent.getReorganizationThread().grantAccessToCurrentLog();
             }
         }
 
@@ -422,7 +422,7 @@ public class PrimaryWriteBuffer {
             // handler will know)
             final long timeStart = System.currentTimeMillis();
             while (!m_writerThreadAccessesBuffer) {
-                m_logComponent.grantReorgThreadAccessToCurrentLog();
+                m_logComponent.getReorganizationThread().grantAccessToCurrentLog();
                 if (System.currentTimeMillis() > timeStart + WRITERTHREAD_TIMEOUTTIME) {
                     break;
                 }

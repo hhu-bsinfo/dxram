@@ -200,7 +200,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
         if (ownRole == NodeRole.SUPERPEER) {
             // #if LOGGER >= DEBUG
-            // LOGGER.debug("********** ********** Node Failure ********** **********");
+            LOGGER.debug("********** ********** Node Failure ********** **********");
             // #endif /* LOGGER >= DEBUG */
 
             // Restore superpeer overlay and/or initiate recovery
@@ -210,14 +210,14 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
                 // Failed node was either the predecessor superpeer or a peer/terminal this superpeer is responsible for
 
                 // #if LOGGER >= DEBUG
-                // LOGGER.debug("Failed node was a %s, NodeID: 0x%X", roleOfFailedNode, p_nodeID);
+                LOGGER.debug("Failed node was a %s, NodeID: 0x%X", roleOfFailedNode, p_nodeID);
                 // #endif /* LOGGER >= DEBUG */
 
                 // Clean-up zookeeper
                 m_boot.failureHandling(p_nodeID, roleOfFailedNode);
             } else {
                 // #if LOGGER >= DEBUG
-                // LOGGER.debug("Not responsible for failed node, NodeID: 0x%X", p_nodeID);
+                LOGGER.debug("Not responsible for failed node, NodeID: 0x%X", p_nodeID);
                 // #endif /* LOGGER >= DEBUG */
             }
         } else {

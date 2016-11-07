@@ -172,10 +172,10 @@ class NIOSelector extends Thread {
                     // Only close connection if since request at least the time for two connection timeouts has elapsed
                     if (System.currentTimeMillis() - connection.getClosingTimestamp() > 2 * m_connectionTimeout) {
                         // #if LOGGER >= DEBUG
-                        // try {
-                            // LOGGER.debug("Closing connection to %s;%s", connection.getDestination(), connection.getChannel().getRemoteAddress());
-                        // } catch (final IOException ignored) {
-                        // }
+                        try {
+                            LOGGER.debug("Closing connection to %s;%s", connection.getDestination(), connection.getChannel().getRemoteAddress());
+                        } catch (final IOException ignored) {
+                        }
                         // #endif /* LOGGER >= DEBUG */
                         // Close connection
                         m_connectionCreator.closeConnection(connection, false);
@@ -189,7 +189,7 @@ class NIOSelector extends Thread {
                         connection.getChannel().register(m_selector, interest, connection);
                     } catch (final ClosedChannelException e) {
                         // #if LOGGER >= DEBUG
-                        // LOGGER.debug("Could not change operations!");
+                        LOGGER.debug("Could not change operations!");
                         // #endif /* LOGGER >= DEBUG */
                     }
                 }
@@ -328,7 +328,7 @@ class NIOSelector extends Thread {
                             successful = m_nioInterface.read(connection);
                         } catch (final IOException e) {
                             // #if LOGGER >= DEBUG
-                            // LOGGER.debug("Could not read from channel (0x%X)!", connection.getDestination());
+                            LOGGER.debug("Could not read from channel (0x%X)!", connection.getDestination());
                             // #endif /* LOGGER >= DEBUG */
 
                             successful = false;
@@ -350,11 +350,11 @@ class NIOSelector extends Thread {
                     } catch (final IOException ignored) {
                         if (connection != null) {
                             // #if LOGGER >= DEBUG
-                            // LOGGER.debug("Could not write to channel (0x%X)!", connection.getDestination());
+                            LOGGER.debug("Could not write to channel (0x%X)!", connection.getDestination());
                             // #endif /* LOGGER >= DEBUG */
                         } else {
                             // #if LOGGER >= DEBUG
-                            // LOGGER.debug("Could not write to channel!");
+                            LOGGER.debug("Could not write to channel!");
                             // #endif /* LOGGER >= DEBUG */
                         }
 

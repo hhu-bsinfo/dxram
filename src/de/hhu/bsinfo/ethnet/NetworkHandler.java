@@ -170,7 +170,7 @@ public final class NetworkHandler implements DataReceiver {
         final int p_numberOfBuffersPerConnection, final int p_flowControlWindowSize, final int p_connectionTimeout) {
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering initialize");
+        LOGGER.trace("Entering initialize");
         // #endif /* LOGGER == TRACE */
 
         m_nodeMap = p_nodeMap;
@@ -182,7 +182,7 @@ public final class NetworkHandler implements DataReceiver {
         m_manager = new ConnectionManager(m_connectionCreator, this);
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting initialize");
+        LOGGER.trace("Exiting initialize");
         // #endif /* LOGGER == TRACE */
 
         // (new PrintThread()).start();
@@ -289,20 +289,20 @@ public final class NetworkHandler implements DataReceiver {
      */
     public void connectNode(final short p_nodeID) throws NetworkException {
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering connectNode with: p_nodeID=0x%X", p_nodeID);
+        LOGGER.trace("Entering connectNode with: p_nodeID=0x%X", p_nodeID);
         // #endif /* LOGGER == TRACE */
 
         try {
             m_manager.getConnection(p_nodeID);
         } catch (final IOException e) {
             // #if LOGGER >= DEBUG
-            // LOGGER.debug("IOException during connection lookup", e);
+            LOGGER.debug("IOException during connection lookup", e);
             // #endif /* LOGGER >= DEBUG */
             throw new NetworkDestinationUnreachableException(p_nodeID);
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting connectNode");
+        LOGGER.trace("Exiting connectNode");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -320,7 +320,7 @@ public final class NetworkHandler implements DataReceiver {
         p_message.beforeSend();
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering sendMessage with: p_message=%s", p_message);
+        LOGGER.trace("Entering sendMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */
 
         /*
@@ -344,7 +344,7 @@ public final class NetworkHandler implements DataReceiver {
                 connection = m_manager.getConnection(p_message.getDestination());
             } catch (final IOException e) {
                 // #if LOGGER >= DEBUG
-                // LOGGER.debug("Connection invalid", e);
+                LOGGER.debug("Connection invalid", e);
                 // #endif /* LOGGER >= DEBUG */
                 throw new NetworkDestinationUnreachableException(p_message.getDestination());
             }
@@ -353,13 +353,13 @@ public final class NetworkHandler implements DataReceiver {
                     connection.write(p_message);
                 } else {
                     // #if LOGGER >= DEBUG
-                    // LOGGER.debug("Connection invalid");
+                    LOGGER.debug("Connection invalid");
                     // #endif /* LOGGER >= DEBUG */
                     throw new NetworkDestinationUnreachableException(p_message.getDestination());
                 }
             } catch (final NetworkException e) {
                 // #if LOGGER >= DEBUG
-                // LOGGER.debug("Sending data failed, Message invalid", e);
+                LOGGER.debug("Sending data failed, Message invalid", e);
                 // #endif /* LOGGER >= DEBUG */
                 throw new NetworkException("Sending data failed, invalid message", e);
             }
@@ -368,7 +368,7 @@ public final class NetworkHandler implements DataReceiver {
         p_message.afterSend();
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting sendMessage");
+        LOGGER.trace("Exiting sendMessage");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -381,7 +381,7 @@ public final class NetworkHandler implements DataReceiver {
     @Override
     public void newMessage(final AbstractMessage p_message) {
         // #if LOGGER == TRACE
-        // LOGGER.trace("Received new message: %s", p_message);
+        LOGGER.trace("Received new message: %s", p_message);
         // #endif /* LOGGER == TRACE */
 
         if (p_message instanceof AbstractResponse) {

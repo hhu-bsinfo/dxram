@@ -171,7 +171,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
                     // }
                     // if (chunks == null) {
                     // #if LOGGER >= ERROR
-                    // /*m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next backup peer.");*/
+                    /*m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next backup peer.");*/
                     // #endif /* LOGGER >= ERROR */
                     // continue;
                     // }

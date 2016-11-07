@@ -111,7 +111,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
      */
     public void connectNode(final short p_nodeID) throws NetworkException {
         // #if LOGGER == TRACE
-        // LOGGER.trace("Connecting node 0x%X", p_nodeID);
+        LOGGER.trace("Connecting node 0x%X", p_nodeID);
         // #endif /* LOGGER == TRACE */
 
         try {
@@ -134,7 +134,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
      */
     public void sendMessage(final AbstractMessage p_message) throws NetworkException {
         // #if LOGGER == TRACE
-        // LOGGER.trace("Sending message %s", p_message);
+        LOGGER.trace("Sending message %s", p_message);
         // #endif /* LOGGER == TRACE */
 
         try {
@@ -163,7 +163,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
      */
     public void sendSync(final AbstractRequest p_request) throws NetworkException {
         // #if LOGGER == TRACE
-        // LOGGER.trace("Sending request (sync): %s", p_request);
+        LOGGER.trace("Sending request (sync): %s", p_request);
         // #endif /* LOGGER == TRACE */
 
         try {
@@ -174,7 +174,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Waiting for response to request: %s", p_request);
+        LOGGER.trace("Waiting for response to request: %s", p_request);
         // #endif /* LOGGER == TRACE */
 
         if (!p_request.waitForResponses((int) m_requestTimeout.getMs())) {
@@ -183,7 +183,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
             // #endif /* LOGGER >= ERROR */
 
             // #if LOGGER >= DEBUG
-            // LOGGER.debug(m_networkHandler.getStatus());
+            LOGGER.debug(m_networkHandler.getStatus());
             // #endif /* LOGGER >= DEBUG */
 
             RequestMap.remove(p_request.getRequestID());

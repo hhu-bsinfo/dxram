@@ -630,7 +630,7 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
                 m_remoteDelegatesForNextFrontier.writeLock().unlock();
 
                 // #if LOGGER >= DEBUG
-                // LOGGER.debug("Frontier swap, new cur frontier size: %d", m_curFrontier.size());
+                LOGGER.debug("Frontier swap, new cur frontier size: %d", m_curFrontier.size());
                 // #endif /* LOGGER >= DEBUG */
 
                 // go for next run
@@ -680,7 +680,7 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
             }
 
             // #if LOGGER >= DEBUG
-            // LOGGER.debug("Joining BFS threads...");
+            LOGGER.debug("Joining BFS threads...");
             // #endif /* LOGGER >= DEBUG */
 
             for (BFSThread thread : m_threads) {
@@ -697,7 +697,7 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
             m_networkService.unregisterReceiver(BFSResultMessage.class, this);
 
             // #if LOGGER >= DEBUG
-            // LOGGER.debug("BFS shutdown");
+            LOGGER.debug("BFS shutdown");
             // #endif /* LOGGER >= DEBUG */
         }
 

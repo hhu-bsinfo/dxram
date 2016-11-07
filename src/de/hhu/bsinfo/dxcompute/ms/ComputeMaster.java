@@ -209,7 +209,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
         m_state = State.STATE_IDLE;
 
         // #if LOGGER >= DEBUG
-        // LOGGER.debug("Entering idle state");
+        LOGGER.debug("Entering idle state");
         // #endif /* LOGGER >= DEBUG */
     }
 
@@ -270,8 +270,8 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
             while (task.getPayload().getNumRequiredSlaves() > m_signedOnSlaves.size()) {
                 // #if LOGGER >= DEBUG
-                // LOGGER.debug("Not enough slaves available for task %s waiting (%d/%d)...", task, m_signedOnSlaves.size(), task.getPayload()
-                        // .getNumRequiredSlaves());
+                LOGGER.debug("Not enough slaves available for task %s waiting (%d/%d)...", task, m_signedOnSlaves.size(), task.getPayload()
+                        .getNumRequiredSlaves());
                 // #endif /* LOGGER >= DEBUG */
 
                 try {
@@ -331,7 +331,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
         }
 
         // #if LOGGER >= DEBUG
-        // LOGGER.debug("Syncing with %d/%d slaves...", numberOfSlavesOnExecution, m_signedOnSlaves.size());
+        LOGGER.debug("Syncing with %d/%d slaves...", numberOfSlavesOnExecution, m_signedOnSlaves.size());
         // #endif /* LOGGER >= DEBUG */
 
         Pair<short[], long[]> result = m_lookup.barrierSignOn(m_executionBarrierId, -1);
@@ -339,7 +339,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
         int[] returnCodes;
         if (result != null) {
             // #if LOGGER >= DEBUG
-            // LOGGER.debug("Syncing done");
+            LOGGER.debug("Syncing done");
             // #endif /* LOGGER >= DEBUG */
 
             // grab return codes from barrier
@@ -370,7 +370,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
         m_joinLock.unlock();
 
         // #if LOGGER >= DEBUG
-        // LOGGER.debug("Entering idle state");
+        LOGGER.debug("Entering idle state");
         // #endif /* LOGGER >= DEBUG */
     }
 
@@ -410,7 +410,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
         m_lastPingMs = System.currentTimeMillis();
         // #if LOGGER == TRACE
-        // LOGGER.trace("Pinging slaves, %d online", m_signedOnSlaves.size());
+        LOGGER.trace("Pinging slaves, %d online", m_signedOnSlaves.size());
         // #endif /* LOGGER == TRACE */
     }
 
@@ -452,7 +452,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
             m_joinLock.unlock();
         } else {
             // #if LOGGER == TRACE
-            // LOGGER.trace("Cannot join slave, master not in idle state");
+            LOGGER.trace("Cannot join slave, master not in idle state");
             // #endif /* LOGGER == TRACE */
 
             // send response that joining is not possible currently

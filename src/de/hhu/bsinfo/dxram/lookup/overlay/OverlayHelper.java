@@ -261,7 +261,7 @@ public final class OverlayHelper {
         int index;
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering getResponsibleSuperpeer with: p_nodeID=0x%X", p_nodeID);
+        LOGGER.trace("Entering getResponsibleSuperpeer with: p_nodeID=0x%X", p_nodeID);
         // #endif /* LOGGER == TRACE */
 
         if (!p_superpeers.isEmpty()) {
@@ -279,7 +279,7 @@ public final class OverlayHelper {
             // #endif /* LOGGER >= WARN */
         }
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting getResponsibleSuperpeer");
+        LOGGER.trace("Exiting getResponsibleSuperpeer");
         // #endif /* LOGGER == TRACE */
 
         return responsibleSuperpeer;

@@ -230,7 +230,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
 
         // add filtered files
         // #if LOGGER >= DEBUG
-        // LOGGER.debug("Setting up oel for current slave, iterating files in %s", p_path);
+        LOGGER.debug("Setting up oel for current slave, iterating files in %s", p_path);
         // #endif /* LOGGER >= DEBUG */
 
         for (File file : files) {

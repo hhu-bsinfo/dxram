@@ -104,7 +104,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
         try {
             final int id = m_converter.convert(p_name);
             // #if LOGGER == TRACE
-            // LOGGER.trace("Registering chunkID 0x%X, name %s, id %d", p_chunkId, p_name, id);
+            LOGGER.trace("Registering chunkID 0x%X, name %s, id %d", p_chunkId, p_name, id);
             // #endif /* LOGGER == TRACE */
 
             m_lookup.insertNameserviceEntry(id, p_chunkId);
@@ -131,13 +131,13 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
         try {
             final int id = m_converter.convert(p_name);
             // #if LOGGER == TRACE
-            // LOGGER.trace("Lookup name %s, id %d", p_name, id);
+            LOGGER.trace("Lookup name %s, id %d", p_name, id);
             // #endif /* LOGGER == TRACE */
 
             ret = m_lookup.getChunkIDForNameserviceEntry(id, p_timeoutMs);
 
             // #if LOGGER == TRACE
-            // LOGGER.trace("Lookup name %s, resulting chunkID 0x%X", p_name, ret);
+            LOGGER.trace("Lookup name %s, resulting chunkID 0x%X", p_name, ret);
             // #endif /* LOGGER == TRACE */
         } catch (final IllegalArgumentException e) {
             // #if LOGGER >= ERROR

@@ -161,7 +161,7 @@ public final class SimpleJobServiceTest extends AbstractMain implements JobEvent
             try {
                 // abusing chunkID for time to wait
                 // #if LOGGER >= DEBUG
-                // LOGGER.debug("Sleeping %d", p_chunkIDs[0]);
+                LOGGER.debug("Sleeping %d", p_chunkIDs[0]);
                 // #endif /* LOGGER >= DEBUG */
 
                 Thread.sleep(p_chunkIDs[0]);

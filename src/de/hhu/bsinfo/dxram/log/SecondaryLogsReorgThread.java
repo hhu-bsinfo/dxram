@@ -27,7 +27,7 @@ public final class SecondaryLogsReorgThread extends Thread {
     // Attributes
     private LogComponent m_logComponent;
     private long m_secondaryLogSize;
-    private volatile boolean m_shutdown;
+
     private VersionsHashTable m_allVersions;
     private ReentrantLock m_reorganizationLock;
     private Condition m_reorganizationFinishedCondition;
@@ -37,6 +37,10 @@ public final class SecondaryLogsReorgThread extends Thread {
     private byte[] m_reorgSegmentData;
     private byte m_counter;
     private boolean m_isRandomChoice;
+
+    private volatile boolean m_reorgThreadWaits;
+    private volatile boolean m_accessGrantedForReorgThread;
+    private volatile boolean m_shutdown;
 
     // Constructors
 
@@ -67,6 +71,8 @@ public final class SecondaryLogsReorgThread extends Thread {
         m_counter = 0;
     }
 
+    // Setter
+
     /**
      * Get access to secondary log for reorganization thread
      *
@@ -79,13 +85,20 @@ public final class SecondaryLogsReorgThread extends Thread {
         }
     }
 
-    // Setter
-
     /**
      * Shutdown
      */
     public void shutdown() {
         m_shutdown = true;
+    }
+
+    /**
+     * Grants the reorganization thread access to a secondary log
+     */
+    public void grantAccessToCurrentLog() {
+        if (m_reorgThreadWaits) {
+            m_accessGrantedForReorgThread = true;
+        }
     }
 
     /**
@@ -103,13 +116,13 @@ public final class SecondaryLogsReorgThread extends Thread {
         if (p_await) {
             while (!m_reorganizationLock.tryLock()) {
                 // Grant access for reorganization thread to avoid deadlock
-                m_logComponent.grantReorgThreadAccessToCurrentLog();
+                grantAccessToCurrentLog();
             }
             m_secLog = p_secLog;
             while (m_secLog.equals(p_secLog)) {
                 if (!m_reorganizationFinishedCondition.await(10, TimeUnit.MICROSECONDS)) {
                     // Grant access for reorganization thread to avoid deadlock
-                    m_logComponent.grantReorgThreadAccessToCurrentLog();
+                    grantAccessToCurrentLog();
                 }
             }
 
@@ -135,7 +148,7 @@ public final class SecondaryLogsReorgThread extends Thread {
             // Check if there is an urgent reorganization request -> reorganize complete secondary log and signal
             if (m_secLog != null) {
                 // #if LOGGER >= DEBUG
-                // LOGGER.debug("Got urgent reorganization request for %s", m_secLog.getRangeIDOrFirstLocalID());
+                LOGGER.debug("Got urgent reorganization request for %s", m_secLog.getRangeIDOrFirstLocalID());
                 // #endif /* LOGGER >= DEBUG */
 
                 // Leave current secondary log
@@ -149,7 +162,7 @@ public final class SecondaryLogsReorgThread extends Thread {
                 // Reorganize complete secondary log
                 secondaryLog = m_secLog;
 
-                m_logComponent.getAccessToSecLog(secondaryLog);
+                getAccessToSecLog(secondaryLog);
 
                 secondaryLog.getCurrentVersions(m_allVersions);
                 secondaryLog.reorganizeAll(m_reorgSegmentData, m_allVersions);
@@ -191,13 +204,13 @@ public final class SecondaryLogsReorgThread extends Thread {
                     secondaryLog = iter.next();
                     iter.remove();
                     // #if LOGGER == TRACE
-                    // LOGGER
-                        // .trace("Got reorganization request for %s. Queue length: %d", secondaryLog.getRangeIDOrFirstLocalID(), m_reorganizationRequests.size());
+                    LOGGER
+                        .trace("Got reorganization request for %s. Queue length: %d", secondaryLog.getRangeIDOrFirstLocalID(), m_reorganizationRequests.size());
                     // #endif /* LOGGER == TRACE */
                     m_requestLock.unlock();
 
                     // Reorganize complete secondary log
-                    m_logComponent.getAccessToSecLog(secondaryLog);
+                    getAccessToSecLog(secondaryLog);
                     secondaryLog.getCurrentVersions(m_allVersions);
                     secondaryLog.reorganizeAll(m_reorgSegmentData, m_allVersions);
                     secondaryLog.resetReorgSegment();
@@ -212,7 +225,7 @@ public final class SecondaryLogsReorgThread extends Thread {
                 // This is the first iteration -> choose secondary log and gather versions
                 secondaryLog = chooseLog();
                 if (secondaryLog != null && (secondaryLog.getOccupiedSpace() > m_secondaryLogSize / 2 || m_isRandomChoice)) {
-                    m_logComponent.getAccessToSecLog(secondaryLog);
+                    getAccessToSecLog(secondaryLog);
                     secondaryLog.getCurrentVersions(m_allVersions);
                 } else {
                     // Nothing to do -> wait for a while to reduce cpu load
@@ -226,13 +239,14 @@ public final class SecondaryLogsReorgThread extends Thread {
 
             // Reorganize one segment
             // #if LOGGER == TRACE
-            // LOGGER.trace("Going to reorganize %s", secondaryLog.getRangeIDOrFirstLocalID());
+            LOGGER.trace("Going to reorganize %s", secondaryLog.getRangeIDOrFirstLocalID());
             // #endif /* LOGGER == TRACE */
-            m_logComponent.getAccessToSecLog(secondaryLog);
+            getAccessToSecLog(secondaryLog);
+
             final long start = System.currentTimeMillis();
             secondaryLog.reorganizeIteratively(m_reorgSegmentData, m_allVersions);
             // #if LOGGER == TRACE
-            // LOGGER.trace("Time to reorganize segment: %d", System.currentTimeMillis() - start);
+            LOGGER.trace("Time to reorganize segment: %d", System.currentTimeMillis() - start);
             // #endif /* LOGGER == TRACE */
 
             if (counter++ == iterationsPerLog) {
@@ -242,6 +256,25 @@ public final class SecondaryLogsReorgThread extends Thread {
                 m_allVersions.clear();
                 counter = 0;
             }
+        }
+    }
+
+    /**
+     * Get access to secondary log for reorganization thread
+     *
+     * @param p_secLog
+     *     the Secondary Log
+     */
+    private void getAccessToSecLog(final SecondaryLog p_secLog) {
+        if (!p_secLog.isAccessed()) {
+            p_secLog.setAccessFlag(true);
+
+            m_reorgThreadWaits = true;
+            while (!m_accessGrantedForReorgThread) {
+                Thread.yield();
+            }
+            m_accessGrantedForReorgThread = false;
+            m_reorgThreadWaits = false;
         }
     }
 

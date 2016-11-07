@@ -59,7 +59,7 @@ public final class ZooKeeperHandler {
      */
     public synchronized void connect() throws ZooKeeperException {
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering connect");
+        LOGGER.trace("Entering connect");
         // #endif /* LOGGER == TRACE */
 
         if (m_zookeeper == null) {
@@ -80,7 +80,7 @@ public final class ZooKeeperHandler {
             }
         }
         // #if LOGGER == TRACE
-        // LOGGER.trace(getClass().getName(), "Exiting connect");
+        LOGGER.trace(getClass().getName(), "Exiting connect");
         // #endif /* LOGGER == TRACE */
     }
 

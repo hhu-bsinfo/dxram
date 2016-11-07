@@ -63,7 +63,7 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
 
         listeners.add(p_listener);
         // #if LOGGER >= DEBUG
-        // LOGGER.debug("Registered listener %s for event %s", p_listener.getClass().getName(), p_class.getName());
+        LOGGER.debug("Registered listener %s for event %s", p_listener.getClass().getName(), p_class.getName());
         // #endif /* LOGGER >= DEBUG */
     }
 
@@ -78,7 +78,7 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
     @Override
     public <T extends AbstractEvent> void fireEvent(final T p_event) {
         // #if LOGGER == TRACE
-        // LOGGER.trace("Event fired: %s", p_event);
+        LOGGER.trace("Event fired: %s", p_event);
         // #endif /* LOGGER == TRACE */
 
         ArrayList<EventListener<?>> listeners = m_eventListener.get(p_event.getClass().getName());

@@ -260,7 +260,7 @@ class NIOConnection extends AbstractConnection {
     protected void doCloseGracefully() {
         if (!m_outgoing.isEmpty()) {
             // #if LOGGER >= DEBUG
-            // LOGGER.debug("Waiting for all scheduled messages to be sent over to be closed connection!");
+            LOGGER.debug("Waiting for all scheduled messages to be sent over to be closed connection!");
             // #endif /* LOGGER >= DEBUG */
             long start = System.currentTimeMillis();
             while (!m_outgoing.isEmpty()) {

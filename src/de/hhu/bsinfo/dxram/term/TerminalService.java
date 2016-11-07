@@ -240,7 +240,7 @@ public class TerminalService extends AbstractDXRAMService {
             reader.close();
         } catch (final FileNotFoundException e) {
             // #if LOGGER >= DEBUG
-            // LOGGER.debug("No history found: %s", p_file);
+            LOGGER.debug("No history found: %s", p_file);
             // #endif /* LOGGER >= DEBUG */
         } catch (final IOException e) {
             // #if LOGGER >= ERROR

@@ -149,7 +149,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
             for (File file : directoryListing) {
                 if (file.getName().endsWith(".js")) {
                     // #if LOGGER >= DEBUG
-                    // LOGGER.debug("Loading terminal script '%s'", file.getName());
+                    LOGGER.debug("Loading terminal script '%s'", file.getName());
                     // #endif /* LOGGER >= DEBUG */
 
                     String name = file.getName().split("\\.")[0];

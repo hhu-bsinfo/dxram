@@ -39,7 +39,7 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
      *     the first ChunkID of the backup range or the RangeID for migrations
      */
     public RecoverBackupRangeRequest(final short p_destination, final short p_owner, final long p_firstChunkIDOrRangeID) {
-        super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST);
+        super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, true);
 
         m_owner = p_owner;
         m_firstChunkIDOrRangeID = p_firstChunkIDOrRangeID;

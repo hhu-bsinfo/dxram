@@ -27,7 +27,7 @@ import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
 import de.hhu.bsinfo.dxram.log.storage.LogCatalog;
 import de.hhu.bsinfo.dxram.log.storage.PrimaryLog;
-import de.hhu.bsinfo.dxram.log.storage.PrimaryWriteBuffer;
+import de.hhu.bsinfo.dxram.log.storage.PrimaryWriteBufferSecure;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
 import de.hhu.bsinfo.dxram.log.storage.Version;
@@ -80,7 +80,7 @@ public class LogComponent extends AbstractDXRAMComponent {
     private short m_nodeID;
     private boolean m_loggingIsActive;
 
-    private PrimaryWriteBuffer m_writeBuffer;
+    private PrimaryWriteBufferSecure m_writeBuffer;
     private PrimaryLog m_primaryLog;
     private LogCatalog[] m_logCatalogs;
 
@@ -89,9 +89,6 @@ public class LogComponent extends AbstractDXRAMComponent {
     private SecondaryLogsReorgThread m_secondaryLogsReorgThread;
 
     private ReentrantLock m_flushLock;
-
-    private volatile boolean m_reorgThreadWaits;
-    private volatile boolean m_accessGrantedForReorgThread;
 
     private String m_backupDirectory;
 
@@ -163,6 +160,15 @@ public class LogComponent extends AbstractDXRAMComponent {
         }
 
         return ret;
+    }
+
+    /**
+     * Returns the Secondary Logs Reorganization Thread
+     *
+     * @return the instance of SecondaryLogsReorgThread
+     */
+    public SecondaryLogsReorgThread getReorganizationThread() {
+        return m_secondaryLogsReorgThread;
     }
 
     /**
@@ -278,7 +284,7 @@ public class LogComponent extends AbstractDXRAMComponent {
             }
         }
         // #if LOGGER == TRACE
-        // LOGGER.trace("Time to initialize range: %d", System.currentTimeMillis() - time);
+        LOGGER.trace("Time to initialize range: %d", System.currentTimeMillis() - time);
         // #endif /* LOGGER == TRACE */
     }
 
@@ -401,15 +407,6 @@ public class LogComponent extends AbstractDXRAMComponent {
     }
 
     /**
-     * Grants the reorganization thread access to a secondary log
-     */
-    public void grantReorgThreadAccessToCurrentLog() {
-        if (m_reorgThreadWaits) {
-            m_accessGrantedForReorgThread = true;
-        }
-    }
-
-    /**
      * Flushes all secondary log buffers
      *
      * @throws IOException
@@ -474,11 +471,11 @@ public class LogComponent extends AbstractDXRAMComponent {
                 // #endif /* LOGGER >= ERROR */
             }
             // #if LOGGER == TRACE
-            // LOGGER.trace("Initialized primary log (%d)", m_primaryLogSize);
+            LOGGER.trace("Initialized primary log (%d)", m_primaryLogSize);
             // #endif /* LOGGER == TRACE */
 
             // Create primary log buffer
-            m_writeBuffer = new PrimaryWriteBuffer(this, m_primaryLog, (int) m_writeBufferSize.getBytes(), (int) m_flashPageSize.getBytes(),
+            m_writeBuffer = new PrimaryWriteBufferSecure(this, m_primaryLog, (int) m_writeBufferSize.getBytes(), (int) m_flashPageSize.getBytes(),
                 (int) m_secondaryLogBufferSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_useChecksum, m_sortBufferPooling);
 
             // Create secondary log and secondary log buffer catalogs
@@ -661,25 +658,6 @@ public class LogComponent extends AbstractDXRAMComponent {
             chunkID = p_buffer.getLong();
 
             getSecondaryLog(chunkID, p_owner, rangeID).invalidateChunk(chunkID);
-        }
-    }
-
-    /**
-     * Get access to secondary log for reorganization thread
-     *
-     * @param p_secLog
-     *     the Secondary Log
-     */
-    void getAccessToSecLog(final SecondaryLog p_secLog) {
-        if (!p_secLog.isAccessed()) {
-            p_secLog.setAccessFlag(true);
-
-            m_reorgThreadWaits = true;
-            while (!m_accessGrantedForReorgThread) {
-                Thread.yield();
-            }
-            m_accessGrantedForReorgThread = false;
-            m_reorgThreadWaits = false;
         }
     }
 

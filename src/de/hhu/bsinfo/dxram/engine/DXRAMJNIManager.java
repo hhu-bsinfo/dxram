@@ -29,7 +29,7 @@ final class DXRAMJNIManager {
      */
     public static void setup(final DXRAMContext.EngineSettings p_engineSettings) {
         // #if LOGGER >= DEBUG
-        // LOGGER.debug("Setting up JNI classes...");
+        LOGGER.debug("Setting up JNI classes...");
         // #endif /* LOGGER >= DEBUG */
 
         String path;
@@ -50,7 +50,7 @@ final class DXRAMJNIManager {
         path = cwd + '/' + p_engineSettings.getJNIPath() + "/libJNIconsole." + extension;
 
         // #if LOGGER >= DEBUG
-        // LOGGER.debug("Loading JNIconsole: %s", path);
+        LOGGER.debug("Loading JNIconsole: %s", path);
         // #endif /* LOGGER >= DEBUG */
 
         JNIconsole.load(path);

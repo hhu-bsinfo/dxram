@@ -36,15 +36,14 @@ public class SecondaryLog extends AbstractLog {
     private static final int VERSIONS_BUFFER_CAPACITY = 65536;
 
     // Attributes
-    private short m_nodeID;
-    private long m_rangeIDOrFirstLocalID;
-    private long m_secondaryLogSize;
-    private int m_logSegmentSize;
-    private boolean m_useChecksum;
+    private final long m_secondaryLogReorgThreshold;
+    private final short m_nodeID;
+    private final long m_rangeIDOrFirstLocalID;
+    private final long m_secondaryLogSize;
+    private final int m_logSegmentSize;
+    private final boolean m_useChecksum;
 
     private VersionsBuffer m_versionsBuffer;
-
-    private long m_secondaryLogReorgThreshold;
     private SecondaryLogsReorgThread m_reorganizationThread;
 
     private SegmentHeader[] m_segmentHeaders;
@@ -127,7 +126,7 @@ public class SecondaryLog extends AbstractLog {
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Initialized secondary log (%d)", m_secondaryLogSize);
+        LOGGER.trace("Initialized secondary log (%d)", m_secondaryLogSize);
         // #endif /* LOGGER == TRACE */
     }
 

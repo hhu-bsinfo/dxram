@@ -87,7 +87,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
                 m_memoryManager.unlockAccess();
 
                 // #if LOGGER == TRACE
-                // LOGGER.trace("Sending migration request to %s", p_target);
+                LOGGER.trace("Sending migration request to %s", p_target);
                 // #endif /* LOGGER == TRACE */
 
                 MigrationRequest request = new MigrationRequest(p_target, new Chunk[] {chunk});
@@ -407,7 +407,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
             if (!success) {
                 // #if LOGGER == TRACE
-                // LOGGER.trace("Failure! Could not migrate chunk 0x%X to node 0x%X", p_message.getChunkID(), p_message.getTargetNode());
+                LOGGER.trace("Failure! Could not migrate chunk 0x%X to node 0x%X", p_message.getChunkID(), p_message.getTargetNode());
                 // #endif /* LOGGER == TRACE */
             }
         };

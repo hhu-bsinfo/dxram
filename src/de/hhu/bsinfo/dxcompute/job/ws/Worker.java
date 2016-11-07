@@ -120,7 +120,7 @@ public class Worker extends Thread {
                 m_isIdle = false;
 
                 // #if LOGGER >= DEBUG
-                // LOGGER.debug("Worker %d: Executing job %s from queue", m_id, job);
+                LOGGER.debug("Worker %d: Executing job %s from queue", m_id, job);
                 // #endif /* LOGGER >= DEBUG */
 
                 m_workerDelegate.executingJob(job);
@@ -134,7 +134,7 @@ public class Worker extends Thread {
                 m_isIdle = false;
 
                 // #if LOGGER >= DEBUG
-                // LOGGER.debug("Worker %d: Executing stolen job %s", m_id, job);
+                LOGGER.debug("Worker %d: Executing stolen job %s", m_id, job);
                 // #endif /* LOGGER >= DEBUG */
 
                 m_workerDelegate.executingJob(job);

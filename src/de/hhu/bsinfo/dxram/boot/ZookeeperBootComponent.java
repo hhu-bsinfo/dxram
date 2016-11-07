@@ -338,7 +338,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                 setBootstrapPeer(m_nodes.getOwnNodeID());
 
                 // #if LOGGER >= DEBUG
-                // LOGGER.debug("Failed node %s was bootstrap. New bootstrap is %s", NodeID.toHexString(p_nodeID), NodeID.toHexString(m_bootstrap));
+                LOGGER.debug("Failed node %s was bootstrap. New bootstrap is %s", NodeID.toHexString(p_nodeID), NodeID.toHexString(m_bootstrap));
                 // #endif /* LOGGER >= DEBUG */
 
             }
@@ -573,7 +573,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
         int seed;
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering parseNodesBootstrap");
+        LOGGER.trace("Entering parseNodesBootstrap");
         // #endif /* LOGGER == TRACE */
 
         try {
@@ -658,7 +658,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting parseNodesBootstrap");
+        LOGGER.trace("Exiting parseNodesBootstrap");
         // #endif /* LOGGER == TRACE */
 
         return true;
@@ -683,7 +683,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
         String[] splits;
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering parseNodesNormal");
+        LOGGER.trace("Entering parseNodesNormal");
         // #endif /* LOGGER == TRACE */
 
         try {
@@ -803,7 +803,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting parseNodesNormal");
+        LOGGER.trace("Exiting parseNodesNormal");
         // #endif /* LOGGER == TRACE */
 
         return true;

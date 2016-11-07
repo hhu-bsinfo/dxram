@@ -125,13 +125,13 @@ public abstract class AbstractLog {
      *     if the header could not be read or written
      */
     final boolean createLogAndWriteHeader(final byte[] p_header) throws IOException {
-        boolean ret = false;
+        boolean ret = true;
 
         if (m_logFile.exists()) {
             ret = m_logFile.delete();
         }
 
-        if (ret) {
+        if (ret && !m_logFile.getParentFile().exists()) {
             // Create folders
             ret = m_logFile.getParentFile().mkdirs();
         }

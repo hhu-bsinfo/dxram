@@ -38,7 +38,7 @@ public class RecoverMessage extends AbstractMessage {
      *     the NodeID of the owner
      */
     public RecoverMessage(final short p_destination, final short p_owner, final boolean p_useLiveData) {
-        super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_MESSAGE);
+        super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_MESSAGE, true);
 
         m_owner = p_owner;
         m_useLiveData = p_useLiveData;
