@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.lookup.overlay.cache;
 
+import java.util.ArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -557,7 +558,7 @@ public final class CacheTree {
      *     the primary peer
      * @return true if insertion was successful
      */
-    private boolean cacheChunkID(final long p_chunkID, final short p_nodeID) {
+    public boolean cacheChunkID(final long p_chunkID, final short p_nodeID) {
         Node node;
 
         m_lock.writeLock().lock();
@@ -1203,6 +1204,209 @@ public final class CacheTree {
 
         return ret;
     }
+
+
+    /**
+     * Cache btree to List using the print algorithm
+     * @return list of node elements
+     *
+     * @author michael.birkhoff@hhu.de
+     */
+
+    public ArrayList<CacheNodeElement> toList() {
+
+        ArrayList<CacheNodeElement> list;
+
+        if (null == m_root) {
+            list = null;
+        } else {
+            list = new ArrayList<CacheNodeElement>();
+            getList(m_root, list);
+        }
+
+        return list;
+
+    }
+
+    /**
+     * gets one node of the btree and walks down the btree recursively
+     * @param p_node
+     *            the current node
+     * @param p_list
+     *            list to add to
+     * @return list of node elements
+     *
+     * @author michael.birkhoff@hhu.de
+     */
+
+    private ArrayList<CacheNodeElement> getList(final Node p_node, final ArrayList<CacheNodeElement> p_list) {
+
+        Node obj;
+
+        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
+
+            CacheNodeElement e = new CacheNodeElement(p_node.getCID(i), p_node.getNodeID(i));
+            p_list.add(e);
+
+        }
+
+        if (null != p_node.getChild(0)) {
+            for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
+                obj = p_node.getChild(i);
+                getList(obj, p_list);
+
+            }
+            if (1 <= p_node.getNumberOfChildren()) {
+                obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
+                getList(obj, p_list);
+
+            }
+        }
+
+        return p_list;
+
+    }
+
+
+
+    /**
+     * Cache btree to List using the print algorithm
+     * this version however does not write an entry with the specified NodeID into the list.
+     * This is used for delete all from entry
+     * @return list of node elements
+     *
+     * @author michael.birkhoff@hhu.de
+     */
+
+    public ArrayList<CacheNodeElement> toListFilteredInverse(final short p_nodeID) {
+
+        ArrayList<CacheNodeElement> list;
+
+        if (null == m_root) {
+            list = null;
+        } else {
+            list = new ArrayList<CacheNodeElement>();
+            getFilteredInverseList(m_root, list, p_nodeID);
+        }
+
+        return list;
+
+    }
+
+    /**
+     * gets one node of the btree and walks down the btree recursively
+     * puts entries with specified nodeID in the list 'p_list' provided as argument
+     * @param p_node
+     *            the current node
+     * @param p_list
+     *            list to add to
+     * @return list of node elements
+     *
+     * @author michael.birkhoff@hhu.de
+     */
+
+    private void getFilteredInverseList(final Node p_node, final ArrayList<CacheNodeElement> p_list, final short p_nodeID) {
+
+        Node obj;
+
+        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
+
+            CacheNodeElement e = new CacheNodeElement(p_node.getCID(i), p_node.getNodeID(i));
+            if(e.getNodeId() == p_nodeID )
+                p_list.add(e);
+
+        }
+
+        if (null != p_node.getChild(0)) {
+            for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
+                obj = p_node.getChild(i);
+                getFilteredInverseList(obj, p_list, p_nodeID);
+
+            }
+            if (1 <= p_node.getNumberOfChildren()) {
+                obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
+                getFilteredInverseList(obj, p_list, p_nodeID);
+
+            }
+        }
+
+
+    }
+
+
+    /**
+     * deletes all cache entries from a node
+     * serialising first and deleting afterwards
+     * @param p_deleteNodeID node ID for which all entries will be deleted
+     *
+     * @return if something has been deleted
+     *
+     * @author michael.birkhoff@hhu.de
+     */
+
+    public boolean deleteAllCacheEntriesFromNode(final short p_deleteNodeID)
+    {
+        boolean deletedSomething = false;
+
+        ArrayList<CacheNodeElement> allEntries =  toListFilteredInverse(p_deleteNodeID);
+
+
+        for(int i = 0; i < allEntries.size(); i++)
+        {
+            remove(allEntries.get(i).getChunkId());
+
+        }
+
+        if(allEntries.size() > 0){
+            deletedSomething = true;
+        }
+
+        return deletedSomething;
+    }
+
+
+
+
+
+    /**
+     * Element of a BTree Entry used as helper class for serializing
+     * @author michael.birkhoff@hhu.de
+     */
+    public final class CacheNodeElement {
+
+        private Long m_chunkId;
+        private short m_nodeId;
+
+        /**
+         * instanciate NodeElement
+         * @param p_chunkId
+         *            chunk to find ...
+         * @param p_nodeId
+         *            ... on node
+         */
+        public CacheNodeElement(final Long p_chunkId, final short p_nodeId) {
+            m_chunkId = p_chunkId;
+            m_nodeId = p_nodeId;
+        }
+
+        /**
+         * Getter chunkID
+         * @return chunkID
+         */
+        public Long getChunkId() {
+            return m_chunkId;
+        }
+
+        /**
+         * Getter NodeID
+         * @return Node ID
+         */
+        public short getNodeId() {
+            return m_nodeId;
+        }
+    }
+
+
 
     /**
      * A single node of the btree

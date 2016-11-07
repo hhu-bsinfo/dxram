@@ -33,7 +33,7 @@ import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 06.06.2014
  */
-public class PrimaryWriteBuffer {
+public class PrimaryWriteBufferSecure {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(PrimaryWriteBuffer.class.getSimpleName());
 
@@ -105,7 +105,7 @@ public class PrimaryWriteBuffer {
      * @param p_sortBufferPooling
      *     whether buffer pooling is enabled or not
      */
-    public PrimaryWriteBuffer(final LogComponent p_logComponent, final PrimaryLog p_primaryLog, final int p_writeBufferSize, final int p_flashPageSize,
+    public PrimaryWriteBufferSecure(final LogComponent p_logComponent, final PrimaryLog p_primaryLog, final int p_writeBufferSize, final int p_flashPageSize,
         final int p_secondaryLogBufferSize, final int p_logSegmentSize, final boolean p_useChecksum, final boolean p_sortBufferPooling) {
         m_logComponent = p_logComponent;
         m_primaryLog = p_primaryLog;
