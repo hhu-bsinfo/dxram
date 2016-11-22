@@ -46,10 +46,10 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     private static final Logger LOGGER = LogManager.getFormatterLogger(PeerLockService.class.getSimpleName());
 
     // statistics recorder
-    private static final StatisticsOperation SOP_LOCK = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Lock");
-    private static final StatisticsOperation SOP_UNLOCK = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Unlock");
-    private static final StatisticsOperation SOP_INCOMING_LOCK = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "IncomingLock");
-    private static final StatisticsOperation SOP_INCOMING_UNLOCK = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "IncomingUnlock");
+    private static final StatisticsOperation SOP_LOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "Lock");
+    private static final StatisticsOperation SOP_UNLOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "Unlock");
+    private static final StatisticsOperation SOP_INCOMING_LOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "IncomingLock");
+    private static final StatisticsOperation SOP_INCOMING_UNLOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "IncomingUnlock");
 
     // configuration values
     @Expose
