@@ -1291,13 +1291,13 @@ public final class SmallObjectHeapSegment {
 
             // Get the list with a free block which is big enough
             list = getList(blockSize) + 1;
-            while (list < m_freeBlocksListCount && readPointer(m_baseFreeBlockList + list * POINTER_SIZE) == 0) {
+            address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
+            while (list < m_freeBlocksListCount && address == 0) {
                 list++;
-            }
-            if (list < m_freeBlocksListCount) {
-                // A list is found
                 address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
-            } else {
+            }
+
+            if (list >= m_freeBlocksListCount) {
                 // Traverse through the lower list
                 list = getList(blockSize);
                 address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
