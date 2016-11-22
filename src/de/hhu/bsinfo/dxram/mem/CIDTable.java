@@ -379,26 +379,36 @@ public final class CIDTable {
      * @return the entry
      */
     private long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) {
-        long ret = 0;
         long index;
         long entry;
 
-        if (p_level == LID_TABLE_LEVELS) {
-            index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
-        } else {
-            index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
-        }
+        int level = p_level;
+        long addressTable = p_addressTable;
 
-        if (p_level > 0) {
-            entry = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
-            if (entry > 0) {
-                ret = getEntry(p_chunkID, entry & BITMASK_ADDRESS, p_level - 1);
+        do {
+            if (level == LID_TABLE_LEVELS) {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & NID_LEVEL_BITMASK;
+            } else {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & LID_LEVEL_BITMASK;
             }
-        } else {
-            ret = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
-        }
 
-        return ret;
+            if (level > 0) {
+                entry = readEntry(addressTable, index) & BITMASK_ADDRESS;
+
+                if (entry <= 0) {
+                    break;
+                }
+
+                // move on to next table
+                addressTable = entry & BITMASK_ADDRESS;
+            } else {
+                return readEntry(addressTable, index) & BITMASK_ADDRESS;
+            }
+
+            level--;
+        } while (level >= 0);
+
+        return 0;
     }
 
     /**
@@ -418,31 +428,37 @@ public final class CIDTable {
         long index;
         long entry;
 
-        if (p_level == LID_TABLE_LEVELS) {
-            index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
-        } else {
-            index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
-        }
-        if (p_level > 0) {
-            // Read table entry
-            entry = readEntry(p_addressTable, index);
-            if (entry == 0) {
-                entry = createLIDTable();
-                if (entry == -1) {
-                    return false;
-                }
-                writeEntry(p_addressTable, index, entry);
+        int level = p_level;
+        long addressTable = p_addressTable;
+
+        do {
+            if (level == LID_TABLE_LEVELS) {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & NID_LEVEL_BITMASK;
+            } else {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & LID_LEVEL_BITMASK;
             }
 
-            if (entry > 0) {
+            if (level > 0) {
+                // Read table entry
+                entry = readEntry(addressTable, index);
+                if (entry == 0) {
+                    entry = createLIDTable();
+                    if (entry == -1) {
+                        return false;
+                    }
+                    writeEntry(addressTable, index, entry);
+                }
+
                 // move on to next table
-                return setEntry(p_chunkID, p_addressChunk, entry & BITMASK_ADDRESS, p_level - 1);
+                addressTable = entry & BITMASK_ADDRESS;
+            } else {
+                // Set the level 0 entry
+                // valid and active entry, delete flag 0
+                writeEntry(addressTable, index, p_addressChunk & BITMASK_ADDRESS);
             }
-        } else {
-            // Set the level 0 entry
-            // valid and active entry, delete flag 0
-            writeEntry(p_addressTable, index, p_addressChunk & BITMASK_ADDRESS);
-        }
+
+            level--;
+        } while (level >= 0);
 
         return true;
     }
@@ -466,37 +482,47 @@ public final class CIDTable {
         long index;
         long entry;
 
-        if (p_level == LID_TABLE_LEVELS) {
-            index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
-        } else {
-            index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
-        }
-        if (p_level > 0) {
-            // Read table entry
-            entry = readEntry(p_addressTable, index);
-            if ((entry & FULL_FLAG) > 0) {
-                // Delete full flag
-                entry &= ~FULL_FLAG;
-                writeEntry(p_addressTable, index, entry);
+        int level = p_level;
+        long addressTable = p_addressTable;
+
+        do {
+            if (level == LID_TABLE_LEVELS) {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & NID_LEVEL_BITMASK;
+            } else {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & LID_LEVEL_BITMASK;
             }
 
-            if ((entry & BITMASK_ADDRESS) > 0) {
+            if (level > 0) {
+                // Read table entry
+                entry = readEntry(addressTable, index);
+                if ((entry & FULL_FLAG) > 0) {
+                    // Delete full flag
+                    entry &= ~FULL_FLAG;
+                    writeEntry(addressTable, index, entry);
+                }
+
+                if ((entry & BITMASK_ADDRESS) == 0) {
+                    break;
+                }
+
                 // Delete entry in the following table
-                ret = deleteEntry(p_chunkID, entry & BITMASK_ADDRESS, p_level - 1, p_flagZombie);
-            }
-        } else {
-            // Read the level 0 entry
-            ret = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
-            // Delete the level 0 entry
-            // invalid + active address but deleted flag 1
-            // -> zombie entry
-            if (p_flagZombie) {
-                writeEntry(p_addressTable, index, ret | DELETED_FLAG);
+                addressTable = entry & BITMASK_ADDRESS;
             } else {
-                // delete flag cleared, but address is 0 -> free entry
-                writeEntry(p_addressTable, index, 0);
+                ret = readEntry(addressTable, index) & BITMASK_ADDRESS;
+
+                // Delete the level 0 entry
+                // invalid + active address but deleted flag 1
+                // -> zombie entry
+                if (p_flagZombie) {
+                    writeEntry(addressTable, index, ret | DELETED_FLAG);
+                } else {
+                    // delete flag cleared, but address is 0 -> free entry
+                    writeEntry(addressTable, index, 0);
+                }
             }
-        }
+
+            level--;
+        } while (level >= 0);
 
         return ret;
     }
