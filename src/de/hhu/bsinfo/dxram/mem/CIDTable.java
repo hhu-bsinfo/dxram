@@ -345,15 +345,7 @@ public final class CIDTable {
      * @return the entry
      */
     private long readEntry(final long p_addressTable, final long p_index) {
-        long ret;
-
-        if (p_addressTable == m_addressTableDirectory) {
-            ret = m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
-        } else {
-            ret = m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
-        }
-
-        return ret;
+        return m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
     }
 
     /**

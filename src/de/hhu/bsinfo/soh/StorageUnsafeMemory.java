@@ -6,7 +6,6 @@ import java.io.RandomAccessFile;
 
 import sun.misc.Unsafe;
 
-import de.hhu.bsinfo.utils.Endianness;
 import de.hhu.bsinfo.utils.UnsafeHandler;
 
 /**
@@ -105,15 +104,11 @@ public class StorageUnsafeMemory implements Storage {
         assert p_ptr < m_memorySize;
         assert p_ptr + p_length <= m_memorySize;
 
-        int bytesRead = 0;
-
-        // / XXX quite inefficient way to write, but no other possibility (?)
         for (int i = 0; i < p_length; i++) {
             p_array[p_arrayOffset + i] = UNSAFE.getByte(m_memoryBase + p_ptr + i);
-            bytesRead++;
         }
 
-        return bytesRead;
+        return p_length;
     }
 
     @Override
@@ -153,15 +148,11 @@ public class StorageUnsafeMemory implements Storage {
         assert p_ptr >= 0;
         assert p_ptr + p_length <= m_memorySize;
 
-        int bytesWritten = 0;
-
-        // / XXX quite inefficient way to write, but no other possibility (?)
         for (int i = 0; i < p_length; i++) {
             UNSAFE.putByte(m_memoryBase + p_ptr + i, p_array[p_arrayOffset + i]);
-            bytesWritten++;
         }
 
-        return bytesWritten;
+        return p_length;
     }
 
     @Override
@@ -203,19 +194,9 @@ public class StorageUnsafeMemory implements Storage {
 
         long val = 0;
 
-        // take endianness into account!!!
-        if (Endianness.getEndianness() > 0) {
-            for (int i = 0; i < p_count; i++) {
-                // work around not having unsigned data types and "wipe"
-                // the sign by & 0xFF
-                val |= ((long) (UNSAFE.getByte(m_memoryBase + p_ptr + i) & 0xFF)) << (8 * i);
-            }
-        } else {
-            for (int i = 0; i < p_count; i++) {
-                // work around not having unsigned data types and "wipe"
-                // the sign by & 0xFF
-                val |= ((long) (UNSAFE.getByte(m_memoryBase + p_ptr + i) & 0xFF)) << (8 * (7 - i));
-            }
+        for (int i = 0; i < p_count; i++) {
+            // kill the sign by & 0xFF
+            val |= (long) (UNSAFE.getByte(m_memoryBase + p_ptr + i) & 0xFF) << 8 * i;
         }
 
         return val;
@@ -226,15 +207,8 @@ public class StorageUnsafeMemory implements Storage {
         assert p_ptr >= 0;
         assert p_ptr + p_count <= m_memorySize;
 
-        // take endianness into account!!!
-        if (Endianness.getEndianness() > 0) {
-            for (int i = 0; i < p_count; i++) {
-                UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) ((p_val >> (8 * i)) & 0xFF));
-            }
-        } else {
-            for (int i = 0; i < p_count; i++) {
-                UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) (p_val >> (8 * (7 - i)) & 0xFF));
-            }
+        for (int i = 0; i < p_count; i++) {
+            UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) (p_val >> 8 * i & 0xFF));
         }
     }
 }

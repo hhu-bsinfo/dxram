@@ -2,8 +2,6 @@ package de.hhu.bsinfo.dxram.data;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.utils.Endianness;
-
 /**
  * Utils class with helpers for sending chunk related messages.
  * This helps making use of the additional status byte provided with every message.
@@ -117,13 +115,8 @@ public final class ChunkMessagesMetadataUtils {
                 p_buffer.putShort((short) (p_numItems & 0xFFFF));
                 break;
             case 3:
-                if (Endianness.getEndianness() > 0) {
-                    p_buffer.putShort((short) (p_numItems >> 8 & 0xFFFF));
-                    p_buffer.put((byte) (p_numItems & 0xFF));
-                } else {
-                    p_buffer.put((byte) (p_numItems & 0xFF));
-                    p_buffer.putShort((short) (p_numItems >> 8 & 0xFFFF));
-                }
+                p_buffer.putShort((short) (p_numItems >> 8 & 0xFFFF));
+                p_buffer.put((byte) (p_numItems & 0xFF));
                 break;
             case 4:
                 p_buffer.putInt(p_numItems);
@@ -160,11 +153,7 @@ public final class ChunkMessagesMetadataUtils {
                 numChunks = p_buffer.getShort() & 0xFFFF;
                 break;
             case 3:
-                if (Endianness.getEndianness() > 0) {
-                    numChunks = (p_buffer.getShort() & 0xFFFF) << 8 | p_buffer.get() & 0xFF;
-                } else {
-                    numChunks = (p_buffer.get() & 0xFF) << 16 | p_buffer.getShort();
-                }
+                numChunks = (p_buffer.getShort() & 0xFFFF) << 8 | p_buffer.get() & 0xFF;
                 break;
             case 4:
                 numChunks = p_buffer.getInt();

@@ -4,7 +4,6 @@ import java.io.File;
 
 import sun.misc.Unsafe;
 
-import de.hhu.bsinfo.utils.Endianness;
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.UnsafeHandler;
 
@@ -14,7 +13,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.04.2015
  * @deprecated Unsafe will be deprecated in Java 9. Keeping it here for benchmarks with own native implementation JNINativeMemory
  */
-@Deprecated public class StorageHybridUnsafeJNINativeMemory implements Storage {
+@Deprecated
+public class StorageHybridUnsafeJNINativeMemory implements Storage {
     private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
 
     private long m_memoryBase = -1;
@@ -27,7 +27,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
 
     }
 
-    @Override public void allocate(final long p_size) {
+    @Override
+    public void allocate(final long p_size) {
         assert p_size > 0;
 
         try {
@@ -39,7 +40,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         m_memorySize = p_size;
     }
 
-    @Override public void free() {
+    @Override
+    public void free() {
         try {
             UNSAFE.freeMemory(m_memoryBase);
         } catch (final Throwable e) {
@@ -48,11 +50,13 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         m_memorySize = 0;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return "m_memoryBase=0x" + Long.toHexString(m_memoryBase) + ", m_memorySize: " + m_memorySize;
     }
 
-    @Override public void dump(final File p_file, final long p_ptr, final long p_length) {
+    @Override
+    public void dump(final File p_file, final long p_ptr, final long p_length) {
         assert p_ptr >= 0;
         assert p_ptr < m_memorySize;
         assert p_ptr + p_length <= m_memorySize;
@@ -60,11 +64,13 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         JNINativeMemory.dump(m_memoryBase + p_ptr, p_length, p_file.getAbsolutePath());
     }
 
-    @Override public long getSize() {
+    @Override
+    public long getSize() {
         return m_memorySize;
     }
 
-    @Override public void set(final long p_ptr, final long p_size, final byte p_value) {
+    @Override
+    public void set(final long p_ptr, final long p_size, final byte p_value) {
         assert p_ptr >= 0;
         assert p_ptr < m_memorySize;
         assert p_ptr + p_size <= m_memorySize;
@@ -72,7 +78,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         UNSAFE.setMemory(m_memoryBase + p_ptr, p_size, p_value);
     }
 
-    @Override public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
+    @Override
+    public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
         assert p_ptr >= 0;
         assert p_ptr < m_memorySize;
         assert p_ptr + p_length <= m_memorySize;
@@ -81,14 +88,16 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         return p_length;
     }
 
-    @Override public byte readByte(final long p_ptr) {
+    @Override
+    public byte readByte(final long p_ptr) {
         assert p_ptr >= 0;
         assert p_ptr < m_memorySize;
 
         return UNSAFE.getByte(m_memoryBase + p_ptr);
     }
 
-    @Override public short readShort(final long p_ptr) {
+    @Override
+    public short readShort(final long p_ptr) {
         assert p_ptr >= 0;
         assert p_ptr + 1 < m_memorySize;
 
@@ -110,7 +119,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         return val;
     }
 
-    @Override public int readInt(final long p_ptr) {
+    @Override
+    public int readInt(final long p_ptr) {
         assert p_ptr >= 0;
         assert p_ptr + 3 < m_memorySize;
 
@@ -136,7 +146,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         return val;
     }
 
-    @Override public long readLong(final long p_ptr) {
+    @Override
+    public long readLong(final long p_ptr) {
         assert p_ptr >= 0;
         assert p_ptr + 7 < m_memorySize;
 
@@ -171,7 +182,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         return val;
     }
 
-    @Override public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
+    @Override
+    public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
         assert p_ptr >= 0;
         assert p_ptr + p_length <= m_memorySize;
 
@@ -179,14 +191,16 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         return p_length;
     }
 
-    @Override public void writeByte(final long p_ptr, final byte p_value) {
+    @Override
+    public void writeByte(final long p_ptr, final byte p_value) {
         assert p_ptr >= 0;
         assert p_ptr < m_memorySize;
 
         UNSAFE.putByte(m_memoryBase + p_ptr, p_value);
     }
 
-    @Override public void writeShort(final long p_ptr, final short p_value) {
+    @Override
+    public void writeShort(final long p_ptr, final short p_value) {
         assert p_ptr >= 0;
         assert p_ptr + 1 < m_memorySize;
 
@@ -206,7 +220,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         UNSAFE.putShort(m_memoryBase + p_ptr, p_value);
     }
 
-    @Override public void writeInt(final long p_ptr, final int p_value) {
+    @Override
+    public void writeInt(final long p_ptr, final int p_value) {
         assert p_ptr >= 0;
         assert p_ptr + 3 < m_memorySize;
 
@@ -230,7 +245,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         UNSAFE.putInt(m_memoryBase + p_ptr, p_value);
     }
 
-    @Override public void writeLong(final long p_ptr, final long p_value) {
+    @Override
+    public void writeLong(final long p_ptr, final long p_value) {
         assert p_ptr >= 0;
         assert p_ptr + 7 < m_memorySize;
 
@@ -262,43 +278,29 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
         UNSAFE.putLong(m_memoryBase + p_ptr, p_value);
     }
 
-    @Override public long readVal(final long p_ptr, final int p_count) {
+    @Override
+    public long readVal(final long p_ptr, final int p_count) {
         assert p_ptr >= 0;
         assert p_ptr + p_count <= m_memorySize;
 
         long val = 0;
 
-        // take endianness into account!!!
-        if (Endianness.getEndianness() > 0) {
-            for (int i = 0; i < p_count; i++) {
-                // work around not having unsigned data types and "wipe"
-                // the sign by & 0xFF
-                val |= ((long) (UNSAFE.getByte(m_memoryBase + p_ptr + i) & 0xFF)) << (8 * i);
-            }
-        } else {
-            for (int i = 0; i < p_count; i++) {
-                // work around not having unsigned data types and "wipe"
-                // the sign by & 0xFF
-                val |= ((long) (UNSAFE.getByte(m_memoryBase + p_ptr + i) & 0xFF)) << (8 * (7 - i));
-            }
+        for (int i = 0; i < p_count; i++) {
+            // work around not having unsigned data types and "wipe"
+            // the sign by & 0xFF
+            val |= (long) (UNSAFE.getByte(m_memoryBase + p_ptr + i) & 0xFF) << 8 * i;
         }
 
         return val;
     }
 
-    @Override public void writeVal(final long p_ptr, final long p_val, final int p_count) {
+    @Override
+    public void writeVal(final long p_ptr, final long p_val, final int p_count) {
         assert p_ptr >= 0;
         assert p_ptr + p_count <= m_memorySize;
 
-        // take endianness into account!!!
-        if (Endianness.getEndianness() > 0) {
-            for (int i = 0; i < p_count; i++) {
-                UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) ((p_val >> (8 * i)) & 0xFF));
-            }
-        } else {
-            for (int i = 0; i < p_count; i++) {
-                UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) (p_val >> (8 * (7 - i)) & 0xFF));
-            }
+        for (int i = 0; i < p_count; i++) {
+            UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) (p_val >> 8 * i & 0xFF));
         }
     }
 }

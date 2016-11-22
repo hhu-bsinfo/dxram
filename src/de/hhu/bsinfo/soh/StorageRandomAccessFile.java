@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
 
-import de.hhu.bsinfo.utils.Endianness;
-
 /**
  * Implementation of a storage based on a random access file.
  * Important note: This is quite slow and will take up
@@ -24,15 +22,16 @@ public class StorageRandomAccessFile implements Storage {
      * Constructor
      *
      * @param p_file
-     *         File to use as storage.
+     *     File to use as storage.
      * @throws FileNotFoundException
-     *         If creating random access file failed.
+     *     If creating random access file failed.
      */
     public StorageRandomAccessFile(final File p_file) throws FileNotFoundException {
         m_file = new RandomAccessFile(p_file, "rwd");
     }
 
-    @Override public void allocate(final long p_size) {
+    @Override
+    public void allocate(final long p_size) {
         final byte[] buf = new byte[8192];
         long size = p_size;
 
@@ -56,7 +55,8 @@ public class StorageRandomAccessFile implements Storage {
         }
     }
 
-    @Override public void free() {
+    @Override
+    public void free() {
         try {
             m_file.close();
         } catch (final IOException e) {
@@ -64,7 +64,8 @@ public class StorageRandomAccessFile implements Storage {
         }
     }
 
-    @Override public void dump(final File p_file, final long p_ptr, final long p_length) {
+    @Override
+    public void dump(final File p_file, final long p_ptr, final long p_length) {
         assert p_ptr >= 0;
         assert p_ptr < m_size;
         assert p_ptr + p_length <= m_size;
@@ -91,11 +92,13 @@ public class StorageRandomAccessFile implements Storage {
         }
     }
 
-    @Override public long getSize() {
+    @Override
+    public long getSize() {
         return m_size;
     }
 
-    @Override public void set(final long p_ptr, final long p_size, final byte p_value) {
+    @Override
+    public void set(final long p_ptr, final long p_size, final byte p_value) {
         assert p_ptr >= 0;
         assert p_ptr < m_size;
         assert p_ptr + p_size <= m_size;
@@ -123,7 +126,8 @@ public class StorageRandomAccessFile implements Storage {
         }
     }
 
-    @Override public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
+    @Override
+    public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
         assert p_ptr >= 0;
         assert p_ptr < m_size;
         assert p_ptr + p_length <= m_size;
@@ -140,7 +144,8 @@ public class StorageRandomAccessFile implements Storage {
         return bytesRead;
     }
 
-    @Override public byte readByte(final long p_ptr) {
+    @Override
+    public byte readByte(final long p_ptr) {
         assert p_ptr >= 0;
         assert p_ptr < m_size;
 
@@ -156,7 +161,8 @@ public class StorageRandomAccessFile implements Storage {
         return value;
     }
 
-    @Override public short readShort(final long p_ptr) {
+    @Override
+    public short readShort(final long p_ptr) {
         assert p_ptr >= 0;
         assert p_ptr + 1 < m_size;
 
@@ -172,7 +178,8 @@ public class StorageRandomAccessFile implements Storage {
         return value;
     }
 
-    @Override public int readInt(final long p_ptr) {
+    @Override
+    public int readInt(final long p_ptr) {
         assert p_ptr >= 0;
         assert p_ptr + 3 < m_size;
 
@@ -188,7 +195,8 @@ public class StorageRandomAccessFile implements Storage {
         return value;
     }
 
-    @Override public long readLong(final long p_ptr) {
+    @Override
+    public long readLong(final long p_ptr) {
         assert p_ptr >= 0;
         assert p_ptr + 7 < m_size;
 
@@ -204,7 +212,8 @@ public class StorageRandomAccessFile implements Storage {
         return value;
     }
 
-    @Override public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
+    @Override
+    public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
         assert p_ptr >= 0;
         assert p_ptr + p_array.length <= m_size;
 
@@ -221,7 +230,8 @@ public class StorageRandomAccessFile implements Storage {
         return bytesWritten;
     }
 
-    @Override public void writeByte(final long p_ptr, final byte p_value) {
+    @Override
+    public void writeByte(final long p_ptr, final byte p_value) {
         assert p_ptr >= 0;
         assert p_ptr < m_size;
 
@@ -233,7 +243,8 @@ public class StorageRandomAccessFile implements Storage {
         }
     }
 
-    @Override public void writeShort(final long p_ptr, final short p_value) {
+    @Override
+    public void writeShort(final long p_ptr, final short p_value) {
         assert p_ptr > 0;
         assert p_ptr + 1 < m_size;
 
@@ -245,7 +256,8 @@ public class StorageRandomAccessFile implements Storage {
         }
     }
 
-    @Override public void writeInt(final long p_ptr, final int p_value) {
+    @Override
+    public void writeInt(final long p_ptr, final int p_value) {
         assert p_ptr >= 0;
         assert p_ptr + 3 < m_size;
 
@@ -257,7 +269,8 @@ public class StorageRandomAccessFile implements Storage {
         }
     }
 
-    @Override public void writeLong(final long p_ptr, final long p_value) {
+    @Override
+    public void writeLong(final long p_ptr, final long p_value) {
         assert p_ptr >= 0;
         assert p_ptr + 7 < m_size;
 
@@ -269,7 +282,8 @@ public class StorageRandomAccessFile implements Storage {
         }
     }
 
-    @Override public long readVal(final long p_ptr, final int p_count) {
+    @Override
+    public long readVal(final long p_ptr, final int p_count) {
         assert p_ptr >= 0;
         assert p_ptr + p_count <= m_size;
 
@@ -278,21 +292,11 @@ public class StorageRandomAccessFile implements Storage {
         try {
             m_file.seek(p_ptr);
 
-            // take endianness into account!!!
-            if (Endianness.getEndianness() > 0) {
-                for (int i = 0; i < p_count; i++) {
-                    // input little endian byte order
-                    // work around not having unsigned data types and "wipe"
-                    // the sign by & 0xFF
-                    val |= ((long) (m_file.readByte() & 0xFF)) << (8 * i);
-                }
-            } else {
-                for (int i = 0; i < p_count; i++) {
-                    // input little endian byte order
-                    // work around not having unsigned data types and "wipe"
-                    // the sign by & 0xFF
-                    val |= ((long) (m_file.readByte() & 0xFF)) << (8 * (7 - i));
-                }
+            for (int i = 0; i < p_count; i++) {
+                // input little endian byte order
+                // work around not having unsigned data types and "wipe"
+                // the sign by & 0xFF
+                val |= (long) (m_file.readByte() & 0xFF) << 8 * i;
             }
         } catch (final IOException e) {
             throw new MemoryRuntimeException("reading failed " + e);
@@ -301,24 +305,17 @@ public class StorageRandomAccessFile implements Storage {
         return val;
     }
 
-    @Override public void writeVal(final long p_ptr, final long p_val, final int p_count) {
+    @Override
+    public void writeVal(final long p_ptr, final long p_val, final int p_count) {
         assert p_ptr >= 0;
         assert p_ptr + p_count <= m_size;
 
         try {
             m_file.seek(p_ptr);
 
-            // take endianness into account!!!
-            if (Endianness.getEndianness() > 0) {
-                for (int i = 0; i < p_count; i++) {
-                    // output little endian byte order
-                    m_file.writeByte((int) ((p_val >> (8 * i)) & 0xFF));
-                }
-            } else {
-                for (int i = 0; i < p_count; i++) {
-                    // output little endian byte order
-                    m_file.writeByte((int) (p_val >> (8 * (7 - i)) & 0xFF));
-                }
+            for (int i = 0; i < p_count; i++) {
+                // output little endian byte order
+                m_file.writeByte((int) (p_val >> 8 * i & 0xFF));
             }
         } catch (final IOException e) {
             throw new MemoryRuntimeException("writing failed " + e);

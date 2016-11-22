@@ -49,13 +49,13 @@ public final class SmallObjectHeapSegment {
      * Creates an instance of Segment
      *
      * @param p_memory
-     *         The underlying storage to use for this segment.
+     *     The underlying storage to use for this segment.
      * @param p_segmentID
-     *         The ID of the segment
+     *     The ID of the segment
      * @param p_base
-     *         The base address of the segment
+     *     The base address of the segment
      * @param p_size
-     *         The size of the segment in bytes.
+     *     The size of the segment in bytes.
      */
     public SmallObjectHeapSegment(final Storage p_memory, final int p_segmentID, final long p_base, final long p_size) {
         m_memory = p_memory;
@@ -142,7 +142,7 @@ public final class SmallObjectHeapSegment {
      * Assigns the Segment to a thread.
      *
      * @param p_threadID
-     *         The thread ID to assign this segment to.
+     *     The thread ID to assign this segment to.
      * @return the previously assigned thread
      */
     public long assign(final long p_threadID) {
@@ -178,7 +178,7 @@ public final class SmallObjectHeapSegment {
      * Allocate a memory block
      *
      * @param p_size
-     *         the size of the block in bytes.
+     *     the size of the block in bytes.
      * @return the address of the block
      */
     public long malloc(final int p_size) {
@@ -237,7 +237,7 @@ public final class SmallObjectHeapSegment {
      * Frees a memory block
      *
      * @param p_address
-     *         the address of the block
+     *     the address of the block
      */
     public void free(final long p_address) {
         long address;
@@ -268,7 +268,7 @@ public final class SmallObjectHeapSegment {
      * Get the size of an allocated block of memory.
      *
      * @param p_address
-     *         Address of the block.
+     *     Address of the block.
      * @return Size of the block in bytes (payload only).
      */
     public int getSizeBlock(final long p_address) {
@@ -299,11 +299,11 @@ public final class SmallObjectHeapSegment {
      * Overwrites the bytes in the memory with the given value
      *
      * @param p_address
-     *         the address to start
+     *     the address to start
      * @param p_size
-     *         the number of bytes to overwrite
+     *     the number of bytes to overwrite
      * @param p_value
-     *         the value to write
+     *     the value to write
      */
     public void set(final long p_address, final long p_size, final byte p_value) {
         assert assertSegmentBounds(p_address, p_size);
@@ -339,9 +339,9 @@ public final class SmallObjectHeapSegment {
      * Read a single byte from the specified address + offset.
      *
      * @param p_address
-     *         Address.
+     *     Address.
      * @param p_offset
-     *         Offset to add to the address.
+     *     Offset to add to the address.
      * @return Byte read.
      */
     public byte readByte(final long p_address, final long p_offset) {
@@ -379,9 +379,9 @@ public final class SmallObjectHeapSegment {
      * Read a single short from the specified address + offset.
      *
      * @param p_address
-     *         Address.
+     *     Address.
      * @param p_offset
-     *         Offset to add to the address.
+     *     Offset to add to the address.
      * @return Short read.
      */
     public short readShort(final long p_address, final long p_offset) {
@@ -409,9 +409,9 @@ public final class SmallObjectHeapSegment {
      * Read a single int from the specified address + offset.
      *
      * @param p_address
-     *         Address.
+     *     Address.
      * @param p_offset
-     *         Offset to add to the address.
+     *     Offset to add to the address.
      * @return Int read.
      */
     public int readInt(final long p_address, final long p_offset) {
@@ -439,9 +439,9 @@ public final class SmallObjectHeapSegment {
      * Read a long from the specified address + offset.
      *
      * @param p_address
-     *         Address.
+     *     Address.
      * @param p_offset
-     *         Offset to add to the address.
+     *     Offset to add to the address.
      * @return Long read.
      */
     public long readLong(final long p_address, final long p_offset) {
@@ -469,15 +469,15 @@ public final class SmallObjectHeapSegment {
      * Read data into a byte array.
      *
      * @param p_address
-     *         Address in heap to start at.
+     *     Address in heap to start at.
      * @param p_offset
-     *         Offset to add to start address.
+     *     Offset to add to start address.
      * @param p_buffer
-     *         Buffer to read into.
+     *     Buffer to read into.
      * @param p_offsetArray
-     *         Offset within the buffer.
+     *     Offset within the buffer.
      * @param p_length
-     *         Number of elements to read.
+     *     Number of elements to read.
      * @return Number of elements read.
      */
     public int readBytes(final long p_address, final long p_offset, final byte[] p_buffer, final int p_offsetArray, final int p_length) {
@@ -541,15 +541,15 @@ public final class SmallObjectHeapSegment {
      * Read data into a short array.
      *
      * @param p_address
-     *         Address in heap to start at.
+     *     Address in heap to start at.
      * @param p_offset
-     *         Offset to add to start address.
+     *     Offset to add to start address.
      * @param p_buffer
-     *         Buffer to read into.
+     *     Buffer to read into.
      * @param p_offsetArray
-     *         Offset within the buffer.
+     *     Offset within the buffer.
      * @param p_length
-     *         Number of elements to read.
+     *     Number of elements to read.
      * @return Number of elements read.
      */
     public int readShorts(final long p_address, final long p_offset, final short[] p_buffer, final int p_offsetArray, final int p_length) {
@@ -624,15 +624,15 @@ public final class SmallObjectHeapSegment {
      * Read data into an int array.
      *
      * @param p_address
-     *         Address in heap to start at.
+     *     Address in heap to start at.
      * @param p_offset
-     *         Offset to add to start address.
+     *     Offset to add to start address.
      * @param p_buffer
-     *         Buffer to read into.
+     *     Buffer to read into.
      * @param p_offsetArray
-     *         Offset within the buffer.
+     *     Offset within the buffer.
      * @param p_length
-     *         Number of elements to read.
+     *     Number of elements to read.
      * @return Number of elements read.
      */
     public int readInts(final long p_address, final long p_offset, final int[] p_buffer, final int p_offsetArray, final int p_length) {
@@ -708,15 +708,15 @@ public final class SmallObjectHeapSegment {
      * Read data into a long array.
      *
      * @param p_address
-     *         Address in heap to start at.
+     *     Address in heap to start at.
      * @param p_offset
-     *         Offset to add to start address.
+     *     Offset to add to start address.
      * @param p_buffer
-     *         Buffer to read into.
+     *     Buffer to read into.
      * @param p_offsetArray
-     *         Offset within the buffer.
+     *     Offset within the buffer.
      * @param p_length
-     *         Number of elements to read.
+     *     Number of elements to read.
      * @return Number of elements read.
      */
     public int readLongs(final long p_address, final long p_offset, final long[] p_buffer, final int p_offsetArray, final int p_length) {
@@ -792,11 +792,11 @@ public final class SmallObjectHeapSegment {
      * Write a single byte to the specified address + offset.
      *
      * @param p_address
-     *         Address.
+     *     Address.
      * @param p_offset
-     *         Offset to add to the address.
+     *     Offset to add to the address.
      * @param p_value
-     *         Byte to write.
+     *     Byte to write.
      */
     public void writeByte(final long p_address, final long p_offset, final byte p_value) {
         assert assertSegmentBounds(p_address, p_offset);
@@ -827,11 +827,11 @@ public final class SmallObjectHeapSegment {
      * Write a short to the specified address + offset.
      *
      * @param p_address
-     *         Address.
+     *     Address.
      * @param p_offset
-     *         Offset to add to the address.
+     *     Offset to add to the address.
      * @param p_value
-     *         Short to write.
+     *     Short to write.
      */
     public void writeShort(final long p_address, final long p_offset, final short p_value) {
         assert assertSegmentBounds(p_address, p_offset);
@@ -852,11 +852,11 @@ public final class SmallObjectHeapSegment {
      * Write a single int to the specified address + offset.
      *
      * @param p_address
-     *         Address.
+     *     Address.
      * @param p_offset
-     *         Offset to add to the address.
+     *     Offset to add to the address.
      * @param p_value
-     *         int to write.
+     *     int to write.
      */
     public void writeInt(final long p_address, final long p_offset, final int p_value) {
         assert assertSegmentBounds(p_address, p_offset);
@@ -877,11 +877,11 @@ public final class SmallObjectHeapSegment {
      * Write a long value to the specified address + offset.
      *
      * @param p_address
-     *         Address.
+     *     Address.
      * @param p_offset
-     *         Offset to add to the address.
+     *     Offset to add to the address.
      * @param p_value
-     *         Long value to write.
+     *     Long value to write.
      */
     public void writeLong(final long p_address, final long p_offset, final long p_value) {
         assert assertSegmentBounds(p_address, p_offset);
@@ -902,15 +902,15 @@ public final class SmallObjectHeapSegment {
      * Write an array of bytes to the specified address + offset.
      *
      * @param p_address
-     *         Address.
+     *     Address.
      * @param p_offset
-     *         Offset to add to the address.
+     *     Offset to add to the address.
      * @param p_value
-     *         Bytes to write.
+     *     Bytes to write.
      * @param p_offsetArray
-     *         Offset within the buffer.
+     *     Offset within the buffer.
      * @param p_length
-     *         Number of elements to read.
+     *     Number of elements to read.
      * @return Number of elements written.
      */
     public int writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_offsetArray, final int p_length) {
@@ -974,15 +974,15 @@ public final class SmallObjectHeapSegment {
      * Write an array of shorts to the heap.
      *
      * @param p_address
-     *         Address of an allocated block of memory.
+     *     Address of an allocated block of memory.
      * @param p_offset
-     *         Offset within the block of memory to start at.
+     *     Offset within the block of memory to start at.
      * @param p_value
-     *         Array to write.
+     *     Array to write.
      * @param p_offsetArray
-     *         Offset within the array.
+     *     Offset within the array.
      * @param p_length
-     *         Number of elements to write.
+     *     Number of elements to write.
      * @return Number of elements written.
      */
     int writeShorts(final long p_address, final long p_offset, final short[] p_value, final int p_offsetArray, final int p_length) {
@@ -1058,15 +1058,15 @@ public final class SmallObjectHeapSegment {
      * Write an array of ints to the heap.
      *
      * @param p_address
-     *         Address of an allocated block of memory.
+     *     Address of an allocated block of memory.
      * @param p_offset
-     *         Offset within the block of memory to start at.
+     *     Offset within the block of memory to start at.
      * @param p_value
-     *         Array to write.
+     *     Array to write.
      * @param p_offsetArray
-     *         Offset within the array.
+     *     Offset within the array.
      * @param p_length
-     *         Number of elements to write.
+     *     Number of elements to write.
      * @return Number of elements written.
      */
     int writeInts(final long p_address, final long p_offset, final int[] p_value, final int p_offsetArray, final int p_length) {
@@ -1142,15 +1142,15 @@ public final class SmallObjectHeapSegment {
      * Write an array of longs to the heap.
      *
      * @param p_address
-     *         Address of an allocated block of memory.
+     *     Address of an allocated block of memory.
      * @param p_offset
-     *         Offset within the block of memory to start at.
+     *     Offset within the block of memory to start at.
      * @param p_value
-     *         Array to write.
+     *     Array to write.
      * @param p_offsetArray
-     *         Offset within the array.
+     *     Offset within the array.
      * @param p_length
-     *         Number of elements to write.
+     *     Number of elements to write.
      * @return Number of elements written.
      */
     int writeLongs(final long p_address, final long p_offset, final long[] p_value, final int p_offsetArray, final int p_length) {
@@ -1222,10 +1222,11 @@ public final class SmallObjectHeapSegment {
         return itemsWritten;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return "Segment(id: " + m_segmentID + ", m_assignedThread " + m_assignedThread + "): " + "m_base " + m_base + ", m_baseFreeBlockList " +
-                m_baseFreeBlockList + ", m_size " + m_size + ", m_fullSize " + m_fullSize + ", segment borders: " + m_base + "|" + (m_base + m_fullSize) +
-                ", status: " + m_status;
+            m_baseFreeBlockList + ", m_size " + m_size + ", m_fullSize " + m_fullSize + ", segment borders: " + m_base + "|" + (m_base + m_fullSize) +
+            ", status: " + m_status;
     }
 
     // -------------------------------------------------------------------------------------------
@@ -1235,7 +1236,7 @@ public final class SmallObjectHeapSegment {
      * by the given address.
      *
      * @param p_address
-     *         Address of block to get the size of.
+     *     Address of block to get the size of.
      * @return Size of memory block at specified address.
      */
     private long getSizeMemoryBlock(final long p_address) {
@@ -1251,9 +1252,9 @@ public final class SmallObjectHeapSegment {
      * Reserve a free block of memory.
      *
      * @param p_size
-     *         Size of the block (payload size).
+     *     Size of the block (payload size).
      * @param p_chainedBlock
-     *         True if this block is part of a chain of blocks and not the last block in the chain.
+     *     True if this block is part of a chain of blocks and not the last block in the chain.
      * @return Address of the reserved block or null if out of memory of no block for requested size was found.
      */
     private long reserveBlock(final int p_size, final boolean p_chainedBlock) {
@@ -1374,11 +1375,11 @@ public final class SmallObjectHeapSegment {
      * Free a reserved block of memory
      *
      * @param p_address
-     *         Address of the block
+     *     Address of the block
      * @param p_lengthFieldSize
-     *         Size of the length field
+     *     Size of the length field
      * @param p_blockSize
-     *         Size of the block's payload
+     *     Size of the block's payload
      */
     private void freeReservedBlock(final long p_address, final int p_lengthFieldSize, final long p_blockSize) {
         long blockSize;
@@ -1528,11 +1529,11 @@ public final class SmallObjectHeapSegment {
      * This handles a value split over two blocks as well.
      *
      * @param p_address
-     *         Address of the block (root of the chained blocks)
+     *     Address of the block (root of the chained blocks)
      * @param p_offset
-     *         Offset within the whole block
+     *     Offset within the whole block
      * @param p_valLength
-     *         Length of the value to read
+     *     Length of the value to read
      * @return The read value (cast to an appropriate data type depending on specified length).
      */
     private long readChainedBlockValue(final long p_address, final long p_offset, final int p_valLength) {
@@ -1593,13 +1594,13 @@ public final class SmallObjectHeapSegment {
      * This handles a value split over two blocks as well.
      *
      * @param p_address
-     *         Address of the block (root of the chained blocks)
+     *     Address of the block (root of the chained blocks)
      * @param p_offset
-     *         Offset within the whole block
+     *     Offset within the whole block
      * @param p_value
-     *         Value to write
+     *     Value to write
      * @param p_valLength
-     *         Length of the value to read
+     *     Length of the value to read
      */
     private void writeChainedBlockValue(final long p_address, final long p_offset, final long p_value, final int p_valLength) {
         long address;
@@ -1664,7 +1665,7 @@ public final class SmallObjectHeapSegment {
      * Check the segment bounds with the specified address.
      *
      * @param p_address
-     *         Address to check if within segment.
+     *     Address to check if within segment.
      * @return Dummy return for assert
      */
     private boolean assertSegmentBounds(final long p_address) {
@@ -1679,9 +1680,9 @@ public final class SmallObjectHeapSegment {
      * Check the segment bounds with the specified start address and size.
      *
      * @param p_address
-     *         Address to check if within bounds.
+     *     Address to check if within bounds.
      * @param p_length
-     *         Number of bytes starting at address.
+     *     Number of bytes starting at address.
      * @return Dummy return for assert
      */
     private boolean assertSegmentBounds(final long p_address, final long p_length) {
@@ -1696,7 +1697,7 @@ public final class SmallObjectHeapSegment {
      * Check if the specified size is within the range of the max blocksize.
      *
      * @param p_size
-     *         Size to check if not exceeding max blocksize.
+     *     Size to check if not exceeding max blocksize.
      * @return Dummy return for assert
      */
     private boolean assertSegmentMaxBlocksize(final long p_size) {
@@ -1711,9 +1712,9 @@ public final class SmallObjectHeapSegment {
      * Creates a free block
      *
      * @param p_address
-     *         the address
+     *     the address
      * @param p_size
-     *         the size
+     *     the size
      */
     private void createFreeBlock(final long p_address, final long p_size) {
         long listOffset;
@@ -1770,7 +1771,7 @@ public final class SmallObjectHeapSegment {
      * Unhooks a free block
      *
      * @param p_address
-     *         the address
+     *     the address
      */
     private void unhookFreeBlock(final long p_address) {
         int lengthFieldSize;
@@ -1802,7 +1803,7 @@ public final class SmallObjectHeapSegment {
      * Gets the suitable list for the given size
      *
      * @param p_size
-     *         the size
+     *     the size
      * @return the suitable list
      */
     private int getList(final long p_size) {
@@ -1819,7 +1820,7 @@ public final class SmallObjectHeapSegment {
      * Read the right part of a marker byte
      *
      * @param p_address
-     *         the address
+     *     the address
      * @return the right part of a marker byte
      */
     int readRightPartOfMarker(final long p_address) {
@@ -1830,7 +1831,7 @@ public final class SmallObjectHeapSegment {
      * Read the left part of a marker byte
      *
      * @param p_address
-     *         the address
+     *     the address
      * @return the left part of a marker byte
      */
     private int readLeftPartOfMarker(final long p_address) {
@@ -1842,7 +1843,7 @@ public final class SmallObjectHeapSegment {
      * from the marker byte.
      *
      * @param p_marker
-     *         Marker byte.
+     *     Marker byte.
      * @return Size of the length field of block with specified marker byte.
      */
     private int getSizeFromMarker(final int p_marker) {
@@ -1863,9 +1864,9 @@ public final class SmallObjectHeapSegment {
      * Writes a marker byte
      *
      * @param p_address
-     *         the address
+     *     the address
      * @param p_right
-     *         the right part
+     *     the right part
      */
     private void writeRightPartOfMarker(final long p_address, final int p_right) {
         byte marker;
@@ -1878,9 +1879,9 @@ public final class SmallObjectHeapSegment {
      * Writes a marker byte
      *
      * @param p_address
-     *         the address
+     *     the address
      * @param p_left
-     *         the left part
+     *     the left part
      */
     private void writeLeftPartOfMarker(final long p_address, final int p_left) {
         byte marker;
@@ -1893,7 +1894,7 @@ public final class SmallObjectHeapSegment {
      * Reads a pointer
      *
      * @param p_address
-     *         the address
+     *     the address
      * @return the pointer
      */
     long readPointer(final long p_address) {
@@ -1904,9 +1905,9 @@ public final class SmallObjectHeapSegment {
      * Writes a pointer
      *
      * @param p_address
-     *         the address
+     *     the address
      * @param p_pointer
-     *         the pointer
+     *     the pointer
      */
     private void writePointer(final long p_address, final long p_pointer) {
         write(p_address, p_pointer, POINTER_SIZE);
@@ -1916,9 +1917,9 @@ public final class SmallObjectHeapSegment {
      * Reads up to 8 bytes combined in a long
      *
      * @param p_address
-     *         the address
+     *     the address
      * @param p_count
-     *         the number of bytes
+     *     the number of bytes
      * @return the combined bytes
      */
     protected long read(final long p_address, final int p_count) {
@@ -1929,11 +1930,11 @@ public final class SmallObjectHeapSegment {
      * Writes up to 8 bytes combined in a long
      *
      * @param p_address
-     *         the address
+     *     the address
      * @param p_bytes
-     *         the combined bytes
+     *     the combined bytes
      * @param p_count
-     *         the number of bytes
+     *     the number of bytes
      */
     private void write(final long p_address, final long p_bytes, final int p_count) {
         m_memory.writeVal(p_address, p_bytes, p_count);
@@ -1943,13 +1944,13 @@ public final class SmallObjectHeapSegment {
      * Read data from the storage into a short array.
      *
      * @param p_ptr
-     *         Start position in storage.
+     *     Start position in storage.
      * @param p_array
-     *         Array to read the data into.
+     *     Array to read the data into.
      * @param p_arrayOffset
-     *         Start offset in array to start writing the shorts to.
+     *     Start offset in array to start writing the shorts to.
      * @param p_length
-     *         Number of shorts to read from specified start.
+     *     Number of shorts to read from specified start.
      * @return Number of read elements.
      */
     private int readShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
@@ -1964,13 +1965,13 @@ public final class SmallObjectHeapSegment {
      * Read data from the storage into a int array.
      *
      * @param p_ptr
-     *         Start position in storage.
+     *     Start position in storage.
      * @param p_array
-     *         Array to read the data into.
+     *     Array to read the data into.
      * @param p_arrayOffset
-     *         Start offset in array to start writing the ints to.
+     *     Start offset in array to start writing the ints to.
      * @param p_length
-     *         Number of ints to read from specified start.
+     *     Number of ints to read from specified start.
      * @return Number of read elements.
      */
     private int readInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
@@ -1985,13 +1986,13 @@ public final class SmallObjectHeapSegment {
      * Read data from the storage into a long array.
      *
      * @param p_ptr
-     *         Start position in storage.
+     *     Start position in storage.
      * @param p_array
-     *         Array to read the data into.
+     *     Array to read the data into.
      * @param p_arrayOffset
-     *         Start offset in array to start writing the longs to.
+     *     Start offset in array to start writing the longs to.
      * @param p_length
-     *         Number of longs to read from specified start.
+     *     Number of longs to read from specified start.
      * @return Number of read elements.
      */
     private int readLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
@@ -2006,13 +2007,13 @@ public final class SmallObjectHeapSegment {
      * Write an array of shorts to the storage.
      *
      * @param p_ptr
-     *         Start address to write to.
+     *     Start address to write to.
      * @param p_array
-     *         Array with data to write.
+     *     Array with data to write.
      * @param p_arrayOffset
-     *         Offset in array to start reading the data from.
+     *     Offset in array to start reading the data from.
      * @param p_length
-     *         Number of elements to write.
+     *     Number of elements to write.
      * @return Number of written elements
      */
     private int writeShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
@@ -2027,13 +2028,13 @@ public final class SmallObjectHeapSegment {
      * Write an array of ints to the storage.
      *
      * @param p_ptr
-     *         Start address to write to.
+     *     Start address to write to.
      * @param p_array
-     *         Array with data to write.
+     *     Array with data to write.
      * @param p_arrayOffset
-     *         Offset in array to start reading the data from.
+     *     Offset in array to start reading the data from.
      * @param p_length
-     *         Number of elements to write.
+     *     Number of elements to write.
      * @return Number of written elements
      */
     private int writeInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
@@ -2048,13 +2049,13 @@ public final class SmallObjectHeapSegment {
      * Write an array of longs to the storage.
      *
      * @param p_ptr
-     *         Start address to write to.
+     *     Start address to write to.
      * @param p_array
-     *         Array with data to write.
+     *     Array with data to write.
      * @param p_arrayOffset
-     *         Offset in array to start reading the data from.
+     *     Offset in array to start reading the data from.
      * @param p_length
-     *         Number of elements to write.
+     *     Number of elements to write.
      * @return Number of written elements
      */
     private int writeLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
@@ -2087,7 +2088,7 @@ public final class SmallObjectHeapSegment {
          * Creates an instance of Status
          *
          * @param p_freeSpace
-         *         the free space
+         *     the free space
          */
         private Status(final long p_freeSpace) {
             m_freeSpace = p_freeSpace;
@@ -2124,7 +2125,8 @@ public final class SmallObjectHeapSegment {
             return m_freeSmall64ByteBlocks;
         }
 
-        @Override public String toString() {
+        @Override
+        public String toString() {
             return "Status [m_freeSpace=" + m_freeSpace + ", m_freeBlocks=" + m_freeBlocks + ", m_smallBlocks=" + m_freeSmall64ByteBlocks + "]";
         }
 
