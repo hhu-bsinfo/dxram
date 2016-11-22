@@ -235,7 +235,7 @@ public final class StatisticsOperation {
         }
 
         /**
-         * Get the total amount of time we were in the enter/leave section in ns.
+         * Get the total amount of time spent inside the enter-leave section in ns.
          *
          * @return Total time in ns.
          */
@@ -244,7 +244,16 @@ public final class StatisticsOperation {
         }
 
         /**
-         * Get the shortest time we spent in the enter/leave section in ns.
+         * Get the total amount of time spent inside the enter-leave section in ms.
+         *
+         * @return Total time in ns.
+         */
+        public double getTotalTimeMs() {
+            return m_totalTimeNs / 1000.0 / 1000.0;
+        }
+
+        /**
+         * Get the shortest time spent inside the enter-leave section in ns.
          *
          * @return Shortest time in ns.
          */
@@ -253,7 +262,16 @@ public final class StatisticsOperation {
         }
 
         /**
-         * Get the longest time we spent in the enter/leave section in ns.
+         * Get the shortest time spent inside the enter-leave section in ms.
+         *
+         * @return Shortest time in ns.
+         */
+        public double getShortestTimeMs() {
+            return m_shortestTimeNs / 1000.0 / 1000.0;
+        }
+
+        /**
+         * Get the longest time spent inside the enter-leave section in ns.
          *
          * @return Longest time in ns.
          */
@@ -262,12 +280,30 @@ public final class StatisticsOperation {
         }
 
         /**
-         * Get the avarage time we spent in the enter/leave section in ns.
+         * Get the longest time spent inside the enter-leave section in ms.
          *
-         * @return Avarage time in ns.
+         * @return Longest time in ns.
          */
-        long getAvarageTimeNs() {
+        public double getLongestTimeMs() {
+            return m_longestTimeNs / 1000.0 / 1000.0;
+        }
+
+        /**
+         * Get the average time spent inside the enter-leave section in ns.
+         *
+         * @return Average time in ns.
+         */
+        long getAverageTimeNs() {
             return m_totalTimeNs / m_opCount;
+        }
+
+        /**
+         * Get the average time spent inside the enter-leave section in ms.
+         *
+         * @return Average time in ns.
+         */
+        double getAverageTimeMs() {
+            return m_totalTimeNs / m_opCount / 1000.0 / 1000.0;
         }
 
         /**
@@ -300,9 +336,9 @@ public final class StatisticsOperation {
 
         @Override
         public String toString() {
-            return "Stats[" + m_threadName + "](m_opCount, " + m_opCount + ")(m_totalTimeNs, " + m_totalTimeNs + ")(m_shortestTimeNs, " + m_shortestTimeNs +
-                ")(m_longestTimeNs, " + m_longestTimeNs + ")(avgTimeNs, " + getAvarageTimeNs() + ")(opsPerSecond, " + getOpsPerSecond() + ")(m_counter, " +
-                m_counter + ")(m_counter2, " + m_counter2 + ')';
+            return "Stats[" + m_threadName + "](m_opCount, " + m_opCount + ")(avgTimeMs, " + getAverageTimeMs() + ")(m_totalTimeMs, " + getTotalTimeMs() +
+                ")(m_shortestTimeMs, " + getShortestTimeMs() + ")(m_longestTimeMs, " + getLongestTimeMs() + ")(avgTimeMs, " + getAverageTimeMs() +
+                ")(opsPerSecond, " + getOpsPerSecond() + ")(m_counter, " + m_counter + ")(m_counter2, " + m_counter2 + ')';
         }
     }
 }
