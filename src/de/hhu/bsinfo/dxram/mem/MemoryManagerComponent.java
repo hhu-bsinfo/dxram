@@ -19,7 +19,6 @@ import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
-import de.hhu.bsinfo.soh.SmallObjectHeapSegment;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
@@ -89,10 +88,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             return null;
         }
 
-        status.m_freeMemoryBytes = m_rawMemory.getFreeMemory();
-        status.m_totalMemoryBytes = m_rawMemory.getTotalMemory();
-        status.m_totalPayloadMemoryBytes = m_rawMemory.getTotalPayloadMemory();
-        status.m_numberOfActiveMemoryBlocks = m_rawMemory.getNumberOfActiveMemoryBlocks();
+        status.m_freeMemoryBytes = m_rawMemory.getStatus().getFree();
+        status.m_totalMemoryBytes = m_rawMemory.getStatus().getSize();
+        status.m_totalPayloadMemoryBytes = m_rawMemory.getStatus().getAllocatedPayload();
+        status.m_numberOfActiveMemoryBlocks = m_rawMemory.getStatus().getAllocatedBlocks();
         status.m_totalChunkPayloadMemory = m_totalActiveChunkMemory;
         status.m_numberOfActiveChunks = m_numActiveChunks;
         status.m_cidTableCount = m_cidTable.getTableCount();
@@ -226,9 +225,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             return chunkID;
         }
 
-        if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+        if (p_size > SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK) {
             // #if LOGGER >= WARN
-            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK);
             // #endif /* LOGGER >= WARN */
         }
 
@@ -285,9 +284,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
         chunkID = p_chunkId;
 
-        if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+        if (p_size > SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK) {
             // #if LOGGER >= WARN
-            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK);
             // #endif /* LOGGER >= WARN */
         }
 
@@ -338,9 +337,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             return chunkID;
         }
 
-        if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+        if (p_size > SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK) {
             // #if LOGGER >= WARN
-            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK);
             // #endif /* LOGGER >= WARN */
         }
 
@@ -376,8 +375,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             } else {
                 // most likely out of memory
                 // #if LOGGER >= ERROR
-                LOGGER.fatal("Creating chunk with size %d failed, most likely out of memory, free %d, total %d", p_size, m_rawMemory.getFreeMemory(),
-                    m_rawMemory.getTotalMemory());
+                LOGGER.fatal("Creating chunk with size %d failed, most likely out of memory, free %d, total %d", p_size, m_rawMemory.getStatus().getFree(),
+                    m_rawMemory.getStatus().getSize());
                 // #endif /* LOGGER >= ERROR */
 
                 // put lid back
@@ -915,8 +914,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             // #if LOGGER == INFO
             LOGGER.info("Allocating native memory (%d mb). This may take a while...", m_keyValueStoreSize.getMB());
             // #endif /* LOGGER == INFO */
-            m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
-            m_rawMemory.initialize(m_keyValueStoreSize.getBytes(), m_keyValueStoreSize.getBytes());
+            m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory(), m_keyValueStoreSize.getBytes());
             m_cidTable = new CIDTable(this);
             m_cidTable.initialize(m_rawMemory);
 
@@ -934,7 +932,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     protected boolean shutdownComponent() {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
             m_cidTable.disengage();
-            m_rawMemory.disengage();
+            m_rawMemory.destroy();
 
             m_cidTable = null;
             m_rawMemory = null;

@@ -87,7 +87,7 @@ public class StorageRandomAccessFile implements Storage {
                 if (outFile != null) {
                     outFile.close();
                 }
-            } catch (final IOException e) {
+            } catch (final IOException ignored) {
             }
         }
     }
@@ -132,7 +132,7 @@ public class StorageRandomAccessFile implements Storage {
         assert p_ptr < m_size;
         assert p_ptr + p_length <= m_size;
 
-        int bytesRead = -1;
+        int bytesRead;
 
         try {
             m_file.seek(p_ptr);
@@ -149,7 +149,7 @@ public class StorageRandomAccessFile implements Storage {
         assert p_ptr >= 0;
         assert p_ptr < m_size;
 
-        byte value = 0;
+        byte value;
 
         try {
             m_file.seek(p_ptr);
@@ -166,7 +166,7 @@ public class StorageRandomAccessFile implements Storage {
         assert p_ptr >= 0;
         assert p_ptr + 1 < m_size;
 
-        short value = 0;
+        short value;
 
         try {
             m_file.seek(p_ptr);
@@ -183,7 +183,7 @@ public class StorageRandomAccessFile implements Storage {
         assert p_ptr >= 0;
         assert p_ptr + 3 < m_size;
 
-        int value = 0;
+        int value;
 
         try {
             m_file.seek(p_ptr);
@@ -200,7 +200,7 @@ public class StorageRandomAccessFile implements Storage {
         assert p_ptr >= 0;
         assert p_ptr + 7 < m_size;
 
-        long value = 0;
+        long value;
 
         try {
             m_file.seek(p_ptr);
@@ -217,7 +217,7 @@ public class StorageRandomAccessFile implements Storage {
         assert p_ptr >= 0;
         assert p_ptr + p_array.length <= m_size;
 
-        int bytesWritten = -1;
+        int bytesWritten;
 
         try {
             m_file.seek(p_ptr);

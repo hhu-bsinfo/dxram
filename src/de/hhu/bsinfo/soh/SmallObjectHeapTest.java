@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.soh;
 
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
-public class SmallObjectHeapTest {
+public final class SmallObjectHeapTest {
     private static final Lock LOCK = new ReentrantLock(false);
 
     private SmallObjectHeap m_memory;
@@ -28,27 +28,23 @@ public class SmallObjectHeapTest {
      * Constructor
      *
      * @param p_memorySize
-     *         Total raw memory size in bytes.
-     * @param p_segmentSize
-     *         Total size of a single segment
+     *     Total raw memory size in bytes.
      * @param p_numThreads
-     *         Number of threads to run this
+     *     Number of threads to run this
      * @param p_numOperations
-     *         Number of operations to execute.
+     *     Number of operations to execute.
      * @param p_mallocFreeRatio
-     *         Malloc/free ratio.
+     *     Malloc/free ratio.
      * @param p_blockSizeMin
-     *         Minimum memory block size to alloc.
+     *     Minimum memory block size to alloc.
      * @param p_blockSizeMax
-     *         Maximum memory block size to alloc.
+     *     Maximum memory block size to alloc.
      * @param p_debugPrint
-     *         Enable debug prints
+     *     Enable debug prints
      */
-    public SmallObjectHeapTest(final long p_memorySize, final long p_segmentSize, final int p_numThreads, final int p_numOperations,
-            final float p_mallocFreeRatio, final int p_blockSizeMin, final int p_blockSizeMax, final boolean p_debugPrint) {
+    private SmallObjectHeapTest(final long p_memorySize, final int p_numThreads, final int p_numOperations, final float p_mallocFreeRatio,
+        final int p_blockSizeMin, final int p_blockSizeMax, final boolean p_debugPrint) {
         assert p_memorySize > 0;
-        assert p_segmentSize > 0;
-        assert p_segmentSize <= p_memorySize;
         assert p_numThreads > 0;
         assert p_numOperations > 0;
         assert p_mallocFreeRatio >= 0.5;
@@ -56,15 +52,8 @@ public class SmallObjectHeapTest {
         assert p_blockSizeMax > 0;
         assert p_blockSizeMax > p_blockSizeMin;
 
-        // m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
-        // m_memory = new SmallObjectHeap(new StorageRandomAccessFile(file));
-        m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
-        // m_memory = new SmallObjectHeap(new StorageHybridUnsafeJNINativeMemory());
-        // m_memory = new SmallObjectHeap(new StorageJavaHeap());
-
-        if (m_memory.initialize(p_memorySize, p_segmentSize) == -1) {
-            System.out.println("Initializing memory failed.");
-        }
+        // m_memory = new SmallObjectHeap(new StorageRandomAccessFile(new File("memory.raw")), p_memorySize);
+        m_memory = new SmallObjectHeap(new StorageUnsafeMemory(), p_memorySize);
 
         m_numThreads = p_numThreads;
         m_numOperations = p_numOperations;
@@ -83,15 +72,15 @@ public class SmallObjectHeapTest {
         System.out.println(m_memory);
 
         System.out.println("Starting " + m_numThreads + " threads.");
-        Vector<Future<?>> submitedTasks = new Vector<Future<?>>();
+        ArrayList<Future<?>> submittedTasks = new ArrayList<>();
         for (int i = 0; i < m_numThreads; i++) {
             MemoryThread memThread = new MemoryThread(m_memory, m_numOperations, m_mallocFreeRatio, m_blockSizeMin, m_blockSizeMax, m_debugPrint);
-            submitedTasks.add(executor.submit(memThread));
+            submittedTasks.add(executor.submit(memThread));
         }
 
         System.out.println("Waiting for workers to finish...");
 
-        for (Future<?> future : submitedTasks) {
+        for (Future<?> future : submittedTasks) {
             try {
                 future.get();
             } catch (final ExecutionException | InterruptedException e) {
@@ -116,7 +105,6 @@ public class SmallObjectHeapTest {
 
         HeapWalker.Results results = HeapWalker.walk(m_memory);
         System.out.println(results);
-        HeapIntegrityChecker.check(results);
 
         executor.shutdown();
     }
@@ -125,30 +113,70 @@ public class SmallObjectHeapTest {
      * Java main entry point.
      *
      * @param p_args
-     *         Command line arguments
+     *     Command line arguments
      */
     public static void main(final String[] p_args) {
-        if (p_args.length < 8) {
-            System.out.println("Usage: RawMemoryTest <memorySize> <segmentSize> <numThreads> <numOperations> " +
-                    "<mallocFreeRatio> <blockSizeMin> <blockSizeMax> <debugPrint>");
+        if (p_args.length >= 1 && p_args.length < 7) {
+            System.out.println("Usage: RawMemoryTest <memorySize> <numThreads> <numOperations> <mallocFreeRatio> <blockSizeMin> <blockSizeMax> <debugPrint>");
             return;
         }
 
-        long memorySize = Long.parseLong(p_args[0]);
-        long segmentSize = Long.parseLong(p_args[1]);
-        int numThreads = Integer.parseInt(p_args[2]);
-        int numOperations = Integer.parseInt(p_args[3]);
-        float mallocFreeRatio = Float.parseFloat(p_args[4]);
-        int blockSizeMin = Integer.parseInt(p_args[5]);
-        int blockSizeMax = Integer.parseInt(p_args[6]);
-        boolean debugPrint = Boolean.parseBoolean(p_args[7]);
+        if (p_args.length == 0) {
+            runTests();
+        } else {
+            long memorySize = Long.parseLong(p_args[0]);
+            int numThreads = Integer.parseInt(p_args[1]);
+            int numOperations = Integer.parseInt(p_args[2]);
+            float mallocFreeRatio = Float.parseFloat(p_args[3]);
+            int blockSizeMin = Integer.parseInt(p_args[4]);
+            int blockSizeMax = Integer.parseInt(p_args[5]);
+            boolean debugPrint = Boolean.parseBoolean(p_args[6]);
 
-        System.out.println("Initializing RawMemory test...");
-        SmallObjectHeapTest test =
-                new SmallObjectHeapTest(memorySize, segmentSize, numThreads, numOperations, mallocFreeRatio, blockSizeMin, blockSizeMax, debugPrint);
-        System.out.println("Running test...");
+            runTest(0, memorySize, numThreads, numOperations, mallocFreeRatio, blockSizeMin, blockSizeMax, debugPrint);
+        }
+    }
+
+    /**
+     * List of hardcoded tests to ensure everything's working
+     */
+    private static void runTests() {
+        // single malloc
+        runTest(0, 1024, 1, 1, 1.0f, 16, 16, false);
+        // a few more mallocs
+        runTest(1, 1024, 1, 3, 1.0f, 16, 16, false);
+        // single malloc + free
+        runTest(2, 1024, 1, 2, 0.5f, 16, 16, false);
+        // multiple malloc + free
+        runTest(3, 1024, 1, 6, 0.5f, 16, 16, false);
+
+        // some greater tests
+        runTest(4, 1024 * 1024, 1, 10, 0.5f, 16, 1024, false);
+        runTest(5, 1024 * 1024 * 1024, 1, 100, 0.5f, 16, 1024 * 1024, false);
+        runTest(6, 1024 * 1024 * 1024, 1, 1000, 0.5f, 16, 1024 * 1024, false);
+        runTest(7, 1024 * 1024 * 1024, 1, 10000, 0.5f, 16, 1024 * 1024, false);
+        runTest(8, 1024 * 1024 * 1024, 1, 100000, 0.5f, 16, 1024 * 1024, false);
+        runTest(8, 1024 * 1024 * 1024, 1, 1000000, 0.5f, 16, 1024 * 1024, false);
+
+        // block chaining
+        runTest(9, 1024 * 1024 * 32, 1, 1, 1.0f, 1024 * 1024 * 9, 1024 * 1024 * 16, false);
+        runTest(10, 1024 * 1024 * 128, 1, 6, 0.5f, 1024 * 1024 * 9, 1024 * 1024 * 16, false);
+        runTest(11, 1024 * 1024 * 1024, 1, 100, 0.5f, 1024 * 1024 * 9, 1024 * 1024 * 16, false);
+
+        // huge test (32gb ram necessary!)
+        runTest(12, 1024 * 1024 * 1024 * 32L, 1, 10000, 0.5f, 16, 1024 * 1024 * 64, false);
+    }
+
+    private static void runTest(int testId, long memorySize, int numThreads, int numOperations, float mallocFreeRatio, int blockSizeMin, int blockSizeMax,
+        boolean debugPrint) {
+
+        System.out.println("===============================================================");
+        System.out.println("Initializing RawMemory test (" + testId + ")...");
+        SmallObjectHeapTest test = new SmallObjectHeapTest(memorySize, numThreads, numOperations, mallocFreeRatio, blockSizeMin, blockSizeMax, debugPrint);
+        System.out.println("Running test (" + testId + ")...");
+        long timeStart = System.nanoTime();
         test.run();
-        System.out.println("Test done.");
+        long time = System.nanoTime() - timeStart;
+        System.out.println("Test (" + testId + ") done: " + time / 1000.0 / 1000.0 + " ms");
     }
 
     /**
@@ -156,7 +184,7 @@ public class SmallObjectHeapTest {
      *
      * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
      */
-    public class MemoryThread implements Runnable {
+    private static class MemoryThread implements Runnable {
         private SmallObjectHeap m_memory;
 
         private float m_mallocFreeRatio;
@@ -166,26 +194,26 @@ public class SmallObjectHeapTest {
         private int m_blockSizeMax = -1;
         private boolean m_debugPrint;
 
-        private Vector<Long> m_blocksAlloced = new Vector<Long>();
+        private ArrayList<Long> m_blocksAlloced = new ArrayList<>();
 
         /**
          * Constructor
          *
          * @param p_rawMemory
-         *         Raw memory instance to use.
+         *     Raw memory instance to use.
          * @param p_numOperations
-         *         Number of operations to execute.
+         *     Number of operations to execute.
          * @param p_mallocFreeRatio
-         *         Malloc/free ratio.
+         *     Malloc/free ratio.
          * @param p_blockSizeMin
-         *         Minimum memory block size to alloc.
+         *     Minimum memory block size to alloc.
          * @param p_blockSizeMax
-         *         Maximum memory block size to alloc.
+         *     Maximum memory block size to alloc.
          * @param p_debugPrint
-         *         Enable debug prints
+         *     Enable debug prints
          */
-        public MemoryThread(final SmallObjectHeap p_rawMemory, final int p_numOperations, final float p_mallocFreeRatio, final int p_blockSizeMin,
-                final int p_blockSizeMax, final boolean p_debugPrint) {
+        MemoryThread(final SmallObjectHeap p_rawMemory, final int p_numOperations, final float p_mallocFreeRatio, final int p_blockSizeMin,
+            final int p_blockSizeMax, final boolean p_debugPrint) {
             assert m_blockSizeMin > 0;
             assert m_blockSizeMax > 0;
             assert m_mallocFreeRatio > 0;
@@ -209,7 +237,8 @@ public class SmallObjectHeapTest {
             }
         }
 
-        @Override public void run() {
+        @Override
+        public void run() {
             System.out.println("(" + Thread.currentThread().getId() + ") " + this);
 
             while (m_numMallocOperations + m_numFreeOperations > 0) {
@@ -221,7 +250,7 @@ public class SmallObjectHeapTest {
                         size = (int) (Math.random() * (m_blockSizeMax - m_blockSizeMin)) + m_blockSizeMin;
                     }
 
-                    long ptr = -1;
+                    long ptr;
 
                     LOCK.lock();
                     ptr = m_memory.malloc(size);
@@ -233,17 +262,17 @@ public class SmallObjectHeapTest {
                     m_memory.set(ptr, size, (byte) 0xBB);
 
                     // test writing/reading across two blocks
-                    if (size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+                    if (size > SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK) {
                         {
-                            if (m_memory.getSizeBlock(ptr) <= SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+                            if (m_memory.getSizeBlock(ptr) <= SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK) {
                                 System.out.println("!!! Chained blocks getting size failed");
                                 System.exit(-1);
                             }
                         }
                         {
                             short v = 0x1122;
-                            m_memory.writeShort(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, v);
-                            short v2 = m_memory.readShort(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1);
+                            m_memory.writeShort(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1, v);
+                            short v2 = m_memory.readShort(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks short writing/reading failed");
                                 System.exit(-1);
@@ -251,8 +280,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             int v = 0xAABBCCDD;
-                            m_memory.writeInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, v);
-                            int v2 = m_memory.readInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1);
+                            m_memory.writeInt(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1, v);
+                            int v2 = m_memory.readInt(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks int (1) writing/reading failed");
                                 System.exit(-1);
@@ -260,8 +289,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             int v = 0xAABBCCDD;
-                            m_memory.writeInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 2, v);
-                            int v2 = m_memory.readInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 2);
+                            m_memory.writeInt(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 2, v);
+                            int v2 = m_memory.readInt(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 2);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks int (2) writing/reading failed");
                                 System.exit(-1);
@@ -269,8 +298,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             int v = 0xAABBCCDD;
-                            m_memory.writeInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 3, v);
-                            int v2 = m_memory.readInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 3);
+                            m_memory.writeInt(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 3, v);
+                            int v2 = m_memory.readInt(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 3);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks int (3) writing/reading failed");
                                 System.exit(-1);
@@ -278,8 +307,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long v = 0x1122334455667788L;
-                            m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, v);
-                            long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1);
+                            m_memory.writeLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1, v);
+                            long v2 = m_memory.readLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks long (1) writing/reading failed");
                                 System.exit(-1);
@@ -287,8 +316,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long v = 0x1122334455667788L;
-                            m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 2, v);
-                            long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 2);
+                            m_memory.writeLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 2, v);
+                            long v2 = m_memory.readLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 2);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks long (2) writing/reading failed");
                                 System.exit(-1);
@@ -296,8 +325,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long v = 0x1122334455667788L;
-                            m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 3, v);
-                            long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 3);
+                            m_memory.writeLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 3, v);
+                            long v2 = m_memory.readLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 3);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks long (3) writing/reading failed");
                                 System.exit(-1);
@@ -305,8 +334,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long v = 0x1122334455667788L;
-                            m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 4, v);
-                            long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 4);
+                            m_memory.writeLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 4, v);
+                            long v2 = m_memory.readLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 4);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks long (4) writing/reading failed");
                                 System.exit(-1);
@@ -314,8 +343,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long v = 0x1122334455667788L;
-                            m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 5, v);
-                            long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 5);
+                            m_memory.writeLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 5, v);
+                            long v2 = m_memory.readLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 5);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks long (5) writing/reading failed");
                                 System.exit(-1);
@@ -323,8 +352,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long v = 0x1122334455667788L;
-                            m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 6, v);
-                            long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 6);
+                            m_memory.writeLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 6, v);
+                            long v2 = m_memory.readLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 6);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks long (6) writing/reading failed");
                                 System.exit(-1);
@@ -332,8 +361,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long v = 0x1122334455667788L;
-                            m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 7, v);
-                            long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 7);
+                            m_memory.writeLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 7, v);
+                            long v2 = m_memory.readLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 7);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks long (7) writing/reading failed");
                                 System.exit(-1);
@@ -341,8 +370,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long v = 0x1122334455667788L;
-                            m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 8, v);
-                            long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 8);
+                            m_memory.writeLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 8, v);
+                            long v2 = m_memory.readLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 8);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks long (8) writing/reading failed");
                                 System.exit(-1);
@@ -350,9 +379,9 @@ public class SmallObjectHeapTest {
                         }
                         {
                             byte[] test = new byte[] {0x11, 0x22, 0x33, 0x44, 0x55};
-                            m_memory.writeBytes(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test, 0, test.length);
+                            m_memory.writeBytes(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1, test, 0, test.length);
                             byte[] test2 = new byte[test.length];
-                            m_memory.readBytes(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0, test2.length);
+                            m_memory.readBytes(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0, test2.length);
                             for (int i = 0; i < test.length; i++) {
                                 if (test[i] != test2[i]) {
                                     System.out.println("!!! Chained blocks byte array writing/reading failed");
@@ -362,9 +391,9 @@ public class SmallObjectHeapTest {
                         }
                         {
                             short[] test = new short[] {0x11, 0x22, 0x33, 0x44, 0x55};
-                            m_memory.writeShorts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test, 0, test.length);
+                            m_memory.writeShorts(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1, test, 0, test.length);
                             short[] test2 = new short[test.length];
-                            m_memory.readShorts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0, test2.length);
+                            m_memory.readShorts(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0, test2.length);
                             for (int i = 0; i < test.length; i++) {
                                 if (test[i] != test2[i]) {
                                     System.out.println("!!! Chained blocks short array writing/reading failed");
@@ -374,9 +403,9 @@ public class SmallObjectHeapTest {
                         }
                         {
                             int[] test = new int[] {0x11, 0x22, 0x33, 0x44, 0x55};
-                            m_memory.writeInts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test, 0, test.length);
+                            m_memory.writeInts(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1, test, 0, test.length);
                             int[] test2 = new int[test.length];
-                            m_memory.readInts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0, test2.length);
+                            m_memory.readInts(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0, test2.length);
                             for (int i = 0; i < test.length; i++) {
                                 if (test[i] != test2[i]) {
                                     System.out.println("!!! Chained blocks int array writing/reading failed");
@@ -386,9 +415,9 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long[] test = new long[] {0x11, 0x22, 0x33, 0x44, 0x55};
-                            m_memory.writeLongs(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test, 0, test.length);
+                            m_memory.writeLongs(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1, test, 0, test.length);
                             long[] test2 = new long[test.length];
-                            m_memory.readLongs(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0, test2.length);
+                            m_memory.readLongs(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0, test2.length);
                             for (int i = 0; i < test.length; i++) {
                                 if (test[i] != test2[i]) {
                                     System.out.println("!!! Chained blocks long array writing/reading failed");
@@ -398,8 +427,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             short v = 0x1122;
-                            m_memory.writeShort(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, v);
-                            short v2 = m_memory.readShort(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1);
+                            m_memory.writeShort(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1, v);
+                            short v2 = m_memory.readShort(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks short writing/reading to second full block failed");
                                 System.exit(-1);
@@ -407,8 +436,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             int v = 0x11223344;
-                            m_memory.writeInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, v);
-                            int v2 = m_memory.readInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1);
+                            m_memory.writeInt(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1, v);
+                            int v2 = m_memory.readInt(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks int writing/reading to second full block failed");
                                 System.exit(-1);
@@ -416,8 +445,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long v = 0x1122334455667788L;
-                            m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, v);
-                            long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1);
+                            m_memory.writeLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1, v);
+                            long v2 = m_memory.readLong(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1);
                             if (v != v2) {
                                 System.out.println("!!! Chained blocks long writing/reading to second full block failed");
                                 System.exit(-1);
@@ -425,9 +454,9 @@ public class SmallObjectHeapTest {
                         }
                         {
                             byte[] test = new byte[] {0x11, 0x22, 0x33, 0x44, 0x55};
-                            m_memory.writeBytes(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test, 0, test.length);
+                            m_memory.writeBytes(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1, test, 0, test.length);
                             byte[] test2 = new byte[test.length];
-                            m_memory.readBytes(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0, test2.length);
+                            m_memory.readBytes(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0, test2.length);
                             for (int i = 0; i < test.length; i++) {
                                 if (test[i] != test2[i]) {
                                     System.out.println("!!! Chained blocks byte array writing/reading to second block failed");
@@ -437,9 +466,9 @@ public class SmallObjectHeapTest {
                         }
                         {
                             short[] test = new short[] {0x11, 0x22, 0x33, 0x44, 0x55};
-                            m_memory.writeShorts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test, 0, test.length);
+                            m_memory.writeShorts(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1, test, 0, test.length);
                             short[] test2 = new short[test.length];
-                            m_memory.readShorts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0, test2.length);
+                            m_memory.readShorts(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0, test2.length);
                             for (int i = 0; i < test.length; i++) {
                                 if (test[i] != test2[i]) {
                                     System.out.println("!!! Chained blocks short array writing/reading to second block failed");
@@ -449,9 +478,9 @@ public class SmallObjectHeapTest {
                         }
                         {
                             int[] test = new int[] {0x11, 0x22, 0x33, 0x44, 0x55};
-                            m_memory.writeInts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test, 0, test.length);
+                            m_memory.writeInts(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1, test, 0, test.length);
                             int[] test2 = new int[test.length];
-                            m_memory.readInts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0, test2.length);
+                            m_memory.readInts(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0, test2.length);
                             for (int i = 0; i < test.length; i++) {
                                 if (test[i] != test2[i]) {
                                     System.out.println("!!! Chained blocks int array writing/reading to second block failed");
@@ -461,9 +490,9 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long[] test = new long[] {0x11, 0x22, 0x33, 0x44, 0x55};
-                            m_memory.writeLongs(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test, 0, test.length);
+                            m_memory.writeLongs(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1, test, 0, test.length);
                             long[] test2 = new long[test.length];
-                            m_memory.readLongs(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0, test2.length);
+                            m_memory.readLongs(ptr, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0, test2.length);
                             for (int i = 0; i < test.length; i++) {
                                 if (test[i] != test2[i]) {
                                     System.out.println("!!! Chained blocks long array writing/reading to second block failed");
@@ -515,13 +544,13 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long[] test = new long[size / Long.BYTES];
-                            for (long i = 0; i < test.length; i++) {
-                                test[(int) i] = i;
+                            for (int i = 0; i < test.length; i++) {
+                                test[i] = i;
                             }
                             m_memory.writeLongs(ptr, 0, test, 0, test.length);
                             m_memory.readLongs(ptr, 0, test, 0, test.length);
-                            for (long i = 0; i < test.length; i++) {
-                                if (test[(int) i] != i) {
+                            for (int i = 0; i < test.length; i++) {
+                                if (test[i] != i) {
                                     System.out.println("!!! Chained blocks full long array writing/reading failed: " + i);
                                     System.exit(-1);
                                 }
@@ -529,8 +558,8 @@ public class SmallObjectHeapTest {
                         }
                         {
                             long[] test = new long[(size - 8) / Long.BYTES];
-                            for (long i = 0; i < test.length; i++) {
-                                test[(int) i] = i;
+                            for (int i = 0; i < test.length; i++) {
+                                test[i] = i;
                             }
                             m_memory.writeInt(ptr, 0, 0xAABBCCDD);
                             m_memory.writeInt(ptr, 4, 0x11223344);
@@ -545,8 +574,8 @@ public class SmallObjectHeapTest {
                             }
 
                             m_memory.readLongs(ptr, 8, test, 0, test.length);
-                            for (long i = 0; i < test.length; i++) {
-                                if (test[(int) i] != i) {
+                            for (int i = 0; i < test.length; i++) {
+                                if (test[i] != i) {
                                     System.out.println("!!! Chained blocks pseudo vertex neighbors writing/reading failed: " + i);
                                     System.exit(-1);
                                 }
@@ -558,7 +587,7 @@ public class SmallObjectHeapTest {
                 } else if (m_numFreeOperations > 0) {
                     // execute free if blocks allocated
                     if (!m_blocksAlloced.isEmpty()) {
-                        Long memoryPtr = m_blocksAlloced.firstElement();
+                        Long memoryPtr = m_blocksAlloced.get(0);
                         m_blocksAlloced.remove(0);
 
                         LOCK.lock();
@@ -574,16 +603,10 @@ public class SmallObjectHeapTest {
             }
         }
 
-        /**
-         * Print debug output.
-         */
-        public void printDebug() {
-            System.out.println(this);
-        }
-
-        @Override public String toString() {
+        @Override
+        public String toString() {
             return "MemoryThread: mallocOperations " + m_numMallocOperations + ", freeOperations: " + m_numFreeOperations + ",  blockSizeMin: " +
-                    m_blockSizeMin + ", blockSizeMax: " + m_blockSizeMax;
+                m_blockSizeMin + ", blockSizeMax: " + m_blockSizeMax;
         }
     }
 }

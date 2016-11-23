@@ -1,132 +1,155 @@
 package de.hhu.bsinfo.soh;
 
-import java.io.File;
-
-import de.hhu.bsinfo.utils.Tools;
-
 /**
- * The raw memory is split into several segments to provide
- * non conflicting access for multiple threads. A arena manager
- * takes care of assigning the threads accessing to the segments
- * on allocation calls. Further synchronization for free, read and
- * write calls are handled in this class.
+ * Very efficient memory allocator for many small objects
  *
  * @author Florian Klein, florian.klein@hhu.de, 13.02.2014
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
 public final class SmallObjectHeap {
 
-    // have a few attributes package scoped for the HeapWalker/Analyzer
-    Storage m_memory;
+    // Constants
+    static final byte POINTER_SIZE = 5;
+    private static final byte SMALL_BLOCK_SIZE = 64;
+    private static final byte OCCUPIED_FLAGS_OFFSET = 0x5;
+    private static final byte OCCUPIED_FLAGS_OFFSET_MASK = 0x03;
+    private static final byte SINGLE_BYTE_MARKER = 0xF;
 
-    long m_segmentSize;
-    SmallObjectHeapSegment[] m_segments;
+    // limits a single payload block to 8MB, though the allocator supports chaining of blocks
+    // private static final int MAX_LENGTH_FIELD = 3;
+    private static final int CHAINED_BLOCK_LENGTH_FIELD = POINTER_SIZE;
+    public static final int MAX_SIZE_MEMORY_BLOCK = (int) Math.pow(2, 23);
+    static final int SIZE_MARKER_BYTE = 1;
+
+    // Attributes, have them accessible by the package to enable walking and analyzing the heap
+    // don't modify or access them otherwise
+    Storage m_memory;
+    private Status m_status;
+
+    long m_baseFreeBlockList;
+    int m_freeBlocksListSize = -1;
+    long[] m_freeBlockListSizes;
+    private int m_freeBlocksListCount = -1;
 
     // Constructors
 
     /**
-     * Creates an instance of RawMemory
+     * Creates an instance of the object heap
      *
-     * @param p_storageInstance
-     *     Storage instance used as memory.
-     */
-    public SmallObjectHeap(final Storage p_storageInstance) {
-        m_memory = p_storageInstance;
-    }
-
-    // Methods
-
-    /**
-     * Initializes the memory
-     *
+     * @param p_memory
+     *     The underlying storage to use for this memory.
      * @param p_size
-     *     the size of the memory
-     * @param p_segmentSize
-     *     The size for a single segment.
-     * @return the actual size of the memory
+     *     The size of the memory in bytes.
      */
-    public long initialize(final long p_size, final long p_segmentSize) {
-        long ret;
-        int segmentCount;
-        long base;
-        long remaining;
-        long size;
+    public SmallObjectHeap(final Storage p_memory, final long p_size) {
+        m_memory = p_memory;
+        m_status = new Status();
+        m_status.m_size = p_size;
 
-        if (p_size < 0 || p_segmentSize < 0) {
-            ret = -1;
-        } else {
-            m_segmentSize = p_segmentSize;
+        m_memory.allocate(p_size);
+        m_memory.set(0, m_memory.getSize(), (byte) 0);
 
-            segmentCount = (int) (p_size / p_segmentSize);
-            if (p_size % p_segmentSize > 0) {
-                segmentCount++;
-            }
+        // according to memory size, have a proper amount of
+        // free memory block lists
+        // -2, because we don't need a free block list for the full memory
+        // and the first size greater than the full memory size
+        // detect highest bit using log2 to have proper memory sizes
+        m_freeBlocksListCount = (int) (Math.log(p_size) / Math.log(2)) - 2;
+        m_freeBlocksListSize = m_freeBlocksListCount * POINTER_SIZE;
+        m_baseFreeBlockList = m_status.m_size - m_freeBlocksListSize;
 
-            m_memory.allocate(p_size);
-            m_memory.set(0, m_memory.getSize(), (byte) 0);
-
-            // Initialize segments
-            base = 0;
-            remaining = p_size;
-            m_segments = new SmallObjectHeapSegment[segmentCount];
-            for (int i = 0; i < segmentCount; i++) {
-                size = Math.min(p_segmentSize, remaining);
-                m_segments[i] = new SmallObjectHeapSegment(m_memory, i, base, size);
-
-                base += p_segmentSize;
-                remaining -= p_segmentSize;
-            }
-            // m_arenaManager = new ArenaManager(m_segments);
-
-            ret = m_memory.getSize();
+        // Initializes the list sizes
+        m_freeBlockListSizes = new long[m_freeBlocksListCount];
+        for (int i = 0; i < m_freeBlocksListCount; i++) {
+            m_freeBlockListSizes[i] = (long) Math.pow(2, i + 2);
         }
+        m_freeBlockListSizes[0] = 12;
+        m_freeBlockListSizes[1] = 24;
+        m_freeBlockListSizes[2] = 36;
+        m_freeBlockListSizes[3] = 48;
 
-        return ret;
+        // Create one big free block
+        // -2 for the marker bytes
+        m_status.m_free = m_status.m_size - m_freeBlocksListSize - SIZE_MARKER_BYTE * 2;
+        createFreeBlock(SIZE_MARKER_BYTE, m_status.m_free);
+        m_status.m_freeBlocks = 1;
+        m_status.m_freeSmall64ByteBlocks = 0;
     }
 
     /**
-     * Disengages the memory
+     * Free all memory of the storage instance
      */
-    public void disengage() {
+    public void destroy() {
         m_memory.free();
         m_memory = null;
-
-        m_segments = null;
-        // m_arenaManager = null;
     }
 
     /**
-     * Dump a range of memory to a file.
+     * Gets the status
      *
-     * @param p_file
-     *     Destination file to dump to.
-     * @param p_addr
-     *     Start address.
-     * @param p_count
-     *     Number of bytes to dump.
+     * @return the status
      */
-    public void dump(final File p_file, final long p_addr, final long p_count) {
-        m_memory.dump(p_file, p_addr, p_count);
+    public Status getStatus() {
+        return m_status;
     }
 
     /**
      * Allocate a memory block
      *
      * @param p_size
-     *     the size of the block
-     * @return the offset of the block
+     *     the size of the block in bytes.
+     * @return the address of the block
      */
     public long malloc(final int p_size) {
-        long ret = -1;
 
-        for (SmallObjectHeapSegment segment : m_segments) {
-            ret = segment.malloc(p_size);
-            if (ret != -1) {
-                break;
+        if (p_size > MAX_SIZE_MEMORY_BLOCK) {
+            // avoid huge allocations if not enough space
+            if (p_size > m_status.getFree()) {
+                return -1;
             }
-        }
 
-        return ret;
+            // slice into multiple blocks and chain them
+
+            int slices = p_size / MAX_SIZE_MEMORY_BLOCK;
+            if (p_size % MAX_SIZE_MEMORY_BLOCK > 0) {
+                ++slices;
+            }
+
+            // allocate blocks
+            long[] blocks = new long[slices];
+            for (int i = 0; i < blocks.length; i++) {
+                if (i + 1 == blocks.length) {
+                    // last block
+                    blocks[i] = reserveBlock(p_size % MAX_SIZE_MEMORY_BLOCK, false);
+                } else {
+                    blocks[i] = reserveBlock(MAX_SIZE_MEMORY_BLOCK, true);
+                }
+            }
+
+            // check if allocation(s) failed (not enough space)
+            for (int i = 0; i < blocks.length; i++) {
+                if (blocks[i] == -1) {
+                    // roll back
+                    for (i = 0; i < blocks.length; i++) {
+                        if (blocks[i] != -1) {
+                            free(blocks[i]);
+                        }
+                    }
+
+                    return -1;
+                }
+            }
+
+            // chain blocks from back to front, omit last block
+            for (int i = 0; i < blocks.length - 1; i++) {
+                writePointer(blocks[i], blocks[i + 1]);
+            }
+
+            // root of chain
+            return blocks[0];
+        } else {
+            return reserveBlock(p_size, false);
+        }
     }
 
     /**
@@ -136,10 +159,28 @@ public final class SmallObjectHeap {
      *     the address of the block
      */
     public void free(final long p_address) {
-        SmallObjectHeapSegment segment;
+        long address;
+        int lengthFieldSize;
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        segment.free(p_address);
+        address = p_address;
+        while (true) {
+            lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+
+            // further blocks chained block
+            if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+
+                // read address of next block, free current
+                long addrNext = readPointer(address);
+                // blockSize var is a ptr here
+                freeReservedBlock(address, lengthFieldSize, MAX_SIZE_MEMORY_BLOCK);
+                address = addrNext;
+
+            } else {
+                freeReservedBlock(address, lengthFieldSize, getSizeMemoryBlock(address));
+                break;
+            }
+
+        }
     }
 
     /**
@@ -150,11 +191,25 @@ public final class SmallObjectHeap {
      * @return Size of the block in bytes (payload only).
      */
     public int getSizeBlock(final long p_address) {
-        SmallObjectHeapSegment segment;
-        int size = -1;
+        int lengthFieldSize;
+        int size = 0;
+        long address;
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        size = segment.getSizeBlock(p_address);
+        assert assertMemoryBounds(p_address);
+
+        address = p_address;
+        while (true) {
+            // skip length byte(s)
+            lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+            if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+                // ptr to next chained block
+                size += MAX_SIZE_MEMORY_BLOCK;
+                address = read(address, lengthFieldSize);
+            } else {
+                size += (int) read(address, lengthFieldSize);
+                break;
+            }
+        }
 
         return size;
     }
@@ -170,10 +225,33 @@ public final class SmallObjectHeap {
      *     the value to write
      */
     public void set(final long p_address, final long p_size, final byte p_value) {
-        SmallObjectHeapSegment segment;
+        assert assertMemoryBounds(p_address, p_size);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        segment.set(p_address, p_size, p_value);
+        int lengthFieldSize;
+        long address;
+        long size;
+
+        size = p_size;
+        address = p_address;
+        while (size > 0) {
+            // skip length byte(s)
+            lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+            if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+                if (size > MAX_SIZE_MEMORY_BLOCK) {
+                    m_memory.set(address + lengthFieldSize, MAX_SIZE_MEMORY_BLOCK, p_value);
+                    size -= MAX_SIZE_MEMORY_BLOCK;
+                } else {
+                    m_memory.set(address + lengthFieldSize, size, p_value);
+                    size = 0;
+                }
+
+                address = readPointer(address);
+            } else {
+                m_memory.set(address + lengthFieldSize, size, p_value);
+                break;
+            }
+        }
+
     }
 
     /**
@@ -186,13 +264,34 @@ public final class SmallObjectHeap {
      * @return Byte read.
      */
     public byte readByte(final long p_address, final long p_offset) {
-        SmallObjectHeapSegment segment;
-        byte val;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        val = segment.readByte(p_address, p_offset);
+        int lengthFieldSize;
+        long size;
+        long address;
 
-        return val;
+        // skip length byte(s)
+        address = p_address;
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+        size = read(address, lengthFieldSize);
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            // determine which block the offset is in
+            int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+
+            // seek to block
+            for (int i = 0; i < blockCnt; i++) {
+                address = readPointer(address);
+            }
+
+            lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+        } else {
+            if (!(p_offset < size) || !(size >= Byte.BYTES && p_offset + Byte.BYTES <= size)) {
+                return 0;
+            }
+        }
+
+        return m_memory.readByte(address + lengthFieldSize + p_offset);
     }
 
     /**
@@ -205,13 +304,24 @@ public final class SmallObjectHeap {
      * @return Short read.
      */
     public short readShort(final long p_address, final long p_offset) {
-        SmallObjectHeapSegment segment;
-        short val;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        val = segment.readShort(p_address, p_offset);
+        int lengthFieldSize;
+        int size;
 
-        return val;
+        // skip length byte(s)
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+        size = (int) read(p_address, lengthFieldSize);
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            return (short) readChainedBlockValue(p_address, p_offset, Short.BYTES);
+        } else {
+            if (!(p_offset < size) || !(size >= Short.BYTES && p_offset + Short.BYTES <= size)) {
+                return 0;
+            }
+
+            return m_memory.readShort(p_address + lengthFieldSize + p_offset);
+        }
     }
 
     /**
@@ -224,13 +334,24 @@ public final class SmallObjectHeap {
      * @return Int read.
      */
     public int readInt(final long p_address, final long p_offset) {
-        SmallObjectHeapSegment segment;
-        int val;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        val = segment.readInt(p_address, p_offset);
+        int lengthFieldSize;
+        int size;
 
-        return val;
+        // skip length byte(s)
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+        size = (int) read(p_address, lengthFieldSize);
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            return (int) readChainedBlockValue(p_address, p_offset, Integer.BYTES);
+        } else {
+            if (!(p_offset < size) || !(size >= Integer.BYTES && p_offset + Integer.BYTES <= size)) {
+                return 0;
+            }
+
+            return m_memory.readInt(p_address + lengthFieldSize + p_offset);
+        }
     }
 
     /**
@@ -243,113 +364,347 @@ public final class SmallObjectHeap {
      * @return Long read.
      */
     public long readLong(final long p_address, final long p_offset) {
-        SmallObjectHeapSegment segment;
-        long val;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        val = segment.readLong(p_address, p_offset);
+        int lengthFieldSize;
+        int size;
 
-        return val;
+        // skip length byte(s)
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+        size = (int) read(p_address, lengthFieldSize);
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            return readChainedBlockValue(p_address, p_offset, Long.BYTES);
+        } else {
+            if (!(p_offset < size) || !(size >= Long.BYTES || p_offset + Long.BYTES <= size)) {
+                return 0;
+            }
+
+            return m_memory.readLong(p_address + lengthFieldSize + p_offset);
+        }
     }
 
     /**
-     * Read data from the heap into a byte array.
+     * Read data into a byte array.
      *
      * @param p_address
-     *     Address of an allocated block of memory to read from.
+     *     Address in heap to start at.
      * @param p_offset
-     *     Offset with the block to start reading at.
+     *     Offset to add to start address.
      * @param p_buffer
      *     Buffer to read into.
      * @param p_offsetArray
-     *     Offset within the buffer to start at.
+     *     Offset within the buffer.
      * @param p_length
      *     Number of elements to read.
      * @return Number of elements read.
      */
     public int readBytes(final long p_address, final long p_offset, final byte[] p_buffer, final int p_offsetArray, final int p_length) {
-        SmallObjectHeapSegment segment;
-        int bytesRead = -1;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        bytesRead = segment.readBytes(p_address, p_offset, p_buffer, p_offsetArray, p_length);
+        int bytesRead = 0;
+        int lengthFieldSize;
+        long address;
+
+        address = p_address;
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            // determine which block the offset is in
+            int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+            long offset = p_offset;
+            int offsetArray = p_offsetArray;
+
+            // seek to block
+            for (int i = 0; i < blockCnt; i++) {
+                address = readPointer(address);
+                offset -= MAX_SIZE_MEMORY_BLOCK;
+            }
+
+            // read
+            long length = p_length;
+            while (true) {
+                lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+                if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && offset % MAX_SIZE_MEMORY_BLOCK + length > MAX_SIZE_MEMORY_BLOCK) {
+                    // cur block and more
+                    int curSize = (int) (MAX_SIZE_MEMORY_BLOCK - offset);
+
+                    m_memory.readBytes(address + lengthFieldSize + offset, p_buffer, offsetArray, curSize);
+
+                    offsetArray += curSize;
+                    bytesRead += curSize;
+                    offset = 0;
+                    length -= curSize;
+
+                    // move on
+                    address = readPointer(address);
+                } else {
+                    // last block, write what's left
+                    assert length <= Math.pow(2, 8 * lengthFieldSize);
+
+                    m_memory.readBytes(address + lengthFieldSize + offset, p_buffer, offsetArray, (int) length);
+
+                    bytesRead += length;
+                    break;
+                }
+            }
+
+        } else {
+            bytesRead = m_memory.readBytes(address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+        }
 
         return bytesRead;
     }
 
     /**
-     * Read data from the heap into a short array.
+     * Read data into a short array.
      *
      * @param p_address
-     *     Address of an allocated block of memory to read from.
+     *     Address in heap to start at.
      * @param p_offset
-     *     Offset with the block to start reading at.
+     *     Offset to add to start address.
      * @param p_buffer
      *     Buffer to read into.
      * @param p_offsetArray
-     *     Offset within the buffer to start at.
+     *     Offset within the buffer.
      * @param p_length
      *     Number of elements to read.
      * @return Number of elements read.
      */
     public int readShorts(final long p_address, final long p_offset, final short[] p_buffer, final int p_offsetArray, final int p_length) {
-        SmallObjectHeapSegment segment;
-        int elementsRead = -1;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        elementsRead = segment.readShorts(p_address, p_offset, p_buffer, p_offsetArray, p_length);
+        int itemsRead = 0;
+        int lengthFieldSize;
+        long address;
 
-        return elementsRead;
+        address = p_address;
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            // determine which block the offset is in
+            int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+            long offset = p_offset;
+            int offsetArray = p_offsetArray;
+            // if a single short is split between two blocks, other shorts are split as well between further blocks
+            boolean dataOnBlockSplit = p_offset % Short.BYTES > 0;
+
+            // seek to block
+            for (int i = 0; i < blockCnt; i++) {
+                address = readPointer(address);
+                offset -= MAX_SIZE_MEMORY_BLOCK;
+            }
+
+            // read
+            long length = p_length;
+            while (true) {
+                lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+                if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && offset % MAX_SIZE_MEMORY_BLOCK + length * Short.BYTES > MAX_SIZE_MEMORY_BLOCK) {
+                    // cur block and more
+                    int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Short.BYTES;
+
+                    readShorts(address + lengthFieldSize + offset, p_buffer, offsetArray, curItems);
+                    offsetArray += curItems;
+                    itemsRead += curItems;
+                    length -= curItems;
+
+                    // don't read last (and first) item of block normally
+                    if (dataOnBlockSplit) {
+                        offset += curItems * Short.BYTES;
+
+                        p_buffer[offsetArray] = (short) readChainedBlockValue(address, offset, Short.BYTES);
+                        offset = Short.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
+                        ++offsetArray;
+                        ++itemsRead;
+                        --length;
+                    } else {
+                        offset = 0;
+                    }
+
+                    // move on
+                    address = readPointer(address);
+                } else {
+                    // last block, read what's left
+                    assert length * Short.BYTES <= Math.pow(2, 8 * lengthFieldSize);
+
+                    readShorts(address + lengthFieldSize + offset, p_buffer, offsetArray, (int) length);
+
+                    itemsRead += length;
+                    break;
+                }
+            }
+        } else {
+            itemsRead = readShorts(address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+        }
+
+        return itemsRead;
     }
 
     /**
-     * Read data from the heap into an int array.
+     * Read data into an int array.
      *
      * @param p_address
-     *     Address of an allocated block of memory to read from.
+     *     Address in heap to start at.
      * @param p_offset
-     *     Offset with the block to start reading at.
+     *     Offset to add to start address.
      * @param p_buffer
      *     Buffer to read into.
      * @param p_offsetArray
-     *     Offset within the buffer to start at.
+     *     Offset within the buffer.
      * @param p_length
      *     Number of elements to read.
      * @return Number of elements read.
      */
     public int readInts(final long p_address, final long p_offset, final int[] p_buffer, final int p_offsetArray, final int p_length) {
-        SmallObjectHeapSegment segment;
-        int elementsRead = -1;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        elementsRead = segment.readInts(p_address, p_offset, p_buffer, p_offsetArray, p_length);
+        int itemsRead = 0;
+        int lengthFieldSize;
+        long address;
 
-        return elementsRead;
+        address = p_address;
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            // determine which block the offset is in
+            int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+            long offset = p_offset;
+            int offsetArray = p_offsetArray;
+            // if a single short is split between two blocks, other shorts are split as well between further blocks
+            boolean dataOnBlockSplit = p_offset % Integer.BYTES > 0;
+
+            // seek to block
+            for (int i = 0; i < blockCnt; i++) {
+                address = readPointer(address);
+                offset -= MAX_SIZE_MEMORY_BLOCK;
+            }
+
+            // read
+            long length = p_length;
+            while (true) {
+                lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+                if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && offset % MAX_SIZE_MEMORY_BLOCK + length * Integer.BYTES > MAX_SIZE_MEMORY_BLOCK) {
+                    // cur block and more
+                    int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Integer.BYTES;
+
+                    readInts(address + lengthFieldSize + offset, p_buffer, offsetArray, curItems);
+                    offsetArray += curItems;
+                    itemsRead += curItems;
+                    length -= curItems;
+
+                    // don't read last (and first) item of block normally
+                    if (dataOnBlockSplit) {
+                        offset += curItems * Integer.BYTES;
+
+                        p_buffer[offsetArray] = (int) readChainedBlockValue(address, offset, Integer.BYTES);
+                        offset = Integer.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
+                        ++offsetArray;
+                        ++itemsRead;
+                        --length;
+                    } else {
+                        offset = 0;
+                    }
+
+                    // move on
+                    address = readPointer(address);
+                } else {
+                    // last block, read what's left
+                    assert length * Integer.BYTES <= Math.pow(2, 8 * lengthFieldSize);
+
+                    readInts(address + lengthFieldSize + offset, p_buffer, offsetArray, (int) length);
+
+                    itemsRead += length;
+                    break;
+                }
+            }
+        } else {
+            itemsRead = readInts(address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+        }
+
+        return itemsRead;
     }
 
     /**
-     * Read data from the heap into a long array.
+     * Read data into a long array.
      *
      * @param p_address
-     *     Address of an allocated block of memory to read from.
+     *     Address in heap to start at.
      * @param p_offset
-     *     Offset with the block to start reading at.
+     *     Offset to add to start address.
      * @param p_buffer
      *     Buffer to read into.
      * @param p_offsetArray
-     *     Offset within the buffer to start at.
+     *     Offset within the buffer.
      * @param p_length
      *     Number of elements to read.
      * @return Number of elements read.
      */
     public int readLongs(final long p_address, final long p_offset, final long[] p_buffer, final int p_offsetArray, final int p_length) {
-        SmallObjectHeapSegment segment;
-        int elementsRead = -1;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        elementsRead = segment.readLongs(p_address, p_offset, p_buffer, p_offsetArray, p_length);
+        int itemsRead = 0;
+        int lengthFieldSize;
+        long address;
 
-        return elementsRead;
+        address = p_address;
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            // determine which block the offset is in
+            int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+            long offset = p_offset;
+            int offsetArray = p_offsetArray;
+            // if a single short is split between two blocks, other shorts are split as well between further blocks
+            boolean dataOnBlockSplit = p_offset % Long.BYTES > 0;
+
+            // seek to block
+            for (int i = 0; i < blockCnt; i++) {
+                address = readPointer(address);
+                offset -= MAX_SIZE_MEMORY_BLOCK;
+            }
+
+            // read
+            long length = p_length;
+            while (true) {
+                lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+                if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && offset % MAX_SIZE_MEMORY_BLOCK + length * Long.BYTES > MAX_SIZE_MEMORY_BLOCK) {
+                    // cur block and more
+                    int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Long.BYTES;
+
+                    readLongs(address + lengthFieldSize + offset, p_buffer, offsetArray, curItems);
+                    offsetArray += curItems;
+                    itemsRead += curItems;
+                    length -= curItems;
+
+                    // don't read last (and first) item of block normally
+                    if (dataOnBlockSplit) {
+                        offset += curItems * Long.BYTES;
+
+                        p_buffer[offsetArray] = readChainedBlockValue(address, offset, Long.BYTES);
+                        offset = Long.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
+                        ++offsetArray;
+                        ++itemsRead;
+                        --length;
+                    } else {
+                        offset = 0;
+                    }
+
+                    // move on
+                    address = readPointer(address);
+                } else {
+                    // last block, read what's left
+                    assert length * Long.BYTES <= Math.pow(2, 8 * lengthFieldSize);
+
+                    readLongs(address + lengthFieldSize + offset, p_buffer, offsetArray, (int) length);
+
+                    itemsRead += length;
+                    break;
+                }
+            }
+        } else {
+            itemsRead = readLongs(address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+        }
+
+        return itemsRead;
     }
 
     /**
@@ -363,14 +718,32 @@ public final class SmallObjectHeap {
      *     Byte to write.
      */
     public void writeByte(final long p_address, final long p_offset, final byte p_value) {
-        SmallObjectHeapSegment segment;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        segment.writeByte(p_address, p_offset, p_value);
+        int lengthFieldSize;
+        long address;
+
+        // skip length byte(s)
+        address = p_address;
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            // determine which block the offset is in
+            int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+
+            // seek to block
+            for (int i = 0; i < blockCnt; i++) {
+                address = readPointer(address);
+            }
+
+            lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+        }
+
+        m_memory.writeByte(address + lengthFieldSize + p_offset, p_value);
     }
 
     /**
-     * Write a short to the spcified address + offset.
+     * Write a short to the specified address + offset.
      *
      * @param p_address
      *     Address.
@@ -380,10 +753,18 @@ public final class SmallObjectHeap {
      *     Short to write.
      */
     public void writeShort(final long p_address, final long p_offset, final short p_value) {
-        SmallObjectHeapSegment segment;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        segment.writeShort(p_address, p_offset, p_value);
+        int lengthFieldSize;
+
+        // skip length byte(s)
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            writeChainedBlockValue(p_address, p_offset, p_value, Short.BYTES);
+        } else {
+            m_memory.writeShort(p_address + lengthFieldSize + p_offset, p_value);
+        }
     }
 
     /**
@@ -397,10 +778,18 @@ public final class SmallObjectHeap {
      *     int to write.
      */
     public void writeInt(final long p_address, final long p_offset, final int p_value) {
-        SmallObjectHeapSegment segment;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        segment.writeInt(p_address, p_offset, p_value);
+        int lengthFieldSize;
+
+        // skip length byte(s)
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            writeChainedBlockValue(p_address, p_offset, p_value, Integer.BYTES);
+        } else {
+            m_memory.writeInt(p_address + lengthFieldSize + p_offset, p_value);
+        }
     }
 
     /**
@@ -414,231 +803,1263 @@ public final class SmallObjectHeap {
      *     Long value to write.
      */
     public void writeLong(final long p_address, final long p_offset, final long p_value) {
-        SmallObjectHeapSegment segment;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        segment.writeLong(p_address, p_offset, p_value);
+        int lengthFieldSize;
+
+        // skip length byte(s)
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            writeChainedBlockValue(p_address, p_offset, p_value, Long.BYTES);
+        } else {
+            m_memory.writeLong(p_address + lengthFieldSize + p_offset, p_value);
+        }
     }
 
     /**
-     * Write data from a byte array to a block of memory on the heap.
+     * Write an array of bytes to the specified address + offset.
      *
      * @param p_address
-     *     Address of an allocated block of memory.
+     *     Address.
      * @param p_offset
-     *     Offset to start writing at within the block.
+     *     Offset to add to the address.
      * @param p_value
-     *     Array with data to write.
+     *     Bytes to write.
      * @param p_offsetArray
-     *     Offset within the array to start reading at.
+     *     Offset within the buffer.
      * @param p_length
-     *     Number of elements to write.
+     *     Number of elements to read.
      * @return Number of elements written.
      */
     public int writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_offsetArray, final int p_length) {
-        SmallObjectHeapSegment segment;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        return segment.writeBytes(p_address, p_offset, p_value, p_offsetArray, p_length);
+        int bytesWritten = 0;
+        int lengthFieldSize;
+        long address;
+
+        address = p_address;
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            // determine which block the offset is in
+            int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+            long offset = p_offset;
+            int offsetArray = p_offsetArray;
+
+            // seek to block
+            for (int i = 0; i < blockCnt; i++) {
+                address = readPointer(address);
+                offset -= MAX_SIZE_MEMORY_BLOCK;
+            }
+
+            // read
+            long length = p_length;
+            while (true) {
+                lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+                if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && offset % MAX_SIZE_MEMORY_BLOCK + length > MAX_SIZE_MEMORY_BLOCK) {
+                    // cur block and more
+                    int curSize = (int) (MAX_SIZE_MEMORY_BLOCK - offset);
+
+                    m_memory.writeBytes(address + lengthFieldSize + offset, p_value, offsetArray, curSize);
+
+                    offsetArray += curSize;
+                    bytesWritten += curSize;
+                    offset = 0;
+                    length -= curSize;
+
+                    // move on
+                    address = readPointer(address);
+                } else {
+                    // last block, write what's left
+                    assert length <= Math.pow(2, 8 * lengthFieldSize);
+
+                    m_memory.writeBytes(address + lengthFieldSize + offset, p_value, offsetArray, (int) length);
+
+                    bytesWritten += length;
+                    break;
+                }
+            }
+
+        } else {
+            bytesWritten = m_memory.writeBytes(address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
+        }
+
+        return bytesWritten;
     }
 
     /**
-     * Write data from a short array to a block of memory on the heap.
+     * Write an array of shorts to the heap.
      *
      * @param p_address
      *     Address of an allocated block of memory.
      * @param p_offset
-     *     Offset to start writing at within the block.
+     *     Offset within the block of memory to start at.
      * @param p_value
-     *     Array with data to write.
+     *     Array to write.
      * @param p_offsetArray
-     *     Offset within the array to start reading at.
+     *     Offset within the array.
      * @param p_length
      *     Number of elements to write.
      * @return Number of elements written.
      */
     public int writeShorts(final long p_address, final long p_offset, final short[] p_value, final int p_offsetArray, final int p_length) {
-        SmallObjectHeapSegment segment;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        return segment.writeShorts(p_address, p_offset, p_value, p_offsetArray, p_length);
+        int itemsWritten = 0;
+        int lengthFieldSize;
+        long address;
+
+        address = p_address;
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            // determine which block the offset is in
+            int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+            long offset = p_offset;
+            int offsetArray = p_offsetArray;
+            // if a single short is split between two blocks, other shorts are split as well between further blocks
+            boolean dataOnBlockSplit = p_offset % Short.BYTES > 0;
+
+            // seek to block
+            for (int i = 0; i < blockCnt; i++) {
+                address = readPointer(address);
+                offset -= MAX_SIZE_MEMORY_BLOCK;
+            }
+
+            // write
+            long length = p_length;
+            while (true) {
+                lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+                if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && offset % MAX_SIZE_MEMORY_BLOCK + length * Short.BYTES > MAX_SIZE_MEMORY_BLOCK) {
+                    // cur block and more
+                    int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Short.BYTES;
+
+                    writeShorts(address + lengthFieldSize + offset, p_value, offsetArray, curItems);
+                    offsetArray += curItems;
+                    itemsWritten += curItems;
+                    length -= curItems;
+
+                    // don't read last (and first) item of block normally
+                    if (dataOnBlockSplit) {
+                        offset += curItems * Short.BYTES;
+
+                        writeChainedBlockValue(address, offset, p_value[offsetArray], Short.BYTES);
+                        offset = Short.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
+                        ++offsetArray;
+                        ++itemsWritten;
+                        --length;
+                    } else {
+                        offset = 0;
+                    }
+
+                    // move on
+                    address = readPointer(address);
+                } else {
+                    // last block, read what's left
+                    assert length * Short.BYTES <= Math.pow(2, 8 * lengthFieldSize);
+
+                    writeShorts(address + lengthFieldSize + offset, p_value, offsetArray, (int) length);
+
+                    itemsWritten += length;
+                    break;
+                }
+            }
+        } else {
+            itemsWritten = writeShorts(address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
+        }
+
+        return itemsWritten;
     }
 
     /**
-     * Write data from an int array to a block of memory on the heap.
+     * Write an array of ints to the heap.
      *
      * @param p_address
      *     Address of an allocated block of memory.
      * @param p_offset
-     *     Offset to start writing at within the block.
+     *     Offset within the block of memory to start at.
      * @param p_value
-     *     Array with data to write.
+     *     Array to write.
      * @param p_offsetArray
-     *     Offset within the array to start reading at.
+     *     Offset within the array.
      * @param p_length
      *     Number of elements to write.
      * @return Number of elements written.
      */
     public int writeInts(final long p_address, final long p_offset, final int[] p_value, final int p_offsetArray, final int p_length) {
-        SmallObjectHeapSegment segment;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        return segment.writeInts(p_address, p_offset, p_value, p_offsetArray, p_length);
+        int itemsWritten = 0;
+        int lengthFieldSize;
+        long address;
+
+        address = p_address;
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            // determine which block the offset is in
+            int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+            long offset = p_offset;
+            int offsetArray = p_offsetArray;
+            // if a single short is split between two blocks, other shorts are split as well between further blocks
+            boolean dataOnBlockSplit = p_offset % Integer.BYTES > 0;
+
+            // seek to block
+            for (int i = 0; i < blockCnt; i++) {
+                address = readPointer(address);
+                offset -= MAX_SIZE_MEMORY_BLOCK;
+            }
+
+            // write
+            long length = p_length;
+            while (true) {
+                lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+                if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && offset % MAX_SIZE_MEMORY_BLOCK + length * Integer.BYTES > MAX_SIZE_MEMORY_BLOCK) {
+                    // cur block and more
+                    int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Integer.BYTES;
+
+                    writeInts(address + lengthFieldSize + offset, p_value, offsetArray, curItems);
+                    offsetArray += curItems;
+                    itemsWritten += curItems;
+                    length -= curItems;
+
+                    // don't read last (and first) item of block normally
+                    if (dataOnBlockSplit) {
+                        offset += curItems * Integer.BYTES;
+
+                        writeChainedBlockValue(address, offset, p_value[offsetArray], Integer.BYTES);
+                        offset = Integer.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
+                        ++offsetArray;
+                        ++itemsWritten;
+                        --length;
+                    } else {
+                        offset = 0;
+                    }
+
+                    // move on
+                    address = readPointer(address);
+                } else {
+                    // last block, read what's left
+                    assert length * Integer.BYTES <= Math.pow(2, 8 * lengthFieldSize);
+
+                    writeInts(address + lengthFieldSize + offset, p_value, offsetArray, (int) length);
+
+                    itemsWritten += length;
+                    break;
+                }
+            }
+        } else {
+            itemsWritten = writeInts(address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
+        }
+
+        return itemsWritten;
     }
 
     /**
-     * Write data from a long array to a block of memory on the heap.
+     * Write an array of longs to the heap.
      *
      * @param p_address
      *     Address of an allocated block of memory.
      * @param p_offset
-     *     Offset to start writing at within the block.
+     *     Offset within the block of memory to start at.
      * @param p_value
-     *     Array with data to write.
+     *     Array to write.
      * @param p_offsetArray
-     *     Offset within the array to start reading at.
+     *     Offset within the array.
      * @param p_length
      *     Number of elements to write.
      * @return Number of elements written.
      */
     public int writeLongs(final long p_address, final long p_offset, final long[] p_value, final int p_offsetArray, final int p_length) {
-        SmallObjectHeapSegment segment;
+        assert assertMemoryBounds(p_address, p_offset);
 
-        segment = m_segments[(int) (p_address / m_segmentSize)];
-        return segment.writeLongs(p_address, p_offset, p_value, p_offsetArray, p_length);
-    }
+        int itemsWritten = 0;
+        int lengthFieldSize;
+        long address;
 
-    /**
-     * Get the total space available in bytes.
-     *
-     * @return Total space in bytes.
-     */
-    public long getTotalMemory() {
-        return m_segmentSize * m_segments.length;
-    }
+        address = p_address;
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 
-    /**
-     * Get the amount of free memory in bytes.
-     *
-     * @return Free memory in bytes.
-     */
-    public long getFreeMemory() {
-        long size = 0;
+        if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+            // determine which block the offset is in
+            int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+            long offset = p_offset;
+            int offsetArray = p_offsetArray;
+            // if a single short is split between two blocks, other shorts are split as well between further blocks
+            boolean dataOnBlockSplit = p_offset % Long.BYTES > 0;
 
-        for (SmallObjectHeapSegment segment : m_segments) {
-            size += segment.getStatus().getFreeSpace();
+            // seek to block
+            for (int i = 0; i < blockCnt; i++) {
+                address = readPointer(address);
+                offset -= MAX_SIZE_MEMORY_BLOCK;
+            }
+
+            // write
+            long length = p_length;
+            while (true) {
+                lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+                if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && offset % MAX_SIZE_MEMORY_BLOCK + length * Long.BYTES > MAX_SIZE_MEMORY_BLOCK) {
+                    // cur block and more
+                    int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Long.BYTES;
+
+                    writeLongs(address + lengthFieldSize + offset, p_value, offsetArray, curItems);
+                    offsetArray += curItems;
+                    itemsWritten += curItems;
+                    length -= curItems;
+
+                    // don't read last (and first) item of block normally
+                    if (dataOnBlockSplit) {
+                        offset += curItems * Long.BYTES;
+
+                        writeChainedBlockValue(address, offset, p_value[offsetArray], Long.BYTES);
+                        offset = Long.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
+                        ++offsetArray;
+                        ++itemsWritten;
+                        --length;
+                    } else {
+                        offset = 0;
+                    }
+
+                    // move on
+                    address = readPointer(address);
+                } else {
+                    // last block, read what's left
+                    assert length * Long.BYTES <= Math.pow(2, 8 * lengthFieldSize);
+
+                    writeLongs(address + lengthFieldSize + offset, p_value, offsetArray, (int) length);
+
+                    itemsWritten += length;
+                    break;
+                }
+            }
+        } else {
+            itemsWritten = writeLongs(address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
         }
 
-        return size;
-    }
-
-    /**
-     * Get the total amount of memory usable for actual data.
-     *
-     * @return Total amount of memory usable for data in bytes.
-     */
-    public long getTotalPayloadMemory() {
-        long size = 0;
-
-        for (SmallObjectHeapSegment segment : m_segments) {
-            size += segment.getSizeAllocatedPayload();
-        }
-
-        return size;
-    }
-
-    /**
-     * Get the total number of active/allocated memory blocks.
-     *
-     * @return Number of allocated memory blocks.
-     */
-    public long getNumberOfActiveMemoryBlocks() {
-        long size = 0;
-
-        for (SmallObjectHeapSegment segment : m_segments) {
-            size += segment.getNumActiveMemoryBlocks();
-        }
-
-        return size;
+        return itemsWritten;
     }
 
     @Override
     public String toString() {
-        StringBuilder output;
-        SmallObjectHeapSegment.Status[] stati;
-        long freeSpace;
-        long freeBlocks;
-
-        stati = getSegmentStatus();
-        freeSpace = 0;
-        freeBlocks = 0;
-        for (SmallObjectHeapSegment.Status status : stati) {
-            freeSpace += status.getFreeSpace();
-            freeBlocks += status.getFreeBlocks();
-        }
-
-        output = new StringBuilder();
-        output.append("RawMemory (" + m_memory + ")");
-        output.append("\nSegment Count: " + m_segments.length + " each of size " + Tools.readableSize(m_segmentSize));
-        output.append("\nFree Space: " + Tools.readableSize(freeSpace) + " in " + freeBlocks + " blocks");
-
-        for (int i = 0; i < stati.length; i++) {
-            output.append("\n\t" + m_segments[i]);
-        }
-
-        return output.toString();
+        return "Memory: " + "m_baseFreeBlockList " + m_baseFreeBlockList + ", status: " + m_status;
     }
 
-    /**
-     * Prints debug infos
-     */
-    public void printDebugInfos() {
-        System.out.println("\n" + this);
-    }
+    // -------------------------------------------------------------------------------------------
 
     /**
-     * Gets the current fragmentation of all segments
+     * Get the size of the allocated or free'd block of memory specified
+     * by the given address.
      *
-     * @return the fragmentation
+     * @param p_address
+     *     Address of block to get the size of.
+     * @return Size of memory block at specified address.
      */
-    public double[] getFragmentation() {
-        double[] ret;
+    private long getSizeMemoryBlock(final long p_address) {
+        int lengthFieldSize;
 
-        ret = new double[m_segments.length];
-        for (int i = 0; i < m_segments.length; i++) {
-            ret[i] = m_segments[i].getFragmentation();
+        assert assertMemoryBounds(p_address);
+
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+        return read(p_address, lengthFieldSize);
+    }
+
+    /**
+     * Reserve a free block of memory.
+     *
+     * @param p_size
+     *     Size of the block (payload size).
+     * @param p_chainedBlock
+     *     True if this block is part of a chain of blocks and not the last block in the chain.
+     * @return Address of the reserved block or null if out of memory of no block for requested size was found.
+     */
+    private long reserveBlock(final int p_size, final boolean p_chainedBlock) {
+        long ret = -1;
+        int list;
+        long address;
+        long blockSize;
+        int lengthFieldSize;
+        long freeSize;
+        int freeLengthFieldSize;
+        byte blockMarker;
+
+        if (p_size > 0 && p_size <= MAX_SIZE_MEMORY_BLOCK) {
+            if (!p_chainedBlock) {
+                if (p_size >= 1 << 16) {
+                    lengthFieldSize = 3;
+                } else if (p_size >= 1 << 8) {
+                    lengthFieldSize = 2;
+                } else {
+                    lengthFieldSize = 1;
+                }
+
+                blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
+            } else {
+                // length field contains the ptr to the next block in the chain
+                // payload block is still MAX_SIZE_MEMORY_BLOCK in size
+                lengthFieldSize = CHAINED_BLOCK_LENGTH_FIELD;
+
+                // use lengthFieldSize state to indicate block size POINTER_SIZE (5) and chained block
+                blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
+            }
+
+            blockSize = p_size + lengthFieldSize;
+
+            // Get the list with a free block which is big enough
+            list = getList(blockSize) + 1;
+            address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
+            while (list < m_freeBlocksListCount && address == 0) {
+                list++;
+                address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
+            }
+
+            if (list >= m_freeBlocksListCount) {
+                // Traverse through the lower list
+                list = getList(blockSize);
+                address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
+                if (address != 0) {
+                    freeLengthFieldSize = readRightPartOfMarker(address - 1);
+                    freeSize = read(address, freeLengthFieldSize);
+                    while (freeSize < blockSize && address != 0) {
+                        address = readPointer(address + freeLengthFieldSize + POINTER_SIZE);
+                        if (address != 0) {
+                            freeLengthFieldSize = readRightPartOfMarker(address - 1);
+                            freeSize = read(address, freeLengthFieldSize);
+                        }
+                    }
+                }
+            }
+
+            if (address != 0) {
+                // Unhook the free block
+                unhookFreeBlock(address);
+
+                freeLengthFieldSize = readRightPartOfMarker(address - SIZE_MARKER_BYTE);
+                freeSize = read(address, freeLengthFieldSize);
+                if (freeSize == blockSize) {
+                    m_status.m_free -= blockSize;
+                    m_status.m_freeBlocks--;
+                    if (freeSize < SMALL_BLOCK_SIZE) {
+                        m_status.m_freeSmall64ByteBlocks--;
+                    }
+                } else if (freeSize == blockSize + 1) {
+                    // 1 Byte to big -> write two markers on the right
+                    writeRightPartOfMarker(address + blockSize, SINGLE_BYTE_MARKER);
+                    writeLeftPartOfMarker(address + blockSize + 1, SINGLE_BYTE_MARKER);
+
+                    // +1 for the marker byte added
+                    m_status.m_free -= blockSize + 1;
+                    m_status.m_freeBlocks--;
+                    if (freeSize + 1 < SMALL_BLOCK_SIZE) {
+                        m_status.m_freeSmall64ByteBlocks--;
+                    }
+                } else {
+                    // Block is too big -> create a new free block with the remaining size
+                    createFreeBlock(address + blockSize + 1, freeSize - blockSize - 1);
+
+                    // +1 for the marker byte added
+                    m_status.m_free -= blockSize + 1;
+
+                    if (freeSize >= SMALL_BLOCK_SIZE && freeSize - blockSize - 1 < SMALL_BLOCK_SIZE) {
+                        m_status.m_freeSmall64ByteBlocks++;
+                    }
+                }
+                // Write marker
+                writeLeftPartOfMarker(address + blockSize, blockMarker);
+                writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
+
+                // Write block size (or ptr to next block)
+                if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+                    write(address, 0xFFFFFFFFFFL, lengthFieldSize);
+                } else {
+                    write(address, p_size, lengthFieldSize);
+                }
+
+                ret = address;
+            }
+        }
+
+        if (ret != -1) {
+            m_status.m_allocatedPayload += p_size;
+            m_status.m_allocatedBlocks++;
         }
 
         return ret;
     }
 
-    // --------------------------------------------------------------------------------------------------------
+    /**
+     * Free a reserved block of memory
+     *
+     * @param p_address
+     *     Address of the block
+     * @param p_lengthFieldSize
+     *     Size of the length field
+     * @param p_blockSize
+     *     Size of the block's payload
+     */
+    private void freeReservedBlock(final long p_address, final int p_lengthFieldSize, final long p_blockSize) {
+        long blockSize;
+        long freeSize;
+        long address;
+        int lengthFieldSize;
+        int leftMarker;
+        int rightMarker;
+        boolean leftFree;
+        long leftSize;
+        boolean rightFree;
+        long rightSize;
+
+        assert assertMemoryBounds(p_address);
+
+        blockSize = p_blockSize;
+        lengthFieldSize = p_lengthFieldSize;
+        freeSize = blockSize + lengthFieldSize;
+        address = p_address;
+
+        // only merge if left neighbor exists (beginning of memory area)
+        if (address - SIZE_MARKER_BYTE != 0) {
+            // Read left part of the marker on the left
+            leftMarker = readLeftPartOfMarker(address - 1);
+            leftFree = true;
+            switch (leftMarker) {
+                case 0:
+                    // Left neighbor block (<= 12 byte) is free -> merge free blocks
+                    // -1, length field size is 1
+                    leftSize = read(address - SIZE_MARKER_BYTE - 1, 1);
+                    // merge marker byte
+                    leftSize += SIZE_MARKER_BYTE;
+                    break;
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                    // Left neighbor block is free -> merge free blocks
+                    leftSize = read(address - SIZE_MARKER_BYTE - leftMarker, leftMarker);
+                    // skip leftSize and marker byte from address to get block offset
+                    unhookFreeBlock(address - leftSize - SIZE_MARKER_BYTE);
+                    // we also merge the marker byte
+                    leftSize += SIZE_MARKER_BYTE;
+                    break;
+                case SINGLE_BYTE_MARKER:
+                    // Left byte is free -> merge free blocks
+                    leftSize = 1;
+                    break;
+                default:
+                    leftSize = 0;
+                    leftFree = false;
+                    break;
+            }
+        } else {
+            leftSize = 0;
+            leftFree = false;
+        }
+
+        // update start address of free block and size
+        address -= leftSize;
+        freeSize += leftSize;
+
+        // Only merge if right neighbor within valid area (not inside or past free blocks list)
+        if (address + blockSize + SIZE_MARKER_BYTE != m_baseFreeBlockList) {
+
+            // Read right part of the marker on the right
+            rightMarker = readRightPartOfMarker(p_address + lengthFieldSize + blockSize);
+            rightFree = true;
+            switch (rightMarker) {
+                case 0:
+                    // Right neighbor block (<= 12 byte) is free -> merge free blocks
+                    // + 1 to skip marker byte
+                    rightSize = read(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE, 1);
+                    // merge marker byte
+                    rightSize += SIZE_MARKER_BYTE;
+                    break;
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                    // Right neighbor block is free -> merge free blocks
+                    // + 1 to skip marker byte
+                    rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
+                    unhookFreeBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
+                    // we also merge the marker byte
+                    rightSize += SIZE_MARKER_BYTE;
+                    break;
+                case 15:
+                    // Right byte is free -> merge free blocks
+                    rightSize = 1;
+                    break;
+                default:
+                    rightSize = 0;
+                    rightFree = false;
+                    break;
+            }
+        } else {
+            rightSize = 0;
+            rightFree = false;
+        }
+
+        // update size of full free block
+        freeSize += rightSize;
+
+        // Create a free block
+        createFreeBlock(address, freeSize);
+
+        if (!leftFree && !rightFree) {
+            m_status.m_free += blockSize + lengthFieldSize;
+            m_status.m_freeBlocks++;
+            if (blockSize + lengthFieldSize < SMALL_BLOCK_SIZE) {
+                m_status.m_freeSmall64ByteBlocks++;
+            }
+        } else if (leftFree && !rightFree) {
+            m_status.m_free += blockSize + lengthFieldSize + SIZE_MARKER_BYTE;
+            if (blockSize + lengthFieldSize + leftSize >= SMALL_BLOCK_SIZE && leftSize < SMALL_BLOCK_SIZE) {
+                m_status.m_freeSmall64ByteBlocks--;
+            }
+        } else if (!leftFree /*&& rightFree*/) {
+            m_status.m_free += blockSize + lengthFieldSize + SIZE_MARKER_BYTE;
+            if (blockSize + lengthFieldSize + rightSize >= SMALL_BLOCK_SIZE && rightSize < SMALL_BLOCK_SIZE) {
+                m_status.m_freeSmall64ByteBlocks--;
+            }
+            // leftFree && rightFree
+        } else {
+            // +2 for two marker bytes being merged
+            m_status.m_free += blockSize + lengthFieldSize + 2 * SIZE_MARKER_BYTE;
+            m_status.m_freeBlocks--;
+            if (blockSize + lengthFieldSize + leftSize + rightSize >= SMALL_BLOCK_SIZE) {
+                if (rightSize < SMALL_BLOCK_SIZE && leftSize < SMALL_BLOCK_SIZE) {
+                    m_status.m_freeSmall64ByteBlocks--;
+                } else if (rightSize >= SMALL_BLOCK_SIZE && leftSize >= SMALL_BLOCK_SIZE) {
+                    m_status.m_freeSmall64ByteBlocks++;
+                }
+            }
+        }
+
+        m_status.m_allocatedPayload -= blockSize;
+        m_status.m_allocatedBlocks--;
+    }
 
     /**
-     * Gets the segment for the given address
+     * Read a value from a series of chained blocks.
+     * This handles a value split over two blocks as well.
+     *
+     * @param p_address
+     *     Address of the block (root of the chained blocks)
+     * @param p_offset
+     *     Offset within the whole block
+     * @param p_valLength
+     *     Length of the value to read
+     * @return The read value (cast to an appropriate data type depending on specified length).
+     */
+    private long readChainedBlockValue(final long p_address, final long p_offset, final int p_valLength) {
+        long address;
+        int lengthFieldSize;
+        long offset;
+
+        address = p_address;
+        offset = p_offset;
+
+        // determine which block the offset is in
+        int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+
+        // seek to block
+        for (int i = 0; i < blockCnt; i++) {
+            address = readPointer(address);
+            offset -= MAX_SIZE_MEMORY_BLOCK;
+        }
+
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+
+        // unfortunate: one part of the variable is in the current and the other one in
+        // the next block
+        int frag1Size = (int) (MAX_SIZE_MEMORY_BLOCK - offset);
+        if (frag1Size > p_valLength) {
+            frag1Size = p_valLength;
+        }
+        int frag2Size = p_valLength - frag1Size;
+
+        if (frag2Size > 0) {
+            long frag1 = read(address + lengthFieldSize + offset, frag1Size);
+
+            // next block
+            address = readPointer(address);
+            lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+
+            long frag2 = read(address + lengthFieldSize, frag2Size);
+
+            // assemble, assuming little endian byte order
+            return (frag2 & 0xFFFFFFFFFFFFFFFFL >>> 64 - frag2Size * 8) << frag1Size * 8 | frag1 & 0xFFFFFFFFFFFFFFFFL >>> 64 - frag1Size * 8;
+        } else {
+            switch (p_valLength) {
+                case Short.BYTES:
+                    return m_memory.readShort(address + lengthFieldSize + offset);
+                case Integer.BYTES:
+                    return m_memory.readInt(address + lengthFieldSize + offset);
+                case Long.BYTES:
+                    return m_memory.readLong(address + lengthFieldSize + offset);
+                default:
+                    return m_memory.readVal(address + lengthFieldSize + offset, p_valLength);
+            }
+
+        }
+    }
+
+    /**
+     * Write a value to a memory location consisting of a series of chained blocks.
+     * This handles a value split over two blocks as well.
+     *
+     * @param p_address
+     *     Address of the block (root of the chained blocks)
+     * @param p_offset
+     *     Offset within the whole block
+     * @param p_value
+     *     Value to write
+     * @param p_valLength
+     *     Length of the value to read
+     */
+    private void writeChainedBlockValue(final long p_address, final long p_offset, final long p_value, final int p_valLength) {
+        long address;
+        int lengthFieldSize;
+        long offset;
+
+        address = p_address;
+        offset = p_offset;
+
+        // determine which block the offset is in
+        int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
+
+        // seek to block
+        for (int i = 0; i < blockCnt; i++) {
+            address = readPointer(address);
+            offset -= MAX_SIZE_MEMORY_BLOCK;
+        }
+
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+
+        // unfortunate: one part of the variable is in the current and the other one in
+        // the next block
+        int frag1Size = (int) (MAX_SIZE_MEMORY_BLOCK - offset);
+        if (frag1Size > p_valLength) {
+            frag1Size = p_valLength;
+        }
+        int frag2Size = p_valLength - frag1Size;
+
+        if (frag2Size > 0) {
+            // assuming little endian byte order
+            long frag1 = p_value & 0xFFFFFFFFFFFFFFFFL >>> 64 - frag1Size * 8;
+            long frag2 = p_value >> frag1Size * 8 & 0xFFFFFFFFFFFFFFFFL >>> 64 - frag2Size * 8;
+
+            // fragment 1 first (little endian)
+            write(address + lengthFieldSize + offset, frag1, frag1Size);
+
+            // next block
+            address = readPointer(address);
+            lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
+
+            write(address + lengthFieldSize, frag2, frag2Size);
+        } else {
+            switch (p_valLength) {
+                case Short.BYTES:
+                    m_memory.writeShort(address + lengthFieldSize + offset, (short) p_value);
+                    break;
+                case Integer.BYTES:
+                    m_memory.writeInt(address + lengthFieldSize + offset, (int) p_value);
+                    break;
+                case Long.BYTES:
+                    m_memory.writeLong(address + lengthFieldSize + offset, p_value);
+                    break;
+                default:
+                    m_memory.writeVal(address + lengthFieldSize + offset, p_value, p_valLength);
+                    break;
+            }
+
+        }
+    }
+
+    /**
+     * Check the memory bounds with the specified address.
+     *
+     * @param p_address
+     *     Address to check if within memory.
+     * @return Dummy return for assert
+     */
+    private boolean assertMemoryBounds(final long p_address) {
+        if (p_address < 0 || p_address > m_status.m_size) {
+            throw new MemoryRuntimeException("Address " + p_address + " is not within memory: " + this);
+        }
+
+        return true;
+    }
+
+    /**
+     * Check the memory bounds with the specified start address and size.
+     *
+     * @param p_address
+     *     Address to check if within bounds.
+     * @param p_length
+     *     Number of bytes starting at address.
+     * @return Dummy return for assert
+     */
+    private boolean assertMemoryBounds(final long p_address, final long p_length) {
+        if (p_address < 0 || p_address > m_status.m_size || p_address + p_length < 0 || p_address + p_length > m_status.m_size) {
+            throw new MemoryRuntimeException("Address " + p_address + " with length " + p_length + "is not within memory: " + this);
+        }
+
+        return true;
+    }
+
+    /**
+     * Creates a free block
      *
      * @param p_address
      *     the address
-     * @return the segment
+     * @param p_size
+     *     the size
      */
-    protected int getSegment(final long p_address) {
-        return (int) (p_address / m_segmentSize);
+    private void createFreeBlock(final long p_address, final long p_size) {
+        long listOffset;
+        int lengthFieldSize;
+        long anchor;
+        long size;
+
+        if (p_size < 12) {
+            // If size < 12 -> the block will not be hook in the lists
+            lengthFieldSize = 0;
+
+            write(p_address, p_size, 1);
+            write(p_address + p_size - 1, p_size, 1);
+        } else {
+            lengthFieldSize = 1;
+
+            // Calculate the number of bytes for the length field
+            size = p_size >> 8;
+            while (size > 0) {
+                lengthFieldSize++;
+
+                size >>= 8;
+            }
+
+            // Get the corresponding list
+            listOffset = m_baseFreeBlockList + getList(p_size) * POINTER_SIZE;
+
+            // Hook block in list
+            anchor = readPointer(listOffset);
+
+            // Write pointer to list and successor
+            writePointer(p_address + lengthFieldSize, listOffset);
+            writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
+            if (anchor != 0) {
+                // Write pointer of successor
+                int marker;
+                marker = readRightPartOfMarker(anchor - SIZE_MARKER_BYTE);
+                writePointer(anchor + marker, p_address);
+            }
+            // Write pointer of list
+            writePointer(listOffset, p_address);
+
+            // Write length
+            write(p_address, p_size, lengthFieldSize);
+            write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
+        }
+
+        // Write right and left marker
+        writeRightPartOfMarker(p_address - SIZE_MARKER_BYTE, lengthFieldSize);
+        writeLeftPartOfMarker(p_address + p_size, lengthFieldSize);
     }
 
     /**
-     * Gets the current segment status
+     * Unhooks a free block
      *
-     * @return the segment status
+     * @param p_address
+     *     the address
      */
-    protected SmallObjectHeapSegment.Status[] getSegmentStatus() {
-        SmallObjectHeapSegment.Status[] ret;
+    private void unhookFreeBlock(final long p_address) {
+        int lengthFieldSize;
+        long prevPointer;
+        long nextPointer;
 
-        ret = new SmallObjectHeapSegment.Status[m_segments.length];
-        for (int i = 0; i < m_segments.length; i++) {
-            ret[i] = m_segments[i].getStatus();
+        // Read size of length field
+        lengthFieldSize = readRightPartOfMarker(p_address - SIZE_MARKER_BYTE);
+
+        // Read pointers
+        prevPointer = readPointer(p_address + lengthFieldSize);
+        nextPointer = readPointer(p_address + lengthFieldSize + POINTER_SIZE);
+
+        if (prevPointer >= m_baseFreeBlockList) {
+            // Write Pointer of list
+            writePointer(prevPointer, nextPointer);
+        } else {
+            // Write Pointer of predecessor
+            writePointer(prevPointer + lengthFieldSize + POINTER_SIZE, nextPointer);
+        }
+
+        if (nextPointer != 0) {
+            // Write pointer of successor
+            writePointer(nextPointer + lengthFieldSize, prevPointer);
+        }
+    }
+
+    /**
+     * Gets the suitable list for the given size
+     *
+     * @param p_size
+     *     the size
+     * @return the suitable list
+     */
+    private int getList(final long p_size) {
+        int ret = 0;
+
+        while (ret + 1 < m_freeBlockListSizes.length && m_freeBlockListSizes[ret + 1] <= p_size) {
+            ret++;
         }
 
         return ret;
+    }
+
+    /**
+     * Read the right part of a marker byte
+     *
+     * @param p_address
+     *     the address
+     * @return the right part of a marker byte
+     */
+    int readRightPartOfMarker(final long p_address) {
+        return m_memory.readByte(p_address) & 0xF;
+    }
+
+    /**
+     * Read the left part of a marker byte
+     *
+     * @param p_address
+     *     the address
+     * @return the left part of a marker byte
+     */
+    private int readLeftPartOfMarker(final long p_address) {
+        return (m_memory.readByte(p_address) & 0xF0) >> 4;
+    }
+
+    /**
+     * Extract the size of the length field of the allocated or free area
+     * from the marker byte.
+     *
+     * @param p_marker
+     *     Marker byte.
+     * @return Size of the length field of block with specified marker byte.
+     */
+    private static int getSizeFromMarker(final int p_marker) {
+        int ret;
+
+        if (p_marker <= OCCUPIED_FLAGS_OFFSET) {
+            // free block size
+            ret = p_marker;
+        } else {
+            // allocated block sizes 1, 2, 3 and 5 (chained block next ptr) are used
+            ret = p_marker - OCCUPIED_FLAGS_OFFSET;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Writes a marker byte
+     *
+     * @param p_address
+     *     the address
+     * @param p_right
+     *     the right part
+     */
+    private void writeRightPartOfMarker(final long p_address, final int p_right) {
+        byte marker;
+
+        marker = (byte) ((m_memory.readByte(p_address) & 0xF0) + (p_right & 0xF));
+        m_memory.writeByte(p_address, marker);
+    }
+
+    /**
+     * Writes a marker byte
+     *
+     * @param p_address
+     *     the address
+     * @param p_left
+     *     the left part
+     */
+    private void writeLeftPartOfMarker(final long p_address, final int p_left) {
+        byte marker;
+
+        marker = (byte) (((p_left & 0xF) << 4) + (m_memory.readByte(p_address) & 0xF));
+        m_memory.writeByte(p_address, marker);
+    }
+
+    /**
+     * Reads a pointer
+     *
+     * @param p_address
+     *     the address
+     * @return the pointer
+     */
+    long readPointer(final long p_address) {
+        return read(p_address, POINTER_SIZE);
+    }
+
+    /**
+     * Writes a pointer
+     *
+     * @param p_address
+     *     the address
+     * @param p_pointer
+     *     the pointer
+     */
+    private void writePointer(final long p_address, final long p_pointer) {
+        write(p_address, p_pointer, POINTER_SIZE);
+    }
+
+    /**
+     * Reads up to 8 bytes combined in a long
+     *
+     * @param p_address
+     *     the address
+     * @param p_count
+     *     the number of bytes
+     * @return the combined bytes
+     */
+    protected long read(final long p_address, final int p_count) {
+        return m_memory.readVal(p_address, p_count);
+    }
+
+    /**
+     * Writes up to 8 bytes combined in a long
+     *
+     * @param p_address
+     *     the address
+     * @param p_bytes
+     *     the combined bytes
+     * @param p_count
+     *     the number of bytes
+     */
+    private void write(final long p_address, final long p_bytes, final int p_count) {
+        m_memory.writeVal(p_address, p_bytes, p_count);
+    }
+
+    /**
+     * Read data from the storage into a short array.
+     *
+     * @param p_ptr
+     *     Start position in storage.
+     * @param p_array
+     *     Array to read the data into.
+     * @param p_arrayOffset
+     *     Start offset in array to start writing the shorts to.
+     * @param p_length
+     *     Number of shorts to read from specified start.
+     * @return Number of read elements.
+     */
+    private int readShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
+        for (int i = 0; i < p_length; i++) {
+            p_array[i + p_arrayOffset] = m_memory.readShort(p_ptr + i * Short.BYTES);
+        }
+
+        return p_length;
+    }
+
+    /**
+     * Read data from the storage into a int array.
+     *
+     * @param p_ptr
+     *     Start position in storage.
+     * @param p_array
+     *     Array to read the data into.
+     * @param p_arrayOffset
+     *     Start offset in array to start writing the ints to.
+     * @param p_length
+     *     Number of ints to read from specified start.
+     * @return Number of read elements.
+     */
+    private int readInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
+        for (int i = 0; i < p_length; i++) {
+            p_array[i + p_arrayOffset] = m_memory.readInt(p_ptr + i * Integer.BYTES);
+        }
+
+        return p_length;
+    }
+
+    /**
+     * Read data from the storage into a long array.
+     *
+     * @param p_ptr
+     *     Start position in storage.
+     * @param p_array
+     *     Array to read the data into.
+     * @param p_arrayOffset
+     *     Start offset in array to start writing the longs to.
+     * @param p_length
+     *     Number of longs to read from specified start.
+     * @return Number of read elements.
+     */
+    private int readLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
+        for (int i = 0; i < p_length; i++) {
+            p_array[i + p_arrayOffset] = m_memory.readLong(p_ptr + i * Long.BYTES);
+        }
+
+        return p_length;
+    }
+
+    /**
+     * Write an array of shorts to the storage.
+     *
+     * @param p_ptr
+     *     Start address to write to.
+     * @param p_array
+     *     Array with data to write.
+     * @param p_arrayOffset
+     *     Offset in array to start reading the data from.
+     * @param p_length
+     *     Number of elements to write.
+     * @return Number of written elements
+     */
+    private int writeShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
+        for (int i = 0; i < p_length; i++) {
+            m_memory.writeShort(p_ptr + i * Short.BYTES, p_array[i + p_arrayOffset]);
+        }
+
+        return p_length;
+    }
+
+    /**
+     * Write an array of ints to the storage.
+     *
+     * @param p_ptr
+     *     Start address to write to.
+     * @param p_array
+     *     Array with data to write.
+     * @param p_arrayOffset
+     *     Offset in array to start reading the data from.
+     * @param p_length
+     *     Number of elements to write.
+     * @return Number of written elements
+     */
+    private int writeInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
+        for (int i = 0; i < p_length; i++) {
+            m_memory.writeInt(p_ptr + i * Integer.BYTES, p_array[i + p_arrayOffset]);
+        }
+
+        return p_length;
+    }
+
+    /**
+     * Write an array of longs to the storage.
+     *
+     * @param p_ptr
+     *     Start address to write to.
+     * @param p_array
+     *     Array with data to write.
+     * @param p_arrayOffset
+     *     Offset in array to start reading the data from.
+     * @param p_length
+     *     Number of elements to write.
+     * @return Number of written elements
+     */
+    private int writeLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
+        for (int i = 0; i < p_length; i++) {
+            m_memory.writeLong(p_ptr + i * Long.BYTES, p_array[i + p_arrayOffset]);
+        }
+
+        return p_length;
+    }
+
+    // --------------------------------------------------------------------------------------
+
+    // Classes
+
+    /**
+     * Holds fragmentation information of the memory
+     *
+     * @author Florian Klein 10.04.2014
+     */
+    public static final class Status {
+
+        private long m_size;
+        private long m_free;
+        private long m_allocatedPayload;
+        private long m_allocatedBlocks;
+        private long m_freeBlocks;
+        private long m_freeSmall64ByteBlocks;
+
+        /**
+         * Get the total size of the memory
+         *
+         * @return Total size in bytes
+         */
+        public long getSize() {
+            return m_size;
+        }
+
+        /**
+         * Get the total amount of free memory
+         *
+         * @return Total free memory in bytes
+         */
+        public long getFree() {
+            return m_free;
+        }
+
+        /**
+         * Get the total amount of bytes used for payload of the allocated blocks
+         *
+         * @return Amount of memory in bytes used for payload
+         */
+        public long getAllocatedPayload() {
+            return m_allocatedPayload;
+        }
+
+        /**
+         * Get the total number of allocated blocks
+         *
+         * @return Number of allocated blocks
+         */
+        public long getAllocatedBlocks() {
+            return m_allocatedBlocks;
+        }
+
+        /**
+         * Get the total number of free blocks
+         *
+         * @return Number of free blocks
+         */
+        public long getFreeBlocks() {
+            return m_freeBlocks;
+        }
+
+        /**
+         * Get the total number of free blocks with a size of less than 64 bytes
+         *
+         * @return Number of small free blocks
+         */
+        public long getFreeSmall64ByteBlocks() {
+            return m_freeSmall64ByteBlocks;
+        }
+
+        /**
+         * Gets the current fragmentation in percentage
+         *
+         * @return the fragmentation
+         */
+        public double getFragmentation() {
+            double ret = 0;
+
+            if (m_freeSmall64ByteBlocks >= 1 || m_freeBlocks >= 1) {
+                ret = (double) m_freeSmall64ByteBlocks / m_freeBlocks;
+            }
+
+            return ret;
+        }
+
+        @Override
+        public String toString() {
+            return "Status [m_size=" + m_size + ", m_free=" + m_free + ", m_allocatedPayload=" + m_allocatedPayload + ", m_allocatedBlocks=" +
+                m_allocatedBlocks + ", m_freeBlocks=" + m_freeBlocks + ", m_freeSmall64ByteBlocks=" + m_freeSmall64ByteBlocks + ", fragmentation=" +
+                getFragmentation() + ']';
+        }
     }
 
 }
