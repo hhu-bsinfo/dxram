@@ -324,11 +324,11 @@ class VersionsBuffer {
      *     the first ChunkID in backup range
      * @return the former epoch
      */
-    final short readAll(final TemporaryVersionsStorage p_allVersions, final boolean p_logStoresMigrations, final long p_offset) {
+    final short readAll(final TemporaryVersionsStorage p_allVersions, final boolean p_logStoresMigrations, final long p_offset, final boolean p_writeBack) {
         if (!p_logStoresMigrations) {
-            return readAll(p_allVersions, p_offset, true);
+            return readAll(p_allVersions, p_offset, p_writeBack);
         } else {
-            return readAllMigrations(p_allVersions, true);
+            return readAllMigrations(p_allVersions, p_writeBack);
         }
     }
 

@@ -573,7 +573,7 @@ public class SecondaryLog extends AbstractLog {
         if (!m_storesMigrations) {
             // Get all current versions
             versionStorage = new TemporaryVersionsStorage(m_secondaryLogSize, 2 * m_versionsBuffer.getRangeSize(m_rangeIDOrFirstLocalID));
-            epoch = m_versionsBuffer.readAll(versionStorage, m_storesMigrations, m_rangeIDOrFirstLocalID);
+            epoch = m_versionsBuffer.readAll(versionStorage, m_storesMigrations, m_rangeIDOrFirstLocalID, false);
             int[] allVersions = versionStorage.getVersionsForNormalLog();
 
             stats.m_timeToReadVersionsFromDisk = System.currentTimeMillis() - time;
@@ -591,7 +591,7 @@ public class SecondaryLog extends AbstractLog {
         } else {
             // Get all current versions; we do not know the number of versions
             versionStorage = new TemporaryVersionsStorage(m_secondaryLogSize);
-            epoch = m_versionsBuffer.readAll(versionStorage, m_storesMigrations, m_rangeIDOrFirstLocalID);
+            epoch = m_versionsBuffer.readAll(versionStorage, m_storesMigrations, m_rangeIDOrFirstLocalID, false);
             VersionsHashTable allVersions = versionStorage.getVersionsForMigrationLog();
 
             stats.m_timeToReadVersionsFromDisk = System.currentTimeMillis() - time;
@@ -707,7 +707,7 @@ public class SecondaryLog extends AbstractLog {
         Arrays.fill(m_reorgVector, (byte) 0);
 
         // Read versions from SSD and write back current view
-        return m_versionsBuffer.readAll(p_allVersions, m_storesMigrations, m_rangeIDOrFirstLocalID);
+        return m_versionsBuffer.readAll(p_allVersions, m_storesMigrations, m_rangeIDOrFirstLocalID, true);
     }
 
     /**
