@@ -73,7 +73,7 @@ public final class HeapWalker {
         // get what we need from the segment
         baseAddress = 0;
         // size = total - last section that holds the free block list roots
-        blockAreaSize = p_segment.getStatus().getSize() - p_segment.m_baseFreeBlockList;
+        blockAreaSize = p_segment.m_baseFreeBlockList;
 
         // walk memory block area
         while (baseAddress < blockAreaSize - 1) {
@@ -118,17 +118,6 @@ public final class HeapWalker {
 
                     lengthFieldSize = block.m_markerByte;
                     freeBlockSize = p_segment.read(baseAddress + SmallObjectHeap.SIZE_MARKER_BYTE, lengthFieldSize);
-
-                    // + 2 marker bytes
-                    block.m_endAddress = baseAddress + freeBlockSize + SmallObjectHeap.SIZE_MARKER_BYTE * 2;
-                    block.m_rawBlockSize = freeBlockSize;
-                    block.m_prevFreeBlock = p_segment.read(baseAddress + SmallObjectHeap.SIZE_MARKER_BYTE + lengthFieldSize, SmallObjectHeap.POINTER_SIZE);
-                    block.m_nextFreeBlock = p_segment
-                        .read(baseAddress + SmallObjectHeap.SIZE_MARKER_BYTE + lengthFieldSize + SmallObjectHeap.POINTER_SIZE, SmallObjectHeap.POINTER_SIZE);
-                    // no payload
-                    block.m_blockPayloadSize = -1;
-
-                    memoryBlocks.put(block.m_startAddress, block);
 
                     // proceed
                     baseAddress += SmallObjectHeap.SIZE_MARKER_BYTE + freeBlockSize;
@@ -213,7 +202,7 @@ public final class HeapWalker {
                     int lengthFieldSize;
                     long blockPayloadSize;
 
-                    lengthFieldSize = 5;
+                    lengthFieldSize = SmallObjectHeap.POINTER_SIZE;
                     blockPayloadSize = SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK;
 
                     // + 2 marker bytes
@@ -228,6 +217,8 @@ public final class HeapWalker {
 
                     // proceed
                     baseAddress += SmallObjectHeap.SIZE_MARKER_BYTE + lengthFieldSize + blockPayloadSize;
+
+                    break;
                 }
 
                 // free memory 1 byte
@@ -248,7 +239,7 @@ public final class HeapWalker {
 
                 default: {
                     System.out.println("!!! Block with invalid marker detected: ptr " + block.m_startAddress + ", marker " + block.m_markerByte);
-                    break;
+                    return memoryBlocks;
                 }
             }
         }

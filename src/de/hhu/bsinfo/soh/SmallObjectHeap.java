@@ -1,5 +1,8 @@
 package de.hhu.bsinfo.soh;
 
+import java.io.File;
+import java.util.ArrayList;
+
 /**
  * Very efficient memory allocator for many small objects
  *
@@ -94,6 +97,20 @@ public final class SmallObjectHeap {
     }
 
     /**
+     * Dump a range of memory to a file.
+     *
+     * @param p_file
+     *     Destination file to dump to.
+     * @param p_addr
+     *     Start address.
+     * @param p_count
+     *     Number of bytes to dump.
+     */
+    public void dump(final File p_file, final long p_addr, final long p_count) {
+        m_memory.dump(p_file, p_addr, p_count);
+    }
+
+    /**
      * Allocate a memory block
      *
      * @param p_size
@@ -150,6 +167,82 @@ public final class SmallObjectHeap {
         } else {
             return reserveBlock(p_size, false);
         }
+    }
+
+    /**
+     * Allocate multiple blocks in a single call. This falls back to normal malloc if the
+     * allocator cannot find a single free block that fits all the sizes
+     *
+     * @param p_sizes
+     *     Sizes for the blocks to allocate
+     * @return List of addresses for the sizes on success, null on failure
+     */
+    public long[] multiMalloc(final int... p_sizes) {
+        long[] ret;
+
+        // number of marker bytes to separate blocks
+        // -1: one marker byte is already part of the free block
+        int bigChunkSize = p_sizes.length - 1;
+
+        for (int i = 0; i < p_sizes.length; i++) {
+            bigChunkSize += p_sizes[i];
+
+            if (p_sizes[i] <= MAX_SIZE_MEMORY_BLOCK) {
+                if (p_sizes[i] >= 1 << 16) {
+                    bigChunkSize += 3;
+                } else if (p_sizes[i] >= 1 << 8) {
+                    bigChunkSize += 2;
+                } else {
+                    bigChunkSize += 1;
+                }
+            } else {
+                int slices = p_sizes[i] / MAX_SIZE_MEMORY_BLOCK;
+                if (p_sizes[i] % MAX_SIZE_MEMORY_BLOCK > 0) {
+                    ++slices;
+                }
+
+                // we need additional marker bytes for further blocks added due to chaining
+                bigChunkSize += slices - 1;
+
+                // all blocks except the last one have a length field of 5
+                bigChunkSize += (slices - 1) * CHAINED_BLOCK_LENGTH_FIELD;
+
+                int lastBlockSize = p_sizes[i] % MAX_SIZE_MEMORY_BLOCK;
+
+                if (lastBlockSize >= 1 << 16) {
+                    bigChunkSize += 3;
+                } else if (lastBlockSize >= 1 << 8) {
+                    bigChunkSize += 2;
+                } else {
+                    bigChunkSize += 1;
+                }
+            }
+        }
+
+        ret = multiReserveBlocks(bigChunkSize, p_sizes);
+
+        if (ret == null) {
+            // fallback to single malloc calls on failure
+
+            ret = new long[p_sizes.length];
+
+            for (int i = 0; i < p_sizes.length; i++) {
+                long addr = malloc(p_sizes[i]);
+
+                if (addr == -1) {
+                    // roll back
+                    for (int j = 0; j < i; j++) {
+                        free(ret[j]);
+                    }
+
+                    return null;
+                }
+
+                ret[i] = addr;
+            }
+        }
+
+        return ret;
     }
 
     /**
@@ -1176,12 +1269,9 @@ public final class SmallObjectHeap {
      */
     private long reserveBlock(final int p_size, final boolean p_chainedBlock) {
         long ret = -1;
-        int list;
         long address;
-        long blockSize;
+        int blockSize;
         int lengthFieldSize;
-        long freeSize;
-        int freeLengthFieldSize;
         byte blockMarker;
 
         if (p_size > 0 && p_size <= MAX_SIZE_MEMORY_BLOCK) {
@@ -1206,65 +1296,13 @@ public final class SmallObjectHeap {
 
             blockSize = p_size + lengthFieldSize;
 
-            // Get the list with a free block which is big enough
-            list = getList(blockSize) + 1;
-            address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
-            while (list < m_freeBlocksListCount && address == 0) {
-                list++;
-                address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
-            }
-
-            if (list >= m_freeBlocksListCount) {
-                // Traverse through the lower list
-                list = getList(blockSize);
-                address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
-                if (address != 0) {
-                    freeLengthFieldSize = readRightPartOfMarker(address - 1);
-                    freeSize = read(address, freeLengthFieldSize);
-                    while (freeSize < blockSize && address != 0) {
-                        address = readPointer(address + freeLengthFieldSize + POINTER_SIZE);
-                        if (address != 0) {
-                            freeLengthFieldSize = readRightPartOfMarker(address - 1);
-                            freeSize = read(address, freeLengthFieldSize);
-                        }
-                    }
-                }
-            }
+            address = findFreeBlock(blockSize);
 
             if (address != 0) {
-                // Unhook the free block
+
                 unhookFreeBlock(address);
+                trimFreeBlockToSize(address, blockSize);
 
-                freeLengthFieldSize = readRightPartOfMarker(address - SIZE_MARKER_BYTE);
-                freeSize = read(address, freeLengthFieldSize);
-                if (freeSize == blockSize) {
-                    m_status.m_free -= blockSize;
-                    m_status.m_freeBlocks--;
-                    if (freeSize < SMALL_BLOCK_SIZE) {
-                        m_status.m_freeSmall64ByteBlocks--;
-                    }
-                } else if (freeSize == blockSize + 1) {
-                    // 1 Byte to big -> write two markers on the right
-                    writeRightPartOfMarker(address + blockSize, SINGLE_BYTE_MARKER);
-                    writeLeftPartOfMarker(address + blockSize + 1, SINGLE_BYTE_MARKER);
-
-                    // +1 for the marker byte added
-                    m_status.m_free -= blockSize + 1;
-                    m_status.m_freeBlocks--;
-                    if (freeSize + 1 < SMALL_BLOCK_SIZE) {
-                        m_status.m_freeSmall64ByteBlocks--;
-                    }
-                } else {
-                    // Block is too big -> create a new free block with the remaining size
-                    createFreeBlock(address + blockSize + 1, freeSize - blockSize - 1);
-
-                    // +1 for the marker byte added
-                    m_status.m_free -= blockSize + 1;
-
-                    if (freeSize >= SMALL_BLOCK_SIZE && freeSize - blockSize - 1 < SMALL_BLOCK_SIZE) {
-                        m_status.m_freeSmall64ByteBlocks++;
-                    }
-                }
                 // Write marker
                 writeLeftPartOfMarker(address + blockSize, blockMarker);
                 writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
@@ -1282,6 +1320,199 @@ public final class SmallObjectHeap {
 
         if (ret != -1) {
             m_status.m_allocatedPayload += p_size;
+            m_status.m_allocatedBlocks++;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Find a free block with a minimum size
+     *
+     * @param p_size
+     *     Number of bytes that have to fit into that block
+     * @return Address of the still hooked free block
+     */
+    private long findFreeBlock(final int p_size) {
+        int list;
+        long address;
+        long freeSize;
+        int freeLengthFieldSize;
+
+        // Get the list with a free block which is big enough
+        list = getList(p_size) + 1;
+        address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
+        while (list < m_freeBlocksListCount && address == 0) {
+            list++;
+            address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
+        }
+
+        if (list >= m_freeBlocksListCount) {
+            // Traverse through the lower list
+            list = getList(p_size);
+            address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
+            if (address != 0) {
+                freeLengthFieldSize = readRightPartOfMarker(address - 1);
+                freeSize = read(address, freeLengthFieldSize);
+                while (freeSize < p_size && address != 0) {
+                    address = readPointer(address + freeLengthFieldSize + POINTER_SIZE);
+                    if (address != 0) {
+                        freeLengthFieldSize = readRightPartOfMarker(address - 1);
+                        freeSize = read(address, freeLengthFieldSize);
+                    }
+                }
+            }
+        }
+
+        return address;
+    }
+
+    /**
+     * Uses an unhooked block and trims it to the right size to exactly fit the
+     * specified number of bytes. The unused space is hooked back as free space.
+     *
+     * @param p_address
+     *     Address of the unhooked block to trim
+     * @param p_size
+     *     Size to trim the block to
+     */
+    private void trimFreeBlockToSize(final long p_address, final long p_size) {
+        long freeSize;
+        int freeLengthFieldSize;
+
+        freeLengthFieldSize = readRightPartOfMarker(p_address - SIZE_MARKER_BYTE);
+        freeSize = read(p_address, freeLengthFieldSize);
+        if (freeSize == p_size) {
+            m_status.m_free -= p_size;
+            m_status.m_freeBlocks--;
+            if (freeSize < SMALL_BLOCK_SIZE) {
+                m_status.m_freeSmall64ByteBlocks--;
+            }
+        } else if (freeSize == p_size + 1) {
+            // 1 Byte to big -> write two markers on the right
+            writeRightPartOfMarker(p_address + p_size, SINGLE_BYTE_MARKER);
+            writeLeftPartOfMarker(p_address + p_size + 1, SINGLE_BYTE_MARKER);
+
+            // +1 for the marker byte added
+            m_status.m_free -= p_size + 1;
+            m_status.m_freeBlocks--;
+            if (freeSize + 1 < SMALL_BLOCK_SIZE) {
+                m_status.m_freeSmall64ByteBlocks--;
+            }
+        } else {
+            // Block is too big -> create a new free block with the remaining size
+            createFreeBlock(p_address + p_size + 1, freeSize - p_size - 1);
+
+            // +1 for the marker byte added
+            m_status.m_free -= p_size + 1;
+
+            if (freeSize >= SMALL_BLOCK_SIZE && freeSize - p_size - 1 < SMALL_BLOCK_SIZE) {
+                m_status.m_freeSmall64ByteBlocks++;
+            }
+        }
+    }
+
+    /**
+     * Reserve multiple blocks with a single call reducing metadata processing overhead
+     *
+     * @param p_bigBlockSize
+     *     Total size of the block to reserve. This already needs to include all marker bytes and length fields aside the payload sizes
+     * @param p_sizes
+     *     List of block sizes (payloads, only)
+     * @return Addresses of the allocated blocks
+     */
+    private long[] multiReserveBlocks(final int p_bigBlockSize, final int[] p_sizes) {
+        long[] ret;
+        int size;
+        long address;
+        int lengthFieldSize;
+        byte blockMarker;
+
+        address = findFreeBlock(p_bigBlockSize);
+
+        // no free block found
+        if (address == 0) {
+            return null;
+        }
+
+        unhookFreeBlock(address);
+        trimFreeBlockToSize(address, p_bigBlockSize);
+
+        ret = new long[p_sizes.length];
+
+        ArrayList<Long> chainedBlocks = new ArrayList<>();
+
+        for (int i = 0; i < p_sizes.length; i++) {
+
+            size = p_sizes[i];
+
+            if (size > MAX_SIZE_MEMORY_BLOCK) {
+
+                // chained block
+
+                int slices = size / MAX_SIZE_MEMORY_BLOCK;
+                if (size % MAX_SIZE_MEMORY_BLOCK > 0) {
+                    ++slices;
+                }
+
+                // length field contains the ptr to the next block in the chain
+                // payload block is still MAX_SIZE_MEMORY_BLOCK in size
+                lengthFieldSize = CHAINED_BLOCK_LENGTH_FIELD;
+
+                // return root of chained blocks
+                ret[i] = address;
+
+                for (int j = 0; j < slices - 1; j++) {
+                    blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
+
+                    writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
+                    writeLeftPartOfMarker(address + lengthFieldSize + MAX_SIZE_MEMORY_BLOCK, blockMarker);
+
+                    // +1: right side marker byte
+                    address += lengthFieldSize + MAX_SIZE_MEMORY_BLOCK + 1;
+
+                    chainedBlocks.add(address);
+
+                    m_status.m_allocatedBlocks++;
+                }
+
+                size %= MAX_SIZE_MEMORY_BLOCK;
+            }
+
+            if (size >= 1 << 16) {
+                lengthFieldSize = 3;
+            } else if (size >= 1 << 8) {
+                lengthFieldSize = 2;
+            } else {
+                lengthFieldSize = 1;
+            }
+
+            blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
+
+            writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
+            writeLeftPartOfMarker(address + lengthFieldSize + size, blockMarker);
+            write(address, size, lengthFieldSize);
+
+            // don't overwrite root of chained blocks if chained block
+            if (ret[i] == 0) {
+                ret[i] = address;
+            } else {
+                long curBlock = ret[i];
+
+                // chain blocks
+                for (Long block : chainedBlocks) {
+                    write(curBlock, block, 5);
+                    curBlock = block;
+                }
+
+                chainedBlocks.clear();
+            }
+
+            // +1 : right side marker byte
+            address += lengthFieldSize + size + 1;
+
+            // update full size
+            m_status.m_allocatedPayload += p_sizes[i];
             m_status.m_allocatedBlocks++;
         }
 
