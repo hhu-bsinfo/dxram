@@ -50,6 +50,15 @@ public class StatisticsRecorder {
         }
     }
 
+    /**
+     * Reset all operations
+     */
+    public void reset() {
+        for (StatisticsOperation op : m_operations.values()) {
+            op.reset();
+        }
+    }
+
     @Override
     public String toString() {
         String str = '[' + m_recorderName + ']';

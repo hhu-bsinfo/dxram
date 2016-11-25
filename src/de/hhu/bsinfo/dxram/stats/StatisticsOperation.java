@@ -63,6 +63,14 @@ public final class StatisticsOperation {
     }
 
     /**
+     * Reset all recorded values
+     */
+    public void reset() {
+        m_statsMap[0] = new Stats[ms_blockSizeStatsMap];
+        m_statsMapBlockPos = 1;
+    }
+
+    /**
      * Call this when/before you start/enter the call/operation you want
      * to record.
      */

@@ -60,6 +60,15 @@ public class StatisticsService extends AbstractDXRAMService {
     }
 
     /**
+     * Reset all statistics
+     */
+    public static void resetStatistics() {
+        for (StatisticsRecorder recorder : StatisticsRecorderManager.getRecorders()) {
+            recorder.reset();
+        }
+    }
+
+    /**
      * Print the statistics of a specific recorder to the console.
      *
      * @param p_class

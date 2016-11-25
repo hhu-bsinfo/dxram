@@ -238,6 +238,19 @@ public class ChunkComponent extends AbstractDXRAMComponent {
         m_memoryManager.unlockManage();
     }
 
+    public boolean putRecoveredChunks(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
+
+        if (m_memoryManager.createAndPutRecovered(p_chunkIDs, p_data, p_offsets, p_lengths, p_usedEntries) != MemoryErrorCodes.SUCCESS) {
+            return false;
+        }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("Stored recovered %d chunks locally", p_chunkIDs.length);
+        // #endif /* LOGGER == TRACE */
+
+        return true;
+    }
+
     /**
      * Puts migrated or recovered Chunks
      *

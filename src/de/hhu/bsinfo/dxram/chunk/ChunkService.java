@@ -227,7 +227,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      * @return ChunkIDs/Handles identifying the created chunks.
      */
     public long[] create(final int p_size, final int p_count) {
-        long[] chunkIDs;
+        long[] chunkIDs = null;
 
         assert p_size > 0 && p_count > 0;
 
@@ -247,18 +247,34 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         SOP_CREATE.enter(p_count);
         // #endif /* STATISTICS */
 
-        chunkIDs = new long[p_count];
+        if (p_count == 1) {
+            m_memoryManager.lockManage();
+            long chunkId = m_memoryManager.create(p_size);
+            m_memoryManager.unlockManage();
 
-        m_memoryManager.lockManage();
+            if (chunkId != -1) {
+                chunkIDs = new long[] {chunkId};
+            }
+        } else {
+            m_memoryManager.lockManage();
+            chunkIDs = m_memoryManager.createMulti(p_size, p_count);
+            m_memoryManager.unlockManage();
+        }
+
+        if (chunkIDs == null) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Multi create for size %d, count %d failed", p_size, p_count);
+            // #endif /* LOGGER >= ERROR */
+            return null;
+        }
+
         // keep loop tight and execute everything
         // that we don't have to lock outside of this section
         for (int i = 0; i < p_count; i++) {
-            chunkIDs[i] = m_memoryManager.create(p_size);
             // tell the superpeer overlay about our newly created chunks, otherwise they can not be found
             // by other peers (network traffic for backup range initialization only (e.g. every 256 MB))
             m_backup.initBackupRange(chunkIDs[i], p_size);
         }
-        m_memoryManager.unlockManage();
 
         // #ifdef STATISTICS
         SOP_CREATE.leave();
@@ -302,6 +318,37 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #ifdef STATISTICS
         SOP_CREATE.enter(p_dataStructures.length);
         // #endif /* STATISTICS */
+
+        if (p_dataStructures.length == 1) {
+            m_memoryManager.lockManage();
+            long chunkID = m_memoryManager.create(p_dataStructures[0].sizeofObject());
+            m_memoryManager.unlockManage();
+            if (chunkID != ChunkID.INVALID_ID) {
+                count++;
+                p_dataStructures[0].setID(chunkID);
+                // tell the superpeer overlay about our newly created chunks, otherwise they can not be found
+                // by other peers (network traffic for backup range initialization only (e.g. every 256 MB))
+                m_backup.initBackupRange(p_dataStructures[0].getID(), p_dataStructures[0].sizeofObject());
+            } else {
+                p_dataStructures[0].setID(ChunkID.INVALID_ID);
+            }
+        } else {
+            m_memoryManager.lockManage();
+            long[] chunkIDs = m_memoryManager.createMulti(p_dataStructures);
+            m_memoryManager.unlockManage();
+
+            if (chunkIDs == null) {
+                // TODO error handling
+                return count;
+            }
+
+            for (int i = 0; i < chunkIDs.length; i++) {
+                p_dataStructures[i].setID(chunkIDs[i]);
+                // tell the superpeer overlay about our newly created chunks, otherwise they can not be found
+                // by other peers (network traffic for backup range initialization only (e.g. every 256 MB))
+                m_backup.initBackupRange(p_dataStructures[i].getID(), p_dataStructures[i].sizeofObject());
+            }
+        }
 
         m_memoryManager.lockManage();
         // keep loop tight and execute everything
@@ -368,16 +415,32 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
         chunkIDs = new long[p_sizes.length];
 
-        m_memoryManager.lockManage();
-        // keep loop tight and execute everything
-        // that we don't have to lock outside of this section
-        for (int i = 0; i < p_sizes.length; i++) {
-            chunkIDs[i] = m_memoryManager.create(p_sizes[i]);
+        if (p_sizes.length == 1) {
+            m_memoryManager.lockManage();
+            chunkIDs[0] = m_memoryManager.create(p_sizes[0]);
+            m_memoryManager.unlockManage();
+
             // tell the superpeer overlay about our newly created chunks, otherwise they can not be found
             // by other peers (network traffic for backup range initialization only (e.g. every 256 MB))
-            m_backup.initBackupRange(chunkIDs[i], p_sizes[i]);
+            m_backup.initBackupRange(chunkIDs[0], p_sizes[0]);
+        } else {
+            m_memoryManager.lockManage();
+            chunkIDs = m_memoryManager.createMultiSizes(p_sizes);
+            m_memoryManager.unlockManage();
+
+            if (chunkIDs == null) {
+                // TODO error handling
+                return null;
+            }
+
+            // keep loop tight and execute everything
+            // that we don't have to lock outside of this section
+            for (int i = 0; i < p_sizes.length; i++) {
+                // tell the superpeer overlay about our newly created chunks, otherwise they can not be found
+                // by other peers (network traffic for backup range initialization only (e.g. every 256 MB))
+                m_backup.initBackupRange(chunkIDs[i], p_sizes[i]);
+            }
         }
-        m_memoryManager.unlockManage();
 
         // #ifdef STATISTICS
         SOP_CREATE.leave();

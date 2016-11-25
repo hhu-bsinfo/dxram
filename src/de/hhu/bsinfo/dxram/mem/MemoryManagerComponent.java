@@ -314,6 +314,172 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         return chunkID;
     }
 
+    public long[] createMultiSizes(final int... p_sizes) {
+        long[] addresses;
+        long[] lids;
+
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("A %s is not allowed to create a chunk", role);
+            // #endif /* LOGGER >= ERROR */
+            return null;
+        }
+
+        // #ifdef STATISTICS
+        SOP_CREATE.enter();
+        // #endif /* STATISTICS */
+
+        // TODO lid multi create
+
+        // get new LIDs
+        lids = new long[p_sizes.length];
+        for (int i = 0; i < lids.length; i++) {
+            lids[i] = m_cidTable.getFreeLID();
+            if (lids[i] == -1) {
+                // TODO error handling
+                return null;
+            }
+        }
+
+        // first, try to allocate. maybe early return
+        // #ifdef STATISTICS
+        // TODO multi malloc
+        //  SOP_MALLOC.enter(p_size);
+        // #endif /* STATISTICS */
+        addresses = m_rawMemory.multiMallocSizes(p_sizes);
+        // #ifdef STATISTICS
+        //SOP_MALLOC.leave();
+        // #endif /* STATISTICS */
+        if (addresses != null) {
+
+            for (int i = 0; i < lids.length; i++) {
+                lids[i] = ((long) m_boot.getNodeID() << 48) + lids[i];
+
+                // TODO multi set?
+
+                // register new chunk in cid table
+                if (!m_cidTable.set(lids[i], addresses[i])) {
+                    // on demand allocation of new table failed
+                    // free previously created chunk for data to avoid memory leak
+                    m_rawMemory.free(addresses[i]);
+
+                    // TODO error handling
+                } else {
+                    m_numActiveChunks++;
+                    m_totalActiveChunkMemory += p_sizes[i];
+                }
+            }
+
+        } else {
+            // most likely out of memory
+            // #if LOGGER >= ERROR
+            //            LOGGER.fatal("Creating chunk with size %d failed, most likely out of memory, free %d, total %d", p_size, m_rawMemory.getStatus().getFree(),
+            //                m_rawMemory.getStatus().getSize());
+            // #endif /* LOGGER >= ERROR */
+
+            // put lids back
+            // TODO multi put back
+            for (int i = 0; i < lids.length; i++) {
+                m_cidTable.putChunkIDForReuse(lids[i]);
+            }
+        }
+
+        // #ifdef STATISTICS
+        //SOP_CREATE.leave();
+        // #endif /* STATISTICS */
+
+        return lids;
+    }
+
+    public long[] createMulti(final DataStructure... p_dataStructures) {
+        int[] sizes = new int[p_dataStructures.length];
+
+        for (int i = 0; i < p_dataStructures.length; i++) {
+            sizes[i] = p_dataStructures[i].sizeofObject();
+        }
+
+        return createMultiSizes(sizes);
+    }
+
+    public long[] createMulti(final int p_size, final int p_count) {
+        long[] addresses;
+        long[] lids;
+
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("A %s is not allowed to create a chunk", role);
+            // #endif /* LOGGER >= ERROR */
+            return null;
+        }
+
+        // #ifdef STATISTICS
+        SOP_CREATE.enter();
+        // #endif /* STATISTICS */
+
+        // TODO lid multi create
+
+        // get new LIDs
+        lids = new long[p_count];
+        for (int i = 0; i < lids.length; i++) {
+            lids[i] = m_cidTable.getFreeLID();
+            if (lids[i] == -1) {
+                // TODO error handling
+                return null;
+            }
+        }
+
+        // first, try to allocate. maybe early return
+        // #ifdef STATISTICS
+        // TODO multi malloc
+        //  SOP_MALLOC.enter(p_size);
+        // #endif /* STATISTICS */
+        addresses = m_rawMemory.multiMalloc(p_size, p_count);
+        // #ifdef STATISTICS
+        //SOP_MALLOC.leave();
+        // #endif /* STATISTICS */
+        if (addresses != null) {
+
+            for (int i = 0; i < lids.length; i++) {
+                lids[i] = ((long) m_boot.getNodeID() << 48) + lids[i];
+
+                // TODO multi set?
+
+                // register new chunk in cid table
+                if (!m_cidTable.set(lids[i], addresses[i])) {
+                    // on demand allocation of new table failed
+                    // free previously created chunk for data to avoid memory leak
+                    m_rawMemory.free(addresses[i]);
+
+                    // TODO error handling
+                } else {
+                    m_numActiveChunks++;
+                    m_totalActiveChunkMemory += p_size;
+                }
+            }
+
+        } else {
+            // most likely out of memory
+            // #if LOGGER >= ERROR
+            //            LOGGER.fatal("Creating chunk with size %d failed, most likely out of memory, free %d, total %d", p_size, m_rawMemory.getStatus().getFree(),
+            //                m_rawMemory.getStatus().getSize());
+            // #endif /* LOGGER >= ERROR */
+
+            // put lids back
+            // TODO multi put back
+            for (int i = 0; i < lids.length; i++) {
+                m_cidTable.putChunkIDForReuse(lids[i]);
+            }
+        }
+
+        // #ifdef STATISTICS
+        //SOP_CREATE.leave();
+        // #endif /* STATISTICS */
+
+        return lids;
+    }
+
     /**
      * Create a new chunk.
      * This is a management call and has to be locked using lockManage().
@@ -612,6 +778,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         // #endif /* STATISTICS */
 
         return ret;
+    }
+
+    public MemoryErrorCodes createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths,
+        final int p_usedEntries) {
+
+        // TODO: needs create with chunk ID call + put in tight loop
+
     }
 
     // -----------------------------------------------------------------------------

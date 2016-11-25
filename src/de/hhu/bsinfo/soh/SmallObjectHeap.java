@@ -177,7 +177,7 @@ public final class SmallObjectHeap {
      *     Sizes for the blocks to allocate
      * @return List of addresses for the sizes on success, null on failure
      */
-    public long[] multiMalloc(final int... p_sizes) {
+    public long[] multiMallocSizes(final int... p_sizes) {
         long[] ret;
 
         // number of marker bytes to separate blocks
@@ -228,6 +228,80 @@ public final class SmallObjectHeap {
 
             for (int i = 0; i < p_sizes.length; i++) {
                 long addr = malloc(p_sizes[i]);
+
+                if (addr == -1) {
+                    // roll back
+                    for (int j = 0; j < i; j++) {
+                        free(ret[j]);
+                    }
+
+                    return null;
+                }
+
+                ret[i] = addr;
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Allocate multiple blocks in a single call. This falls back to normal malloc if the
+     * allocator cannot find a single free block that fits all the sizes
+     *
+     * @param p_size
+     *     Size of one block to allocate
+     * @param p_count
+     *     Number of blocks of p_size each to allocate
+     * @return List of addresses for the sizes on success, null on failure
+     */
+    public long[] multiMalloc(final int p_size, final int p_count) {
+        long[] ret;
+
+        // number of marker bytes to separate blocks
+        // -1: one marker byte is already part of the free block
+        int bigChunkSize = p_count - 1;
+
+        if (p_size <= MAX_SIZE_MEMORY_BLOCK) {
+            if (p_size >= 1 << 16) {
+                bigChunkSize += 3 * p_count;
+            } else if (p_size >= 1 << 8) {
+                bigChunkSize += 2 * p_count;
+            } else {
+                bigChunkSize += 1 * p_count;
+            }
+        } else {
+            int slices = p_size / MAX_SIZE_MEMORY_BLOCK;
+            if (p_size % MAX_SIZE_MEMORY_BLOCK > 0) {
+                ++slices;
+            }
+
+            // we need additional marker bytes for further blocks added due to chaining
+            bigChunkSize += (slices - 1) * p_count;
+
+            // all blocks except the last one have a length field of 5
+            bigChunkSize += (slices - 1) * CHAINED_BLOCK_LENGTH_FIELD * p_count;
+
+            int lastBlockSize = p_size % MAX_SIZE_MEMORY_BLOCK;
+
+            if (lastBlockSize >= 1 << 16) {
+                bigChunkSize += 3 * p_count;
+            } else if (lastBlockSize >= 1 << 8) {
+                bigChunkSize += 2 * p_count;
+            } else {
+                bigChunkSize += 1 * p_count;
+            }
+        }
+
+        ret = multiReserveBlocks(bigChunkSize, p_size, p_count);
+
+        if (ret == null) {
+            // fallback to single malloc calls on failure
+
+            ret = new long[p_count];
+
+            for (int i = 0; i < p_count; i++) {
+                long addr = malloc(p_size);
 
                 if (addr == -1) {
                     // roll back
@@ -1513,6 +1587,115 @@ public final class SmallObjectHeap {
 
             // update full size
             m_status.m_allocatedPayload += p_sizes[i];
+            m_status.m_allocatedBlocks++;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Reserve multiple blocks with a single call reducing metadata processing overhead
+     *
+     * @param p_bigBlockSize
+     *     Total size of the block to reserve. This already needs to include all marker bytes and length fields aside the payload sizes
+     * @param p_size
+     *     Size of the block
+     * @param p_count
+     *     Number of blocks of p_size each
+     * @return Addresses of the allocated blocks
+     */
+    private long[] multiReserveBlocks(final int p_bigBlockSize, final int p_size, final int p_count) {
+        long[] ret;
+        int size;
+        long address;
+        int lengthFieldSize;
+        byte blockMarker;
+
+        address = findFreeBlock(p_bigBlockSize);
+
+        // no free block found
+        if (address == 0) {
+            return null;
+        }
+
+        unhookFreeBlock(address);
+        trimFreeBlockToSize(address, p_bigBlockSize);
+
+        ret = new long[p_count];
+
+        ArrayList<Long> chainedBlocks = new ArrayList<>();
+
+        for (int i = 0; i < p_count; i++) {
+
+            size = p_size;
+
+            if (size > MAX_SIZE_MEMORY_BLOCK) {
+
+                // chained block
+
+                int slices = size / MAX_SIZE_MEMORY_BLOCK;
+                if (size % MAX_SIZE_MEMORY_BLOCK > 0) {
+                    ++slices;
+                }
+
+                // length field contains the ptr to the next block in the chain
+                // payload block is still MAX_SIZE_MEMORY_BLOCK in size
+                lengthFieldSize = CHAINED_BLOCK_LENGTH_FIELD;
+
+                // return root of chained blocks
+                ret[i] = address;
+
+                for (int j = 0; j < slices - 1; j++) {
+                    blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
+
+                    writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
+                    writeLeftPartOfMarker(address + lengthFieldSize + MAX_SIZE_MEMORY_BLOCK, blockMarker);
+
+                    // +1: right side marker byte
+                    address += lengthFieldSize + MAX_SIZE_MEMORY_BLOCK + 1;
+
+                    chainedBlocks.add(address);
+
+                    m_status.m_allocatedBlocks++;
+                }
+
+                size %= MAX_SIZE_MEMORY_BLOCK;
+            }
+
+            if (size >= 1 << 16) {
+                lengthFieldSize = 3;
+            } else if (size >= 1 << 8) {
+                lengthFieldSize = 2;
+            } else {
+                lengthFieldSize = 1;
+            }
+
+            blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
+
+            writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
+            writeLeftPartOfMarker(address + lengthFieldSize + size, blockMarker);
+            write(address, size, lengthFieldSize);
+
+            // don't overwrite root of chained blocks if chained block
+            if (ret[i] == 0) {
+                ret[i] = address;
+            } else {
+                long curBlock = ret[i];
+
+                // chain blocks
+                for (Long block : chainedBlocks) {
+                    write(curBlock, block, 5);
+                    curBlock = block;
+                }
+
+                chainedBlocks.clear();
+            }
+
+            // +1 : right side marker byte
+            address += lengthFieldSize + size + 1;
+
+            // update full size
+            m_status.m_allocatedPayload += p_size;
             m_status.m_allocatedBlocks++;
         }
 

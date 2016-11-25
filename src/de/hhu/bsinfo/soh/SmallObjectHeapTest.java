@@ -307,7 +307,7 @@ public final class SmallObjectHeapTest {
                         }
 
                         LOCK.lock();
-                        long[] ptrs = m_memory.multiMalloc(sizes);
+                        long[] ptrs = m_memory.multiMallocSizes(sizes);
                         LOCK.unlock();
 
                         if (ptrs == null) {

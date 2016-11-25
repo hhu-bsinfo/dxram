@@ -46,50 +46,82 @@ public class ChunkServiceBenchmarkPeer extends DXRAMMain {
         int batchSize = p_arguments.getArgument(ARG_BATCH_SIZE).getValue(Integer.class);
         int chunkSize = p_arguments.getArgument(ARG_CHUNK_SIZE).getValue(Integer.class);
 
-        ChunkService chunkService = getService(ChunkService.class);
-
         System.out.printf("Running with %d chunks in batches of %d, chunk size %d\n", numChunks, batchSize, chunkSize);
 
-        Chunk[] chunks = new Chunk[batchSize];
+        System.out.println(">>> Test 1");
+        test1(numChunks, batchSize, chunkSize);
+        StatisticsService.printStatistics();
+        System.out.println("=======================================");
+        StatisticsService.resetStatistics();
+
+        System.out.println(">>> Test 2");
+        test2(numChunks, batchSize, chunkSize);
+        StatisticsService.printStatistics();
+        System.out.println("=======================================");
+        StatisticsService.resetStatistics();
+
+        System.out.println("Done");
+
+        return 0;
+    }
+
+    private void test1(final int p_numChunks, final int p_batchSize, final int p_chunkSize) {
+        ChunkService chunkService = getService(ChunkService.class);
+
+        Chunk[] chunks = new Chunk[p_batchSize];
         for (int i = 0; i < chunks.length; i++) {
-            chunks[i] = new Chunk(chunkSize);
+            chunks[i] = new Chunk(p_chunkSize);
 
             // fill with incremental data
-            for (int j = 0; j < chunkSize; j++) {
+            for (int j = 0; j < p_chunkSize; j++) {
                 chunks[i].getData().put((byte) j);
             }
         }
 
-        int iterations = numChunks / batchSize;
+        int iterations = p_numChunks / p_batchSize;
 
         for (int i = 0; i < iterations; i++) {
             if (chunkService.create(chunks) != chunks.length) {
                 System.out.println("ERROR: Creating chunks failed.");
-                return -1;
+                System.exit(-1);
             }
 
             if (chunkService.put(chunks) != chunks.length) {
                 System.out.println("ERROR: Putting chunks failed.");
-                return -2;
+                System.exit(-2);
             }
 
             if (chunkService.get(chunks) != chunks.length) {
                 System.out.println("ERROR: Getting chunks failed.");
-                return -3;
+                System.exit(-3);
             }
 
             // TODO check if data is correct
 
             if (chunkService.remove(chunks) != chunks.length) {
                 System.out.println("ERROR: Removing chunks failed.");
-                return -4;
+                System.exit(-4);
             }
         }
+    }
 
-        System.out.println("Done");
+    private void test2(final int p_numChunks, final int p_batchSize, final int p_chunkSize) {
+        ChunkService chunkService = getService(ChunkService.class);
 
-        StatisticsService.printStatistics();
+        int iterations = p_numChunks / p_batchSize;
 
-        return 0;
+        for (int i = 0; i < iterations; i++) {
+            long[] chunkdIDs = chunkService.create(p_chunkSize, p_batchSize);
+
+            if (chunkdIDs == null) {
+                System.out.println("ERROR: Creating chunks failed.");
+                System.exit(-1);
+            }
+
+            if (chunkService.remove(chunkdIDs) != chunkdIDs.length) {
+                System.out.println("ERROR: Removing chunks failed.");
+                System.exit(-2);
+            }
+        }
     }
 }
