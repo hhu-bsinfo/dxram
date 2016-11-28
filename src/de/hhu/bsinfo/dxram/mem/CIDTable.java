@@ -183,6 +183,9 @@ public final class CIDTable {
         m_store = new LIDStore();
         m_nextLocalID = new AtomicLong(1);
 
+        // NOTE: 10 seems to be a good value because it doesn't add too much overhead when creating huge ranges chunks
+        // but still allows 10 * 4096 translations to be cached for fast lookup and gets/puts
+        // (value determined by profiling the application)
         m_cache = new TranslationCache(10);
 
         // #if LOGGER >= INFO
@@ -897,6 +900,7 @@ public final class CIDTable {
         public void putTableLevel0(final long p_chunkID, final long p_addressTable) {
             m_chunkIDs[m_cachePos] = p_chunkID & 0xFFFFFFFFFFFFF000L;
             m_tableLevel0Addr[m_cachePos] = p_addressTable;
+            m_cachePos = (m_cachePos + 1) % m_chunkIDs.length;
         }
     }
 }
