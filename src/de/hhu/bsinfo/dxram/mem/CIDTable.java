@@ -44,8 +44,9 @@ public final class CIDTable {
     private long m_totalMemoryTables = -1;
 
     private LIDStore m_store;
-
     private AtomicLong m_nextLocalID;
+
+    private TranslationCache m_cache;
 
     /**
      * Creates an instance of CIDTable
@@ -181,6 +182,8 @@ public final class CIDTable {
 
         m_store = new LIDStore();
         m_nextLocalID = new AtomicLong(1);
+
+        m_cache = new TranslationCache(10);
 
         // #if LOGGER >= INFO
         LOGGER.info("CIDTable: init success (page directory at: 0x%X)", m_addressTableDirectory);
@@ -382,8 +385,16 @@ public final class CIDTable {
         long index;
         long entry;
 
-        int level = p_level;
-        long addressTable = p_addressTable;
+        int level = 0;
+        long addressTable;
+        boolean putCache = false;
+
+        addressTable = m_cache.getTableLevel0(p_chunkID);
+        if (addressTable == -1) {
+            level = p_level;
+            addressTable = p_addressTable;
+            putCache = true;
+        }
 
         do {
             if (level == LID_TABLE_LEVELS) {
@@ -402,6 +413,10 @@ public final class CIDTable {
                 // move on to next table
                 addressTable = entry & BITMASK_ADDRESS;
             } else {
+                if (putCache) {
+                    m_cache.putTableLevel0(p_chunkID, addressTable);
+                }
+
                 return readEntry(addressTable, index) & BITMASK_ADDRESS;
             }
 
@@ -428,8 +443,16 @@ public final class CIDTable {
         long index;
         long entry;
 
-        int level = p_level;
-        long addressTable = p_addressTable;
+        int level = 0;
+        long addressTable;
+        boolean putCache = false;
+
+        addressTable = m_cache.getTableLevel0(p_chunkID);
+        if (addressTable == -1) {
+            level = p_level;
+            addressTable = p_addressTable;
+            putCache = true;
+        }
 
         do {
             if (level == LID_TABLE_LEVELS) {
@@ -452,9 +475,15 @@ public final class CIDTable {
                 // move on to next table
                 addressTable = entry & BITMASK_ADDRESS;
             } else {
+                if (putCache) {
+                    m_cache.putTableLevel0(p_chunkID, addressTable);
+                }
+
                 // Set the level 0 entry
                 // valid and active entry, delete flag 0
                 writeEntry(addressTable, index, p_addressChunk & BITMASK_ADDRESS);
+
+                return true;
             }
 
             level--;
@@ -810,5 +839,64 @@ public final class CIDTable {
          * @return the NodeID
          */
         short getNodeId();
+    }
+
+    /**
+     * Cache for translated addresses
+     */
+    private static final class TranslationCache {
+
+        private long[] m_chunkIDs;
+        private long[] m_tableLevel0Addr;
+        private int m_cachePos;
+
+        /**
+         * Constructor
+         *
+         * @param p_size
+         *     Number of entries for the cache
+         */
+        public TranslationCache(final int p_size) {
+            m_chunkIDs = new long[p_size];
+            m_tableLevel0Addr = new long[p_size];
+            m_cachePos = 0;
+
+            for (int i = 0; i < p_size; i++) {
+                m_chunkIDs[i] = -1;
+                m_tableLevel0Addr[i] = -1;
+            }
+        }
+
+        /**
+         * Try to get the table level 0 entry for the chunk id
+         *
+         * @param p_chunkID
+         *     Chunk id for cache lookup of table level 0
+         * @return Address of level 0 table or -1 if not cached
+         */
+        public long getTableLevel0(final long p_chunkID) {
+            long tableLevel0IDRange = p_chunkID & 0xFFFFFFFFFFFFF000L;
+
+            for (int i = 0; i < m_chunkIDs.length; i++) {
+                if (m_chunkIDs[i] == tableLevel0IDRange) {
+                    return m_tableLevel0Addr[i];
+                }
+            }
+
+            return -1;
+        }
+
+        /**
+         * Put a new entry into the cache
+         *
+         * @param p_chunkID
+         *     Chunk id of the table level 0 to be cached
+         * @param p_addressTable
+         *     Address of the level 0 table
+         */
+        public void putTableLevel0(final long p_chunkID, final long p_addressTable) {
+            m_chunkIDs[m_cachePos] = p_chunkID & 0xFFFFFFFFFFFFF000L;
+            m_tableLevel0Addr[m_cachePos] = p_addressTable;
+        }
     }
 }

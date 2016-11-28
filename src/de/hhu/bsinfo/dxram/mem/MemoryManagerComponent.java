@@ -42,14 +42,19 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         SUCCESS, UNKNOWN, DOES_NOT_EXIST, READ, WRITE, OUT_OF_MEMORY, INVALID_NODE_ROLE,
     }
 
+    private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
+
     // statistics recording
     static final StatisticsOperation SOP_MALLOC = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Malloc");
-    private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
+    private static final StatisticsOperation SOP_MULTI_MALLOC = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "MultiMalloc");
     private static final StatisticsOperation SOP_FREE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Free");
     private static final StatisticsOperation SOP_GET = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Get");
     private static final StatisticsOperation SOP_PUT = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Put");
     private static final StatisticsOperation SOP_CREATE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Create");
+    private static final StatisticsOperation SOP_MULTI_CREATE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "MultiCreate");
     private static final StatisticsOperation SOP_REMOVE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Remove");
+    private static final StatisticsOperation SOP_CREATE_PUT_RECOVERED =
+        StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateAndPutRecovered");
     // configuration values
     @Expose
     private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
@@ -282,6 +287,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             return chunkID;
         }
 
+        // #ifdef STATISTICS
+        SOP_CREATE.enter();
+        // #endif /* STATISTICS */
+
         chunkID = p_chunkId;
 
         if (p_size > SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK) {
@@ -311,6 +320,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             }
         }
 
+        // #ifdef STATISTICS
+        SOP_CREATE.leave();
+        // #endif /* STATISTICS */
+
         return chunkID;
     }
 
@@ -327,44 +340,44 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         }
 
         // #ifdef STATISTICS
-        SOP_CREATE.enter();
+        SOP_MULTI_CREATE.enter();
         // #endif /* STATISTICS */
-
-        // TODO lid multi create
 
         // get new LIDs
         lids = new long[p_sizes.length];
         for (int i = 0; i < lids.length; i++) {
             lids[i] = m_cidTable.getFreeLID();
             if (lids[i] == -1) {
-                // TODO error handling
+                // #if LOGGER >= ERROR
+                LOGGER.fatal("Allocating new LIDs failed, out of LIDs");
+                // #endif /* LOGGER >= ERROR */
                 return null;
             }
         }
 
-        // first, try to allocate. maybe early return
         // #ifdef STATISTICS
-        // TODO multi malloc
-        //  SOP_MALLOC.enter(p_size);
+        SOP_MULTI_MALLOC.enter(p_sizes.length);
         // #endif /* STATISTICS */
         addresses = m_rawMemory.multiMallocSizes(p_sizes);
         // #ifdef STATISTICS
-        //SOP_MALLOC.leave();
+        SOP_MULTI_MALLOC.leave();
         // #endif /* STATISTICS */
         if (addresses != null) {
 
             for (int i = 0; i < lids.length; i++) {
                 lids[i] = ((long) m_boot.getNodeID() << 48) + lids[i];
 
-                // TODO multi set?
-
                 // register new chunk in cid table
                 if (!m_cidTable.set(lids[i], addresses[i])) {
-                    // on demand allocation of new table failed
-                    // free previously created chunk for data to avoid memory leak
-                    m_rawMemory.free(addresses[i]);
 
-                    // TODO error handling
+                    for (int j = i; j >= 0; j--) {
+                        // on demand allocation of new table failed
+                        // free previously created chunk for data to avoid memory leak
+                        m_rawMemory.free(addresses[j]);
+                    }
+
+                    lids = null;
+                    break;
                 } else {
                     m_numActiveChunks++;
                     m_totalActiveChunkMemory += p_sizes[i];
@@ -374,19 +387,20 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         } else {
             // most likely out of memory
             // #if LOGGER >= ERROR
-            //            LOGGER.fatal("Creating chunk with size %d failed, most likely out of memory, free %d, total %d", p_size, m_rawMemory.getStatus().getFree(),
-            //                m_rawMemory.getStatus().getSize());
+            LOGGER.fatal("Multi create chunks failed, most likely out of memory, free %d, total %d", m_rawMemory.getStatus().getFree(),
+                m_rawMemory.getStatus().getSize());
             // #endif /* LOGGER >= ERROR */
 
             // put lids back
-            // TODO multi put back
             for (int i = 0; i < lids.length; i++) {
                 m_cidTable.putChunkIDForReuse(lids[i]);
             }
+
+            return null;
         }
 
         // #ifdef STATISTICS
-        //SOP_CREATE.leave();
+        SOP_MULTI_CREATE.leave();
         // #endif /* STATISTICS */
 
         return lids;
@@ -415,44 +429,45 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         }
 
         // #ifdef STATISTICS
-        SOP_CREATE.enter();
+        SOP_MULTI_CREATE.enter();
         // #endif /* STATISTICS */
-
-        // TODO lid multi create
 
         // get new LIDs
         lids = new long[p_count];
         for (int i = 0; i < lids.length; i++) {
             lids[i] = m_cidTable.getFreeLID();
             if (lids[i] == -1) {
-                // TODO error handling
+                // #if LOGGER >= ERROR
+                LOGGER.fatal("Allocating new LIDs failed, out of LIDs");
+                // #endif /* LOGGER >= ERROR */
                 return null;
             }
         }
 
         // first, try to allocate. maybe early return
         // #ifdef STATISTICS
-        // TODO multi malloc
-        //  SOP_MALLOC.enter(p_size);
+        SOP_MULTI_MALLOC.enter(p_size);
         // #endif /* STATISTICS */
         addresses = m_rawMemory.multiMalloc(p_size, p_count);
         // #ifdef STATISTICS
-        //SOP_MALLOC.leave();
+        SOP_MULTI_MALLOC.leave();
         // #endif /* STATISTICS */
         if (addresses != null) {
 
             for (int i = 0; i < lids.length; i++) {
                 lids[i] = ((long) m_boot.getNodeID() << 48) + lids[i];
 
-                // TODO multi set?
-
                 // register new chunk in cid table
                 if (!m_cidTable.set(lids[i], addresses[i])) {
-                    // on demand allocation of new table failed
-                    // free previously created chunk for data to avoid memory leak
-                    m_rawMemory.free(addresses[i]);
 
-                    // TODO error handling
+                    for (int j = i; j >= 0; j--) {
+                        // on demand allocation of new table failed
+                        // free previously created chunk for data to avoid memory leak
+                        m_rawMemory.free(addresses[j]);
+                    }
+
+                    lids = null;
+                    break;
                 } else {
                     m_numActiveChunks++;
                     m_totalActiveChunkMemory += p_size;
@@ -462,19 +477,18 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         } else {
             // most likely out of memory
             // #if LOGGER >= ERROR
-            //            LOGGER.fatal("Creating chunk with size %d failed, most likely out of memory, free %d, total %d", p_size, m_rawMemory.getStatus().getFree(),
-            //                m_rawMemory.getStatus().getSize());
+            LOGGER.fatal("Multi create chunks failed, most likely out of memory, free %d, total %d", m_rawMemory.getStatus().getFree(),
+                m_rawMemory.getStatus().getSize());
             // #endif /* LOGGER >= ERROR */
 
             // put lids back
-            // TODO multi put back
             for (int i = 0; i < lids.length; i++) {
                 m_cidTable.putChunkIDForReuse(lids[i]);
             }
         }
 
         // #ifdef STATISTICS
-        //SOP_CREATE.leave();
+        SOP_MULTI_CREATE.leave();
         // #endif /* STATISTICS */
 
         return lids;
@@ -780,11 +794,58 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         return ret;
     }
 
-    public MemoryErrorCodes createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths,
-        final int p_usedEntries) {
+    public MemoryErrorCodes createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths) {
+        MemoryErrorCodes ret;
+        long[] addresses;
 
-        // TODO: needs create with chunk ID call + put in tight loop
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("A %s is not allowed to create a chunk", role);
+            // #endif /* LOGGER >= ERROR */
+            return MemoryErrorCodes.INVALID_NODE_ROLE;
+        }
 
+        // #ifdef STATISTICS
+        SOP_CREATE_PUT_RECOVERED.enter(p_chunkIDs.length);
+        // #endif /* STATISTICS */
+
+        // #ifdef STATISTICS
+        SOP_MULTI_MALLOC.enter(p_chunkIDs.length);
+        // #endif /* STATISTICS */
+        addresses = m_rawMemory.multiMallocSizes(p_lengths);
+        // #ifdef STATISTICS
+        SOP_MULTI_MALLOC.leave();
+        // #endif /* STATISTICS */
+        if (addresses != null) {
+
+            for (int i = 0; i < addresses.length; i++) {
+                m_rawMemory.writeBytes(addresses[i], 0, p_data, p_offsets[i], p_lengths[i]);
+                m_totalActiveChunkMemory += p_lengths[i];
+            }
+
+            m_numActiveChunks += addresses.length;
+
+            for (int i = 0; i < addresses.length; i++) {
+                m_cidTable.set(p_chunkIDs[i], addresses[i]);
+            }
+
+            ret = MemoryErrorCodes.SUCCESS;
+        } else {
+            // most likely out of memory
+            // #if LOGGER >= ERROR
+            LOGGER.fatal("Creating recovered chunks failed, most likely out of memory, free %d, total %d", m_rawMemory.getStatus().getFree(),
+                m_rawMemory.getStatus().getSize());
+            // #endif /* LOGGER >= ERROR */
+
+            ret = MemoryErrorCodes.OUT_OF_MEMORY;
+        }
+
+        // #ifdef STATISTICS
+        SOP_CREATE_PUT_RECOVERED.leave();
+        // #endif /* STATISTICS */
+
+        return ret;
     }
 
     // -----------------------------------------------------------------------------
@@ -1091,7 +1152,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             m_cidTable = new CIDTable(this);
             m_cidTable.initialize(m_rawMemory);
 
-            // m_lock = new ReentrantReadWriteLock(false);
             m_lock = new AtomicInteger(0);
 
             m_numActiveChunks = 0;
