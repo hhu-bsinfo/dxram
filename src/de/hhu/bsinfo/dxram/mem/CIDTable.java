@@ -1,7 +1,6 @@
 package de.hhu.bsinfo.dxram.mem;
 
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,7 +43,7 @@ public final class CIDTable {
     private long m_totalMemoryTables = -1;
 
     private LIDStore m_store;
-    private AtomicLong m_nextLocalID;
+    private long m_nextLocalID;
 
     private TranslationCache m_cache;
 
@@ -90,7 +89,7 @@ public final class CIDTable {
 
         // If no free ID exist, get next local ID
         if (ret == -1) {
-            ret = m_nextLocalID.getAndIncrement();
+            ret = m_nextLocalID++;
         }
 
         return ret;
@@ -181,7 +180,7 @@ public final class CIDTable {
         m_addressTableDirectory = createNIDTable();
 
         m_store = new LIDStore();
-        m_nextLocalID = new AtomicLong(1);
+        m_nextLocalID = 1;
 
         // NOTE: 10 seems to be a good value because it doesn't add too much overhead when creating huge ranges chunks
         // but still allows 10 * 4096 translations to be cached for fast lookup and gets/puts
@@ -201,11 +200,48 @@ public final class CIDTable {
      * @return the entry. 0 for invalid/unused.
      */
     public long get(final long p_chunkID) {
-        long ret;
+        long index;
+        long entry;
 
-        ret = getEntry(p_chunkID, m_addressTableDirectory, LID_TABLE_LEVELS);
+        int level = 0;
+        long addressTable;
+        boolean putCache = false;
 
-        return ret;
+        addressTable = m_cache.getTableLevel0(p_chunkID);
+        if (addressTable == -1) {
+            level = LID_TABLE_LEVELS;
+            addressTable = m_addressTableDirectory;
+            putCache = true;
+        }
+
+        do {
+            if (level == LID_TABLE_LEVELS) {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & NID_LEVEL_BITMASK;
+            } else {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & LID_LEVEL_BITMASK;
+            }
+
+            if (level > 0) {
+                entry = readEntry(addressTable, index) & BITMASK_ADDRESS;
+
+                if (entry <= 0) {
+                    break;
+                }
+
+                // move on to next table
+                addressTable = entry & BITMASK_ADDRESS;
+            } else {
+                if (putCache) {
+                    m_cache.putTableLevel0(p_chunkID, addressTable);
+                }
+
+                return readEntry(addressTable, index) & BITMASK_ADDRESS;
+            }
+
+            level--;
+        } while (level >= 0);
+
+        return 0;
     }
 
     /**
@@ -218,7 +254,56 @@ public final class CIDTable {
      * @return True if successful, false if allocation of a new table failed, out of memory
      */
     public boolean set(final long p_chunkID, final long p_addressChunk) {
-        return setEntry(p_chunkID, p_addressChunk, m_addressTableDirectory, LID_TABLE_LEVELS);
+        long index;
+        long entry;
+
+        int level = 0;
+        long addressTable;
+        boolean putCache = false;
+
+        addressTable = m_cache.getTableLevel0(p_chunkID);
+        if (addressTable == -1) {
+            level = LID_TABLE_LEVELS;
+            addressTable = m_addressTableDirectory;
+            putCache = true;
+        }
+
+        do {
+            if (level == LID_TABLE_LEVELS) {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & NID_LEVEL_BITMASK;
+            } else {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & LID_LEVEL_BITMASK;
+            }
+
+            if (level > 0) {
+                // Read table entry
+                entry = readEntry(addressTable, index);
+                if (entry == 0) {
+                    entry = createLIDTable();
+                    if (entry == -1) {
+                        return false;
+                    }
+                    writeEntry(addressTable, index, entry);
+                }
+
+                // move on to next table
+                addressTable = entry & BITMASK_ADDRESS;
+            } else {
+                if (putCache) {
+                    m_cache.putTableLevel0(p_chunkID, addressTable);
+                }
+
+                // Set the level 0 entry
+                // valid and active entry, delete flag 0
+                writeEntry(addressTable, index, p_addressChunk & BITMASK_ADDRESS);
+
+                return true;
+            }
+
+            level--;
+        } while (level >= 0);
+
+        return true;
     }
 
     /**
@@ -231,8 +316,52 @@ public final class CIDTable {
      * @return The address of the chunk which was removed from the table.
      */
     public long delete(final long p_chunkID, final boolean p_flagZombie) {
-        long ret;
-        ret = deleteEntry(p_chunkID, m_addressTableDirectory, LID_TABLE_LEVELS, p_flagZombie);
+        long ret = -1;
+        long index;
+        long entry;
+
+        int level = LID_TABLE_LEVELS;
+        long addressTable = m_addressTableDirectory;
+
+        do {
+            if (level == LID_TABLE_LEVELS) {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & NID_LEVEL_BITMASK;
+            } else {
+                index = p_chunkID >> BITS_PER_LID_LEVEL * level & LID_LEVEL_BITMASK;
+            }
+
+            if (level > 0) {
+                // Read table entry
+                entry = readEntry(addressTable, index);
+                if ((entry & FULL_FLAG) > 0) {
+                    // Delete full flag
+                    entry &= ~FULL_FLAG;
+                    writeEntry(addressTable, index, entry);
+                }
+
+                if ((entry & BITMASK_ADDRESS) == 0) {
+                    break;
+                }
+
+                // Delete entry in the following table
+                addressTable = entry & BITMASK_ADDRESS;
+            } else {
+                ret = readEntry(addressTable, index) & BITMASK_ADDRESS;
+
+                // Delete the level 0 entry
+                // invalid + active address but deleted flag 1
+                // -> zombie entry
+                if (p_flagZombie) {
+                    writeEntry(addressTable, index, ret | DELETED_FLAG);
+                } else {
+                    // delete flag cleared, but address is 0 -> free entry
+                    writeEntry(addressTable, index, 0);
+                }
+            }
+
+            level--;
+        } while (level >= 0);
+
         return ret;
     }
 
@@ -265,7 +394,6 @@ public final class CIDTable {
      */
     void disengage() {
         m_store = null;
-        m_nextLocalID = null;
 
         m_addressTableDirectory = -1;
     }
@@ -371,192 +499,6 @@ public final class CIDTable {
         value += p_entry & 0xFFFFFFFFFFL;
 
         m_rawMemory.writeLong(p_addressTable, ENTRY_SIZE * p_index, value);
-    }
-
-    /**
-     * Gets an entry of the level 0 table
-     *
-     * @param p_chunkID
-     *     the ChunkID of the entry
-     * @param p_addressTable
-     *     the current table
-     * @param p_level
-     *     the table level
-     * @return the entry
-     */
-    private long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) {
-        long index;
-        long entry;
-
-        int level = 0;
-        long addressTable;
-        boolean putCache = false;
-
-        addressTable = m_cache.getTableLevel0(p_chunkID);
-        if (addressTable == -1) {
-            level = p_level;
-            addressTable = p_addressTable;
-            putCache = true;
-        }
-
-        do {
-            if (level == LID_TABLE_LEVELS) {
-                index = p_chunkID >> BITS_PER_LID_LEVEL * level & NID_LEVEL_BITMASK;
-            } else {
-                index = p_chunkID >> BITS_PER_LID_LEVEL * level & LID_LEVEL_BITMASK;
-            }
-
-            if (level > 0) {
-                entry = readEntry(addressTable, index) & BITMASK_ADDRESS;
-
-                if (entry <= 0) {
-                    break;
-                }
-
-                // move on to next table
-                addressTable = entry & BITMASK_ADDRESS;
-            } else {
-                if (putCache) {
-                    m_cache.putTableLevel0(p_chunkID, addressTable);
-                }
-
-                return readEntry(addressTable, index) & BITMASK_ADDRESS;
-            }
-
-            level--;
-        } while (level >= 0);
-
-        return 0;
-    }
-
-    /**
-     * Sets an entry of the level 0 table
-     *
-     * @param p_chunkID
-     *     the ChunkID of the entry
-     * @param p_addressChunk
-     *     the address of the chunk
-     * @param p_addressTable
-     *     the address of the current CID table
-     * @param p_level
-     *     the table level
-     * @return True if successful, false if no further table could be allocated (out of memory)
-     */
-    private boolean setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable, final int p_level) {
-        long index;
-        long entry;
-
-        int level = 0;
-        long addressTable;
-        boolean putCache = false;
-
-        addressTable = m_cache.getTableLevel0(p_chunkID);
-        if (addressTable == -1) {
-            level = p_level;
-            addressTable = p_addressTable;
-            putCache = true;
-        }
-
-        do {
-            if (level == LID_TABLE_LEVELS) {
-                index = p_chunkID >> BITS_PER_LID_LEVEL * level & NID_LEVEL_BITMASK;
-            } else {
-                index = p_chunkID >> BITS_PER_LID_LEVEL * level & LID_LEVEL_BITMASK;
-            }
-
-            if (level > 0) {
-                // Read table entry
-                entry = readEntry(addressTable, index);
-                if (entry == 0) {
-                    entry = createLIDTable();
-                    if (entry == -1) {
-                        return false;
-                    }
-                    writeEntry(addressTable, index, entry);
-                }
-
-                // move on to next table
-                addressTable = entry & BITMASK_ADDRESS;
-            } else {
-                if (putCache) {
-                    m_cache.putTableLevel0(p_chunkID, addressTable);
-                }
-
-                // Set the level 0 entry
-                // valid and active entry, delete flag 0
-                writeEntry(addressTable, index, p_addressChunk & BITMASK_ADDRESS);
-
-                return true;
-            }
-
-            level--;
-        } while (level >= 0);
-
-        return true;
-    }
-
-    /**
-     * Gets and deletes an entry of the level 0 table
-     *
-     * @param p_chunkID
-     *     the ChunkID of the entry
-     * @param p_addressTable
-     *     the current table
-     * @param p_level
-     *     the table level
-     * @param p_flagZombie
-     *     flag the deleted entry as zombie i.e. keep the chunk
-     *     allocated but remove it from the table index.
-     * @return the entry
-     */
-    private long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level, final boolean p_flagZombie) {
-        long ret = -1;
-        long index;
-        long entry;
-
-        int level = p_level;
-        long addressTable = p_addressTable;
-
-        do {
-            if (level == LID_TABLE_LEVELS) {
-                index = p_chunkID >> BITS_PER_LID_LEVEL * level & NID_LEVEL_BITMASK;
-            } else {
-                index = p_chunkID >> BITS_PER_LID_LEVEL * level & LID_LEVEL_BITMASK;
-            }
-
-            if (level > 0) {
-                // Read table entry
-                entry = readEntry(addressTable, index);
-                if ((entry & FULL_FLAG) > 0) {
-                    // Delete full flag
-                    entry &= ~FULL_FLAG;
-                    writeEntry(addressTable, index, entry);
-                }
-
-                if ((entry & BITMASK_ADDRESS) == 0) {
-                    break;
-                }
-
-                // Delete entry in the following table
-                addressTable = entry & BITMASK_ADDRESS;
-            } else {
-                ret = readEntry(addressTable, index) & BITMASK_ADDRESS;
-
-                // Delete the level 0 entry
-                // invalid + active address but deleted flag 1
-                // -> zombie entry
-                if (p_flagZombie) {
-                    writeEntry(addressTable, index, ret | DELETED_FLAG);
-                } else {
-                    // delete flag cleared, but address is 0 -> free entry
-                    writeEntry(addressTable, index, 0);
-                }
-            }
-
-            level--;
-        } while (level >= 0);
-
-        return ret;
     }
 
     /**
@@ -694,7 +636,7 @@ public final class CIDTable {
         // as well as elements that are still allocated
         // (because they don't fit into the local array anymore)
         // but not valid -> zombies
-        private volatile long m_overallCount;
+        private long m_overallCount;
 
         // Constructors
 
@@ -859,7 +801,7 @@ public final class CIDTable {
          * @param p_size
          *     Number of entries for the cache
          */
-        public TranslationCache(final int p_size) {
+        TranslationCache(final int p_size) {
             m_chunkIDs = new long[p_size];
             m_tableLevel0Addr = new long[p_size];
             m_cachePos = 0;
@@ -877,7 +819,7 @@ public final class CIDTable {
          *     Chunk id for cache lookup of table level 0
          * @return Address of level 0 table or -1 if not cached
          */
-        public long getTableLevel0(final long p_chunkID) {
+        long getTableLevel0(final long p_chunkID) {
             long tableLevel0IDRange = p_chunkID & 0xFFFFFFFFFFFFF000L;
 
             for (int i = 0; i < m_chunkIDs.length; i++) {
@@ -897,7 +839,7 @@ public final class CIDTable {
          * @param p_addressTable
          *     Address of the level 0 table
          */
-        public void putTableLevel0(final long p_chunkID, final long p_addressTable) {
+        void putTableLevel0(final long p_chunkID, final long p_addressTable) {
             m_chunkIDs[m_cachePos] = p_chunkID & 0xFFFFFFFFFFFFF000L;
             m_tableLevel0Addr[m_cachePos] = p_addressTable;
             m_cachePos = (m_cachePos + 1) % m_chunkIDs.length;
