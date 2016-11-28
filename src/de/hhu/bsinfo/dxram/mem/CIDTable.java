@@ -19,8 +19,8 @@ import de.hhu.bsinfo.soh.SmallObjectHeap;
 public final class CIDTable {
 
     private static final byte ENTRY_SIZE = 5;
-    private static final byte LID_TABLE_LEVELS = 4;
-    private static final long BITMASK_ADDRESS = 0x7FFFFFFFFFL;
+    static final byte LID_TABLE_LEVELS = 4;
+    static final long BITMASK_ADDRESS = 0x7FFFFFFFFFL;
     private static final long BIT_FLAG = 0x8000000000L;
     private static final long FULL_FLAG = BIT_FLAG;
     private static final long DELETED_FLAG = BIT_FLAG;
@@ -29,11 +29,11 @@ public final class CIDTable {
     private static final StatisticsOperation SOP_CREATE_NID_TABLE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateNIDTable");
     private static final StatisticsOperation SOP_CREATE_LID_TABLE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateLIDTable");
     private static final byte BITS_PER_LID_LEVEL = 48 / LID_TABLE_LEVELS;
-    private static final int ENTRIES_PER_LID_LEVEL = (int) Math.pow(2.0, BITS_PER_LID_LEVEL);
+    static final int ENTRIES_PER_LID_LEVEL = (int) Math.pow(2.0, BITS_PER_LID_LEVEL);
     private static final int LID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_PER_LID_LEVEL + 7;
     private static final long LID_LEVEL_BITMASK = (int) Math.pow(2.0, BITS_PER_LID_LEVEL) - 1;
     private static final byte BITS_FOR_NID_LEVEL = 16;
-    private static final int ENTRIES_FOR_NID_LEVEL = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL);
+    static final int ENTRIES_FOR_NID_LEVEL = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL);
     private static final int NID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_FOR_NID_LEVEL + 7;
     private static final long NID_LEVEL_BITMASK = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL) - 1;
     private GetNodeIdHook m_nodeIdHook;
@@ -412,6 +412,47 @@ public final class CIDTable {
     }
 
     /**
+     * Reads a table entry
+     *
+     * @param p_addressTable
+     *     the table
+     * @param p_index
+     *     the index of the entry
+     * @return the entry
+     */
+    long readEntry(final long p_addressTable, final long p_index) {
+        return m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
+    }
+
+    /**
+     * Writes a table entry
+     *
+     * @param p_addressTable
+     *     the table
+     * @param p_index
+     *     the index of the entry
+     * @param p_entry
+     *     the entry
+     */
+    void writeEntry(final long p_addressTable, final long p_index, final long p_entry) {
+        long value;
+
+        value = m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFF0000000000L;
+        value += p_entry & 0xFFFFFFFFFFL;
+
+        m_rawMemory.writeLong(p_addressTable, ENTRY_SIZE * p_index, value);
+    }
+
+    /**
+     * Get the address of the table directory
+     *
+     * @return Address of table directory
+     */
+    long getAddressTableDirectory() {
+        return m_addressTableDirectory;
+    }
+
+    /**
      * Creates the NodeID table
      *
      * @return the address of the table
@@ -467,38 +508,6 @@ public final class CIDTable {
         // #endif /* STATISTICS */
 
         return ret;
-    }
-
-    /**
-     * Reads a table entry
-     *
-     * @param p_addressTable
-     *     the table
-     * @param p_index
-     *     the index of the entry
-     * @return the entry
-     */
-    private long readEntry(final long p_addressTable, final long p_index) {
-        return m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
-    }
-
-    /**
-     * Writes a table entry
-     *
-     * @param p_addressTable
-     *     the table
-     * @param p_index
-     *     the index of the entry
-     * @param p_entry
-     *     the entry
-     */
-    private void writeEntry(final long p_addressTable, final long p_index, final long p_entry) {
-        long value;
-
-        value = m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFF0000000000L;
-        value += p_entry & 0xFFFFFFFFFFL;
-
-        m_rawMemory.writeLong(p_addressTable, ENTRY_SIZE * p_index, value);
     }
 
     /**
