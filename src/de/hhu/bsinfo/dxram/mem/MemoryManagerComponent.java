@@ -417,16 +417,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     }
 
     public long[] createMulti(final int p_size, final int p_count) {
+        assert m_boot.getNodeRole() == NodeRole.PEER;
+
         long[] addresses;
         long[] lids;
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s is not allowed to create a chunk", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
-        }
 
         // #ifdef STATISTICS
         SOP_MULTI_CREATE.enter();
@@ -504,24 +498,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      */
     public long create(final int p_size) {
         assert p_size > 0;
+        assert m_boot.getNodeRole() == NodeRole.PEER;
 
         long address;
         long chunkID = -1;
         long lid;
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s is not allowed to create a chunk", role);
-            // #endif /* LOGGER >= ERROR */
-            return chunkID;
-        }
-
-        if (p_size > SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK) {
-            // #if LOGGER >= WARN
-            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK);
-            // #endif /* LOGGER >= WARN */
-        }
 
         // #ifdef STATISTICS
         SOP_CREATE.enter();
@@ -580,16 +561,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return Size of the chunk or -1 if the chunkID was invalid.
      */
     public int getSize(final long p_chunkID) {
+        assert m_boot.getNodeRole() == NodeRole.PEER;
+
         long address;
         int size = -1;
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return size;
-        }
 
         address = m_cidTable.get(p_chunkID);
         if (address > 0) {
@@ -608,14 +583,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data structure exists.
      */
     public MemoryErrorCodes get(final DataStructure p_dataStructure) {
+        assert m_boot.getNodeRole() == NodeRole.PEER;
+
         long address;
         MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            ret = MemoryErrorCodes.DOES_NOT_EXIST;
-            return ret;
-        }
 
         // #ifdef STATISTICS
         SOP_GET.enter();
@@ -649,13 +620,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return A byte array with payload if getting the chunk payload was successful, null if no chunk with the ID exists.
      */
     public byte[] get(final long p_chunkID) {
+        assert m_boot.getNodeRole() == NodeRole.PEER;
+
         byte[] ret = null;
         long address;
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            return null;
-        }
 
         // #ifdef STATISTICS
         SOP_GET.enter();
@@ -697,14 +665,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return MemoryErrorCodes indicating success or failure
      */
     public MemoryErrorCodes put(final DataStructure p_dataStructure) {
+        assert m_boot.getNodeRole() == NodeRole.PEER;
+
         long address;
         MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            ret = MemoryErrorCodes.DOES_NOT_EXIST;
-            return ret;
-        }
 
         // #ifdef STATISTICS
         SOP_PUT.enter();
@@ -740,18 +704,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return MemoryErrorCodes indicating success or failure
      */
     public MemoryErrorCodes remove(final long p_chunkID, final boolean p_wasMigrated) {
+        assert m_boot.getNodeRole() == NodeRole.PEER;
+
         long addressDeletedChunk;
         int size;
         MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            ret = MemoryErrorCodes.INVALID_NODE_ROLE;
-            return ret;
-        }
 
         // #ifdef STATISTICS
         SOP_REMOVE.enter();
@@ -795,16 +752,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     }
 
     public MemoryErrorCodes createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths) {
+        assert m_boot.getNodeRole() == NodeRole.PEER;
+
         MemoryErrorCodes ret;
         long[] addresses;
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s is not allowed to create a chunk", role);
-            // #endif /* LOGGER >= ERROR */
-            return MemoryErrorCodes.INVALID_NODE_ROLE;
-        }
 
         // #ifdef STATISTICS
         SOP_CREATE_PUT_RECOVERED.enter(p_chunkIDs.length);
@@ -861,13 +812,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return The value read at the offset of the chunk.
      */
     public byte readByte(final long p_chunkID, final int p_offset) {
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return -1;
-        }
+        assert m_boot.getNodeRole() == NodeRole.PEER;
 
         long address = m_cidTable.get(p_chunkID);
         if (address > 0) {
@@ -888,13 +833,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return The value read at the offset of the chunk.
      */
     public short readShort(final long p_chunkID, final int p_offset) {
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return -1;
-        }
+        assert m_boot.getNodeRole() == NodeRole.PEER;
 
         long address = m_cidTable.get(p_chunkID);
         if (address > 0) {
@@ -915,13 +854,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return The value read at the offset of the chunk.
      */
     public int readInt(final long p_chunkID, final int p_offset) {
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return -1;
-        }
+        assert m_boot.getNodeRole() == NodeRole.PEER;
 
         long address = m_cidTable.get(p_chunkID);
         if (address > 0) {
@@ -942,13 +875,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return The value read at the offset of the chunk.
      */
     public long readLong(final long p_chunkID, final int p_offset) {
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return -1;
-        }
+        assert m_boot.getNodeRole() == NodeRole.PEER;
 
         long address = m_cidTable.get(p_chunkID);
         if (address > 0) {
@@ -971,13 +898,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeByte(final long p_chunkID, final int p_offset, final byte p_value) {
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return false;
-        }
+        assert m_boot.getNodeRole() == NodeRole.PEER;
 
         long address = m_cidTable.get(p_chunkID);
         if (address > 0) {
@@ -1002,13 +923,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeShort(final long p_chunkID, final int p_offset, final short p_value) {
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return false;
-        }
+        assert m_boot.getNodeRole() == NodeRole.PEER;
 
         long address = m_cidTable.get(p_chunkID);
         if (address > 0) {
@@ -1033,13 +948,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeInt(final long p_chunkID, final int p_offset, final int p_value) {
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return false;
-        }
+        assert m_boot.getNodeRole() == NodeRole.PEER;
 
         long address = m_cidTable.get(p_chunkID);
         if (address > 0) {
@@ -1064,13 +973,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeLong(final long p_chunkID, final int p_offset, final long p_value) {
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return false;
-        }
+        assert m_boot.getNodeRole() == NodeRole.PEER;
 
         long address = m_cidTable.get(p_chunkID);
         if (address > 0) {
@@ -1094,12 +997,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return whether this Chunk is stored locally or not
      */
     public boolean exists(final long p_chunkID) {
-        long address;
+        assert m_boot.getNodeRole() == NodeRole.PEER;
 
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            return false;
-        }
+        long address;
 
         // Get the address from the CIDTable
         address = m_cidTable.get(p_chunkID);
