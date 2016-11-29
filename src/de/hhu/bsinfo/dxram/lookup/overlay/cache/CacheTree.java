@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxram.lookup.overlay.cache;
 
+import java.util.ArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -306,6 +307,45 @@ public final class CacheTree {
     }
 
     /**
+     * gets one node of the btree and walks down the btree recursively
+     * puts entries with specified nodeID in the list 'p_list' provided as argument
+     *
+     * @param p_node
+     *     the current node
+     * @param p_list
+     *     list to add to
+     * @author michael.birkhoff@hhu.de
+     */
+
+    private static void getFilteredInverseList(final Node p_node, final ArrayList<CacheNodeElement> p_list, final short p_nodeID) {
+
+        Node obj;
+
+        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
+
+            CacheNodeElement e = new CacheNodeElement(p_node.getCID(i), p_node.getNodeID(i));
+            if (e.getNodeId() == p_nodeID) {
+                p_list.add(e);
+            }
+
+        }
+
+        if (p_node.getChild(0) != null) {
+            for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
+                obj = p_node.getChild(i);
+                getFilteredInverseList(obj, p_list, p_nodeID);
+
+            }
+            if (p_node.getNumberOfChildren() >= 1) {
+                obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
+                getFilteredInverseList(obj, p_list, p_nodeID);
+
+            }
+        }
+
+    }
+
+    /**
      * Stops the TTLHandler
      */
     public void close() {
@@ -432,7 +472,12 @@ public final class CacheTree {
      */
     public void invalidatePeer(final short p_nodeID) {
         m_lock.writeLock().lock();
-        // TODO
+        ArrayList<CacheNodeElement> allEntries = toListFilteredInverse(p_nodeID);
+
+        for (int i = 0; i < allEntries.size(); i++) {
+            remove(allEntries.get(i).getChunkId());
+
+        }
         m_lock.writeLock().unlock();
     }
 
@@ -476,6 +521,53 @@ public final class CacheTree {
         }
 
         return ret;
+    }
+
+    /**
+     * Cache btree to List using the print algorithm
+     * this version however does not write an entry with the specified NodeID into the list.
+     * This is used for delete all from entry
+     *
+     * @return list of node elements
+     * @author michael.birkhoff@hhu.de
+     */
+
+    private ArrayList<CacheNodeElement> toListFilteredInverse(final short p_nodeID) {
+
+        ArrayList<CacheNodeElement> list;
+
+        if (m_root == null) {
+            list = null;
+        } else {
+            list = new ArrayList<CacheNodeElement>();
+            getFilteredInverseList(m_root, list, p_nodeID);
+        }
+
+        return list;
+
+    }
+
+    /**
+     * Caches a single ChunkID
+     *
+     * @param p_chunkID
+     *     the ChunkID
+     * @param p_nodeID
+     *     the primary peer
+     * @return true if insertion was successful
+     */
+    private boolean cacheChunkID(final long p_chunkID, final short p_nodeID) {
+        Node node;
+
+        m_lock.writeLock().lock();
+        node = createOrReplaceEntry(p_chunkID, p_nodeID);
+
+        mergeWithPredecessorOrBound(p_chunkID, p_nodeID, node);
+
+        mergeWithSuccessor(p_chunkID, p_nodeID);
+        m_lock.writeLock().unlock();
+
+        return true;
     }
 
     /**
@@ -559,29 +651,6 @@ public final class CacheTree {
                 }
             }
         }
-    }
-
-    /**
-     * Caches a single ChunkID
-     *
-     * @param p_chunkID
-     *     the ChunkID
-     * @param p_nodeID
-     *     the primary peer
-     * @return true if insertion was successful
-     */
-    private boolean cacheChunkID(final long p_chunkID, final short p_nodeID) {
-        Node node;
-
-        m_lock.writeLock().lock();
-        node = createOrReplaceEntry(p_chunkID, p_nodeID);
-
-        mergeWithPredecessorOrBound(p_chunkID, p_nodeID, node);
-
-        mergeWithSuccessor(p_chunkID, p_nodeID);
-        m_lock.writeLock().unlock();
-
-        return true;
     }
 
     /**
@@ -1806,6 +1875,48 @@ public final class CacheTree {
         @Override
         public String toString() {
             return "(ChunkID: " + m_chunkID + ", NodeID: " + m_nodeID + ')';
+        }
+    }
+
+    /**
+     * Element of a BTree Entry used as helper class for serializing
+     *
+     * @author michael.birkhoff@hhu.de
+     */
+    private static final class CacheNodeElement {
+
+        private Long m_chunkId;
+        private short m_nodeId;
+
+        /**
+         * Creates an instance of CacheNodeElement
+         *
+         * @param p_chunkId
+         *     chunk to find ...
+         * @param p_nodeId
+         *     ... on node
+         */
+        CacheNodeElement(final Long p_chunkId, final short p_nodeId) {
+            m_chunkId = p_chunkId;
+            m_nodeId = p_nodeId;
+        }
+
+        /**
+         * Getter chunkID
+         *
+         * @return chunkID
+         */
+        Long getChunkId() {
+            return m_chunkId;
+        }
+
+        /**
+         * Getter NodeID
+         *
+         * @return Node ID
+         */
+        short getNodeId() {
+            return m_nodeId;
         }
     }
 
