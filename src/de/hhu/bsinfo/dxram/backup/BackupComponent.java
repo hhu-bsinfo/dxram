@@ -12,7 +12,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -54,7 +54,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
     // dependent components
     private AbstractBootComponent m_boot;
-    private ChunkComponent m_chunk;
+    private ChunkBackupComponent m_chunk;
     private LookupComponent m_lookup;
     private LogComponent m_log;
     private EventComponent m_event;
@@ -366,7 +366,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
+        m_chunk = p_componentAccessor.getComponent(ChunkBackupComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_log = p_componentAccessor.getComponent(LogComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);

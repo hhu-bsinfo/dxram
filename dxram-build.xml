@@ -25,7 +25,8 @@
     <property name="build_proj_log_dir" value="${build_proj_dir}/${log_dir}"/>
 
     <target name="build-all"
-            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, compile-release, compile-performance, move-release"
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, compile-release,
+             compile-performance, move-release"
             description="builds all files"/>
     <target name="build-debug"
             depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, move-debug"
@@ -48,6 +49,9 @@
     </target>
 
     <target name="copy_libs" depends="create_base_dirs" description="copies the libs">
+        <copy file="${lib_dir}/gson-2.7.jar" todir="${build_proj_lib_dir}"/>
+        <copy file="${lib_dir}/log4j-api-2.7.jar" todir="${build_proj_lib_dir}"/>
+        <copy file="${lib_dir}/log4j-core-2.7.jar" todir="${build_proj_lib_dir}"/>
         <copy file="${lib_dir}/log4j-1.2.16.jar" todir="${build_proj_lib_dir}"/>
         <copy file="${lib_dir}/slf4j-log4j12-1.6.1.jar" todir="${build_proj_lib_dir}"/>
         <copy file="${lib_dir}/slf4j-api-1.6.1.jar" todir="${build_proj_lib_dir}"/>
@@ -175,17 +179,22 @@
                 <attribute name="Class-Path" value="${jar.classpath}"/>
             </manifest>
         </jar>
+
+        <delete dir="${build_proj_dir}/classes"/>
     </target>
 
     <target name="move-debug" depends="compile-debug" description="moves jar file to DXRAM.jar">
         <move file="${build_proj_dir}/${name}-debug.jar" tofile="${build_proj_dir}/DXRAM.jar"/>
+        <copy file="${build_proj_dir}/DXRAM.jar" tofile="${basedir}/DXRAM.jar"/>
     </target>
 
     <target name="move-release" depends="compile-release" description="moves jar file to DXRAM.jar">
         <move file="${build_proj_dir}/${name}-release.jar" tofile="${build_proj_dir}/DXRAM.jar"/>
+        <copy file="${build_proj_dir}/DXRAM.jar" tofile="${basedir}/DXRAM.jar"/>
     </target>
 
     <target name="move-performance" depends="compile-performance" description="moves jar file to DXRAM.jar">
         <move file="${build_proj_dir}/${name}-performance.jar" tofile="${build_proj_dir}/DXRAM.jar"/>
+        <copy file="${build_proj_dir}/DXRAM.jar" tofile="${basedir}/DXRAM.jar"/>
     </target>
 </project>

@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -75,6 +76,7 @@ public class LogComponent extends AbstractDXRAMComponent {
     private NetworkComponent m_network;
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
+    private ChunkBackupComponent m_chunk;
 
     // private state
     private short m_nodeID;
@@ -299,8 +301,8 @@ public class LogComponent extends AbstractDXRAMComponent {
      *     the RangeID
      * @return the recovered Chunks
      */
-    public Chunk[] recoverBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) {
-        Chunk[] chunks = null;
+    public int recoverBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) {
+        int ret = 0;
         SecondaryLogBuffer secondaryLogBuffer;
 
         try {
@@ -309,7 +311,7 @@ public class LogComponent extends AbstractDXRAMComponent {
             secondaryLogBuffer = getSecondaryLogBuffer(p_chunkID, p_owner, p_rangeID);
             if (secondaryLogBuffer != null) {
                 secondaryLogBuffer.flushSecLogBuffer();
-                chunks = getSecondaryLog(p_chunkID, p_owner, p_rangeID).recoverAllLogEntries(true);
+                ret = getSecondaryLog(p_chunkID, p_owner, p_rangeID).recoverFromLog(m_chunk, true);
             }
         } catch (final IOException | InterruptedException e) {
             // #if LOGGER >= ERROR
@@ -317,7 +319,7 @@ public class LogComponent extends AbstractDXRAMComponent {
             // #endif /* LOGGER >= ERROR */
         }
 
-        return chunks;
+        return ret;
     }
 
     /**
@@ -333,7 +335,7 @@ public class LogComponent extends AbstractDXRAMComponent {
         Chunk[] ret = null;
 
         try {
-            ret = SecondaryLog.recoverBackupRangeFromFile(p_fileName, p_path, m_useChecksum, m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes());
+            ret = SecondaryLog.recoverFromFile(p_fileName, p_path, m_useChecksum, m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes());
         } catch (final IOException e) {
             // #if LOGGER >= ERROR
             LOGGER.error("Could not recover from file %s: %s", p_path, e);
@@ -447,6 +449,7 @@ public class LogComponent extends AbstractDXRAMComponent {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
+        m_chunk = p_componentAccessor.getComponent(ChunkBackupComponent.class);
     }
 
     @Override
@@ -474,6 +477,10 @@ public class LogComponent extends AbstractDXRAMComponent {
             LOGGER.trace("Initialized primary log (%d)", m_primaryLogSize);
             // #endif /* LOGGER == TRACE */
 
+            // Create reorganization thread for secondary logs
+            m_secondaryLogsReorgThread = new SecondaryLogsReorgThread(this, m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes());
+            m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
+
             // Create primary log buffer
             m_writeBuffer = new PrimaryWriteBufferSecure(this, m_primaryLog, (int) m_writeBufferSize.getBytes(), (int) m_flashPageSize.getBytes(),
                 (int) m_secondaryLogBufferSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_useChecksum, m_sortBufferPooling);
@@ -483,9 +490,6 @@ public class LogComponent extends AbstractDXRAMComponent {
 
             m_secondaryLogCreationLock = new ReentrantReadWriteLock(false);
 
-            // Create reorganization thread for secondary logs
-            m_secondaryLogsReorgThread = new SecondaryLogsReorgThread(this, m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes());
-            m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
             // Start secondary logs reorganization thread
             m_secondaryLogsReorgThread.start();
 
@@ -500,6 +504,10 @@ public class LogComponent extends AbstractDXRAMComponent {
         LogCatalog cat;
 
         if (m_loggingIsActive) {
+            // Close write buffer
+            m_writeBuffer.closeWriteBuffer();
+            m_writeBuffer = null;
+
             // Stop reorganization thread
             m_secondaryLogsReorgThread.interrupt();
             m_secondaryLogsReorgThread.shutdown();
@@ -514,10 +522,6 @@ public class LogComponent extends AbstractDXRAMComponent {
                 // #endif /* LOGGER >= WARN */
             }
             m_secondaryLogsReorgThread = null;
-
-            // Close write buffer
-            m_writeBuffer.closeWriteBuffer();
-            m_writeBuffer = null;
 
             // Close primary log
             if (m_primaryLog != null) {

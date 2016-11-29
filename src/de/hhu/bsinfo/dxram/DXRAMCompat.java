@@ -1,7 +1,7 @@
 package de.hhu.bsinfo.dxram;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.chunk.AsyncChunkService;
+import de.hhu.bsinfo.dxram.chunk.ChunkAsyncService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -18,7 +18,7 @@ import de.hhu.bsinfo.dxram.stats.StatisticsService;
 public class DXRAMCompat {
     private DXRAM m_dxram;
     private ChunkService m_chunkService;
-    private AsyncChunkService m_asyncChunkService;
+    private ChunkAsyncService m_asyncChunkService;
     private NameserviceService m_nameserviceService;
     private AbstractLockService m_lockService;
     private StatisticsService m_statisticsService;
@@ -33,7 +33,7 @@ public class DXRAMCompat {
     public DXRAMCompat(final DXRAM p_dxram) {
         m_dxram = p_dxram;
         m_chunkService = m_dxram.getService(ChunkService.class);
-        m_asyncChunkService = m_dxram.getService(AsyncChunkService.class);
+        m_asyncChunkService = m_dxram.getService(ChunkAsyncService.class);
         m_nameserviceService = m_dxram.getService(NameserviceService.class);
         m_lockService = m_dxram.getService(AbstractLockService.class);
         m_statisticsService = m_dxram.getService(StatisticsService.class);

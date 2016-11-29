@@ -110,6 +110,12 @@ public class VersionsHashTable {
         long iter;
         final long key = p_key + 1;
 
+        // #if LOGGER >= ERROR
+        if (m_count == m_elementCapacity) {
+            LOGGER.error("HashTable is too small. Rehashing prohibited!");
+        }
+        // #endif /* LOGGER >= ERROR */
+
         index = (VersionsBuffer.hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
         iter = getKey(index);
@@ -125,12 +131,6 @@ public class VersionsHashTable {
             set(index, key, p_epoch, p_version);
             m_count++;
         }
-
-        // #if LOGGER >= ERROR
-        if (m_count == m_elementCapacity) {
-            LOGGER.error("HashTable is too small. Rehashing prohibited!");
-        }
-        // #endif /* LOGGER >= ERROR */
     }
 
     /**

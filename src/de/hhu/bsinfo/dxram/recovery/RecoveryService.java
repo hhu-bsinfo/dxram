@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.recovery;
 
 import java.io.File;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -8,7 +9,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -38,12 +39,13 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
     // dependent components
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
-    private ChunkComponent m_chunk;
+    private ChunkBackupComponent m_chunk;
     private LogComponent m_log;
     private LookupComponent m_lookup;
     private NetworkComponent m_network;
 
     private String m_backupDirectory;
+    private ReentrantLock m_recoveryLock;
 
     /**
      * Constructor
@@ -111,7 +113,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
+        m_chunk = p_componentAccessor.getComponent(ChunkBackupComponent.class);
         m_log = p_componentAccessor.getComponent(LogComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
@@ -129,6 +131,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
         // #endif /* LOGGER >= WARN */
         m_backupDirectory = m_backup.getBackupDirectory();
 
+        m_recoveryLock = new ReentrantLock(false);
+
         return true;
     }
 
@@ -144,11 +148,9 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      *     the NodeID of the node whose Chunks have to be restored
      */
     private void recoverLocally(final short p_owner) {
+        int count;
         long firstChunkIDOrRangeID;
-        //short[] backupPeers;
-        Chunk[] chunks;
         BackupRange[] backupRanges;
-        //RecoverBackupRangeRequest request;
 
         if (!m_backup.isActive()) {
             // #if LOGGER >= WARN
@@ -158,50 +160,24 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
             backupRanges = m_lookup.getAllBackupRanges(p_owner);
             if (backupRanges != null) {
                 for (BackupRange backupRange : backupRanges) {
-                    //backupPeers = backupRange.getBackupPeers();
                     firstChunkIDOrRangeID = backupRange.getRangeID();
 
-                    // Get Chunks from backup peers (or locally if this is the primary backup peer)
-                    // for (short backupPeer : backupPeers) {
-                    // if (backupPeer == m_boot.getNodeID()) {
-                    // if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
-                    // chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
-                    // } else {
-                    // chunks = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
-                    // }
-                    // if (chunks == null) {
-                    // #if LOGGER >= ERROR
-                    /*m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next backup peer.");*/
-                    // #endif /* LOGGER >= ERROR */
-                    // continue;
-                    // }
-                    // } else if (backupPeer != -1) {
-                    // request = new RecoverBackupRangeRequest(backupPeer, p_owner, firstChunkIDOrRangeID);
-                    // m_network.sendSync(request);
-                    // chunks = request.getResponse(RecoverBackupRangeResponse.class).getChunks();
-                    // }
-                    // break;
-                    // }
-
                     if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
-                        chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
+                        count = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
                     } else {
-                        chunks = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
+                        count = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
                     }
 
                     // #if LOGGER >= INFO
-                    LOGGER.info("Retrieved %d Chunks", chunks.length);
+                    LOGGER.info("Recovered %d Chunks", count);
                     // #endif /* LOGGER >= INFO */
 
-                    // Store recovered Chunks
-                    m_chunk.putRecoveredChunks(chunks);
-
                     // Inform superpeers about new location of migrated Chunks (non-migrated Chunks are processed later)
-                    for (Chunk chunk : chunks) {
+                    /*-for (Chunk chunk : chunks) {
                         if (ChunkID.getCreatorID(chunk.getID()) != p_owner) {
                             m_lookup.migrate(chunk.getID(), m_boot.getNodeID());
                         }
-                    }
+                    }*/
                 }
                 // Inform superpeers about new location of non-migrated Chunks
                 m_lookup.setRestorerAfterRecovery(p_owner);
@@ -279,16 +255,15 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      */
     private int recoverBackupRange(final short p_owner, final long p_firstChunkIDOrRangeID) {
         int ret;
-        Chunk[] chunks;
+
+        m_recoveryLock.lock();
 
         if (ChunkID.getCreatorID(p_firstChunkIDOrRangeID) == p_owner) {
             // Failed peer was the creator -> recover normal backup range
-            chunks = m_log.recoverBackupRange(p_owner, p_firstChunkIDOrRangeID, (byte) -1);
-            ret = chunks.length;
+            ret = m_log.recoverBackupRange(p_owner, p_firstChunkIDOrRangeID, (byte) -1);
         } else {
             // Failed peer was not the creator -> recover migration backup range
-            chunks = m_log.recoverBackupRange(p_owner, -1, (byte) p_firstChunkIDOrRangeID);
-            ret = chunks.length;
+            ret = m_log.recoverBackupRange(p_owner, -1, (byte) p_firstChunkIDOrRangeID);
         }
 
         if (ret == 0) {
@@ -296,6 +271,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
             LOGGER.error("Cannot recover Chunks locally");
             // #endif /* LOGGER >= ERROR */
         }
+
+        m_recoveryLock.unlock();
 
         // TODO: Not complete!
 

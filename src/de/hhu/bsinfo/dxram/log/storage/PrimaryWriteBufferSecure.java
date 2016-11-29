@@ -391,8 +391,6 @@ public class PrimaryWriteBufferSecure {
         public void run() {
             while (true) {
                 if (m_isShuttingDown) {
-                    // Shutdown signal -> directly flush all data to primary log and shut down
-                    flushDataToPrimaryLog();
                     break;
                 }
 

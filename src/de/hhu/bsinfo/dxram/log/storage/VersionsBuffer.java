@@ -10,6 +10,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 
 /**
@@ -27,8 +28,11 @@ class VersionsBuffer {
     // Attributes
     private LogComponent m_logComponent;
 
+    private long m_highestChunkID = 0;
+
     private int[] m_table;
     private int m_count;
+    private int m_logCount;
     private int m_intCapacity;
     private int m_elementCapacity;
     private int m_threshold;
@@ -60,6 +64,7 @@ class VersionsBuffer {
 
         m_logComponent = p_logComponent;
         m_count = 0;
+        m_logCount = 0;
         m_elementCapacity = p_initialElementCapacity;
         m_threshold = (int) (m_elementCapacity * p_loadFactor);
         m_intCapacity = m_elementCapacity * 3;
@@ -100,6 +105,15 @@ class VersionsBuffer {
      */
     final int getEntryCount() {
         return m_count;
+    }
+
+    /**
+     * Returns the number of keys in VersionsLog
+     *
+     * @return the number of keys in VersionsLog
+     */
+    final int getLogEntryCount() {
+        return m_logCount;
     }
 
     /**
@@ -198,6 +212,7 @@ class VersionsBuffer {
                 newTable = new int[m_intCapacity];
                 oldTable = m_table;
                 m_table = newTable;
+                m_logCount += m_count;
                 m_count = 0;
 
                 ret = incrementEpoch();
@@ -238,8 +253,6 @@ class VersionsBuffer {
         return ret;
     }
 
-    // Methods
-
     /**
      * Returns the value to which the specified key is mapped in VersionsBuffer
      *
@@ -269,6 +282,8 @@ class VersionsBuffer {
         return ret;
     }
 
+    // Methods
+
     /**
      * Maps the given key to the given value in VersionsBuffer
      *
@@ -285,6 +300,10 @@ class VersionsBuffer {
         }
 
         putInternal(p_key, p_version);
+    }
+
+    final int getArrayCount(final long p_offset) {
+        return (int) (ChunkID.getLocalID(m_highestChunkID) - ChunkID.getLocalID(p_offset)) + 1;
     }
 
     /**
@@ -371,7 +390,9 @@ class VersionsBuffer {
                     }
                 }
                 update = true;
+                m_logCount = p_allVersions.size();
             } else {
+                m_logCount = p_allVersions.size();
                 m_accessLock.unlock();
             }
 
@@ -408,6 +429,119 @@ class VersionsBuffer {
     }
 
     /**
+     * Read all versions from SSD, add current versions and write back
+     *
+     * @param p_allVersions
+     *     the VersionsHashTable to put all current versions in
+     */
+    final int readAllArray(final int[] p_allVersions, final long p_offset) {
+        int length;
+        int version;
+        boolean update = false;
+        long chunkID;
+        byte[] data;
+        int[] newTable;
+        int[] oldTable;
+        int[] hashTable;
+        ByteBuffer buffer;
+        int counter = 0;
+
+        m_flushLock.lock();
+        try {
+            length = (int) m_versionsFile.length();
+
+            if (length > 0) {
+                // Read all entries from SSD to hashtable
+
+                // Read old versions from SSD and add to hashtable
+                // Then read all new versions from versions log and add to hashtable (overwrites older entries!)
+                data = new byte[length];
+                m_versionsFile.seek(0);
+                m_versionsFile.readFully(data);
+                buffer = ByteBuffer.wrap(data);
+
+                for (int i = 0; i * SSD_ENTRY_SIZE < length; i++) {
+                    chunkID = buffer.getLong();
+                    if (p_allVersions[(int) (chunkID - p_offset) * 2] == -1) {
+                        counter++;
+                    }
+                    p_allVersions[(int) (chunkID - p_offset) * 2] = buffer.getShort();
+                    p_allVersions[(int) (chunkID - p_offset) * 2 + 1] = buffer.get() << 16 | buffer.get() << 8 | buffer.get();
+                }
+
+                if (counter * SSD_ENTRY_SIZE < length) {
+                    // Versions log was not empty -> compact
+                    update = true;
+                }
+            } else {
+                // There is nothing on SSD yet
+            }
+
+            // Put all versions from versions buffer to VersionsHashTable
+            m_accessLock.lock();
+            if (m_count > 0) {
+                // "Copy" all data to release lock as soon as possible
+                newTable = new int[m_intCapacity];
+                oldTable = m_table;
+                m_table = newTable;
+                m_count = 0;
+
+                incrementEpoch();
+                m_accessLock.unlock();
+
+                for (int i = 0; i < oldTable.length; i += 3) {
+                    chunkID = (long) oldTable[i] << 32 | oldTable[i + 1] & 0xFFFFFFFFL;
+                    if (chunkID != 0) {
+                        if (p_allVersions[(int) (chunkID - p_offset - 1) * 2] == -1) {
+                            counter++;
+                        }
+
+                        // ChunkID: -1 because 1 is added before putting to avoid LID 0; epoch was incremented before
+                        p_allVersions[(int) (chunkID - p_offset - 1) * 2] = (short) (m_epoch - 1 + (m_eon << 15));
+                        p_allVersions[(int) (chunkID - p_offset - 1) * 2 + 1] = oldTable[i + 2];
+                    }
+                }
+                update = true;
+                m_logCount = counter;
+            } else {
+                m_logCount = counter;
+                m_accessLock.unlock();
+            }
+
+            if (update) {
+                // Write back current hashtable compactified
+                data = new byte[counter * SSD_ENTRY_SIZE];
+                buffer = ByteBuffer.wrap(data);
+
+                for (int i = 0; i < getArrayCount(p_offset); i += 2) {
+                    chunkID = i + p_offset;
+                    if (p_allVersions[i] != -1) {
+                        // ChunkID (-1 because 1 is added before putting to avoid LID 0)
+                        buffer.putLong(chunkID - 1);
+                        // Epoch (4 Bytes in hashtable, 2 in persistent table)
+                        buffer.putShort((short) p_allVersions[i]);
+                        // Version (4 Bytes in hashtable, 3 in persistent table)
+                        version = p_allVersions[i + 1];
+                        buffer.put((byte) (version >>> 16));
+                        buffer.put((byte) (version >>> 8));
+                        buffer.put((byte) version);
+                    }
+                }
+                m_versionsFile.seek(0);
+                m_versionsFile.write(data);
+                m_versionsFile.setLength(data.length);
+            }
+        } catch (final IOException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Could write to versions file", e);
+            // #endif /* LOGGER >= ERROR */
+        }
+        m_flushLock.unlock();
+
+        return counter;
+    }
+
+    /**
      * Returns the next value to which the specified key is mapped in VersionsBuffer
      *
      * @param p_key
@@ -429,6 +563,10 @@ class VersionsBuffer {
         index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
         m_accessLock.lock();
+        if (ChunkID.getLocalID(p_key) > m_highestChunkID) {
+            m_highestChunkID = p_key;
+        }
+
         iter = getKey(index);
         while (iter != 0) {
             if (iter == key) {

@@ -272,10 +272,10 @@ public abstract class AbstractLogEntryHeader {
      *     the payload
      * @return the checksum
      */
-    public static int calculateChecksumOfPayload(final byte[] p_payload) {
+    public static int calculateChecksumOfPayload(final byte[] p_payload, final int p_offset, final int p_length) {
 
         CRC.reset();
-        CRC.update(p_payload, 0, p_payload.length);
+        CRC.update(p_payload, p_offset, p_length);
 
         return (int) CRC.getValue();
     }

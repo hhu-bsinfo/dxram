@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -43,7 +43,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
     // dependent components
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
-    private ChunkComponent m_chunk;
+    private ChunkMigrationComponent m_chunk;
     private LookupComponent m_lookup;
     private MemoryManagerComponent m_memoryManager;
     private NetworkComponent m_network;
@@ -356,7 +356,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
+        m_chunk = p_componentAccessor.getComponent(ChunkMigrationComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
@@ -382,7 +382,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
         MigrationResponse response = new MigrationResponse(p_request);
 
-        if (!m_chunk.putForeignChunks((Chunk[]) p_request.getDataStructures())) {
+        if (!m_chunk.putMigratedChunks((Chunk[]) p_request.getDataStructures())) {
             response.setStatusCode((byte) -1);
         }
 

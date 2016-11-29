@@ -5,9 +5,10 @@ import java.net.InetSocketAddress;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
-import de.hhu.bsinfo.dxram.chunk.AsyncChunkService;
+import de.hhu.bsinfo.dxram.chunk.ChunkAsyncService;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMemoryService;
+import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
@@ -164,6 +165,7 @@ public class DXRAM {
         p_engine.registerComponent(BackupComponent.class);
         p_engine.registerComponent(ZookeeperBootComponent.class);
         p_engine.registerComponent(ChunkComponent.class);
+        p_engine.registerComponent(ChunkMigrationComponent.class);
         p_engine.registerComponent(EventComponent.class);
         p_engine.registerComponent(FailureComponent.class);
         p_engine.registerComponent(PeerLockComponent.class);
@@ -185,7 +187,7 @@ public class DXRAM {
      *     DXRAM engine instance to register services at
      */
     protected void registerServices(final DXRAMEngine p_engine) {
-        p_engine.registerService(AsyncChunkService.class);
+        p_engine.registerService(ChunkAsyncService.class);
         p_engine.registerService(BootService.class);
         p_engine.registerService(ChunkMemoryService.class);
         p_engine.registerService(ChunkService.class);

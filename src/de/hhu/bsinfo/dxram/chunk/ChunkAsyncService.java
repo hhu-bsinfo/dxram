@@ -38,13 +38,13 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.02.2016
  */
-public class AsyncChunkService extends AbstractDXRAMService implements MessageReceiver {
+public class ChunkAsyncService extends AbstractDXRAMService implements MessageReceiver {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(AsyncChunkService.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkAsyncService.class.getSimpleName());
 
     // statistics recording
-    private static final StatisticsOperation SOP_PUT_ASYNC = StatisticsRecorderManager.getOperation(AsyncChunkService.class, "PutAsync");
-    private static final StatisticsOperation SOP_INCOMING_PUT_ASYNC = StatisticsRecorderManager.getOperation(AsyncChunkService.class, "IncomingPutAsync");
+    private static final StatisticsOperation SOP_PUT_ASYNC = StatisticsRecorderManager.getOperation(ChunkAsyncService.class, "PutAsync");
+    private static final StatisticsOperation SOP_INCOMING_PUT_ASYNC = StatisticsRecorderManager.getOperation(ChunkAsyncService.class, "IncomingPutAsync");
 
     // dependent components
     private AbstractBootComponent m_boot;
@@ -56,7 +56,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
     /**
      * Constructor
      */
-    public AsyncChunkService() {
+    public ChunkAsyncService() {
         super("achunk");
     }
 
