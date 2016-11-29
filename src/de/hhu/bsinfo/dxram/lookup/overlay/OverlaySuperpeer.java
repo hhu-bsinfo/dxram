@@ -1038,9 +1038,9 @@ public class OverlaySuperpeer implements MessageReceiver {
         }
         // #if LOGGER >= DEBUG
         if (metadata.length > 0 && superpeerToSendData) {
-        LOGGER.debug(str);
+            LOGGER.debug(str);
         } else {
-        LOGGER.debug("No need to spread data");
+            LOGGER.debug("No need to spread data");
         }
         // #endif /* LOGGER >= DEBUG */
     }
@@ -1319,7 +1319,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         // #endif /* LOGGER == TRACE */
 
         if (OverlayHelper.isHashInSuperpeerRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID)) {
-            m_metadata.getNameserviceEntry(id);
+            chunkID = m_metadata.getNameserviceEntry(id);
 
             // #if LOGGER == TRACE
             LOGGER.trace("GET_CHUNKID_REQUEST from 0x%X, id %d, reply chunkID 0x%X", p_getChunkIDForNameserviceEntryRequest.getSource(), id, chunkID);
