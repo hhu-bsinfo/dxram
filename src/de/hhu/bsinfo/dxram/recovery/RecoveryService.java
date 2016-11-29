@@ -23,9 +23,11 @@ import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverMessage;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
+import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.utils.JNIFileRaw;
 
 /**
  * This service provides all recovery functionality.
@@ -192,22 +194,77 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      *     the NodeID of the node whose Chunks have to be restored
      */
     private void recoverLocallyFromFile(final short p_owner) {
-        String fileName;
-        File folderToScan;
-        File[] listOfFiles;
-        Chunk[] chunks;
 
-        if (!m_backup.isActive()) {
-            // #if LOGGER >= WARN
-            LOGGER.warn("Backup is not activated. Cannot recover!");
-            // #endif /* LOGGER >= WARN */
+        // TODO: Read-in access mode
+        HarddriveAccessMode mode = HarddriveAccessMode.RANDOM_ACCESS_FILE;
+        if (mode != HarddriveAccessMode.RAW_DEVICE) {
+            String fileName;
+            File folderToScan;
+            File[] listOfFiles;
+            Chunk[] chunks;
+
+            if (!m_backup.isActive()) {
+                // #if LOGGER >= WARN
+                LOGGER.warn("Backup is not activated. Cannot recover!");
+                // #endif /* LOGGER >= WARN */
+            } else {
+                folderToScan = new File(m_backupDirectory);
+                listOfFiles = folderToScan.listFiles();
+                assert listOfFiles != null;
+                for (int i = 0; i < listOfFiles.length; i++) {
+                    if (listOfFiles[i].isFile()) {
+                        fileName = listOfFiles[i].getName();
+                        if (fileName.contains("sec" + p_owner)) {
+                            chunks = m_log.recoverBackupRangeFromFile(fileName, m_backupDirectory);
+
+                            if (chunks == null) {
+                                // #if LOGGER >= ERROR
+                                LOGGER.error("Cannot recover Chunks! Trying next file.");
+                                // #endif /* LOGGER >= ERROR */
+                                continue;
+                            }
+                            // #if LOGGER >= INFO
+                            LOGGER.info("Retrieved %d Chunks from file", chunks.length);
+                            // #endif /* LOGGER >= INFO */
+
+                            // Store recovered Chunks
+                            m_chunk.putRecoveredChunks(chunks);
+
+                            if (fileName.contains("M")) {
+                                // Inform superpeers about new location of migrated Chunks (non-migrated Chunks are
+                                // processed later)
+                                for (Chunk chunk : chunks) {
+                                    if (ChunkID.getCreatorID(chunk.getID()) != p_owner) {
+                                        // TODO: This might crash because there is no tree for creator of this chunk
+                                        m_lookup.migrate(chunk.getID(), m_boot.getNodeID());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Inform superpeers about new location of non-migrated Chunks
+                // TODO: This might crash because there is no tree for recovered peer
+                m_lookup.setRestorerAfterRecovery(p_owner);
+            }
         } else {
-            folderToScan = new File(m_backupDirectory);
-            listOfFiles = folderToScan.listFiles();
-            assert listOfFiles != null;
-            for (int i = 0; i < listOfFiles.length; i++) {
-                if (listOfFiles[i].isFile()) {
-                    fileName = listOfFiles[i].getName();
+            String fileName;
+            String files;
+            String[] listOfFiles;
+            Chunk[] chunks = null;
+
+            if (!m_backup.isActive()) {
+                // #if LOGGER >= WARN
+                LOGGER.warn("Backup is not activated. Cannot recover!");
+                // #endif /* LOGGER >= WARN */
+            } else {
+                // Get list of all files in RAW device
+                files = JNIFileRaw.getFileList();
+                // split string to get filenames
+                listOfFiles = files.split("[\\n]+");
+                for (int i = 0; i < listOfFiles.length; i++) {
+                    fileName = listOfFiles[i];
                     if (fileName.contains("sec" + p_owner)) {
                         chunks = m_log.recoverBackupRangeFromFile(fileName, m_backupDirectory);
 
@@ -236,11 +293,11 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
                         }
                     }
                 }
-            }
 
-            // Inform superpeers about new location of non-migrated Chunks
-            // TODO: This might crash because there is no tree for recovered peer
-            m_lookup.setRestorerAfterRecovery(p_owner);
+                // Inform superpeers about new location of non-migrated Chunks
+                // TODO: This might crash because there is no tree for recovered peer
+                m_lookup.setRestorerAfterRecovery(p_owner);
+            }
         }
     }
 

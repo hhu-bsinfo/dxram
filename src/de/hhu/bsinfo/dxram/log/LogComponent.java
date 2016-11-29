@@ -21,6 +21,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.DefaultPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.MigrationPrimLogEntryHeader;
@@ -33,8 +34,10 @@ import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
 import de.hhu.bsinfo.dxram.log.storage.Version;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NetworkException;
+import de.hhu.bsinfo.utils.JNIFileRaw;
 import de.hhu.bsinfo.utils.Tools;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
@@ -54,6 +57,10 @@ public class LogComponent extends AbstractDXRAMComponent {
 
     // configuration values
     @Expose
+    private String m_harddriveAccess = "raf";
+    @Expose
+    private String m_rawDevicePath = "/dev/raw/raw1";
+    @Expose
     private boolean m_useChecksum = true;
     @Expose
     private StorageUnit m_flashPageSize = new StorageUnit(4, StorageUnit.KB);
@@ -71,6 +78,8 @@ public class LogComponent extends AbstractDXRAMComponent {
     private int m_reorgUtilizationThreshold = 70;
     @Expose
     private boolean m_sortBufferPooling = true;
+
+    private HarddriveAccessMode m_mode;
 
     // dependent components
     private NetworkComponent m_network;
@@ -335,7 +344,7 @@ public class LogComponent extends AbstractDXRAMComponent {
         Chunk[] ret = null;
 
         try {
-            ret = SecondaryLog.recoverFromFile(p_fileName, p_path, m_useChecksum, m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes());
+            ret = SecondaryLog.recoverFromFile(p_fileName, p_path, m_useChecksum, m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_mode);
         } catch (final IOException e) {
             // #if LOGGER >= ERROR
             LOGGER.error("Could not recover from file %s: %s", p_path, e);
@@ -458,6 +467,14 @@ public class LogComponent extends AbstractDXRAMComponent {
         m_loggingIsActive = m_boot.getNodeRole() == NodeRole.PEER && m_backup.isActive();
         if (m_loggingIsActive) {
 
+            m_mode = HarddriveAccessMode.convert(m_harddriveAccess);
+            if (m_mode == HarddriveAccessMode.ODIRECT) {
+                DXRAMJNIManager.loadJNIModule(HarddriveAccessMode.getJNIFileName(m_mode));
+            } else if (m_mode == HarddriveAccessMode.RAW_DEVICE) {
+                DXRAMJNIManager.loadJNIModule(HarddriveAccessMode.getJNIFileName(m_mode));
+                JNIFileRaw.prepareRawDevice(m_rawDevicePath, 0);
+            }
+
             m_nodeID = m_boot.getNodeID();
 
             m_backupDirectory = m_backup.getBackupDirectory();
@@ -467,7 +484,7 @@ public class LogComponent extends AbstractDXRAMComponent {
 
             // Create primary log
             try {
-                m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, m_primaryLogSize.getBytes(), (int) m_flashPageSize.getBytes());
+                m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, m_primaryLogSize.getBytes(), (int) m_flashPageSize.getBytes(), m_mode);
             } catch (final IOException e) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Primary log creation failed", e);
@@ -581,7 +598,7 @@ public class LogComponent extends AbstractDXRAMComponent {
                     secLog =
                         new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, ChunkID.getLocalID(p_firstChunkIDOrRangeID), cat.getNewID(false), false,
                             m_backupDirectory, m_secondaryLogSize.getBytes(), (int) m_flashPageSize.getBytes(), (int) m_logSegmentSize.getBytes(),
-                            m_reorgUtilizationThreshold, m_useChecksum);
+                            m_reorgUtilizationThreshold, m_useChecksum, m_mode);
                     // Insert range in log catalog
                     cat.insertRange(p_firstChunkIDOrRangeID, secLog, (int) m_secondaryLogBufferSize.getBytes(), (int) m_logSegmentSize.getBytes());
                 }
@@ -590,7 +607,7 @@ public class LogComponent extends AbstractDXRAMComponent {
                     // Create new secondary log for migrations
                     secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_firstChunkIDOrRangeID, cat.getNewID(true), true, m_backupDirectory,
                         m_secondaryLogSize.getBytes(), (int) m_flashPageSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_reorgUtilizationThreshold,
-                        m_useChecksum);
+                        m_useChecksum, m_mode);
                     // Insert range in log catalog
                     cat.insertRange(p_firstChunkIDOrRangeID, secLog, (int) m_secondaryLogBufferSize.getBytes(), (int) m_logSegmentSize.getBytes());
                 }

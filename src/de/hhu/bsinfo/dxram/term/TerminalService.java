@@ -16,6 +16,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.JNIconsole;
@@ -115,6 +116,8 @@ public class TerminalService extends AbstractDXRAMService {
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
+            DXRAMJNIManager.loadJNIModule("JNIconsole");
+
             loadHistoryFromFile("dxram_term_history");
         }
 

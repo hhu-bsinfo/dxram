@@ -14,6 +14,7 @@ import de.hhu.bsinfo.utils.unit.IPV4Unit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 20.10.2016
  */
 public class DXRAMContext {
+
     @Expose
     private EngineSettings m_engineSettings = new EngineSettings();
     @Expose

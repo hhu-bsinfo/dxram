@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxram.engine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.OSValidator;
 
 /**
@@ -11,9 +10,11 @@ import de.hhu.bsinfo.utils.OSValidator;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-final class DXRAMJNIManager {
+public final class DXRAMJNIManager {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMJNIManager.class.getSimpleName());
+
+    private static String ms_jniPath;
 
     /**
      * Constructor
@@ -24,12 +25,12 @@ final class DXRAMJNIManager {
     /**
      * Setup JNI related things for DXRAM according to the provided profile via settings.
      *
-     * @param p_engineSettings
-     *     EngineSettings data for setup.
+     * @param p_module
+     *     the module to load.
      */
-    public static void setup(final DXRAMContext.EngineSettings p_engineSettings) {
+    public static void loadJNIModule(final String p_module) {
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Setting up JNI classes...");
+        LOGGER.debug("Setting up JNI class for %s", p_module);
         // #endif /* LOGGER >= DEBUG */
 
         String path;
@@ -37,9 +38,9 @@ final class DXRAMJNIManager {
         String extension;
 
         if (OSValidator.isUnix()) {
-            extension = "so";
+            extension = ".so";
         } else if (OSValidator.isMac()) {
-            extension = "dylib";
+            extension = ".dylib";
         } else {
             // #if LOGGER >= ERROR
             LOGGER.error("Non supported OS");
@@ -47,13 +48,24 @@ final class DXRAMJNIManager {
             return;
         }
 
-        path = cwd + '/' + p_engineSettings.getJNIPath() + "/libJNIconsole." + extension;
+        // Load JNI-lib for given module
+        path = cwd + '/' + ms_jniPath + "/lib" + p_module + extension;
 
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Loading JNIconsole: %s", path);
+        LOGGER.debug("Loading %s: %s", p_module, path);
         // #endif /* LOGGER >= DEBUG */
 
-        JNIconsole.load(path);
+        System.load(path);
+    }
+
+    /**
+     * Setup JNI related things for DXRAM according to the provided profile via settings.
+     *
+     * @param p_engineSettings
+     *     EngineSettings data for setup.
+     */
+    public static void setup(final DXRAMContext.EngineSettings p_engineSettings) {
+        ms_jniPath = p_engineSettings.getJNIPath();
     }
 
 }

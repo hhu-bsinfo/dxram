@@ -15,16 +15,6 @@ public final class JNINativeMemory {
     }
 
     /**
-     * Provide the path to the native implementation.
-     *
-     * @param p_pathNativeLibrary
-     *     Path to the library with the native implementation.
-     */
-    public static void load(final String p_pathNativeLibrary) {
-        System.load(p_pathNativeLibrary);
-    }
-
-    /**
      * Allocate memory on the native operating system's heap.
      *
      * @param p_size

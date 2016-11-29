@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 
 import de.hhu.bsinfo.dxram.log.LogComponent;
+import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 
 /**
  * This class implements the primary log. Furthermore this class manages all
@@ -40,12 +41,14 @@ public final class PrimaryLog extends AbstractLog {
      *     the size of a primary log
      * @param p_flashPageSize
      *     the size of flash page
+     * @param p_mode
+     *     the HarddriveAccessMode
      * @throws IOException
      *     if primary log could not be created
      */
     public PrimaryLog(final LogComponent p_logComponent, final String p_backupDirectory, final short p_nodeID, final long p_primaryLogSize,
-        final int p_flashPageSize) throws IOException {
-        super(new File(p_backupDirectory + 'N' + p_nodeID + '_' + PRIMLOG_SUFFIX_FILENAME), p_primaryLogSize, PRIMLOG_HEADER.length);
+        final int p_flashPageSize, final HarddriveAccessMode p_mode) throws IOException {
+        super(new File(p_backupDirectory + 'N' + p_nodeID + '_' + PRIMLOG_SUFFIX_FILENAME), p_primaryLogSize, PRIMLOG_HEADER.length, p_mode);
         m_primaryLogSize = p_primaryLogSize;
 
         m_writePos = 0;

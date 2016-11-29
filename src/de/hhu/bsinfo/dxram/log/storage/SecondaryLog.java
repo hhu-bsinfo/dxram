@@ -19,6 +19,9 @@ import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.SecondaryLogsReorgThread;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.recovery.RecoveryDataStructure;
+import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
+import de.hhu.bsinfo.utils.JNIFileDirect;
+import de.hhu.bsinfo.utils.JNIFileRaw;
 import de.hhu.bsinfo.utils.Tools;
 
 /**
@@ -83,15 +86,17 @@ public class SecondaryLog extends AbstractLog {
      *     the threshold size for a secondary size to trigger reorganization
      * @param p_useChecksum
      *     the logger component
+     * @param p_mode
+     *     the HarddriveAccessMode
      * @throws IOException
      *     if secondary log could not be created
      */
     public SecondaryLog(final LogComponent p_logComponent, final SecondaryLogsReorgThread p_reorganizationThread, final short p_nodeID,
         final long p_rangeIDOrFirstLocalID, final String p_rangeIdentification, final boolean p_storesMigrations, final String p_backupDirectory,
         final long p_secondaryLogSize, final int p_flashPageSize, final int p_logSegmentSize, final int p_reorgUtilizationThreshold,
-        final boolean p_useChecksum) throws IOException {
+        final boolean p_useChecksum, final HarddriveAccessMode p_mode) throws IOException {
         super(new File(p_backupDirectory + 'N' + p_nodeID + '_' + SECLOG_PREFIX_FILENAME + p_nodeID + '_' + p_rangeIdentification + SECLOG_POSTFIX_FILENAME),
-            p_secondaryLogSize, SECLOG_HEADER.length);
+            p_secondaryLogSize, SECLOG_HEADER.length, p_mode);
         if (p_secondaryLogSize < p_flashPageSize) {
             throw new IllegalArgumentException("Error: Secondary log too small");
         }
@@ -107,7 +112,7 @@ public class SecondaryLog extends AbstractLog {
         m_rangeIDOrFirstLocalID = p_rangeIDOrFirstLocalID;
 
         m_versionsBuffer = new VersionsBuffer(p_logComponent,
-            p_backupDirectory + 'N' + p_nodeID + '_' + SECLOG_PREFIX_FILENAME + p_nodeID + '_' + p_rangeIdentification + ".ver");
+            p_backupDirectory + 'N' + p_nodeID + '_' + SECLOG_PREFIX_FILENAME + p_nodeID + '_' + p_rangeIdentification + ".ver", p_mode);
 
         m_reorganizationThread = p_reorganizationThread;
 
@@ -248,12 +253,14 @@ public class SecondaryLog extends AbstractLog {
      *     the secondary log size
      * @param p_logSegmentSize
      *     the segment size
+     * @param p_mode
+     *     the harddrive access mode
      * @return ArrayList with all log entries as chunks
      * @throws IOException
      *     if the secondary log could not be read
      */
     public static Chunk[] recoverFromFile(final String p_fileName, final String p_path, final boolean p_useChecksum, final long p_secondaryLogSize,
-        final int p_logSegmentSize) throws IOException {
+        final int p_logSegmentSize, final HarddriveAccessMode p_mode) throws IOException {
         short nodeID;
         int i = 0;
         int offset = 0;
@@ -273,7 +280,9 @@ public class SecondaryLog extends AbstractLog {
         storesMigrations = p_fileName.contains("M");
 
         chunkMap = new HashMap<Long, Chunk>();
-        segments = readAllSegmentsFromFile(p_path + p_fileName, p_secondaryLogSize, p_logSegmentSize);
+
+        segments = readAllSegmentsFromFile(p_path + p_fileName, p_secondaryLogSize, p_logSegmentSize, p_mode);
+
         // TODO: Reorganize log
         while (i < segments.length) {
             if (segments[i] != null) {
@@ -324,25 +333,60 @@ public class SecondaryLog extends AbstractLog {
      *     the secondary log size
      * @param p_logSegmentSize
      *     the segment size
+     * @param p_mode
+     *     the harddrive access mode
      * @return all data
      * @throws IOException
      *     if the secondary log could not be read
      * @note executed only by reorganization thread
      */
-    private static byte[][] readAllSegmentsFromFile(final String p_path, final long p_secondaryLogSize, final int p_logSegmentSize) throws IOException {
+    private static byte[][] readAllSegmentsFromFile(final String p_path, final long p_secondaryLogSize, final int p_logSegmentSize,
+        final HarddriveAccessMode p_mode) throws IOException {
         byte[][] result;
         int numberOfSegments;
-        RandomAccessFile randomAccessFile;
 
-        // TODO: Where is the end of a segment?
         numberOfSegments = (int) (p_secondaryLogSize / p_logSegmentSize);
-        randomAccessFile = new RandomAccessFile(new File(p_path), "r");
-        result = new byte[numberOfSegments][];
-        for (int i = 0; i < numberOfSegments; i++) {
-            result[i] = new byte[p_logSegmentSize];
-            readFromSecondaryLogFile(result[i], p_logSegmentSize, i * p_logSegmentSize, randomAccessFile, (short) SECLOG_HEADER.length);
+        if (p_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+            RandomAccessFile randomAccessFile;
+            randomAccessFile = new RandomAccessFile(new File(p_path), "r");
+            result = new byte[numberOfSegments][];
+            for (int i = 0; i < numberOfSegments; i++) {
+                result[i] = new byte[p_logSegmentSize];
+                readFromSecondaryLogFile(result[i], p_logSegmentSize, i * p_logSegmentSize, randomAccessFile, (short) SECLOG_HEADER.length);
+            }
+            randomAccessFile.close();
+        } else if (p_mode == HarddriveAccessMode.ODIRECT) {
+            int fileID = JNIFileDirect.open(p_path, 1);
+            if (fileID < 0) {
+                throw new IOException("JNI Error: Cannot open logfile.");
+            }
+            // Allocate buffers for reading
+            long readBufferAddr = JNIFileDirect.createBuffer(p_logSegmentSize);
+            result = new byte[numberOfSegments][];
+            for (int i = 0; i < numberOfSegments; i++) {
+                result[i] = new byte[p_logSegmentSize];
+                readFromSecondaryLogFile(result[i], p_logSegmentSize, i * p_logSegmentSize, fileID, readBufferAddr, p_logSegmentSize,
+                    (short) SECLOG_HEADER.length, p_mode);
+            }
+            JNIFileDirect.freeBuffer(readBufferAddr);
+            JNIFileDirect.close(fileID);
+        } else {
+            File file = new File(p_path);
+            int fileID = JNIFileRaw.openLog(file.getName());
+            if (fileID < 0) {
+                throw new IOException("JNI Error: Cannot open logfile.");
+            }
+            // Allocate buffers for reading
+            long readBufferAddr = JNIFileRaw.createBuffer(p_logSegmentSize);
+            result = new byte[numberOfSegments][];
+            for (int i = 0; i < numberOfSegments; i++) {
+                result[i] = new byte[p_logSegmentSize];
+                readFromSecondaryLogFile(result[i], p_logSegmentSize, i * p_logSegmentSize, fileID, readBufferAddr, p_logSegmentSize,
+                    (short) SECLOG_HEADER.length, p_mode);
+            }
+            JNIFileRaw.freeBuffer(readBufferAddr);
+            JNIFileRaw.closeLog(fileID);
         }
-        randomAccessFile.close();
 
         return result;
     }

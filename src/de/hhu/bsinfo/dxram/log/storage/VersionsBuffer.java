@@ -13,6 +13,9 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.LogComponent;
+import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
+import de.hhu.bsinfo.utils.JNIFileDirect;
+import de.hhu.bsinfo.utils.JNIFileRaw;
 
 /**
  * HashTable to store versions (Linear probing)
@@ -35,6 +38,8 @@ class VersionsBuffer {
     private static ByteBuffer ms_flushBuffer;
 
     private LogComponent m_logComponent;
+    private HarddriveAccessMode m_mode;
+
     private long m_highestChunkID = 0;
     private int[] m_table;
     private int m_count;
@@ -42,7 +47,15 @@ class VersionsBuffer {
     private int m_intCapacity;
     private byte m_eon;
     private short m_epoch;
+
     private RandomAccessFile m_versionsFile;
+    private int m_fileID;
+    // Pointer to read- and writebuffer for JNI
+    private long m_readBufferPointer;
+    private long m_writeBufferPointer;
+    // Size for read and write JNI-buffer
+    private int m_readBufferSize;
+    private int m_writeBufferSize;
 
     private ReentrantLock m_accessLock;
 
@@ -55,11 +68,15 @@ class VersionsBuffer {
      *     the log component to enable calling access granting methods
      * @param p_path
      *     the versions file's path
+     * @param p_mode
+     *     the harddrive access mode
      */
-    VersionsBuffer(final LogComponent p_logComponent, final String p_path) {
+    VersionsBuffer(final LogComponent p_logComponent, final String p_path, final HarddriveAccessMode p_mode) {
         super();
 
         m_logComponent = p_logComponent;
+        m_mode = p_mode;
+
         m_count = 0;
         m_logCount = 0;
         m_intCapacity = VERSIONS_BUFFER_CAPACITY * 3;
@@ -70,18 +87,63 @@ class VersionsBuffer {
         m_eon = 0;
         m_epoch = 0;
 
-        try {
-            final File file = new File(p_path);
-            if (file.exists()) {
-                if (!file.delete()) {
-                    throw new FileNotFoundException();
+        if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+            try {
+                final File file = new File(p_path);
+                if (file.exists()) {
+                    if (!file.delete()) {
+                        throw new FileNotFoundException();
+                    }
                 }
+                m_versionsFile = new RandomAccessFile(file, "rw");
+            } catch (final FileNotFoundException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not create versions file", e);
+                // #endif /* LOGGER >= ERROR */
             }
-            m_versionsFile = new RandomAccessFile(file, "rw");
-        } catch (final FileNotFoundException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Could not create versions file", e);
-            // #endif /* LOGGER >= ERROR */
+        } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+            try {
+                final File file = new File(p_path);
+                if (file.exists()) {
+                    if (!file.delete()) {
+                        throw new FileNotFoundException();
+                    }
+                }
+                m_fileID = JNIFileDirect.open(file.getCanonicalPath(), 0);
+                if (m_fileID < 0) {
+                    throw new IOException("JNI Error: Could not create Version Buffer.");
+                }
+            } catch (final IOException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not create versions file", e);
+                // #endif /* LOGGER >= ERROR */
+            }
+            // Set size for JNI-buffer (use 4 MB as standard)
+            // Use only multiples of the device-blocksize to get an aligned buffer!
+            m_writeBufferSize = 4 * 1024 * 1024;
+            m_readBufferSize = 4 * 1024 * 1024;
+            // Set pointer to buffer to 0
+            m_readBufferPointer = JNIFileDirect.createBuffer(m_readBufferSize);
+            m_writeBufferPointer = JNIFileDirect.createBuffer(m_writeBufferSize);
+        } else {
+            try {
+                final File file = new File(p_path);
+                m_fileID = JNIFileRaw.createLog(file.getName(), 0);
+                if (m_fileID < 0) {
+                    throw new IOException("JNI Error: Could not create Version Buffer.");
+                }
+            } catch (final IOException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not create versions file", e);
+                // #endif /* LOGGER >= ERROR */
+            }
+            // Set size for JNI-buffer (use 4 MB as standard)
+            // Use only multiples of the device-blocksize to get an aligned buffer!
+            m_writeBufferSize = 4 * 1024 * 1024;
+            m_readBufferSize = 4 * 1024 * 1024;
+            // Set pointer to buffer to 0
+            m_readBufferPointer = JNIFileDirect.createBuffer(m_readBufferSize);
+            m_writeBufferPointer = JNIFileDirect.createBuffer(m_writeBufferSize);
         }
 
         m_accessLock = new ReentrantLock(false);
@@ -94,6 +156,7 @@ class VersionsBuffer {
      *
      * @return the number of keys in VersionsBuffer
      */
+
     final boolean isThresholdReached() {
         return m_count >= FLUSH_THRESHOLD;
     }
@@ -104,13 +167,20 @@ class VersionsBuffer {
      * @return the number of keys in VersionsBuffer
      */
     final long getFileSize() {
-        try {
-            return m_versionsFile.length();
-        } catch (final IOException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Could not read versions file's size", e);
-            // #endif /* LOGGER >= ERROR */
-            return -1;
+
+        if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+            try {
+                return m_versionsFile.length();
+            } catch (final IOException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not read versions file's size", e);
+                // #endif /* LOGGER >= ERROR */
+                return -1;
+            }
+        } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+            return JNIFileDirect.length(m_fileID);
+        } else {
+            return JNIFileRaw.dlength(m_fileID);
         }
     }
 
@@ -219,8 +289,22 @@ class VersionsBuffer {
                     }
                 }
 
-                m_versionsFile.seek((int) m_versionsFile.length());
-                m_versionsFile.write(ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE);
+                if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                    m_versionsFile.seek((int) m_versionsFile.length());
+                    m_versionsFile.write(ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE);
+                } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                    if (JNIFileDirect
+                        .dwrite(m_fileID, ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE, (int) JNIFileDirect.length(m_fileID), m_writeBufferPointer,
+                            m_writeBufferSize) < 0) {
+                        throw new IOException("JNI Error.");
+                    }
+                } else {
+                    long writePosition = JNIFileRaw.dlength(m_fileID);
+                    if (JNIFileRaw.dwrite(m_fileID, ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE, writePosition, m_writeBufferPointer, m_writeBufferSize) <
+                        0) {
+                        throw new IOException("JNI Error.");
+                    }
+                }
             } catch (final IOException e) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Could write to versions file", e);
@@ -240,6 +324,7 @@ class VersionsBuffer {
      *     the searched key (is incremented before insertion to avoid 0)
      * @return the value to which the key is mapped in VersionsBuffer
      */
+
     protected final Version get(final long p_key) {
         Version ret = null;
         int index;
@@ -411,7 +496,13 @@ class VersionsBuffer {
 
         ret = m_epoch;
         try {
-            length = (int) m_versionsFile.length();
+            if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                length = (int) m_versionsFile.length();
+            } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                length = (int) JNIFileDirect.length(m_fileID);
+            } else {
+                length = (int) JNIFileRaw.dlength(m_fileID);
+            }
 
             if (length > 0) {
                 // Read all entries from SSD to hashtable
@@ -419,8 +510,20 @@ class VersionsBuffer {
                 // Read old versions from SSD and add to hashtable
                 // Then read all new versions from versions log and add to hashtable (overwrites older entries!)
                 data = new byte[length];
-                m_versionsFile.seek(0);
-                m_versionsFile.readFully(data);
+
+                if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                    m_versionsFile.seek(0);
+                    m_versionsFile.readFully(data);
+                } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                    if (JNIFileDirect.read(m_fileID, data, 0, data.length, 0, m_readBufferPointer, m_readBufferSize) < 0) {
+                        throw new IOException("JNI error: error reading file");
+                    }
+                } else {
+                    if (JNIFileRaw.dread(m_fileID, data, 0, data.length, 0, m_readBufferPointer, m_readBufferSize) < 0) {
+                        throw new IOException("JNI error: Error reading file");
+                    }
+                }
+
                 buffer = ByteBuffer.wrap(data);
 
                 for (int i = 0; i * SSD_ENTRY_SIZE < length; i++) {
@@ -490,9 +593,23 @@ class VersionsBuffer {
                         buffer.put((byte) version);
                     }
                 }
-                m_versionsFile.seek(0);
-                m_versionsFile.write(data);
-                m_versionsFile.setLength(data.length);
+
+                if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                    m_versionsFile.seek(0);
+                    m_versionsFile.write(data);
+                    m_versionsFile.setLength(data.length);
+                } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                    if (JNIFileDirect.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
+                        throw new IOException("JNI Error: Could not write to file");
+                    }
+                } else {
+                    if (JNIFileRaw.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
+                        throw new IOException("JNI Error: Could not write to file");
+                    }
+                    if (JNIFileRaw.setDFileLength(m_fileID, data.length) < 0) {
+                        throw new IOException("JNI error: could not set file length");
+                    }
+                }
             }
         } catch (final IOException e) {
             // #if LOGGER >= ERROR
@@ -534,7 +651,13 @@ class VersionsBuffer {
 
         ret = m_epoch;
         try {
-            length = (int) m_versionsFile.length();
+            if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                length = (int) m_versionsFile.length();
+            } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                length = (int) JNIFileDirect.length(m_fileID);
+            } else {
+                length = (int) JNIFileRaw.dlength(m_fileID);
+            }
 
             if (length > 0) {
                 // Read all entries from SSD to hashtable
@@ -542,8 +665,20 @@ class VersionsBuffer {
                 // Read old versions from SSD and add to hashtable
                 // Then read all new versions from versions log and add to hashtable (overwrites older entries!)
                 data = new byte[length];
-                m_versionsFile.seek(0);
-                m_versionsFile.readFully(data);
+
+                if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                    m_versionsFile.seek(0);
+                    m_versionsFile.readFully(data);
+                } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                    if (JNIFileDirect.read(m_fileID, data, 0, data.length, 0, m_readBufferPointer, m_readBufferSize) < 0) {
+                        throw new IOException("JNI error: error reading file");
+                    }
+                } else {
+                    if (JNIFileRaw.dread(m_fileID, data, 0, data.length, 0, m_readBufferPointer, m_readBufferSize) < 0) {
+                        throw new IOException("JNI error: Error reading file");
+                    }
+                }
+
                 buffer = ByteBuffer.wrap(data);
 
                 for (int i = 0; i * SSD_ENTRY_SIZE < length; i++) {
@@ -619,9 +754,23 @@ class VersionsBuffer {
                         buffer.put((byte) version);
                     }
                 }
-                m_versionsFile.seek(0);
-                m_versionsFile.write(data);
-                m_versionsFile.setLength(data.length);
+
+                if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                    m_versionsFile.seek(0);
+                    m_versionsFile.write(data);
+                    m_versionsFile.setLength(data.length);
+                } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                    if (JNIFileDirect.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
+                        throw new IOException("JNI Error: Could not write to file");
+                    }
+                } else {
+                    if (JNIFileRaw.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
+                        throw new IOException("JNI Error: Could not write to file");
+                    }
+                    if (JNIFileRaw.setDFileLength(m_fileID, data.length) < 0) {
+                        throw new IOException("JNI error: could not set file length");
+                    }
+                }
             }
         } catch (final IOException e) {
             // #if LOGGER >= ERROR

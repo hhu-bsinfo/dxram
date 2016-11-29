@@ -29,7 +29,7 @@ public class NativeMemoryTest extends AbstractMain {
      * Java main entry point.
      *
      * @param p_args
-     *         Main arguments.
+     *     Main arguments.
      */
     public static void main(final String[] p_args) {
         AbstractMain main = new NativeMemoryTest();
@@ -46,7 +46,7 @@ public class NativeMemoryTest extends AbstractMain {
         final String jniPath = p_arguments.getArgument(ARG_JNI_PATH).getValue(String.class);
 
         System.out.println("Loading jni file " + jniPath);
-        JNINativeMemory.load(jniPath);
+        System.load(jniPath);
 
         final int size = 32;
         long addr = JNINativeMemory.alloc(size);

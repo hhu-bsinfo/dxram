@@ -19,7 +19,7 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
 public class NativeMemoryBenchmark extends AbstractMain {
     private static final Argument ARG_NUM_RUNS = new Argument("numRuns", "100000", true, "Number of runs to execute for the final result");
     private static final Argument ARG_PATH_JNI_NATIVE_MEMORY =
-            new Argument("pathJNINativeMemory", null, false, "Absolute path to the compiled JNINativeMemory library files or single library file");
+        new Argument("pathJNINativeMemory", null, false, "Absolute path to the compiled JNINativeMemory library files or single library file");
 
     private EvaluationTable m_table;
 
@@ -34,7 +34,7 @@ public class NativeMemoryBenchmark extends AbstractMain {
      * Java main entry point.
      *
      * @param p_args
-     *         Main arguments.
+     *     Main arguments.
      */
     public static void main(final String[] p_args) {
         AbstractMain main = new NativeMemoryBenchmark();
@@ -60,9 +60,9 @@ public class NativeMemoryBenchmark extends AbstractMain {
      * Execute evaluation.
      *
      * @param p_numRuns
-     *         Number of runs to execute for each implementation.
+     *     Number of runs to execute for each implementation.
      * @param p_pathJniNativeMemory
-     *         Path to folder with all compiled JNINativeLibraries
+     *     Path to folder with all compiled JNINativeLibraries
      */
     private void mainEval(final int p_numRuns, final String p_pathJniNativeMemory) {
         if (p_pathJniNativeMemory.endsWith(".so") || p_pathJniNativeMemory.endsWith(".dylib")) {
@@ -71,7 +71,7 @@ public class NativeMemoryBenchmark extends AbstractMain {
             prepareTableEval(libName);
 
             runUnsafe(p_numRuns, "Unsafe");
-            JNINativeMemory.load(p_pathJniNativeMemory);
+            System.load(p_pathJniNativeMemory);
             runJNINativeMemory(p_numRuns, libName);
         } else {
             prepareTableEval(null);
@@ -84,25 +84,25 @@ public class NativeMemoryBenchmark extends AbstractMain {
             System.out.println("Running with multiple libraries from path: " + path);
 
             runUnsafe(p_numRuns, "Unsafe");
-            JNINativeMemory.load(path + "libJNINativeMemory_gcc_o1.so");
+            System.load(path + "libJNINativeMemory_gcc_o1.so");
             runJNINativeMemory(p_numRuns, "JNINativeMemory-gcc-O1");
-            JNINativeMemory.load(path + "libJNINativeMemory_gcc_o2.so");
+            System.load(path + "libJNINativeMemory_gcc_o2.so");
             runJNINativeMemory(p_numRuns, "JNINativeMemory-gcc-O2");
-            JNINativeMemory.load(path + "libJNINativeMemory_gcc_o3.so");
+            System.load(path + "libJNINativeMemory_gcc_o3.so");
             runJNINativeMemory(p_numRuns, "JNINativeMemory-gcc-O3");
 
-            JNINativeMemory.load(path + "libJNINativeMemory_clang_o1.so");
+            System.load(path + "libJNINativeMemory_clang_o1.so");
             runJNINativeMemory(p_numRuns, "JNINativeMemory-clang-O1");
-            JNINativeMemory.load(path + "libJNINativeMemory_clang_o2.so");
+            System.load(path + "libJNINativeMemory_clang_o2.so");
             runJNINativeMemory(p_numRuns, "JNINativeMemory-clang-O2");
-            JNINativeMemory.load(path + "libJNINativeMemory_clang_o3.so");
+            System.load(path + "libJNINativeMemory_clang_o3.so");
             runJNINativeMemory(p_numRuns, "JNINativeMemory-clang-O3");
 
-            JNINativeMemory.load(path + "libJNINativeMemory_icc_o1.so");
+            System.load(path + "libJNINativeMemory_icc_o1.so");
             runJNINativeMemory(p_numRuns, "JNINativeMemory-intel-O1");
-            JNINativeMemory.load(path + "libJNINativeMemory_icc_o2.so");
+            System.load(path + "libJNINativeMemory_icc_o2.so");
             runJNINativeMemory(p_numRuns, "JNINativeMemory-intel-O2");
-            JNINativeMemory.load(path + "libJNINativeMemory_icc_o3.so");
+            System.load(path + "libJNINativeMemory_icc_o3.so");
             runJNINativeMemory(p_numRuns, "JNINativeMemory-intel-O3");
         }
 
@@ -113,7 +113,7 @@ public class NativeMemoryBenchmark extends AbstractMain {
      * Create the table for measured data
      *
      * @param p_singleLibrary
-     *         Name of library for the table entry
+     *     Name of library for the table entry
      */
     private void prepareTableEval(final String p_singleLibrary) {
         if (p_singleLibrary == null) {
@@ -152,9 +152,9 @@ public class NativeMemoryBenchmark extends AbstractMain {
      * Execute the benchmark with Java's Unsafe
      *
      * @param p_numRuns
-     *         Number of runs to execute.
+     *     Number of runs to execute.
      * @param p_rowName
-     *         Name of the row in the table to put the data into.
+     *     Name of the row in the table to put the data into.
      */
     private void runUnsafe(final int p_numRuns, final String p_rowName) {
         Unsafe unsafe = UnsafeHandler.getInstance().getUnsafe();
@@ -218,9 +218,9 @@ public class NativeMemoryBenchmark extends AbstractMain {
      * Execute the benchmark with a JNINativeMemory implementation.
      *
      * @param p_numRuns
-     *         Number of runs to execute.
+     *     Number of runs to execute.
      * @param p_rowName
-     *         Name of the row in the table to put the data into.
+     *     Name of the row in the table to put the data into.
      */
     private void runJNINativeMemory(final int p_numRuns, final String p_rowName) {
         Stopwatch[] stopwatches = new Stopwatch[6];

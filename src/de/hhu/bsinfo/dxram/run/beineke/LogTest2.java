@@ -19,7 +19,7 @@ public final class LogTest2 {
 
     // Constants
     private static final int THREADS = 1;
-    private static final int CHUNK_SIZE = 100;
+    private static final int CHUNK_SIZE = 64;
     private static final int CHUNKS_PER_PUT = 100;
 
     // Constructors
@@ -99,7 +99,7 @@ public final class LogTest2 {
             }
 
             start = System.currentTimeMillis();
-            while (counter < 3221225472L / THREADS) {
+            while (counter < 10737418240L / THREADS) {
                 // Create new chunks in MemoryManagement
                 m_chunkService.create(chunks);
 
