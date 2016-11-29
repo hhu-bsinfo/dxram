@@ -6,7 +6,6 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -104,7 +103,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
                 for (short peer : backupPeers) {
                     if (peer != m_boot.getNodeID() && peer != NodeID.INVALID_ID) {
                         // #if LOGGER == TRACE
-                        LOGGER.trace("Logging %s to %s", ChunkID.toHexString(p_dataStructure.getID()), NodeID.toHexString(peer));
+                        LOGGER.trace("Logging 0x%x to %s", p_dataStructure.getID(), NodeID.toHexString(peer));
                         // #endif /* LOGGER == TRACE */
 
                         try {

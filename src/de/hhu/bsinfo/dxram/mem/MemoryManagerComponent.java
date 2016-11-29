@@ -42,10 +42,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         SUCCESS, UNKNOWN, DOES_NOT_EXIST, READ, WRITE, OUT_OF_MEMORY, INVALID_NODE_ROLE,
     }
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
-
     // statistics recording
     static final StatisticsOperation SOP_MALLOC = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Malloc");
+    private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
     private static final StatisticsOperation SOP_MULTI_MALLOC = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "MultiMalloc");
     private static final StatisticsOperation SOP_FREE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Free");
     private static final StatisticsOperation SOP_GET = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Get");
@@ -751,20 +750,21 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         return ret;
     }
 
-    public MemoryErrorCodes createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths) {
+    public MemoryErrorCodes createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths,
+        final int p_usedEntries) {
         assert m_boot.getNodeRole() == NodeRole.PEER;
 
         MemoryErrorCodes ret;
         long[] addresses;
 
         // #ifdef STATISTICS
-        SOP_CREATE_PUT_RECOVERED.enter(p_chunkIDs.length);
+        SOP_CREATE_PUT_RECOVERED.enter(p_usedEntries);
         // #endif /* STATISTICS */
 
         // #ifdef STATISTICS
-        SOP_MULTI_MALLOC.enter(p_chunkIDs.length);
+        SOP_MULTI_MALLOC.enter(p_usedEntries);
         // #endif /* STATISTICS */
-        addresses = m_rawMemory.multiMallocSizes(p_lengths);
+        addresses = m_rawMemory.multiMallocSizesUsedEntries(p_usedEntries, p_lengths);
         // #ifdef STATISTICS
         SOP_MULTI_MALLOC.leave();
         // #endif /* STATISTICS */

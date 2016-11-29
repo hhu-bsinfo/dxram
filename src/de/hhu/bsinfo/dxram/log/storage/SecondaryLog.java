@@ -788,14 +788,6 @@ public class SecondaryLog extends AbstractLog {
             p_stat.m_timeToReadSegmentsFromDisk += System.currentTimeMillis() - time;
 
             if (segmentLength > 0) {
-                // For C Memory Manager Component
-                //                int index = 0;
-                //                int length = 100000;
-                //                long[] chunkIDs = new long[length];
-                //                int[] offsets = new int[length];
-                //                int[] lengths = new int[length];
-                // \C Memory Manager Component
-
                 recoveryDataStructure = new RecoveryDataStructure(p_segmentData);
                 while (readBytes < segmentLength) {
                     time = System.currentTimeMillis();
@@ -836,28 +828,6 @@ public class SecondaryLog extends AbstractLog {
                         p_stat.m_timeToCheck += System.currentTimeMillis() - time;
 
                         // Put chunk in memory
-
-                        // For C Memory Manager Component
-                        //                        if (index < length) {
-                        //                            index++;
-                        //                        } else {
-                        //                            time = System.currentTimeMillis();
-                        //                            if (p_chunkComponent.putRecoveredChunks(chunkIDs, p_segmentData, offsets, lengths, length)) {
-                        //                                counter += length;
-                        //                            } else {
-                        //                                // #if LOGGER >= ERROR
-                        //LOGGER.error("Memory management failure. Could not recover chunks!");
-                        //                                // #endif /* LOGGER >= ERROR */
-                        //                            }
-                        //                            p_stat.m_timeToPut += System.currentTimeMillis() - time;
-                        //                            index = 0;
-                        //                        }
-                        //                        chunkIDs[index] = chunkID;
-                        //                        offsets[index] = readBytes + headerSize;
-                        //                        lengths[index] = payloadSize;
-                        // \C Memory Manager Component
-
-                        // For Java Memory Manager Component
                         time = System.currentTimeMillis();
                         recoveryDataStructure.setID(chunkID);
                         recoveryDataStructure.setOffset(readBytes + headerSize);
@@ -870,7 +840,6 @@ public class SecondaryLog extends AbstractLog {
                             // #endif /* LOGGER >= ERROR */
                         }
                         p_stat.m_timeToPut += System.currentTimeMillis() - time;
-                        // \Java Memory Manager Component
 
                     } else {
                         // Version, epoch and/or eon is different -> ignore entry
@@ -878,20 +847,132 @@ public class SecondaryLog extends AbstractLog {
                     }
                     readBytes += headerSize + payloadSize;
                 }
+            }
+        } catch (final IOException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Recovery failed(%d): ", m_rangeIDOrFirstLocalID, e);
+            // #endif /* LOGGER >= ERROR */
+        }
 
-                // For C Memory Manager Component
-                //                if (index != 0) {
-                //                    time = System.currentTimeMillis();
-                //                    if (p_chunkComponent.putRecoveredChunks(chunkIDs, p_segmentData, offsets, lengths, index)) {
-                //                        counter += index;
-                //                    } else {
-                //                        // #if LOGGER >= ERROR
-                //LOGGER.error("Memory management failure. Could not recover chunks!");
-                //                        // #endif /* LOGGER >= ERROR */
-                //                    }
-                //                    p_stat.m_timeToPut += System.currentTimeMillis() - time;
-                //                }
-                // \C Memory Manager Component
+        return counter;
+    }
+
+    /**
+     * Recover a segment from a normal secondary log
+     *
+     * @param p_segmentIndex
+     *     the index of the segment
+     * @param p_allVersions
+     *     all versions in an int-array
+     * @param p_epoch
+     *     the epoch before reading the versions
+     * @param p_chunkComponent
+     *     the ChunkComponent
+     * @param p_doCRCCheck
+     *     whether to check the CRC checksum
+     */
+    private int recoverSegmentMultiPut(final int p_segmentIndex, final byte[] p_segmentData, final int[] p_allVersions, final short p_epoch,
+        final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck, final Statistics p_stat) {
+        int headerSize;
+        int readBytes = 0;
+        int segmentLength;
+        int payloadSize;
+        int counter = 0;
+        long chunkID;
+        long time;
+        Version currentVersion;
+        Version entryVersion;
+        AbstractLogEntryHeader logEntryHeader;
+        RecoveryDataStructure recoveryDataStructure;
+
+        try {
+            time = System.currentTimeMillis();
+            segmentLength = readSegment(p_segmentData, p_segmentIndex);
+            p_stat.m_timeToReadSegmentsFromDisk += System.currentTimeMillis() - time;
+
+            if (segmentLength > 0) {
+                int index = 0;
+                int length = 100000;
+                long[] chunkIDs = new long[length];
+                int[] offsets = new int[length];
+                int[] lengths = new int[length];
+
+                recoveryDataStructure = new RecoveryDataStructure(p_segmentData);
+                while (readBytes < segmentLength) {
+                    time = System.currentTimeMillis();
+                    logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(p_segmentData, readBytes, m_storesMigrations);
+                    headerSize = logEntryHeader.getHeaderSize(p_segmentData, readBytes);
+                    payloadSize = logEntryHeader.getLength(p_segmentData, readBytes);
+                    chunkID = logEntryHeader.getCID(p_segmentData, readBytes);
+                    entryVersion = logEntryHeader.getVersion(p_segmentData, readBytes);
+
+                    // Get current version
+                    currentVersion = new Version((short) p_allVersions[(int) (chunkID - m_rangeIDOrFirstLocalID) * 2],
+                        p_allVersions[(int) (chunkID - m_rangeIDOrFirstLocalID) * 2 + 1]);
+                    if (currentVersion.getEpoch() == -1 || (short) (p_epoch + 1) == entryVersion.getEpoch()) {
+                        // There is no entry in hashtable or element is more current -> get latest version from cache
+                        // (Epoch can only be 1 greater because there is no flushing during reorganization)
+                        currentVersion = m_versionsBuffer.get(chunkID);
+                    }
+
+                    if (!m_storesMigrations) {
+                        // Add creator
+                        chunkID += (long) m_nodeID << 48;
+                    }
+
+                    // Compare current version with element
+                    if (currentVersion.equals(logEntryHeader.getVersion(p_segmentData, readBytes))) {
+                        // Create chunk only if log entry complete
+                        if (p_doCRCCheck) {
+                            if (AbstractLogEntryHeader.calculateChecksumOfPayload(p_segmentData, readBytes + headerSize, payloadSize) !=
+                                logEntryHeader.getChecksum(p_segmentData, readBytes)) {
+                                // #if LOGGER >= ERROR
+                                LOGGER.error("Corrupt data. Could not recover 0x%X!", chunkID);
+                                // #endif /* LOGGER >= ERROR */
+
+                                readBytes += headerSize + payloadSize;
+                                continue;
+                            }
+                        }
+                        p_stat.m_timeToCheck += System.currentTimeMillis() - time;
+
+                        // Put chunks in memory
+                        if (index < length) {
+                            index++;
+                        } else {
+                            time = System.currentTimeMillis();
+                            if (p_chunkComponent.putRecoveredChunks(chunkIDs, p_segmentData, offsets, lengths, length)) {
+                                counter += length;
+                            } else {
+                                // #if LOGGER >= ERROR
+                                LOGGER.error("Memory management failure. Could not recover chunks!");
+                                // #endif /* LOGGER >= ERROR */
+                            }
+                            p_stat.m_timeToPut += System.currentTimeMillis() - time;
+                            index = 0;
+                        }
+                        chunkIDs[index] = chunkID;
+                        offsets[index] = readBytes + headerSize;
+                        lengths[index] = payloadSize;
+                    } else {
+                        // Version, epoch and/or eon is different -> ignore entry
+                        p_stat.m_timeToCheck += System.currentTimeMillis() - time;
+                    }
+                    readBytes += headerSize + payloadSize;
+                }
+
+                // Put other chunks in memory
+                if (index != 0) {
+                    time = System.currentTimeMillis();
+                    if (p_chunkComponent.putRecoveredChunks(chunkIDs, p_segmentData, offsets, lengths, index)) {
+                        counter += index;
+                    } else {
+                        // #if LOGGER >= ERROR
+                        LOGGER.error("Memory management failure. Could not recover chunks!");
+                        // #endif /* LOGGER >= ERROR */
+                    }
+                    p_stat.m_timeToPut += System.currentTimeMillis() - time;
+                }
 
             }
         } catch (final IOException e) {

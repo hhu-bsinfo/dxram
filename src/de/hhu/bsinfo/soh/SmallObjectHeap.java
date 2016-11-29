@@ -11,27 +11,24 @@ import java.util.ArrayList;
  */
 public final class SmallObjectHeap {
 
+    public static final int MAX_SIZE_MEMORY_BLOCK = (int) Math.pow(2, 23);
     // Constants
     static final byte POINTER_SIZE = 5;
+    static final int SIZE_MARKER_BYTE = 1;
     private static final byte SMALL_BLOCK_SIZE = 64;
     private static final byte OCCUPIED_FLAGS_OFFSET = 0x5;
     private static final byte OCCUPIED_FLAGS_OFFSET_MASK = 0x03;
     private static final byte SINGLE_BYTE_MARKER = 0xF;
-
     // limits a single payload block to 8MB, though the allocator supports chaining of blocks
     // private static final int MAX_LENGTH_FIELD = 3;
     private static final int CHAINED_BLOCK_LENGTH_FIELD = POINTER_SIZE;
-    public static final int MAX_SIZE_MEMORY_BLOCK = (int) Math.pow(2, 23);
-    static final int SIZE_MARKER_BYTE = 1;
-
     // Attributes, have them accessible by the package to enable walking and analyzing the heap
     // don't modify or access them otherwise
     Storage m_memory;
-    private Status m_status;
-
     long m_baseFreeBlockList;
     int m_freeBlocksListSize = -1;
     long[] m_freeBlockListSizes;
+    private Status m_status;
     private int m_freeBlocksListCount = -1;
 
     // Constructors
@@ -80,20 +77,42 @@ public final class SmallObjectHeap {
     }
 
     /**
-     * Free all memory of the storage instance
-     */
-    public void destroy() {
-        m_memory.free();
-        m_memory = null;
-    }
-
-    /**
      * Gets the status
      *
      * @return the status
      */
     public Status getStatus() {
         return m_status;
+    }
+
+    /**
+     * Extract the size of the length field of the allocated or free area
+     * from the marker byte.
+     *
+     * @param p_marker
+     *     Marker byte.
+     * @return Size of the length field of block with specified marker byte.
+     */
+    private static int getSizeFromMarker(final int p_marker) {
+        int ret;
+
+        if (p_marker <= OCCUPIED_FLAGS_OFFSET) {
+            // free block size
+            ret = p_marker;
+        } else {
+            // allocated block sizes 1, 2, 3 and 5 (chained block next ptr) are used
+            ret = p_marker - OCCUPIED_FLAGS_OFFSET;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Free all memory of the storage instance
+     */
+    public void destroy() {
+        m_memory.free();
+        m_memory = null;
     }
 
     /**
@@ -178,13 +197,27 @@ public final class SmallObjectHeap {
      * @return List of addresses for the sizes on success, null on failure
      */
     public long[] multiMallocSizes(final int... p_sizes) {
+        return multiMallocSizesUsedEntries(p_sizes.length, p_sizes);
+    }
+
+    /**
+     * Allocate multiple blocks in a single call. This falls back to normal malloc if the
+     * allocator cannot find a single free block that fits all the sizes
+     *
+     * @param p_sizes
+     *     Sizes for the blocks to allocate
+     * @param p_usedEntries
+     *     First n elements to be used of size array
+     * @return List of addresses for the sizes on success, null on failure
+     */
+    public long[] multiMallocSizesUsedEntries(final int p_usedEntries, final int... p_sizes) {
         long[] ret;
 
         // number of marker bytes to separate blocks
         // -1: one marker byte is already part of the free block
-        int bigChunkSize = p_sizes.length - 1;
+        int bigChunkSize = p_usedEntries - 1;
 
-        for (int i = 0; i < p_sizes.length; i++) {
+        for (int i = 0; i < p_usedEntries; i++) {
             bigChunkSize += p_sizes[i];
 
             if (p_sizes[i] <= MAX_SIZE_MEMORY_BLOCK) {
@@ -224,9 +257,9 @@ public final class SmallObjectHeap {
         if (ret == null) {
             // fallback to single malloc calls on failure
 
-            ret = new long[p_sizes.length];
+            ret = new long[p_usedEntries];
 
-            for (int i = 0; i < p_sizes.length; i++) {
+            for (int i = 0; i < p_usedEntries; i++) {
                 long addr = malloc(p_sizes[i]);
 
                 if (addr == -1) {
@@ -325,6 +358,7 @@ public final class SmallObjectHeap {
      * @param p_address
      *     the address of the block
      */
+
     public void free(final long p_address) {
         long address;
         int lengthFieldSize;
@@ -1308,12 +1342,47 @@ public final class SmallObjectHeap {
         return itemsWritten;
     }
 
+    // -------------------------------------------------------------------------------------------
+
     @Override
     public String toString() {
         return "Memory: " + "m_baseFreeBlockList " + m_baseFreeBlockList + ", status: " + m_status;
     }
 
-    // -------------------------------------------------------------------------------------------
+    /**
+     * Reads up to 8 bytes combined in a long
+     *
+     * @param p_address
+     *     the address
+     * @param p_count
+     *     the number of bytes
+     * @return the combined bytes
+     */
+    protected long read(final long p_address, final int p_count) {
+        return m_memory.readVal(p_address, p_count);
+    }
+
+    /**
+     * Read the right part of a marker byte
+     *
+     * @param p_address
+     *     the address
+     * @return the right part of a marker byte
+     */
+    int readRightPartOfMarker(final long p_address) {
+        return m_memory.readByte(p_address) & 0xF;
+    }
+
+    /**
+     * Reads a pointer
+     *
+     * @param p_address
+     *     the address
+     * @return the pointer
+     */
+    long readPointer(final long p_address) {
+        return read(p_address, POINTER_SIZE);
+    }
 
     /**
      * Get the size of the allocated or free'd block of memory specified
@@ -2132,17 +2201,6 @@ public final class SmallObjectHeap {
     }
 
     /**
-     * Read the right part of a marker byte
-     *
-     * @param p_address
-     *     the address
-     * @return the right part of a marker byte
-     */
-    int readRightPartOfMarker(final long p_address) {
-        return m_memory.readByte(p_address) & 0xF;
-    }
-
-    /**
      * Read the left part of a marker byte
      *
      * @param p_address
@@ -2151,28 +2209,6 @@ public final class SmallObjectHeap {
      */
     private int readLeftPartOfMarker(final long p_address) {
         return (m_memory.readByte(p_address) & 0xF0) >> 4;
-    }
-
-    /**
-     * Extract the size of the length field of the allocated or free area
-     * from the marker byte.
-     *
-     * @param p_marker
-     *     Marker byte.
-     * @return Size of the length field of block with specified marker byte.
-     */
-    private static int getSizeFromMarker(final int p_marker) {
-        int ret;
-
-        if (p_marker <= OCCUPIED_FLAGS_OFFSET) {
-            // free block size
-            ret = p_marker;
-        } else {
-            // allocated block sizes 1, 2, 3 and 5 (chained block next ptr) are used
-            ret = p_marker - OCCUPIED_FLAGS_OFFSET;
-        }
-
-        return ret;
     }
 
     /**
@@ -2206,17 +2242,6 @@ public final class SmallObjectHeap {
     }
 
     /**
-     * Reads a pointer
-     *
-     * @param p_address
-     *     the address
-     * @return the pointer
-     */
-    long readPointer(final long p_address) {
-        return read(p_address, POINTER_SIZE);
-    }
-
-    /**
      * Writes a pointer
      *
      * @param p_address
@@ -2226,19 +2251,6 @@ public final class SmallObjectHeap {
      */
     private void writePointer(final long p_address, final long p_pointer) {
         write(p_address, p_pointer, POINTER_SIZE);
-    }
-
-    /**
-     * Reads up to 8 bytes combined in a long
-     *
-     * @param p_address
-     *     the address
-     * @param p_count
-     *     the number of bytes
-     * @return the combined bytes
-     */
-    protected long read(final long p_address, final int p_count) {
-        return m_memory.readVal(p_address, p_count);
     }
 
     /**
