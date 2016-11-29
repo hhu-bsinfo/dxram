@@ -20,11 +20,12 @@ public final class SecondaryLogBuffer {
     // Attributes
     private byte[] m_buffer;
     private int m_bytesInBuffer;
-
     private SecondaryLog m_secondaryLog;
-    private int m_logSegmentSize;
 
     // Constructors
+    private int m_logSegmentSize;
+
+    // Getter
 
     /**
      * Creates an instance of SecondaryLogBuffer
@@ -48,8 +49,6 @@ public final class SecondaryLogBuffer {
         // #endif /* LOGGER == TRACE */
     }
 
-    // Getter
-
     /**
      * Returns the number of bytes
      *
@@ -59,6 +58,8 @@ public final class SecondaryLogBuffer {
         return m_bytesInBuffer;
     }
 
+    // Methods
+
     /**
      * Returns whether the secondary log buffer is empty or not
      *
@@ -67,8 +68,6 @@ public final class SecondaryLogBuffer {
     public boolean isBufferEmpty() {
         return m_bytesInBuffer == 0;
     }
-
-    // Methods
 
     /**
      * Changes log entries for storing in secondary log

@@ -837,10 +837,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                         remoteChunksByPeers.put(peer, remoteChunksOfPeer);
                     }
                     remoteChunksOfPeer.add(p_dataStructures[i + p_offset]);
+                } else {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Location of Chunk is unknown, it cannot be put!");
+                    // #endif /* LOGGER >= ERROR */
                 }
             }
         }
-
         m_memoryManager.unlockAccess();
 
         // go for remote chunks

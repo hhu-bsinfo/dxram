@@ -29,7 +29,7 @@ public final class LogTest3 {
     // Constants
     private static final long BYTES_TO_LOAD = 5196002400L;
     private static final long BYTES_TO_UPDATE = 6000128000L;
-    private static final int CHUNK_SIZE = 100;
+    private static final int CHUNK_SIZE = 64;
     private static final int CHUNKS_PER_PUT = 100;
     private static final int CHUNKS_PER_UPDATE = 512;
     private static final int MASTER_THREADS = 1;
@@ -290,12 +290,12 @@ public final class LogTest3 {
          */
         @Override
         public void run() {
-            final short[] nodeIDs = new short[3];
+            /*-final short[] nodeIDs = new short[3];
             nodeIDs[0] = 640;
             nodeIDs[1] = -15807;
-            nodeIDs[2] = -14847;
-            /*-final short[] nodeIDs = new short[1];
-            nodeIDs[0] = 640;*/
+            nodeIDs[2] = -14847;*/
+            final short[] nodeIDs = new short[1];
+            nodeIDs[0] = 320;
             ByteBuffer data;
 
             long start;
@@ -325,6 +325,7 @@ public final class LogTest3 {
                     for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
                         chunks[i].setChunkID(((long) nodeIDs[rand.nextInt(nodeIDs.length)] << 48) + offset + i);
                     }*/
+                    long time = System.currentTimeMillis();
                     for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
                         chunks[i].setID(((long) nodeIDs[rand.nextInt(nodeIDs.length)] << 48) + nextLong(rand, BYTES_TO_LOAD / CHUNK_SIZE - CHUNKS_PER_PUT) + 1);
                     }

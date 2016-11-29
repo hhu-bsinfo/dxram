@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 23.02.2014
  */
-public class VersionsHashTable {
+class VersionsHashTable {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(VersionsHashTable.class.getSimpleName());
 
@@ -26,7 +26,7 @@ public class VersionsHashTable {
      * @param p_initialElementCapacity
      *     the initial capacity of VersionsHashTable
      */
-    public VersionsHashTable(final int p_initialElementCapacity) {
+    VersionsHashTable(final int p_initialElementCapacity) {
         super();
 
         m_count = 0;
@@ -38,7 +38,7 @@ public class VersionsHashTable {
         m_table = new int[m_elementCapacity * 4];
     }
 
-    // Getter
+    // Getter / Setter
 
     /**
      * Returns all entries
@@ -66,6 +66,15 @@ public class VersionsHashTable {
      */
     protected final int size() {
         return m_count;
+    }
+
+    /**
+     * Returns the number of keys fitting in VersionsHashTable
+     *
+     * @return the number of keys fitting in VersionsHashTable
+     */
+    protected final int capacity() {
+        return m_table.length / 4;
     }
 
     /**

@@ -40,38 +40,50 @@ public class PrimaryWriteBuffer {
     // Constants
     private static final int WRITE_BUFFER_MAX_SIZE = 1024 * 1024 * 1024;
     // Must be smaller than 1/2 of WRITE_BUFFER_SIZE
-    private static final int SIGNAL_ON_BYTE_COUNT = 12 * 1024 * 1024;
+    private static final int SIGNAL_ON_BYTE_COUNT = 16 * 1024 * 1024;
     private static final long WRITERTHREAD_TIMEOUTTIME = 100L;
 
     // Attributes
-    private LogComponent m_logComponent;
-    private int m_writeBufferSize;
-    private int m_flashPageSize;
-    private int m_secondaryLogBufferSize;
-    private int m_logSegmentSize;
-    private boolean m_useChecksum;
+    private final LogComponent m_logComponent;
+    private final PrimaryLog m_primaryLog;
+    private final int m_writeBufferSize;
+    private final int m_flashPageSize;
+    private final int m_secondaryLogBufferSize;
+    private final int m_logSegmentSize;
+    private final boolean m_useChecksum;
 
     private byte[] m_buffer;
-    private int m_ringBufferSize;
     private PrimaryLogWriterThread m_writerThread;
-
-    private PrimaryLog m_primaryLog;
-
-    private HashMap<Long, Integer> m_lengthByBackupRange;
-
-    private int m_bufferReadPointer;
-    private int m_bufferWritePointer;
-    private int m_bytesInWriteBuffer;
 
     private long m_timestamp;
 
-    private boolean m_isShuttingDown;
-    private boolean m_dataAvailable;
-    private volatile boolean m_flushingComplete;
+    // The following members are read/set by writer thread synchronized by metadata lock and read/set by exclusive message handler without
+    // synchronization, but it is guaranteed that metadata lock is acquired by exclusive message handler before writer thread accesses
+    // the metadata (-> happened before)
+    private int m_bufferReadPointer;
+    private int m_bufferWritePointer;
+    private HashMap<Long, Integer> m_lengthByBackupRange;
+
+    // Read/Set by exclusive message handler, only (either to log chunks or to initialize flushing during recovery)
     private boolean m_needToLock;
 
-    private boolean m_writerThreadRequestsAccessToBuffer;
-    private boolean m_writerThreadAccessesBuffer;
+    // All accesses are synchronized by metadata lock
+    private boolean m_dataAvailable;
+
+    // Read by writer thread, set by application thread
+    private volatile boolean m_isShuttingDown;
+
+    // Set by application thread(s); used to wait until flushing is completed
+    private volatile boolean m_flushingComplete;
+
+    // Written by writer thread, read by exclusive message handler
+    private volatile boolean m_writerThreadRequestsAccessToBuffer;
+
+    // Read/Set by exclusive message handler and writer thread; used to grant access to writer thread
+    private volatile boolean m_writerThreadAccessesBuffer;
+
+    // Read and increased by exclusive message handler, read and reset by writer thread (no concurrent access!)
+    private volatile int m_bytesInWriteBuffer;
 
     private ReentrantLock m_metadataLock;
     private Condition m_dataAvailableCond;
@@ -123,6 +135,7 @@ public class PrimaryWriteBuffer {
         m_writerThread = null;
         m_flushingComplete = false;
         m_dataAvailable = false;
+
         m_needToLock = false;
 
         m_metadataLock = new ReentrantLock(false);
@@ -133,7 +146,6 @@ public class PrimaryWriteBuffer {
             throw new IllegalArgumentException("Illegal buffer size! Must be 2^x with " + Math.log(m_flashPageSize) / Math.log(2) + " <= x <= 31");
         }
         m_buffer = new byte[m_writeBufferSize];
-        m_ringBufferSize = m_writeBufferSize;
         m_lengthByBackupRange = new HashMap<Long, Integer>();
         m_isShuttingDown = false;
 
@@ -175,12 +187,6 @@ public class PrimaryWriteBuffer {
         while (!m_flushingComplete) {
             Thread.yield();
         }
-
-        m_writerThread = null;
-        m_bufferReadPointer = 0;
-        m_bufferWritePointer = 0;
-        m_ringBufferSize = 0;
-        m_buffer = null;
     }
 
     /**
@@ -191,20 +197,9 @@ public class PrimaryWriteBuffer {
     }
 
     /**
-     * Grant the writer thread access to buffer meta-data
-     */
-    public void grantAccessToWriterThread() {
-        m_metadataLock.lock();
-        m_writerThreadAccessesBuffer = true;
-        m_needToLock = true;
-        m_dataAvailable = true;
-        m_dataAvailableCond.signalAll();
-        m_metadataLock.unlock();
-    }
-
-    /**
      * Writes log entries as a whole (max. size: write buffer) Log entry format:
      * /////// // CID // LEN // CRC// DATA ... ///////
+     * Is only called by exclusive message handler
      *
      * @param p_header
      *     the log entry's header as a byte array
@@ -218,6 +213,7 @@ public class PrimaryWriteBuffer {
      */
     public final int putLogData(final byte[] p_header, final ByteBuffer p_buffer, final int p_payloadLength) throws InterruptedException {
         AbstractLogEntryHeader logEntryHeader;
+        int bytesInWriteBuffer;
         int bytesToWrite;
         int bytesUntilEnd;
         int writePointer;
@@ -237,101 +233,124 @@ public class PrimaryWriteBuffer {
         if (p_payloadLength <= 0) {
             throw new IllegalArgumentException("No payload for log entry!");
         }
-        if (bytesToWrite > m_ringBufferSize) {
+        if (bytesToWrite > m_writeBufferSize) {
             throw new IllegalArgumentException("Data to write exceeds buffer size!");
         }
 
-        if (!m_isShuttingDown) {
-            // ***Synchronization***//
-            // Signal writer thread if write buffer is nearly full
-            if (m_bytesInWriteBuffer > m_writeBufferSize * 0.8) {
-                // Grant writer thread access to meta-data (data available)
-                grantAccessToWriterThread();
-            }
+        // ***Synchronization***//
+        // Signal writer thread if write buffer is nearly full
+        bytesInWriteBuffer = m_bytesInWriteBuffer;
+        if (bytesInWriteBuffer > m_writeBufferSize * 0.8) {
+            // Grant writer thread access to meta-data (data available)
+            // Acquires metadata lock -> changed values become visible to writer thread
+            grantAccessToWriterThread();
+        }
 
-            // Explicitly synchronize if access to meta-data was granted to writer thread or no message was logged in a long time
-            // This is always executed by the same thread (exclusive message handler) -> m_needToLock must not be synchronized
-            currentTime = System.currentTimeMillis();
-            if (m_needToLock || currentTime - m_timestamp > 2 * WRITERTHREAD_TIMEOUTTIME) {
-                m_needToLock = false;
-                m_metadataLock.lock();
-                while (m_writerThreadAccessesBuffer) {
-                    m_finishedCopyingCond.await();
-                }
-                m_metadataLock.unlock();
+        // Explicitly synchronize if access to meta-data was granted to writer thread or no message was logged in a long time
+        // This is always executed by the same thread (exclusive message handler)
+        currentTime = System.currentTimeMillis();
+        if (m_needToLock || currentTime - m_timestamp > WRITERTHREAD_TIMEOUTTIME) {
+            // If m_needToLock is set, writer thread got access granted by this thread and flushing is in progress
+            // After waiting at least WRITERTHREAD_TIMEOUTTIME without getting access, the writer thread accesses the metadata
+            // anyway -> check if writer thread is accessing when (currentTime - m_timestamp > WRITERTHREAD_TIMEOUTTIME)
+            m_needToLock = false;
+            m_metadataLock.lock();
+            while (m_writerThreadAccessesBuffer) {
+                m_finishedCopyingCond.await();
             }
-            m_timestamp = currentTime;
+            m_metadataLock.unlock();
+            bytesInWriteBuffer = 0;
+        }
+        m_timestamp = currentTime;
 
-            // ***Appending***//
-            // Set buffer write pointer and byte counter
-            writePointer = m_bufferWritePointer;
-            m_bufferWritePointer = writePointer + bytesToWrite;
-            if (m_bufferWritePointer >= m_buffer.length) {
-                m_bufferWritePointer = bytesToWrite - (m_buffer.length - writePointer);
-            }
-            // Update byte counters
-            m_bytesInWriteBuffer += bytesToWrite;
+        // ***Appending***//
+        // Set buffer write pointer and byte counter
+        // Access metadata without locking as no other thread can change meanwhile; changed values will become visible
+        // when granted access to writer thread by acquiring the metadata lock (-> happened before)
+        writePointer = m_bufferWritePointer;
+        m_bufferWritePointer = writePointer + bytesToWrite;
+        if (m_bufferWritePointer >= m_buffer.length) {
+            m_bufferWritePointer = bytesToWrite - (m_buffer.length - writePointer);
+        }
+        // Update byte counters
+        m_bytesInWriteBuffer += bytesToWrite;
 
-            counter = m_lengthByBackupRange.get(rangeID);
-            if (counter == null) {
-                m_lengthByBackupRange.put(rangeID, bytesToWrite);
-            } else {
-                m_lengthByBackupRange.put(rangeID, counter + bytesToWrite);
-            }
+        counter = m_lengthByBackupRange.get(rangeID);
+        if (counter == null) {
+            m_lengthByBackupRange.put(rangeID, bytesToWrite);
+        } else {
+            m_lengthByBackupRange.put(rangeID, counter + bytesToWrite);
+        }
 
-            // Determine free space from end of log to end of array
-            if (writePointer >= m_bufferReadPointer) {
-                bytesUntilEnd = m_ringBufferSize - writePointer;
-            } else {
-                bytesUntilEnd = m_bufferReadPointer - writePointer;
-            }
-            if (bytesToWrite <= bytesUntilEnd) {
+        // Determine free space from end of log to end of array
+        if (writePointer >= m_bufferReadPointer) {
+            bytesUntilEnd = m_writeBufferSize - writePointer;
+        } else {
+            bytesUntilEnd = m_bufferReadPointer - writePointer;
+        }
+        if (bytesToWrite <= bytesUntilEnd) {
+            // Write header
+            System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
+            // Write payload
+            p_buffer.get(m_buffer, writePointer + p_header.length, p_payloadLength);
+        } else {
+            // Twofold cyclic write access
+            if (bytesUntilEnd < p_header.length) {
+                // Write header
+                System.arraycopy(p_header, 0, m_buffer, writePointer, bytesUntilEnd);
+                System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0, p_header.length - bytesUntilEnd);
+                // Write payload
+                p_buffer.get(m_buffer, p_header.length - bytesUntilEnd, p_payloadLength);
+            } else if (bytesUntilEnd > p_header.length) {
                 // Write header
                 System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
                 // Write payload
-                p_buffer.get(m_buffer, writePointer + p_header.length, p_payloadLength);
+                p_buffer.get(m_buffer, writePointer + p_header.length, bytesUntilEnd - p_header.length);
+                p_buffer.get(m_buffer, 0, p_payloadLength - (bytesUntilEnd - p_header.length));
             } else {
-                // Twofold cyclic write access
-                if (bytesUntilEnd < p_header.length) {
-                    // Write header
-                    System.arraycopy(p_header, 0, m_buffer, writePointer, bytesUntilEnd);
-                    System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0, p_header.length - bytesUntilEnd);
-                    // Write payload
-                    p_buffer.get(m_buffer, p_header.length - bytesUntilEnd, p_payloadLength);
-                } else if (bytesUntilEnd > p_header.length) {
-                    // Write header
-                    System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
-                    // Write payload
-                    p_buffer.get(m_buffer, writePointer + p_header.length, bytesUntilEnd - p_header.length);
-                    p_buffer.get(m_buffer, 0, p_payloadLength - (bytesUntilEnd - p_header.length));
-                } else {
-                    // Write header
-                    System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
-                    // Write payload
-                    p_buffer.get(m_buffer, 0, p_payloadLength);
-                }
-            }
-            if (m_useChecksum) {
-                AbstractLogEntryHeader.addChecksum(m_buffer, writePointer, bytesToWrite, logEntryHeader, bytesUntilEnd);
-            }
-
-            // ***Synchronization***//
-            // Grant writer thread access to meta-data (data available)
-            if (m_bytesInWriteBuffer >= SIGNAL_ON_BYTE_COUNT) {
-                grantAccessToWriterThread();
-            }
-
-            // Grant writer thread access to meta-data (time-out)
-            if (m_writerThreadRequestsAccessToBuffer) {
-                m_writerThreadAccessesBuffer = true;
-                m_needToLock = true;
+                // Write header
+                System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
+                // Write payload
+                p_buffer.get(m_buffer, 0, p_payloadLength);
             }
         }
+        if (m_useChecksum) {
+            AbstractLogEntryHeader.addChecksum(m_buffer, writePointer, bytesToWrite, logEntryHeader, bytesUntilEnd);
+        }
+
+        // ***Synchronization***//
+        // Grant writer thread access to meta-data (data available)
+        if (bytesInWriteBuffer + bytesToWrite >= SIGNAL_ON_BYTE_COUNT) {
+            // Acquires metadata lock -> changed values become visible to writer thread
+            grantAccessToWriterThread();
+        }
+
+        // Grant writer thread access to meta-data (time-out)
+        if (m_writerThreadRequestsAccessToBuffer) {
+            m_writerThreadAccessesBuffer = true;
+            m_needToLock = true;
+        }
+
         return bytesToWrite;
     }
 
     /**
+     * Grant the writer thread access to buffer meta-data
+     */
+    public void grantAccessToWriterThread() {
+        m_metadataLock.lock();
+        m_writerThreadAccessesBuffer = true;
+        m_needToLock = true;
+
+        // Send signal to start flushing by writer thread
+        m_dataAvailable = true;
+        m_dataAvailableCond.signalAll();
+        m_metadataLock.unlock();
+    }
+
+    /**
      * Wakes-up writer thread and flushes data to primary log
+     * Is only called by exclusive message handler
      */
     public final void signalWriterThreadAndFlushToPrimLog() {
         grantAccessToWriterThread();
@@ -372,8 +391,6 @@ public class PrimaryWriteBuffer {
         public void run() {
             while (true) {
                 if (m_isShuttingDown) {
-                    // Shutdown signal -> directly flush all data to primary log and shut down
-                    flushDataToPrimaryLog();
                     break;
                 }
 
@@ -418,8 +435,9 @@ public class PrimaryWriteBuffer {
             // Gain exclusive write access:
             // If signaled by message handler the exclusive write access is already hold
             // Else wait for acknowledgement by message handler
-            // If after 100ms the access has not been granted (no log message has arrived) -> do it anyway (message
-            // handler will know)
+            // If after 100ms (default) the access has not been granted (no log message has arrived) -> do it anyway (the exclusive message
+            // handler will know, happened before relation not guaranteed but most likely as the message handler acquires and releases a
+            // different lock after returning and writer thread waits for a long time)
             final long timeStart = System.currentTimeMillis();
             while (!m_writerThreadAccessesBuffer) {
                 m_logComponent.getReorganizationThread().grantAccessToCurrentLog();
@@ -640,8 +658,7 @@ public class PrimaryWriteBuffer {
                 }
 
                 if (primaryLogBufferSize > 0) {
-                    // Write all log entries, that were not written to secondary log, in primary log with one write
-                    // access
+                    // Write all log entries, that were not written to secondary log, in primary log with one write access
                     m_primaryLog.appendData(primaryLogBuffer, 0, primaryLogBufferOffset);
                 }
             }
@@ -902,15 +919,11 @@ public class PrimaryWriteBuffer {
             }
 
             if (m_convert) {
-                // More secondary log buffer size for this node: Convert primary log entry header to secondary log
-                // header and append
-                // entry to node buffer
+                // More secondary log buffer size for this node: Convert primary log entry header to secondary log header and append entry to node buffer
                 m_writtenBytesPerSegment[index] += AbstractLogEntryHeader
                     .convertAndPut(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize, p_bytesUntilEnd, p_conversionOffset);
             } else {
-                // Less secondary log buffer size for this node: Just append entry to node buffer without converting the
-                // log entry
-                // header
+                // Less secondary log buffer size for this node: Just append entry to node buffer without converting the log entry header
                 if (p_logEntrySize <= p_bytesUntilEnd) {
                     System.arraycopy(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize);
                 } else {

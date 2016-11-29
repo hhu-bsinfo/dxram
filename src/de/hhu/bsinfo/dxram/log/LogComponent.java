@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
 import de.hhu.bsinfo.dxram.log.storage.LogCatalog;
 import de.hhu.bsinfo.dxram.log.storage.PrimaryLog;
-import de.hhu.bsinfo.dxram.log.storage.PrimaryWriteBufferSecure;
+import de.hhu.bsinfo.dxram.log.storage.PrimaryWriteBuffer;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
 import de.hhu.bsinfo.dxram.log.storage.Version;
@@ -82,7 +82,7 @@ public class LogComponent extends AbstractDXRAMComponent {
     private short m_nodeID;
     private boolean m_loggingIsActive;
 
-    private PrimaryWriteBufferSecure m_writeBuffer;
+    private PrimaryWriteBuffer m_writeBuffer;
     private PrimaryLog m_primaryLog;
     private LogCatalog[] m_logCatalogs;
 
@@ -246,7 +246,7 @@ public class LogComponent extends AbstractDXRAMComponent {
      * @return the header size
      */
     public short getAproxHeaderSize(final short p_nodeID, final long p_localID, final int p_size) {
-        return AbstractLogEntryHeader.getAproxSecLogHeaderSize(m_boot.getNodeID() != p_nodeID, p_localID, p_size);
+        return AbstractLogEntryHeader.getApproxSecLogHeaderSize(m_boot.getNodeID() != p_nodeID, p_localID, p_size);
     }
 
     /**
@@ -482,7 +482,7 @@ public class LogComponent extends AbstractDXRAMComponent {
             m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
 
             // Create primary log buffer
-            m_writeBuffer = new PrimaryWriteBufferSecure(this, m_primaryLog, (int) m_writeBufferSize.getBytes(), (int) m_flashPageSize.getBytes(),
+            m_writeBuffer = new PrimaryWriteBuffer(this, m_primaryLog, (int) m_writeBufferSize.getBytes(), (int) m_flashPageSize.getBytes(),
                 (int) m_secondaryLogBufferSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_useChecksum, m_sortBufferPooling);
 
             // Create secondary log and secondary log buffer catalogs

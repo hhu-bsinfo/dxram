@@ -141,7 +141,7 @@ public abstract class AbstractLogEntryHeader {
                         if (p_bytesUntilEnd - crcOffset - i > 0) {
                             p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
                         } else {
-                            p_buffer[i] = (byte) (checksum >> i * 8 & 0xff);
+                            p_buffer[i - (p_bytesUntilEnd - crcOffset)] = (byte) (checksum >> i * 8 & 0xff);
                         }
                     }
                 }
@@ -292,13 +292,37 @@ public abstract class AbstractLogEntryHeader {
      *     the size
      * @return the maximum log entry header size for secondary log
      */
-    public static short getAproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
+    public static short getApproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
         // Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation
         // because the
         // actual version is determined during logging on backup peer (at creation time it's size is 0 but it might be
         // bigger at some point)
         short ret =
             (short) (LOG_ENTRY_TYP_SIZE + getSizeForLocalIDField(p_localID) + getSizeForLengthField(p_size) + LOG_ENTRY_EPO_SIZE + 1 + ms_logEntryCRCSize);
+
+        if (p_logStoresMigrations) {
+            ret += LOG_ENTRY_NID_SIZE;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the approximated log entry header size for secondary log (the version size can only be determined on
+     * backup -> 1 byte as average value, without a localID the length can only be approximated -> 4 byte)
+     *
+     * @param p_logStoresMigrations
+     *     whether the entry is in a secondary log for migrations or not
+     * @param p_size
+     *     the size
+     * @return the maximum log entry header size for secondary log
+     */
+    public static short getApproxSecLogHeaderSize(final boolean p_logStoresMigrations, final int p_size) {
+        // Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation
+        // because the
+        // actual version is determined during logging on backup peer (at creation time it's size is 0 but it might be
+        // bigger at some point)
+        short ret = (short) (LOG_ENTRY_TYP_SIZE + 4 + getSizeForLengthField(p_size) + LOG_ENTRY_EPO_SIZE + 1 + ms_logEntryCRCSize);
 
         if (p_logStoresMigrations) {
             ret += LOG_ENTRY_NID_SIZE;

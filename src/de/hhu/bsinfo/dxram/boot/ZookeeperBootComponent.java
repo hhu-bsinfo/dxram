@@ -736,7 +736,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                 m_bloomFilter.add(nodeID);
 
                 // Set routing information for that node
-                splits = node.split("/");
+                splits = node.split(":");
 
                 m_nodes.addNode(nodeID,
                     new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), (short) 0, (short) 0, NodeRole.toNodeRole(splits[2]), false));
