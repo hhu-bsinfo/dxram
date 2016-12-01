@@ -277,7 +277,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
     @Override
     public void eventTriggered(final NodeFailureEvent p_event) {
-        if (p_event.getRole() == NodeRole.PEER) {
+        if (m_boot.getNodeRole() == NodeRole.PEER) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("Connection to peer 0x%X lost, unlocking all chunks locked by lost instance", p_event.getNodeID());
             // #endif /* LOGGER >= DEBUG */

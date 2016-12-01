@@ -88,6 +88,8 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     // ChunkID -> migration backup range
     private MigrationBackupTree m_migrationsTree;
 
+    private ArrayList<BackupRange> m_recoveredBackupRanges;
+
     private ReentrantReadWriteLock m_lock;
 
     /**
@@ -157,7 +159,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
         m_lastChunkID = p_chunkID;
         if (m_backupActive) {
-            size = p_size + m_log.getAproxHeaderSize(m_nodeID, localID, p_size);
+            size = p_size + m_log.getApproxHeaderSize(m_nodeID, localID, p_size);
             if (!m_firstRangeInitialized && localID == 1) {
                 // First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
                 // This is the first put and p_localID is not reused
@@ -197,6 +199,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
         m_lock.readLock().lock();
         if (ChunkID.getCreatorID(p_chunkID) == m_nodeID) {
+            // Search in own backup ranges
             for (int i = m_ownBackupRanges.size() - 1; i >= 0; i--) {
                 if (m_ownBackupRanges.get(i).getRangeID() <= ChunkID.getLocalID(p_chunkID)) {
                     ret = m_ownBackupRanges.get(i).getCopyOfBackupPeers();
@@ -204,7 +207,18 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
                 }
             }
         } else {
-            ret = m_migrationBackupRanges.get(m_migrationsTree.getBackupRange(p_chunkID)).getCopyOfBackupPeers();
+            // Search in recovered backup ranges
+            for (int i = m_recoveredBackupRanges.size() - 1; i >= 0; i--) {
+                if (m_recoveredBackupRanges.get(i).getRangeID() <= ChunkID.getLocalID(p_chunkID)) {
+                    ret = m_recoveredBackupRanges.get(i).getCopyOfBackupPeers();
+                    break;
+                }
+            }
+
+            if (ret == null) {
+                // Search in migration backup ranges
+                ret = m_migrationBackupRanges.get(m_migrationsTree.getBackupRange(p_chunkID)).getCopyOfBackupPeers();
+            }
         }
         m_lock.readLock().unlock();
 
@@ -223,6 +237,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
         m_lock.readLock().lock();
         if (ChunkID.getCreatorID(p_chunkID) == m_nodeID) {
+            // Search in own backup ranges
             for (int i = m_ownBackupRanges.size() - 1; i >= 0; i--) {
                 if (m_ownBackupRanges.get(i).getRangeID() <= ChunkID.getLocalID(p_chunkID)) {
                     ret = m_ownBackupRanges.get(i).getBackupPeersAsLong();
@@ -230,7 +245,18 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
                 }
             }
         } else {
-            ret = m_migrationBackupRanges.get(m_migrationsTree.getBackupRange(p_chunkID)).getBackupPeersAsLong();
+            // Search in recovered backup ranges
+            for (int i = m_recoveredBackupRanges.size() - 1; i >= 0; i--) {
+                if (m_recoveredBackupRanges.get(i).getRangeID() <= ChunkID.getLocalID(p_chunkID)) {
+                    ret = m_recoveredBackupRanges.get(i).getBackupPeersAsLong();
+                    break;
+                }
+            }
+
+            if (ret == -1) {
+                // Search in migration backup ranges
+                ret = m_migrationBackupRanges.get(m_migrationsTree.getBackupRange(p_chunkID)).getBackupPeersAsLong();
+            }
         }
         m_lock.readLock().unlock();
 
@@ -250,6 +276,40 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
         m_lookup.initRange(((long) -1 << 48) + backupRange.getRangeID(), m_nodeID, backupRange.getBackupPeers());
         m_log.initBackupRange(((long) -1 << 48) + backupRange.getRangeID(), backupRange.getBackupPeers());
+    }
+
+    /**
+     * Initializes a new migration backup range for a recovered range
+     * S
+     */
+    public void initNewRecoveredBackupRange(final long p_firstChunkID, final short[] p_backupPeers) {
+        BackupRange backupRange;
+        short[] currentBackupPeers;
+
+        // TODO: Add migrations if this is a migration range that was recovered
+
+        m_lock.writeLock().lock();
+        short newBackupPeer = determineReplacementBackupPeer(p_backupPeers, m_nodeID, p_firstChunkID);
+
+        currentBackupPeers = new short[p_backupPeers.length];
+        for (int i = 0; i < p_backupPeers.length; i++) {
+            if (p_backupPeers[i] != m_nodeID) {
+                currentBackupPeers[i] = p_backupPeers[i];
+            } else {
+                currentBackupPeers[i] = newBackupPeer;
+            }
+        }
+        backupRange = new BackupRange(p_firstChunkID, currentBackupPeers);
+
+        m_recoveredBackupRanges.add(backupRange);
+        m_lock.writeLock().unlock();
+
+        // TODO:
+        m_lookup.initRange(((long) -1 << 48) + backupRange.getRangeID(), m_nodeID, backupRange.getBackupPeers());
+        //m_lookup.replaceBackupPeer(firstChunkID, failedPeer, newBackupPeer);
+
+        m_log.initBackupRange(p_firstChunkID, newBackupPeer);
+        m_chunk.replicateBackupRange(newBackupPeer, p_firstChunkID, (long) -1);
     }
 
     /**
@@ -373,6 +433,45 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
                     }
                 }
             }
+
+            // Replace failed peer in all recovered backup ranges
+            for (int i = 0; i < m_recoveredBackupRanges.size(); i++) {
+                m_lock.writeLock().lock();
+                currentBackupRange = m_recoveredBackupRanges.get(i);
+                backupPeers = currentBackupRange.getCopyOfBackupPeers();
+                firstChunkID = currentBackupRange.getRangeID();
+
+                for (int j = 0; j < backupPeers.length; j++) {
+                    currentBackupPeer = backupPeers[j];
+                    if (currentBackupPeer == failedPeer) {
+                        // Determine new backup peer and replace it in backup range
+                        newBackupPeer = determineReplacementBackupPeer(backupPeers, failedPeer, firstChunkID);
+                        currentBackupRange.replaceBackupPeer(j, newBackupPeer);
+                        m_lock.writeLock().unlock();
+
+                        // Send new backup peer all chunks of backup range
+                        if (newBackupPeer != -1) {
+                            if (m_recoveredBackupRanges.size() > i + 1) {
+                                // There is a succeeding backup range
+                                lastChunkID = m_recoveredBackupRanges.get(i + 1).getRangeID() - 1;
+                            } else {
+                                // This is the current backup range
+                                lastChunkID = m_lastChunkID;
+                            }
+                            m_chunk.replicateBackupRange(newBackupPeer, firstChunkID, lastChunkID);
+                        }
+
+                        // Inform responsible superpeer to update backup range
+                        m_lookup.replaceBackupPeer(firstChunkID, failedPeer, newBackupPeer);
+
+                        break;
+                    }
+                    if (j == backupPeers.length - 1) {
+                        // Failed peer was not responsible for backup range
+                        m_lock.writeLock().unlock();
+                    }
+                }
+            }
         }
     }
 
@@ -400,9 +499,13 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         m_event.registerListener(this, NodeFailureEvent.class);
         m_nodeID = m_boot.getNodeID();
         if (m_backupActive && m_boot.getNodeRole() == NodeRole.PEER) {
+
+            m_event.registerListener(this, NodeFailureEvent.class);
+
             m_ownBackupRanges = new ArrayList<>();
             m_migrationBackupRanges = new ArrayList<>();
             m_migrationsTree = new MigrationBackupTree((short) 10, m_backupRangeSize.getBytes());
+            m_recoveredBackupRanges = new ArrayList<>();
             m_currentBackupRange = null;
             m_currentMigrationBackupRange = new BackupRange(-1, null);
             m_rangeSize = 0;

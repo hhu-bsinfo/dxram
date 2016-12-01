@@ -142,6 +142,28 @@ public final class LogCatalog {
     }
 
     /**
+     * Removes buffer and secondary log for given range
+     */
+    public void removeBufferAndLog(final long p_chunkID, final byte p_rangeID) throws IOException {
+        SecondaryLog secondaryLog;
+        SecondaryLogBuffer secondaryLogBuffer;
+        int rangeID;
+
+        if (p_rangeID != -1) {
+            secondaryLogBuffer = m_migrationBuffers.remove(p_rangeID);
+            secondaryLogBuffer.close();
+            secondaryLog = m_migrationLogs.remove(p_rangeID);
+            secondaryLog.closeAndRemove();
+        } else {
+            rangeID = getRangeID(p_chunkID);
+            secondaryLogBuffer = m_creatorBuffers.remove(rangeID);
+            secondaryLogBuffer.close();
+            secondaryLog = m_creatorLogs.remove(rangeID);
+            secondaryLog.closeAndRemove();
+        }
+    }
+
+    /**
      * Gets the unique identification for the next backup range
      *
      * @param p_isMigration
@@ -311,7 +333,7 @@ public final class LogCatalog {
     public void closeLogsAndBuffers() throws IOException {
         for (int i = 0; i < m_creatorLogs.size(); i++) {
             m_creatorBuffers.get(i).close();
-            m_creatorLogs.get(i).closeLog();
+            m_creatorLogs.get(i).close();
         }
         m_creatorBuffers = null;
         m_creatorLogs = null;
@@ -319,7 +341,7 @@ public final class LogCatalog {
 
         for (int i = 0; i < m_migrationLogs.size(); i++) {
             m_migrationBuffers.get(i).close();
-            m_migrationLogs.get(i).closeLog();
+            m_migrationLogs.get(i).close();
         }
         m_migrationBuffers = null;
         m_migrationLogs = null;

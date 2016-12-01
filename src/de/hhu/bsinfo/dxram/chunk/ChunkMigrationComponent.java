@@ -79,7 +79,7 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
 
             if (m_backup.isActive()) {
                 logEntrySize =
-                    chunk.getDataSize() + m_log.getAproxHeaderSize(ChunkID.getCreatorID(chunk.getID()), ChunkID.getLocalID(chunk.getID()), chunk.getDataSize());
+                    chunk.getDataSize() + m_log.getApproxHeaderSize(ChunkID.getCreatorID(chunk.getID()), ChunkID.getLocalID(chunk.getID()), chunk.getDataSize());
                 if (m_backup.fitsInCurrentMigrationBackupRange(size, logEntrySize)) {
                     // Chunk fits in current migration backup range
                     size += logEntrySize;

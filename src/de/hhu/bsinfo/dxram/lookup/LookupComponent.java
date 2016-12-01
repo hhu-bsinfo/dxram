@@ -472,8 +472,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *     NodeRole of failed node
      * @return whether this superpeer is responsible for the failed node
      */
-    public boolean failureHandling(final short p_failedNode, final NodeRole p_role) {
-        return m_superpeer.failureHandling(p_failedNode, p_role);
+    public boolean superpeersNodeFailureHandling(final short p_failedNode, final NodeRole p_role) {
+        return m_superpeer.nodeFailureHandling(p_failedNode, p_role);
     }
 
     /**
@@ -781,12 +781,15 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     @Override
     public void eventTriggered(final AbstractEvent p_event) {
         if (p_event instanceof NodeFailureEvent) {
+
             NodeFailureEvent event = (NodeFailureEvent) p_event;
 
             if (event.getRole() == NodeRole.PEER) {
                 m_chunkIDCacheTree.invalidatePeer(event.getNodeID());
             }
+
         } else if (p_event instanceof NameserviceCacheEntryUpdateEvent) {
+
             NameserviceCacheEntryUpdateEvent event = (NameserviceCacheEntryUpdateEvent) p_event;
             // update if available to avoid caching all entries
             if (m_applicationIDCache.contains(event.getId())) {
@@ -812,6 +815,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
             // terminate.
             m_applicationIDCache = new Cache<>(m_nameserviceCacheEntries);
             // m_aidCache.enableTTL();
+
+            m_event.registerListener(this, NodeFailureEvent.class);
         }
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {

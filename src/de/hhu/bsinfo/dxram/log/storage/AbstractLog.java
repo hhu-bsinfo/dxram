@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.dxram.log.storage;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.concurrent.locks.ReentrantLock;
@@ -201,9 +202,9 @@ public abstract class AbstractLog {
      * Closes the log
      *
      * @throws IOException
-     *     if the flushing during closure fails
+     *     if the closing fails
      */
-    public final void closeLog() throws IOException {
+    public final void close() throws IOException {
         if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
             m_randomAccessFile.close();
         } else if (m_mode == HarddriveAccessMode.ODIRECT) {
@@ -222,6 +223,44 @@ public abstract class AbstractLog {
     }
 
     /**
+     * Closes the log and deletes it
+     *
+     * @throws IOException
+     *     if the closing fails
+     */
+    public void closeAndRemove() throws IOException {
+        if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+            m_randomAccessFile.close();
+
+            if (m_logFile.exists()) {
+                if (!m_logFile.delete()) {
+                    throw new FileNotFoundException();
+                }
+            }
+        } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+            if (JNIFileDirect.close(m_fileID) < 0) {
+                throw new IOException("Error Closing the log");
+            }
+            JNIFileDirect.freeBuffer(m_readBufferSize);
+            JNIFileDirect.freeBuffer(m_writeBufferSize);
+
+            if (m_logFile.exists()) {
+                if (!m_logFile.delete()) {
+                    throw new FileNotFoundException();
+                }
+            }
+        } else {
+            if (JNIFileRaw.closeLog(m_fileID) < 0) {
+                throw new IOException("Error Closing the log");
+            }
+            JNIFileDirect.freeBuffer(m_readBufferSize);
+            JNIFileDirect.freeBuffer(m_writeBufferSize);
+
+            JNIFileRaw.deleteLog(m_fileID);
+        }
+    }
+
+    /**
      * Creates and initializes random access file
      *
      * @param p_header
@@ -230,6 +269,7 @@ public abstract class AbstractLog {
      * @throws IOException
      *     if the header could not be read or written
      */
+
     final boolean createLogAndWriteHeader(final byte[] p_header) throws IOException {
         boolean ret = true;
 

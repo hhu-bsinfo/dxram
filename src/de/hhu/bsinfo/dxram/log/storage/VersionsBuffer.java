@@ -61,6 +61,7 @@ class VersionsBuffer {
     private byte m_eon;
     private short m_epoch;
 
+    private String m_path;
     private RandomAccessFile m_versionsFile;
     private int m_fileID;
     // Pointer to read- and writebuffer for JNI
@@ -101,6 +102,7 @@ class VersionsBuffer {
         m_epoch = 0;
 
         if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+            m_path = p_path;
             try {
                 final File file = new File(p_path);
                 if (file.exists()) {
@@ -162,8 +164,6 @@ class VersionsBuffer {
         m_accessLock = new ReentrantLock(false);
     }
 
-    // Getter
-
     /**
      * Returns the number of keys in VersionsBuffer
      *
@@ -173,6 +173,8 @@ class VersionsBuffer {
     final boolean isThresholdReached() {
         return m_count >= FLUSH_THRESHOLD;
     }
+
+    // Getter
 
     /**
      * Returns the number of keys in VersionsBuffer
@@ -378,6 +380,33 @@ class VersionsBuffer {
         putInternal(p_key, p_version);
     }
 
+    /**
+     * Closes the version buffer and deletes the version log
+     */
+    void closeAndRemove() throws IOException {
+        if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+            final File file = new File(m_path);
+            if (file.exists()) {
+                if (!file.delete()) {
+                    throw new FileNotFoundException();
+                }
+            }
+        } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+            final File file = new File(m_path);
+            if (file.exists()) {
+                if (!file.delete()) {
+                    throw new FileNotFoundException();
+                }
+            }
+            JNIFileDirect.freeBuffer(m_readBufferSize);
+            JNIFileDirect.freeBuffer(m_writeBufferSize);
+        } else {
+            JNIFileRaw.deleteLog(m_fileID);
+            JNIFileDirect.freeBuffer(m_readBufferSize);
+            JNIFileDirect.freeBuffer(m_writeBufferSize);
+        }
+    }
+
     // Methods
 
     /**
@@ -388,6 +417,7 @@ class VersionsBuffer {
      *     the first ChunkID in range
      * @return the number of entries in this range
      */
+
     final int getRangeSize(final long p_offset) {
         return (int) (ChunkID.getLocalID(m_highestChunkID) - ChunkID.getLocalID(p_offset)) + 1;
     }
@@ -658,7 +688,7 @@ class VersionsBuffer {
 
         versions = p_allVersions.getVersionsForMigrationLog();
         if (m_logCount > versions.capacity()) {
-            // There may too many versions in versions log to fit in hashtable -> resize
+            // There may be too many versions in versions log to fit in hashtable -> resize
             versions = p_allVersions.resizeVersionsForMigrationLog(m_logCount);
         }
 

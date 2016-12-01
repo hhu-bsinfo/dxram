@@ -324,7 +324,7 @@ public class OverlaySuperpeer implements MessageReceiver {
      *     NodeRole of failed node
      * @return true if superpeer is responsible for failed node, false otherwise
      */
-    public boolean failureHandling(final short p_failedNode, final NodeRole p_nodeRole) {
+    public boolean nodeFailureHandling(final short p_failedNode, final NodeRole p_nodeRole) {
         if (p_nodeRole == NodeRole.SUPERPEER) {
             return superpeerFailureHandling(p_failedNode);
         } else if (p_nodeRole == NodeRole.PEER) {
@@ -734,6 +734,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         long firstChunkIDOrRangeID;
         BackupRange[] backupRanges;
         short[] backupPeers;
+        short[] backupSuperpeers;
 
         boolean finished = false;
 
@@ -766,6 +767,9 @@ public class OverlaySuperpeer implements MessageReceiver {
                 // #if LOGGER >= INFO
                 LOGGER.info("Starting recovery for failed node 0x%X", p_failedNode);
                 // #endif /* LOGGER >= INFO */
+
+                backupSuperpeers = OverlayHelper.getBackupSuperpeers(m_nodeID, m_superpeers);
+
                 RecoverBackupRangeRequest request;
                 RecoverBackupRangeResponse response;
                 while (!finished) {
@@ -784,13 +788,26 @@ public class OverlaySuperpeer implements MessageReceiver {
                                     LOGGER.info("Initiating recovery of range 0x%X on peer 0x%X", firstChunkIDOrRangeID, backupPeers[i]);
                                     // #endif /* LOGGER >= INFO */
 
-                                    request = new RecoverBackupRangeRequest(backupPeers[i], p_failedNode, firstChunkIDOrRangeID);
+                                    request = new RecoverBackupRangeRequest(backupPeers[i], p_failedNode, backupPeers, firstChunkIDOrRangeID);
                                     try {
                                         m_network.sendSync(request);
 
                                         response = request.getResponse(RecoverBackupRangeResponse.class);
                                         if (response.getNumberOfRecoveredChunks() > 0) {
                                             counter += response.getNumberOfRecoveredChunks();
+
+                                            m_metadata.setRestorerAfterRecoveryInLookupTree(p_failedNode, backupPeers[i]);
+
+                                            for (short backupSuperpeer : backupSuperpeers) {
+                                                try {
+                                                    m_network.sendMessage(new SetRestorerAfterRecoveryMessage(backupSuperpeer, p_failedNode, backupPeers[i]));
+                                                } catch (final NetworkException e) {
+                                                    // Backup superpeer is not available. The new one will get the update.
+                                                    // #if LOGGER >= WARN
+                                                    LOGGER.error("Backup superpeer 0x%x is not available!", backupSuperpeer);
+                                                    // #endif /* LOGGER >= WARN */
+                                                }
+                                            }
                                             break;
                                         }
                                     } catch (final NetworkException ignored) {
@@ -1673,7 +1690,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         LOGGER.trace("Got request: SET_RESTORER_AFTER_RECOVERY_MESSAGE 0x%X", p_setRestorerAfterRecoveryMessage.getSource());
         // #endif /* LOGGER == TRACE */
 
-        m_metadata.setRestorerAfterRecoveryInLookupTree(p_setRestorerAfterRecoveryMessage.getOwner(), p_setRestorerAfterRecoveryMessage.getSource());
+        m_metadata.setRestorerAfterRecoveryInLookupTree(p_setRestorerAfterRecoveryMessage.getOldOwner(), p_setRestorerAfterRecoveryMessage.getNewOwner());
     }
 
     /**

@@ -179,8 +179,10 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
                     if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
                         count = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
+                        m_log.removeBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
                     } else {
                         count = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
+                        m_log.removeBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
                     }
 
                     // #if LOGGER >= INFO
@@ -331,9 +333,11 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
         if (ChunkID.getCreatorID(p_firstChunkIDOrRangeID) == p_owner) {
             // Failed peer was the creator -> recover normal backup range
             ret = m_log.recoverBackupRange(p_owner, p_firstChunkIDOrRangeID, (byte) -1);
+            m_log.removeBackupRange(p_owner, p_firstChunkIDOrRangeID, (byte) -1);
         } else {
             // Failed peer was not the creator -> recover migration backup range
             ret = m_log.recoverBackupRange(p_owner, -1, (byte) p_firstChunkIDOrRangeID);
+            m_log.removeBackupRange(p_owner, -1, (byte) p_firstChunkIDOrRangeID);
         }
 
         if (ret == 0) {
@@ -374,9 +378,68 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      *     the RecoverBackupRangeRequest
      */
     private void incomingRecoverBackupRangeRequest(final RecoverBackupRangeRequest p_request) {
+        /*
+         * Things to do to recover a backup range:
+         *  1) It is a normal backup range:
+         *      In LogComponent:
+         *      a) Flush all data to secondary logs (first primary buffer, then specific secondary log buffer)
+         *      b) Block reorganization thread
+         *      c) Get MemoryManager write lock
+         *      d) Create a version array:
+         *          i) Number of chunks in backup range: last ChunkID - first ChunkID + 1
+         *      e) Read all versions in array (do not write back!)
+         *      f) For all not empty segments in log (backup range):
+         *          i)   Read the whole segment from SSD
+         *          ii)  Create an array for ChunkIDs, offsets in segment buffer and lengths for a batch of to be stored chunks
+         *          iii) Iterate over all log entries. If an entry is valid and uncorrupted, store its ChunkID, offset length in the arrays
+         *          In ChunkBackupComponent
+         *          iv)  If batch size is reached or segment is fully iterated, store all chunks in memory management with one call
+         *      g) Release MemoryManager write lock
+         *      h) Unblock reorganization thread
+         *      i) Remove backup range from log module:
+         *          - Remove secondary log and secondary log buffer from log catalog
+         *          - Close secondary log buffer
+         *          - Close version buffer and delete version log from hard drive
+         *          - Close secondary log and delete it from hard drive
+         *      j)
+         *
+         *
+         *  2) It is a migration backup range:
+         *      In LogComponent:
+         *      a) Flush all data to secondary logs (first primary buffer, then specific secondary log buffer)
+         *      b) Block reorganization thread
+         *      c) Get MemoryManager write lock
+         *      d) Create a version hashtable:
+         *          i) Number of chunks in backup range is unknown, at the beginning hashtable is large enough for an average chunk size of 32 bytes
+         *      e) Read all versions in hashtable (do not write back!):
+         *          i)   If there are more versions written to hard drive than fitting in hashtable, resize hashtable to number of written versions
+         *          ii)  After reading all versions from hard drive: If there are too many new versions in version buffer, resize hashtable again
+         *          iii) Hashtable is always sized for the worst case scenario to prevent rehashing during filling
+         *      f) For all not empty segments in log (backup range):
+         *          i)   Read the whole segment from SSD
+         *          ii)  Create an array for ChunkIDs, offsets in segment buffer and lengths for a batch of to be stored chunks
+         *          iii) Iterate over all log entries. If an entry is valid and uncorrupted, store its ChunkID, offset length in the arrays
+         *          In ChunkBackupComponent
+         *          iv)  If batch size is reached or segment is fully iterated, store all chunks in memory management with one call
+         *      g) Release MemoryManager write lock
+         *      h) Unblock reorganization thread
+         *      i) Remove backup range from log module:
+         *          - Remove secondary log and secondary log buffer from log catalog
+         *          - Close secondary log buffer
+         *          - Close version buffer and delete version log from hard drive
+         *          - Close secondary log and delete it from hard drive
+         *      j)
+         */
+
         // Outsource recovery to another thread to avoid blocking a message handler
         Runnable task = () -> {
-            int recoveredChunks = recoverBackupRange(p_request.getOwner(), p_request.getFirstChunkIDOrRangeID());
+            long firstChunkIDOrRangeID = p_request.getFirstChunkIDOrRangeID();
+            short[] backupPeers = p_request.getBackupPeers();
+
+            int recoveredChunks = recoverBackupRange(p_request.getOwner(), firstChunkIDOrRangeID);
+
+            m_backup.initNewRecoveredBackupRange(firstChunkIDOrRangeID, backupPeers);
+
             try {
                 m_network.sendMessage(new RecoverBackupRangeResponse(p_request, recoveredChunks));
             } catch (final NetworkException ignored) {

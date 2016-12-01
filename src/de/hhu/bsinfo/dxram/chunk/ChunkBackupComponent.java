@@ -76,6 +76,9 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
             return;
         }
 
+        if (p_lastChunkID == -1) {
+            // TODO
+        }
         // Gather all chunks of backup range
         chunks = new Chunk[(int) (p_lastChunkID - p_firstChunkID + 1)];
         for (long chunkID = p_firstChunkID; chunkID <= p_lastChunkID; chunkID++) {

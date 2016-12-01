@@ -236,8 +236,6 @@ public class SecondaryLog extends AbstractLog {
         return ret;
     }
 
-    // Setter
-
     /**
      * Sets the access flag
      *
@@ -252,6 +250,8 @@ public class SecondaryLog extends AbstractLog {
             m_activeSegment = null;//
         }*/
     }
+
+    // Setter
 
     /**
      * Returns a list with all log entries in file wrapped in chunks
@@ -335,8 +335,6 @@ public class SecondaryLog extends AbstractLog {
         return chunkMap.values().toArray(new Chunk[chunkMap.size()]);
     }
 
-    // Methods
-
     /**
      * Returns all segments of secondary log
      *
@@ -402,6 +400,23 @@ public class SecondaryLog extends AbstractLog {
         }
 
         return result;
+    }
+
+    // Methods
+
+    /**
+     * Closes the secondary log and frees all memory
+     *
+     * @throws IOException
+     *     if closing the files fail
+     */
+    @Override
+    public void closeAndRemove() throws IOException {
+        // Free version buffer and version log
+        m_versionsBuffer.closeAndRemove();
+
+        // Free log on hard drive
+        super.closeAndRemove();
     }
 
     /**
@@ -659,7 +674,7 @@ public class SecondaryLog extends AbstractLog {
             p_chunkComponent.startBlockRecovery();
             for (int i = 0; i < m_segmentHeaders.length; i++) {
                 if (m_segmentHeaders[i] != null && !m_segmentHeaders[i].isEmpty()) {
-                    count += recoverSegmentWithMigrations(i, segmentData, allVersions, epoch, p_chunkComponent, doCRCCheck);
+                    count += recoverSegmentWithMigrations(i, segmentData, allVersions, epoch, p_chunkComponent, doCRCCheck, stats);
                 }
             }
 
@@ -772,119 +787,20 @@ public class SecondaryLog extends AbstractLog {
      *
      * @param p_segmentIndex
      *     the index of the segment
+     * @param p_segmentData
+     *     the read-in segment in a byte array
      * @param p_allVersions
      *     all versions in an int-array
      * @param p_epoch
      *     the epoch before reading the versions
      * @param p_chunkComponent
-     *     the ChunkComponent
+     *     the ChunkBackupComponent
      * @param p_doCRCCheck
      *     whether to check the CRC checksum
+     * @param p_stat
+     *     timing statistics
      */
     private int recoverSegment(final int p_segmentIndex, final byte[] p_segmentData, final int[] p_allVersions, final short p_epoch,
-        final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck, final Statistics p_stat) {
-        int headerSize;
-        int readBytes = 0;
-        int segmentLength;
-        int payloadSize;
-        int counter = 0;
-        long chunkID;
-        long time;
-        Version currentVersion;
-        Version entryVersion;
-        AbstractLogEntryHeader logEntryHeader;
-        RecoveryDataStructure recoveryDataStructure;
-
-        try {
-            time = System.currentTimeMillis();
-            segmentLength = readSegment(p_segmentData, p_segmentIndex);
-            p_stat.m_timeToReadSegmentsFromDisk += System.currentTimeMillis() - time;
-
-            if (segmentLength > 0) {
-                recoveryDataStructure = new RecoveryDataStructure(p_segmentData);
-                while (readBytes < segmentLength) {
-                    time = System.currentTimeMillis();
-                    logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(p_segmentData, readBytes, m_storesMigrations);
-                    headerSize = logEntryHeader.getHeaderSize(p_segmentData, readBytes);
-                    payloadSize = logEntryHeader.getLength(p_segmentData, readBytes);
-                    chunkID = logEntryHeader.getCID(p_segmentData, readBytes);
-                    entryVersion = logEntryHeader.getVersion(p_segmentData, readBytes);
-
-                    // Get current version
-                    currentVersion = new Version((short) p_allVersions[(int) (chunkID - m_rangeIDOrFirstLocalID) * 2],
-                        p_allVersions[(int) (chunkID - m_rangeIDOrFirstLocalID) * 2 + 1]);
-                    if (currentVersion.getEpoch() == -1 || (short) (p_epoch + 1) == entryVersion.getEpoch()) {
-                        // There is no entry in hashtable or element is more current -> get latest version from cache
-                        // (Epoch can only be 1 greater because there is no flushing during reorganization)
-                        currentVersion = m_versionsBuffer.get(chunkID);
-                    }
-
-                    if (!m_storesMigrations) {
-                        // Add creator
-                        chunkID += (long) m_nodeID << 48;
-                    }
-
-                    // Compare current version with element
-                    if (currentVersion.equals(logEntryHeader.getVersion(p_segmentData, readBytes))) {
-                        // Create chunk only if log entry complete
-                        if (p_doCRCCheck) {
-                            if (AbstractLogEntryHeader.calculateChecksumOfPayload(p_segmentData, readBytes + headerSize, payloadSize) !=
-                                logEntryHeader.getChecksum(p_segmentData, readBytes)) {
-                                // #if LOGGER >= ERROR
-                                LOGGER.error("Corrupt data. Could not recover 0x%X!", chunkID);
-                                // #endif /* LOGGER >= ERROR */
-
-                                readBytes += headerSize + payloadSize;
-                                continue;
-                            }
-                        }
-                        p_stat.m_timeToCheck += System.currentTimeMillis() - time;
-
-                        // Put chunk in memory
-                        time = System.currentTimeMillis();
-                        recoveryDataStructure.setID(chunkID);
-                        recoveryDataStructure.setOffset(readBytes + headerSize);
-                        recoveryDataStructure.setLength(payloadSize);
-                        if (p_chunkComponent.putRecoveredChunk(recoveryDataStructure)) {
-                            counter++;
-                        } else {
-                            // #if LOGGER >= ERROR
-                            LOGGER.error("Memory management failure. Could not recover 0x%X!", chunkID);
-                            // #endif /* LOGGER >= ERROR */
-                        }
-                        p_stat.m_timeToPut += System.currentTimeMillis() - time;
-
-                    } else {
-                        // Version, epoch and/or eon is different -> ignore entry
-                        p_stat.m_timeToCheck += System.currentTimeMillis() - time;
-                    }
-                    readBytes += headerSize + payloadSize;
-                }
-            }
-        } catch (final IOException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Recovery failed(%d): ", m_rangeIDOrFirstLocalID, e);
-            // #endif /* LOGGER >= ERROR */
-        }
-
-        return counter;
-    }
-
-    /**
-     * Recover a segment from a normal secondary log
-     *
-     * @param p_segmentIndex
-     *     the index of the segment
-     * @param p_allVersions
-     *     all versions in an int-array
-     * @param p_epoch
-     *     the epoch before reading the versions
-     * @param p_chunkComponent
-     *     the ChunkComponent
-     * @param p_doCRCCheck
-     *     whether to check the CRC checksum
-     */
-    private int recoverSegmentMultiPut(final int p_segmentIndex, final byte[] p_segmentData, final int[] p_allVersions, final short p_epoch,
         final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck, final Statistics p_stat) {
         int headerSize;
         int readBytes = 0;
@@ -928,10 +844,8 @@ public class SecondaryLog extends AbstractLog {
                         currentVersion = m_versionsBuffer.get(chunkID);
                     }
 
-                    if (!m_storesMigrations) {
-                        // Add creator
-                        chunkID += (long) m_nodeID << 48;
-                    }
+                    // Add creator
+                    chunkID += (long) m_nodeID << 48;
 
                     // Compare current version with element
                     if (currentVersion.equals(logEntryHeader.getVersion(p_segmentData, readBytes))) {
@@ -1002,34 +916,48 @@ public class SecondaryLog extends AbstractLog {
      *
      * @param p_segmentIndex
      *     the index of the segment
+     * @param p_segmentData
+     *     the read-in segment in a byte array
      * @param p_allVersions
      *     all versions in a hashtable
      * @param p_epoch
      *     the epoch before reading the versions
      * @param p_chunkComponent
-     *     the ChunkComponent
+     *     the ChunkBackupComponent
      * @param p_doCRCCheck
      *     whether to check the CRC checksum
+     * @param p_stat
+     *     timing statistics
      */
     private int recoverSegmentWithMigrations(final int p_segmentIndex, final byte[] p_segmentData, final VersionsHashTable p_allVersions, final short p_epoch,
-        final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck) {
+        final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck, final Statistics p_stat) {
         int headerSize;
         int readBytes = 0;
         int segmentLength;
         int payloadSize;
         int counter = 0;
         long chunkID;
+        long time;
         Version currentVersion;
         Version entryVersion;
         AbstractLogEntryHeader logEntryHeader;
         RecoveryDataStructure recoveryDataStructure;
 
         try {
+            time = System.currentTimeMillis();
             segmentLength = readSegment(p_segmentData, p_segmentIndex);
+            p_stat.m_timeToReadSegmentsFromDisk += System.currentTimeMillis() - time;
+
             if (segmentLength > 0) {
+                int index = 0;
+                int length = 100000;
+                long[] chunkIDs = new long[length];
+                int[] offsets = new int[length];
+                int[] lengths = new int[length];
 
                 recoveryDataStructure = new RecoveryDataStructure(p_segmentData);
                 while (readBytes < segmentLength) {
+                    time = System.currentTimeMillis();
                     logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(p_segmentData, readBytes, m_storesMigrations);
                     headerSize = logEntryHeader.getHeaderSize(p_segmentData, readBytes);
                     payloadSize = logEntryHeader.getLength(p_segmentData, readBytes);
@@ -1042,11 +970,6 @@ public class SecondaryLog extends AbstractLog {
                         // There is no entry in hashtable or element is more current -> get latest version from cache
                         // (Epoch can only be 1 greater because there is no flushing during reorganization)
                         currentVersion = m_versionsBuffer.get(chunkID);
-                    }
-
-                    if (!m_storesMigrations) {
-                        // Add creator
-                        chunkID += (long) m_nodeID << 48;
                     }
 
                     // Compare current version with element
@@ -1063,22 +986,46 @@ public class SecondaryLog extends AbstractLog {
                                 continue;
                             }
                         }
-                        // Put chunk in memory
-                        recoveryDataStructure.setID(chunkID);
-                        recoveryDataStructure.setOffset(readBytes + headerSize);
-                        recoveryDataStructure.setLength(payloadSize);
-                        if (p_chunkComponent.putRecoveredChunk(recoveryDataStructure)) {
-                            counter++;
+                        p_stat.m_timeToCheck += System.currentTimeMillis() - time;
+
+                        // Put chunks in memory
+                        if (index < length) {
+                            index++;
                         } else {
-                            // #if LOGGER >= ERROR
-                            LOGGER.error("Memory management failure. Could not recover 0x%X!", chunkID);
-                            // #endif /* LOGGER >= ERROR */
+                            time = System.currentTimeMillis();
+                            if (p_chunkComponent.putRecoveredChunks(chunkIDs, p_segmentData, offsets, lengths, length)) {
+                                counter += length;
+                            } else {
+                                // #if LOGGER >= ERROR
+                                LOGGER.error("Memory management failure. Could not recover chunks!");
+                                // #endif /* LOGGER >= ERROR */
+                            }
+                            p_stat.m_timeToPut += System.currentTimeMillis() - time;
+                            index = 0;
                         }
+                        chunkIDs[index] = chunkID;
+                        offsets[index] = readBytes + headerSize;
+                        lengths[index] = payloadSize;
                     } else {
                         // Version, epoch and/or eon is different -> ignore entry
+                        p_stat.m_timeToCheck += System.currentTimeMillis() - time;
                     }
                     readBytes += headerSize + payloadSize;
                 }
+
+                // Put other chunks in memory
+                if (index != 0) {
+                    time = System.currentTimeMillis();
+                    if (p_chunkComponent.putRecoveredChunks(chunkIDs, p_segmentData, offsets, lengths, index)) {
+                        counter += index;
+                    } else {
+                        // #if LOGGER >= ERROR
+                        LOGGER.error("Memory management failure. Could not recover chunks!");
+                        // #endif /* LOGGER >= ERROR */
+                    }
+                    p_stat.m_timeToPut += System.currentTimeMillis() - time;
+                }
+
             }
         } catch (final IOException e) {
             // #if LOGGER >= ERROR

@@ -26,7 +26,8 @@ import de.hhu.bsinfo.ethnet.AbstractMessage;
 public class SetRestorerAfterRecoveryMessage extends AbstractMessage {
 
     // Attributes
-    private short m_owner;
+    private short m_oldOwner;
+    private short m_newOwner;
 
     // Constructors
 
@@ -36,7 +37,8 @@ public class SetRestorerAfterRecoveryMessage extends AbstractMessage {
     public SetRestorerAfterRecoveryMessage() {
         super();
 
-        m_owner = -1;
+        m_oldOwner = -1;
+        m_newOwner = -1;
     }
 
     /**
@@ -44,40 +46,54 @@ public class SetRestorerAfterRecoveryMessage extends AbstractMessage {
      *
      * @param p_destination
      *     the destination
-     * @param p_owner
+     * @param p_oldOwner
      *     the failed peer
+     * @param p_newOwner
+     *     the new owner
      */
-    public SetRestorerAfterRecoveryMessage(final short p_destination, final short p_owner) {
+    public SetRestorerAfterRecoveryMessage(final short p_destination, final short p_oldOwner, final short p_newOwner) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE);
 
-        m_owner = p_owner;
+        m_oldOwner = p_oldOwner;
+        m_newOwner = p_newOwner;
     }
 
     // Getters
 
     /**
-     * Get the owner
+     * Get the old owner
      *
      * @return the NodeID
      */
-    public final short getOwner() {
-        return m_owner;
+    public final short getOldOwner() {
+        return m_oldOwner;
+    }
+
+    /**
+     * Get the new owner
+     *
+     * @return the NodeID
+     */
+    public final short getNewOwner() {
+        return m_newOwner;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Short.BYTES;
+        return 2 * Short.BYTES;
     }
 
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_owner);
+        p_buffer.putShort(m_oldOwner);
+        p_buffer.putShort(m_newOwner);
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        m_owner = p_buffer.getShort();
+        m_oldOwner = p_buffer.getShort();
+        m_newOwner = p_buffer.getShort();
     }
 
 }

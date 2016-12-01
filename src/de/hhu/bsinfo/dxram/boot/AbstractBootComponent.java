@@ -134,5 +134,5 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
      * @param p_role
      *     failed node's role
      */
-    public abstract void failureHandling(short p_nodeID, NodeRole p_role);
+    public abstract void superpeersNodeFailureHandling(short p_nodeID, NodeRole p_role);
 }

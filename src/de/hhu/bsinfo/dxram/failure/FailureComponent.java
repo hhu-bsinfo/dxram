@@ -211,13 +211,86 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
         ownRole = m_boot.getNodeRole();
         roleOfFailedNode = m_boot.getNodeRole(p_nodeID);
 
+        /*
+         * Things to do after a node failure ("informing" a node means the node gets here, too):
+         *  1) This is a superpeer:
+         *      a) Failed node was a superpeer:
+         *          In LookupComponent:
+         *          i)   This is the successor: Inform all other superpeers actively and take over peers (other metadata is already available)
+         *          ii)  This is the last backup superpeer: Send failed superpeer's metadata to this superpeer's successor
+         *          iii) Failed superpeer was one of this node's backup superpeers: Send this superpeer's metadata to new, succeeding backup superpeer
+         *          iv)  Remove superpeer from ring (locally, but as every superpeer does this the node is erased completely)
+         *          v)   This is the successor or predecessor: Determine new neighbor (is a special role in overlay)
+         *          In ZooKeeperBootComponent:
+         *          i)   This is the successor: Remove superpeer from "/nodes/superpeers"
+         *          ii)  This is the successor: Add ChunkID of failed superpeer to "/nodes/free" if node was not registered in file at startup
+         *          iii) This is the successor: Replace failed superpeer as a bootstrap ("/nodes/bootstrap") if it was the bootstrap
+         *          iv)  This is the successor: If superpeer was not registered in file at startup, remove its ChunkID from "/nodes/new"
+         *      b) Failed node was a peer:
+         *          In LookupComponent:
+         *          i)   Inform all assigned peers
+         *          ii)  This is the responsible superpeer: Inform all other superpeers (to inform all peers, see above)
+         *          iii) This is the responsible superpeer: Get all backup ranges (normal and migration) from LookupTree and start recovery for every backup
+         *                 range by sending a RecoverBackupRangeRequest to the primary backup peers (secondary and tertiary if unavailable)
+         *                 - If the recovery was successful: Set the new owner as restorer in LookupTree to replace creator as owner and replicate change to
+         *                      backup superpeers
+         *          iv)  This is the responsible superpeer: Remove peer (locally)
+         *          In ZooKeeperBootComponent:
+         *          i)   This is the responsible superpeer: Remove peer from "/nodes/peers"
+         *          ii)  This is the responsible superpeer: Add ChunkID of failed peer to "/nodes/free" if node was not registered in file at startup
+         *          iii) This is the responsible superpeer: If peer was not registered in file at startup, remove its ChunkID from "/nodes/new"
+         *      c) Failed node was a terminal:
+         *          In LookupComponent:
+         *          i)   This is the responsible superpeer: Remove terminal (locally; a terminal is handled like a peer here)
+         *          In ZooKeeperBootComponent:
+         *          i)   This is the responsible superpeer: Remove peer from "/nodes/terminals"
+         *          ii)  This is the responsible superpeer: Add ChunkID of failed terminal to "/nodes/free" if node was not registered in file at startup
+         *          iii) This is the responsible superpeer: If terminal was not registered in file at startup (default), remove its ChunkID from "/nodes/new"
+         *
+         *
+         *  2) This is a peer:
+         *      a) Failed node was a superpeer: Nothing
+         *      b) Failed node was a peer:
+         *          Fire NodeFailureEvent:
+         *              In BackupComponent (if backup is active):
+         *              i)   Iterate over all backup ranges (normal, migration, TODO) and search for the failed peer in all backup ranges' backup peers
+         *                      For every hit:
+         *                      - Determine a new backup peer
+         *                      - Replace it in local backup range
+         *                      In ChunkBackupComponent:
+         *                      - Replicate every single chunk of this backup range to the new backup peer
+         *                          + Normal: Determine last ChunkID of range (begin of next backup range - 1 or last known ChunkID for last backup range)
+         *                              and replicate every chunk between (and including) first ChunkID (stored in backup range) and last ChunkID
+         *                          + Migration: Get every ChunkID of this backup range by iterating the MigrationBackupTree, send chunk for every ChunkID
+         *                          + Recovery: TODO
+         *                      In LookupComponent
+         *                      - Replace the failed backup peer by the new determined backup peer on the responsible superpeer
+         *              In LookupComponent (if caches are enabled):
+         *              i) Invalidate all cached lookup ranges in CacheTree that store the failed peer as current location
+         *              In PeerLockService:
+         *              i) Unlock all remote locks (for chunks stored on this peer) that are held by the failed peer
+         *      c) Failed node was a terminal:
+         *          Fire NodeFailureEvent:
+         *              In PeerLockService:
+         *              i) Unlock all remote locks (for chunks stored on this peer) that are held by the failed terminal
+         *
+         *
+         *  3) This is a terminal:
+         *      a) Failed node was a superpeer: Nothing
+         *      b) Failed node was a peer:
+         *          Fire NodeFailureEvent:
+         *              In LookupComponent (if caches are enabled):
+         *              i) Invalidate all cached lookup ranges in CacheTree that store the failed peer as current location
+         *      c) Failed node was a terminal: Nothing
+         */
+
         if (ownRole == NodeRole.SUPERPEER) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("********** ********** Node Failure ********** **********");
             // #endif /* LOGGER >= DEBUG */
 
             // Restore superpeer overlay and/or initiate recovery
-            responsible = m_lookup.failureHandling(p_nodeID, roleOfFailedNode);
+            responsible = m_lookup.superpeersNodeFailureHandling(p_nodeID, roleOfFailedNode);
 
             if (responsible) {
                 // Failed node was either the predecessor superpeer or a peer/terminal this superpeer is responsible for
@@ -227,7 +300,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
                 // #endif /* LOGGER >= DEBUG */
 
                 // Clean-up zookeeper
-                m_boot.failureHandling(p_nodeID, roleOfFailedNode);
+                m_boot.superpeersNodeFailureHandling(p_nodeID, roleOfFailedNode);
             } else {
                 // #if LOGGER >= DEBUG
                 LOGGER.debug("Not responsible for failed node, NodeID: 0x%X", p_nodeID);
@@ -235,8 +308,8 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
             }
         } else {
             // This is a peer or terminal
-            if (roleOfFailedNode == NodeRole.PEER) {
-                // Notify other components/services (PeerLockService, ZooKeeperBootComponent, LookupComponent)
+            if (roleOfFailedNode == NodeRole.PEER || roleOfFailedNode == NodeRole.TERMINAL) {
+                // Notify other components/services (BackupComponent, LookupComponent, PeerLockService)
                 m_event.fireEvent(new NodeFailureEvent(getClass().getSimpleName(), p_nodeID, roleOfFailedNode));
             }
         }

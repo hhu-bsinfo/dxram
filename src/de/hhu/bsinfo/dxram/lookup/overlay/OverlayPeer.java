@@ -250,7 +250,7 @@ public class OverlayPeer implements MessageReceiver {
 
         while (true) {
             try {
-                m_network.sendMessage(new SetRestorerAfterRecoveryMessage(responsibleSuperpeer, p_owner));
+                m_network.sendMessage(new SetRestorerAfterRecoveryMessage(responsibleSuperpeer, p_owner, m_nodeID));
             } catch (final NetworkException e) {
                 // Responsible superpeer is not available, try again (superpeers will be updated
                 // automatically by network thread)

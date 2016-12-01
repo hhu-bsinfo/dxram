@@ -31,8 +31,6 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.event.EventListener;
-import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
@@ -49,7 +47,7 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class ZookeeperBootComponent extends AbstractBootComponent implements Watcher, EventListener<NodeFailureEvent> {
+public class ZookeeperBootComponent extends AbstractBootComponent implements Watcher {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(ZookeeperBootComponent.class.getSimpleName());
 
@@ -328,7 +326,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
     }
 
     @Override
-    public void failureHandling(final short p_nodeID, final NodeRole p_role) {
+    public void superpeersNodeFailureHandling(final short p_nodeID, final NodeRole p_role) {
         Stat status;
 
         if (p_role == NodeRole.SUPERPEER) {
@@ -397,11 +395,11 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
         // m_nodesConfiguration.removeNode(p_nodeID);
     }
 
-    @Override
-    public void eventTriggered(final NodeFailureEvent p_event) {
-        // TODO: Remove failed node from nodes configuration?
-        // m_nodesConfiguration.removeNode(p_event.getNodeID());
-    }
+    //@Override
+    //public void eventTriggered(final NodeFailureEvent p_event) {
+    // TODO: Remove failed node from nodes configuration?
+    // m_nodesConfiguration.removeNode(p_event.getNodeID());
+    //}
 
     @Override
     public void process(final WatchedEvent p_event) {
