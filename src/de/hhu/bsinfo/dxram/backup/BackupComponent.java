@@ -165,15 +165,19 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
                 // This is the first put and p_localID is not reused
                 backupRange = determineBackupPeers(0);
 
-                m_lookup.initRange((long) m_nodeID << 48, m_nodeID, backupRange.getBackupPeers());
-                m_log.initBackupRange((long) m_nodeID << 48, backupRange.getBackupPeers());
+                if (backupRange != null) {
+                    m_lookup.initRange((long) m_nodeID << 48, m_nodeID, backupRange.getBackupPeers());
+                    m_log.initBackupRange((long) m_nodeID << 48, backupRange.getBackupPeers());
+                }
                 m_rangeSize = size;
                 m_firstRangeInitialized = true;
             } else if (m_rangeSize + size > m_backupRangeSize.getBytes()) {
                 backupRange = determineBackupPeers(localID);
 
-                m_lookup.initRange(((long) m_nodeID << 48) + localID, m_nodeID, backupRange.getBackupPeers());
-                m_log.initBackupRange(((long) m_nodeID << 48) + localID, backupRange.getBackupPeers());
+                if (backupRange != null) {
+                    m_lookup.initRange(((long) m_nodeID << 48) + localID, m_nodeID, backupRange.getBackupPeers());
+                    m_log.initBackupRange(((long) m_nodeID << 48) + localID, backupRange.getBackupPeers());
+                }
                 m_rangeSize = size;
             } else {
                 m_rangeSize += size;
@@ -274,8 +278,10 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         m_migrationsTree.initNewBackupRange();
         m_lock.writeLock().unlock();
 
-        m_lookup.initRange(((long) -1 << 48) + backupRange.getRangeID(), m_nodeID, backupRange.getBackupPeers());
-        m_log.initBackupRange(((long) -1 << 48) + backupRange.getRangeID(), backupRange.getBackupPeers());
+        if (backupRange != null) {
+            m_lookup.initRange(((long) -1 << 48) + backupRange.getRangeID(), m_nodeID, backupRange.getBackupPeers());
+            m_log.initBackupRange(((long) -1 << 48) + backupRange.getRangeID(), backupRange.getBackupPeers());
+        }
     }
 
     /**

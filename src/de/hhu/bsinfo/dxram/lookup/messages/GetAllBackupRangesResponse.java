@@ -77,7 +77,6 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
 
         p_buffer.putInt(m_backupRanges.length);
         for (BackupRange backupRange : m_backupRanges) {
-            exporter.setPayloadSize(backupRange.sizeofObject());
             exporter.exportObject(backupRange);
         }
     }
@@ -89,7 +88,6 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
         m_backupRanges = new BackupRange[p_buffer.getInt()];
         for (int i = 0; i < m_backupRanges.length; i++) {
             m_backupRanges[i] = new BackupRange();
-            importer.setPayloadSize(BackupRange.sizeofObjectStatic());
             importer.importObject(m_backupRanges[i]);
         }
     }

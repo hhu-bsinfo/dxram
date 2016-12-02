@@ -865,6 +865,10 @@ public class SecondaryLog extends AbstractLog {
 
                         // Put chunks in memory
                         if (index < length) {
+                            chunkIDs[index] = chunkID;
+                            offsets[index] = readBytes + headerSize;
+                            lengths[index] = payloadSize;
+
                             index++;
                         } else {
                             time = System.currentTimeMillis();
@@ -877,10 +881,11 @@ public class SecondaryLog extends AbstractLog {
                             }
                             p_stat.m_timeToPut += System.currentTimeMillis() - time;
                             index = 0;
+
+                            chunkIDs[index] = chunkID;
+                            offsets[index] = readBytes + headerSize;
+                            lengths[index] = payloadSize;
                         }
-                        chunkIDs[index] = chunkID;
-                        offsets[index] = readBytes + headerSize;
-                        lengths[index] = payloadSize;
                     } else {
                         // Version, epoch and/or eon is different -> ignore entry
                         p_stat.m_timeToCheck += System.currentTimeMillis() - time;
@@ -990,6 +995,10 @@ public class SecondaryLog extends AbstractLog {
 
                         // Put chunks in memory
                         if (index < length) {
+                            chunkIDs[index] = chunkID;
+                            offsets[index] = readBytes + headerSize;
+                            lengths[index] = payloadSize;
+
                             index++;
                         } else {
                             time = System.currentTimeMillis();
@@ -1002,10 +1011,11 @@ public class SecondaryLog extends AbstractLog {
                             }
                             p_stat.m_timeToPut += System.currentTimeMillis() - time;
                             index = 0;
+
+                            chunkIDs[index] = chunkID;
+                            offsets[index] = readBytes + headerSize;
+                            lengths[index] = payloadSize;
                         }
-                        chunkIDs[index] = chunkID;
-                        offsets[index] = readBytes + headerSize;
-                        lengths[index] = payloadSize;
                     } else {
                         // Version, epoch and/or eon is different -> ignore entry
                         p_stat.m_timeToCheck += System.currentTimeMillis() - time;

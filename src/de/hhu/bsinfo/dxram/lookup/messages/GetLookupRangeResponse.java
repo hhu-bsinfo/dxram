@@ -85,7 +85,6 @@ public class GetLookupRangeResponse extends AbstractResponse {
             p_buffer.put((byte) 0);
         } else {
             final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
-            exporter.setPayloadSize(m_lookupRange.sizeofObject());
 
             p_buffer.put((byte) 1);
             exporter.exportObject(m_lookupRange);
@@ -98,7 +97,6 @@ public class GetLookupRangeResponse extends AbstractResponse {
             final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
             m_lookupRange = new LookupRange();
-            importer.setPayloadSize(m_lookupRange.sizeofObject());
             importer.importObject(m_lookupRange);
         }
     }

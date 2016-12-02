@@ -25,10 +25,13 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage.Status;
 import de.hhu.bsinfo.ethnet.NodeID;
+
+import static de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper.ORDER;
 
 /**
  * Wrapper class for all data of one superpeer
@@ -128,6 +131,7 @@ public final class MetadataHandler {
         byte[] storages;
         byte[] barriers;
         ByteBuffer data;
+        MessagesDataStructureImExporter exporter;
 
         m_dataLock.readLock().lock();
         // #if LOGGER == TRACE
@@ -157,7 +161,7 @@ public final class MetadataHandler {
             startIndex = index;
             currentPeer = m_assignedPeersIncludingBackups.get(index++);
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_beginOfArea, p_endOfArea)) {
-                size += LookupTree.getLookupTreeWriteLength(getLookupTreeLocal(currentPeer)) + Short.BYTES;
+                size += getLookupTreeLocal(currentPeer).sizeofObject() + Short.BYTES;
                 count++;
 
                 if (index == m_assignedPeersIncludingBackups.size()) {
@@ -181,6 +185,7 @@ public final class MetadataHandler {
 
             // Iterate over assigned peers and write lookup trees
             data.putInt(count);
+            exporter = new MessagesDataStructureImExporter(data);
             index = startIndex;
             currentPeer = m_assignedPeersIncludingBackups.get(index++);
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_beginOfArea, p_endOfArea)) {
@@ -189,7 +194,7 @@ public final class MetadataHandler {
                 // #endif /* LOGGER == TRACE */
 
                 data.putShort(currentPeer);
-                LookupTree.writeLookupTree(data, getLookupTreeLocal(currentPeer));
+                exporter.exportObject(getLookupTreeLocal(currentPeer));
 
                 if (index == m_assignedPeersIncludingBackups.size()) {
                     index = 0;
@@ -236,6 +241,7 @@ public final class MetadataHandler {
         byte[] barriers;
         LookupTree tree;
         ByteBuffer data;
+        MessagesDataStructureImExporter exporter;
 
         m_dataLock.readLock().lock();
         // #if LOGGER == TRACE
@@ -256,7 +262,7 @@ public final class MetadataHandler {
         for (int i = 0; i < Short.MAX_VALUE * 2; i++) {
             tree = getLookupTreeLocal((short) i);
             if (tree != null) {
-                size += LookupTree.getLookupTreeWriteLength(tree) + Short.BYTES;
+                size += tree.sizeofObject() + Short.BYTES;
                 count++;
             }
         }
@@ -273,6 +279,7 @@ public final class MetadataHandler {
 
         // Iterate over all peers and write lookup trees
         data.putInt(count);
+        exporter = new MessagesDataStructureImExporter(data);
         for (int i = 0; i < Short.MAX_VALUE * 2; i++) {
             tree = getLookupTreeLocal((short) i);
             if (tree != null) {
@@ -281,7 +288,7 @@ public final class MetadataHandler {
                 // #endif /* LOGGER == TRACE */
 
                 data.putShort((short) i);
-                LookupTree.writeLookupTree(data, tree);
+                exporter.exportObject(tree);
             }
         }
         m_dataLock.readLock().unlock();
@@ -416,6 +423,7 @@ public final class MetadataHandler {
         byte[] storages = null;
         byte[] barriers = null;
         ByteBuffer data;
+        MessagesDataStructureImExporter exporter;
 
         m_dataLock.readLock().lock();
         // #if LOGGER == TRACE
@@ -460,7 +468,7 @@ public final class MetadataHandler {
             currentPeer = m_assignedPeersIncludingBackups.get(index++);
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_predecessor, p_nodeID)) {
                 if (Collections.binarySearch(p_peers, currentPeer) < 0) {
-                    size += LookupTree.getLookupTreeWriteLength(getLookupTreeLocal(currentPeer)) + Short.BYTES;
+                    size += getLookupTreeLocal(currentPeer).sizeofObject() + Short.BYTES;
                     count++;
                 }
 
@@ -497,6 +505,7 @@ public final class MetadataHandler {
 
             // Iterate over assigned peers and write lookup trees
             data.putInt(count);
+            exporter = new MessagesDataStructureImExporter(data);
             index = startIndex;
             currentPeer = m_assignedPeersIncludingBackups.get(index++);
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_predecessor, p_nodeID)) {
@@ -506,7 +515,8 @@ public final class MetadataHandler {
                     // #endif /* LOGGER == TRACE */
 
                     data.putShort(currentPeer);
-                    LookupTree.writeLookupTree(data, getLookupTreeLocal(currentPeer));
+
+                    exporter.exportObject(getLookupTreeLocal(currentPeer));
                 }
 
                 if (index == m_assignedPeersIncludingBackups.size()) {
@@ -626,9 +636,12 @@ public final class MetadataHandler {
     public short[] storeMetadata(final byte[] p_metadata) {
         short nodeID;
         int size;
+        int treeSize;
         int pos;
         short[] ret = null;
+        LookupTree tree;
         ByteBuffer data;
+        MessagesDataStructureImExporter importer;
 
         if (p_metadata != null && p_metadata.length != 0) {
             data = ByteBuffer.wrap(p_metadata);
@@ -667,6 +680,7 @@ public final class MetadataHandler {
 
             // Put all lookup trees
             size = data.getInt();
+            importer = new MessagesDataStructureImExporter(data);
             ret = new short[size];
             // #if LOGGER == TRACE
             LOGGER.trace("Storing lookup trees. Length: %d", size);
@@ -677,7 +691,9 @@ public final class MetadataHandler {
                 LOGGER.trace("Storing lookup tree of 0x%X", nodeID);
                 // #endif /* LOGGER == TRACE */
 
-                m_lookupTrees[nodeID & 0xFFFF] = LookupTree.readLookupTree(data);
+                tree = new LookupTree(ORDER);
+                importer.importObject(tree);
+                m_lookupTrees[nodeID & 0xFFFF] = tree;
                 ret[i] = nodeID;
             }
             m_dataLock.writeLock().unlock();
@@ -821,7 +837,7 @@ public final class MetadataHandler {
         m_dataLock.writeLock().lock();
         tree = getLookupTreeLocal(p_creator);
         if (tree == null) {
-            tree = new LookupTree(OverlayHelper.ORDER);
+            tree = new LookupTree(ORDER);
             m_lookupTrees[p_creator & 0xFFFF] = tree;
             ret = true;
         }

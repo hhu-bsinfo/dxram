@@ -43,7 +43,7 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
     }
 
     /**
-     * Get the payload size that was set previously indicating the total size of the data strcture.
+     * Get the payload size that was set previously indicating the total size of the data structure.
      *
      * @return Payload size.
      */

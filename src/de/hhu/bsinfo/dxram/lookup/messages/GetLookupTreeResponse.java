@@ -15,6 +15,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
@@ -66,36 +67,22 @@ public class GetLookupTreeResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        int ret;
-
-        // ret += Integer.BYTES;
-        // if (m_trees != null && m_trees.size() > 0) {
-        // for (LookupTree tree : m_trees) {
-        // ret += LookupTree.getCIDTreeWriteLength(tree);
-        // }
-        // }
-        ret = LookupTree.getLookupTreeWriteLength(m_tree);
-
-        return ret;
+        return m_tree.sizeofObject();
     }
 
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
+        final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 
-        LookupTree.writeLookupTree(p_buffer, m_tree);
-
+        exporter.exportObject(m_tree);
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
+        final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
-        // m_trees = new ArrayList<LookupTree>(p_buffer.getInt());
-        // for (int i = 0; i < m_trees.size(); i++) {
-        // m_trees.add(LookupTree.readCIDTree(p_buffer));
-        // }
-
-        m_tree = LookupTree.readLookupTree(p_buffer);
+        importer.importObject(m_tree);
     }
 
 }

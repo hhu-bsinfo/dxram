@@ -13,15 +13,7 @@
 
 package de.hhu.bsinfo.dxram.lookup.overlay.storage;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
@@ -145,168 +137,121 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Reads an CIDTree from ByteBuffer
-     *
-     * @param p_buffer
-     *     the ByteBuffer
-     * @return the CIDTree
+     * @author michael.birkhoff@hhu.de
      */
-    // TODO stefan: delete this when done implementing importer/exporter interface
-    public static LookupTree readLookupTree(final ByteBuffer p_buffer) {
-        LookupTree ret = null;
-        byte[] data;
+    @Override
+    public void importObject(final Importer p_importer) {
 
-        if (p_buffer.get() != 0) {
-            data = new byte[p_buffer.getInt()];
-            p_buffer.get(data);
-            ret = parseLookupTree(data);
+        // Size is read before!
+
+        m_creator = p_importer.readShort();
+        m_restorer = p_importer.readShort();
+        m_status = p_importer.readByte() != 0;
+
+        int backupRangesSize = p_importer.readInt();
+
+        for (int i = 0; i < backupRangesSize; i++) {
+
+            long[] longArray = new long[p_importer.readInt()];
+            p_importer.readLongs(longArray);
+            m_backupRanges.add(longArray);
+
         }
 
-        return ret;
+        int migrationBackupRangesSize = p_importer.readInt();
+
+        for (int i = 0; i < migrationBackupRangesSize; i++) {
+
+            m_migrationBackupRanges.add(p_importer.readLong());
+
+        }
+
+        createOrReplaceEntry((long) Math.pow(2, 48), m_creator);
+
+        int elementsInBTree = p_importer.readInt();
+
+        // init range
+
+        for (int i = 0; i < elementsInBTree; i++) {
+
+            long lid = p_importer.readLong();
+            short nid = p_importer.readShort();
+
+            createOrReplaceEntry(lid, nid);
+
+        }
+
     }
 
     /**
-     * Writes an CIDTree
-     *
-     * @param p_buffer
-     *     the buffer
-     * @param p_tree
-     *     the CIDTree
+     * @author michael.birkhoff@hhu.de
      */
-    // TODO stefan: delete this when done implementing importer/exporter interface
-    public static void writeLookupTree(final ByteBuffer p_buffer, final LookupTree p_tree) {
-        byte[] data;
+    @Override
+    public void exportObject(final Exporter p_exporter) {
 
-        assert p_buffer != null;
+        p_exporter.writeShort(m_creator);
+        p_exporter.writeShort(m_restorer);
+        p_exporter.writeByte((byte) (m_status ? 1 : 0));
 
-        if (p_tree == null) {
-            p_buffer.put((byte) 0);
-        } else {
-            data = parseLookupTree(p_tree);
-            if (data == null) {
-                p_buffer.put((byte) 0);
-            } else {
-                p_buffer.put((byte) 1);
-            }
-            if (data != null) {
-                p_buffer.putInt(data.length);
-                p_buffer.put(data);
-            }
-        }
-    }
+        p_exporter.writeInt(m_backupRanges.size());
 
-    // Getters
+        for (int i = 0; i < m_backupRanges.size(); i++) {
 
-    /**
-     * Get the lenth of a CIDTree
-     *
-     * @param p_tree
-     *     the CIDTree
-     * @return the lenght of the CIDTree
-     */
-    // TODO stefan: delete this when done implementing importer/exporter interface
-    public static int getLookupTreeWriteLength(final LookupTree p_tree) {
-        int ret;
-        byte[] data;
+            p_exporter.writeInt(m_backupRanges.get(i).length);
+            p_exporter.writeLongs(m_backupRanges.get(i));
 
-        if (p_tree == null) {
-            ret = Byte.BYTES;
-        } else {
-            data = parseLookupTree(p_tree);
-            ret = Byte.BYTES;
-            if (data != null) {
-                ret += Integer.BYTES + data.length;
-            }
         }
 
-        return ret;
-    }
+        p_exporter.writeInt(m_migrationBackupRanges.size());
 
-    /**
-     * Parses binary data into an CIDTree
-     *
-     * @param p_data
-     *     the binary data
-     * @return the CIDTree
-     */
-    // TODO stefan: delete this when done implementing importer/exporter interface
-    private static LookupTree parseLookupTree(final byte[] p_data) {
-        LookupTree ret = null;
-        ByteArrayInputStream byteArrayInputStream;
-        ObjectInput objectInput = null;
+        for (int i = 0; i < m_migrationBackupRanges.size(); i++) {
 
-        if (p_data != null && p_data.length > 0) {
-            byteArrayInputStream = new ByteArrayInputStream(p_data);
-            try {
-                objectInput = new ObjectInputStream(byteArrayInputStream);
-                ret = (LookupTree) objectInput.readObject();
-            } catch (final Exception ignored) {
-            } finally {
-                try {
-                    if (objectInput != null) {
-                        objectInput.close();
-                    }
-                    byteArrayInputStream.close();
-                } catch (final IOException ignored) {
-                }
-            }
+            p_exporter.writeLong(m_migrationBackupRanges.get(i));
         }
 
-        return ret;
+        if (m_root != null) {
+            // Push Size
+            int numberOfTreeElements = m_size + 1;
+            p_exporter.writeInt(numberOfTreeElements);
+
+            // Push elements
+            putTreeInByteBuffer(m_root, p_exporter);
+        }
+
     }
 
     // Setters
 
     /**
-     * Parses an CIDTree to a byte array
-     *
-     * @param p_tree
-     *     the CIDTree
-     * @return the byte array
+     * @author michael.birkhoff@hhu.de
      */
-    // TODO stefan: delete this when done implementing importer/exporter interface
-    private static byte[] parseLookupTree(final LookupTree p_tree) {
-        byte[] ret = null;
-        ByteArrayOutputStream byteArrayOutputStream;
-        ObjectOutput objectOutput = null;
-
-        byteArrayOutputStream = new ByteArrayOutputStream();
-        try {
-            objectOutput = new ObjectOutputStream(byteArrayOutputStream);
-            objectOutput.writeObject(p_tree);
-            ret = byteArrayOutputStream.toByteArray();
-        } catch (final IOException ignored) {
-        } finally {
-            try {
-                if (objectOutput != null) {
-                    objectOutput.close();
-                }
-                byteArrayOutputStream.close();
-            } catch (final IOException ignored) {
-            }
-        }
-
-        return ret;
-    }
-
-    @Override
-    public void importObject(final Importer p_importer) {
-        // TODO stefan: replace java serializable interface with importer/exporter interface
-        throw new RuntimeException("Not implemented.");
-    }
-
-    // Methods
-
-    @Override
-    public void exportObject(final Exporter p_exporter) {
-        // TODO stefan: replace java serializable interface with importer/exporter interface
-        throw new RuntimeException("Not implemented.");
-    }
-
     @Override
     public int sizeofObject() {
-        // TODO stefan: replace java serializable interface with importer/exporter interface
-        throw new RuntimeException("Not implemented.");
+        // Size of the b tree list
+        // Integer represents the bytes where the size of the list is stored, m_size + 1 for number of entries including the
+        // default (LocalID: 0x1000000000000 NodeID: 0xNID), long and short for key and value
+        int numberOfBytesWritten = Integer.BYTES + (m_size + 1) * (Long.BYTES + Short.BYTES);
+
+        numberOfBytesWritten += Short.BYTES;
+        numberOfBytesWritten += Short.BYTES;
+        numberOfBytesWritten += Byte.BYTES;
+
+        numberOfBytesWritten += Integer.BYTES;
+
+        for (int i = 0; i < m_backupRanges.size(); i++) {
+
+            numberOfBytesWritten += Integer.BYTES;
+            numberOfBytesWritten += m_backupRanges.get(i).length * Long.BYTES;
+        }
+
+        numberOfBytesWritten += Integer.BYTES;
+
+        for (int i = 0; i < m_migrationBackupRanges.size(); i++) {
+
+            numberOfBytesWritten += Long.BYTES;
+        }
+
+        return numberOfBytesWritten;
     }
 
     /**
@@ -677,6 +622,41 @@ public final class LookupTree implements Serializable, Importable, Exportable {
             backupPeers = BackupRange.replaceBackupPeer(m_migrationBackupRanges.get((int) p_firstChunkIDOrRangeID), p_failedPeer, p_replacement);
             m_migrationBackupRanges.set((int) p_firstChunkIDOrRangeID, backupPeers);
         }
+    }
+
+    /**
+     * Adds one node as pair of long and short from the btree to the byte buffer and walks down the btree recursively
+     *
+     * @param p_node
+     *     the current node
+     * @param p_exporter
+     *     bytebuffer to write into
+     * @author michael.birkhoff@hhu.de
+     */
+    private void putTreeInByteBuffer(final Node p_node, final Exporter p_exporter) {
+        Node obj;
+
+        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
+
+            p_exporter.writeLong(p_node.getLocalID(i));
+            p_exporter.writeShort(p_node.getNodeID(i));
+
+        }
+
+        for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
+            obj = p_node.getChild(i);
+
+            if (obj != null) {
+                putTreeInByteBuffer(obj, p_exporter);
+            }
+
+        }
+        if (p_node.getNumberOfChildren() >= 1) {
+            obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
+
+            putTreeInByteBuffer(obj, p_exporter);
+        }
+
     }
 
     /**
