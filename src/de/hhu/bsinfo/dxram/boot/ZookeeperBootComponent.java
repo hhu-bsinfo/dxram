@@ -610,7 +610,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                     m_nodes.setOwnNodeID(nodeID);
                     m_bootstrap = nodeID;
                     // #if LOGGER >= INFO
-                    LOGGER.info("Own node assigned: ", entry);
+                    LOGGER.info("Own node assigned: %s", entry);
                     // #endif /* LOGGER >= INFO */
                 }
                 if (entry.getRole() == NodeRole.SUPERPEER) {
@@ -619,7 +619,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
                 m_nodes.addNode((short) (nodeID & 0x0000FFFF), entry);
                 // #if LOGGER >= INFO
-                LOGGER.info("Node added: ", entry);
+                LOGGER.info("Node added: %s", entry);
                 // #endif /* LOGGER >= INFO */
             }
 
@@ -727,13 +727,13 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                     m_nodes.setOwnNodeID(nodeID);
                     m_bootstrap = nodeID;
                     // #if LOGGER >= INFO
-                    LOGGER.info("Own node assigned: ", entry);
+                    LOGGER.info("Own node assigned: %s", entry);
                     // #endif /* LOGGER >= INFO */
                 }
 
                 m_nodes.addNode((short) (nodeID & 0x0000FFFF), entry);
                 // #if LOGGER >= INFO
-                LOGGER.info("Node added: ", entry);
+                LOGGER.info("Node added: %s", entry);
                 // #endif /* LOGGER >= INFO */
             }
 

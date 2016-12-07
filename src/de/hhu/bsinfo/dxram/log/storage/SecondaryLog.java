@@ -731,16 +731,24 @@ public class SecondaryLog extends AbstractLog {
      *     an array and a hash table (for migrations) with all versions for this secondary log
      */
     public final void reorganizeAll(final byte[] p_segmentData, final TemporaryVersionsStorage p_allVersions, final short p_epoch) {
+        boolean res;
+
         if (!m_storesMigrations) {
             for (int i = 0; i < m_segmentHeaders.length; i++) {
                 if (m_segmentHeaders[i] != null) {
-                    reorganizeSegment(i, p_segmentData, p_allVersions.getVersionsForNormalLog(), p_epoch);
+                    if (!reorganizeSegment(i, p_segmentData, p_allVersions.getVersionsForNormalLog(), p_epoch)) {
+                        // Reorganization failed because of an I/O error -> abort
+                        break;
+                    }
                 }
             }
         } else {
             for (int i = 0; i < m_segmentHeaders.length; i++) {
                 if (m_segmentHeaders[i] != null) {
-                    reorganizeSegmentWithMigrations(i, p_segmentData, p_allVersions.getVersionsForMigrationLog(), p_epoch);
+                    if (!reorganizeSegmentWithMigrations(i, p_segmentData, p_allVersions.getVersionsForMigrationLog(), p_epoch)) {
+                        // Reorganization failed because of an I/O error -> abort
+                        break;
+                    }
                 }
             }
         }
@@ -754,12 +762,16 @@ public class SecondaryLog extends AbstractLog {
      * @param p_allVersions
      *     an array and a hash table (for migrations) with all versions for this secondary log
      */
-    public final void reorganizeIteratively(final byte[] p_segmentData, final TemporaryVersionsStorage p_allVersions, final short p_epoch) {
+    public final boolean reorganizeIteratively(final byte[] p_segmentData, final TemporaryVersionsStorage p_allVersions, final short p_epoch) {
+        boolean ret;
+
         if (!m_storesMigrations) {
-            reorganizeSegment(chooseSegment(), p_segmentData, p_allVersions.getVersionsForNormalLog(), p_epoch);
+            ret = reorganizeSegment(chooseSegment(), p_segmentData, p_allVersions.getVersionsForNormalLog(), p_epoch);
         } else {
-            reorganizeSegmentWithMigrations(chooseSegment(), p_segmentData, p_allVersions.getVersionsForMigrationLog(), p_epoch);
+            ret = reorganizeSegmentWithMigrations(chooseSegment(), p_segmentData, p_allVersions.getVersionsForMigrationLog(), p_epoch);
         }
+
+        return ret;
     }
 
     /**
@@ -880,11 +892,11 @@ public class SecondaryLog extends AbstractLog {
                                 // #endif /* LOGGER >= ERROR */
                             }
                             p_stat.m_timeToPut += System.currentTimeMillis() - time;
-                            index = 0;
 
-                            chunkIDs[index] = chunkID;
-                            offsets[index] = readBytes + headerSize;
-                            lengths[index] = payloadSize;
+                            chunkIDs[0] = chunkID;
+                            offsets[0] = readBytes + headerSize;
+                            lengths[0] = payloadSize;
+                            index = 1;
                         }
                     } else {
                         // Version, epoch and/or eon is different -> ignore entry
@@ -1010,11 +1022,11 @@ public class SecondaryLog extends AbstractLog {
                                 // #endif /* LOGGER >= ERROR */
                             }
                             p_stat.m_timeToPut += System.currentTimeMillis() - time;
-                            index = 0;
 
-                            chunkIDs[index] = chunkID;
-                            offsets[index] = readBytes + headerSize;
-                            lengths[index] = payloadSize;
+                            chunkIDs[0] = chunkID;
+                            offsets[0] = readBytes + headerSize;
+                            lengths[0] = payloadSize;
+                            index = 1;
                         }
                     } else {
                         // Version, epoch and/or eon is different -> ignore entry
@@ -1354,9 +1366,11 @@ public class SecondaryLog extends AbstractLog {
      *     a hash table with all versions for this secondary log
      * @param p_epoch
      *     the epoch before reading all versions
+     * @return whether the reorganization was successful or not
      */
-    private void reorganizeSegmentWithMigrations(final int p_segmentIndex, final byte[] p_segmentData, final VersionsHashTable p_allVersions,
+    private boolean reorganizeSegmentWithMigrations(final int p_segmentIndex, final byte[] p_segmentData, final VersionsHashTable p_allVersions,
         final short p_epoch) {
+        boolean ret = true;
         int length;
         int readBytes = 0;
         int writtenBytes = 0;
@@ -1421,9 +1435,10 @@ public class SecondaryLog extends AbstractLog {
                         }
                     }
                 } catch (final IOException e) {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Reorganization failed(%d): ", m_rangeIDOrFirstLocalID, e);
-                    // #endif /* LOGGER >= ERROR */
+                    // #if LOGGER >= WARN
+                    LOGGER.warn("Reorganization failed(%d): ", m_rangeIDOrFirstLocalID, e);
+                    // #endif /* LOGGER >= WARN */
+                    ret = false;
                 }
             } else {
                 m_segmentAssignmentlock.unlock();
@@ -1436,6 +1451,8 @@ public class SecondaryLog extends AbstractLog {
                 // #endif /* LOGGER >= INFO */
             }
         }
+
+        return ret;
     }
 
     /**
@@ -1449,8 +1466,10 @@ public class SecondaryLog extends AbstractLog {
      *     a hash table with all versions for this secondary log
      * @param p_epoch
      *     the epoch before reading all versions
+     * @return whether the reorganization was successful or not
      */
-    private void reorganizeSegment(final int p_segmentIndex, final byte[] p_segmentData, final int[] p_allVersions, final short p_epoch) {
+    private boolean reorganizeSegment(final int p_segmentIndex, final byte[] p_segmentData, final int[] p_allVersions, final short p_epoch) {
+        boolean ret = true;
         int length;
         int readBytes = 0;
         int writtenBytes = 0;
@@ -1517,9 +1536,10 @@ public class SecondaryLog extends AbstractLog {
                         }
                     }
                 } catch (final IOException e) {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Reorganization failed(%d): ", m_rangeIDOrFirstLocalID, e);
-                    // #endif /* LOGGER >= ERROR */
+                    // #if LOGGER >= WARN
+                    LOGGER.warn("Reorganization failed(log: %d): ", m_rangeIDOrFirstLocalID, e);
+                    // #endif /* LOGGER >= WARN */
+                    ret = false;
                 }
             } else {
                 m_segmentAssignmentlock.unlock();
@@ -1532,6 +1552,8 @@ public class SecondaryLog extends AbstractLog {
                 // #endif /* LOGGER >= INFO */
             }
         }
+
+        return ret;
     }
 
     /**

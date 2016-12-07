@@ -68,6 +68,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.PingSuperpeerMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.ReplaceBackupPeerRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.ReplaceBackupPeerResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SetRestorerAfterRecoveryMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateRequest;
@@ -1554,6 +1555,8 @@ public class OverlayPeer implements MessageReceiver {
             SuperpeerStorageStatusRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE,
             SuperpeerStorageStatusResponse.class);
+        m_network
+            .registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REPLACE_BACKUP_PEER_RESPONSE, ReplaceBackupPeerResponse.class);
     }
 
     /**

@@ -274,7 +274,10 @@ public final class SecondaryLogsReorgThread extends Thread {
             getAccessToSecLog(secondaryLog);
 
             final long start = System.currentTimeMillis();
-            secondaryLog.reorganizeIteratively(m_reorgSegmentData, m_allVersions, epoch);
+            if (!secondaryLog.reorganizeIteratively(m_reorgSegmentData, m_allVersions, epoch)) {
+                // Reorganization failed because of an I/O error -> switch log
+                counter = iterationsPerLog;
+            }
             // #if LOGGER == TRACE
             LOGGER.trace("Time to reorganize segment: %d", System.currentTimeMillis() - start);
             // #endif /* LOGGER == TRACE */

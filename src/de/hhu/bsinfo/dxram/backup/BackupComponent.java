@@ -307,7 +307,8 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         }
         backupRange = new BackupRange(p_firstChunkID, currentBackupPeers);
 
-        m_recoveredBackupRanges.add(backupRange);
+        //TODO: Check this
+        /*-m_recoveredBackupRanges.add(backupRange);
         m_lock.writeLock().unlock();
 
         // TODO:
@@ -315,7 +316,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         //m_lookup.replaceBackupPeer(firstChunkID, failedPeer, newBackupPeer);
 
         m_log.initBackupRange(p_firstChunkID, newBackupPeer);
-        m_chunk.replicateBackupRange(newBackupPeer, p_firstChunkID, (long) -1);
+        m_chunk.replicateBackupRange(newBackupPeer, p_firstChunkID, (long) -1);*/
     }
 
     /**

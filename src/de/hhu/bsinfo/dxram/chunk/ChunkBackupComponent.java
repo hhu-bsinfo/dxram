@@ -159,11 +159,11 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      *     the Chunks lengths.
      * @param p_usedEntries
      *     the number of actually used entries within the arrays (might be smaller than the array lengths).
+     * @lock manage lock from memory manager component must be locked
      */
     public boolean putRecoveredChunks(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
         boolean ret = true;
 
-        m_memoryManager.lockManage();
         if (m_memoryManager.createAndPutRecovered(p_chunkIDs, p_data, p_offsets, p_lengths, p_usedEntries) != MemoryManagerComponent.MemoryErrorCodes.SUCCESS) {
             // #if LOGGER == ERROR
             LOGGER.error("Recovered chunks could not be stored locally");
@@ -174,7 +174,6 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
             LOGGER.trace("Stored %d recovered chunks locally", p_usedEntries);
             // #endif /* LOGGER == TRACE */
         }
-        m_memoryManager.unlockManage();
 
         return ret;
     }

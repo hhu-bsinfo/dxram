@@ -265,7 +265,7 @@ public final class SmallObjectHeap {
             }
         }
 
-        ret = multiReserveBlocks(bigChunkSize, p_sizes);
+        ret = multiReserveBlocks(bigChunkSize, p_sizes, p_usedEntries);
 
         if (ret == null) {
             // fallback to single malloc calls on failure
@@ -1577,7 +1577,7 @@ public final class SmallObjectHeap {
      *     List of block sizes (payloads, only)
      * @return Addresses of the allocated blocks
      */
-    private long[] multiReserveBlocks(final int p_bigBlockSize, final int[] p_sizes) {
+    private long[] multiReserveBlocks(final int p_bigBlockSize, final int[] p_sizes, final int p_usedEntries) {
         long[] ret;
         int size;
         long address;
@@ -1594,11 +1594,11 @@ public final class SmallObjectHeap {
         unhookFreeBlock(address);
         trimFreeBlockToSize(address, p_bigBlockSize);
 
-        ret = new long[p_sizes.length];
+        ret = new long[p_usedEntries];
 
         ArrayList<Long> chainedBlocks = new ArrayList<>();
 
-        for (int i = 0; i < p_sizes.length; i++) {
+        for (int i = 0; i < p_usedEntries; i++) {
 
             size = p_sizes[i];
 

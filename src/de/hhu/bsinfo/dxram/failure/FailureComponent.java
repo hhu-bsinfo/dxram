@@ -76,82 +76,87 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
             ConnectionLostEvent event = (ConnectionLostEvent) p_event;
             short nodeID = event.getNodeID();
 
-            m_failureLock.lock();
-            if (m_nodeStatus[nodeID & 0xFFFF] < 5) {
-                m_nodeStatus[nodeID & 0xFFFF] = 5;
-                m_failureLock.unlock();
-
-                /*
-                 * Section A - High priority
-                 * A connection was removed after an error -> try to re-connect
-                 * If re-connecting fails, failure will be handled
-                 *
-                 * There can only be one thread per NodeID in here, but there might be another thread in section B for
-                 * the same NodeID. All other events (ConnectionLostEvents and ResponseDelayedEvents) for given NodeID
-                 * are ignored meanwhile. If there is a thread in section B for given NodeID, this section is still
-                 * reachable.
-                 */
-
-                // #if LOGGER == DEBUG
-                LOGGER.debug("ConnectionLostEvent triggered: 0x%X", nodeID);
-                // #endif /* LOGGER == DEBUG */
-
-                try {
-                    m_network.connectNode(nodeID);
-
-                    // #if LOGGER == DEBUG
-                    LOGGER.debug("Re-connect successful, continuing");
-                    // #endif /* LOGGER == DEBUG */
-                } catch (final NetworkException e) {
-                    // #if LOGGER == DEBUG
-                    LOGGER.debug("Node is unreachable. Initiating failure handling");
-                    // #endif /* LOGGER == DEBUG */
-
-                    failureHandling(nodeID);
-                }
-
+            if (nodeID != -1) {
                 m_failureLock.lock();
-                m_nodeStatus[nodeID & 0xFFFF] = 0;
-                m_failureLock.unlock();
-            } else {
-                m_failureLock.unlock();
+                if (m_nodeStatus[nodeID & 0xFFFF] < 5) {
+                    m_nodeStatus[nodeID & 0xFFFF] = 5;
+                    m_failureLock.unlock();
+
+                    /*
+                     * Section A - High priority
+                     * A connection was removed after an error -> try to re-connect
+                     * If re-connecting fails, failure will be handled
+                     *
+                     * There can only be one thread per NodeID in here, but there might be another thread in section B for
+                     * the same NodeID. All other events (ConnectionLostEvents and ResponseDelayedEvents) for given NodeID
+                     * are ignored meanwhile. If there is a thread in section B for given NodeID, this section is still
+                     * reachable.
+                     */
+
+                    // #if LOGGER == DEBUG
+                    LOGGER.debug("ConnectionLostEvent triggered: 0x%X", nodeID);
+                    // #endif /* LOGGER == DEBUG */
+
+                    try {
+                        m_network.connectNode(nodeID);
+
+                        // #if LOGGER == DEBUG
+                        LOGGER.debug("Re-connect successful, continuing");
+                        // #endif /* LOGGER == DEBUG */
+                    } catch (final NetworkException e) {
+                        // #if LOGGER == DEBUG
+                        LOGGER.debug("Node is unreachable. Initiating failure handling");
+                        // #endif /* LOGGER == DEBUG */
+
+                        failureHandling(nodeID);
+                    }
+
+                    m_failureLock.lock();
+                    m_nodeStatus[nodeID & 0xFFFF] = 0;
+                    m_failureLock.unlock();
+                } else {
+                    m_failureLock.unlock();
+                }
             }
         } else {
             ResponseDelayedEvent event = (ResponseDelayedEvent) p_event;
             short nodeID = event.getNodeID();
 
-            m_failureLock.lock();
-            if (m_nodeStatus[nodeID & 0xFFFF] == 0) {
-                m_nodeStatus[nodeID & 0xFFFF]++;
-                m_failureLock.unlock();
-
-                /*
-                 * Section B - Low priority
-                 * A response was delayed -> send a message to check connection
-                 *
-                 * There can only be one thread per NodeID in here, but there might be another thread in section A for
-                 * the same NodeID. All other ResponseDelayedEvents for given NodeID are ignored meanwhile. If there is
-                 * a thread in section A for given NodeID, this section is unreachable.
-                 */
-
-                // #if LOGGER == DEBUG
-                LOGGER.debug("ResponseDelayedEvent triggered: 0x%X. Sending default message and return.", nodeID);
-                // #endif /* LOGGER == DEBUG */
-
-                try {
-                    // Sending default message to detect connection failure. If the connection is broken,
-                    // a ConnectionLostEvent will be triggered
-                    m_network.sendMessage(new DefaultMessage(nodeID));
-                } catch (final NetworkException ignored) {
-                }
-
+            if (nodeID != -1) {
                 m_failureLock.lock();
-                m_nodeStatus[nodeID & 0xFFFF]--;
-                m_failureLock.unlock();
-            } else {
-                m_failureLock.unlock();
+                if (m_nodeStatus[nodeID & 0xFFFF] == 0) {
+                    m_nodeStatus[nodeID & 0xFFFF]++;
+                    m_failureLock.unlock();
+
+                    /*
+                     * Section B - Low priority
+                     * A response was delayed -> send a message to check connection
+                     *
+                     * There can only be one thread per NodeID in here, but there might be another thread in section A for
+                     * the same NodeID. All other ResponseDelayedEvents for given NodeID are ignored meanwhile. If there is
+                     * a thread in section A for given NodeID, this section is unreachable.
+                     */
+
+                    // #if LOGGER == DEBUG
+                    LOGGER.debug("ResponseDelayedEvent triggered: 0x%X. Sending default message and return.", nodeID);
+                    // #endif /* LOGGER == DEBUG */
+
+                    try {
+                        // Sending default message to detect connection failure. If the connection is broken,
+                        // a ConnectionLostEvent will be triggered
+                        m_network.sendMessage(new DefaultMessage(nodeID));
+                    } catch (final NetworkException ignored) {
+                    }
+
+                    m_failureLock.lock();
+                    m_nodeStatus[nodeID & 0xFFFF]--;
+                    m_failureLock.unlock();
+                } else {
+                    m_failureLock.unlock();
+                }
             }
         }
+
     }
 
     @Override

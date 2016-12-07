@@ -120,7 +120,10 @@ public final class LogTest2 {
                 m_chunkService.put(chunks);
 
                 counter += CHUNKS_PER_PUT * CHUNK_SIZE;
-                // System.out.println("Created " + CHUNKS_PER_PUT + " chunks and replicated them.");
+
+                if (counter / CHUNK_SIZE / CHUNKS_PER_PUT % 1000 == 0) {
+                    System.out.println("Created " + counter / CHUNKS_PER_PUT + " chunks (" + CHUNK_SIZE + " bytes each) and replicated them.");
+                }
             }
             System.out.println("Time to distribute 3GB payload: " + (System.currentTimeMillis() - start) + " ms");
         }
