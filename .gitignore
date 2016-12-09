@@ -15,6 +15,5 @@ DXRAM.jar
 dxram.iml
 dxram_term_history
 out/*
-config/
-conf/
+config/*.json
 start_dxram_terminal.sh
