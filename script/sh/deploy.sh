@@ -1,30 +1,39 @@
 #!/bin/bash
 
 
-LOCAL_EXEC_PATH="../../"
-REMOTE_EXEC_PATH="/home/beineke/dxram/"
-LOCAL_ZOOKEEPER_PATH="/mnt/c/Users/kbein/workspace/zookeeper/"
-REMOTE_ZOOKEEPER_PATH="/home/beineke/zookeeper/"
-LOCALHOST="127.0.0.1"
-NODE_FILE="./$1"
-if [ "${NODE_FILE: -5}" != ".conf" ] ; then
-  NODE_FILE="${NODE_FILE}.conf"
-fi
-NODES=`cat "$NODE_FILE" | grep -v '#'`
-CONFIG_FILE="$LOCAL_EXEC_PATH/config/dxram.json"
-DEFAULT_CLASS="de.hhu.bsinfo.dxram.run.DXRAMMain"
-DEFAULT_CONDITION="Peer started."
-EXECUTION_DIR="`pwd`/"
-LOG_DIR="${EXECUTION_DIR}logs/"
-
-echo "##############################"
-echo "Deploying $(echo $1 | cut -d '.' -f 1)"
-echo "##############################"
-echo "Local execution path: $LOCAL_EXEC_PATH"
-echo "Remote execution path: $REMOTE_EXEC_PATH"
-echo "Local ZooKeeper path: $LOCAL_ZOOKEEPER_PATH"
-echo "Remote ZooKeeper path: $REMOTE_EXEC_PATH"
-echo -e "\n\n"
+#############
+# Functions #
+#############
+determineConfigurablePaths() {
+  TMP=`echo "$NODES" | grep LOCAL_EXEC_PATH`
+  echo "$TMP"
+  if [ "$TMP" != "" ] ; then
+    LOCAL_EXEC_PATH=`echo "$TMP" | cut -d '=' -f 2`
+  else
+    LOCAL_EXEC_PATH="../../"
+  fi
+  
+  TMP=`echo "$NODES" | grep REMOTE_EXEC_PATH`
+  if [ "$TMP" != "" ] ; then
+    REMOTE_EXEC_PATH=`echo "$TMP" | cut -d '=' -f 2`
+  else
+    REMOTE_EXEC_PATH="/home/beineke/dxram/"
+  fi
+  
+  TMP=`echo "$NODES" | grep LOCAL_ZOOKEEPER_PATH`
+  if [ "$TMP" != "" ] ; then
+    LOCAL_ZOOKEEPER_PATH=`echo "$TMP" | cut -d '=' -f 2`
+  else
+    LOCAL_ZOOKEEPER_PATH="/mnt/c/Users/kbein/workspace/zookeeper/"
+  fi
+  
+  TMP=`echo "$NODES" | grep REMOTE_ZOOKEEPER_PATH`
+  if [ "$TMP" != "" ] ; then
+    REMOTE_ZOOKEEPER_PATH=`echo "$TMP" | cut -d '=' -f 2`
+  else
+    REMOTE_ZOOKEEPER_PATH="/home/beineke/zookeeper/"
+  fi
+}
 
 clean-up() {
   rm -f "${EXECUTION_DIR}dxram.json"
@@ -360,6 +369,33 @@ close() {
 ###############
 # Entry point #
 ###############
+# Trim node file
+NODE_FILE="./$1"
+if [ "${NODE_FILE: -5}" != ".conf" ] ; then
+  NODE_FILE="${NODE_FILE}.conf"
+fi
+NODES=`cat "$NODE_FILE" | grep -v '#'`
+
+# Set execution paths
+determineConfigurablePaths
+EXECUTION_DIR="`pwd`/"
+LOG_DIR="${EXECUTION_DIR}logs/"
+CONFIG_FILE="$LOCAL_EXEC_PATH/config/dxram.json"
+
+# Set default values
+LOCALHOST="127.0.0.1"
+DEFAULT_CLASS="de.hhu.bsinfo.dxram.run.DXRAMMain"
+DEFAULT_CONDITION="Peer started."
+
+# Print configuration
+echo "##############################"
+echo "Deploying $(echo $1 | cut -d '.' -f 1)"
+echo "##############################"
+echo "Local execution path: $LOCAL_EXEC_PATH"
+echo "Remote execution path: $REMOTE_EXEC_PATH"
+echo "Local ZooKeeper path: $LOCAL_ZOOKEEPER_PATH"
+echo "Remote ZooKeeper path: $REMOTE_ZOOKEEPER_PATH"
+echo -e "\n\n"
 
 clean-up
 
