@@ -33,6 +33,10 @@ determineConfigurablePaths() {
   else
     REMOTE_ZOOKEEPER_PATH="/home/beineke/zookeeper/"
   fi
+
+  # Trim node file
+  NODES=`echo "$NODES" | grep -v '_EXEC_PATH'`
+  NODES=`echo "$NODES" | grep -v '_ZOOKEEPER_PATH'`
 }
 
 clean-up() {
@@ -57,6 +61,7 @@ writeConfiguration() {
           \"m_readFromFile\": 1
         }"
 
+  CURRENT_CONFIG=""
   CONFIG_STRING=""
   FIRST_ITERATION=true
   while read NODE || [[ -n "$NODE" ]]; do
@@ -65,6 +70,20 @@ writeConfiguration() {
     ROLE=`echo $NODE | cut -d ',' -f 3`
 
     if [ "$ROLE" = "Z" ] ; then
+      # Create replacement string for zookeeper configuration
+      ZOOKEEPER_CONFIG_STRING="
+      \"m_path\": \"/dxram\",
+      \"m_connection\": {
+        \"m_ip\": \"$NODE_IP\",
+        \"m_port\": $NODE_PORT
+      },"
+
+      # Replace zookeeper configuration
+      CURRENT_CONFIG=`sed '/ZookeeperBootComponent/q' $CONFIG_FILE`
+      CURRENT_CONFIG="$CURRENT_CONFIG$ZOOKEEPER_CONFIG_STRING"
+      END=`sed -ne '/ZookeeperBootComponent/{s///; :a' -e 'n;p;ba' -e '}' $CONFIG_FILE`
+      END=`echo "$END" | sed -ne '/},/{s///; :a' -e 'n;p;ba' -e '}'`
+      CURRENT_CONFIG=`echo -e "$CURRENT_CONFIG\n$END"`
       continue
     elif [ "$ROLE" = "S" ] ; then
       ROLE="SUPERPEER"
@@ -86,13 +105,25 @@ writeConfiguration() {
   CONFIG_STRING=`echo -e "$CONFIG_STRING\n      ],"`
 
   # Replace nodes configuration:  
-  NEW_CONFIG=`sed '/m_nodesConfig/q' $CONFIG_FILE`
+  NEW_CONFIG=`echo "$CURRENT_CONFIG" | sed '/m_nodesConfig/q'`
   NEW_CONFIG="$NEW_CONFIG$CONFIG_STRING"
-  END=`sed -ne '/m_nodesConfig/{s///; :a' -e 'n;p;ba' -e '}' $CONFIG_FILE`
+  END=`echo "$CURRENT_CONFIG" | sed -ne '/m_nodesConfig/{s///; :a' -e 'n;p;ba' -e '}'`
   END=`echo "$END" | sed -ne '/],/{s///; :a' -e 'n;p;ba' -e '}'`
   NEW_CONFIG=`echo -e "$NEW_CONFIG\n$END"`
   
   echo "$NEW_CONFIG" > "${EXECUTION_DIR}dxram.json"
+}
+
+copyRemoteConfiguration() {
+    local IP=$1
+    scp "dxram.json ${IP}:${REMOTE_EXEC_PATH}config/"
+}
+
+copyLocalConfiguration() {
+  if [ "$LOCAL_CONFIG_WAS_COPIED" = false ] ; then
+    cp dxram.json "${LOCAL_EXEC_PATH}config/"
+    LOCAL_CONFIG_WAS_COPIED=true
+  fi
 }
 
 startRemoteZooKeeper() {
@@ -159,8 +190,8 @@ checkSuperpeerStartup() {
   local NODE_PORT=$2
 
   while true ; do
-    SUCCESS=`cat "${LOG_DIR}log_superpeer_$NUMBER_OF_SUPERPEERS" | grep "Superpeer started."`
-    FAIL=`cat "${LOG_DIR}log_superpeer_$NUMBER_OF_SUPERPEERS" | grep "Initializing DXRAM failed."`
+    SUCCESS=`cat "${LOG_DIR}log_superpeer_$NUMBER_OF_SUPERPEERS" | grep "^>>> Superpeer started <<<$"`
+    FAIL=`cat "${LOG_DIR}log_superpeer_$NUMBER_OF_SUPERPEERS" | grep "^Initializing DXRAM failed.$"`
     if [ "$SUCCESS" != "" ] ; then
       echo "Superpeer ($NODE_IP $NODE_PORT) started"
      break
@@ -205,8 +236,8 @@ checkPeerStartup() {
   local CONDITION="$6"
 
   while true ; do
-    SUCCESS=`cat "${LOG_DIR}log_peer_$NUMBER_OF_PEERS" | grep "$CONDITION"`
-    FAIL1=`cat "${LOG_DIR}log_peer_$NUMBER_OF_PEERS" | grep "Initializing DXRAM failed."`
+    SUCCESS=`cat "${LOG_DIR}log_peer_$NUMBER_OF_PEERS" | grep "^$CONDITION$"`
+    FAIL1=`cat "${LOG_DIR}log_peer_$NUMBER_OF_PEERS" | grep "^Initializing DXRAM failed.$"`
     FAIL2=`cat "${LOG_DIR}log_peer_$NUMBER_OF_PEERS" | grep -i "error"`
     if [ "$SUCCESS" != "" ] ; then
       echo "Peer ($NODE_IP $NODE_PORT $RAM_SIZE_IN_GB $CLASS $ARGUMENTS) started"
@@ -238,18 +269,6 @@ startLocalTerminal() {
   cd "$LOCAL_EXEC_PATH"
   java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$IP -Ddxram.m_engineSettings.m_address.m_port=$PORT -Ddxram.m_engineSettings.m_role=Terminal -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS < $SCRIPT
   cd "$EXECUTION_DIR"
-}
-
-copyRemoteConfiguration() {
-    local IP=$1
-    scp "dxram.json ${IP}:${REMOTE_EXEC_PATH}config/"
-}
-
-copyLocalConfiguration() {
-  if [ "$LOCAL_CONFIG_WAS_COPIED" = false ] ; then
-    cp dxram.json "${LOCAL_EXEC_PATH}config/"
-    LOCAL_CONFIG_WAS_COPIED=true
-  fi
 }
 
 execute() {
