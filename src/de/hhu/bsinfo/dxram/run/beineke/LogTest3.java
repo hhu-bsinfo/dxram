@@ -88,6 +88,7 @@ public final class LogTest3 {
                 currentThread.join();
             } catch (final InterruptedException ignored) {
             }
+            System.out.println("All chunks created and replicated.");
         } else if ("benchmark".equals(p_arguments[0])) {
             // Initialize DXRAM
             final DXRAM dxram = new DXRAM();
@@ -103,6 +104,7 @@ public final class LogTest3 {
                 currentThread.join();
             } catch (final InterruptedException ignored) {
             }
+            System.out.println("Benchmark finished.");
         }
     }
 
