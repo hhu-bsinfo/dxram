@@ -152,6 +152,10 @@ JNIEXPORT jbyteArray JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_readline(JNIEnv
 
     temp = readline (prompt);
 
+    if (temp == NULL) {
+      return NULL;
+    }
+
     int idx,len;
 
     len = strlen(temp);

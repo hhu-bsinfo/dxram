@@ -1,6 +1,9 @@
 #!/bin/bash
 
 
+# TODO: -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value= ...
+
+
 #############
 # Functions #
 #############
@@ -36,7 +39,7 @@ determine_configurable_paths() {
   if [ "$tmp" != "" ] ; then
     readonly LOCAL_ZOOKEEPER_PATH=`echo "$tmp" | cut -d '=' -f 2`
   else
-    readonly LOCAL_ZOOKEEPER_PATH="/mnt/c/Users/kbein/workspace/zookeeper/"
+    readonly LOCAL_ZOOKEEPER_PATH="/home/beineke/workspace/zookeeper/"
   fi
   
   tmp=`echo "$NODES" | grep REMOTE_ZOOKEEPER_PATH`
@@ -48,7 +51,7 @@ determine_configurable_paths() {
 
   # Trim node file
   NODES=`echo "$NODES" | grep -v '_EXEC_PATH'`
-  readonly NODES=`echo "$NODES" | grep -v '_ZOOKEEPER_PATH'`
+  NODES=`echo "$NODES" | grep -v '_ZOOKEEPER_PATH'`
 }
 
 ######################################################
@@ -62,7 +65,6 @@ determine_configurable_paths() {
 ######################################################
 clean_up() {
   rm -f "${EXECUTION_DIR}dxram.json"
-  rm -f "${EXECUTION_DIR}nohup.out"
   rm -rf "${EXECUTION_DIR}logs"
 
   mkdir "$LOG_DIR"
@@ -102,6 +104,7 @@ check_configuration() {
 
 ######################################################
 # Write DXRAM configuration file with updated node and ZooKeeper information
+# Update node table: Hostname is replaced by resolved ip and determined port
 # Globals:
 #   CONFIG_FILE
 #   NODES
@@ -110,6 +113,10 @@ check_configuration() {
 #   None
 ######################################################
 write_configuration() {
+  # Initialize hashtable for port determination
+  declare -A NODE_ARRAY
+  local current_port=0
+
   # Create replacement string for nodes configuration:
   local default_node="
         {
@@ -123,23 +130,32 @@ write_configuration() {
           \"m_readFromFile\": 1
         }"
 
-  local current_config=""
+  local current_config=`cat $CONFIG_FILE`
   local config_string=""
   local end=""
   local node=""
+  local new_node=""
+  local new_nodes=""
   local first_iterartion=true
   while read node || [[ -n "$node" ]]; do
-    local node_ip=`echo $node | cut -d ',' -f 1`
-    local node_port=`echo $node | cut -d ',' -f 2`
-    local role=`echo $node | cut -d ',' -f 3`
+    local hostname=`echo $node | cut -d ',' -f 1`
+    local role=`echo $node | cut -d ',' -f 2`
+    local ip=`getent hosts $hostname | cut -d ' ' -f 1`
+    if [ "$ip" = "" ] ; then
+      echo "ERROR: Unknown host: \"$hostname\"."
+      close
+    fi
+    local port="0"
 
     if [ "$role" = "Z" ] ; then
+      port="$ZOOKEEPER_PORT"
+
       # Create replacement string for zookeeper configuration
       local zookeeper_config_string="
       \"m_path\": \"/dxram\",
       \"m_connection\": {
-        \"m_ip\": \"$node_ip\",
-        \"m_port\": $node_port
+        \"m_ip\": \"$ip\",
+        \"m_port\": $port
       },"
 
       # Replace zookeeper configuration
@@ -148,24 +164,53 @@ write_configuration() {
       end=`sed -ne '/ZookeeperBootComponent/{s///; :a' -e 'n;p;ba' -e '}' $CONFIG_FILE`
       end=`echo "$end" | sed -ne '/},/{s///; :a' -e 'n;p;ba' -e '}'`
       current_config=`echo -e "$current_config\n$end"`
+
+      # Replace hostname by ip and port in nodes table
+      new_nodes=`echo "$node" | sed "s/\([a-Z0-9\-\.]*\)/$ip,$port,\1/"`
       continue
     elif [ "$role" = "S" ] ; then
+      current_port=${NODE_ARRAY["$hostname"]}
+      if [ "$current_port" = "" ] ; then
+	current_port=22221
+      else
+	current_port=$(($current_port + 1))
+      fi
+      port=$current_port
+      NODE_ARRAY["$hostname"]=$current_port
+
       role="SUPERPEER"
     elif [ "$role" = "P" ] ; then
+      current_port=${NODE_ARRAY["$hostname"]}
+      if [ "$current_port" = "" ] ; then
+	current_port=22222
+      else
+	current_port=$(($current_port + 1))
+      fi
+      port=$current_port
+      NODE_ARRAY["$hostname"]=$current_port
+
       role="PEER"
     elif [ "$role" = "T" ] ; then
+      port="22220"
+
       role="TERMINAL"
     fi
-    
-    local node_string=`echo "$default_node" | sed "s/IP_TEMPLATE/$node_ip/" | sed "s/PORT_TEMPLATE/$node_port/" | sed "s/ROLE_TEMPLATE/$role/"`
-    
+
+    local node_string=`echo "$default_node" | sed "s/IP_TEMPLATE/$ip/" | sed "s/PORT_TEMPLATE/$port/" | sed "s/ROLE_TEMPLATE/$role/"`
+
     if [ "$first_iterartion" == true ] ; then
       config_string="$config_string$node_string"
       first_iterartion=false
     else
       config_string="$config_string,$node_string"
     fi
+
+    # Replace hostname by ip and port in nodes table
+    new_node=`echo "$node" | sed "s/\([a-Z0-9\-\.]*\)/$ip,$port,\1/"`
+    new_nodes=`echo -e "$new_nodes\n$new_node"`
   done <<< "$NODES"
+  readonly NODES="$new_nodes"
+
   config_string=`echo -e "$config_string\n      ],"`
 
   # Replace nodes configuration:
@@ -225,13 +270,13 @@ copy_local_configuration() {
 #   REMOTE_ZOOKEEPER_PATH
 # Arguments:
 #   ip - The IP of the remote node
-#   port - The Port of the ZooKeeper server to start
+#   port - The port of the ZooKeeper server to start
 ######################################################
 start_remote_zookeeper() {
   local ip=$1
   local port=$2
 
-  nohup ssh $ip -n "sed -i \"s/clientPort=[0-9]*/clientPort=$port/g\" \"${REMOTE_ZOOKEEPER_PATH}conf/zoo.cfg\" && ${REMOTE_ZOOKEEPER_PATH}bin/zkServer.sh start"
+  ssh $ip -n "sed -i \"s/clientPort=[0-9]*/clientPort=$port/g\" \"${REMOTE_ZOOKEEPER_PATH}conf/zoo.cfg\" && ${REMOTE_ZOOKEEPER_PATH}bin/zkServer.sh start"
 }
 
 ######################################################
@@ -240,7 +285,7 @@ start_remote_zookeeper() {
 #   LOCAL_ZOOKEEPER_PATH
 #   EXECUTION_DIR
 # Arguments:
-#   port - The Port of the ZooKeeper server to start
+#   port - The port of the ZooKeeper server to start
 ######################################################
 start_local_zookeeper() {
   local port=$1
@@ -259,31 +304,47 @@ start_local_zookeeper() {
 #   EXECUTION_DIR
 # Arguments:
 #   ip - The IP of the ZooKeeper server
-#   port - The Port of the ZooKeeper server
+#   port - The port of the ZooKeeper server
+#   hostname - The hostname of the ZooKeeper server
 ######################################################
 check_zookeeper_startup() {
   local ip=$1
   local port=$2
+  local hostname=$3
+
+  local logfile="${LOG_DIR}${hostname}_${port}_zookeeper_server"
 
   while true ; do
-    local success_started=`cat "${LOG_DIR}log_zookeeper" | grep "STARTED"`
-    local success_running=`cat "${LOG_DIR}log_zookeeper" | grep "already running"`
-    local fail_pid=`cat "${LOG_DIR}log_zookeeper" | grep "FAILED TO WRITE PID"`
-    local fail_started=`cat "${LOG_DIR}log_zookeeper" | grep "SERVER DID NOT START"`
+    local success_started=`cat "$logfile" 2> /dev/null | grep "STARTED"`
+    local success_running=`cat "$logfile" 2> /dev/null | grep "already running"`
+    local fail_pid=`cat "$logfile" 2> /dev/null | grep "FAILED TO WRITE PID"`
+    local fail_started=`cat "$logfile" 2> /dev/null | grep "SERVER DID NOT START"`
     if [ "$success_started" != "" -o "$success_running" != "" ] ; then
       echo "ZooKeeper ($ip $port) started"
-      
+
       # TODO: Remote
 
       # Remove all dxram related entries
       cd "$LOCAL_ZOOKEEPER_PATH"
-      "bin/zkCli.sh" rmr /dxram > "${LOG_DIR}log_zookeeper_client"
+      echo "rmr /dxram" | "bin/zkCli.sh" > "${LOG_DIR}${hostname}_${port}_zookeeper_client" 2>&1
       cd "$EXECUTION_DIR"
 
-      break  
+      while true ; do
+	local success=`cat "${LOG_DIR}${hostname}_${port}_zookeeper_client" | grep "CONNECTED"`
+	local fail=`cat "${LOG_DIR}${hostname}_${port}_zookeeper_client" | grep -i "exception"`
+	if [ "$success" != "" ] ; then
+	  echo "ZooKeeper clean-up successful."
+	  break
+	elif [ "$fail" != "" ] ; then
+	  echo "ZooKeeper server not available."
+	  close
+	fi
+      done
+
+      break
     elif [ "$fail_pid" != "" -o "$fail_started" != "" ] ; then
-      echo "ERROR: ZooKeeper ($ip $port) could not be started. See log file ${LOG_DIR}log_zookeeper"
-      exit
+      echo "ERROR: ZooKeeper ($ip $port) could not be started. See log file $logfile"
+      close
     fi
     sleep 1.0
   done
@@ -296,13 +357,13 @@ check_zookeeper_startup() {
 #   DEFAULT_CLASS
 # Arguments:
 #   ip - The IP of the Superpeer
-#   port - The Port of Superpeer
+#   port - The port of Superpeer
 ######################################################
 start_remote_superpeer() {
   local ip=$1
   local port=$2
 
-  nohup ssh $ip -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Superpeer -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS"
+  ssh $ip -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Superpeer -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS"
 }
 
 ######################################################
@@ -313,7 +374,7 @@ start_remote_superpeer() {
 #   EXECUTION_DIR
 # Arguments:
 #   ip - The IP of the Superpeer
-#   port - The Port of Superpeer
+#   port - The port of Superpeer
 ######################################################
 start_local_superpeer() {
   local ip=$1
@@ -330,23 +391,25 @@ start_local_superpeer() {
 #   LOG_DIR
 # Arguments:
 #   ip - The IP of the Superpeer
-#   port - The Port of Superpeer
-#   number_of_superpeers - The number of Superpeers
+#   port - The port of Superpeer
+#   hostname - The hostname
 ######################################################
 check_superpeer_startup() {
-  local node_ip=$1
-  local node_port=$2
-  local number_of_superpeers=$3
+  local ip=$1
+  local port=$2
+  local hostname=$3
+
+  local logfile="${LOG_DIR}${hostname}_${port}_superpeer"
 
   while true ; do
-    local success=`cat "${LOG_DIR}log_superpeer_$number_of_superpeers" | grep "^>>> Superpeer started <<<$"`
-    local fail=`cat "${LOG_DIR}log_superpeer_$number_of_superpeers" | grep "^Initializing DXRAM failed.$"`
+    local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$DEFAULT_CONDITION"`
+    local fail=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
     if [ "$success" != "" ] ; then
-      echo "Superpeer ($node_ip $node_port) started"
+      echo "Superpeer ($ip $port) started"
      break
     elif [ "$fail" != "" ] ; then
-      echo "ERROR: Superpeer ($node_ip $node_port) could not be started. See log file ${LOG_DIR}log_superpeer_$number_of_superpeers"
-      exit
+      echo "ERROR: Superpeer ($ip $port) could not be started. See log file $logfile"
+      close
     fi
     sleep 1.0
   done
@@ -358,7 +421,7 @@ check_superpeer_startup() {
 #   REMOTE_EXEC_PATH
 # Arguments:
 #   ip - The IP of the Peer
-#   port - The Port of Peer
+#   port - The port of Peer
 #   ram_size_in_gb - The key-value store size
 #   class - The class to execute
 #   arguments - The arguments
@@ -370,7 +433,12 @@ start_remote_peer() {
   local class=$4
   local arguments="$5"
 
-  nohup ssh $ip -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $class $arguments"
+  if [ "$ram_size_in_gb" = "" ] ; then
+    # Use default key value store size
+    ssh $ip -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $class $arguments"
+  else
+    ssh $ip -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $class $arguments"
+  fi
 }
 
 ######################################################
@@ -379,7 +447,7 @@ start_remote_peer() {
 #   LOCAL_EXEC_PATH
 # Arguments:
 #   ip - The IP of the Peer
-#   port - The Port of Peer
+#   port - The port of Peer
 #   ram_size_in_gb - The key-value store size
 #   class - The class to execute
 #   arguments - The arguments
@@ -392,7 +460,12 @@ start_local_peer() {
   local arguments="$5"
 
   cd "$LOCAL_EXEC_PATH"
-  java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $class $arguments
+  if [ "$ram_size_in_gb" = "" ] ; then
+    # Use default key value store size
+    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $class $arguments
+  else
+    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $class $arguments
+  fi
   cd "$EXECUTION_DIR"
 }
 
@@ -402,35 +475,37 @@ start_local_peer() {
 #   LOG_DIR
 # Arguments:
 #   ip - The IP of the Peer
-#   port - The Port of Peer
+#   port - The port of Peer
+#   hostname - The hostname
 #   ram_size_in_gb - The key-value store size
 #   class - The class to execute
 #   arguments - The arguments
 #   condition - The string to wait for
-#   number_of_peers - The number of Peers
 ######################################################
 check_peer_startup() {
   local ip=$1
   local port=$2
-  local ram_size_in_gb=$3
-  local class=$4
-  local arguments="$5"
-  local condition="$6"
-  local number_of_peers=$7
+  local hostname=$3
+  local ram_size_in_gb=$4
+  local class=$5
+  local arguments="$6"
+  local condition="$7"
+
+  local logfile="${LOG_DIR}${hostname}_${port}_peer"
 
   while true ; do
-    local success=`cat "${LOG_DIR}log_peer_$number_of_peers" | grep "^$condition$"`
-    local fail_init=`cat "${LOG_DIR}log_peer_$number_of_peers" | grep "^Initializing DXRAM failed.$"`
-    local fail_error=`cat "${LOG_DIR}log_peer_$number_of_peers" | grep -i "error"`
+    local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$condition"`
+    local fail_init=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
+    local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception"`
     if [ "$success" != "" ] ; then
       echo "Peer ($ip $port $ram_size_in_gb $class $arguments) started"
       break
     elif [ "$fail_init" != "" ] ; then
-      echo "ERROR: Peer ($ip $port $ram_size_in_gb $class $arguments) could not be started. See log file ${LOG_DIR}log_peer_$number_of_peers"
-      exit
+      echo "ERROR: Peer ($ip $port $ram_size_in_gb $class $arguments) could not be started. See log file $logfile"
+      close
     elif [ "$fail_error" != "" ] ; then
-      echo "ERROR: Peer ($ip $port $ram_size_in_gb $class $arguments) failed. See log file ${LOG_DIR}log_peer_$number_of_peers"
-      exit
+      echo "ERROR: Peer ($ip $port $ram_size_in_gb $class $arguments) failed. See log file $logfile"
+      close
     fi
     sleep 1.0
   done
@@ -443,7 +518,7 @@ check_peer_startup() {
 #   DEFAULT_CLASS
 # Arguments:
 #   ip - The IP of the Peer
-#   port - The Port of Peer
+#   port - The port of Peer
 #   script - The script with terminal commands
 ######################################################
 start_remote_terminal() {
@@ -451,7 +526,11 @@ start_remote_terminal() {
   local port=$2
   local script=$3
 
-  ssh $ip - n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS < $script"
+  if [ "$script" = "" ] ; then
+    ssh $ip -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS"
+  else
+    ssh $ip -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -Ddxram.m_services[TerminalService].m_autostartScript=script/term/$script -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS"
+  fi
 }
 
 ######################################################
@@ -462,7 +541,7 @@ start_remote_terminal() {
 #   EXECUTION_DIR
 # Arguments:
 #   ip - The IP of the Peer
-#   port - The Port of Peer
+#   port - The port of Peer
 #   script - The script with terminal commands
 ######################################################
 start_local_terminal() {
@@ -471,7 +550,11 @@ start_local_terminal() {
   local script=$3
 
   cd "$LOCAL_EXEC_PATH"
-  java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS < $script
+  if [ "$script" = "" ] ; then
+    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS
+  else
+    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -Ddxram.m_services[TerminalService].m_autostartScript="script/term/$script" -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS
+  fi
   cd "$EXECUTION_DIR"
 }
 
@@ -487,38 +570,51 @@ start_local_terminal() {
 execute() {
   local number_of_superpeers=0
   local number_of_peers=0
+  local zookeeper_started=false
   local local_config_was_copied=false
   local remote_config_was_copied=false
   
   local node=""
-  while read node || [[ -n "$node" ]]; do
-    local node_ip=`echo $node | cut -d ',' -f 1`
-    local node_port=`echo $node | cut -d ',' -f 2`
-    local role=`echo $node | cut -d ',' -f 3`
+  local number_of_lines=`echo "$NODES" | wc -l`
+  local counter=1
+  while [  $counter -le $number_of_lines ]; do
+    node=`echo "$NODES" | sed "${counter}q;d"`
+    counter=$(($counter + 1))
+    local ip=`echo $node | cut -d ',' -f 1`
+    local port=`echo $node | cut -d ',' -f 2`
+    local hostname=`echo $node | cut -d ',' -f 3`
+    local role=`echo $node | cut -d ',' -f 4`
 
     if [ "$role" = "Z" ] ; then
-      if [ "$node_ip" = "$LOCALHOST" ] ; then
-        start_local_zookeeper $node_ip > ${LOG_DIR}log_zookeeper 2>&1 &
-        check_zookeeper_startup $node_ip $node_port
+      if [ "$zookeeper_started" = false ] ; then
+	if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ] ; then
+	  start_local_zookeeper "$port" > "${LOG_DIR}${hostname}_${port}_zookeeper_server" 2>&1
+	  check_zookeeper_startup "$ip" "$port" "$hostname"
+	else
+	  start_remote_zookeeper "$ip" "$port" > "${LOG_DIR}${hostname}_${port}_zookeeper_server" 2>&1
+	  check_zookeeper_startup "$ip" "$port" "$hostname"
+	fi
+	zookeeper_started=true
       else
-        start_remote_zookeeper $node_ip $node_port > ${LOG_DIR}log_peer_zookeeper 2>&1 &
-        check_zookeeper_startup $node_ip $node_port
+	echo "ERROR: More than one ZooKeeper instance defined."
+	close
       fi
     elif [ "$role" = "S" ] ; then
       number_of_superpeers=$(($number_of_superpeers + 1))
-      if [ "$node_ip" = "$LOCALHOST" ] ; then
-        local_config_was_copied=`copy_local_configuration $local_config_was_copied`
-        start_local_superpeer $node_ip $node_port > ${LOG_DIR}log_superpeer_$number_of_superpeers 2>&1 &
-        check_superpeer_startup $node_ip $node_port $number_of_superpeers
+
+      if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ] ; then
+        local_config_was_copied=`copy_local_configuration "$local_config_was_copied"`
+        start_local_superpeer "$ip" "$port" > "${LOG_DIR}${hostname}_${port}_superpeer" 2>&1 &
+        check_superpeer_startup "$ip" "$port" "$hostname"
       else
-        remote_config_was_copied=`copy_remote_configuration $remote_config_was_copied $node_ip`
-        start_remote_superpeer $node_ip $node_port > ${LOG_DIR}log_superpeer_$node_ip 2>&1 &
-        check_superpeer_startup $node_ip $node_port $number_of_superpeers
+        remote_config_was_copied=`copy_remote_configuration "$remote_config_was_copied" "$ip"`
+        start_remote_superpeer "$ip" "$port" > "${LOG_DIR}${hostname}_${port}_superpeer" 2>&1 &
+        check_superpeer_startup "$ip" "$port" "$hostname"
       fi
     elif [ "$role" = "P" ] ; then
       number_of_peers=$(($number_of_peers + 1))
 
-      iter=4
+      iter=5
       while true ; do
         local tmp=`echo $node | cut -d ',' -f $iter`
         local iter=$((iter + 1))
@@ -534,9 +630,10 @@ execute() {
           local arguments=`echo $tmp | cut -d '=' -f 2`
         elif [ "$arg_type" = "cond" ] ; then
           local condition=`echo $tmp | cut -d '=' -f 2`
+          condition="^$condition$"
         elif [ "$arg_type" = "tcond" ] ; then
           local time_condition=`echo $tmp | cut -d '=' -f 2`
-        fi  
+        fi
       done
 
       if [ "$class" = "" ] ; then
@@ -546,14 +643,14 @@ execute() {
         local condition=$DEFAULT_CONDITION
       fi
 
-      if [ "$node_ip" = "$LOCALHOST" ] ; then
-        local_config_was_copied=`copy_local_configuration $local_config_was_copied`
-        start_local_peer $node_ip $node_port $ram_size_in_gb $class "$arguments" > ${LOG_DIR}log_peer_$number_of_peers 2>&1 &
-        check_peer_startup $node_ip $node_port $ram_size_in_gb $class "$arguments" "$condition" $number_of_peers
+      if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ] ; then
+        local_config_was_copied=`copy_local_configuration "$local_config_was_copied"`
+        start_local_peer "$ip" "$port" "$ram_size_in_gb" "$class" "$arguments" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+        check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_gb" "$class" "$arguments" "$condition"
       else
-        remote_config_was_copied=`copy_remote_configuration $remote_config_was_copied $node_ip`
-        start_emote_peer $node_ip $node_port $ram_size_in_gb $class "$arguments" > ${LOG_DIR}log_peer_$node_ip 2>&1 &
-        check_peer_startup $node_ip $node_port $ram_size_in_gb $class "$arguments" "$condition" $number_of_peers
+        remote_config_was_copied=`copy_remote_configuration "$remote_config_was_copied" "$ip"`
+        start_remote_peer "$ip" "$port" "$ram_size_in_gb" "$class" "$arguments" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+        check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_gb" "$class" "$arguments" "$condition"
       fi
 
       if [ "$time_condition" != "" ] ; then
@@ -561,21 +658,21 @@ execute() {
         sleep "$time_condition"
       fi
     elif [ "$role" = "T" ] ; then
-      script=`echo $node | cut -d ',' -f 4`
-      echo "Starting terminal ($node_ip $node_port $script)"
+      script=`echo $node | cut -d ',' -f 5`
+      echo "Starting terminal ($ip $port $script)"
       echo "Quit with ctrl+c or by typing \"quit\""
       echo "Output:"
 
-      if [ "$node_ip" = "$LOCALHOST" ] ; then
-        local_config_was_copied=`copy_local_configuration $local_config_was_copied`
-        start_local_terminal $node_ip $node_port $script
+      if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ] ; then
+        local_config_was_copied=`copy_local_configuration "$local_config_was_copied"`
+        start_local_terminal "$ip" "$port" "$script"
       else
-        remote_config_was_copied=`copy_remote_configuration $remote_config_was_copied $node_ip`
-        start_remote_terminal $node_ip $node_port $script
+        remote_config_was_copied=`copy_remote_configuration "$remote_config_was_copied" "$ip"`
+        start_remote_terminal "$ip" "$port" "$script"
       fi
     fi
 
-  done <<< "$NODES"
+  done
 }
 
 ######################################################
@@ -590,22 +687,24 @@ close() {
   echo "Closing all dxram instances..."
   local node=""
   while read node || [[ -n "$node" ]]; do
-    node_ip=`echo $node | cut -d ',' -f 1`
-    node_port=`echo $node | cut -d ',' -f 2`
-    role=`echo $node | cut -d ',' -f 3`
+    ip=`echo $node | cut -d ',' -f 1`
+    role=`echo $node | cut -d ',' -f 4`
 
     if [ "$role" = "Z" ] ; then
       # Stop ZooKeeper?
       echo "ZooKeeper will stay alive"
     else
-      if [ "$node_ip" = "$LOCALHOST" ] ; then
-        kill `ps u | grep dxram | grep $node_port | cut -d " " -f 3`
+      if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ] ; then
+        pkill -9 -f DXRAM.jar
       else
-        ssh $node_ip - n "kill `ps u | grep dxram grep $node_port | cut -d " " -f 3`"
+        ssh $ip - n "pkill -9 -f DXRAM.jar"
       fi
       sleep 1
     fi
   done <<< "$NODES"
+
+  echo "Exiting..."
+  exit
 }
 
 
@@ -622,9 +721,11 @@ NODES=`cat "$node_file" | grep -v '#' | sed 's/, /,/g' | sed 's/,\t/,/g'`
 
 # Set default values
 readonly NFS_MODE=true # Deactivate for copying configuration to every single remote node
-readonly LOCALHOST="127.0.0.1"
+readonly LOCALHOST=`getent hosts localhost | cut -d ' ' -f 1`
+readonly THIS_HOST=`getent hosts $(hostname) | cut -d ' ' -f 1`
 readonly DEFAULT_CLASS="de.hhu.bsinfo.dxram.run.DXRAMMain"
-readonly DEFAULT_CONDITION="Peer started."
+readonly DEFAULT_CONDITION="^>>> DXRAM started <<<$"
+readonly ZOOKEEPER_PORT="2181"
 
 # Set execution paths
 determine_configurable_paths
@@ -633,9 +734,9 @@ readonly LOG_DIR="${EXECUTION_DIR}logs/"
 readonly CONFIG_FILE="${LOCAL_EXEC_PATH}config/dxram.json"
 
 # Print configuration
-echo "##############################"
-echo "Deploying $(echo $1 | cut -d '.' -f 1)"
-echo "##############################"
+echo "########################################"
+echo "Deploying $(echo $1 | cut -d '.' -f 1) on $THIS_HOST"
+echo "########################################"
 echo ""
 echo "Local execution path: $LOCAL_EXEC_PATH"
 echo "Remote execution path: $REMOTE_EXEC_PATH"
@@ -653,4 +754,3 @@ execute
 
 echo -e "\n\n"
 close
-echo "Exiting..."

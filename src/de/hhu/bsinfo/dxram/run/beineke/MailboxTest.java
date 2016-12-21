@@ -124,7 +124,7 @@ public final class MailboxTest {
             }
             chunkService.put(anchor);
 
-            System.out.println("Server started");
+            System.out.println("\nServer started");
 
             /* Migration test */
             int i = 0;

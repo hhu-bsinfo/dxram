@@ -718,12 +718,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                         return false;
                     }
 
-                    if (p_cmdLineNodeRole == NodeRole.TERMINAL) {
-                        // #if LOGGER >= ERROR
-                        LOGGER.error("A Terminal node should not be in nodes list");
-                        // #endif /* LOGGER >= ERROR */
-                        return false;
-                    }
                     m_nodes.setOwnNodeID(nodeID);
                     m_bootstrap = nodeID;
                     // #if LOGGER >= INFO

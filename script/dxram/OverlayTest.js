@@ -1,0 +1,43 @@
+//
+// @author: Kevin Beineke, kevin.beineke@hhu.de, 21.12.2016
+//
+dxterm.cmd("nodelist")
+metadatasummary("all")
+chunkcreate(10,0x280)
+namereg(0x280,1,"a")
+chunkcreate(10,0x280)
+namereg(0x280,2,"b")
+chunkcreate(10,0x280)
+namereg(0x280,3,"c")
+chunkcreate(10,0xC241)
+namereg(0x280,1,"d")
+chunkcreate(10,0xC241)
+namereg(0x280,2,"e")
+chunkcreate(10,0xC241)
+namereg(0x280,3,"f")
+chunkcreate(10,0xC241)
+namereg(0x280,4,"g")
+chunkcreate(10,0xC241)
+namereg(0x280,5,"h")
+chunkcreate(10,0xC601)
+namereg(0x280,1,"i")
+chunkcreate(10,0xC601)
+namereg(0x280,2,"j")
+// TODO: sleep 3 seconds
+metadatasummary("all")
+tmpcreate(1,100)
+tmpcreate(2,200)
+tmpcreate(3,50)
+tmpcreate(4,300)
+tmpcreate(5,150)
+// TODO: sleep 3 seconds
+metadatasummary("all")
+chunkmigrate(0x280,1,0xC601)
+chunkmigrate(0xC241,4,0x0280)
+// TODO: sleep 3 seconds
+metadatasummary("all")
+nodeshutdown(0xC301,true)
+nodeshutdown(0xC0C1,true)
+// TODO: sleep 3 seconds
+metadatasummary("all")
+exit()
