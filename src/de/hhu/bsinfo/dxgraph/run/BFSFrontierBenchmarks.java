@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /*
  * Copyright (C) 2016 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
  *
@@ -12,8 +11,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-=======
->>>>>>> 1b151f1... Cleanup
 package de.hhu.bsinfo.dxgraph.run;
 
 import java.util.ArrayList;
