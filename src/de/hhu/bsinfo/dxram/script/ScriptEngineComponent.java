@@ -55,8 +55,6 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
     private ScriptContext m_defaultScriptContext;
     private Map<String, ScriptContext> m_scriptContexts = new HashMap<>();
 
-    private ScriptDXRAMContext m_scriptEngineContext;
-
     /**
      * Constructor
      */
@@ -278,7 +276,7 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
         m_scriptEngine = m_scriptEngineManager.getEngineByName("JavaScript");
 
         // create default context
-        m_defaultScriptContext = new ScriptContext(m_scriptEngineContext, m_scriptEngine, "default");
+        m_defaultScriptContext = new ScriptContext(this, m_scriptEngine, "default");
 
         // TODO autostart script
 
@@ -293,8 +291,6 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 
         m_scriptEngine = null;
         m_scriptEngineManager = null;
-
-        m_scriptEngineContext = null;
 
         return true;
     }
