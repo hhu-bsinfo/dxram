@@ -17,7 +17,8 @@ function imports() {
 
 function help() {
 	return "Lock a chunk\n" +
-			"Parameters: cidStr | nid lid\n" +
+			"Usage (1): chunklock(cidStr) | nid lid\n" +
+			"Usage (2): chunklock(nid, lid)\n" +
 			"  cidStr: Full chunk ID of the chunk to lock as string\n" +
 			"  nid: Separate local id part of the chunk to lock\n" +
 			"  lid: Separate node id part of the chunk to lock";

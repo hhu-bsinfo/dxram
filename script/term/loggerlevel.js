@@ -18,7 +18,8 @@ function imports() {
 function help() {
 
 	return "Change the output level of the logger\n" +
-			"Parameters: level [nid]\n" +
+			"Usage (1): loggerlevel(level)\n" +
+			"Usage (2): loggerlevel(level, nid)\n" +
 			"  level: Log level to set, available levels (str): disabled, error, warn, info, debug, trace\n" +
 			"  nid: Change the log level of another node, defaults to current node";
 }

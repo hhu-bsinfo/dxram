@@ -17,7 +17,8 @@ function imports() {
 
 function help() {
 	return "Remove an existing chunk. Usable with either full chunk id or split into nid and lid\n" +
-			"Parameters: cidStr | nid lid\n" +
+			"Usage (1): chunkremove(cidStr)\n" +
+			"Usage (2): chunkremove(nid, lid)\n" +
 			"  cidStr: Full chunk id of the chunk to remove as string\n" +
 			"  nid: Node id to remove the chunk with specified local id\n" +
 			"  lid: Local id of the chunk to remove. If missing node id, current node is assumed";

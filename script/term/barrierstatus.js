@@ -18,7 +18,7 @@ function imports() {
 function help() {
 
 	return "Get the current status of a barrier\n" +
-			"Parameters: bid\n" +
+			"Usage: barrierstatus(bid)\n" +
 			"  bid: Id of an allocated barrier to get the status of";
 }
 

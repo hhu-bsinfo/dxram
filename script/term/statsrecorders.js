@@ -17,7 +17,8 @@ function imports() {
 
 function help() {
 
-	return "Prints all available statistics recorders"
+	return "Prints all available statistics recorders\n" +
+	        "Usage: statsrecorders()";
 }
 
 function exec() {

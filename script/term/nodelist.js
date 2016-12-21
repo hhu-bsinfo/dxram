@@ -17,7 +17,8 @@ function imports() {
 
 function help() {
 	return "List all available nodes or nodes of a specific type\n" +
-			"Parameters: role\n" +
+			"Usage (1): nodelist()\n" +
+			"Usage (2): nodelist(role)\n" +
 			"  role: Filter list by role if specified";
 }
 

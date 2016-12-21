@@ -17,7 +17,8 @@ function imports() {
 
 function help() {
 
-	return "List all available tasks that are registered and can be executed"
+	return "List all available tasks that are registered and can be executed\n" +
+	        "Usage: comptasks()"
 }
 
 function exec(nid) {

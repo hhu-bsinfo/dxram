@@ -18,7 +18,7 @@ function imports() {
 function help() {
 
 	return "Change the size of an existing barrier, keeping its id\n" +
-			"Parameters: bid size\n" +
+			"Usage: barriersize(bid, size)\n" +
 			"  bid: Id of the barrier to change its size\n" +
 			"  size: New size for the existing barrier";
 }

@@ -18,7 +18,8 @@ function imports() {
 function help() {
 
 	return "Sign on to an allocated barrier for synchronization (for testing/debugging)\n" +
-			"Parameters: bid [data]\n" +
+			"Usage (1): barriersignon(bid)\n" +
+			"Usage (2): barriersignon(bid, data)\n" +
 			"  bid: Id of the barrier to sign on to\n" +
 			"  data: Custom data to pass along with the sign on call (optional)";
 }

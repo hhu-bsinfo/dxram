@@ -17,7 +17,7 @@ function imports() {
 
 function help() {
 	return "Prints a summary of the specified superpeer's metadata\n" +
-			"Parameters: nid\n" +
+			"Usage: metadatasummary(nid)\n" +
 			"  nid: Node id of the superpeer to print the metadata of\n" +
 			"       \"all\" prints metadata of all superpeers";
 }

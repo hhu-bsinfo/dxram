@@ -17,7 +17,7 @@ function imports() {
 
 function help() {
 	return "Get the status of the chunk service/memory from a remote node\n" +
-			"Parameters: nid sizetype\n" +
+			"Usage: chunkstatus(nid, sizetype)\n" +
 			"  nid: Node ID of the remote peer to get the status from\n" +
 			"  sizetype: Specify the type of size you want to display (b, kb, mb, gb)";
 }

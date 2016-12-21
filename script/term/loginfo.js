@@ -18,7 +18,7 @@ function imports() {
 function help() {
 
 	return "Prints the log utilization of given peer\n" +
-			"Parameters: nid\n" +
+			"Usage: loginfo(nid)\n" +
 			"  nid: Node id of the peer";
 }
 

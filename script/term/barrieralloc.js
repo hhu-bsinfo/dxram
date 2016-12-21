@@ -18,7 +18,7 @@ function imports() {
 function help() {
 
 	return "Create a new barrier for synchronization of mutliple peers\n" +
-			"Parameters: size\n" +
+		    "Usage: barrieralloc(size)\n" +
 			"  size: Size of the barrier, i.e. the number of peers that have to sign on for release";
 }
 

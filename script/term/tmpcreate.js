@@ -18,7 +18,7 @@ function imports() {
 function help() {
 
 	return "Allocate memory for a chunk on a superpeer's storage (temporary)\n" +
-			"Parameters: id size\n" +
+			"Usage: tmpcreate(id, size)\n" +
 			"  id: Id to identify the chunk in the storage\n" +
 			"  size: Size of the chunk to create";
 }

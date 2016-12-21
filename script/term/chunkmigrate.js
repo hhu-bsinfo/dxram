@@ -17,7 +17,8 @@ function imports() {
 
 function help() {
 	return "Migrate a chunk from one peer to another one\n" +
-			"Parameters: cidStr or nid|lid targetNid\n" +
+			"Usage (1): chunkmigrate(cidStr, targetNid)\n" +
+			"Usage (2): chunkmigrate(nid, lid, targetNid)\n" +
             "  cidStr: Full chunk ID of the chunk to migrate as string\n" +
             "  nid: Separate local id part of the chunk to migrate\n" +
             "  lid: Separate node id part of the chunk to migrate\n" +

@@ -17,7 +17,7 @@ function imports() {
 
 function help() {
 	return "Get a list of chunk id ranges from a peer holding chunks (migrated chunks optional)\n" +
-			"Parameters: nid migrated\n" +
+			"Usage: chunklist(nid, migrated)\n" +
 			"  nid: Node ID of the remote peer to get the list from\n" +
 			"  migrated: List the migrated chunks as well (default: false)";
 }

@@ -20,8 +20,8 @@ function imports() {
 function help() {
 
 	return "Submit a task to a compute group\n" +
-	        "Parameters (1): typeId subtypeId cgid wait ...\n" +
-	        "Parameters (2): pathTaskFile cgid wait\n" +
+	        "Usage (1): comptasksub(typeId, subtypeId, cgid, wait, ...)\n" +
+	        "Usage (2): comptasksub(pathTaskFile, cgid, wait)\n" +
 	        "  typeId: Type id of the task to submit\n" +
 	        "  subtypeId: Subtype id of the task to submit\n" +
             "  pathTaskFile: Path to a task file\n" +

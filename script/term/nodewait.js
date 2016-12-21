@@ -17,7 +17,10 @@ function imports() {
 
 function help() {
 	return "Wait for a minimum number of nodes to be available/online\n" +
-			"Parameters: superpeers peers pollIntervalMs\n" +
+			"Usage (1): nodewait()\n" +
+			"Usage (2): nodewait(superpeers)\n" +
+			"Usage (3): nodewait(superpeers, peers)\n" +
+			"Usage (4): nodewait(superpeers, peers, pollIntervalMs)\n" +
 			"  superpeers: Number of available superpeers to wait for (default 0)\n" +
 			"  peers: Number of available peers to wait for (default 0)\n" +
 			"  pollIntervalMs: Polling interval when checking online status (default 1000)";

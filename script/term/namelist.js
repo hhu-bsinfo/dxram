@@ -17,7 +17,8 @@ function imports() {
 
 function help() {
 
-	return "List all registered name mappings of the nameservice";
+	return "List all registered name mappings of the nameservice\n" +
+	        "Usage: namelist()";
 }
 
 function exec() {

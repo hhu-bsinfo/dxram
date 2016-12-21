@@ -18,7 +18,7 @@ function imports() {
 function help() {
 
 	return "Get the current status of a compute group\n" +
-	        "Parameters: cgid\n" +
+	        "Usage: compgrpstatus(cgid)\n" +
             "  cgid: Compute group id to get the status from";
 }
 

@@ -17,7 +17,7 @@ function imports() {
 
 function help() {
 	return "Create a chunk on a remote node\n" +
-			"Parameters: size nid\n" +
+			"Usage: chunkcreate(size, nid)\n" +
 			"  size: Size of the chunk to create\n" +
 			"  nid: Node id of the peer to create the chunk on";
 }
