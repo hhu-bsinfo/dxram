@@ -120,6 +120,18 @@ public class TerminalService extends AbstractDXRAMService {
         // #endif /* LOGGER >= INFO */
     }
 
+    /**
+     * Load a script file into the terminal context
+     *
+     * @param p_path
+     *     Path to the java script file to load
+     * @return True if successful, false otherwise.
+     */
+    public boolean load(final String p_path) {
+
+        return m_terminal.getScriptContext().load(p_path);
+    }
+
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
