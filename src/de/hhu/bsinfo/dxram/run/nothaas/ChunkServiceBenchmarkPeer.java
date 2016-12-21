@@ -17,8 +17,6 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.run.DXRAMMain;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * Small test/benchmark to measure execution time of the core methods
@@ -27,12 +25,14 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
  */
-public class ChunkServiceBenchmarkPeer extends DXRAMMain {
+public final class ChunkServiceBenchmarkPeer extends DXRAMMain {
 
-    private static final Argument ARG_NUM_CHUNKS = new Argument("numChunks", "1000", true, "Total number of chunks involved in the test");
-    private static final Argument ARG_BATCH_SIZE =
-        new Argument("batchSize", "10", true, "Split the total number of chunks into a number of batches for get and put operations");
-    private static final Argument ARG_CHUNK_SIZE = new Argument("chunkSize", "128", true, "Size of a chunk in bytes");
+    /**
+     * Constructor
+     */
+    private ChunkServiceBenchmarkPeer() {
+        super("ChunkServiceBenchmarkPeer");
+    }
 
     /**
      * Java main entry point.
@@ -46,18 +46,15 @@ public class ChunkServiceBenchmarkPeer extends DXRAMMain {
     }
 
     @Override
-    protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
-        super.registerDefaultProgramArguments(p_arguments);
-        p_arguments.setArgument(ARG_NUM_CHUNKS);
-        p_arguments.setArgument(ARG_BATCH_SIZE);
-        p_arguments.setArgument(ARG_CHUNK_SIZE);
-    }
+    protected int mainApplication(final String[] p_args) {
+        if (p_args.length < 3) {
+            System.out.println("Usage: " + getClass().getSimpleName() + " [numChunks] [batchSize] [chunkSize]");
+            return -1;
+        }
 
-    @Override
-    protected int mainApplication(final ArgumentList p_arguments) {
-        int numChunks = p_arguments.getArgument(ARG_NUM_CHUNKS).getValue(Integer.class);
-        int batchSize = p_arguments.getArgument(ARG_BATCH_SIZE).getValue(Integer.class);
-        int chunkSize = p_arguments.getArgument(ARG_CHUNK_SIZE).getValue(Integer.class);
+        int numChunks = Integer.parseInt(p_args[0]);
+        int batchSize = Integer.parseInt(p_args[1]);
+        int chunkSize = Integer.parseInt(p_args[2]);
 
         System.out.printf("Running with %d chunks in batches of %d, chunk size %d\n", numChunks, batchSize, chunkSize);
 

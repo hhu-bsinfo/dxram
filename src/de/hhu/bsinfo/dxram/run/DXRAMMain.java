@@ -18,8 +18,6 @@ import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.term.TerminalService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Base class for an entry point of a DXRAM application.
@@ -28,8 +26,7 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.02.2016
  */
-public class DXRAMMain extends AbstractMain {
-
+public class DXRAMMain {
     private DXRAM m_dxram;
     private String m_nodeTypeName;
 
@@ -37,15 +34,26 @@ public class DXRAMMain extends AbstractMain {
      * Default constructor
      */
     public DXRAMMain() {
-        super("DXRAM");
         m_dxram = new DXRAM();
         m_nodeTypeName = "DXRAM";
     }
 
     /**
      * Constructor
+     *
+     * @param p_nodeTypeName
+     *     Type name for node (debugging purpose, only)
+     */
+    public DXRAMMain(final String p_nodeTypeName) {
+        m_dxram = new DXRAM();
+        m_nodeTypeName = p_nodeTypeName;
+    }
+
+    /**
+     * Constructor
      * Use this if you extended the DXRAM class and provide an instance of it to
-     * run it within the DXRAMMain context
+     * run it within the DXRAMMain context. This is used for building further layers
+     * on top of DXRAM (refer to DXCompute or DXGraph).
      *
      * @param p_nodeTypeName
      *     Type name for node (debugging purpose, only)
@@ -53,7 +61,6 @@ public class DXRAMMain extends AbstractMain {
      *     DXRAM instance to run (just create the instance, no init)
      */
     public DXRAMMain(final String p_nodeTypeName, final DXRAM p_dxram) {
-        super("DXRAM");
         m_dxram = p_dxram;
         m_nodeTypeName = p_nodeTypeName;
     }
@@ -78,32 +85,31 @@ public class DXRAMMain extends AbstractMain {
         dxram.run(p_args);
     }
 
-    @Override
-    protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
-
-    }
-
-    @Override
-    protected int main(final ArgumentList p_arguments) {
-        printBuildDateAndUser();
+    /**
+     * DXRAM's entry point to be called from Java's main entry point.
+     *
+     * @param p_args
+     *     Java cmd arguments
+     */
+    public void run(final String[] p_args) {
         System.out.println("Main entry point: " + m_nodeTypeName);
 
         if (!m_dxram.initialize(true)) {
             System.out.println("Initializing " + m_nodeTypeName + " failed.");
-            return -1;
+            System.exit(-1);
         }
 
-        return mainApplication(p_arguments);
+        System.exit(mainApplication(p_args));
     }
 
     /**
      * Override this to implement your application built on top of DXRAM.
      *
-     * @param p_arguments
-     *     the arguments
+     * @param p_args
+     *     Java cmd arguments
      * @return Exit code of the application.
      */
-    protected int mainApplication(final ArgumentList p_arguments) {
+    protected int mainApplication(final String[] p_args) {
         BootService boot = getService(BootService.class);
 
         if (boot != null) {

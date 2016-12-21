@@ -17,11 +17,8 @@ import sun.misc.Unsafe;
 
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.UnsafeHandler;
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.eval.EvaluationTable;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
-import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Benchmark the JNINativeMemory implementation compiled with various
@@ -29,18 +26,15 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
  */
-public class NativeMemoryBenchmark extends AbstractMain {
-    private static final Argument ARG_NUM_RUNS = new Argument("numRuns", "100000", true, "Number of runs to execute for the final result");
-    private static final Argument ARG_PATH_JNI_NATIVE_MEMORY =
-        new Argument("pathJNINativeMemory", null, false, "Absolute path to the compiled JNINativeMemory library files or single library file");
+public final class NativeMemoryBenchmark {
 
     private EvaluationTable m_table;
 
     /**
      * Constructor
      */
-    protected NativeMemoryBenchmark() {
-        super("Benchmarks methods for accessing native/unsafe memory.");
+    private NativeMemoryBenchmark() {
+
     }
 
     /**
@@ -50,19 +44,17 @@ public class NativeMemoryBenchmark extends AbstractMain {
      *     Main arguments.
      */
     public static void main(final String[] p_args) {
-        AbstractMain main = new NativeMemoryBenchmark();
+        NativeMemoryBenchmark main = new NativeMemoryBenchmark();
         main.run(p_args);
     }
 
-    @Override
-    protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
-        p_arguments.setArgument(ARG_NUM_RUNS);
-    }
+    private int run(final String[] p_args) {
+        if (p_args.length < 2) {
+            System.out.println("Usage: " + getClass().getSimpleName() + " [numRuns] [pathJniNativeMemory]");
+        }
 
-    @Override
-    protected int main(final ArgumentList p_arguments) {
-        final int numRuns = p_arguments.getArgument(ARG_NUM_RUNS).getValue(Integer.class);
-        final String pathJniNativeMemory = p_arguments.getArgument(ARG_PATH_JNI_NATIVE_MEMORY).getValue(String.class);
+        final int numRuns = Integer.parseInt(p_args[0]);
+        final String pathJniNativeMemory = p_args[1];
 
         mainEval(numRuns, pathJniNativeMemory);
 
@@ -79,7 +71,7 @@ public class NativeMemoryBenchmark extends AbstractMain {
      */
     private void mainEval(final int p_numRuns, final String p_pathJniNativeMemory) {
         if (p_pathJniNativeMemory.endsWith(".so") || p_pathJniNativeMemory.endsWith(".dylib")) {
-            String libName = p_pathJniNativeMemory.substring(p_pathJniNativeMemory.lastIndexOf("/"), p_pathJniNativeMemory.length());
+            String libName = p_pathJniNativeMemory.substring(p_pathJniNativeMemory.lastIndexOf('/'), p_pathJniNativeMemory.length());
             System.out.println("Running with single library: " + libName);
             prepareTableEval(libName);
 

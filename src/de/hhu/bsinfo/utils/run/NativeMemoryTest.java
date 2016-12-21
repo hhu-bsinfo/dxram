@@ -17,9 +17,6 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 
 import de.hhu.bsinfo.utils.JNINativeMemory;
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Test and verify if the native memory implementation is working correctly
@@ -27,15 +24,13 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.02.2016
  */
-public class NativeMemoryTest extends AbstractMain {
-
-    public static final Argument ARG_JNI_PATH = new Argument("jniPath", null, false, "Path to JNI file with native memory implementation");
+public final class NativeMemoryTest {
 
     /**
      * Constructor
      */
-    public NativeMemoryTest() {
-        super("Testing JNI native memory implementation, especially if endianness is working correctly");
+    private NativeMemoryTest() {
+
     }
 
     /**
@@ -45,18 +40,16 @@ public class NativeMemoryTest extends AbstractMain {
      *     Main arguments.
      */
     public static void main(final String[] p_args) {
-        AbstractMain main = new NativeMemoryTest();
+        NativeMemoryTest main = new NativeMemoryTest();
         main.run(p_args);
     }
 
-    @Override
-    protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
-        p_arguments.setArgument(ARG_JNI_PATH);
-    }
+    private int run(final String[] p_args) {
+        if (p_args.length < 1) {
+            System.out.println("Usage: " + getClass().getSimpleName() + " [jniPath]");
+        }
 
-    @Override
-    protected int main(final ArgumentList p_arguments) {
-        final String jniPath = p_arguments.getArgument(ARG_JNI_PATH).getValue(String.class);
+        final String jniPath = p_args[0];
 
         System.out.println("Loading jni file " + jniPath);
         System.load(jniPath);
