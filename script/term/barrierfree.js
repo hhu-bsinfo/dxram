@@ -18,7 +18,7 @@ function imports() {
 function help() {
 
 	return "Free an allocated barrier\n" +
-			"Parameters: bid\n" +
+			"Usage: barrierfree(bid)\n" +
 			"  bid: Id of an allocated barrier to free";
 }
 

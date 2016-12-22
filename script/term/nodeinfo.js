@@ -17,7 +17,8 @@ function imports() {
 
 function help() {
 	return "Get information about either the current node or another node in the network\n" +
-			"Parameters: nid\n" +
+			"Usage (1): nodeinfo(nid)\n" +
+			"Usage (2): nodeinfo()\n" +
 			"  nid: If specified, gets information of this node";
 }
 

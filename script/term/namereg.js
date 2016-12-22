@@ -18,7 +18,8 @@ function imports() {
 function help() {
 
 	return "Get the chunk id for a registered name mapping\n" +
-			"Parameters: cidStr or nid|lid name\n" +
+			"Usage (1): namereg(cidStr, name)\n" +
+			"Usage (2): namereg(nid, lid, name)\n" +
             "  cidStr: Full chunk ID of the chunk to register as string\n" +
             "  nid: Separate local id part of the chunk to register\n" +
             "  lid: Separate node id part of the chunk to register\n" +

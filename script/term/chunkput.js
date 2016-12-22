@@ -22,7 +22,12 @@ function help() {
             "If no offset is specified, the whole chunk is overwritten with the new data. " +
             "Otherwise the data is inserted at the starting offset with its length. " +
             "If the specified data is too long it will be trunced\n" +
-			"Parameters: cidStr or nid|lid data [offset] [type]\n" +
+			"Usage (1): chunkput(cidStr, data, offset, type)\n" +
+			"Usage (2): chunkput(cidStr, data, offset)\n" +
+			"Usage (3): chunkput(cidStr, data)\n" +
+            "Usage (4): chunkput(nid, lid, data, offset, type)\n" +
+            "Usage (5): chunkput(nid, lid, data, offset)\n" +
+            "Usage (6): chunkput(nid, lid, data)\n" +
 			"  cidStr: Full chunk ID of the chunk to put data to (as string!)\n" +
 			"  nid: (Or) separate local id part of chunk to put the data to" +
 			"  lid: (In combination with) separate node id part of the chunk to put the data to\n" +

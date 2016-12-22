@@ -17,7 +17,7 @@ function imports() {
 
 function help() {
 	return "Get the list of all locked chunks of a node\n" +
-			"Parameters: nid\n" +
+			"Usage: chunklocklist(nid)\n" +
 			"  nid: Get the list of locked chunks from a remote node";
 }
 

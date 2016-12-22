@@ -18,7 +18,7 @@ function imports() {
 function help() {
 
 	return "Remove a (stored) chunk from temporary storage (superpeer storage)\n" +
-			"Parameters: id\n" +
+			"Usage: tmpremove(id)\n" +
 			"  id: Id of the chunk in temporary storage";
 }
 

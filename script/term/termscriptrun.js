@@ -17,7 +17,7 @@ function imports() {
 
 function help() {
 	return "Load and run a java script file within the DXRAM terminal context\n" +
-			"Parameters: scriptfile\n" +
+			"Usage: termscriptrun(scriptfile)\n" +
 			"  scriptfile: Path to script file to load and run";
 }
 

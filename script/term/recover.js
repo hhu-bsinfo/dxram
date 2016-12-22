@@ -18,7 +18,7 @@ function imports() {
 function help() {
 
 	return "Recovers all data of owner on dest\n" +
-			"Parameters: ownerNid destNid\n" +
+			"Usage: recover(ownerNid, destNid)\n" +
 			"  ownerNid: Node id of the owner to recover data of\n" +
 			"  destNid: Destination node id to recover the data to";
 }

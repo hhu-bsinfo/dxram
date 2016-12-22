@@ -21,8 +21,10 @@ function help() {
 	return "Put data in the specified chunk (temporary storage)." +
             "If no offset is specified, the whole chunk is overwritten with the new data. " +
             "Otherwise the data is inserted at the starting offset with its length. " +
-            "If the specified data is too long it will be trunced\n" +
-			"Parameters: id data [offset] [type]\n" +
+            "If the specified data is too long it will be truncated\n" +
+			"Usage (1): tmpput(id, data, offset, type)\n" +
+			"Usage (2): tmpput(id, data, offset)\n" +
+			"Usage (3): tmpput(id, data)\n" +
 			"  id: Id of the chunk stored in temporary storage\n" +
 			"  data: Data to store (format has to match type parameter)\n" +
 			"  type: Type of the data to store (str, byte, short, int, long, hex), defaults to str\n" +

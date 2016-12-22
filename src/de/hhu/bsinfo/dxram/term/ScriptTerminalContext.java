@@ -130,9 +130,9 @@ public class ScriptTerminalContext {
      */
     public void help() {
         System.out.println(
-            "Type '?' or 'help' to print this message\n" + "> The terminal uses a java script engine, i.e. you can type java script code and execute it\n" +
+            "Type '?' or 'help' to print this message\n" + "> The terminal uses a java script engine, i.e. you can enter java script (code) and execute it\n" +
                 "> Two contexts are available in the terminal: 'dxram' and 'dxterm' (refer to the classes " +
-                "'ScriptDXRAMContext' and 'ScriptTerminalContext' more information)\n" +
+                "'ScriptDXRAMContext' and 'ScriptTerminalContext' for more information)\n" +
                 "> Built in terminal commands can be executed without the terminal context, i.e. nodelist() " + "instead of dxterm.cmd(\"nodelist\").exec()\n" +
                 "> To list all built in terminal commands: dxterm.list()\n" + "> Get help about a terminal command, example: 'help nodelist' or " +
                 "dxterm.cmd(\"nodelist\").help()\n" + "> To reload the terminal commands from the script folder: dxterm.reload()");

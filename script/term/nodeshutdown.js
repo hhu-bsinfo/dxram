@@ -17,7 +17,8 @@ function imports() {
 
 function help() {
 	return "Shutdown a DXRAM node\n" +
-			"Parameters: nid kill\n" +
+			"Usage (1): nodeshutdown(nid)\n" +
+			"Usage (2): nodeshutdown(nid, kill)\n" +
 			"  nid: Id of the node to shutdown\n" +
 			"  kill: If specified, true for a hard shutdown (kill process), false for proper soft shutdown (default)"
 }

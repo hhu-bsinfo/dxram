@@ -13,11 +13,10 @@
 
 package de.hhu.bsinfo.dxram.term;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
+import jline.ArgumentCompletor;
+import jline.ConsoleReader;
+import jline.SimpleCompletor;
+
 import java.io.IOException;
 
 import com.google.gson.annotations.Expose;
@@ -29,10 +28,8 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
-import de.hhu.bsinfo.utils.JNIconsole;
 
 /**
  * Service providing an interactive terminal running on a DXRAM instance.
@@ -54,8 +51,10 @@ public class TerminalService extends AbstractDXRAMService {
     private AbstractBootComponent m_boot;
     private TerminalComponent m_terminal;
 
+    private ConsoleReader m_consoleReader;
+    private ArgumentCompletor m_argCompletor;
+
     private volatile boolean m_loop = true;
-    private BufferedWriter m_historyFile;
 
     /**
      * Constructor
@@ -77,7 +76,10 @@ public class TerminalService extends AbstractDXRAMService {
         }
 
         // register commands for auto completion
-        JNIconsole.autocompleteCommands(m_terminal.getRegisteredCommands().keySet().toArray(new String[m_terminal.getRegisteredCommands().size()]));
+        m_argCompletor = new ArgumentCompletor(
+            new SimpleCompletor(m_terminal.getRegisteredCommands().keySet().toArray(new String[m_terminal.getRegisteredCommands().size()])));
+
+        m_consoleReader.addCompletor(m_argCompletor);
 
         // #if LOGGER >= INFO
         LOGGER.info("Running terminal...");
@@ -97,22 +99,15 @@ public class TerminalService extends AbstractDXRAMService {
         }
 
         while (m_loop) {
-            arr = JNIconsole.readline('$' + NodeID.toHexString(m_boot.getNodeID()) + "> ");
-            if (arr != null) {
-                String command = new String(arr, 0, arr.length);
-
-                try {
-                    if (m_historyFile != null) {
-                        m_historyFile.write(command + '\n');
-                    }
-                } catch (final IOException e) {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Writing history file failed", e);
-                    // #endif /* LOGGER >= ERROR */
-                }
-
-                evaluate(command);
+            String command;
+            try {
+                command = m_consoleReader.readLine('$' + NodeID.toHexString(m_boot.getNodeID()) + "> ");
+            } catch (IOException e) {
+                LOGGER.error("Readline failed", e);
+                continue;
             }
+
+            evaluate(command);
         }
 
         // #if LOGGER >= INFO
@@ -141,9 +136,15 @@ public class TerminalService extends AbstractDXRAMService {
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
-            DXRAMJNIManager.loadJNIModule("JNIconsole");
+            try {
+                m_consoleReader = new ConsoleReader();
+                m_consoleReader.setBellEnabled(false);
+            } catch (IOException e) {
+                LOGGER.error("Initializing ConsoleReader failed", e);
+                return false;
+            }
 
-            loadHistoryFromFile("dxram_term_history");
+            loadHistoryFromFile(".dxram_term_history");
         }
 
         return true;
@@ -151,11 +152,9 @@ public class TerminalService extends AbstractDXRAMService {
 
     @Override
     protected boolean shutdownService() {
-        if (m_historyFile != null) {
-            try {
-                m_historyFile.close();
-            } catch (final IOException ignored) {
-            }
+        try {
+            m_consoleReader.getHistory().flushBuffer();
+        } catch (final IOException ignored) {
         }
 
         return true;
@@ -246,44 +245,17 @@ public class TerminalService extends AbstractDXRAMService {
      *     File to load the history from and append new commands to.
      */
     private void loadHistoryFromFile(final String p_file) {
-        BufferedReader reader;
-        try {
-            reader = new BufferedReader(new FileReader(p_file));
-
-            // import history if found
-            String str;
-            while (true) {
-                try {
-                    str = reader.readLine();
-                } catch (final IOException ignored) {
-                    break;
-                }
-
-                if (str == null) {
-                    break;
-                }
-
-                JNIconsole.addToHistory(str);
-            }
-
-            reader.close();
-        } catch (final FileNotFoundException e) {
-            // #if LOGGER >= DEBUG
-            LOGGER.debug("No history found: %s", p_file);
-            // #endif /* LOGGER >= DEBUG */
-        } catch (final IOException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Reading history %s failed: %s", p_file, e);
-            // #endif /* LOGGER >= ERROR */
-        }
-
-        try {
-            m_historyFile = new BufferedWriter(new FileWriter(p_file, true));
-        } catch (final IOException e) {
-            m_historyFile = null;
-            // #if LOGGER >= WARN
-            LOGGER.warn("Opening history %s for writing failed: %s", p_file, e);
-            // #endif /* LOGGER >= WARN */
-        }
+        //        try {
+        //            // TODO fix
+        //            m_consoleReader.setHistory(new History(new File(p_file)));
+        //        } catch (final FileNotFoundException e) {
+        //            // #if LOGGER >= DEBUG
+        //            LOGGER.debug("No history found: %s", p_file);
+        //            // #endif /* LOGGER >= DEBUG */
+        //        } catch (final IOException e) {
+        //            // #if LOGGER >= ERROR
+        //            LOGGER.error("Reading history %s failed: %s", p_file, e);
+        //            // #endif /* LOGGER >= ERROR */
+        //        }
     }
 }

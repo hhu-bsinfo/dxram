@@ -17,7 +17,8 @@ function imports() {
 
 function help() {
 
-	return "Get a list of available compute groups"
+	return "Get a list of available compute groups\n" +
+			"Usage: compgrpls()";
 }
 
 function exec(nid) {

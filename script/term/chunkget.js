@@ -18,9 +18,26 @@ function imports() {
 function help() {
 
 	return "Get a chunk specified by either full cid or separted lid + nid from a storage\n" +
-			"Parameters (1): cidStr or nid|lid className\n" +
-			"Parameters (2): cidStr or nid|lid [type] [hex] [offset] [length]\n" +
-			"Parameters (3): cidStr or nid|lid [offset] [length] [type] [hex]\n" +
+            "Usage (1): chunkget(cidStr)\n" +
+            "Usage (2): chunkget(nid, lid)\n" +
+			"Usage (3): chunkget(cidStr, className)\n" +
+			"Usage (4): chunkget(nid, lid, className)\n" +
+			"Usage (5): chunkget(cidStr, type, hex, offset, length)\n" +
+			"Usage (6): chunkget(cidStr, type, hex, offset)\n" +
+			"Usage (7): chunkget(cidStr, type, hex)\n" +
+			"Usage (8): chunkget(cidStr, type)\n" +
+            "Usage (9): chunkget(nid, lid, type, hex, offset, length)\n" +
+            "Usage (10): chunkget(nid, lid, type, hex, offset)\n" +
+            "Usage (11): chunkget(nid, lid, type, hex)\n" +
+            "Usage (12): chunkget(nid, lid, type)\n" +
+            "Usage (13): chunkget(cidStr, offset, length, type, hex)\n" +
+            "Usage (14): chunkget(cidStr, offset, length, type)\n" +
+            "Usage (15): chunkget(cidStr, offset, length)\n" +
+            "Usage (16): chunkget(cidStr, offset)\n" +
+            "Usage (18): chunkget(nid, lid, offset, length, type, hex)\n" +
+            "Usage (19): chunkget(nid, lid, offset, length, type)\n" +
+            "Usage (20): chunkget(nid, lid, offset, length)\n" +
+            "Usage (21): chunkget(nid, lid, offset)\n" +
 			"  cidStr: Full chunk ID of the chunk to get data from (as string!)\n" +
 			"  nid: (Or) separate node id part of the chunk to get data from\n" +
 			"  lid: (In combination with) separate local id part of the chunk to get data from\n" +

@@ -17,7 +17,8 @@ function imports() {
 
 function help() {
 
-	return "Get the status of the temporary (superpeer) storage";
+	return "Get the status of the temporary (superpeer) storage\n" +
+	        "Usage: tmpstatus()";
 }
 
 function exec() {

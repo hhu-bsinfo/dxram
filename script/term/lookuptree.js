@@ -17,7 +17,7 @@ function imports() {
 
 function help() {
 	return "Prints the look up tree of a specified node\n" +
-			"Parameters: nid\n" +
+			"Usage: lookuptree(nid)\n" +
 			"  nid: Node id of the peer to print the lookup tree of";
 }
 

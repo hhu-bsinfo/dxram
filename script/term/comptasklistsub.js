@@ -20,7 +20,7 @@ function imports() {
 function help() {
 
 	return "Submit a list of tasks loaded from a file\n" +
-	        "Parameters: fileName cgid wait\n" +
+	        "Usage: comptasklistsub(fileName, cgid, wait)\n" +
             "  fileName: Path to a task list file\n" +
             "  cgid: Id of the compute group to submit the tasks to\n" +
             "  wait: Wait/block until all tasks completed";

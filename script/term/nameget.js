@@ -18,7 +18,7 @@ function imports() {
 function help() {
 
 	return "Register a nameservice entry for a specific chunk id\n" +
-			"Parameters: name\n" +
+			"Usage: nameget(name)\n" +
 			"  name: Name to get the chunk id for";
 }
 

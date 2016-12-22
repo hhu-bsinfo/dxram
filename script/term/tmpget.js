@@ -18,9 +18,16 @@ function imports() {
 function help() {
 
 	return "Get a chunk from the temporary storage\n" +
-			"Parameters (1): id className\n" +
-			"Parameters (2): id [type] [hex] [offset] [length]\n" +
-			"Parameters (3): id [offset] [length] [type] [hex]\n" +
+	        "Usage (1): tmpget(id)\n" +
+	        "Usage (2): tmpget(id, className)\n" +
+	        "Usage (3): tmpget(id, type, hex, offset, length)\n" +
+	        "Usage (4): tmpget(id, type, hex, offset)\n" +
+	        "Usage (5): tmpget(id, type, hex)\n" +
+	        "Usage (6): tmpget(id, type)\n" +
+	        "Usage (7): tmpget(id, offset, length, type, hex)\n" +
+	        "Usage (8): tmpget(id, offset, length, type)\n" +
+	        "Usage (9): tmpget(id, offset, length)\n" +
+	        "Usage (10): tmpget(id, offset)\n" +
 			"  id: Id of the chunk stored in temporary storage\n" +
 			"  className: Full name of a java class that implements DataStructure (with package path). " +
 			"An instance is created, the data is stored in that instance and printed.\n " +

@@ -18,7 +18,8 @@ function imports() {
 function help() {
 
 	return  "Prints all statistics\n" +
-	        "Parameters: [className]\n" +
+	        "Usage (1): statsprint()\n" +
+	        "Usage (2): statsprint(className)\n" +
 	        "  className: Filter statistics by class name, optional";
 }
 
