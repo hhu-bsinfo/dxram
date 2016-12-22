@@ -13,7 +13,7 @@ log.txt
 *.swp
 DXRAM.jar
 dxram.iml
-dxram_term_history
+.dxram_term_history
 out/*
 config/*.json
 start_dxram_terminal.sh
