@@ -90,7 +90,7 @@ check_configuration() {
   if [ "$config_content" = "" ] ; then
     # There is no configuration file -> start dxram once to create configuration
     cd "$LOCAL_EXEC_PATH"
-    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS > /dev/null 2>&1
+    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -cp $LIBRARIES $DEFAULT_CLASS > /dev/null 2>&1
     echo -e "File not found: DXRAM configuration file was created\n"
     cd "$EXECUTION_DIR"
   else
@@ -100,7 +100,7 @@ check_configuration() {
       # Configuration file seems to be corrupted -> start dxram once to create new configuration
       rm "$CONFIG_FILE"
       cd "$LOCAL_EXEC_PATH"
-      java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS > /dev/null 2>&1
+      java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -cp $LIBRARIES $DEFAULT_CLASS > /dev/null 2>&1
       echo -e "File corruption: DXRAM configuration file was created\n"
       cd "$EXECUTION_DIR"
     fi
@@ -378,7 +378,7 @@ start_remote_superpeer() {
   local vm_options="$4"
 
   echo "Executing superpeer on $3 ($ip, $port):"
-  ssh $hostname -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Superpeer -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS"
+  ssh $hostname -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Superpeer -cp $LIBRARIES $DEFAULT_CLASS"
 }
 
 ######################################################
@@ -398,7 +398,7 @@ start_local_superpeer() {
   local vm_options="$3"
 
   cd "$LOCAL_EXEC_PATH"
-  java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Superpeer -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS
+  java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Superpeer -cp $LIBRARIES $DEFAULT_CLASS
   cd "$EXECUTION_DIR"
 }
 
@@ -459,9 +459,9 @@ start_remote_peer() {
   echo "Executing peer on $3 ($ip, $port):"
   if [ "$ram_size_in_gb" = "" ] ; then
     # Use default key value store size
-    ssh $hostname -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $class $arguments"
+    ssh $hostname -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -cp $LIBRARIES $class $arguments"
   else
-    ssh $hostname -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $class $arguments"
+    ssh $hostname -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb -cp $LIBRARIES $class $arguments"
   fi
 }
 
@@ -488,9 +488,9 @@ start_local_peer() {
   cd "$LOCAL_EXEC_PATH"
   if [ "$ram_size_in_gb" = "" ] ; then
     # Use default key value store size
-    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $class $arguments
+    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -cp $LIBRARIES $class $arguments
   else
-    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $class $arguments
+    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb -cp $LIBRARIES $class $arguments
   fi
   cd "$EXECUTION_DIR"
 }
@@ -558,9 +558,9 @@ start_remote_terminal() {
 
   echo "Executing terminal on $3 ($ip, $port):"
   if [ "$script" = "" ] ; then
-    ssh $hostname "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS"
+    ssh $hostname -t "bash -l -c \"cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -cp $LIBRARIES $DEFAULT_CLASS\""
   else
-    ssh $hostname "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -Ddxram.m_services[TerminalService].m_autostartScript=script/dxram/$script -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS"
+    ssh $hostname -t "bash -l -c \"cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -Ddxram.m_services[TerminalService].m_autostartScript=script/dxram/$script -cp $LIBRARIES $DEFAULT_CLASS\""
   fi
 }
 
@@ -582,9 +582,9 @@ start_local_terminal() {
 
   cd "$LOCAL_EXEC_PATH"
   if [ "$script" = "" ] ; then
-    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS
+    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -cp $LIBRARIES $DEFAULT_CLASS
   else
-    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -Ddxram.m_services[TerminalService].m_autostartScript="script/dxram/$script" -cp lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:DXRAM.jar $DEFAULT_CLASS
+    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -Ddxram.m_services[TerminalService].m_autostartScript="script/dxram/$script" -cp $LIBRARIES $DEFAULT_CLASS
   fi
   cd "$EXECUTION_DIR"
 }
@@ -770,6 +770,7 @@ readonly NFS_MODE=true # Deactivate for copying configuration to every single re
 readonly LOCALHOST=`host localhost | cut -d ' ' -f 4`
 readonly THIS_HOST=`host \`hostname\` | cut -d ' ' -f 4`
 readonly DEFAULT_CLASS="de.hhu.bsinfo.dxram.run.DXRAMMain"
+readonly LIBRARIES="lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:lib/jline-1.0.jar:DXRAM.jar"
 readonly DEFAULT_CONDITION="^>>> DXRAM started <<<$"
 readonly ZOOKEEPER_PORT="2181"
 

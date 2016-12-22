@@ -15,8 +15,11 @@ package de.hhu.bsinfo.dxram.term;
 
 import jline.ArgumentCompletor;
 import jline.ConsoleReader;
+import jline.History;
 import jline.SimpleCompletor;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import com.google.gson.annotations.Expose;
@@ -152,11 +155,6 @@ public class TerminalService extends AbstractDXRAMService {
 
     @Override
     protected boolean shutdownService() {
-        try {
-            m_consoleReader.getHistory().flushBuffer();
-        } catch (final IOException ignored) {
-        }
-
         return true;
     }
 
@@ -193,9 +191,20 @@ public class TerminalService extends AbstractDXRAMService {
      *     Text to evaluate as terminal command
      */
     private void eveluateCommand(final String p_text) {
+        String text = p_text;
+
+        text = text.replaceAll("\\s+", "");
+        if (!text.contains("(")) {
+            text += "()";
+            System.out.println("Replaced with " + text);
+        } else if (text.contains("(") && !text.contains(")")) {
+            text += ")";
+            System.out.println("Replaced with " + text);
+        }
+
         // resolve terminal cmd "macros"
-        String[] tokensFunc = p_text.split("\\(");
-        String[] tokensHelp = p_text.split(" ");
+        String[] tokensFunc = text.split("\\(");
+        String[] tokensHelp = text.split(" ");
 
         // print help for cmd
         if (tokensHelp.length > 1 && "help".equals(tokensHelp[0])) {
@@ -226,14 +235,14 @@ public class TerminalService extends AbstractDXRAMService {
 
                 m_terminal.getScriptContext().eval(call);
             } else {
-                m_terminal.getScriptContext().eval(p_text);
+                m_terminal.getScriptContext().eval(text);
             }
         } else {
             // filter some generic "macros"
-            if ("help".equals(p_text)) {
+            if ("help".equals(text)) {
                 m_terminal.getScriptTerminalContext().help();
             } else {
-                m_terminal.getScriptContext().eval(p_text);
+                m_terminal.getScriptContext().eval(text);
             }
         }
     }
@@ -245,17 +254,17 @@ public class TerminalService extends AbstractDXRAMService {
      *     File to load the history from and append new commands to.
      */
     private void loadHistoryFromFile(final String p_file) {
-        //        try {
-        //            // TODO fix
-        //            m_consoleReader.setHistory(new History(new File(p_file)));
-        //        } catch (final FileNotFoundException e) {
-        //            // #if LOGGER >= DEBUG
-        //            LOGGER.debug("No history found: %s", p_file);
-        //            // #endif /* LOGGER >= DEBUG */
-        //        } catch (final IOException e) {
-        //            // #if LOGGER >= ERROR
-        //            LOGGER.error("Reading history %s failed: %s", p_file, e);
-        //            // #endif /* LOGGER >= ERROR */
-        //        }
+        try {
+            // TODO fix
+            m_consoleReader.setHistory(new History(new File(p_file)));
+        } catch (final FileNotFoundException e) {
+            // #if LOGGER >= DEBUG
+            LOGGER.debug("No history found: %s", p_file);
+            // #endif /* LOGGER >= DEBUG */
+        } catch (final IOException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Reading history %s failed: %s", p_file, e);
+            // #endif /* LOGGER >= ERROR */
+        }
     }
 }
