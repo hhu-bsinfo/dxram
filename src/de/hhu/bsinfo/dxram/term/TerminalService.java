@@ -200,9 +200,10 @@ public class TerminalService extends AbstractDXRAMService {
 
         // print help for cmd
         if (tokensHelp.length > 1 && "help".equals(tokensHelp[0])) {
-            de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(tokensHelp[1]);
+            String cmd = tokensHelp[1].replaceAll("\\(\\)", "");
+            de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(cmd);
             if (scriptCtx != null) {
-                m_terminal.getScriptContext().eval("dxterm.cmd(\"" + tokensHelp[1] + "\").help()");
+                m_terminal.getScriptContext().eval("dxterm.cmd(\"" + cmd + "\").help()");
             } else {
                 System.out.println("Could not find help for terminal command '" + tokensHelp[1] + '\'');
             }

@@ -56,7 +56,7 @@ function execCid(cid, targetNid) {
         return;
     }
 
-    var migration = dxram.service("migration");
+    var migration = dxram.service("migrate");
 
     // TODO error handling
     migration.targetMigrate(cid, targetNid);
