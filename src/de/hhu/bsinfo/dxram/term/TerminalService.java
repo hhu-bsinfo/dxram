@@ -21,6 +21,7 @@ import jline.SimpleCompletor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import com.google.gson.annotations.Expose;
 
@@ -191,32 +192,58 @@ public class TerminalService extends AbstractDXRAMService {
      *     Text to evaluate as terminal command
      */
     private void eveluateCommand(final String p_text) {
-        String text = p_text;
+        // Remove leading and trailing white spaces and replace multiple space with one space
+        String text = p_text.trim().replaceAll(" +", " ");
 
-        text = text.replaceAll("\\s+", "");
-        if (!text.contains("(")) {
-            text += "()";
-            System.out.println("Replaced with " + text);
-        } else if (text.contains("(") && !text.contains(")")) {
+        if ("list".equals(text)) {
+            m_terminal.getScriptContext().eval("dxterm.list()");
+            return;
+        }
+        if ("reload".equals(text)) {
+            m_terminal.getScriptContext().eval("dxterm.reload()");
+            return;
+        }
+        if (text.startsWith("help")) {
+            if ("help".equals(text)) {
+                m_terminal.getScriptTerminalContext().help();
+            } else {
+                String cmd = text.split(" ")[1].replaceAll("\\(\\)", "");
+                de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(cmd);
+                if (scriptCtx != null) {
+                    m_terminal.getScriptContext().eval("dxterm.cmd(\"" + cmd + "\").help()");
+                } else {
+                    System.out.println("Could not find help for terminal command '" + cmd + '\'');
+                }
+            }
+            return;
+        }
+
+        if (Pattern.matches("[a-z]++ [a-zA-Z0-9\"]++", text)) {
+            // Type1: command arg1 arg2
+
+            // Replace first space after command with (
+            text = text.replaceAll("([a-z]++) ", "$1(");
+            // Replace all spaces outside of double quotes with ,
+            text = text.replaceAll("\\s+(?=((\\\\[\\\\\"]|[^\\\\\"])*\"(\\\\[\\\\\"]|[^\\\\\"])*\")*(\\\\[\\\\\"]|[^\\\\\"])*$)", ",");
+            // Add an closing bracket
             text += ")";
-            System.out.println("Replaced with " + text);
+        } else {
+            // Type2: command(arg1,arg2)
+
+            // Remove all spaces outside of double quotes
+            text = text.replaceAll("\\s+(?=((\\\\[\\\\\"]|[^\\\\\"])*\"(\\\\[\\\\\"]|[^\\\\\"])*\")*(\\\\[\\\\\"]|[^\\\\\"])*$)", "");
+            if (!text.contains("(")) {
+                // Add brackets
+                text += "()";
+            } else if (text.contains("(") && !text.contains(")")) {
+                // Add closing bracket
+                text += ")";
+            }
         }
 
         // resolve terminal cmd "macros"
         String[] tokensFunc = text.split("\\(");
-        String[] tokensHelp = text.split(" ");
-
-        // print help for cmd
-        if (tokensHelp.length > 1 && "help".equals(tokensHelp[0])) {
-            String cmd = tokensHelp[1].replaceAll("\\(\\)", "");
-            de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(cmd);
-            if (scriptCtx != null) {
-                m_terminal.getScriptContext().eval("dxterm.cmd(\"" + cmd + "\").help()");
-            } else {
-                System.out.println("Could not find help for terminal command '" + tokensHelp[1] + '\'');
-            }
-        } else if (tokensFunc.length > 1) {
-
+        if (tokensFunc.length > 1) {
             // resolve cmd call
             de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(tokensFunc[0]);
             if (scriptCtx != null) {
@@ -235,14 +262,8 @@ public class TerminalService extends AbstractDXRAMService {
 
                 m_terminal.getScriptContext().eval(call);
             } else {
-                m_terminal.getScriptContext().eval(text);
-            }
-        } else {
-            // filter some generic "macros"
-            if ("help".equals(text)) {
-                m_terminal.getScriptTerminalContext().help();
-            } else {
-                m_terminal.getScriptContext().eval(text);
+                // Command is not a registered command -> execute unchanged javascript code
+                m_terminal.getScriptContext().eval(p_text);
             }
         }
     }

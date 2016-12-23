@@ -28,50 +28,64 @@ dxterm.printfln("Participating Peers:");
 for each(peer in peers) { 
     dxterm.printfln("0x%X", peer);
 }
+dxterm.printfln("\n\n");
 dxterm.cmd("metadatasummary").exec("all");
 
 
 for each(peer in peers) {
     var counter = Math.floor(Math.random() * 6) + 3;
+    dxterm.printfln("Creating %f chunks on 0x%X (including nameservice register)", counter, peer);
     for (i = 0; i < counter; i++) {
-	dxterm.cmd("chunkcreate").exec(10, peer);
+	dxterm.cmd("chunkcreate").exec(Math.floor(Math.random() * 128) + 32, peer);
 	dxterm.cmd("namereg").exec(peer, i, Math.floor(Math.random() * 10000) + 1);
     }
 }
+dxterm.printfln("\n");
 
 dxram.sleep(3000);
 dxterm.cmd("namelist").exec();
+dxterm.printfln("\n\n");
 dxterm.cmd("metadatasummary").exec("all");
 
 
 var counter = Math.floor(Math.random() * 10) + 5;
+dxterm.printfln("Creating %f tmp storages", counter);
 for (i = 0; i < counter; i++) {
-    dxterm.cmd("tmpcreate").exec(i, 100);
+    dxterm.cmd("tmpcreate").exec(i, Math.floor(Math.random() * 1000) + 50);
 }
 
 
 dxram.sleep(3000);
+dxterm.printfln("\n\n");
 dxterm.cmd("metadatasummary").exec("all");
 
 
 for each(peer in peers) {
     var counter = Math.floor(Math.random() * 3) + 1;
+    dxterm.printfln("Migrating first %f chunks from 0x%X", counter, peer);
     for (i = 0; i < counter; i++) {
-      dxterm.cmd("chunkmigrate").exec(peer, i, peers[Math.floor(Math.random() * (peers.length - 1))]);
+      var randomPeer = peers[Math.floor(Math.random() * (peers.length - 1))];
+      dxterm.printfln("\t Migrating to 0x%X", randomPeer);
+      dxterm.cmd("chunkmigrate").exec(peer, i, randomPeer);
     }
 }
 
 
 dxram.sleep(3000);
+dxterm.printfln("\n\n");
 dxterm.cmd("metadatasummary").exec("all");
 
 
 var counter = Math.floor(Math.random() * 2) + 1;
+dxterm.printfln("Shutting down %f superpeers", counter);
 for (i = 0; i < counter; i++) {
-    dxterm.cmd("nodeshutdown").exec(peers[Math.floor(Math.random() * (peers.length - 1))], true);
+    var randomSuperpeer = superpeers[Math.floor(Math.random() * (superpeers.length - 1))];
+    dxterm.printfln("\t Shutting down 0x%X", randomPeer);
+    dxterm.cmd("nodeshutdown").exec(randomSuperpeer, true);
 }
 
 
 dxram.sleep(3000);
+dxterm.printfln("\n\n");
 dxterm.cmd("metadatasummary").exec("all");
 exit()

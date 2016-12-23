@@ -1,5 +1,9 @@
 #!/bin/bash
-
+SHELL_TYPE=`readlink /proc/$$/exe`
+if [ "$SHELL_TYPE" != "/bin/bash" ] ; then
+  echo "Script must be executed in bash. Exiting..."
+  exit
+fi
 
 
 #############
@@ -145,7 +149,7 @@ write_configuration() {
   while read node || [[ -n "$node" ]]; do
     local hostname=`echo $node | cut -d ',' -f 1`
     local role=`echo $node | cut -d ',' -f 2`
-    local ip=`host $hostname | cut -d ' ' -f 4`
+    local ip=`resolve $hostname`
     if [ "$ip" = "" ] ; then
       echo "ERROR: Unknown host: \"$hostname\"."
       close
@@ -721,6 +725,28 @@ execute() {
 }
 
 ######################################################
+# Resolve hostname to IP
+# Globals:
+# Arguments:
+#   hostname - The hostname to resolve
+# Return:
+#   ip - The IP address
+######################################################
+resolve() {
+  local hostname=$1
+  local ip=""
+
+  ip=`host $hostname | cut -d ' ' -f 4 | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"`
+  if [ "$ip" = "" ] ; then
+    ip=`getent hosts $hostname | cut -d ' ' -f 1 | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"`
+    if [ "$ip" = "" ] ; then
+      echo "ERROR: $hostname could not be identified. Seting default 127.0.0.1"
+    fi
+  fi
+  echo "$ip"
+}
+
+######################################################
 # Close all instances
 # Globals:
 #   NODES
@@ -767,8 +793,8 @@ NODES=`cat "$node_file" | grep -v '#' | sed 's/, /,/g' | sed 's/,\t/,/g'`
 
 # Set default values
 readonly NFS_MODE=true # Deactivate for copying configuration to every single remote node
-readonly LOCALHOST=`host localhost | cut -d ' ' -f 4`
-readonly THIS_HOST=`host \`hostname\` | cut -d ' ' -f 4`
+readonly LOCALHOST=`resolve "localhost"`
+readonly THIS_HOST=`resolve $(hostname)`
 readonly DEFAULT_CLASS="de.hhu.bsinfo.dxram.run.DXRAMMain"
 readonly LIBRARIES="lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:lib/jline-1.0.jar:DXRAM.jar"
 readonly DEFAULT_CONDITION="^>>> DXRAM started <<<$"
