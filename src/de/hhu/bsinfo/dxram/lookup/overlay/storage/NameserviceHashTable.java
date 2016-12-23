@@ -177,7 +177,7 @@ public class NameserviceHashTable extends AbstractMetadata {
                 }
             }
         }
-        return Arrays.copyOfRange(data.array(), 0, count);
+        return Arrays.copyOfRange(data.array(), 0, count * (Integer.BYTES + Long.BYTES));
     }
 
     @Override

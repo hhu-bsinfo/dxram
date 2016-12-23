@@ -33,11 +33,11 @@ dxterm.cmd("metadatasummary").exec("all");
 
 
 for each(peer in peers) {
-    var counter = Math.floor(Math.random() * 6) + 3;
-    dxterm.printfln("Creating %f chunks on 0x%X (including nameservice register)", counter, peer);
+    var counter = (Math.floor(Math.random() * 6) + 3) | 0;
+    dxterm.printfln("Creating %d chunks on 0x%X (including nameservice register)", counter, peer);
     for (i = 0; i < counter; i++) {
-	dxterm.cmd("chunkcreate").exec(Math.floor(Math.random() * 128) + 32, peer);
-	dxterm.cmd("namereg").exec(peer, i, Math.floor(Math.random() * 10000) + 1);
+	dxterm.cmd("chunkcreate").exec((Math.floor(Math.random() * 128) + 32) | 0, peer);
+	dxterm.cmd("namereg").exec(peer, i, (Math.floor(Math.random() * 10000) + 1) | 0);
     }
 }
 dxterm.printfln("\n");
@@ -48,10 +48,10 @@ dxterm.printfln("\n\n");
 dxterm.cmd("metadatasummary").exec("all");
 
 
-var counter = Math.floor(Math.random() * 10) + 5;
-dxterm.printfln("Creating %f tmp storages", counter);
+var counter = (Math.floor(Math.random() * 10) + 5) | 0;
+dxterm.printfln("Creating %d tmp storages", counter);
 for (i = 0; i < counter; i++) {
-    dxterm.cmd("tmpcreate").exec(i, Math.floor(Math.random() * 1000) + 50);
+    dxterm.cmd("tmpcreate").exec((i + 1) | 0, (Math.floor(Math.random() * 1000) + 50) | 0);
 }
 
 
@@ -61,12 +61,12 @@ dxterm.cmd("metadatasummary").exec("all");
 
 
 for each(peer in peers) {
-    var counter = Math.floor(Math.random() * 3) + 1;
-    dxterm.printfln("Migrating first %f chunks from 0x%X", counter, peer);
+    var counter = (Math.floor(Math.random() * 3) + 1) | 0;
+    dxterm.printfln("Migrating first %d chunks from 0x%X", counter, peer);
     for (i = 0; i < counter; i++) {
-      var randomPeer = peers[Math.floor(Math.random() * (peers.length - 1))];
+      var randomPeer = peers[(Math.floor(Math.random() * peers.length)) | 0];
       dxterm.printfln("\t Migrating to 0x%X", randomPeer);
-      dxterm.cmd("chunkmigrate").exec(peer, i, randomPeer);
+      dxterm.cmd("chunkmigrate").exec(peer, i + 1, randomPeer);
     }
 }
 
@@ -76,10 +76,10 @@ dxterm.printfln("\n\n");
 dxterm.cmd("metadatasummary").exec("all");
 
 
-var counter = Math.floor(Math.random() * 2) + 1;
-dxterm.printfln("Shutting down %f superpeers", counter);
+var counter = (Math.floor(Math.random() * 2) + 1) | 0;
+dxterm.printfln("Shutting down %d superpeers", counter);
 for (i = 0; i < counter; i++) {
-    var randomSuperpeer = superpeers[Math.floor(Math.random() * (superpeers.length - 1))];
+    var randomSuperpeer = superpeers[(Math.floor(Math.random() * superpeers.length)) | 0];
     dxterm.printfln("\t Shutting down 0x%X", randomPeer);
     dxterm.cmd("nodeshutdown").exec(randomSuperpeer, true);
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
-SHELL_TYPE=`readlink /proc/$$/exe`
-if [ "$SHELL_TYPE" != "/bin/bash" ] ; then
+SHELL_TYPE=`readlink /proc/$$/exe | tr '/' '\n' | tail -1`
+if [ "$SHELL_TYPE" != "bash" ] ; then
   echo "Script must be executed in bash. Exiting..."
   exit
 fi
@@ -9,6 +9,51 @@ fi
 #############
 # Functions #
 #############
+
+######################################################
+# Check if all neccessary programs are installed
+# Globals:
+# Arguments:
+#   None
+######################################################
+check_programs() {
+  if ! hash cat 2>/dev/null ; then
+    echo "Please install coreutils. Used for cat, cut, rm, mkdir, sleep and readlink. Exiting..."
+    exit
+  fi
+  if ! hash grep 2>/dev/null ; then
+    echo "Please install grep. Used for grep. Exiting..."
+    exit
+  fi
+  if ! hash sed 2>/dev/null ; then
+    echo "Please install sed. Used for sed. Exiting..."
+    exit
+  fi
+  if ! hash hostname 2>/dev/null ; then
+    echo "Please install hostname. Used for hostname. Exiting..."
+    exit
+  fi
+  if ! hash pkill 2>/dev/null ; then
+    echo "Please install procps. Used for pkill. Exiting..."
+    exit
+  fi
+  if ! hash host 2>/dev/null ; then
+    echo "Please install bind9-host. Used for host. Exiting..."
+    exit
+  fi
+  if ! hash getent 2>/dev/null ; then
+    echo "Please install libc-bin. Used for getent. Exiting..."
+    exit
+  fi
+  if ! hash ssh 2>/dev/null ; then
+    echo "Please install openssh-client. Used for ssh and scp. Exiting..."
+    exit
+  fi
+  if ! hash java 2>/dev/null ; then
+    echo "Please install Java 8. Used for java. Exiting..."
+    exit
+  fi
+}
 
 ######################################################
 # Read paths from configuration or set default values
@@ -783,6 +828,14 @@ close() {
 ###############
 # Entry point #
 ###############
+
+if [ "$1" = "" ] ; then
+  echo "Missing parameter: Configuration file"
+  echo "  Example: ./deploy.sh SimpleTest.conf"
+  exit
+fi
+
+check_programs
 
 # Trim node file
 node_file="./$1"

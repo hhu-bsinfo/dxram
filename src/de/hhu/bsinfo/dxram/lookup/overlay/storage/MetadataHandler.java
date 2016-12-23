@@ -81,21 +81,6 @@ public final class MetadataHandler {
     }
 
     /**
-     * Gets all nameservice entries of this superpeer.
-     *
-     * @return all nameservice entries in a byte array
-     */
-    public byte[] getAllNameserviceEntries() {
-        byte[] ret;
-
-        m_dataLock.readLock().lock();
-        ret = m_nameservice.receiveAllMetadata();
-        m_dataLock.readLock().unlock();
-
-        return ret;
-    }
-
-    /**
      * Gets status of whole metadata storage.
      *
      * @return the status
@@ -105,6 +90,21 @@ public final class MetadataHandler {
 
         m_dataLock.readLock().lock();
         ret = m_storage.getStatus();
+        m_dataLock.readLock().unlock();
+
+        return ret;
+    }
+
+    /**
+     * Gets all nameservice entries of this superpeer.
+     *
+     * @return all nameservice entries in a byte array
+     */
+    public byte[] getAllNameserviceEntries(final short p_predecessor, final short p_nodeID) {
+        byte[] ret;
+
+        m_dataLock.readLock().lock();
+        ret = m_nameservice.receiveMetadataInRange(p_predecessor, p_nodeID);
         m_dataLock.readLock().unlock();
 
         return ret;

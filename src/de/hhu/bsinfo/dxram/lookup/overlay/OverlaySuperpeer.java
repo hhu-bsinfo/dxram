@@ -1394,7 +1394,8 @@ public class OverlaySuperpeer implements MessageReceiver {
         // #endif /* LOGGER == TRACE */
 
         try {
-            m_network.sendMessage(new GetNameserviceEntriesResponse(p_getNameserviceEntriesRequest, m_metadata.getAllNameserviceEntries()));
+            m_network
+                .sendMessage(new GetNameserviceEntriesResponse(p_getNameserviceEntriesRequest, m_metadata.getAllNameserviceEntries(m_predecessor, m_nodeID)));
         } catch (final NetworkException e) {
             // Requesting peer is not available anymore, ignore it
         }

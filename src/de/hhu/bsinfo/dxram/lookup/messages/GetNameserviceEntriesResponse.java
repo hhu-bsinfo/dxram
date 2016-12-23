@@ -82,6 +82,8 @@ public class GetNameserviceEntriesResponse extends AbstractResponse {
         if (length != 0) {
             m_entries = new byte[length];
             p_buffer.get(m_entries);
+        } else {
+            m_entries = new byte[0];
         }
     }
 

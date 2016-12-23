@@ -14,10 +14,12 @@
 package de.hhu.bsinfo.dxram.run.beineke;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 
 /*
@@ -124,7 +126,7 @@ public final class MailboxTest {
             }
             chunkService.put(anchor);
 
-            System.out.println("\nServer started");
+            System.out.println("Server started");
 
             /* Migration test */
             int i = 0;
@@ -223,7 +225,7 @@ public final class MailboxTest {
                 for (long id : chunkIDs) {
                     chunk.setID(id);
                     chunkService.get(chunk);
-                    System.out.println(new String(chunk.getData().array()) + '\t' + chunk.getID());
+                    System.out.println(new String(Arrays.copyOfRange(chunk.getData().array(), 0, 10)) + '\t' + ChunkID.toHexString(chunk.getID()));
                 }
 
                 // Wait a moment
