@@ -1026,9 +1026,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return whether this Chunk is stored locally or not
      */
     public boolean exists(final long p_chunkID) {
-        assert m_boot.getNodeRole() == NodeRole.PEER;
+        assert m_boot.getNodeRole() != NodeRole.SUPERPEER;
 
         long address;
+
+        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
+            return false;
+        }
 
         // Get the address from the CIDTable
         address = m_cidTable.get(p_chunkID);
