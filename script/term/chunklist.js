@@ -42,7 +42,7 @@ function exec(nid, migrated) {
         return;
     }
 
-    dxterm.printfln("Locally created chunk id ranges of 0x%X (%d):", nid, chunkRanges.size() / 2);
+    dxterm.printfln("Locally created chunk id ranges of 0x%X (%d):", nid, java.lang.Integer.divideUnsigned(chunkRanges.size(), 2));
 
     for (var i = 0; i < chunkRanges.size(); i++) {
         var currRange = chunkRanges.get(i);
@@ -62,7 +62,7 @@ function exec(nid, migrated) {
             return;
         }
 
-        dxterm.printfln("Migrated chunk id ranges of 0x%X (%d):", nid, chunkRanges.size() / 2);
+        dxterm.printfln("Migrated chunk id ranges of 0x%X (%d):", nid, java.lang.Integer.divideUnsigned(chunkRanges.size(), 2));
 
         for (var i = 0; i < chunkRanges.size(); i++) {
             var currRange = chunkRanges.get(i);
