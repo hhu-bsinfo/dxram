@@ -94,7 +94,7 @@ public class ScriptContext {
             }
         } catch (final Exception e) {
             // #if LOGGER >= ERROR
-            LOGGER.error(e.getMessage());
+            LOGGER.error(e);
             // #endif /* LOGGER >= ERROR */
 
             return false;
@@ -142,7 +142,7 @@ public class ScriptContext {
             }
         } catch (final Exception e) {
             // #if LOGGER >= ERROR
-            LOGGER.error(e.getMessage());
+            LOGGER.error(e);
             // #endif /* LOGGER >= ERROR */
 
             return false;

@@ -115,16 +115,30 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             // #endif /* LOGGER >= WARN */
         }
 
+        // #if LOGGER >= WARN
+        if (service == null) {
+            LOGGER.warn("Service '%s' not available", p_class.getSimpleName());
+        }
+        // #endif /* LOGGER >= WARN */
+
         return service;
     }
 
     @Override
     public AbstractDXRAMService getService(final String p_shortName) {
+        AbstractDXRAMService service = null;
+
         if (m_isInitialized) {
-            return m_contextHandler.getContext().getServices().get(m_servicesShortName.get(p_shortName));
+            service = m_contextHandler.getContext().getServices().get(m_servicesShortName.get(p_shortName));
         }
 
-        return null;
+        // #if LOGGER >= WARN
+        if (service == null) {
+            LOGGER.warn("Service '%s' not available");
+        }
+        // #endif /* LOGGER >= WARN */
+
+        return service;
     }
 
     @Override
