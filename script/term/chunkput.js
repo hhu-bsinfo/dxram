@@ -32,7 +32,7 @@ function help() {
 			"  nid: (Or) separate local id part of chunk to put the data to" +
 			"  lid: (In combination with) separate node id part of the chunk to put the data to\n" +
 			"  data: Data to store (format has to match type parameter)\n" +
-			"  type: Type of the data to store (str, byte, short, int, long, hex), defaults to str\n" +
+			"  type: Type of the data to store (\"str\", \"byte\", \"short\", \"int\", \"long\", \"hex\"), defaults to \"str\"\n" +
 			"  offset: Offset within the existing to store the new data to. -1 to override existing data, defaults to 0";
 }
 
@@ -93,7 +93,7 @@ function exec_cid(cid, data, offset, type) {
     var chunkService = dxram.service("chunk");
     var chunks = chunkService.get(cid);
 
-    if (chunks.first() == 0) {
+    if (chunks == null || chunks.first() == 0) {
         dxmterm.printflnErr("Getting chunk 0x%X failed", cid);
         return;
     }

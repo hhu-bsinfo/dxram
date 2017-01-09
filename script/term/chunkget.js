@@ -41,9 +41,9 @@ function help() {
 			"  cidStr: Full chunk ID of the chunk to get data from (as string!)\n" +
 			"  nid: (Or) separate node id part of the chunk to get data from\n" +
 			"  lid: (In combination with) separate local id part of the chunk to get data from\n" +
-			"  className: Full name of a java class that implements DataStructure (with package path). " +
+			"  className: Full name of a java class that implements DataStructure (with package path) as string.\n" +
 			"An instance is created, the data is stored in that instance and printed.\n " +
-			"  type: Format to print the data (str, byte, short, int, long), defaults to byte\n"  +
+			"  type: Format to print the data (\"str\", \"byte\", \"short\", \"int\", \"long\"), defaults to \"byte\"\n"  +
 			"  hex: For some representations, print as hex instead of decimal, defaults to true\n" +
 			"  offset: Offset within the chunk to start getting data from, defaults to 0\n" +
 			"  length: Number of bytes of the chunk to print, defaults to size of chunk";
@@ -221,7 +221,7 @@ function exec_raw(cid, type, hex, offset, length) {
             return;
     }
 
-    dxterm.println("Chunk data of 0x%X (chunksize %d): \n%s", cid, chunk.sizeofObject(), str);
+    dxterm.printfln("Chunk data of 0x%X (chunksize %d): \n%s", cid, chunk.sizeofObject(), str);
 }
 
 function exec_raw2(cid, offset, length, type, hex) {
