@@ -459,7 +459,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         registerTaskPayloads();
 
         // #if LOGGER >= INFO
-        LOGGER.info("Started compute node 0x%X with compute group id %d", m_role, m_computeGroupId);
+        LOGGER.info("Started compute node type '%s' with compute group id %d", m_role, m_computeGroupId);
         // #endif /* LOGGER >= INFO */
 
         return true;
