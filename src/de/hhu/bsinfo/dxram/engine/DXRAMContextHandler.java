@@ -122,11 +122,6 @@ class DXRAMContextHandler {
                     parent = child;
                 }
 
-                if (child == null) {
-                    LOGGER.error("Invalid vm argument '%s'", key);
-                    continue;
-                }
-
                 String propertyKey = props.getProperty(key);
 
                 // try to determine type, not a very nice way =/
