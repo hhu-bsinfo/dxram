@@ -366,7 +366,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         BackupRange currentBackupRange;
         short[] backupPeers;
 
-        if (p_event.getRole() == NodeRole.PEER) {
+        if (m_backupActive && p_event.getRole() == NodeRole.PEER) {
             failedPeer = p_event.getNodeID();
 
             // Replace failed peer in all own backup ranges
