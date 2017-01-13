@@ -35,6 +35,8 @@ public final class TaskScript implements Importable, Exportable {
     @Expose
     private short m_numRequiredSlaves = NUM_REQUIRED_SLAVES_ARBITRARY;
     @Expose
+    private String m_name = "";
+    @Expose
     private TaskScriptNode[] m_tasks = new TaskScriptNode[0];
 
     /**
@@ -69,6 +71,22 @@ public final class TaskScript implements Importable, Exportable {
     }
 
     /**
+     * Constructor
+     *
+     * @param p_numRequiredSlaves
+     *     Number of slaves required to run this task script
+     * @param p_name
+     *     Name for the task script (for debugging only)
+     * @param p_tasks
+     *     List of tasks forming the script
+     */
+    public TaskScript(final short p_numRequiredSlaves, final String p_name, final TaskScriptNode... p_tasks) {
+        m_numRequiredSlaves = p_numRequiredSlaves;
+        m_name = p_name;
+        m_tasks = p_tasks;
+    }
+
+    /**
      * Get the number of slaves required to run this task.
      *
      * @return Number of slaves this task requires.
@@ -88,12 +106,13 @@ public final class TaskScript implements Importable, Exportable {
 
     @Override
     public String toString() {
-        return "TaskScript[" + m_numRequiredSlaves + ", " + m_tasks.length + ']';
+        return "TaskScript[" + m_name + ", " + m_numRequiredSlaves + ", " + m_tasks.length + ']';
     }
 
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeShort(m_numRequiredSlaves);
+        p_exporter.writeString(m_name);
         p_exporter.writeInt(m_tasks.length);
 
         for (int i = 0; i < m_tasks.length; i++) {
@@ -105,6 +124,7 @@ public final class TaskScript implements Importable, Exportable {
     @Override
     public void importObject(final Importer p_importer) {
         m_numRequiredSlaves = p_importer.readShort();
+        m_name = p_importer.readString();
         m_tasks = new TaskScriptNode[p_importer.readInt()];
 
         for (int i = 0; i < m_tasks.length; i++) {
@@ -131,7 +151,7 @@ public final class TaskScript implements Importable, Exportable {
     public int sizeofObject() {
         int size = 0;
 
-        size += Short.BYTES + Integer.BYTES;
+        size += Short.BYTES + ObjectSizeUtil.sizeofString(m_name) + Integer.BYTES;
 
         for (int i = 0; i < m_tasks.length; i++) {
             size += ObjectSizeUtil.sizeofString(m_tasks[i].getClass().getName()) + m_tasks[i].sizeofObject();

@@ -58,7 +58,7 @@ function exec(taskName, numRequiredSalves, cgid, wait) {
         return;
     }
 
-    var taskScript = new TaskScript(numRequiredSalves, task);
+    var taskScript = new TaskScript(numRequiredSalves, "Terminal", task);
 
     var sem = new Semaphore(0, false);
     var listener = new TaskListener({
