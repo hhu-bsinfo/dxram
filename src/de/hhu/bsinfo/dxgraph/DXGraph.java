@@ -62,17 +62,6 @@ public class DXGraph extends DXCompute {
     }
 
     /**
-     * Get the DXRAMEngine. There is no restriction sticking
-     * to the exposed graph API if low level access or other
-     * services are needed for any task.
-     *
-     * @return DXRAMEngine.
-     */
-    public DXRAMEngine getDXRAMEngine() {
-        return getDXRAMEngine();
-    }
-
-    /**
      * Create storage on the current node for one or multiple vertices. This assigns
      * a valid ID to each successfully created vertex. The actual
      * data stored with the vertex is not stored with this call.
