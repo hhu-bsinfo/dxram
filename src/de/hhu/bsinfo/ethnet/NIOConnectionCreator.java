@@ -124,9 +124,11 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
      */
     @Override
     public void close() {
+        LOGGER.info("NIOSelector close...");
         m_nioSelector.close();
         m_nioSelector = null;
 
+        LOGGER.info("Message creator shutdown...");
         m_messageCreator.shutdown();
         m_messageCreator = null;
     }
