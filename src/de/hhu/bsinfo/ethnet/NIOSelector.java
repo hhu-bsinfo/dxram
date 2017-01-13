@@ -186,7 +186,7 @@ class NIOSelector extends Thread {
                     if (System.currentTimeMillis() - connection.getClosingTimestamp() > 2 * m_connectionTimeout) {
                         // #if LOGGER >= DEBUG
                         try {
-                            LOGGER.debug("Closing connection to %s;%s", connection.getDestination(), connection.getChannel().getRemoteAddress());
+                            LOGGER.debug("Closing connection to 0x%X;%s", connection.getDestination(), connection.getChannel().getRemoteAddress());
                         } catch (final IOException ignored) {
                         }
                         // #endif /* LOGGER >= DEBUG */

@@ -73,6 +73,16 @@ abstract class AbstractConnectionCreator {
     public abstract AbstractConnection createConnection(short p_destination) throws IOException;
 
     /**
+     * Closes the given connection
+     *
+     * @param p_connection
+     *     the connection
+     * @param p_informConnectionManager
+     *     whether to inform the connection manager or not
+     */
+    public abstract void closeConnection(final AbstractConnection p_connection, final boolean p_informConnectionManager);
+
+    /**
      * Check if there a remote node tries to open a connection currently
      *
      * @return whether a remote node opens a connection to this node currently or not

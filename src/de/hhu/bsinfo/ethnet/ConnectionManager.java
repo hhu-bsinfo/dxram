@@ -109,8 +109,32 @@ final class ConnectionManager implements ConnectionCreatorListener {
      * Closes the ConnectionManager
      */
     public void close() {
+        // cleanup all opened connections
+        for (AbstractConnection connection : m_connectionList) {
+            m_creator.closeConnection(connection, false);
+        }
+
+        m_connectionList = null;
+        for (int i = 0; i < m_connections.length; i++) {
+            m_connections[i] = null;
+        }
+
         m_closed = true;
         m_creator.close();
+
+        try {
+            // wait a moment for the thread to shut down (if it can)
+            Thread.sleep(500);
+        } catch (final InterruptedException ignore) {
+
+        }
+
+        m_connectionCreatorHelperThread.interrupt();
+        try {
+            m_connectionCreatorHelperThread.join();
+        } catch (final InterruptedException ignore) {
+
+        }
     }
 
     /**
@@ -402,6 +426,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
                     try {
                         m_jobAvailableCondition.await();
                     } catch (final InterruptedException ignored) {
+                        return;
                     }
                 }
 

@@ -205,29 +205,27 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
         return ret;
     }
 
-    /**
-     * Closes the given connection
-     *
-     * @param p_connection
-     *     the connection
-     * @param p_informConnectionManager
-     *     whether to inform the connection manager or not
-     */
-    void closeConnection(final NIOConnection p_connection, final boolean p_informConnectionManager) {
+    @Override
+    public void closeConnection(final AbstractConnection p_connection, final boolean p_informConnectionManager) {
         SelectionKey key;
-        key = p_connection.getChannel().keyFor(m_nioSelector.getSelector());
-        if (key != null) {
-            key.cancel();
 
-            try {
-                p_connection.getChannel().close();
-            } catch (final IOException e) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Could not close connection to %s!", p_connection.getDestination());
-                // #endif /* LOGGER >= ERROR */
-            }
-            if (p_informConnectionManager) {
-                fireConnectionClosed(p_connection);
+        if (p_connection instanceof NIOConnection) {
+            NIOConnection connection = (NIOConnection) p_connection;
+
+            key = connection.getChannel().keyFor(m_nioSelector.getSelector());
+            if (key != null) {
+                key.cancel();
+
+                try {
+                    connection.getChannel().close();
+                } catch (final IOException e) {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Could not close connection to %s!", p_connection.getDestination());
+                    // #endif /* LOGGER >= ERROR */
+                }
+                if (p_informConnectionManager) {
+                    fireConnectionClosed(p_connection);
+                }
             }
         }
     }

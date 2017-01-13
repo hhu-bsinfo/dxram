@@ -136,6 +136,20 @@ class MessageCreator extends Thread {
      */
     protected void shutdown() {
         m_shutdown = true;
+
+        try {
+            // wait a moment for the thread to shut down (if it can)
+            Thread.sleep(100);
+        } catch (final InterruptedException ignore) {
+
+        }
+
+        interrupt();
+        try {
+            join();
+        } catch (final InterruptedException ignore) {
+
+        }
     }
 
     /**
