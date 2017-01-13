@@ -15,6 +15,8 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
@@ -24,7 +26,7 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
  */
 public class BarrierGetStatusResponse extends AbstractResponse {
     private int m_barrierId;
-    private short[] m_barrierStatus;
+    private BarrierStatus m_barrierStatus;
 
     /**
      * Creates an instance of BarrierGetStatusResponse.
@@ -43,7 +45,7 @@ public class BarrierGetStatusResponse extends AbstractResponse {
      * @param p_barrierStatus
      *     Status of the barrier
      */
-    public BarrierGetStatusResponse(final BarrierGetStatusRequest p_request, final short[] p_barrierStatus) {
+    public BarrierGetStatusResponse(final BarrierGetStatusRequest p_request, final BarrierStatus p_barrierStatus) {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_STATUS_RESPONSE);
 
         m_barrierId = p_request.getBarrierId();
@@ -60,35 +62,33 @@ public class BarrierGetStatusResponse extends AbstractResponse {
     }
 
     /**
-     * Get the barrier status.
-     * First value is the number of signed on peers.
+     * Get the barrier status..
      *
      * @return Barrier status.
      */
-    public short[] getBarrierStatus() {
+    public BarrierStatus getBarrierStatus() {
         return m_barrierStatus;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + Integer.BYTES + m_barrierStatus.length * Short.BYTES;
+        return Integer.BYTES + m_barrierStatus.sizeofObject();
     }
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
+        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+
         p_buffer.putInt(m_barrierId);
-        p_buffer.putInt(m_barrierStatus.length);
-        for (short barrierStatus : m_barrierStatus) {
-            p_buffer.putShort(barrierStatus);
-        }
+        exporter.exportObject(m_barrierStatus);
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
+        MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+
         m_barrierId = p_buffer.getInt();
-        m_barrierStatus = new short[p_buffer.getInt()];
-        for (int i = 0; i < m_barrierStatus.length; i++) {
-            m_barrierStatus[i] = p_buffer.getShort();
-        }
+        m_barrierStatus = new BarrierStatus();
+        importer.importObject(m_barrierStatus);
     }
 }

@@ -39,6 +39,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.OverlayPeer;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlaySuperpeer;
 import de.hhu.bsinfo.dxram.lookup.overlay.cache.CacheTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -604,7 +605,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *     Custom data to pass along with the sign on
      * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
      */
-    public Pair<short[], long[]> barrierSignOn(final int p_barrierId, final long p_customData) {
+    public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData) {
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             // #if LOGGER >= ERROR
             LOGGER.error("A superpeer is not allowed to sign on to barriers");
@@ -620,9 +621,9 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *
      * @param p_barrierId
      *     Id of the barrier.
-     * @return Array of currently signed on peers with the first index being the number of signed on peers or null on error.
+     * @return BarrierStatus or null if barrier does not exist
      */
-    public short[] barrierGetStatus(final int p_barrierId) {
+    public BarrierStatus barrierGetStatus(final int p_barrierId) {
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             // #if LOGGER >= ERROR
             LOGGER.error("A superpeer is not allowed get status of barriers");

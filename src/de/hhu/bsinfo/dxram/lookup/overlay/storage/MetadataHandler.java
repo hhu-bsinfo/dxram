@@ -1177,38 +1177,19 @@ public final class MetadataHandler {
     }
 
     /**
-     * Returns the number of peers signed-on on this barrier.
+     * Returns the sign on status of a barrier
      *
      * @param p_nodeID
      *     the creator
      * @param p_barrierID
      *     the barrier ID
-     * @return array with NodeIDs that already signed on. First index element is the count of signed on peers
+     * @return BarrierStatus with results of the sign or null if the specified barrier does not exist
      */
-    public short[] getSignedOnPeersOfBarrier(final short p_nodeID, final int p_barrierID) {
-        short[] ret;
+    public BarrierStatus getSignOnStatusOfBarrier(final short p_nodeID, final int p_barrierID) {
+        BarrierStatus ret;
 
         m_dataLock.readLock().lock();
-        ret = m_barriers.getSignedOnPeers(p_nodeID, p_barrierID);
-        m_dataLock.readLock().unlock();
-
-        return ret;
-    }
-
-    /**
-     * Returns the custom data of all signed-on peers.
-     *
-     * @param p_nodeID
-     *     the creator
-     * @param p_barrierID
-     *     the barrier ID
-     * @return on success an array with the currently available custom data (sorted by order the peers logged in)
-     */
-    public long[] getCustomDataOfBarrier(final short p_nodeID, final int p_barrierID) {
-        long[] ret;
-
-        m_dataLock.readLock().lock();
-        ret = m_barriers.getBarrierCustomData(p_nodeID, p_barrierID);
+        ret = m_barriers.getBarrierSignOnStatus(p_nodeID, p_barrierID);
         m_dataLock.readLock().unlock();
 
         return ret;

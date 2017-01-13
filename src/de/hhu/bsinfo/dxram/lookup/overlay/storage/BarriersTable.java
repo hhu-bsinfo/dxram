@@ -210,19 +210,6 @@ public class BarriersTable extends AbstractMetadata {
     }
 
     /**
-     * Get the custom data of a barrier that is passed along on barrier sign ons.
-     *
-     * @param p_nodeId
-     *     the creator
-     * @param p_barrierId
-     *     Id of the barrier to get the custom data of.
-     * @return On success returns an array with the currently available custom data (sorted by order the peers logged in)
-     */
-    public long[] getBarrierCustomData(final short p_nodeId, final int p_barrierId) {
-        return m_barrierNodes[p_nodeId & 0xFFFF].getBarrierCustomData(p_barrierId);
-    }
-
-    /**
      * Allocate a new barrier.
      *
      * @param p_nodeId
@@ -301,17 +288,17 @@ public class BarriersTable extends AbstractMetadata {
     }
 
     /**
-     * Get the list of currently signed on peers from a barrier.
-     * The first item (index 0) is the sign on count.
+     * Get the status of the barrier sign on process
      *
      * @param p_nodeId
      *     the creator
      * @param p_barrierId
      *     Id of the barrier to get.
-     * @return Array with node ids that already signed on. First index element is the count of signed on peers.
+     * @return BarrierStatus with the status of the sign on process on the selected barrier or
+     * null if the barrier does not exist
      */
-    short[] getSignedOnPeers(final short p_nodeId, final int p_barrierId) {
-        return m_barrierNodes[p_nodeId & 0xFFFF].getSignedOnPeers(p_barrierId);
+    BarrierStatus getBarrierSignOnStatus(final short p_nodeId, final int p_barrierId) {
+        return m_barrierNodes[p_nodeId & 0xFFFF].getBarrierSignOnStatus(p_barrierId);
     }
 
     /**
@@ -594,14 +581,13 @@ public class BarriersTable extends AbstractMetadata {
         }
 
         /**
-         * Get the list of currently signed on peers from a barrier.
-         * The first item (index 0) is the sign on count.
+         * Get the status of the barrier sign on process
          *
          * @param p_barrierId
-         *     Id of the barrier to get.
-         * @return Array with node ids that already signed on. First index element is the count of signed on peers.
+         *     Id of the barrier to get the status from
+         * @return Current barrier status or null if barrier does not exist
          */
-        private short[] getSignedOnPeers(final int p_barrierId) {
+        private BarrierStatus getBarrierSignOnStatus(final int p_barrierId) {
             if (p_barrierId == BarrierID.INVALID_ID) {
                 return null;
             }
@@ -617,33 +603,19 @@ public class BarriersTable extends AbstractMetadata {
                 return null;
             }
 
-            return m_barrierState[id];
-        }
+            m_barrierLocks[id].lock();
 
-        /**
-         * Get the custom data of a barrier that is passed along on barrier sign ons.
-         *
-         * @param p_barrierId
-         *     Id of the barrier to get the custom data of.
-         * @return On success returns an array with the currently available custom data (sorted by order the peers logged in)
-         */
-        private long[] getBarrierCustomData(final int p_barrierId) {
-            if (p_barrierId == BarrierID.INVALID_ID) {
-                return null;
-            }
+            short signedOnPeers = m_barrierState[id][0];
+            short[] nodeIds = new short[m_barrierData[id].length];
+            long[] data = new long[m_barrierData[id].length];
 
-            short nodeId = BarrierID.getOwnerID(p_barrierId);
-            int id = BarrierID.getBarrierID(p_barrierId);
+            // first element of the state is the number of signed on peers, omit
+            System.arraycopy(m_barrierState[id], 1, nodeIds, 0, m_barrierState[id].length - 1);
+            System.arraycopy(m_barrierData[id], 0, data, 0, m_barrierData[id].length);
 
-            if (nodeId != m_nodeId) {
-                return null;
-            }
+            m_barrierLocks[id].unlock();
 
-            if (id >= m_barrierState.length || m_barrierState[id] == null) {
-                return null;
-            }
-
-            return m_barrierData[id];
+            return new BarrierStatus(signedOnPeers, nodeIds, data);
         }
 
         /**

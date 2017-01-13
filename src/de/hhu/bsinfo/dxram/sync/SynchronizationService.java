@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
-import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 
 /**
  * Service providing mechanisms for synchronizing.
@@ -78,9 +78,9 @@ public class SynchronizationService extends AbstractDXRAMService {
      *     Id of the barrier to sign on to.
      * @param p_customData
      *     Custom data to pass along with the sign on
-     * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
+     * @return BarrierStatus, null on error like barrier does not exist
      */
-    public Pair<short[], long[]> barrierSignOn(final int p_barrierId, final long p_customData) {
+    public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData) {
         return m_lookup.barrierSignOn(p_barrierId, p_customData);
     }
 
@@ -89,9 +89,9 @@ public class SynchronizationService extends AbstractDXRAMService {
      *
      * @param p_barrierId
      *     Id of the barrier.
-     * @return Array of currently signed on peers with the first index being the number of signed on peers or null on error.
+     * @return BarrierStatus, null on error like barrier does not exist
      */
-    public short[] barrierGetStatus(final int p_barrierId) {
+    public BarrierStatus barrierGetStatus(final int p_barrierId) {
         return m_lookup.barrierGetStatus(p_barrierId);
     }
 

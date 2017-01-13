@@ -81,6 +81,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageRemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusResponse;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -839,7 +840,7 @@ public class OverlayPeer implements MessageReceiver {
      *     Custom data to pass along with the sign on
      * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
      */
-    public Pair<short[], long[]> barrierSignOn(final int p_barrierId, final long p_customData) {
+    public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData) {
         if (p_barrierId == BarrierID.INVALID_ID) {
             return null;
         }
@@ -895,7 +896,7 @@ public class OverlayPeer implements MessageReceiver {
 
         m_network.unregister(BarrierReleaseMessage.class, msg);
 
-        return new Pair<>(releaseMessage[0].getSignedOnPeers(), releaseMessage[0].getCustomData());
+        return releaseMessage[0].getBarrierResults();
     }
 
     /**
@@ -903,9 +904,9 @@ public class OverlayPeer implements MessageReceiver {
      *
      * @param p_barrierId
      *     Id of the barrier.
-     * @return Short array with currently signed on peers with the first index being the number of signed on peers
+     * @return Status of the barrier or null if the barrier does not exist
      */
-    public short[] barrierGetStatus(final int p_barrierId) {
+    public BarrierStatus barrierGetStatus(final int p_barrierId) {
         if (p_barrierId == BarrierID.INVALID_ID) {
             return null;
         }

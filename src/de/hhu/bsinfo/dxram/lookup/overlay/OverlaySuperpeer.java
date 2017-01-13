@@ -89,6 +89,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageRemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusResponse;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarriersTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.MetadataHandler;
@@ -1827,19 +1828,20 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         // release all if this was the last sign on
         if (res == 0) {
-            short[] signedOnPeers = m_metadata.getSignedOnPeersOfBarrier(m_nodeID, barrierId);
-            long[] customData = m_metadata.getCustomDataOfBarrier(m_nodeID, barrierId);
-            for (int i = 1; i < signedOnPeers.length; i++) {
-                BarrierReleaseMessage message = new BarrierReleaseMessage(signedOnPeers[i], barrierId, signedOnPeers, customData);
+            BarrierStatus barrierStatus = m_metadata.getSignOnStatusOfBarrier(m_nodeID, barrierId);
+
+            barrierStatus.forEachSignedOnPeer((p_nodeId, p_customData) -> {
+                BarrierReleaseMessage message = new BarrierReleaseMessage(p_nodeId, barrierId, barrierStatus);
 
                 try {
                     m_network.sendMessage(message);
                 } catch (final NetworkException e) {
                     // #if LOGGER >= ERROR
-                    LOGGER.error("Releasing peer 0x%X of barrier 0x%X failed: %s", signedOnPeers[i], barrierId, e);
+                    LOGGER.error("Releasing peer 0x%X of barrier 0x%X failed: %s", p_nodeId, barrierId, e);
                     // #endif /* LOGGER >= ERROR */
                 }
-            }
+            });
+
             // reset for reuse
             m_metadata.resetBarrier(m_nodeID, barrierId);
         }
@@ -1853,14 +1855,14 @@ public class OverlaySuperpeer implements MessageReceiver {
      */
 
     private void incomingBarrierGetStatusRequest(final BarrierGetStatusRequest p_request) {
-        short[] signedOnPeers = m_metadata.getSignedOnPeersOfBarrier(m_nodeID, p_request.getBarrierId());
+        BarrierStatus barrierStatus = m_metadata.getSignOnStatusOfBarrier(m_nodeID, p_request.getBarrierId());
         BarrierGetStatusResponse response;
-        if (signedOnPeers == null) {
+        if (barrierStatus == null) {
             // barrier does not exist
-            response = new BarrierGetStatusResponse(p_request, new short[0]);
+            response = new BarrierGetStatusResponse(p_request, new BarrierStatus());
             response.setStatusCode((byte) -1);
         } else {
-            response = new BarrierGetStatusResponse(p_request, signedOnPeers);
+            response = new BarrierGetStatusResponse(p_request, barrierStatus);
         }
 
         try {
