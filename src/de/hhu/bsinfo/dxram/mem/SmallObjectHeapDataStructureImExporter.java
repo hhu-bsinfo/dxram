@@ -107,6 +107,11 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public void writeString(final String p_str) {
+        writeByteArray(p_str.getBytes());
+    }
+
+    @Override
     public int writeBytes(final byte[] p_array) {
         return writeBytes(p_array, 0, p_array.length);
     }
@@ -164,6 +169,11 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public String readString() {
+        return new String(readByteArray());
+    }
+
+    @Override
     public int readBytes(final byte[] p_array) {
         return readBytes(p_array, 0, p_array.length);
     }
@@ -175,6 +185,34 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
             m_offset += read * Byte.BYTES;
         }
         return read;
+    }
+
+    @Override
+    public byte[] readByteArray() {
+        byte[] arr = new byte[readInt()];
+        readBytes(arr);
+        return arr;
+    }
+
+    @Override
+    public short[] readShortArray() {
+        short[] arr = new short[readInt()];
+        readShorts(arr);
+        return arr;
+    }
+
+    @Override
+    public int[] readIntArray() {
+        int[] arr = new int[readInt()];
+        readInts(arr);
+        return arr;
+    }
+
+    @Override
+    public long[] readLongArray() {
+        long[] arr = new long[readInt()];
+        readLongs(arr);
+        return arr;
     }
 
     @Override
@@ -217,6 +255,30 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
             m_offset += written * Long.BYTES;
         }
         return written;
+    }
+
+    @Override
+    public void writeByteArray(byte[] p_array) {
+        writeInt(p_array.length);
+        writeBytes(p_array);
+    }
+
+    @Override
+    public void writeShortArray(short[] p_array) {
+        writeInt(p_array.length);
+        writeShorts(p_array);
+    }
+
+    @Override
+    public void writeIntArray(int[] p_array) {
+        writeInt(p_array.length);
+        writeInts(p_array);
+    }
+
+    @Override
+    public void writeLongArray(long[] p_array) {
+        writeInt(p_array.length);
+        writeLongs(p_array);
     }
 
     @Override
