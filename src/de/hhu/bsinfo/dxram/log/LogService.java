@@ -61,6 +61,26 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
         return m_log.getCurrentUtilization();
     }
 
+    /**
+     * Returns the current utilization of primary log and all secondary logs
+     *
+     * @return the current utilization
+     */
+    public String getCurrentUtilization(final short p_nid) {
+        GetUtilizationRequest request = new GetUtilizationRequest(p_nid);
+
+        try {
+            m_network.sendSync(request);
+        } catch (NetworkException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Sending GetUtilizationRequest failed", e);
+            // #endif /* LOGGER >= ERROR */
+        }
+
+        GetUtilizationResponse response = (GetUtilizationResponse) request.getResponse();
+        return response.getUtilization();
+    }
+
     @Override
     public void onIncomingMessage(final AbstractMessage p_message) {
         if (p_message != null) {
@@ -158,7 +178,10 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
         try {
             m_network.sendMessage(new InitResponse(p_request, res));
         } catch (final NetworkException e) {
+            // #if LOGGER >= ERROR
             LOGGER.error("Could not acknowledge initilization of backup range", e);
+            // #endif /* LOGGER >= ERROR */
+
         }
     }
 
