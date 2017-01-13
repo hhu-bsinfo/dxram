@@ -343,7 +343,12 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             LOGGER.debug("Executing task: %s", task);
             // #endif /* LOGGER >= DEBUG */
 
-            result = task.execute(new TaskContext(m_ctxData, this, getServiceAccessor()));
+            try {
+                result = task.execute(new TaskContext(m_ctxData, this, getServiceAccessor()));
+            } catch (final Exception e) {
+                LOGGER.error("Executing task failed, exception", e);
+                result = -1;
+            }
 
             syncStepMaster();
         } else {
