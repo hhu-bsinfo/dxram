@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
  * Access to a singleton of an ExecutorService
  * for usage inside of the network package
  * NOTE:
- * The currently running Task has to stay in the task map.
+ * The currently running TaskScript has to stay in the task map.
  * Otherwise the Queue will never be used.
  *
  * @author Marc Ewert, mark.ewert@hhu.de, 14.08.14
@@ -63,7 +63,7 @@ final class TaskExecutor {
      * Add a task to the queue to be executed
      *
      * @param p_runnable
-     *     Task to be executed
+     *     TaskScript to be executed
      */
     public void execute(final Runnable p_runnable) {
         try {

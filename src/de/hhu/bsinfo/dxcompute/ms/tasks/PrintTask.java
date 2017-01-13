@@ -13,40 +13,65 @@
 
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
+import com.google.gson.annotations.Expose;
+
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
-import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.serialization.Exporter;
+import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
- * Print information about the current slave to the console.
+ * Print a message to the console.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class SlavePrintInfoTaskPayload extends TaskPayload {
+public class PrintTask implements Task {
+
+    @Expose
+    private String m_msg = "";
 
     /**
      * Constructor
      */
-    public SlavePrintInfoTaskPayload() {
-        super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_SLAVE_PRINT_INFO_TASK, NUM_REQUIRED_SLAVES_ARBITRARY);
+    public PrintTask() {
+
+    }
+
+    /**
+     * Constructor
+     *
+     * @param p_msg
+     *     Message to print
+     */
+    public PrintTask(final String p_msg) {
+        m_msg = p_msg;
     }
 
     @Override
     public int execute(final TaskContext p_ctx) {
-
-        System.out.println("Task " + getClass().getSimpleName() + ": ");
-        System.out.println("OwnSlaveId: " + p_ctx.getCtxData().getSlaveId());
-        System.out.println("List of slaves in current compute group " + p_ctx.getCtxData().getComputeGroupId() + ": ");
-        short[] slaves = p_ctx.getCtxData().getSlaveNodeIds();
-        for (int i = 0; i < slaves.length; i++) {
-            System.out.println(i + ": " + NodeID.toHexString(slaves[i]));
-        }
-
+        System.out.println(m_msg);
         return 0;
     }
 
     @Override
     public void handleSignal(final Signal p_signal) {
         // ignore signals
+    }
+
+    @Override
+    public void exportObject(final Exporter p_exporter) {
+        p_exporter.writeString(m_msg);
+    }
+
+    @Override
+    public void importObject(final Importer p_importer) {
+        m_msg = p_importer.readString();
+    }
+
+    @Override
+    public int sizeofObject() {
+        return ObjectSizeUtil.sizeofString(m_msg);
     }
 }

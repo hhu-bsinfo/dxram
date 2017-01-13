@@ -26,9 +26,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
-import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
@@ -40,12 +39,13 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * Load a partition index of a partitioned graph for one compute group. The index is
  * used to identify/convert single vertices or ranges of a partitioned graph on loading
  * the graph data.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
+public class GraphLoadPartitionIndexTask implements Task {
     public static final String MS_PART_INDEX_IDENT = "GPI";
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(GraphLoadPartitionIndexTaskPayload.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(GraphLoadPartitionIndexTask.class.getSimpleName());
 
     @Expose
     private String m_pathFile = "./";
@@ -54,20 +54,19 @@ public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
 
     /**
      * Constructor
-     * @param p_numReqSlaves
-     *            Number of slaves required to run this task
+     *
      * @param p_pathFile
-     *            Partition index file to load
+     *     Partition index file to load
      */
-    public GraphLoadPartitionIndexTaskPayload(final short p_numReqSlaves, final String p_pathFile) {
-        super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_PART_INDEX, p_numReqSlaves);
+    public GraphLoadPartitionIndexTask(final String p_pathFile) {
         m_pathFile = p_pathFile;
     }
 
     /**
      * Set the path of the partition index file to load.
+     *
      * @param p_path
-     *            Path of the file to load.
+     *     Path of the file to load.
      */
     public void setPartitionIndexFilePath(final String p_path) {
         m_pathFile = p_path;
@@ -116,8 +115,8 @@ public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
             nameserviceService.register(graphPartIndex, MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId());
 
             // #if LOGGER >= INFO
-            LOGGER.info("Successfully loaded and stored graph partition index, nameservice entry name %s:\n%s", MS_PART_INDEX_IDENT +
-                    p_ctx.getCtxData().getComputeGroupId(), graphPartIndex);
+            LOGGER.info("Successfully loaded and stored graph partition index, nameservice entry name %s:\n%s",
+                MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId(), graphPartIndex);
             // #endif /* LOGGER >= INFO */
         }
 
@@ -136,16 +135,12 @@ public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
 
     @Override
     public void exportObject(final Exporter p_exporter) {
-        super.exportObject(p_exporter);
-
         p_exporter.writeInt(m_pathFile.length());
         p_exporter.writeBytes(m_pathFile.getBytes(StandardCharsets.US_ASCII));
     }
 
     @Override
     public void importObject(final Importer p_importer) {
-        super.importObject(p_importer);
-
         int strLength = p_importer.readInt();
         byte[] tmp = new byte[strLength];
         p_importer.readBytes(tmp);
@@ -154,15 +149,16 @@ public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
 
     @Override
     public int sizeofObject() {
-        return super.sizeofObject() + Integer.BYTES + m_pathFile.length();
+        return Integer.BYTES + m_pathFile.length();
     }
 
     /**
      * Load the graph partition index from one or multiple graph partition index files from a specific path.
+     *
      * @param p_ctx
-     *            Task context.
+     *     TaskScript context.
      * @param p_path
-     *            Path containing the graph partition index file(s).
+     *     Path containing the graph partition index file(s).
      * @return Graph partition index object with partition entries loaded from the files.
      */
     private GraphPartitionIndex loadGraphPartitionIndexFromIndexFiles(final TaskContext p_ctx, final String p_path) {
@@ -183,10 +179,11 @@ public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
     /**
      * Read the graph partition index from a single partition index file. The file can contain multiple entries (one per
      * line)
+     *
      * @param p_ctx
-     *            Task context.
+     *     TaskScript context.
      * @param p_pathFile
-     *            Path + filename of the index file to read.
+     *     Path + filename of the index file to read.
      * @return List of entries read from the file or null on error.
      */
     private ArrayList<GraphPartitionIndex.Entry> readIndexEntriesFromFile(final TaskContext p_ctx, final String p_pathFile) {
@@ -227,8 +224,8 @@ public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
 
             int partitionId = Integer.parseInt(tokens[0]);
             GraphPartitionIndex.Entry entry =
-                    new GraphPartitionIndex.Entry(slaves[partitionId], partitionId, Long.parseLong(tokens[1]), Long.parseLong(tokens[2]),
-                            Long.parseLong(tokens[3]));
+                new GraphPartitionIndex.Entry(slaves[partitionId], partitionId, Long.parseLong(tokens[1]), Long.parseLong(tokens[2]),
+                    Long.parseLong(tokens[3]));
             entries.add(entry);
         }
 

@@ -16,64 +16,67 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Wait for specified amount of time.
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
+ * Empty task that returns a random return value within the specified range
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 13.01.2017
  */
-public class WaitTaskPayload extends TaskPayload {
+public class RandomReturnValueTask implements Task {
 
     @Expose
-    private int m_waitMs;
+    private int m_begin = 0;
+    @Expose
+    private int m_end = 0;
 
     /**
      * Constructor
-     * @param p_numReqSlaves
-     *            Num of slaves request to run this job
-     * @param p_timeMs
-     *            Amount of time to wait in ms.
      */
-    public WaitTaskPayload(final short p_numReqSlaves, final int p_timeMs) {
-        super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK, p_numReqSlaves);
-        m_waitMs = p_timeMs;
+    public RandomReturnValueTask() {
+
+    }
+
+    /**
+     * Constructor
+     *
+     * @param p_begin
+     *     Begin of the random range (including)
+     * @param p_end
+     *     End of the random range (including)
+     */
+    public RandomReturnValueTask(final int p_begin, final int p_end) {
+        m_begin = p_begin;
+        m_end = p_end;
     }
 
     @Override
-    public int execute(final TaskContext p_ctx) {
-        try {
-            Thread.sleep(m_waitMs);
-        } catch (final InterruptedException e) {
-            return -1;
-        }
-
-        return 0;
+    public int execute(TaskContext p_ctx) {
+        return (int) (Math.random() * (m_end - m_begin + 1) + m_begin);
     }
 
     @Override
-    public void handleSignal(final Signal p_signal) {
-        // ignore signals
+    public void handleSignal(Signal p_signal) {
+        // nothing to handle
     }
 
     @Override
-    public void exportObject(final Exporter p_exporter) {
-        super.exportObject(p_exporter);
-
-        p_exporter.writeInt(m_waitMs);
+    public void exportObject(Exporter p_exporter) {
+        p_exporter.writeInt(m_begin);
+        p_exporter.writeInt(m_end);
     }
 
     @Override
-    public void importObject(final Importer p_importer) {
-        super.importObject(p_importer);
-
-        m_waitMs = p_importer.readInt();
+    public void importObject(Importer p_importer) {
+        m_begin = p_importer.readInt();
+        m_end = p_importer.readInt();
     }
 
     @Override
     public int sizeofObject() {
-        return super.sizeofObject() + Integer.BYTES;
+        return 2 * Integer.BYTES;
     }
 }

@@ -27,9 +27,12 @@ import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
+import de.hhu.bsinfo.utils.serialization.Exporter;
+import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Print the statistics to a file.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
 public class PrintStatisticsToFileTask extends PrintStatisticsTask {
@@ -37,15 +40,23 @@ public class PrintStatisticsToFileTask extends PrintStatisticsTask {
     private static final Logger LOGGER = LogManager.getFormatterLogger(PrintStatisticsToFileTask.class.getSimpleName());
 
     @Expose
-    private String m_path;
+    private String m_path = "";
 
     /**
      * Constructor
+     */
+    public PrintStatisticsToFileTask() {
+
+    }
+
+    /**
+     * Constructor
+     *
      * @param p_path
-     *            Filepath of the file to print to.
+     *     Filepath of the file to print to.
      */
     public PrintStatisticsToFileTask(final String p_path) {
-        super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_FILE_TASK);
+        super();
         m_path = p_path;
     }
 
@@ -100,5 +111,20 @@ public class PrintStatisticsToFileTask extends PrintStatisticsTask {
     @Override
     public void handleSignal(final Signal p_signal) {
         // ignore signals
+    }
+
+    @Override
+    public void exportObject(final Exporter p_exporter) {
+        p_exporter.writeString(m_path);
+    }
+
+    @Override
+    public void importObject(final Importer p_importer) {
+        m_path = p_importer.readString();
+    }
+
+    @Override
+    public int sizeofObject() {
+        return Integer.BYTES + m_path.getBytes().length;
     }
 }

@@ -19,7 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 
-import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
@@ -27,32 +27,30 @@ import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Base class to print the statistics.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-abstract class PrintStatisticsTask extends TaskPayload {
+abstract class PrintStatisticsTask implements Task {
 
     /**
      * Constructor
      * Expecting a default constructor for the sub classes extending this
      * base class, otherwise the createInstance call won't work.
      * Make sure to register each task payload implementation prior usage.
-     * @param p_typeId
-     *            Type id
-     * @param p_subtypeId
-     *            Subtype id
      */
-    PrintStatisticsTask(final short p_typeId, final short p_subtypeId) {
-        super(p_typeId, p_subtypeId, NUM_REQUIRED_SLAVES_ARBITRARY);
+    PrintStatisticsTask() {
+
     }
 
     /**
      * Print the statistics to a stream.
+     *
      * @param p_outputStream
-     *            Output stream to print to.
+     *     Output stream to print to.
      * @param p_bootService
-     *            BootService
+     *     BootService
      * @param p_statisticsService
-     *            StatisticsService
+     *     StatisticsService
      */
     static void printStatisticsToOutput(final PrintStream p_outputStream, final BootService p_bootService, final StatisticsService p_statisticsService) {
         DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");

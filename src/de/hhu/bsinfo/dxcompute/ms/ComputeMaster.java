@@ -26,8 +26,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
-import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
-import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskScriptRequest;
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskScriptResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxcompute.ms.messages.SignalMessage;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
@@ -37,16 +37,17 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Implementation of a master. The master accepts tasks, pushes them to a queue and distributes them
  * to the conencted slaves for execution.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
 class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
@@ -57,32 +58,33 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
     private Vector<Short> m_signedOnSlaves = new Vector<>();
     private Lock m_joinLock = new ReentrantLock(false);
-    private ConcurrentLinkedQueue<Task> m_tasks = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<TaskScriptState> m_taskScripts = new ConcurrentLinkedQueue<>();
     private AtomicInteger m_taskCount = new AtomicInteger(0);
     private int m_executeBarrierIdentifier;
     private int m_executionBarrierId;
 
-    private volatile int m_tasksProcessed;
+    private volatile int m_taskScriptsProcessed;
 
     /**
      * Constructor
+     *
      * @param p_computeGroupId
-     *            Compute group id the instance is assigned to.
+     *     Compute group id the instance is assigned to.
      * @param p_pingIntervalMs
-     *            Ping interval in ms to check back with the compute group if still alive.
+     *     Ping interval in ms to check back with the compute group if still alive.
      * @param p_serviceAccessor
-     *            Accessor to services for compute tasks.
+     *     Accessor to services for compute tasks.
      * @param p_network
-     *            NetworkComponent
+     *     NetworkComponent
      * @param p_nameservice
-     *            NameserviceComponent
+     *     NameserviceComponent
      * @param p_boot
-     *            BootComponent
+     *     BootComponent
      * @param p_lookup
-     *            LookupComponent
+     *     LookupComponent
      */
     ComputeMaster(final short p_computeGroupId, final long p_pingIntervalMs, final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
-            final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
+        final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
         super(ComputeRole.MASTER, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_nameservice, p_boot, p_lookup);
 
         p_network.register(SlaveJoinRequest.class, this);
@@ -94,6 +96,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
     /**
      * Get a list of currently connected salves.
+     *
      * @return List of currently connected slaves (node ids).
      */
     ArrayList<Short> getConnectedSlaves() {
@@ -107,13 +110,14 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
     /**
      * Submit a task to this master.
-     * @param p_task
-     *            Task to submit.
+     *
+     * @param p_taskScriptState
+     *     TaskScriptState containing the script to submit.
      * @return True if submission was successful, false if the max number of tasks queued is reached.
      */
-    boolean submitTask(final Task p_task) {
+    boolean submitTask(final TaskScriptState p_taskScriptState) {
         if (m_taskCount.get() < MAX_TASK_COUNT) {
-            m_tasks.add(p_task);
+            m_taskScripts.add(p_taskScriptState);
             m_taskCount.incrementAndGet();
             return true;
         } else {
@@ -123,6 +127,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
     /**
      * Get the number of tasks currently in the queue.
+     *
      * @return Number of tasks in the queue.
      */
     int getNumberOfTasksInQueue() {
@@ -130,11 +135,12 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
     }
 
     /**
-     * Get the total amount of tasks processed so far.
+     * Get the total amount of task scripts processed so far.
+     *
      * @return Number of tasks processed.
      */
-    int getTotalTasksProcessed() {
-        return m_tasksProcessed;
+    int getTotalTaskScriptsProcessed() {
+        return m_taskScriptsProcessed;
     }
 
     @Override
@@ -201,7 +207,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
      */
     private void stateSetup() {
         // #if LOGGER >= INFO
-        LOGGER.info("Setting up master of compute group " + m_computeGroupId);
+        LOGGER.info("Setting up master of compute group %d", m_computeGroupId);
         // #endif /* LOGGER >= INFO */
 
         // check first, if there is already a master registered for this compute group
@@ -261,34 +267,33 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
      */
     private void stateExecute() {
 
-        // get next task
+        // get next taskScript
         m_taskCount.decrementAndGet();
-        Task task = m_tasks.poll();
-        TaskPayload taskPayload = task.getPayload();
-        if (taskPayload == null) {
+        TaskScriptState taskScriptState = m_taskScripts.poll();
+        TaskScript taskScript = taskScriptState.getTaskScript();
+        if (taskScript == null) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Cannot proceed with task %s, missing payload", task);
+            LOGGER.error("Cannot proceed with task script state %s, missing script", taskScriptState);
             // #endif /* LOGGER >= ERROR */
             m_state = State.STATE_IDLE;
             return;
         }
 
-        // check if enough slaves are available for the task to run
-        if (task.getPayload().getNumRequiredSlaves() != TaskPayload.NUM_REQUIRED_SLAVES_ARBITRARY &&
-                task.getPayload().getNumRequiredSlaves() > m_signedOnSlaves.size()) {
+        // check if enough slaves are available for the tasks cript to run
+        if (taskScript.getNumRequiredSlaves() != TaskScript.NUM_REQUIRED_SLAVES_ARBITRARY && taskScript.getNumRequiredSlaves() > m_signedOnSlaves.size()) {
             // #if LOGGER >= INFO
-            LOGGER.info("Not enough slaves available for task %s waiting...", task);
+            LOGGER.info("Not enough slaves available for task script %s waiting...", taskScript);
             // #endif /* LOGGER >= INFO */
 
-            while (task.getPayload().getNumRequiredSlaves() > m_signedOnSlaves.size()) {
+            while (taskScript.getNumRequiredSlaves() > m_signedOnSlaves.size()) {
                 // #if LOGGER >= DEBUG
-                LOGGER.debug("Not enough slaves available for task %s waiting (%d/%d)...", task, m_signedOnSlaves.size(), task.getPayload()
-                        .getNumRequiredSlaves());
+                LOGGER.debug("Not enough slaves available for task script %s waiting (%d/%d)...", taskScript, m_signedOnSlaves.size(),
+                    taskScript.getNumRequiredSlaves());
                 // #endif /* LOGGER >= DEBUG */
 
                 try {
                     Thread.sleep(2000);
-                } catch (InterruptedException e) {
+                } catch (final InterruptedException ignored) {
                 }
 
                 // bad but might happen that a slave goes offline
@@ -300,7 +305,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
         m_joinLock.lock();
 
         // #if LOGGER >= INFO
-        LOGGER.info("Starting execution of task %s with %d slaves", task, m_signedOnSlaves.size());
+        LOGGER.info("Starting execution of task script %s with %d slaves", taskScript, m_signedOnSlaves.size());
         // #endif /* LOGGER >= INFO */
 
         short[] slaves = new short[m_signedOnSlaves.size()];
@@ -308,17 +313,17 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
             slaves[i] = m_signedOnSlaves.get(i);
         }
 
-        task.notifyListenersExecutionStarts();
+        taskScriptState.notifyListenersExecutionStarts();
 
-        // send task to slaves
+        // send task script to slaves
         short numberOfSlavesOnExecution = 0;
         // avoid clashes with other compute groups, but still alter the flag on every next sync
         m_executeBarrierIdentifier = (m_executeBarrierIdentifier + 1) % 2 + m_computeGroupId * 2;
         for (short slave : slaves) {
             TaskContextData ctxData = new TaskContextData(m_computeGroupId, numberOfSlavesOnExecution, slaves);
 
-            // pass barrier identifier for syncing after task along
-            ExecuteTaskRequest request = new ExecuteTaskRequest(slave, m_executeBarrierIdentifier, ctxData, taskPayload);
+            // pass barrier identifier for syncing after taskScript along
+            ExecuteTaskScriptRequest request = new ExecuteTaskScriptRequest(slave, m_executeBarrierIdentifier, ctxData, taskScript);
 
             try {
                 m_network.sendSync(request);
@@ -331,11 +336,12 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
                 continue;
             }
 
-            ExecuteTaskResponse response = (ExecuteTaskResponse) request.getResponse();
+            ExecuteTaskScriptResponse response = (ExecuteTaskScriptResponse) request.getResponse();
             if (response.getStatusCode() != 0) {
                 // exclude slave from execution
                 // #if LOGGER >= ERROR
-                LOGGER.error("Slave 0x%X response %d on execution of task %s excluding from current execution", slave, response.getStatusCode(), task);
+                LOGGER.error("Slave 0x%X response %d on execution of task script %s excluding from current execution", slave, response.getStatusCode(),
+                    taskScript);
                 // #endif /* LOGGER >= ERROR */
             } else {
                 numberOfSlavesOnExecution++;
@@ -343,39 +349,71 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
         }
 
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Syncing with %d/%d slaves...", numberOfSlavesOnExecution, m_signedOnSlaves.size());
+        LOGGER.debug("Executing sync steps with %d/%d slaves...", numberOfSlavesOnExecution, m_signedOnSlaves.size());
         // #endif /* LOGGER >= DEBUG */
 
-        Pair<short[], long[]> result = m_lookup.barrierSignOn(m_executionBarrierId, -1);
-
         int[] returnCodes;
-        if (result != null) {
+        do {
             // #if LOGGER >= DEBUG
-            LOGGER.debug("Syncing done");
+            LOGGER.debug("Awaiting sync step...");
             // #endif /* LOGGER >= DEBUG */
 
-            // grab return codes from barrier
-            returnCodes = new int[slaves.length];
+            BarrierStatus result = m_lookup.barrierSignOn(m_executionBarrierId, -1);
 
-            // sort them to match the indices of the slave list
-            for (int j = 0; j < slaves.length; j++) {
-                for (int i = 0; i < result.first().length; i++) {
-                    if (result.first()[i] == slaves[j]) {
-                        returnCodes[j] = (int) result.second()[i];
-                        break;
+            if (result != null) {
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Sync step done");
+                // #endif /* LOGGER >= DEBUG */
+
+                final boolean[] allDone = {true};
+                result.forEachSignedOnPeer((p_signedOnPeer, p_customData) -> {
+                    if ((int) (p_customData >> 32L) > 0) {
+                        allDone[0] = false;
+                    }
+                });
+
+                if (!allDone[0]) {
+                    continue;
+                }
+
+                // one last sync step to tell the slaves everyone finished
+                result = m_lookup.barrierSignOn(m_executionBarrierId, 0);
+
+                if (result != null) {
+                    // grab return codes from barrier
+                    returnCodes = new int[slaves.length];
+
+                    result.forEachSignedOnPeer((p_signedOnPeer, p_customData) -> {
+                        // sort them to match the indices of the slave list
+                        for (int i = 0; i < slaves.length; i++) {
+                            if (p_signedOnPeer == slaves[i]) {
+                                returnCodes[i] = (int) p_customData;
+                            }
+                        }
+                    });
+                } else {
+                    returnCodes = new int[slaves.length];
+                    for (int i = 0; i < returnCodes.length; i++) {
+                        returnCodes[i] = -1;
                     }
                 }
+            } else {
+                returnCodes = new int[slaves.length];
+                for (int i = 0; i < returnCodes.length; i++) {
+                    returnCodes[i] = -1;
+                }
             }
-        } else {
-            returnCodes = new int[slaves.length];
-            for (int i = 0; i < returnCodes.length; i++) {
-                returnCodes[i] = -1;
-            }
-        }
 
-        m_tasksProcessed++;
+            // #if LOGGER >= DEBUG
+            LOGGER.debug("Sync all done");
+            // #endif /* LOGGER >= DEBUG */
 
-        task.notifyListenersExecutionCompleted(returnCodes);
+            break;
+        } while (true);
+
+        taskScriptState.notifyListenersExecutionCompleted(returnCodes);
+
+        m_taskScriptsProcessed++;
 
         m_state = State.STATE_IDLE;
         // allow further slaves to join
@@ -428,8 +466,9 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
     /**
      * Handle a SlaveJoinRequest
+     *
      * @param p_message
-     *            SlaveJoinRequest
+     *     SlaveJoinRequest
      */
     private void incomingSlaveJoinRequest(final SlaveJoinRequest p_message) {
         if (m_joinLock.tryLock()) {
@@ -451,7 +490,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
                 m_network.sendMessage(response);
 
                 // #if LOGGER >= INFO
-                LOGGER.info("Slave (%d) 0x%X has joined", (m_signedOnSlaves.size() - 1), p_message.getSource());
+                LOGGER.info("Slave (%d) 0x%X has joined", m_signedOnSlaves.size() - 1, p_message.getSource());
                 // #endif /* LOGGER >= INFO */
             } catch (final NetworkException e) {
                 // #if LOGGER >= ERROR
@@ -483,8 +522,9 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
     /**
      * Handle a SignalMessage
+     *
      * @param p_message
-     *            SignalMessage
+     *     SignalMessage
      */
     private void incomingSignalMessage(final SignalMessage p_message) {
         switch (p_message.getSignal()) {

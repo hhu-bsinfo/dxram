@@ -14,31 +14,37 @@
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.stats.StatisticsService;
+import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Print statistics to the console.
+ * Print information about the current slave to the console.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class PrintStatisticsToConsoleTask extends PrintStatisticsTask {
+public class SlavePrintInfoTask implements Task {
 
     /**
      * Constructor
      */
-    public PrintStatisticsToConsoleTask() {
+    public SlavePrintInfoTask() {
 
     }
 
     @Override
     public int execute(final TaskContext p_ctx) {
-        BootService bootService = p_ctx.getDXRAMServiceAccessor().getService(BootService.class);
-        StatisticsService statisticsService = p_ctx.getDXRAMServiceAccessor().getService(StatisticsService.class);
-        printStatisticsToOutput(System.out, bootService, statisticsService);
+
+        System.out.println("TaskScript " + getClass().getSimpleName() + ": ");
+        System.out.println("OwnSlaveId: " + p_ctx.getCtxData().getSlaveId());
+        System.out.println("List of slaves in current compute group " + p_ctx.getCtxData().getComputeGroupId() + ": ");
+        short[] slaves = p_ctx.getCtxData().getSlaveNodeIds();
+        for (int i = 0; i < slaves.length; i++) {
+            System.out.println(i + ": " + NodeID.toHexString(slaves[i]));
+        }
+
         return 0;
     }
 

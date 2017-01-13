@@ -28,6 +28,6 @@ function exec(nid) {
 
     dxterm.printfln("List of available compute groups with master nodes (%d):", masters.size())
     for each (master in masters) {
-        dxterm.printfln("%d: 0x%X", master.second(), entry.first());
+        dxterm.printfln("%d: 0x%X", master.second(), master.first());
     }
 }

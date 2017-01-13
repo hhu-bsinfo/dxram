@@ -23,9 +23,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
-import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.VertexSimple;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeList;
@@ -39,12 +38,13 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Task to load a graph from a partitioned ordered edge list.
+ * TaskScript to load a graph from a partitioned ordered edge list.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
+public class GraphLoadOrderedEdgeListTask implements Task {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(GraphLoadOrderedEdgeListTaskPayload.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(GraphLoadOrderedEdgeListTask.class.getSimpleName());
 
     @Expose
     private String m_path = "./";
@@ -60,21 +60,17 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
 
     /**
      * Constructor
-     * @param p_numReqSlaves
-     *            Number of slaves required to run this task
+     *
      * @param p_path
-     *            Path containing the graph data to load
+     *     Path containing the graph data to load
      * @param p_vertexBatchSize
-     *            Size of a vertex batch for the loading process
+     *     Size of a vertex batch for the loading process
      * @param p_filterDupEdges
-     *            Check for and filter duplicate edges per vertex
+     *     Check for and filter duplicate edges per vertex
      * @param p_filterSelfLoops
-     *            Check for and filter self loops per vertex
+     *     Check for and filter self loops per vertex
      */
-    public GraphLoadOrderedEdgeListTaskPayload(final short p_numReqSlaves, final String p_path, final int p_vertexBatchSize, final boolean p_filterDupEdges,
-            final boolean p_filterSelfLoops) {
-        super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_OEL, p_numReqSlaves);
-
+    public GraphLoadOrderedEdgeListTask(final String p_path, final int p_vertexBatchSize, final boolean p_filterDupEdges, final boolean p_filterSelfLoops) {
         m_path = p_path;
         m_vertexBatchSize = p_vertexBatchSize;
         m_filterDupEdges = p_filterDupEdges;
@@ -83,8 +79,9 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
 
     /**
      * Set the number of vertices to buffer with one load call.
+     *
      * @param p_batchSize
-     *            Number of vertices to buffer.
+     *     Number of vertices to buffer.
      */
     public void setLoadVertexBatchSize(final int p_batchSize) {
         m_vertexBatchSize = p_batchSize;
@@ -92,8 +89,9 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
 
     /**
      * Set the path that contains the graph data.
+     *
      * @param p_path
-     *            Path with graph data files.
+     *     Path with graph data files.
      */
     public void setLoadPath(final String p_path) {
         m_path = p_path;
@@ -113,7 +111,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
 
         // look for the graph partitioned index of the current compute group
         long chunkIdPartitionIndex =
-                nameserviceService.getChunkID(GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT + m_ctx.getCtxData().getComputeGroupId(), 5000);
+            nameserviceService.getChunkID(GraphLoadPartitionIndexTask.MS_PART_INDEX_IDENT + m_ctx.getCtxData().getComputeGroupId(), 5000);
         if (chunkIdPartitionIndex == ChunkID.INVALID_ID) {
             // #if LOGGER >= ERROR
             LOGGER.error("Could not find partition index for current compute group %d", m_ctx.getCtxData().getComputeGroupId());
@@ -172,8 +170,6 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
 
     @Override
     public void exportObject(final Exporter p_exporter) {
-        super.exportObject(p_exporter);
-
         p_exporter.writeInt(m_path.length());
         p_exporter.writeBytes(m_path.getBytes(StandardCharsets.US_ASCII));
         p_exporter.writeInt(m_vertexBatchSize);
@@ -183,8 +179,6 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
 
     @Override
     public void importObject(final Importer p_importer) {
-        super.importObject(p_importer);
-
         int strLength = p_importer.readInt();
         byte[] tmp = new byte[strLength];
         p_importer.readBytes(tmp);
@@ -196,15 +190,16 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
 
     @Override
     public int sizeofObject() {
-        return super.sizeofObject() + Integer.BYTES + m_path.length() + Integer.BYTES + Byte.BYTES * 2;
+        return Integer.BYTES + m_path.length() + Integer.BYTES + Byte.BYTES * 2;
     }
 
     /**
      * Setup an edge list instance for the current slave node.
+     *
      * @param p_path
-     *            Path with indexed graph data partitions.
+     *     Path with indexed graph data partitions.
      * @param p_graphPartitionIndex
-     *            Loaded partition index of the graph
+     *     Loaded partition index of the graph
      * @return OrderedEdgeList instance giving access to the list found for this slave or null on error.
      */
     private OrderedEdgeList setupOrderedEdgeListForCurrentSlave(final String p_path, final GraphPartitionIndex p_graphPartitionIndex) {
@@ -231,14 +226,14 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
             String[] tokens = p_name.split("\\.");
 
             // looking for format xxx.oel.<slave id>
-                if (tokens.length > 1) {
-                    if (tokens[1].equals("boel")) {
-                        return true;
-                    }
+            if (tokens.length > 1) {
+                if (tokens[1].equals("boel")) {
+                    return true;
                 }
+            }
 
-                return false;
-            });
+            return false;
+        });
 
         // add filtered files
         // #if LOGGER >= DEBUG
@@ -267,8 +262,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
             }
 
             orderedEdgeList =
-                    new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000, startOffset, endOffset, m_filterDupEdges,
-                            m_filterSelfLoops, p_graphPartitionIndex.calcTotalVertexCount(), startVertexId);
+                new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000, startOffset, endOffset, m_filterDupEdges,
+                    m_filterSelfLoops, p_graphPartitionIndex.calcTotalVertexCount(), startVertexId);
             break;
         }
 
@@ -277,10 +272,11 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
 
     /**
      * Load a graph partition (single threaded).
+     *
      * @param p_orderedEdgeList
-     *            Graph partition to load.
+     *     Graph partition to load.
      * @param p_graphPartitionIndex
-     *            Index for all partitions to rebase vertex ids to current node.
+     *     Index for all partitions to rebase vertex ids to current node.
      * @return True if loading successful, false on error.
      */
 
@@ -303,7 +299,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
 
         // #if LOGGER >= INFO
         LOGGER.info("Loading started, target vertex/edge count of partition %d: %d/%d", currentPartitionIndexEntry.getPartitionId(),
-                currentPartitionIndexEntry.getVertexCount(), currentPartitionIndexEntry.getEdgeCount());
+            currentPartitionIndexEntry.getVertexCount(), currentPartitionIndexEntry.getEdgeCount());
         // #endif /* LOGGER >= INFO */
 
         while (true) {
@@ -385,7 +381,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
             if (currentPartitionIndexEntry.getVertexCount() != totalVerticesLoaded || currentPartitionIndexEntry.getEdgeCount() != totalEdgesLoaded) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Loading failed, vertex/edge count (%d/%d) does not match data in graph partition " + "index (%d/%d)", totalVerticesLoaded,
-                        totalEdgesLoaded, currentPartitionIndexEntry.getVertexCount(), currentPartitionIndexEntry.getEdgeCount());
+                    totalEdgesLoaded, currentPartitionIndexEntry.getVertexCount(), currentPartitionIndexEntry.getEdgeCount());
                 // #endif /* LOGGER >= ERROR */
                 return false;
             }

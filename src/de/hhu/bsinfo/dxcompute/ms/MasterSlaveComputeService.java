@@ -13,11 +13,11 @@
 
 package de.hhu.bsinfo.dxcompute.ms;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,15 +36,6 @@ import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.TaskExecutionFinishedMessage;
 import de.hhu.bsinfo.dxcompute.ms.messages.TaskExecutionStartedMessage;
-import de.hhu.bsinfo.dxcompute.ms.tasks.MasterSlaveTaskPayloads;
-import de.hhu.bsinfo.dxcompute.ms.tasks.NullTaskPayload;
-import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask;
-import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToFileTask;
-import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToConsoleTask;
-import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToFileTask;
-import de.hhu.bsinfo.dxcompute.ms.tasks.PrintTaskPayload;
-import de.hhu.bsinfo.dxcompute.ms.tasks.SlavePrintInfoTaskPayload;
-import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -89,7 +80,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
     private AbstractComputeMSBase m_computeMSInstance;
 
-    private ConcurrentMap<Integer, Task> m_remoteTasks = new ConcurrentHashMap<>();
+    private ConcurrentMap<Integer, TaskScriptState> m_remoteTasks = new ConcurrentHashMap<>();
     private AtomicInteger m_taskIdCounter = new AtomicInteger(0);
 
     /**
@@ -106,29 +97,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
      */
     public ComputeRole getComputeRole() {
         return m_computeMSInstance.getRole();
-    }
-
-    /**
-     * Get a list of registered task payloads
-     *
-     * @return List of registered task payloads
-     */
-    public List<Map.Entry<Integer, Class<? extends TaskPayload>>> getRegisteredTaskPayloads() {
-        Map<Integer, Class<? extends TaskPayload>> map = TaskPayloadManager.getRegisteredTaskPayloadClasses();
-
-        // sort the list by tid and stid
-        List<Map.Entry<Integer, Class<? extends TaskPayload>>> list = new LinkedList<>(map.entrySet());
-        Collections.sort(list, (p_o1, p_o2) -> {
-            if (p_o1.getKey() < p_o2.getKey()) {
-                return -1;
-            } else if (p_o1.getKey() > p_o2.getKey()) {
-                return 1;
-            } else {
-                return 0;
-            }
-        });
-
-        return list;
     }
 
     /**
@@ -150,6 +118,21 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         return masters;
     }
 
+    public Task createTaskInstance(final String p_taskName, final Object... p_args) {
+        Class<?> clazz;
+        try {
+            clazz = Class.forName(p_taskName);
+        } catch (final ClassNotFoundException e) {
+            throw new RuntimeException("Cannot find task class " + p_taskName);
+        }
+
+        try {
+            return (Task) clazz.getConstructor().newInstance(p_args);
+        } catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            throw new RuntimeException("Cannot create instance of Task " + p_taskName);
+        }
+    }
+
     /**
      * Get the status of the current master node.
      *
@@ -166,7 +149,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         ArrayList<Short> slaves = ((ComputeMaster) m_computeMSInstance).getConnectedSlaves();
         int numTasksInQueue = ((ComputeMaster) m_computeMSInstance).getNumberOfTasksInQueue();
         AbstractComputeMSBase.State state = m_computeMSInstance.getComputeState();
-        int tasksProcessed = ((ComputeMaster) m_computeMSInstance).getTotalTasksProcessed();
+        int tasksProcessed = ((ComputeMaster) m_computeMSInstance).getTotalTaskScriptsProcessed();
 
         return new StatusMaster(m_boot.getNodeID(), state, slaves, numTasksInQueue, tasksProcessed);
     }
@@ -228,43 +211,49 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     }
 
     /**
-     * Submit a task to this master.
+     * Submit a task script to this master.
      *
-     * @param p_task
-     *     Task to submit to this master.
-     * @return Task id assigned or -1 if the current node is not a master or submission failed.
+     * @param p_taskScript
+     *     TaskScript to submit to this master.
+     * @param p_listener
+     *     Listener to register to register with the generated task state
+     * @return TaskScriptState containing assigned task script id and registered listeners or null on error
      */
-    public int submitTask(final Task p_task) {
+    public TaskScriptState submitTaskScript(final TaskScript p_taskScript, final TaskListener... p_listener) {
         if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Cannot submit task %s on non master node type", p_task);
+            LOGGER.error("Cannot submit task %s on non master node type", p_taskScript);
             // #endif /* LOGGER >= ERROR */
-            return -1;
+            return null;
         }
 
-        p_task.assignTaskId(m_taskIdCounter.getAndIncrement());
+        TaskScriptState state = new TaskScriptState(p_taskScript);
+        state.assignTaskId(m_taskIdCounter.getAndIncrement());
+        state.registerTaskListener(p_listener);
 
-        if (((ComputeMaster) m_computeMSInstance).submitTask(p_task)) {
-            return p_task.getTaskIdAssigned();
+        if (((ComputeMaster) m_computeMSInstance).submitTask(state)) {
+            return state;
         } else {
-            return -1;
+            return null;
         }
     }
 
     /**
-     * Submit a task to remote master node.
+     * Submit a task script to remote master node.
      *
-     * @param p_task
-     *     Task to submit to another master node.
+     * @param p_taskScript
+     *     TaskScript to submit to another master node.
      * @param p_computeGroupId
-     *     Compute group to submit the task to.
-     * @return Task id assigned by the remote master node or -1 if the remote node is not a master or submission failed.
+     *     Compute group to submit the task script to.
+     * @param p_listener
+     *     Listener to register to register with the generated task state
+     * @return TaskScriptState containing assigned task script id and registered listeners or null on error
      */
-    public int submitTask(final Task p_task, final short p_computeGroupId) {
+    public TaskScriptState submitTaskScript(final TaskScript p_taskScript, final short p_computeGroupId, final TaskListener... p_listener) {
         if (m_computeMSInstance.getRole() == ComputeRole.MASTER) {
             ComputeMaster master = (ComputeMaster) m_computeMSInstance;
             if (master.getComputeGroupId() == p_computeGroupId) {
-                return submitTask(p_task);
+                return submitTaskScript(p_taskScript, p_listener);
             }
         }
 
@@ -274,117 +263,95 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
             long tmp = m_nameservice.getChunkID(AbstractComputeMSBase.NAMESERVICE_ENTRY_IDENT + p_computeGroupId, 0);
             if (tmp == -1) {
                 // #if LOGGER >= ERROR
-                LOGGER.error("Cannot find master node of compute gropu id %d", p_computeGroupId);
+                LOGGER.error("Cannot find master node of compute group id %d", p_computeGroupId);
                 // #endif /* LOGGER >= ERROR */
-                return -1;
+                return null;
             }
             masterNodeId = ChunkID.getCreatorID(tmp);
         }
 
-        SubmitTaskRequest request = new SubmitTaskRequest(masterNodeId, p_task.getPayload());
+        SubmitTaskRequest request = new SubmitTaskRequest(masterNodeId, p_taskScript);
 
         try {
             m_network.sendSync(request);
         } catch (final NetworkException e) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Sending submit task request to node 0x%X failed: %s", masterNodeId, e);
+            LOGGER.error("Sending submit task script request to node 0x%X failed: %s", masterNodeId, e);
             // #endif /* LOGGER >= ERROR */
-            return -1;
+            return null;
         }
 
         SubmitTaskResponse response = (SubmitTaskResponse) request.getResponse();
         if (response.getStatusCode() != 0) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Error submitting task, code %d" + response.getStatusCode());
+            LOGGER.error("Error submitting task script, code %d", response.getStatusCode());
             // #endif /* LOGGER >= ERROR */
-            return -1;
+            return null;
         }
 
         // remember task for remote callbacks
-        p_task.assignTaskId(response.getAssignedPayloadId());
-        p_task.setNodeIdSubmitted(m_boot.getNodeID());
-        m_remoteTasks.put(p_task.getTaskIdAssigned(), p_task);
+        TaskScriptState state = new TaskScriptState(p_taskScript);
+        state.assignTaskId(response.getAssignedPayloadId());
+        state.setNodeIdSubmitted(m_boot.getNodeID());
+        state.registerTaskListener(p_listener);
+        m_remoteTasks.put(state.getTaskScriptIdAssigned(), state);
 
         // #if LOGGER >= INFO
-        LOGGER.info("Submitted task to compute group %d with master node 0x%X: %s", p_computeGroupId, masterNodeId, p_task);
+        LOGGER.info("Submitted task to compute group %d with master node 0x%X: %s", p_computeGroupId, masterNodeId, p_taskScript);
         // #endif /* LOGGER >= INFO */
 
-        return response.getAssignedPayloadId();
+        return state;
     }
 
     /**
-     * Read a task payload from a json formated string.
+     * Read a task script from a json formatted file
      *
-     * @param p_taskJsonFormat
-     *     Json formated string.
-     * @return Instance of the task payload read or null if creating instance failed.
+     * @param p_taskScriptFileName
+     *     File to read
+     * @return Read task script or null on read failure
      */
-    public TaskPayload readTaskPayloadFromJson(final String p_taskJsonFormat) {
-        Gson gson = TaskPayloadGsonContext.createGsonInstance();
+    public TaskScript readTaskScriptFromJsonFile(final String p_taskScriptFileName) {
+        Gson gson = TaskScriptGsonContext.createGsonInstance();
 
-        return gson.fromJson(p_taskJsonFormat, TaskPayload.class);
-    }
-
-    /**
-     * Read a list of task payloads from a json formated string
-     *
-     * @param p_taskListJsonFormat
-     *     Fson formated string
-     * @return List of task payload instances created from the json string
-     */
-    public TaskPayload[] readTaskPayloadListFromJson(final String p_taskListJsonFormat) {
-
-        Gson gson = TaskPayloadGsonContext.createGsonInstance();
-
-        return gson.fromJson(p_taskListJsonFormat, TaskPayload[].class);
-    }
-
-    /**
-     * Create a task payload instance
-     *
-     * @param p_type
-     *     Type id of the payload to create
-     * @param p_subtype
-     *     Subtype id of the payload to create
-     * @param p_args
-     *     Further arguments for the payload's constructor
-     * @return Instance of the payload or null if creation failed
-     */
-    public TaskPayload createTaskPayload(final short p_type, final short p_subtype, final Object... p_args) {
-
-        return TaskPayloadManager.createInstance(p_type, p_subtype, p_args);
+        try {
+            return gson.fromJson(new String(Files.readAllBytes(Paths.get(p_taskScriptFileName))), TaskScript.class);
+        } catch (final IOException ignored) {
+            return null;
+        }
     }
 
     @Override
-    public void taskBeforeExecution(final Task p_task) {
+    public void taskBeforeExecution(final TaskScriptState p_taskScriptState) {
         // only used for remote tasks to callback the node they were submitted on
-        TaskExecutionStartedMessage message = new TaskExecutionStartedMessage(p_task.getNodeIdSubmitted(), p_task.getTaskIdAssigned());
+        TaskExecutionStartedMessage message =
+            new TaskExecutionStartedMessage(p_taskScriptState.getNodeIdSubmitted(), p_taskScriptState.getTaskScriptIdAssigned());
 
         try {
             m_network.sendMessage(message);
         } catch (final NetworkException e) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Sending remote callback before execution to node %d failed", p_task.getNodeIdSubmitted());
+            LOGGER.error("Sending remote callback before execution to node %d failed", p_taskScriptState.getNodeIdSubmitted());
             // #endif /* LOGGER >= ERROR */
         }
     }
 
     @Override
-    public void taskCompleted(final Task p_task) {
+    public void taskCompleted(final TaskScriptState p_taskScriptState) {
         // only used for remote tasks to callback the node they were submitted on
         TaskExecutionFinishedMessage message =
-            new TaskExecutionFinishedMessage(p_task.getNodeIdSubmitted(), p_task.getTaskIdAssigned(), p_task.getExecutionReturnCodes());
+            new TaskExecutionFinishedMessage(p_taskScriptState.getNodeIdSubmitted(), p_taskScriptState.getTaskScriptIdAssigned(),
+                p_taskScriptState.getExecutionReturnCodes());
 
         try {
             m_network.sendMessage(message);
         } catch (final NetworkException e) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Sending remote callback completed to node 0x%X failed", p_task.getNodeIdSubmitted());
+            LOGGER.error("Sending remote callback completed to node 0x%X failed", p_taskScriptState.getNodeIdSubmitted());
             // #endif /* LOGGER >= ERROR */
         }
 
         // we don't have to remember this remote task anymore
-        m_remoteTasks.remove(p_task.getTaskIdAssigned());
+        m_remoteTasks.remove(p_taskScriptState.getTaskScriptIdAssigned());
     }
 
     @Override
@@ -456,8 +423,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
                 break;
         }
 
-        registerTaskPayloads();
-
         // #if LOGGER >= INFO
         LOGGER.info("Started compute node type '%s' with compute group id %d", m_role, m_computeGroupId);
         // #endif /* LOGGER >= INFO */
@@ -483,13 +448,13 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         SubmitTaskResponse response;
 
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Incoming remote submit task request %s", p_request);
+        LOGGER.debug("Incoming remote submit task script request %s", p_request);
         // #endif /* LOGGER >= DEBUG */
 
         // check if we were able to create an instance (missing task class registration)
-        if (p_request.getTaskPayload() == null) {
+        if (p_request.getTaskScript() == null) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Creating instance for task payload of request %s failed, most likely non registered task payload type", p_request);
+            LOGGER.error("Creating instance for task script of request %s failed, most likely non registered task payload type", p_request);
             // #endif /* LOGGER >= ERROR */
             response = new SubmitTaskResponse(p_request, (short) -1, -1);
             response.setStatusCode((byte) 3);
@@ -498,23 +463,23 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
         if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Cannot submit remote task %s on non master node type", p_request.getTaskPayload());
+            LOGGER.error("Cannot submit remote task script %s on non master node type", p_request.getTaskScript());
             // #endif /* LOGGER >= ERROR */
 
             response = new SubmitTaskResponse(p_request, (short) -1, -1);
             response.setStatusCode((byte) 1);
         } else {
-            Task task = new Task(p_request.getTaskPayload(), "RemoteTask " + p_request);
-            task.assignTaskId(m_taskIdCounter.getAndIncrement());
-            task.setNodeIdSubmitted(p_request.getSource());
-            task.registerTaskListener(this);
+            TaskScriptState taskScriptState = new TaskScriptState(p_request.getTaskScript());
+            taskScriptState.assignTaskId(m_taskIdCounter.getAndIncrement());
+            taskScriptState.setNodeIdSubmitted(p_request.getSource());
+            taskScriptState.registerTaskListener(this);
 
-            boolean ret = ((ComputeMaster) m_computeMSInstance).submitTask(task);
+            boolean ret = ((ComputeMaster) m_computeMSInstance).submitTask(taskScriptState);
 
             if (ret) {
-                m_remoteTasks.put(task.getTaskIdAssigned(), task);
+                m_remoteTasks.put(taskScriptState.getTaskScriptIdAssigned(), taskScriptState);
 
-                response = new SubmitTaskResponse(p_request, m_computeMSInstance.getComputeGroupId(), task.getTaskIdAssigned());
+                response = new SubmitTaskResponse(p_request, m_computeMSInstance.getComputeGroupId(), taskScriptState.getTaskScriptIdAssigned());
                 response.setStatusCode((byte) 0);
             } else {
                 response = new SubmitTaskResponse(p_request, (short) -1, -1);
@@ -568,16 +533,16 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     private void incomingTaskExecutionStartedMessage(final TaskExecutionStartedMessage p_message) {
 
         // that's a little risky, but setting the id in the submit call
-        // is done quickly enough that we can keep blocking a little here
+        // is done quickly enough that we can keep blocking here
         // though if we get weird timeouts or network message behavior
         // this section might be the cause
-        Task task = m_remoteTasks.get(p_message.getTaskPayloadId());
-        while (task == null) {
-            task = m_remoteTasks.get(p_message.getTaskPayloadId());
+        TaskScriptState taskScriptState = m_remoteTasks.get(p_message.getTaskPayloadId());
+        while (taskScriptState == null) {
+            taskScriptState = m_remoteTasks.get(p_message.getTaskPayloadId());
             Thread.yield();
         }
 
-        task.notifyListenersExecutionStarts();
+        taskScriptState.notifyListenersExecutionStarts();
     }
 
     /**
@@ -591,34 +556,15 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         // is done quickly enough that we can keep blocking a little here
         // though if we get weird timeouts or network message behavior
         // this section might be the cause
-        Task task = m_remoteTasks.remove(p_message.getTaskPayloadId());
-        while (task == null) {
-            task = m_remoteTasks.remove(p_message.getTaskPayloadId());
+        TaskScriptState taskScriptState = m_remoteTasks.remove(p_message.getTaskPayloadId());
+        while (taskScriptState == null) {
+            taskScriptState = m_remoteTasks.remove(p_message.getTaskPayloadId());
             Thread.yield();
         }
 
-        // done with task, remove
+        // done with taskScript, remove
         // get return codes of execution
-        task.notifyListenersExecutionCompleted(p_message.getExecutionReturnCodes());
-    }
-
-    /**
-     * Register various (built in) task payloads
-     */
-    private void registerTaskPayloads() {
-        TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_NULL_TASK, NullTaskPayload.class);
-        TaskPayloadManager
-            .registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_SLAVE_PRINT_INFO_TASK, SlavePrintInfoTaskPayload.class);
-        TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK, WaitTaskPayload.class);
-        TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_TASK, PrintTaskPayload.class);
-        TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_CONSOLE_TASK,
-            PrintMemoryStatusToConsoleTask.class);
-        TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_FILE_TASK,
-            PrintMemoryStatusToFileTask.class);
-        TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_CONSOLE_TASK,
-            PrintStatisticsToConsoleTask.class);
-        TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_FILE_TASK,
-            PrintStatisticsToFileTask.class);
+        taskScriptState.notifyListenersExecutionCompleted(p_message.getExecutionReturnCodes());
     }
 
     /**
@@ -629,8 +575,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     public static class StatusMaster implements Importable, Exportable {
         private short m_masterNodeId;
         private AbstractComputeMSBase.State m_state;
-        private int m_numTasksQueued;
-        private int m_tasksProcessed;
+        private int m_numTaskScriptsQueued;
+        private int m_taskScriptsProcessed;
         private ArrayList<Short> m_connectedSlaves;
 
         /**
@@ -640,7 +586,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
             m_masterNodeId = NodeID.INVALID_ID;
             m_state = AbstractComputeMSBase.State.STATE_INVALID;
             m_connectedSlaves = new ArrayList<Short>();
-            m_numTasksQueued = 0;
+            m_numTaskScriptsQueued = 0;
         }
 
         /**
@@ -652,18 +598,18 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
          *     The current state of the instance
          * @param p_connectedSlaves
          *     List of connected slave ids to this master.
-         * @param p_numTasksQueued
-         *     Number of tasks queued currently on this master.
-         * @param p_tasksProcessed
-         *     Number of tasks processed so far.
+         * @param p_numTaskScriptsQueued
+         *     Number of task scripts queued currently on this master.
+         * @param p_taskScriptsProcessed
+         *     Number of task scripts processed so far.
          */
         StatusMaster(final short p_masterNodeId, final AbstractComputeMSBase.State p_state, final ArrayList<Short> p_connectedSlaves,
-            final int p_numTasksQueued, final int p_tasksProcessed) {
+            final int p_numTaskScriptsQueued, final int p_taskScriptsProcessed) {
             m_masterNodeId = p_masterNodeId;
             m_state = p_state;
             m_connectedSlaves = p_connectedSlaves;
-            m_numTasksQueued = p_numTasksQueued;
-            m_tasksProcessed = p_tasksProcessed;
+            m_numTaskScriptsQueued = p_numTaskScriptsQueued;
+            m_taskScriptsProcessed = p_taskScriptsProcessed;
         }
 
         /**
@@ -699,7 +645,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
          * @return Number of queued tasks.
          */
         public int getNumTasksQueued() {
-            return m_numTasksQueued;
+            return m_numTaskScriptsQueued;
         }
 
         /**
@@ -707,8 +653,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
          *
          * @return Number of tasks processed.
          */
-        public int getNumTasksProcessed() {
-            return m_numTasksQueued;
+        public int getNumTaskScriptsProcessed() {
+            return m_taskScriptsProcessed;
         }
 
         @Override
@@ -717,8 +663,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
             p_exporter.writeInt(m_state.ordinal());
             p_exporter.writeInt(m_connectedSlaves.size());
             m_connectedSlaves.forEach(p_exporter::writeShort);
-            p_exporter.writeInt(m_numTasksQueued);
-            p_exporter.writeInt(m_tasksProcessed);
+            p_exporter.writeInt(m_numTaskScriptsQueued);
+            p_exporter.writeInt(m_taskScriptsProcessed);
         }
 
         @Override
@@ -730,8 +676,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
             for (int i = 0; i < size; i++) {
                 m_connectedSlaves.add(p_importer.readShort());
             }
-            m_numTasksQueued = p_importer.readInt();
-            m_tasksProcessed = p_importer.readInt();
+            m_numTaskScriptsQueued = p_importer.readInt();
+            m_taskScriptsProcessed = p_importer.readInt();
         }
 
         @Override
@@ -742,14 +688,14 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         @Override
         public String toString() {
             String str = "";
-            str += "Master: " + NodeID.toHexString(m_masterNodeId) + "\n";
-            str += "State: " + m_state + "\n";
-            str += "Tasks queued: " + m_numTasksQueued + "\n";
-            str += "Tasks processed: " + m_tasksProcessed + "\n";
+            str += "Master: " + NodeID.toHexString(m_masterNodeId) + '\n';
+            str += "State: " + m_state + '\n';
+            str += "Task scripts queued: " + m_numTaskScriptsQueued + '\n';
+            str += "Task scripts processed: " + m_taskScriptsProcessed + '\n';
             str += "Connected slaves(" + m_connectedSlaves.size() + "):\n";
             for (int i = 0; i < m_connectedSlaves.size(); i++) {
                 str += i + ": " + NodeID.toHexString(m_connectedSlaves.get(i));
-                if (m_connectedSlaves.size() > 0 && i < m_connectedSlaves.size() - 1) {
+                if (!m_connectedSlaves.isEmpty() && i < m_connectedSlaves.size() - 1) {
                     str += "\n";
                 }
             }

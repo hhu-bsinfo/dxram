@@ -20,8 +20,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
-import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
-import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskScriptRequest;
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskScriptResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxcompute.ms.messages.SignalMessage;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
@@ -31,6 +31,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
@@ -40,6 +41,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Implementation of a slave. The slave waits for tasks for execution from the master
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
 class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, TaskSignalInterface {
@@ -48,45 +50,46 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
     private short m_masterNodeId = NodeID.INVALID_ID;
 
-    private volatile TaskPayload m_task;
+    private volatile TaskScript m_taskScript;
     private volatile TaskContextData m_ctxData;
-    private Lock m_executeTaskLock = new ReentrantLock(false);
+    private Lock m_executeTaskScriptLock = new ReentrantLock(false);
     private Lock m_handleSignalLock = new ReentrantLock(false);
 
     private int m_masterExecutionBarrierId;
 
     /**
      * Constructor
+     *
      * @param p_computeGroupId
-     *            Compute group id the instance is assigned to.
+     *     Compute group id the instance is assigned to.
      * @param p_pingIntervalMs
-     *            Ping interval in ms to check back with the compute group if still alive.
+     *     Ping interval in ms to check back with the compute group if still alive.
      * @param p_serviceAccessor
-     *            Service accessor for tasks.
+     *     Service accessor for tasks.
      * @param p_network
-     *            NetworkComponent
+     *     NetworkComponent
      * @param p_nameservice
-     *            NameserviceComponent
+     *     NameserviceComponent
      * @param p_boot
-     *            BootComponent
+     *     BootComponent
      * @param p_lookup
-     *            LookupComponent
+     *     LookupComponent
      */
     ComputeSlave(final short p_computeGroupId, final long p_pingIntervalMs, final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
-            final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
+        final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
         super(ComputeRole.SLAVE, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_nameservice, p_boot, p_lookup);
 
         m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
         m_network
-                .registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
+            .registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
         m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST,
-                ExecuteTaskRequest.class);
+            ExecuteTaskScriptRequest.class);
         m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE,
-                ExecuteTaskResponse.class);
+            ExecuteTaskScriptResponse.class);
         m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SIGNAL, SignalMessage.class);
 
         m_network.register(SlaveJoinResponse.class, this);
-        m_network.register(ExecuteTaskRequest.class, this);
+        m_network.register(ExecuteTaskScriptRequest.class, this);
         m_network.register(SignalMessage.class, this);
 
         m_masterExecutionBarrierId = BarrierID.INVALID_ID;
@@ -136,7 +139,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             if (p_message.getType() == DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
                     case MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST:
-                        incomingExecuteTaskRequest((ExecuteTaskRequest) p_message);
+                        incomingExecuteTaskScriptRequest((ExecuteTaskScriptRequest) p_message);
                         break;
                     case MasterSlaveMessages.SUBTYPE_SIGNAL:
                         incomingSignalMessage((SignalMessage) p_message);
@@ -174,7 +177,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             if (tmp == -1) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Setting up slave, cannot find nameservice entry for master node id for key %s of compute group %d", m_nameserviceMasterNodeIdKey,
-                        m_computeGroupId);
+                    m_computeGroupId);
                 // #endif /* LOGGER >= ERROR */
                 try {
                     Thread.sleep(1000);
@@ -230,7 +233,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      * Idle state. Connected to the master of the compute group. Ping and wait for instructions.
      */
     private void stateIdle() {
-        if (m_task != null) {
+        if (m_taskScript != null) {
             m_state = State.STATE_EXECUTE;
         } else {
             // check periodically if master is still available
@@ -265,57 +268,107 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      */
     private void stateExecute() {
         // #if LOGGER >= INFO
-        LOGGER.info("Starting execution of task %s", m_task);
+        LOGGER.info("Starting execution of task script %s", m_taskScript);
         // #endif /* LOGGER >= INFO */
 
-        m_executeTaskLock.lock();
+        m_executeTaskScriptLock.lock();
 
-        int result = m_task.execute(new TaskContext(m_ctxData, this, getServiceAccessor()));
+        int result = 0;
+        for (TaskScriptNode node : m_taskScript.getTasks()) {
+            result = executeTaskScriptNode(node, result);
+        }
 
         // #if LOGGER >= INFO
         LOGGER.info("Execution finished, return code: %d", result);
         // #endif /* LOGGER >= INFO */
 
         m_handleSignalLock.lock();
-        m_task = null;
-        m_executeTaskLock.unlock();
+        m_taskScript = null;
+        m_executeTaskScriptLock.unlock();
         m_handleSignalLock.unlock();
-
-        // #if LOGGER >= DEBUG
-        LOGGER.debug("Syncing with master 0x%X ...", m_masterNodeId);
-        // #endif /* LOGGER >= DEBUG */
 
         // set idle state before sync to avoid race condition with master sending
         // new tasks right after the sync
         m_state = State.STATE_IDLE;
 
-        // sync back with master and pass result to it via barrier
-        m_lookup.barrierSignOn(m_masterExecutionBarrierId, result);
+        // sync until the master tells us we are done. there might be other slaves
+        // taking a different path in the task script thus taking longer to finish
+        Long masterRetCode;
+        do {
+            // #if LOGGER >= DEBUG
+            LOGGER.debug("Final syncing with master 0x%X ...", m_masterNodeId);
+            // #endif /* LOGGER >= DEBUG */
+
+            BarrierStatus barrierResult = m_lookup.barrierSignOn(m_masterExecutionBarrierId, result);
+
+            masterRetCode = barrierResult.findCustomData(m_masterNodeId);
+            if (masterRetCode == null) {
+                throw new RuntimeException("Could not find master return code in barrier sign on result");
+            }
+        } while (masterRetCode != 0);
 
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Syncing done");
-        // #endif /* LOGGER >= DEBUG */
-
-        // #if LOGGER >= DEBUG
-        LOGGER.debug("Entering idle state");
+        LOGGER.debug("Syncing done, entering idle state");
         // #endif /* LOGGER >= DEBUG */
     }
 
-    /**
-     * Handle an incoming ExecuteTaskRequest
-     * @param p_message
-     *            ExecuteTaskRequest
-     */
-    private void incomingExecuteTaskRequest(final ExecuteTaskRequest p_message) {
-        ExecuteTaskResponse response = new ExecuteTaskResponse(p_message);
-        TaskPayload task = null;
+    private void syncStepMaster() {
+        // #if LOGGER >= DEBUG
+        LOGGER.debug("Sync step with master 0x%X ...", m_masterNodeId);
+        // #endif /* LOGGER >= DEBUG */
 
-        if (m_executeTaskLock.tryLock() && m_state == State.STATE_IDLE) {
-            task = p_message.getTaskPayload();
+        m_lookup.barrierSignOn(m_masterExecutionBarrierId, 1L << 32);
+    }
+
+    private int executeTaskScriptNode(final TaskScriptNode p_taskScriptNode, final int p_prevReturnCode) {
+        int result = p_prevReturnCode;
+
+        if (p_taskScriptNode instanceof TaskResultCondition) {
+            TaskResultCondition condition = (TaskResultCondition) p_taskScriptNode;
+
+            // #if LOGGER >= DEBUG
+            LOGGER.debug("Executing condition: %s", condition);
+            // #endif /* LOGGER >= DEBUG */
+
+            TaskScript script = condition.evaluate(result);
+            syncStepMaster();
+
+            for (TaskScriptNode node : script.getTasks()) {
+                result = executeTaskScriptNode(node, result);
+            }
+        } else if (p_taskScriptNode instanceof Task) {
+            Task task = (Task) p_taskScriptNode;
+
+            // #if LOGGER >= DEBUG
+            LOGGER.debug("Executing task: %s", task);
+            // #endif /* LOGGER >= DEBUG */
+
+            result = task.execute(new TaskContext(m_ctxData, this, getServiceAccessor()));
+
+            syncStepMaster();
+        } else {
+            throw new RuntimeException("Unhandled script node type " + p_taskScriptNode.getClass().getName());
+        }
+
+        return result;
+    }
+
+    /**
+     * Handle an incoming ExecuteTaskScriptScriptRequest
+     *
+     * @param p_message
+     *     ExecuteTaskScriptScriptRequest
+     */
+    private void incomingExecuteTaskScriptRequest(final ExecuteTaskScriptRequest p_message) {
+        ExecuteTaskScriptResponse response = new ExecuteTaskScriptResponse(p_message);
+        TaskScript taskScript = null;
+
+        if (m_executeTaskScriptLock.tryLock() && m_state == State.STATE_IDLE) {
+            taskScript = p_message.getTaskScript();
 
             response.setStatusCode((byte) 0);
 
-            m_executeTaskLock.unlock();
+            m_executeTaskScriptLock.unlock();
         } else {
             // cannot execute task, invalid state
             response.setStatusCode((byte) 1);
@@ -324,11 +377,11 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
         try {
             m_network.sendMessage(response);
 
-            if (task != null) {
+            if (taskScript != null) {
                 m_ctxData = p_message.getTaskContextData();
 
                 // assign and start execution if non null
-                m_task = task;
+                m_taskScript = taskScript;
             }
         } catch (final NetworkException e) {
             // #if LOGGER >= ERROR
@@ -339,14 +392,17 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
     /**
      * Handle a SignalMessage
+     *
      * @param p_message
-     *            SignalMessage
+     *     SignalMessage
      */
     private void incomingSignalMessage(final SignalMessage p_message) {
         m_handleSignalLock.lock();
-        if (m_task != null) {
-            m_task.handleSignal(p_message.getSignal());
+        if (m_taskScript != null) {
+            //m_tas.handleSignal(p_message.getSignal());
         }
+
+        // TODO add signal to a queue otherwise it might get lost between two tasks of a script
 
         m_handleSignalLock.unlock();
     }

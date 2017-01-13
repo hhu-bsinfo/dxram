@@ -16,18 +16,21 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.utils.serialization.Exporter;
+import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Print the current memory status to the console.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class PrintMemoryStatusToConsoleTask extends PrintMemoryStatusTaskPayload {
+public class PrintMemoryStatusToConsoleTask extends PrintMemoryStatusTask {
 
     /**
      * Constructor
      */
     public PrintMemoryStatusToConsoleTask() {
-        super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_CONSOLE_TASK);
+
     }
 
     @Override
@@ -40,5 +43,20 @@ public class PrintMemoryStatusToConsoleTask extends PrintMemoryStatusTaskPayload
     @Override
     public void handleSignal(final Signal p_signal) {
         // ignore signals
+    }
+
+    @Override
+    public void exportObject(final Exporter p_exporter) {
+        // nothing to export
+    }
+
+    @Override
+    public void importObject(final Importer p_importer) {
+        // nothing to import
+    }
+
+    @Override
+    public int sizeofObject() {
+        return 0;
     }
 }

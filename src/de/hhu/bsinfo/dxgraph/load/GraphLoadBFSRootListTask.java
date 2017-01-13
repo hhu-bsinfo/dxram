@@ -23,9 +23,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
-import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRoots;
@@ -37,12 +36,13 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Task to load a list of root vertex ids for BFS entry points.
+ * TaskScript to load a list of root vertex ids for BFS entry points.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
+public class GraphLoadBFSRootListTask implements Task {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(GraphLoadBFSRootListTaskPayload.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(GraphLoadBFSRootListTask.class.getSimpleName());
 
     public static final String MS_BFS_ROOTS = "BFS";
 
@@ -51,20 +51,19 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 
     /**
      * Constructor
-     * @param p_numReqSlaves
-     *            Number of slaves required to run this task
+     *
      * @param p_path
-     *            Path containing a root list to load
+     *     Path containing a root list to load
      */
-    public GraphLoadBFSRootListTaskPayload(final short p_numReqSlaves, final String p_path) {
-        super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_BFS_ROOTS, p_numReqSlaves);
+    public GraphLoadBFSRootListTask(final String p_path) {
         m_path = p_path;
     }
 
     /**
      * Set the path where one or multiple partition index files are stored.
+     *
      * @param p_path
-     *            Path where the files are located
+     *     Path where the files are located
      */
     public void setLoadPath(final String p_path) {
         m_path = p_path;
@@ -88,7 +87,7 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 
             // look for the graph partitioned index of the current compute group
             long chunkIdPartitionIndex =
-                    nameserviceService.getChunkID(GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId(), 5000);
+                nameserviceService.getChunkID(GraphLoadPartitionIndexTask.MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId(), 5000);
             if (chunkIdPartitionIndex == ChunkID.INVALID_ID) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Could not find partition index for current compute group %d", p_ctx.getCtxData().getComputeGroupId());
@@ -145,7 +144,7 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 
             // #if LOGGER >= INFO
             LOGGER.info("Successfully loaded and stored root list, nameservice entry name %s:\n%s", MS_BFS_ROOTS + p_ctx.getCtxData().getComputeGroupId(),
-                    rootList);
+                rootList);
             // #endif /* LOGGER >= INFO */
         }
 
@@ -164,16 +163,12 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 
     @Override
     public void exportObject(final Exporter p_exporter) {
-        super.exportObject(p_exporter);
-
         p_exporter.writeInt(m_path.length());
         p_exporter.writeBytes(m_path.getBytes(StandardCharsets.US_ASCII));
     }
 
     @Override
     public void importObject(final Importer p_importer) {
-        super.importObject(p_importer);
-
         int strLength = p_importer.readInt();
         byte[] tmp = new byte[strLength];
         p_importer.readBytes(tmp);
@@ -182,13 +177,14 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 
     @Override
     public int sizeofObject() {
-        return super.sizeofObject() + Integer.BYTES + m_path.length();
+        return Integer.BYTES + m_path.length();
     }
 
     /**
      * Setup a root node list instance.
+     *
      * @param p_path
-     *            Path with the root list.
+     *     Path with the root list.
      * @return OrderedEdgeListRoots instance giving access to the list found for this slave or null on error.
      */
     private OrderedEdgeListRoots setupOrderedEdgeListRoots(final String p_path) {
@@ -212,30 +208,32 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 
         // iterate files in dir, filter by pattern
         File[] files = tmpFile.listFiles((p_dir, p_name) -> {
-            String[] tokens = p_name.split("\\.");
+            String[] tokens = "\\.".split(p_name);
 
             // looking for format xxx.roel
-                if (tokens.length > 1) {
-                    if (tokens[1].equals("broots")) {
-                        return true;
-                    }
+            if (tokens.length > 1) {
+                if ("broots".equals(tokens[1])) {
+                    return true;
                 }
+            }
 
-                return false;
-            });
+            return false;
+        });
 
         // add filtered files
         // #if LOGGER >= DEBUG
         LOGGER.debug("Setting up root oel, iterating files in %s", p_path);
         // #endif /* LOGGER >= DEBUG */
 
-        for (File file : files) {
-            // #if LOGGER >= DEBUG
-            LOGGER.debug("Found root list: %s", file);
-            // #endif /* LOGGER >= DEBUG */
+        if (files != null) {
+            for (File file : files) {
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Found root list: %s", file);
+                // #endif /* LOGGER >= DEBUG */
 
-            orderedEdgeListRoots = new OrderedEdgeListRootsBinaryFile(file.getAbsolutePath());
-            break;
+                orderedEdgeListRoots = new OrderedEdgeListRootsBinaryFile(file.getAbsolutePath());
+                break;
+            }
         }
 
         return orderedEdgeListRoots;
@@ -243,10 +241,11 @@ public class GraphLoadBFSRootListTaskPayload extends TaskPayload {
 
     /**
      * Load the root list.
+     *
      * @param p_orderedEdgeRootList
-     *            Root list to load.
+     *     Root list to load.
      * @param p_graphPartitionIndex
-     *            Index of all partitions to rebase vertex ids of all roots.
+     *     Index of all partitions to rebase vertex ids of all roots.
      * @return Root list instance on success, null on error.
      */
     private GraphRootList loadRootList(final OrderedEdgeListRoots p_orderedEdgeRootList, final GraphPartitionIndex p_graphPartitionIndex) {

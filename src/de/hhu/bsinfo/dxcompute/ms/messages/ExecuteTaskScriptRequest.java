@@ -17,48 +17,50 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.ms.TaskContextData;
-import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
-import de.hhu.bsinfo.dxcompute.ms.TaskPayloadManager;
+import de.hhu.bsinfo.dxcompute.ms.TaskScript;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
- * Request to execute a task on another slave compute node.
+ * Request to execute a task script on another slave compute node.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class ExecuteTaskRequest extends AbstractRequest {
+public class ExecuteTaskScriptRequest extends AbstractRequest {
 
     private int m_barrierIdentifier = -1;
     private TaskContextData m_ctxData;
-    private TaskPayload m_task;
+    private TaskScript m_script;
 
     /**
-     * Creates an instance of ExecuteTaskRequest.
+     * Creates an instance of ExecuteTaskScriptRequest.
      * This constructor is used when receiving this message.
      */
-    public ExecuteTaskRequest() {
+    public ExecuteTaskScriptRequest() {
         super();
     }
 
     /**
-     * Creates an instance of ExecuteTaskRequest.
+     * Creates an instance of ExecuteTaskScriptRequest.
      * This constructor is used when sending this message.
+     *
      * @param p_destination
-     *            the destination node id.
+     *     the destination node id.
      * @param p_barrierIdentifier
-     *            Barrier identifier for synchronization after done executing.
-     * @param p_task
-     *            Task to execute.
+     *     Barrier identifier for synchronization after done executing.
+     * @param p_script
+     *     TaskScript to execute.
      */
-    public ExecuteTaskRequest(final short p_destination, final int p_barrierIdentifier, final TaskContextData p_ctxData, final TaskPayload p_task) {
+    public ExecuteTaskScriptRequest(final short p_destination, final int p_barrierIdentifier, final TaskContextData p_ctxData, final TaskScript p_script) {
         super(p_destination, DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST);
         m_barrierIdentifier = p_barrierIdentifier;
         m_ctxData = p_ctxData;
-        m_task = p_task;
+        m_script = p_script;
     }
 
     /**
      * Get the barrier identifier to use after finishing execution and syncing to the master.
+     *
      * @return Barrier identifier for sync.
      */
     public int getBarrierIdentifier() {
@@ -67,6 +69,7 @@ public class ExecuteTaskRequest extends AbstractRequest {
 
     /**
      * Get the context data for the task to execute.
+     *
      * @return Context data.
      */
     public TaskContextData getTaskContextData() {
@@ -74,39 +77,36 @@ public class ExecuteTaskRequest extends AbstractRequest {
     }
 
     /**
-     * Get the task payload to execute.
-     * @return Task payload.
+     * Get the task script to execute.
+     *
+     * @return TaskScript
      */
-    public TaskPayload getTaskPayload() {
-        return m_task;
+    public TaskScript getTaskScript() {
+        return m_script;
     }
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
         MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 
-        p_buffer.putInt(m_barrierIdentifier);
+        exporter.writeInt(m_barrierIdentifier);
         exporter.exportObject(m_ctxData);
-        p_buffer.putShort(m_task.getTypeId());
-        p_buffer.putShort(m_task.getSubtypeId());
-        exporter.exportObject(m_task);
+        exporter.exportObject(m_script);
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
         MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
-        m_barrierIdentifier = p_buffer.getInt();
+        m_barrierIdentifier = importer.readInt();
         m_ctxData = new TaskContextData();
         importer.importObject(m_ctxData);
-        short type = p_buffer.getShort();
-        short subtype = p_buffer.getShort();
-        m_task = TaskPayloadManager.createInstance(type, subtype);
-        importer.importObject(m_task);
+        m_script = new TaskScript();
+        importer.importObject(m_script);
     }
 
     @Override
     protected final int getPayloadLength() {
-        return 2 * Short.BYTES + Integer.BYTES + m_ctxData.sizeofObject() + m_task.sizeofObject();
+        return Integer.BYTES + m_ctxData.sizeofObject() + m_script.sizeofObject();
     }
 }

@@ -16,25 +16,27 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
- * Reponse to the execute task request with status code.
+ * Reponse to the execute task script request with status code.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class ExecuteTaskResponse extends AbstractResponse {
+public class ExecuteTaskScriptResponse extends AbstractResponse {
     /**
-     * Creates an instance of ExecuteTaskResponse.
+     * Creates an instance of ExecuteTaskScriptResponse.
      * This constructor is used when receiving this message.
      */
-    public ExecuteTaskResponse() {
+    public ExecuteTaskScriptResponse() {
         super();
     }
 
     /**
-     * Creates an instance of ExecuteTaskResponse.
+     * Creates an instance of ExecuteTaskScriptResponse.
      * This constructor is used when sending this message.
+     *
      * @param p_request
-     *            the request to respond to
+     *     the request to respond to
      */
-    public ExecuteTaskResponse(final ExecuteTaskRequest p_request) {
+    public ExecuteTaskScriptResponse(final ExecuteTaskScriptRequest p_request) {
         super(p_request, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE);
     }
 }

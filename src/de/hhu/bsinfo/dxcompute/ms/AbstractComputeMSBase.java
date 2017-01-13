@@ -17,8 +17,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
-import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
-import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskScriptRequest;
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskScriptResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
@@ -105,9 +105,9 @@ abstract class AbstractComputeMSBase extends Thread {
         m_network
                 .registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
         m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST,
-                ExecuteTaskRequest.class);
+                ExecuteTaskScriptRequest.class);
         m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE,
-                ExecuteTaskResponse.class);
+                ExecuteTaskScriptResponse.class);
     }
 
     /**
