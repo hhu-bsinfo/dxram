@@ -206,7 +206,7 @@ public class BarriersTable extends AbstractMetadata {
      * @return True if successful, false otherwise.
      */
     public boolean reset(final short p_nodeId, final int p_barrierId) {
-        return m_barrierNodes[p_nodeId].reset(p_barrierId);
+        return m_barrierNodes[p_nodeId & 0xFFFF].reset(p_barrierId);
     }
 
     /**
@@ -219,7 +219,7 @@ public class BarriersTable extends AbstractMetadata {
      * @return On success returns an array with the currently available custom data (sorted by order the peers logged in)
      */
     public long[] getBarrierCustomData(final short p_nodeId, final int p_barrierId) {
-        return m_barrierNodes[p_nodeId].getBarrierCustomData(p_barrierId);
+        return m_barrierNodes[p_nodeId & 0xFFFF].getBarrierCustomData(p_barrierId);
     }
 
     /**
@@ -234,10 +234,10 @@ public class BarriersTable extends AbstractMetadata {
     int allocateBarrier(final short p_nodeId, final int p_size) {
         int ret;
 
-        if (m_barrierNodes[p_nodeId] == null) {
-            m_barrierNodes[p_nodeId] = new BarrierNode(p_nodeId, m_maxNumBarriers);
+        if (m_barrierNodes[p_nodeId & 0xFFFF] == null) {
+            m_barrierNodes[p_nodeId & 0xFFFF] = new BarrierNode(p_nodeId, m_maxNumBarriers);
         }
-        ret = m_barrierNodes[p_nodeId].allocateBarrier(p_size);
+        ret = m_barrierNodes[p_nodeId & 0xFFFF].allocateBarrier(p_size);
 
         if (ret != -1) {
             m_allBarriersCount++;
@@ -259,7 +259,7 @@ public class BarriersTable extends AbstractMetadata {
     boolean freeBarrier(final short p_nodeId, final int p_barrierId) {
         int ret;
 
-        ret = m_barrierNodes[p_nodeId].freeBarrier(p_barrierId);
+        ret = m_barrierNodes[p_nodeId & 0xFFFF].freeBarrier(p_barrierId);
         if (ret != -1) {
             m_allBarriersCount--;
             m_allBarrierEntriesCount -= ret;
@@ -280,7 +280,7 @@ public class BarriersTable extends AbstractMetadata {
      * @return True if chaning size was sucessful, false otherwise.
      */
     boolean changeBarrierSize(final short p_nodeId, final int p_barrierId, final int p_newSize) {
-        return m_barrierNodes[p_nodeId].changeBarrierSize(p_barrierId, p_newSize);
+        return m_barrierNodes[p_nodeId & 0xFFFF].changeBarrierSize(p_barrierId, p_newSize);
     }
 
     /**
@@ -297,7 +297,7 @@ public class BarriersTable extends AbstractMetadata {
      * @return On success returns the number of peers left to sign on, -1 on failure
      */
     int signOn(final short p_nodeId, final int p_barrierId, final short p_nodeIdToSignOn, final long p_barrierData) {
-        return m_barrierNodes[p_nodeId].signOn(p_barrierId, p_nodeIdToSignOn, p_barrierData);
+        return m_barrierNodes[p_nodeId & 0xFFFF].signOn(p_barrierId, p_nodeIdToSignOn, p_barrierData);
     }
 
     /**
@@ -311,7 +311,7 @@ public class BarriersTable extends AbstractMetadata {
      * @return Array with node ids that already signed on. First index element is the count of signed on peers.
      */
     short[] getSignedOnPeers(final short p_nodeId, final int p_barrierId) {
-        return m_barrierNodes[p_nodeId].getSignedOnPeers(p_barrierId);
+        return m_barrierNodes[p_nodeId & 0xFFFF].getSignedOnPeers(p_barrierId);
     }
 
     /**

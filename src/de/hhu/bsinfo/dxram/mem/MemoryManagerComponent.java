@@ -574,10 +574,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return Size of the chunk or -1 if the chunkID was invalid.
      */
     public int getSize(final long p_chunkID) {
-        assert m_boot.getNodeRole() == NodeRole.PEER;
+        assert m_boot.getNodeRole() != NodeRole.SUPERPEER;
 
         long address;
         int size = -1;
+
+        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
+            return size;
+        }
 
         address = m_cidTable.get(p_chunkID);
         if (address > 0) {
@@ -596,10 +600,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data structure exists.
      */
     public MemoryErrorCodes get(final DataStructure p_dataStructure) {
-        assert m_boot.getNodeRole() == NodeRole.PEER;
+        assert m_boot.getNodeRole() != NodeRole.SUPERPEER;
 
         long address;
         MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
+
+        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
+            return MemoryErrorCodes.DOES_NOT_EXIST;
+        }
 
         // #ifdef STATISTICS
         SOP_GET.enter();
@@ -633,10 +641,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return A byte array with payload if getting the chunk payload was successful, null if no chunk with the ID exists.
      */
     public byte[] get(final long p_chunkID) {
-        assert m_boot.getNodeRole() == NodeRole.PEER;
+        assert m_boot.getNodeRole() != NodeRole.SUPERPEER;
 
         byte[] ret = null;
         long address;
+
+        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
+            return null;
+        }
 
         // #ifdef STATISTICS
         SOP_GET.enter();
@@ -678,10 +690,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return MemoryErrorCodes indicating success or failure
      */
     public MemoryErrorCodes put(final DataStructure p_dataStructure) {
-        assert m_boot.getNodeRole() == NodeRole.PEER;
+        assert m_boot.getNodeRole() != NodeRole.SUPERPEER;
 
         long address;
         MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
+
+        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
+            return MemoryErrorCodes.INVALID_NODE_ROLE;
+        }
 
         // #ifdef STATISTICS
         SOP_PUT.enter();
@@ -1011,9 +1027,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return whether this Chunk is stored locally or not
      */
     public boolean exists(final long p_chunkID) {
-        assert m_boot.getNodeRole() == NodeRole.PEER;
+        assert m_boot.getNodeRole() != NodeRole.SUPERPEER;
 
         long address;
+
+        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
+            return false;
+        }
 
         // Get the address from the CIDTable
         address = m_cidTable.get(p_chunkID);

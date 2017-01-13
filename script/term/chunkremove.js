@@ -46,7 +46,7 @@ function execCid(cid) {
 
     // don't allow removal of index chunk
     if (dxram.lidOfCid(cid) == 0) {
-        dxterm.printlnErr("Removal of index chunk is not allowed.=")
+        dxterm.printlnErr("Removal of index chunk is not allowed")
         return;
     }
 
