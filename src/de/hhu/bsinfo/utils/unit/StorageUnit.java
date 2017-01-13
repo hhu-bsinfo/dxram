@@ -13,12 +13,17 @@
 
 package de.hhu.bsinfo.utils.unit;
 
+import de.hhu.bsinfo.utils.serialization.Exportable;
+import de.hhu.bsinfo.utils.serialization.Exporter;
+import de.hhu.bsinfo.utils.serialization.Importable;
+import de.hhu.bsinfo.utils.serialization.Importer;
+
 /**
  * Wrapper for handling and converting storage units (byte, kb, mb, gb, tb)
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.10.2016
  */
-public class StorageUnit {
+public class StorageUnit implements Importable, Exportable {
 
     public static final String BYTE = "b";
     public static final String KB = "kb";
@@ -27,6 +32,13 @@ public class StorageUnit {
     public static final String TB = "tb";
 
     private long m_bytes;
+
+    /**
+     * Constructor
+     */
+    public StorageUnit() {
+
+    }
 
     /**
      * Constructor
@@ -117,5 +129,20 @@ public class StorageUnit {
                 m_bytes = p_value;
                 break;
         }
+    }
+
+    @Override
+    public void exportObject(final Exporter p_exporter) {
+        p_exporter.writeLong(m_bytes);
+    }
+
+    @Override
+    public void importObject(final Importer p_importer) {
+        m_bytes = p_importer.readLong();
+    }
+
+    @Override
+    public int sizeofObject() {
+        return Long.BYTES;
     }
 }
