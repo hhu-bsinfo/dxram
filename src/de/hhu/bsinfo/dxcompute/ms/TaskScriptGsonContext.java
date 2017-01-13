@@ -22,6 +22,10 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
+import de.hhu.bsinfo.dxram.util.TimeUnitGsonSerializer;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
+import de.hhu.bsinfo.utils.unit.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,7 +39,9 @@ final class TaskScriptGsonContext {
 
     static Gson createGsonInstance() {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation()
-            .registerTypeAdapter(TaskScriptNode.class, new AbstractTaskScriptNodeSerializer()).create();
+            .registerTypeAdapter(TaskScriptNode.class, new AbstractTaskScriptNodeSerializer())
+                .registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer())
+                .registerTypeAdapter(TimeUnit.class, new TimeUnitGsonSerializer()).create();
     }
 
     private static class AbstractTaskScriptNodeSerializer implements JsonDeserializer<TaskScriptNode> {
