@@ -142,7 +142,7 @@ public class ScriptContext {
             }
         } catch (final Exception e) {
             // #if LOGGER >= ERROR
-            LOGGER.error(e);
+            LOGGER.error("Exception", e);
             // #endif /* LOGGER >= ERROR */
 
             return false;
