@@ -20,7 +20,7 @@ package de.hhu.bsinfo.utils.serialization;
  */
 public interface Importable extends ObjectSize {
     /**
-     * Import/De-serialize this object using the provided importer (target).
+     * TaskScriptImport/De-serialize this object using the provided importer (target).
      * Don't call this explicitly. Use an Importer which is calling this
      * method implicitly.
      *

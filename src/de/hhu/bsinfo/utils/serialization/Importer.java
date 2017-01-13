@@ -22,7 +22,7 @@ package de.hhu.bsinfo.utils.serialization;
  */
 public interface Importer {
     /**
-     * Import/read data from the target to the provided already
+     * TaskScriptImport/read data from the target to the provided already
      * allocated object.
      * Depending on the implementation this calls at least
      * the importObject method of the importable object.
@@ -30,9 +30,9 @@ public interface Importer {
      * of data/buffers.
      *
      * @param p_object
-     *         Importable Pre-allocated object to read data from the target into.
+     *     Importable Pre-allocated object to read data from the target into.
      */
-    void importObject(Importable p_object);
+    void importObject(final Importable p_object);
 
     // ----------------------------------------------------------------------
 
@@ -91,15 +91,24 @@ public interface Importer {
     double readDouble();
 
     /**
+     * Read a String from the target.
+     * Use this call in your importable object in the
+     * import call to read data from the target.
+     *
+     * @return String read.
+     */
+    String readString();
+
+    /**
      * Read data into a byte array from target.
      * Use this call in your importable object in the
      * import call to read data from the target.
      *
      * @param p_array
-     *         Array to read into.
+     *     Array to read into.
      * @return Number of bytes read.
      */
-    int readBytes(byte[] p_array);
+    int readBytes(final byte[] p_array);
 
     /**
      * Read data into a short array from target.
@@ -107,10 +116,10 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *         Array to read into.
+     *     Array to read into.
      * @return Number of shorts read;
      */
-    int readShorts(short[] p_array);
+    int readShorts(final short[] p_array);
 
     /**
      * Read data into an int array from target.
@@ -118,10 +127,10 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *         Array to read into.
+     *     Array to read into.
      * @return Number of ints read;
      */
-    int readInts(int[] p_array);
+    int readInts(final int[] p_array);
 
     /**
      * Read data into a long array from target.
@@ -129,10 +138,10 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *         Array to read into.
+     *     Array to read into.
      * @return Number of longs read;
      */
-    int readLongs(long[] p_array);
+    int readLongs(final long[] p_array);
 
     /**
      * Read data into a byte array from target.
@@ -140,14 +149,14 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *         Array to read into.
+     *     Array to read into.
      * @param p_offset
-     *         Offset to start in the array for reading into.
+     *     Offset to start in the array for reading into.
      * @param p_length
-     *         Number of bytes to read.
+     *     Number of bytes to read.
      * @return Number of bytes read.
      */
-    int readBytes(byte[] p_array, int p_offset, int p_length);
+    int readBytes(final byte[] p_array, final int p_offset, final int p_length);
 
     /**
      * Read data into a short array from target.
@@ -155,14 +164,14 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *         Array to read into.
+     *     Array to read into.
      * @param p_offset
-     *         Offset to start in the array for reading into.
+     *     Offset to start in the array for reading into.
      * @param p_length
-     *         Number of shorts to read.
+     *     Number of shorts to read.
      * @return Number of shorts read.
      */
-    int readShorts(short[] p_array, int p_offset, int p_length);
+    int readShorts(final short[] p_array, final int p_offset, final int p_length);
 
     /**
      * Read data into an int array from target.
@@ -170,14 +179,14 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *         Array to read into.
+     *     Array to read into.
      * @param p_offset
-     *         Offset to start in the array for reading into.
+     *     Offset to start in the array for reading into.
      * @param p_length
-     *         Number of ints to read.
+     *     Number of ints to read.
      * @return Number of ints read.
      */
-    int readInts(int[] p_array, int p_offset, int p_length);
+    int readInts(final int[] p_array, final int p_offset, final int p_length);
 
     /**
      * Read data into a long array from target.
@@ -185,12 +194,48 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *         Array to read into.
+     *     Array to read into.
      * @param p_offset
-     *         Offset to start in the array for reading into.
+     *     Offset to start in the array for reading into.
      * @param p_length
-     *         Number of longs to read.
+     *     Number of longs to read.
      * @return Number of longs read.
      */
-    int readLongs(long[] p_array, int p_offset, int p_length);
+    int readLongs(final long[] p_array, final int p_offset, final int p_length);
+
+    /**
+     * Read a byte array from the target.
+     * The array to be read must be stored as self containing object,
+     * i.e. with length information
+     *
+     * @return New array with data read.
+     */
+    byte[] readByteArray();
+
+    /**
+     * Read a short array from the target.
+     * The array to be read must be stored as self containing object,
+     * i.e. with length information
+     *
+     * @return New array with data read.
+     */
+    short[] readShortArray();
+
+    /**
+     * Read an int array from the target.
+     * The array to be read must be stored as self containing object,
+     * i.e. with length information
+     *
+     * @return New array with data read.
+     */
+    int[] readIntArray();
+
+    /**
+     * Read a long array from the target.
+     * The array to be read must be stored as self containing object,
+     * i.e. with length information
+     *
+     * @return New array with data read.
+     */
+    long[] readLongArray();
 }
