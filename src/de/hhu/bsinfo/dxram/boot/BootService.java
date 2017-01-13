@@ -266,6 +266,13 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
     }
 
     /**
+     * (Soft) reboot the current node
+     */
+    public void rebootThisNode() {
+        rebootNode();
+    }
+
+    /**
      * (Soft) reboot a DXRAM node.
      *
      * @param p_nodeID
@@ -274,10 +281,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
      */
     public boolean rebootNode(final short p_nodeID) {
         if (p_nodeID == m_boot.getNodeID()) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Rebooting ourselves is not possible like this");
-            // #endif /* LOGGER >= ERROR */
-            return false;
+            rebootNode();
         }
 
         RebootMessage message = new RebootMessage(p_nodeID);
@@ -347,14 +351,22 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
      *     Message to handle.
      */
     private void incomingRebootMessage(final RebootMessage p_message) {
+        rebootNode();
+    }
+
+    private void rebootNode() {
         DXRAMEngine parentEngine = getParentEngine();
         new Thread() {
             @Override
             public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch (final InterruptedException ignored) {
+                }
                 parentEngine.shutdown();
                 // wait a moment for the superpeer to detect the failure
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(3000);
                 } catch (final InterruptedException ignored) {
                 }
                 parentEngine.init();
