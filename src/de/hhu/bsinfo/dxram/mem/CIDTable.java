@@ -266,14 +266,14 @@ public final class CIDTable {
 
         int level = 0;
         long addressTable;
-        boolean putCache = false;
-
-        //addressTable = m_cache.getTableLevel0(p_chunkID);
-        //if (addressTable == -1) {
-            level = LID_TABLE_LEVELS;
-            addressTable = m_addressTableDirectory;
-        //    putCache = true;
-        //}
+        //        boolean putCache = false;
+        // TODO fix cache -> multi threading
+        //        addressTable = m_cache.getTableLevel0(p_chunkID);
+        //        if (addressTable == -1) {
+        level = LID_TABLE_LEVELS;
+        addressTable = m_addressTableDirectory;
+        //            putCache = true;
+        //        }
 
         do {
             if (level == LID_TABLE_LEVELS) {
@@ -294,9 +294,9 @@ public final class CIDTable {
             } else {
                 addressTable = readEntry(addressTable, index) & BITMASK_ADDRESS;
 
-                //if (putCache) {
-                //    m_cache.putTableLevel0(p_chunkID, addressTable);
-                //}
+                //                if (putCache) {
+                //                    m_cache.putTableLevel0(p_chunkID, addressTable);
+                //                }
 
                 return addressTable;
             }
@@ -322,14 +322,14 @@ public final class CIDTable {
 
         int level = 0;
         long addressTable;
-        boolean putCache = false;
-
-        //addressTable = m_cache.getTableLevel0(p_chunkID);
-        //if (addressTable == -1) {
-            level = LID_TABLE_LEVELS;
-            addressTable = m_addressTableDirectory;
-        //    putCache = true;
-        //}
+        //        boolean putCache = false;
+        // TODO fix cache -> multi threading
+        //        addressTable = m_cache.getTableLevel0(p_chunkID);
+        //        if (addressTable == -1) {
+        level = LID_TABLE_LEVELS;
+        addressTable = m_addressTableDirectory;
+        //            putCache = true;
+        //        }
 
         do {
             if (level == LID_TABLE_LEVELS) {
@@ -352,9 +352,9 @@ public final class CIDTable {
                 // move on to next table
                 addressTable = entry & BITMASK_ADDRESS;
             } else {
-                //if (putCache) {
-                //    m_cache.putTableLevel0(p_chunkID, addressTable);
-                //}
+                //                if (putCache) {
+                //                    m_cache.putTableLevel0(p_chunkID, addressTable);
+                //                }
 
                 // Set the level 0 entry
                 // valid and active entry, delete flag 0
@@ -385,6 +385,8 @@ public final class CIDTable {
 
         int level = LID_TABLE_LEVELS;
         long addressTable = m_addressTableDirectory;
+
+        // TODO invalidate cache
 
         do {
             if (level == LID_TABLE_LEVELS) {
@@ -935,7 +937,7 @@ public final class CIDTable {
          * @return Address of level 0 table or -1 if not cached
          */
         long getTableLevel0(final long p_chunkID) {
-            long tableLevel0IDRange = p_chunkID & 0xFFFFFFFFFFFFF000L;
+            long tableLevel0IDRange = p_chunkID >> BITS_PER_LID_LEVEL;
 
             for (int i = 0; i < m_chunkIDs.length; i++) {
                 if (m_chunkIDs[i] == tableLevel0IDRange) {
@@ -955,7 +957,7 @@ public final class CIDTable {
          *     Address of the level 0 table
          */
         void putTableLevel0(final long p_chunkID, final long p_addressTable) {
-            m_chunkIDs[m_cachePos] = p_chunkID & 0xFFFFFFFFFFFFF000L;
+            m_chunkIDs[m_cachePos] = p_chunkID >> BITS_PER_LID_LEVEL;
             m_tableLevel0Addr[m_cachePos] = p_addressTable;
             m_cachePos = (m_cachePos + 1) % m_chunkIDs.length;
         }
