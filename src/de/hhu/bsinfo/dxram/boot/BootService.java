@@ -356,21 +356,8 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     private void rebootNode() {
         DXRAMEngine parentEngine = getParentEngine();
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(1000);
-                } catch (final InterruptedException ignored) {
-                }
-                parentEngine.shutdown();
-                // wait a moment for the superpeer to detect the failure
-                try {
-                    Thread.sleep(3000);
-                } catch (final InterruptedException ignored) {
-                }
-                parentEngine.init();
-            }
-        }.start();
+        new Thread(() -> {
+            parentEngine.triggerSoftReboot();
+        }).start();
     }
 }

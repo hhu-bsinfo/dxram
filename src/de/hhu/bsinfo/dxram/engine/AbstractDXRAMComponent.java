@@ -42,6 +42,7 @@ public abstract class AbstractDXRAMComponent {
     private final short m_priorityShutdown;
 
     private DXRAMEngine m_parentEngine;
+    private boolean m_isInitialized;
 
     /**
      * Constructor
@@ -147,6 +148,8 @@ public abstract class AbstractDXRAMComponent {
             // #if LOGGER >= INFO
             LOGGER.info("Initializing component successful");
             // #endif /* LOGGER >= INFO */
+
+            m_isInitialized = true;
         }
 
         return ret;
@@ -158,20 +161,24 @@ public abstract class AbstractDXRAMComponent {
      * @return True if shutting down was successful, false otherwise.
      */
     public boolean shutdown() {
-        boolean ret;
+        boolean ret = true;
 
-        // #if LOGGER >= INFO
-        LOGGER.info("Shutting down component...");
-        // #endif /* LOGGER >= INFO */
-        ret = shutdownComponent();
-        if (!ret) {
-            // #if LOGGER >= WARN
-            LOGGER.warn("Shutting down component failed");
-            // #endif /* LOGGER >= WARN */
-        } else {
+        if (m_isInitialized) {
             // #if LOGGER >= INFO
-            LOGGER.info("Shutting down component successful");
+            LOGGER.info("Shutting down component...");
             // #endif /* LOGGER >= INFO */
+            ret = shutdownComponent();
+            if (!ret) {
+                // #if LOGGER >= WARN
+                LOGGER.warn("Shutting down component failed");
+                // #endif /* LOGGER >= WARN */
+            } else {
+                // #if LOGGER >= INFO
+                LOGGER.info("Shutting down component successful");
+                // #endif /* LOGGER >= INFO */
+            }
+
+            m_isInitialized = false;
         }
 
         return ret;

@@ -14,8 +14,6 @@ public class RebootNodeTask implements Task {
         BootService boot = p_ctx.getDXRAMServiceAccessor().getService(BootService.class);
         boot.rebootThisNode();
 
-        // TODO this doesn't work properly because there seem to be active threads after engine.shutdown
-
         return 0;
     }
 

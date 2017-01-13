@@ -339,6 +339,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                         // Enable re-usage of NodeID if failed superpeer was not in nodes file
                         zookeeperCreate("node/free/" + p_nodeID);
                     }
+                    LOGGER.debug("Removed superpeer 0x%X from zookeeper", p_nodeID);
                 }
             } catch (final ZooKeeperException e) {
                 // Entry was already deleted by another node
@@ -363,6 +364,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                         // Enable re-usage of NodeID if failed peer was not in nodes file
                         zookeeperCreate("node/free/" + p_nodeID);
                     }
+                    LOGGER.debug("Removed peer 0x%X from zookeeper", p_nodeID);
                 }
             } catch (final ZooKeeperException e) {
                 // Entry was already deleted by another node
@@ -373,6 +375,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                 status = zookeeperGetStatus("nodes/terminals/" + p_nodeID);
                 if (status != null) {
                     zookeeperDelete("nodes/terminals/" + p_nodeID, status.getVersion());
+                    LOGGER.debug("Removed terminal 0x%X from zookeeper", p_nodeID);
                 }
             } catch (final ZooKeeperException e) {
                 // Entry was already deleted by another node

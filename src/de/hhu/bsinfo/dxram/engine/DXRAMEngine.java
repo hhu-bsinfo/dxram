@@ -15,13 +15,13 @@ package de.hhu.bsinfo.dxram.engine;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import de.hhu.bsinfo.utils.unit.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,6 +39,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     private DXRAMContextHandler m_contextHandler;
 
     private boolean m_isInitialized;
+    private volatile boolean m_triggerReboot;
 
     private Map<String, String> m_servicesShortName = new HashMap<>();
 
@@ -223,7 +224,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         // sort list by initialization priority
         comp = (p_o1, p_o2) -> new Integer(p_o1.getPriorityInit()).compareTo(p_o2.getPriorityInit());
-        Collections.sort(list, comp);
+        list.sort(comp);
 
         // #if LOGGER >= INFO
         LOGGER.info("Initializing %d components...", list.size());
@@ -261,7 +262,47 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         //
         LOGGER.info("Initializing engine done");
         // #endif /* LOGGER >= INFO */
+
         m_isInitialized = true;
+
+        return true;
+    }
+
+    /**
+     * The engine must be driven by the main thread
+     *
+     * @return True if update successful, false on error
+     */
+    public boolean update() {
+        if (Thread.currentThread().getId() != 1) {
+            throw new RuntimeException("Update called by thread-" + Thread.currentThread().getId() +
+                    " (" +Thread.currentThread().getName() + "), not main thread");
+        }
+
+        if (m_triggerReboot) {
+            TimeUnit reinitDelayMs = m_contextHandler.getContext().getEngineSettings().getSoftRebootDelay();
+
+            LOGGER.info("Executing soft reboot with re-init delay " + reinitDelayMs.getMs() + " ms");
+            if (!shutdown()) {
+                return false;
+            }
+            try {
+                Thread.sleep(reinitDelayMs.getMs());
+            } catch (final InterruptedException ignore) {
+
+            }
+            if (!init()) {
+                return false;
+            }
+
+            m_triggerReboot = false;
+        }
+
+        // avoid cpu banging
+        try {
+            Thread.sleep(1000);
+        } catch (final InterruptedException ignored) {
+        }
 
         return true;
     }
@@ -299,7 +340,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         comp = (p_o1, p_o2) -> new Integer(p_o1.getPriorityShutdown()).compareTo(p_o2.getPriorityShutdown());
 
-        Collections.sort(list, comp);
+        list.sort(comp);
 
         // #if LOGGER >= INFO
         LOGGER.info("Shutting down %d components...", list.size());
@@ -319,6 +360,13 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         m_isInitialized = false;
 
         return true;
+    }
+
+    /**
+     * Trigger a soft reboot on the next update cycle
+     */
+    public void triggerSoftReboot() {
+        m_triggerReboot = true;
     }
 
     /**

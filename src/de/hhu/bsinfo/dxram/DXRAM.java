@@ -159,12 +159,28 @@ public class DXRAM {
     }
 
     /**
+     * Update the engine. This must be called by the main thread
+     *
+     * @return True on success, false on failure
+     */
+    public boolean update() {
+        return m_engine.update();
+    }
+
+    /**
      * Shut down DXRAM. Call this if you have not enabled auto shutdown on init.
      */
     public void shutdown() {
         preShutdown();
         m_engine.shutdown();
         postShutdown();
+    }
+
+    /**
+     * Soft reboot DXRAM. Triggers reboot on next update cycle
+     */
+    public void triggerSoftReboot() {
+        m_engine.triggerSoftReboot();
     }
 
     /**

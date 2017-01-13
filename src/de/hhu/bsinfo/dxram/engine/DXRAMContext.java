@@ -20,6 +20,7 @@ import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.unit.IPV4Unit;
+import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * Context object with settings for the engine as well as component and service instances
@@ -106,6 +107,8 @@ public class DXRAMContext {
         private String m_role = "Peer";
         @Expose
         private String m_jniPath = "jni";
+        @Expose
+        private TimeUnit m_softRebootDelay = new TimeUnit(3, TimeUnit.SEC);
 
         /**
          * Constructor
@@ -139,6 +142,14 @@ public class DXRAMContext {
          */
         String getJNIPath() {
             return m_jniPath;
+        }
+
+        /**
+         * Get the time to delay the soft reboot
+         * @return Delay time
+         */
+        TimeUnit getSoftRebootDelay() {
+            return m_softRebootDelay;
         }
     }
 }

@@ -29,6 +29,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 public class DXRAMMain {
     private DXRAM m_dxram;
     private String m_nodeTypeName;
+    private volatile boolean m_triggerSoftReboot;
 
     /**
      * Default constructor
@@ -125,13 +126,11 @@ public class DXRAMMain {
             } else {
                 System.out.println(">>> " + m_nodeTypeName + " started <<<");
 
-                while (true) {
-                    // Wait
-                    try {
-                        Thread.sleep(100000);
-                    } catch (final InterruptedException ignored) {
-                    }
+                while (m_dxram.update()) {
+                    // run
                 }
+
+                return 0;
             }
         } else {
             System.out.println("Missing BootService, cannot run " + m_nodeTypeName);

@@ -39,6 +39,7 @@ public abstract class AbstractDXRAMService {
 
     private String m_shortName;
     private DXRAMEngine m_parentEngine;
+    private boolean m_isStarted;
 
     /**
      * Constructor
@@ -154,6 +155,8 @@ public abstract class AbstractDXRAMService {
             // #if LOGGER >= INFO
             LOGGER.info("Starting service successful");
             // #endif /* LOGGER >= INFO */
+
+            m_isStarted = true;
         }
 
         return ret;
@@ -165,20 +168,24 @@ public abstract class AbstractDXRAMService {
      * @return True if shutting down was successful, false otherwise.
      */
     public boolean shutdown() {
-        boolean ret;
+        boolean ret = true;
 
-        // #if LOGGER >= INFO
-        LOGGER.info("Shutting down service...");
-        // #endif /* LOGGER >= INFO */
-        ret = shutdownService();
-        if (!ret) {
-            // #if LOGGER >= WARN
-            LOGGER.warn("Shutting down service failed");
-            // #endif /* LOGGER >= WARN */
-        } else {
+        if (m_isStarted) {
             // #if LOGGER >= INFO
-            LOGGER.info("Shutting down service successful");
+            LOGGER.info("Shutting down service...");
             // #endif /* LOGGER >= INFO */
+            ret = shutdownService();
+            if (!ret) {
+                // #if LOGGER >= WARN
+                LOGGER.warn("Shutting down service failed");
+                // #endif /* LOGGER >= WARN */
+            } else {
+                // #if LOGGER >= INFO
+                LOGGER.info("Shutting down service successful");
+                // #endif /* LOGGER >= INFO */
+            }
+
+            m_isStarted = false;
         }
 
         return ret;
