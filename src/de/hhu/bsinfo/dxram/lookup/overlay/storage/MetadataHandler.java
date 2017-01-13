@@ -843,7 +843,6 @@ public final class MetadataHandler {
         }
         if (ChunkID.getCreatorID(p_startChunkIDOrRangeID) != -1) {
             tree.initRange(p_startChunkIDOrRangeID, p_creator, p_backupPeers);
-            System.out.println("---------------------------------- " + tree + ", " + p_startChunkIDOrRangeID);
         } else {
             tree.initMigrationRange((int) p_startChunkIDOrRangeID, p_backupPeers);
         }
