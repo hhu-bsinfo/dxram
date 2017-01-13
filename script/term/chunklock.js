@@ -54,6 +54,6 @@ function execCid(cid) {
     if (!err.toString().equals("SUCCESS")) {
         dxterm.printflnErr("Error locking chunk 0x%X: %s", cid, err);
     } else {
-        dxterm.printfln("Locked chunk 0x%X");
+        dxterm.printfln("Locked chunk 0x%X", cid);
     }
 }
