@@ -402,7 +402,7 @@ public abstract class AbstractMessage {
 
             writePayload(p_buffer);
         } catch (final BufferOverflowException e) {
-            throw new NetworkException("Could not create message " + this + ", because message buffer is too small", e);
+            throw new NetworkException("Could not create message " + this + ", because message buffer is too small, payload size " + p_payloadSize, e);
         }
 
         int pos = p_buffer.position();
