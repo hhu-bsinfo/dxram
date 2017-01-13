@@ -134,7 +134,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         // #if LOGGER >= WARN
         if (service == null) {
-            LOGGER.warn("Service '%s' not available");
+            LOGGER.warn("Service '%s' not available", p_shortName);
         }
         // #endif /* LOGGER >= WARN */
 
