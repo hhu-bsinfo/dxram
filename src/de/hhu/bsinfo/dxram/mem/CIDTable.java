@@ -58,7 +58,7 @@ public final class CIDTable {
     private LIDStore m_store;
     private long m_nextLocalID;
 
-    private TranslationCache m_cache;
+    //private TranslationCache m_cache;
 
     /**
      * Creates an instance of CIDTable
@@ -103,6 +103,54 @@ public final class CIDTable {
         // If no free ID exist, get next local ID
         if (ret == -1) {
             ret = m_nextLocalID++;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Get a free LID from the CIDTable
+     *
+     * @return a free LID and version, or -1 if there is none
+     */
+    long[] getFreeLIDs(final int p_size, final boolean p_consecutive) {
+        long[] ret = null;
+
+        if (!p_consecutive) {
+            ret = new long[p_size];
+            for (int i = 0; i < p_size; i++) {
+                if (m_store != null) {
+                    ret[i] = m_store.get();
+                }
+
+                // If no free ID exist, get next local ID
+                if (ret[i] == -1) {
+                    ret[i] = m_nextLocalID++;
+                }
+
+                if (ret[i] == -1) {
+                    // #if LOGGER >= ERROR
+                    LOGGER.fatal("Allocating new LIDs failed, out of LIDs");
+                    // #endif /* LOGGER >= ERROR */
+                    break;
+                }
+            }
+        } else {
+            ret = m_store.getConsecutiveLIDs(p_size);
+            if (ret == null) {
+                // There are not enough consecutive entries in LIDStore
+                ret = new long[p_size];
+                for (int i = 0; i < p_size; i++) {
+                    ret[i] = m_nextLocalID++;
+
+                    if (ret[i] == -1) {
+                        // #if LOGGER >= ERROR
+                        LOGGER.fatal("Allocating new LIDs failed, out of LIDs");
+                        // #endif /* LOGGER >= ERROR */
+                        break;
+                    }
+                }
+            }
         }
 
         return ret;
@@ -198,7 +246,7 @@ public final class CIDTable {
         // NOTE: 10 seems to be a good value because it doesn't add too much overhead when creating huge ranges chunks
         // but still allows 10 * 4096 translations to be cached for fast lookup and gets/puts
         // (value determined by profiling the application)
-        m_cache = new TranslationCache(10);
+        //m_cache = new TranslationCache(10);
 
         // #if LOGGER >= INFO
         LOGGER.info("CIDTable: init success (page directory at: 0x%X)", m_addressTableDirectory);
@@ -220,12 +268,12 @@ public final class CIDTable {
         long addressTable;
         boolean putCache = false;
 
-        addressTable = m_cache.getTableLevel0(p_chunkID);
-        if (addressTable == -1) {
+        //addressTable = m_cache.getTableLevel0(p_chunkID);
+        //if (addressTable == -1) {
             level = LID_TABLE_LEVELS;
             addressTable = m_addressTableDirectory;
-            putCache = true;
-        }
+        //    putCache = true;
+        //}
 
         do {
             if (level == LID_TABLE_LEVELS) {
@@ -244,11 +292,13 @@ public final class CIDTable {
                 // move on to next table
                 addressTable = entry & BITMASK_ADDRESS;
             } else {
-                if (putCache) {
-                    m_cache.putTableLevel0(p_chunkID, addressTable);
-                }
+                addressTable = readEntry(addressTable, index) & BITMASK_ADDRESS;
 
-                return readEntry(addressTable, index) & BITMASK_ADDRESS;
+                //if (putCache) {
+                //    m_cache.putTableLevel0(p_chunkID, addressTable);
+                //}
+
+                return addressTable;
             }
 
             level--;
@@ -274,12 +324,12 @@ public final class CIDTable {
         long addressTable;
         boolean putCache = false;
 
-        addressTable = m_cache.getTableLevel0(p_chunkID);
-        if (addressTable == -1) {
+        //addressTable = m_cache.getTableLevel0(p_chunkID);
+        //if (addressTable == -1) {
             level = LID_TABLE_LEVELS;
             addressTable = m_addressTableDirectory;
-            putCache = true;
-        }
+        //    putCache = true;
+        //}
 
         do {
             if (level == LID_TABLE_LEVELS) {
@@ -302,9 +352,9 @@ public final class CIDTable {
                 // move on to next table
                 addressTable = entry & BITMASK_ADDRESS;
             } else {
-                if (putCache) {
-                    m_cache.putTableLevel0(p_chunkID, addressTable);
-                }
+                //if (putCache) {
+                //    m_cache.putTableLevel0(p_chunkID, addressTable);
+                //}
 
                 // Set the level 0 entry
                 // valid and active entry, delete flag 0
@@ -694,6 +744,49 @@ public final class CIDTable {
                     m_position = (m_position + 1) % m_localIDs.length;
                     m_count--;
                     m_overallCount--;
+                }
+            }
+
+            return ret;
+        }
+
+        /**
+         * Gets a free LocalID
+         *
+         * @return a free LocalID
+         */
+        long[] getConsecutiveLIDs(final int p_size) {
+            long[] ret;
+            int counter = 0;
+            int visited = 0;
+            long currentID;
+            long lastID = -1;
+
+            ret = new long[p_size];
+            while (counter < p_size) {
+                if (m_overallCount - visited < p_size - counter) {
+                    ret = null;
+                    break;
+                }
+
+                if (m_count == 0) {
+                    fill();
+                }
+
+                if (m_count > 0) {
+                    currentID = m_localIDs[m_position];
+
+                    m_position = (m_position + 1) % m_localIDs.length;
+                    m_count--;
+                    m_overallCount--;
+
+                    if (currentID == lastID + 1 || lastID == -1) {
+                        counter++;
+                        lastID = currentID;
+                    } else {
+                        counter = 0;
+                    }
+                    visited++;
                 }
             }
 

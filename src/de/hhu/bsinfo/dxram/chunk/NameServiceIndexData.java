@@ -25,7 +25,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  */
 public class NameServiceIndexData implements DataStructure {
 
-    private static final int MS_NUM_INDICES = 1024;
+    private static final int MS_NUM_INDICES = 20240;
 
     private long m_id = ChunkID.INVALID_ID;
     private short m_numEntries;

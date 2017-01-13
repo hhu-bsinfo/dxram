@@ -231,7 +231,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     }
 
     /**
-     * Create a new chunk.
+     * Create new chunks.
      *
      * @param p_size
      *     Size of the new chunk.
@@ -240,6 +240,21 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      * @return ChunkIDs/Handles identifying the created chunks.
      */
     public long[] create(final int p_size, final int p_count) {
+        return create(p_size, p_count, false);
+    }
+
+    /**
+     * Create new chunks.
+     *
+     * @param p_size
+     *     Size of the new chunk.
+     * @param p_count
+     *     Number of chunks to create with the specified size.
+     * @param p_consecutive
+     *     Whether the ChunkIDs must be consecutive or not.
+     * @return ChunkIDs/Handles identifying the created chunks.
+     */
+    public long[] create(final int p_size, final int p_count, final boolean p_consecutive) {
         long[] chunkIDs = null;
 
         assert p_size > 0 && p_count > 0;
@@ -270,7 +285,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             }
         } else {
             m_memoryManager.lockManage();
-            chunkIDs = m_memoryManager.createMulti(p_size, p_count);
+            chunkIDs = m_memoryManager.createMulti(p_size, p_count, p_consecutive);
             m_memoryManager.unlockManage();
         }
 
@@ -310,6 +325,21 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      * @return Number of successfully created chunks.
      */
     public int create(final DataStructure... p_dataStructures) {
+        return create(false, p_dataStructures);
+    }
+
+    /**
+     * Create new chunks according to the data structures provided.
+     * Important: This does NOT put/write the contents of the data structure provided.
+     * It creates chunks with the sizes of the data structures and sets the IDs.
+     *
+     * @param p_consecutive
+     *     Whether the ChunkIDs must be consecutive or not.
+     * @param p_dataStructures
+     *     Data structures to create chunks for.
+     * @return Number of successfully created chunks.
+     */
+    public int create(final boolean p_consecutive, final DataStructure... p_dataStructures) {
         int count = 0;
 
         if (p_dataStructures.length == 0) {
@@ -347,7 +377,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             }
         } else {
             m_memoryManager.lockManage();
-            long[] chunkIDs = m_memoryManager.createMulti(p_dataStructures);
+            long[] chunkIDs = m_memoryManager.createMulti(p_consecutive, p_dataStructures);
             m_memoryManager.unlockManage();
 
             if (chunkIDs == null) {
@@ -386,6 +416,19 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      * @return ChunkIDs/Handles identifying the created chunks.
      */
     public long[] createSizes(final int... p_sizes) {
+        return createSizes(false, p_sizes);
+    }
+
+    /**
+     * Create chunks with different sizes.
+     *
+     * @parm p_consecutive
+     *      Whether the ChunkIDs must be consecutive or not.
+     * @param p_sizes
+     *     List of sizes to create chunks for.
+     * @return ChunkIDs/Handles identifying the created chunks.
+     */
+    public long[] createSizes(final boolean p_consecutive, final int... p_sizes) {
         long[] chunkIDs;
 
         if (p_sizes.length == 0) {
@@ -420,7 +463,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             m_backup.initBackupRange(chunkIDs[0], p_sizes[0]);
         } else {
             m_memoryManager.lockManage();
-            chunkIDs = m_memoryManager.createMultiSizes(p_sizes);
+            chunkIDs = m_memoryManager.createMultiSizes(p_consecutive, p_sizes);
             m_memoryManager.unlockManage();
 
             if (chunkIDs == null) {
@@ -1059,7 +1102,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                     m_network.sendSync(request);
                 } catch (final NetworkException e) {
                     // #if LOGGER >= ERROR
-                    LOGGER.error("Sending chunk get request to peer 0x%X failed: %", peer, e);
+                    LOGGER.error("Sending chunk get request to peer 0x%X failed: %s", peer, e);
                     // #endif /* LOGGER >= ERROR */
                     continue;
                 }
@@ -1511,10 +1554,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         registerNetworkMessages();
         registerNetworkMessageListener();
-
-        if (m_boot.getNodeRole() == NodeRole.PEER) {
-            m_backup.registerPeer();
-        }
 
         return true;
     }

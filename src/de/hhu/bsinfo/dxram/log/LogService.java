@@ -57,7 +57,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      *
      * @return the current utilization
      */
-    private String getCurrentUtilization() {
+    public String getCurrentUtilization() {
         return m_log.getCurrentUtilization();
     }
 

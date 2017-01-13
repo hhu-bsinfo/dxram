@@ -142,6 +142,14 @@ public class DXRAMCompat {
         return ret;
     }
 
+    public void get(final Chunk p_chunk) throws DXRAMException {
+        if (m_chunkService != null) {
+            if (m_chunkService.get(p_chunk) != 1) {
+                throw new DXRAMException("Getting chunk " + p_chunk + " failed.");
+            }
+        }
+    }
+
     /**
      * Gets the corresponding Chunks for the given IDs
      *
@@ -417,7 +425,7 @@ public class DXRAMCompat {
      * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
      * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2016
      */
-    private static class DXRAMException extends Exception {
+    public static class DXRAMException extends Exception {
 
         // Constants
         private static final long serialVersionUID = 8402205300600257791L;
@@ -430,7 +438,7 @@ public class DXRAMCompat {
          * @param p_message
          *     the message
          */
-        DXRAMException(final String p_message) {
+        public DXRAMException(final String p_message) {
             super(p_message);
         }
 
@@ -442,7 +450,7 @@ public class DXRAMCompat {
          * @param p_cause
          *     the cause
          */
-        private DXRAMException(final String p_message, final Throwable p_cause) {
+        public DXRAMException(final String p_message, final Throwable p_cause) {
             super(p_message, p_cause);
         }
 

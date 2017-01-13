@@ -85,6 +85,28 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
     }
 
     /**
+     * Get the corresponding primary peer (the peer storing the Chunk in RAM) for the given ChunkID
+     *
+     * @param p_chunkID
+     *     the ChunkID
+     * @return the primary peer
+     */
+    public short getPrimaryPeer(final long p_chunkID) {
+        return m_lookup.getPrimaryPeer(p_chunkID);
+    }
+
+    /**
+     * Get the corresponding LookupRange for the given ChunkID
+     *
+     * @param p_chunkID
+     *     the ChunkID
+     * @return the current location and the range borders
+     */
+    public LookupRange getLookupRange(final long p_chunkID) {
+        return m_lookup.getLookupRange(p_chunkID);
+    }
+
+    /**
      * Returns the responsible superpeer for given peer
      *
      * @param p_nid

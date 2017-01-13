@@ -186,6 +186,56 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     /**
+     * Get the corresponding primary peer (the peer storing the Chunk in RAM) for the given ChunkID
+     *
+     * @param p_chunkID
+     *     the ChunkID
+     * @return the primary peer
+     */
+    short getPrimaryPeer(final long p_chunkID) {
+        short ret = -1;
+        LookupRange lookupRange;
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("Entering getPrimaryPeer with: p_chunkID=0x%X", p_chunkID);
+        // #endif /* LOGGER == TRACE */
+
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Superpeer must not call this method!");
+            // #endif /* LOGGER >= ERROR */
+        } else {
+            if (m_cachesEnabled) {
+                // Read from cache
+                ret = m_chunkIDCacheTree.getPrimaryPeer(p_chunkID);
+                if (ret == -1) {
+                    // Cache miss -> get LookupRange from superpeer
+                    lookupRange = m_peer.getLookupRange(p_chunkID);
+
+                    // Add response to cache
+                    if (lookupRange != null) {
+                        m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[0],
+                            ((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[1], lookupRange.getPrimaryPeer());
+
+                        ret = lookupRange.getPrimaryPeer();
+                    }
+                }
+            } else {
+                lookupRange = m_peer.getLookupRange(p_chunkID);
+                if (lookupRange != null) {
+                    ret = lookupRange.getPrimaryPeer();
+                }
+            }
+        }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("Exiting getPrimaryPeer");
+        // #endif /* LOGGER == TRACE */
+
+        return ret;
+    }
+
+    /**
      * Get the corresponding LookupRange for the given ChunkID
      *
      * @param p_chunkID
@@ -196,7 +246,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         LookupRange ret = null;
 
         // #if LOGGER == TRACE
-        LOGGER.trace("Entering get with: p_chunkID=0x%X", p_chunkID);
+        LOGGER.trace("Entering getLookupRange with: p_chunkID=0x%X", p_chunkID);
         // #endif /* LOGGER == TRACE */
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -223,7 +273,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         // #if LOGGER == TRACE
-        LOGGER.trace("Exiting get");
+        LOGGER.trace("Exiting getLookupRange");
         // #endif /* LOGGER == TRACE */
         return ret;
     }

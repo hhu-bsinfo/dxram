@@ -55,6 +55,22 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
     /**
      * Creates an instance of LookupTree
+     */
+    public LookupTree() {
+        m_root = null;
+        m_size = -1;
+        m_creator = -1;
+        m_restorer = -1;
+        m_status = true;
+
+        m_backupRanges = new ArrayList<long[]>();
+        m_migrationBackupRanges = new ArrayList<Long>();
+
+        m_changedEntry = null;
+    }
+
+    /**
+     * Creates an instance of LookupTree
      *
      * @param p_order
      *     order of the btree
@@ -144,6 +160,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         // Size is read before!
 
+        m_minEntries = p_importer.readShort();
+        m_minChildren = (short) (m_minEntries + 1);
+        m_maxEntries = (short) (2 * m_minEntries);
+        m_maxChildren = (short) (m_maxEntries + 1);
+
         m_creator = p_importer.readShort();
         m_restorer = p_importer.readShort();
         m_status = p_importer.readByte() != 0;
@@ -166,21 +187,19 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         }
 
-        createOrReplaceEntry((long) Math.pow(2, 48), m_creator);
+        // Init initial range
+        createOrReplaceEntry((long) Math.pow(2, 48) - 1, m_creator);
 
         int elementsInBTree = p_importer.readInt();
+        if (elementsInBTree > 0) {
 
-        // init range
+            for (int i = 0; i < elementsInBTree; i++) {
+                long lid = p_importer.readLong();
+                short nid = p_importer.readShort();
 
-        for (int i = 0; i < elementsInBTree; i++) {
-
-            long lid = p_importer.readLong();
-            short nid = p_importer.readShort();
-
-            createOrReplaceEntry(lid, nid);
-
+                createOrReplaceEntry(lid, nid);
+            }
         }
-
     }
 
     /**
@@ -188,6 +207,8 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      */
     @Override
     public void exportObject(final Exporter p_exporter) {
+
+        p_exporter.writeShort(m_minEntries);
 
         p_exporter.writeShort(m_creator);
         p_exporter.writeShort(m_restorer);
@@ -216,8 +237,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
             // Push elements
             putTreeInByteBuffer(m_root, p_exporter);
+        } else {
+            p_exporter.writeInt(-1);
         }
-
     }
 
     // Setters
@@ -227,10 +249,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      */
     @Override
     public int sizeofObject() {
+        int numberOfBytesWritten = Integer.BYTES;
+
         // Size of the b tree list
         // Integer represents the bytes where the size of the list is stored, m_size + 1 for number of entries including the
         // default (LocalID: 0x1000000000000 NodeID: 0xNID), long and short for key and value
-        int numberOfBytesWritten = Integer.BYTES + (m_size + 1) * (Long.BYTES + Short.BYTES);
+        if (m_root != null) {
+            numberOfBytesWritten += (m_size + 1) * (Long.BYTES + Short.BYTES);
+        }
+
+        numberOfBytesWritten += Short.BYTES;
 
         numberOfBytesWritten += Short.BYTES;
         numberOfBytesWritten += Short.BYTES;
@@ -305,8 +333,8 @@ public final class LookupTree implements Serializable, Importable, Exportable {
             } else {
                 ret = new short[] {-1, -1, -1};
             }
-
         }
+
         return ret;
     }
 
@@ -431,10 +459,8 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         if (p_startID == 0) {
             m_creator = p_creator;
+            createOrReplaceEntry((long) Math.pow(2, 48) - 1, p_creator);
         } else {
-            if (m_root == null) {
-                createOrReplaceEntry((long) Math.pow(2, 48), p_creator);
-            }
             backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
             m_backupRanges.add(new long[] {p_startID, backupPeers});
         }

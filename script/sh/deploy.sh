@@ -14,23 +14,25 @@ fi
 # Check if all neccessary programs are installed
 # Globals:
 # Arguments:
-#   None
+#   node_file - The configuration file
 ######################################################
 check_programs() {
+  local node_file=$1
+
   if ! hash cat 2>/dev/null ; then
-    echo "Please install coreutils. Used for cat, cut, rm, mkdir, sleep and readlink. Exiting..."
+    echo "Please install coreutils. Used for cat, cut, mkdir, readlink, rm and sleep. Exiting..."
     exit
   fi
   if ! hash grep 2>/dev/null ; then
-    echo "Please install grep. Used for grep. Exiting..."
+    echo "Please install grep. Exiting..."
     exit
   fi
   if ! hash sed 2>/dev/null ; then
-    echo "Please install sed. Used for sed. Exiting..."
+    echo "Please install sed. Exiting..."
     exit
   fi
   if ! hash hostname 2>/dev/null ; then
-    echo "Please install hostname. Used for hostname. Exiting..."
+    echo "Please install hostname. Exiting..."
     exit
   fi
   if ! hash pkill 2>/dev/null ; then
@@ -46,12 +48,14 @@ check_programs() {
     exit
   fi
   if ! hash ssh 2>/dev/null ; then
-    echo "Please install openssh-client. Used for ssh and scp. Exiting..."
+    echo "Please install openssh-client. Used for scp and ssh. Exiting..."
     exit
   fi
   if ! hash java 2>/dev/null ; then
-    echo "Please install Java 8. Used for java. Exiting..."
-    exit
+	if [ "`cat $node_file | grep localhost`" != "" ] ; then
+	  echo "Please install Java 8 for local execution of DXRAM. Exiting..."
+	  exit
+    fi
   fi
 }
 
@@ -220,7 +224,7 @@ write_configuration() {
       current_config=`echo -e "$current_config\n$end"`
 
       # Replace hostname by ip and port in nodes table
-      new_nodes=`echo "$node" | sed "s/\([a-Z0-9\-\.]*\)/$ip,$port,\1/"`
+      new_nodes=`echo "$node" | sed "s/\([a-zA-Z0-9\-\.]*\)/$ip,$port,\1/"`
       continue
     elif [ "$role" = "S" ] ; then
       current_port=${NODE_ARRAY["$hostname"]}
@@ -260,7 +264,7 @@ write_configuration() {
     fi
 
     # Replace hostname by ip and port in nodes table
-    new_node=`echo "$node" | sed "s/\([a-Z0-9\-\.]*\)/$ip,$port,\1/"`
+    new_node=`echo "$node" | sed "s/\([a-zA-Z0-9\-\.]*\)/$ip,$port,\1/"`
     new_nodes=`echo -e "$new_nodes\n$new_node"`
   done <<< "$NODES"
   readonly NODES="$new_nodes"
@@ -332,7 +336,7 @@ start_remote_zookeeper() {
   local port=$2
   local hostname=$3
 
-  ssh $hostname -n "sed -i \"s/clientPort=[0-9]*/clientPort=$port/g\" \"${REMOTE_ZOOKEEPER_PATH}conf/zoo.cfg\" && ${REMOTE_ZOOKEEPER_PATH}bin/zkServer.sh start"
+  ssh $hostname -n "cd $REMOTE_ZOOKEEPER_PATH && sed -i \"s/clientPort=[0-9]*/clientPort=$port/g\" \"conf/zoo.cfg\" && bin/zkServer.sh start"
 }
 
 ######################################################
@@ -358,6 +362,8 @@ start_local_zookeeper() {
 #   LOG_DIR
 #   LOCAL_ZOOKEEPER_PATH
 #   EXECUTION_DIR
+#	LOCALHOST
+# 	THIS_HOST
 # Arguments:
 #   ip - The IP of the ZooKeeper server
 #   port - The port of the ZooKeeper server
@@ -573,7 +579,8 @@ check_peer_startup() {
   while true ; do
     local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$condition"`
     local fail_init=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
-    local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception"`
+	# Abort execution after an exception was thrown (every exception but NetworkResponseTimeoutException)
+    local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseTimeoutException"`
     if [ "$success" != "" ] ; then
       echo "Peer ($ip $port $ram_size_in_gb $class $arguments $vm_options) started"
       break
@@ -642,6 +649,7 @@ start_local_terminal() {
 # Start all instances
 # Globals:
 #   LOCALHOST
+#	THIS_HOST
 #   LOG_DIR
 #   NODES
 # Arguments:
@@ -796,6 +804,7 @@ resolve() {
 # Globals:
 #   NODES
 #   LOCALHOST
+#	THIS_HOST
 # Arguments:
 #   None
 ######################################################
@@ -803,9 +812,9 @@ close() {
   echo "Closing all dxram instances..."
   local node=""
   while read node || [[ -n "$node" ]]; do
-    ip=`echo $node | cut -d ',' -f 1`
-    hostname=`echo $node | cut -d ',' -f 3`
-    role=`echo $node | cut -d ',' -f 4`
+    local ip=`echo $node | cut -d ',' -f 1`
+    local hostname=`echo $node | cut -d ',' -f 3`
+    local role=`echo $node | cut -d ',' -f 4`
 
     if [ "$role" = "Z" ] ; then
       # Stop ZooKeeper?
@@ -816,7 +825,6 @@ close() {
       else
         ssh $hostname -n "pkill -9 -f DXRAM.jar"
       fi
-      sleep 1
     fi
   done <<< "$NODES"
 
@@ -835,18 +843,23 @@ if [ "$1" = "" ] ; then
   exit
 fi
 
-check_programs
-
-# Trim node file
 node_file="./$1"
 if [ "${node_file: -5}" != ".conf" ] ; then
   node_file="${node_file}.conf"
 fi
+
+check_programs "$node_file"
+
+# Trim node file
 NODES=`cat "$node_file" | grep -v '#' | sed 's/, /,/g' | sed 's/,\t/,/g'`
 
 # Set default values
 readonly NFS_MODE=true # Deactivate for copying configuration to every single remote node
 readonly LOCALHOST=`resolve "localhost"`
+if [ `echo $LOCALHOST | cut -d "." -f 1` != "127" ] ; then
+	echo "Illegal loopback device (ip: $LOCALHOST). Exiting..."
+	exit
+fi
 readonly THIS_HOST=`resolve $(hostname)`
 readonly DEFAULT_CLASS="de.hhu.bsinfo.dxram.run.DXRAMMain"
 readonly LIBRARIES="lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:lib/jline-1.0.jar:DXRAM.jar"

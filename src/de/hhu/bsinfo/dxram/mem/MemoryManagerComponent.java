@@ -15,6 +15,7 @@ package de.hhu.bsinfo.dxram.mem;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.gson.annotations.Expose;
 
@@ -74,8 +75,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     private AbstractBootComponent m_boot;
     private SmallObjectHeap m_rawMemory;
     private CIDTable m_cidTable;
-    // private ReentrantReadWriteLock m_lock;
-    private AtomicInteger m_lock;
+    private ReentrantReadWriteLock m_lock;
+    //private AtomicInteger m_lock;
     private long m_numActiveChunks;
     private long m_totalActiveChunkMemory;
     private SmallObjectHeapDataStructureImExporter[] m_imexporter = new SmallObjectHeapDataStructureImExporter[65536];
@@ -161,10 +162,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      */
     public void lockManage() {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            // m_lock.writeLock().lock();
+            m_lock.writeLock().lock();
 
             // set flag to block further readers from entering
-            while (true) {
+            /*-while (true) {
                 int v = m_lock.get();
                 if (m_lock.compareAndSet(v, v | 0x40000000)) {
                     break;
@@ -173,7 +174,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
             while (!m_lock.compareAndSet(0x40000000, 0x80000000)) {
                 // Wait
-            }
+            }*/
         }
     }
 
@@ -183,14 +184,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public void lockAccess() {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
 
-            // m_lock.readLock().lock();
+            m_lock.readLock().lock();
 
-            while (true) {
+            /*-while (true) {
                 int v = m_lock.get() & 0xCFFFFFFF;
                 if (m_lock.compareAndSet(v, v + 1)) {
                     break;
                 }
-            }
+            }*/
 
         }
     }
@@ -200,9 +201,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      */
     public void unlockManage() {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            // m_lock.writeLock().unlock();
+            m_lock.writeLock().unlock();
 
-            m_lock.set(0);
+            //m_lock.set(0);
         }
     }
 
@@ -211,9 +212,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      */
     public void unlockAccess() {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            // m_lock.readLock().unlock();
+            m_lock.readLock().unlock();
 
-            m_lock.decrementAndGet();
+            //m_lock.decrementAndGet();
         }
     }
 
@@ -340,6 +341,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     }
 
     public long[] createMultiSizes(final int... p_sizes) {
+        return createMultiSizes(false, p_sizes);
+    }
+
+    public long[] createMultiSizes(final boolean p_consecutive, final int... p_sizes) {
         long[] addresses;
         long[] lids;
 
@@ -356,15 +361,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         // #endif /* STATISTICS */
 
         // get new LIDs
-        lids = new long[p_sizes.length];
-        for (int i = 0; i < lids.length; i++) {
-            lids[i] = m_cidTable.getFreeLID();
-            if (lids[i] == -1) {
-                // #if LOGGER >= ERROR
-                LOGGER.fatal("Allocating new LIDs failed, out of LIDs");
-                // #endif /* LOGGER >= ERROR */
-                return null;
-            }
+        lids = m_cidTable.getFreeLIDs(p_sizes.length, p_consecutive);
+        if (lids == null) {
+            return null;
         }
 
         // #ifdef STATISTICS
@@ -419,16 +418,24 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     }
 
     public long[] createMulti(final DataStructure... p_dataStructures) {
+        return createMulti(false, p_dataStructures);
+    }
+
+    public long[] createMulti(final boolean p_consecutive, final DataStructure... p_dataStructures) {
         int[] sizes = new int[p_dataStructures.length];
 
         for (int i = 0; i < p_dataStructures.length; i++) {
             sizes[i] = p_dataStructures[i].sizeofObject();
         }
 
-        return createMultiSizes(sizes);
+        return createMultiSizes(p_consecutive, sizes);
     }
 
     public long[] createMulti(final int p_size, final int p_count) {
+        return createMulti(p_size, p_count, false);
+    }
+
+    public long[] createMulti(final int p_size, final int p_count, final boolean p_consecutive) {
         assert m_boot.getNodeRole() == NodeRole.PEER;
 
         long[] addresses;
@@ -439,15 +446,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         // #endif /* STATISTICS */
 
         // get new LIDs
-        lids = new long[p_count];
-        for (int i = 0; i < lids.length; i++) {
-            lids[i] = m_cidTable.getFreeLID();
-            if (lids[i] == -1) {
-                // #if LOGGER >= ERROR
-                LOGGER.fatal("Allocating new LIDs failed, out of LIDs");
-                // #endif /* LOGGER >= ERROR */
-                return null;
-            }
+        lids = m_cidTable.getFreeLIDs(p_count, p_consecutive);
+        if (lids == null) {
+            return null;
         }
 
         // first, try to allocate. maybe early return
@@ -1065,7 +1066,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             m_cidTable = new CIDTable(this);
             m_cidTable.initialize(m_rawMemory);
 
-            m_lock = new AtomicInteger(0);
+            //m_lock = new AtomicInteger(0);
+            m_lock = new ReentrantReadWriteLock(false);
 
             m_numActiveChunks = 0;
             m_totalActiveChunkMemory = 0;

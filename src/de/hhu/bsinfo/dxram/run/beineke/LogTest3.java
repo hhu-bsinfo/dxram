@@ -310,7 +310,7 @@ public final class LogTest3 {
             nodeIDs[1] = -15807;
             nodeIDs[2] = -14847;*/
             final short[] nodeIDs = new short[1];
-            nodeIDs[0] = 320;
+            nodeIDs[0] = 960;
             ByteBuffer data;
 
             long start;
