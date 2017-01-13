@@ -64,7 +64,6 @@ public class SubmitTaskRequest extends AbstractRequest {
     protected final void writePayload(final ByteBuffer p_buffer) {
         MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 
-        exporter.writeString(m_taskScript.getClass().getName());
         exporter.exportObject(m_taskScript);
     }
 
@@ -72,14 +71,12 @@ public class SubmitTaskRequest extends AbstractRequest {
     protected final void readPayload(final ByteBuffer p_buffer) {
         MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
-        String taskName = importer.readString();
-
         m_taskScript = new TaskScript();
         importer.importObject(m_taskScript);
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + m_taskScript.getClass().getName().getBytes().length + m_taskScript.sizeofObject();
+        return m_taskScript.sizeofObject();
     }
 }

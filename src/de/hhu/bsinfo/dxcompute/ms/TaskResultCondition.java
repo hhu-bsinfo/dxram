@@ -20,6 +20,7 @@ import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 public final class TaskResultCondition implements TaskScriptNode {
 
@@ -93,6 +94,6 @@ public final class TaskResultCondition implements TaskScriptNode {
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES + m_cond.getBytes().length + m_true.sizeofObject() + m_false.sizeofObject();
+        return ObjectSizeUtil.sizeofString(m_cond) + Integer.BYTES + m_true.sizeofObject() + m_false.sizeofObject();
     }
 }
