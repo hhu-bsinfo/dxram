@@ -39,6 +39,24 @@ interface ScriptDXRAMContext {
     AbstractDXRAMService service(String p_serviceName);
 
     /**
+     * Get the decimal part of a double value as int
+     *
+     * @param p_val
+     *     Value
+     * @return Decimal part as int
+     */
+    int toInt(final double p_val);
+
+    /**
+     * Get the decimal part of a double value as long
+     *
+     * @param p_val
+     *     Value
+     * @return Decimal part as long
+     */
+    long toLong(final double p_val);
+
+    /**
      * Convert a short value to an unsigned hex string.
      *
      * @param p_val

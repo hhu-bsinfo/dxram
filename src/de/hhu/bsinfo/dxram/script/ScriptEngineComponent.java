@@ -163,11 +163,19 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
     }
 
     @Override
+    public int toInt(double p_val) {
+        return (int) p_val;
+    }
+
+    @Override
+    public long toLong(double p_val) {
+        return (long) p_val;
+    }
+
+    @Override
     public String shortToHexStr(final short p_val) {
         return NodeID.toHexString(p_val);
     }
-
-    // -------------------------------------------------------------------------------------------------------
 
     @Override
     public String intToHexStr(final int p_val) {
