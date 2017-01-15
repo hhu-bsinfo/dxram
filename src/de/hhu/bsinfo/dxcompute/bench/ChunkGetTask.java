@@ -5,48 +5,41 @@ import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import java.util.ArrayList;
 
-public class ChunkCreateTask implements Task {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkCreateTask.class.getSimpleName());
+public class ChunkGetTask implements Task {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkGetTask.class.getSimpleName());
 
     @Expose
     private int m_numThreads = 1;
     @Expose
-    private int m_chunkCount = 1000;
+    private int m_getCount = 1000;
     @Expose
     private int m_chunkBatch = 10;
-    @Expose
-    private StorageUnit m_chunkSizeBytesBegin = new StorageUnit(16, StorageUnit.BYTE);
-    @Expose
-    private StorageUnit m_chunkSizeBytesEnd = new StorageUnit(512, StorageUnit.BYTE);
-
-    public ChunkCreateTask() {
-
-    }
-
-    public ChunkCreateTask(final int p_numThreads, final int p_chunkCount, final StorageUnit p_chunkSizeBytesBegin, final StorageUnit p_chunkSizeBytesEnd) {
-        m_numThreads = p_numThreads;
-        m_chunkCount = p_chunkCount;
-        m_chunkSizeBytesBegin = p_chunkSizeBytesBegin;
-        m_chunkSizeBytesEnd = p_chunkSizeBytesEnd;
-    }
 
     @Override
-    public int execute(final TaskContext p_ctx) {
+    public int execute(TaskContext p_ctx) {
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 
-        int[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_chunkCount, m_numThreads);
+        int[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_getCount, m_numThreads);
         Thread[] threads = new Thread[m_numThreads];
         long[] timeStart = new long[m_numThreads];
         long[] timeEnd = new long[m_numThreads];
+        Chunk[] chunkBatch = new Chunk[m_chunkBatch];
 
-        System.out.printf("Creating %d chunks in batches of %d chunk(s) of random sizes between %s and %s with %d thread(s)...\n",
-                m_chunkCount, m_chunkBatch, m_chunkSizeBytesBegin, m_chunkSizeBytesEnd, m_numThreads);
+        for (int i = 0; i < chunkBatch.length; i++) {
+            chunkBatch[i] = new Chunk();
+        }
+
+        ArrayList<Long> chunkRanges = chunkService.getAllLocalChunkIDRanges();
+
+        System.out.printf("Getting (read only) %d random chunks in batches of %d chunk(s) with %d thread(s)...\n",
+                m_getCount, m_chunkBatch, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
@@ -56,12 +49,18 @@ public class ChunkCreateTask implements Task {
 
                 timeStart[threadIdx] = System.nanoTime();
                 for (int j = 0; j < batches; j++) {
-                    int size = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
-                    chunkService.create(size, m_chunkBatch);
+                    for (Chunk chunk : chunkBatch) {
+                        chunk.setID(ChunkTaskUtils.getRandomChunkIdOfRanges(chunkRanges));
+                    }
+
+                    chunkService.get(chunkBatch);
                 }
                 if (lastBatchRemainder > 0) {
-                    int size = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
-                    chunkService.create(size, lastBatchRemainder);
+                    for (int k = 0; k < lastBatchRemainder; k++) {
+                        chunkBatch[k].setID(ChunkTaskUtils.getRandomChunkIdOfRanges(chunkRanges));
+                    }
+
+                    chunkService.get(chunkBatch, 0, lastBatchRemainder);
                 }
                 timeEnd[threadIdx] = System.nanoTime();
             });
@@ -100,7 +99,7 @@ public class ChunkCreateTask implements Task {
             }
         }
 
-        System.out.printf("Throughput: %f chunks/sec", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_chunkCount));
+        System.out.printf("Throughput: %f chunks/sec", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_getCount));
 
         return 0;
     }
@@ -113,25 +112,19 @@ public class ChunkCreateTask implements Task {
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeInt(m_numThreads);
-        p_exporter.writeInt(m_chunkCount);
+        p_exporter.writeInt(m_getCount);
         p_exporter.writeInt(m_chunkBatch);
-        p_exporter.exportObject(m_chunkSizeBytesBegin);
-        p_exporter.exportObject(m_chunkSizeBytesEnd);
     }
 
     @Override
     public void importObject(final Importer p_importer) {
         m_numThreads = p_importer.readInt();
-        m_chunkCount = p_importer.readInt();
+        m_getCount = p_importer.readInt();
         m_chunkBatch = p_importer.readInt();
-        m_chunkSizeBytesBegin = new StorageUnit();
-        p_importer.importObject(m_chunkSizeBytesBegin);
-        m_chunkSizeBytesEnd = new StorageUnit();
-        p_importer.importObject(m_chunkSizeBytesEnd);
     }
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES * 3 + m_chunkSizeBytesBegin.sizeofObject() + m_chunkSizeBytesEnd.sizeofObject();
+        return Integer.BYTES * 3;
     }
 }

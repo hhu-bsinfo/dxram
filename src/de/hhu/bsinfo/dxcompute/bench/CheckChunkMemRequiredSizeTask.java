@@ -9,9 +9,6 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
-/**
- * Created by rubbinnexx on 1/15/17.
- */
 public class CheckChunkMemRequiredSizeTask implements Task {
     @Expose
     private StorageUnit m_minRequiredSize = new StorageUnit(1, StorageUnit.TB);
