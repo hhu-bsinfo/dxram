@@ -308,6 +308,8 @@ public final class SmallObjectHeap {
         // -1: one marker byte is already part of the free block
         int bigChunkSize = p_count - 1;
 
+        bigChunkSize += p_size * p_count;
+
         if (p_size <= MAX_SIZE_MEMORY_BLOCK) {
             if (p_size >= 1 << 16) {
                 bigChunkSize += 3 * p_count;
