@@ -182,7 +182,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      *
      * @return List of local chunk ID ranges with blocks of start ID and end ID.
      */
-    private ArrayList<Long> getAllLocalChunkIDRanges() {
+    public ArrayList<Long> getAllLocalChunkIDRanges() {
         ArrayList<Long> list;
 
         m_memoryManager.lockAccess();
