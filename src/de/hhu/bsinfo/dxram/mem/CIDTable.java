@@ -805,7 +805,7 @@ public final class CIDTable {
         public boolean put(final long p_localID) {
             boolean ret;
 
-            if (m_count < m_localIDs.length) {
+            if (m_position + m_count < m_localIDs.length) {
                 m_localIDs[m_position + m_count] = p_localID;
 
                 m_count++;
