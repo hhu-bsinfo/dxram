@@ -273,9 +273,13 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
         m_executeTaskScriptLock.lock();
 
-        int result = 0;
+        Integer result = 0;
         for (TaskScriptNode node : m_taskScript.getTasks()) {
             result = executeTaskScriptNode(node, result);
+            if (result == null) {
+                result = 0;
+                break;
+            }
         }
 
         // #if LOGGER >= INFO
@@ -312,6 +316,10 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
         // #endif /* LOGGER >= DEBUG */
     }
 
+    /**
+     * Execute a sync step with the master. This is called after execution
+     * of a single task statement of a task script
+     */
     private void syncStepMaster() {
         // #if LOGGER >= DEBUG
         LOGGER.debug("Sync step with master 0x%X ...", m_masterNodeId);
@@ -320,39 +328,75 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
         m_lookup.barrierSignOn(m_masterExecutionBarrierId, 1L << 32);
     }
 
-    private int executeTaskScriptNode(final TaskScriptNode p_taskScriptNode, final int p_prevReturnCode) {
-        int result = p_prevReturnCode;
+    /**
+     * Execute the give task script node
+     *
+     * @param p_taskScriptNode Script node to execute
+     * @param p_prevReturnCode Return code of the previous task executed
+     * @return Return value of the node executed
+     */
+    private Integer executeTaskScriptNode(final TaskScriptNode p_taskScriptNode, final Integer p_prevReturnCode) {
+        Integer result = p_prevReturnCode;
 
-        if (p_taskScriptNode instanceof TaskResultCondition) {
-            TaskResultCondition condition = (TaskResultCondition) p_taskScriptNode;
+        if (result != null) {
+            if (p_taskScriptNode instanceof TaskResultCondition) {
+                TaskResultCondition condition = (TaskResultCondition) p_taskScriptNode;
 
-            // #if LOGGER >= DEBUG
-            LOGGER.debug("Executing condition: %s", condition);
-            // #endif /* LOGGER >= DEBUG */
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Executing condition: %s", condition);
+                // #endif /* LOGGER >= DEBUG */
 
-            TaskScript script = condition.evaluate(result);
-            syncStepMaster();
+                TaskScript script = condition.evaluate(result);
+                syncStepMaster();
 
-            for (TaskScriptNode node : script.getTasks()) {
-                result = executeTaskScriptNode(node, result);
+                for (TaskScriptNode node : script.getTasks()) {
+                    result = executeTaskScriptNode(node, result);
+                    if (result == null) {
+                        break;
+                    }
+                }
+            } else if (p_taskScriptNode instanceof Task) {
+                Task task = (Task) p_taskScriptNode;
+
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Executing task: %s", task);
+                // #endif /* LOGGER >= DEBUG */
+
+                try {
+                    result = task.execute(new TaskContext(m_ctxData, this, getServiceAccessor()));
+                } catch (final Exception e) {
+                    LOGGER.error("Executing task failed, exception", e);
+                    result = -1;
+                }
+                syncStepMaster();
+            } else if (p_taskScriptNode instanceof TaskResultSwitch) {
+                TaskResultSwitch resSwitch = (TaskResultSwitch) p_taskScriptNode;
+
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Executing switch: %s", resSwitch);
+                // #endif /* LOGGER >= DEBUG */
+
+                TaskScript script = resSwitch.evaluate(result);
+                syncStepMaster();
+
+                for (TaskScriptNode node : script.getTasks()) {
+                    result = executeTaskScriptNode(node, result);
+                    if (result == null) {
+                        break;
+                    }
+                }
+            } else if (p_taskScriptNode instanceof TaskAbort) {
+                TaskAbort abort = (TaskAbort) p_taskScriptNode;
+
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Executing abort: %s", abort);
+                // #endif /* LOGGER >= DEBUG */
+
+                System.out.printf("Aborting task script: %s\n", abort.getAbortMsg());
+                result = null;
+            } else {
+                throw new RuntimeException("Unhandled script node type " + p_taskScriptNode.getClass().getName());
             }
-        } else if (p_taskScriptNode instanceof Task) {
-            Task task = (Task) p_taskScriptNode;
-
-            // #if LOGGER >= DEBUG
-            LOGGER.debug("Executing task: %s", task);
-            // #endif /* LOGGER >= DEBUG */
-
-            try {
-                result = task.execute(new TaskContext(m_ctxData, this, getServiceAccessor()));
-            } catch (final Exception e) {
-                LOGGER.error("Executing task failed, exception", e);
-                result = -1;
-            }
-
-            syncStepMaster();
-        } else {
-            throw new RuntimeException("Unhandled script node type " + p_taskScriptNode.getClass().getName());
         }
 
         return result;

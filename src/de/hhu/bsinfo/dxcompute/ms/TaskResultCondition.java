@@ -22,7 +22,13 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
-public final class TaskResultCondition implements TaskScriptNode {
+/**
+ * Condition to allow execution of a task script taking different branches
+ * depending on the return code of the previous task
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 15.01.2017
+ */
+final class TaskResultCondition implements TaskScriptNode {
 
     private static final Map<String, ConditionFunction> CONDITIONS = new HashMap<>();
 
@@ -49,11 +55,20 @@ public final class TaskResultCondition implements TaskScriptNode {
     @Expose
     private TaskScript m_false = new TaskScript();
 
+    /**
+     * Default constructor
+     */
     public TaskResultCondition() {
 
     }
 
-    public TaskScript evaluate(final int p_prevTaskReturnCode) {
+    /**
+     * Evaluate the condition based on the previous task's return code
+     *
+     * @param p_prevTaskReturnCode Return code of the previous task
+     * @return TaskScript which is the result of the evaluated condition for further execution
+     */
+    TaskScript evaluate(final int p_prevTaskReturnCode) {
         ConditionFunction func = CONDITIONS.get(m_cond);
         if (func == null) {
             return new TaskScript();

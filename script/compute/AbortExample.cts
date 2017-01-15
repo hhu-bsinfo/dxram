@@ -1,6 +1,6 @@
 {
 	"m_numRequiredSlaves": 0,
-	"m_name": "test2",
+	"m_name": "AbortExample",
 	"m_tasks": [
 		{
 		  	"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.RandomReturnValueTask",
@@ -28,17 +28,14 @@
 						"m_msg": "Branched != 0"
 					},
 					{
-					  	"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.EmptyTask"
-					},
-					{
-					  	"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.EmptyTask"
+						"m_abortMsg": "Aborting execution in != 0 branch"
 					}
 				]
 			}
 		},
 		{
 		  	"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.PrintTask",
-			"m_msg": "test"
+			"m_msg": "Message after condition"
 		}
 	]
 }

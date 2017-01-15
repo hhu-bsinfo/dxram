@@ -29,73 +29,80 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Gson context for handling serialization and deserialization of task scripts
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 15.01.2017
+ */
 final class TaskScriptGsonContext {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(TaskScriptGsonContext.class.getSimpleName());
 
+    /**
+     * Static class
+     */
     private TaskScriptGsonContext() {
 
     }
 
+    /**
+     * Create a Gson instance with all adapters attached for serialization/deserialization
+     * @return Gson context
+     */
     static Gson createGsonInstance() {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation()
-            .registerTypeAdapter(TaskScriptNode.class, new AbstractTaskScriptNodeSerializer())
+            .registerTypeAdapter(TaskScriptNode.class, new TaskScriptNodeSerializer())
                 .registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer())
                 .registerTypeAdapter(TimeUnit.class, new TimeUnitGsonSerializer()).create();
     }
 
-    private static class AbstractTaskScriptNodeSerializer implements JsonDeserializer<TaskScriptNode> {
-
+    /**
+     * Gson deserializer for TaskScriptNodes
+     */
+    private static class TaskScriptNodeSerializer implements JsonDeserializer<TaskScriptNode> {
         @Override
         public TaskScriptNode deserialize(final JsonElement p_jsonElement, final Type p_type, final JsonDeserializationContext p_jsonDeserializationContext) {
 
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
 
             if (jsonObj.has("m_task")) {
-                return deserializeTaskPayload(p_jsonElement, p_type, p_jsonDeserializationContext);
+                String className = jsonObj.get("m_task").getAsString();
+
+                Class<?> clazz;
+                try {
+                    clazz = Class.forName(className);
+                } catch (final ClassNotFoundException ignore) {
+                    LOGGER.fatal("Could not find task for class name '%s', check your task script", className);
+                    return null;
+                }
+
+                // check if class implements the Task interface
+                boolean impl = false;
+                for (Class<?> iface : clazz.getInterfaces()) {
+                    if (iface.equals(Task.class)) {
+                        impl = true;
+                        break;
+                    }
+                }
+
+                if (!impl) {
+                    LOGGER.fatal("Class '%s' does not implement the interface Task, check your task script", className);
+                    return null;
+                }
+
+                return p_jsonDeserializationContext.deserialize(p_jsonElement, clazz);
             }
             if (jsonObj.has("m_cond")) {
-                return deserializeTaskResultCondition(p_jsonElement, p_type, p_jsonDeserializationContext);
+                return p_jsonDeserializationContext.deserialize(p_jsonElement, TaskResultCondition.class);
+            }
+            if (jsonObj.has("m_switchCases")) {
+                return p_jsonDeserializationContext.deserialize(p_jsonElement, TaskResultSwitch.class);
+            }
+            if (jsonObj.has("m_abortMsg")) {
+                return p_jsonDeserializationContext.deserialize(p_jsonElement, TaskAbort.class);
             }
 
             return null;
-        }
-
-        private TaskScriptNode deserializeTaskPayload(final JsonElement p_jsonElement, final Type p_type,
-            final JsonDeserializationContext p_jsonDeserializationContext) {
-            JsonObject jsonObj = p_jsonElement.getAsJsonObject();
-
-            String className = jsonObj.get("m_task").getAsString();
-
-            Class<?> clazz;
-            try {
-                clazz = Class.forName(className);
-            } catch (final ClassNotFoundException ignore) {
-                LOGGER.fatal("Could not find task for class name '%s', check your task script", className);
-                return null;
-            }
-
-            // check if class implements the Task interface
-            boolean impl = false;
-            for (Class<?> iface : clazz.getInterfaces()) {
-                if (iface.equals(Task.class)) {
-                    impl = true;
-                    break;
-                }
-            }
-
-            if (!impl) {
-                LOGGER.fatal("Class '%s' does not implement the interface Task, check your task script", className);
-                return null;
-            }
-
-            return p_jsonDeserializationContext.deserialize(p_jsonElement, clazz);
-        }
-
-        private TaskScriptNode deserializeTaskResultCondition(final JsonElement p_jsonElement, final Type p_type,
-            final JsonDeserializationContext p_jsonDeserializationContext) {
-
-            return p_jsonDeserializationContext.deserialize(p_jsonElement, TaskResultCondition.class);
         }
     }
 }

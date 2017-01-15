@@ -47,6 +47,10 @@ final class DXRAMGsonContext {
     private DXRAMGsonContext() {
     }
 
+    /**
+     * Create a Gson instance with all adapters attached for serialization/deserialization
+     * @return Gson context
+     */
     static Gson createGsonInstance() {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation()
             .registerTypeAdapter(AbstractDXRAMComponent.class, new ComponentSerializer())
