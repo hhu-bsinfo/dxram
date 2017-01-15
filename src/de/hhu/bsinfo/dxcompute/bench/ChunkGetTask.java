@@ -26,7 +26,7 @@ public class ChunkGetTask implements Task {
     public int execute(TaskContext p_ctx) {
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 
-        int[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_getCount, m_numThreads);
+        long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_getCount, m_numThreads);
         Thread[] threads = new Thread[m_numThreads];
         long[] timeStart = new long[m_numThreads];
         long[] timeEnd = new long[m_numThreads];
@@ -44,8 +44,8 @@ public class ChunkGetTask implements Task {
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
             threads[i] = new Thread(() -> {
-                int batches = chunkCountsPerThread[threadIdx] / m_chunkBatch;
-                int lastBatchRemainder = chunkCountsPerThread[threadIdx] % m_chunkBatch;
+                long batches = chunkCountsPerThread[threadIdx] / m_chunkBatch;
+                long lastBatchRemainder = chunkCountsPerThread[threadIdx] % m_chunkBatch;
 
                 timeStart[threadIdx] = System.nanoTime();
                 for (int j = 0; j < batches; j++) {
@@ -60,7 +60,7 @@ public class ChunkGetTask implements Task {
                         chunkBatch[k].setID(ChunkTaskUtils.getRandomChunkIdOfRanges(chunkRanges));
                     }
 
-                    chunkService.get(chunkBatch, 0, lastBatchRemainder);
+                    chunkService.get(chunkBatch, 0, (int) lastBatchRemainder);
                 }
                 timeEnd[threadIdx] = System.nanoTime();
             });
@@ -99,7 +99,8 @@ public class ChunkGetTask implements Task {
             }
         }
 
-        System.out.printf("Throughput: %f chunks/sec", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_getCount));
+        System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
+        System.out.printf("Throughput: %f chunks/sec\n", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_getCount));
 
         return 0;
     }

@@ -40,7 +40,7 @@ public class ChunkCreateTask implements Task {
     public int execute(final TaskContext p_ctx) {
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 
-        int[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_chunkCount, m_numThreads);
+        long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_chunkCount, m_numThreads);
         Thread[] threads = new Thread[m_numThreads];
         long[] timeStart = new long[m_numThreads];
         long[] timeEnd = new long[m_numThreads];
@@ -51,8 +51,8 @@ public class ChunkCreateTask implements Task {
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
             threads[i] = new Thread(() -> {
-                int batches = chunkCountsPerThread[threadIdx] / m_chunkBatch;
-                int lastBatchRemainder = chunkCountsPerThread[threadIdx] % m_chunkBatch;
+                long batches = chunkCountsPerThread[threadIdx] / m_chunkBatch;
+                long lastBatchRemainder = chunkCountsPerThread[threadIdx] % m_chunkBatch;
 
                 timeStart[threadIdx] = System.nanoTime();
                 for (int j = 0; j < batches; j++) {
@@ -61,7 +61,7 @@ public class ChunkCreateTask implements Task {
                 }
                 if (lastBatchRemainder > 0) {
                     int size = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
-                    chunkService.create(size, lastBatchRemainder);
+                    chunkService.create(size, (int) lastBatchRemainder);
                 }
                 timeEnd[threadIdx] = System.nanoTime();
             });
@@ -100,7 +100,8 @@ public class ChunkCreateTask implements Task {
             }
         }
 
-        System.out.printf("Throughput: %f chunks/sec", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_chunkCount));
+        System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
+        System.out.printf("Throughput: %f chunks/sec\n", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_chunkCount));
 
         return 0;
     }
