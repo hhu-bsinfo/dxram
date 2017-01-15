@@ -20,6 +20,7 @@ import java.io.PrintStream;
 
 import com.google.gson.annotations.Expose;
 
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,7 +35,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class PrintMemoryStatusToFileTask extends PrintMemoryStatusTask {
+public class PrintMemoryStatusToFileTask implements Task {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(PrintMemoryStatusToFileTask.class.getSimpleName());
 
@@ -98,7 +99,7 @@ public class PrintMemoryStatusToFileTask extends PrintMemoryStatusTask {
             // #endif /* LOGGER >= ERROR */
             return -5;
         }
-        printMemoryStatusToOutput(out, chunkService.getStatus());
+        PrintMemoryStatus.printMemoryStatusToOutput(out, chunkService.getStatus());
 
         out.close();
 

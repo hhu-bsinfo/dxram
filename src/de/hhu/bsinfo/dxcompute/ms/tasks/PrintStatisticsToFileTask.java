@@ -20,6 +20,7 @@ import java.io.PrintStream;
 
 import com.google.gson.annotations.Expose;
 
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,7 +36,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class PrintStatisticsToFileTask extends PrintStatisticsTask {
+public class PrintStatisticsToFileTask implements Task {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(PrintStatisticsToFileTask.class.getSimpleName());
 
@@ -101,7 +102,7 @@ public class PrintStatisticsToFileTask extends PrintStatisticsTask {
             // #endif /* LOGGER >= ERROR */
             return -5;
         }
-        printStatisticsToOutput(out, bootService, statisticsService);
+        PrintStatistics.printStatisticsToOutput(out, bootService, statisticsService);
 
         out.close();
 

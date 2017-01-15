@@ -19,26 +19,22 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 
-import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
- * Base class to print the statistics.
+ * Helper class to print statistics.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-abstract class PrintStatisticsTask implements Task {
+class PrintStatistics {
 
     /**
-     * Constructor
-     * Expecting a default constructor for the sub classes extending this
-     * base class, otherwise the createInstance call won't work.
-     * Make sure to register each task payload implementation prior usage.
+     * Static class
      */
-    PrintStatisticsTask() {
+    private PrintStatistics() {
 
     }
 

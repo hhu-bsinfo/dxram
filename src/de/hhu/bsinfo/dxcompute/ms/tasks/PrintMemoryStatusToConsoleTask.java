@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -24,7 +25,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class PrintMemoryStatusToConsoleTask extends PrintMemoryStatusTask {
+public class PrintMemoryStatusToConsoleTask implements Task {
 
     /**
      * Constructor
@@ -36,7 +37,7 @@ public class PrintMemoryStatusToConsoleTask extends PrintMemoryStatusTask {
     @Override
     public int execute(final TaskContext p_ctx) {
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
-        printMemoryStatusToOutput(System.out, chunkService.getStatus());
+        PrintMemoryStatus.printMemoryStatusToOutput(System.out, chunkService.getStatus());
         return 0;
     }
 

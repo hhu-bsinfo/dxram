@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
@@ -25,7 +26,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class PrintStatisticsToConsoleTask extends PrintStatisticsTask {
+public class PrintStatisticsToConsoleTask implements Task {
 
     /**
      * Constructor
@@ -38,7 +39,7 @@ public class PrintStatisticsToConsoleTask extends PrintStatisticsTask {
     public int execute(final TaskContext p_ctx) {
         BootService bootService = p_ctx.getDXRAMServiceAccessor().getService(BootService.class);
         StatisticsService statisticsService = p_ctx.getDXRAMServiceAccessor().getService(StatisticsService.class);
-        printStatisticsToOutput(System.out, bootService, statisticsService);
+        PrintStatistics.printStatisticsToOutput(System.out, bootService, statisticsService);
         return 0;
     }
 
