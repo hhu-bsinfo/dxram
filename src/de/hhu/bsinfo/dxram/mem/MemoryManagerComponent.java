@@ -598,7 +598,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long address;
         int size = -1;
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+
+            if (role == NodeRole.TERMINAL) {
+                return size;
+            }
+
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
@@ -622,7 +628,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long address;
         boolean ret = true;
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+
+            if (role == NodeRole.TERMINAL) {
+                return ret;
+            }
+
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
@@ -661,7 +673,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         byte[] ret = null;
         long address;
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+
+            if (role == NodeRole.TERMINAL) {
+                return ret;
+            }
+
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
@@ -705,7 +723,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long address;
         boolean ret = true;
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+
+            if (role == NodeRole.TERMINAL) {
+                return ret;
+            }
+
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
@@ -745,7 +769,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         int size;
         boolean ret = true;
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+
+            if (role == NodeRole.TERMINAL) {
+                return ret;
+            }
+
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
@@ -807,7 +837,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public void createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
         long[] addresses;
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+        NodeRole role = m_boot.getNodeRole();
+        if (role != NodeRole.PEER) {
+
+            if (role == NodeRole.TERMINAL) {
+                return;
+            }
+
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
