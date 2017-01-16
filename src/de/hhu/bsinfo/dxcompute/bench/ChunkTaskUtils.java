@@ -1,9 +1,10 @@
 package de.hhu.bsinfo.dxcompute.bench;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
 import java.util.ArrayList;
 import java.util.List;
+
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 final class ChunkTaskUtils {
 
@@ -92,6 +93,6 @@ final class ChunkTaskUtils {
     }
 
     private static long getRandomRange(final long p_start, final long p_end) {
-        return (int) (Math.random() * (p_end - p_start + 1) + p_start);
+        return (long) (Math.random() * (p_end - p_start + 1) + p_start);
     }
 }
