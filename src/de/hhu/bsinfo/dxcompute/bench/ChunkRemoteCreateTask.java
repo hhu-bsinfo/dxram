@@ -9,14 +9,12 @@ import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
-public class ChunkCreateTask implements Task {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkCreateTask.class.getSimpleName());
+public class ChunkRemoteCreateTask implements Task {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkRemoteCreateTask.class.getSimpleName());
 
     @Expose
     private int m_numThreads = 1;
@@ -28,23 +26,16 @@ public class ChunkCreateTask implements Task {
     private StorageUnit m_chunkSizeBytesBegin = new StorageUnit(16, StorageUnit.BYTE);
     @Expose
     private StorageUnit m_chunkSizeBytesEnd = new StorageUnit(512, StorageUnit.BYTE);
-    @Expose
-    private boolean m_remote = false;
-
-    public ChunkCreateTask() {
-
-    }
 
     @Override
     public int execute(final TaskContext p_ctx) {
-        short destNodeId = NodeID.INVALID_ID;
-
-        if (m_remote && p_ctx.getCtxData().getSlaveNodeIds().length < 2) {
+        if (p_ctx.getCtxData().getSlaveNodeIds().length < 2) {
             System.out.println("Not enough slaves (min 2) to execute this task");
             return -1;
-        } else {
-            destNodeId = ChunkTaskUtils.getSuccessorSlaveNodeId(p_ctx.getCtxData().getSlaveNodeIds(), p_ctx.getCtxData().getSlaveId());
         }
+
+        // pick our slave id successor
+        short destNodeId = ChunkTaskUtils.getSuccessorSlaveNodeId(p_ctx.getCtxData().getSlaveNodeIds(), p_ctx.getCtxData().getSlaveId());
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 
@@ -58,45 +49,19 @@ public class ChunkCreateTask implements Task {
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
-            short finalDestNodeId = destNodeId;
             threads[i] = new Thread(() -> {
-                int[] sizes = new int[m_chunkBatch];
                 long batches = chunkCountsPerThread[threadIdx] / m_chunkBatch;
                 long lastBatchRemainder = chunkCountsPerThread[threadIdx] % m_chunkBatch;
 
                 timeStart[threadIdx] = System.nanoTime();
-
-                if (!m_remote) {
-                    for (int j = 0; j < batches; j++) {
-                        for (int k = 0; k < m_chunkBatch; k++) {
-                            chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
-                        }
-                    }
-
-                    if (lastBatchRemainder > 0) {
-                        for (int k = 0; k < lastBatchRemainder; k++) {
-                            chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
-                        }
-                    }
-                } else {
-                    for (int j = 0; j < batches; j++) {
-                        for (int k = 0; k < m_chunkBatch; k++) {
-                            sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
-                        }
-
-                        chunkService.createRemote(finalDestNodeId, sizes);
-                    }
-
-                    if (lastBatchRemainder > 0) {
-                        sizes = new int[(int) lastBatchRemainder];
-                        for (int k = 0; k < sizes.length; k++) {
-                            chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
-                        }
-
-                        chunkService.createRemote(finalDestNodeId, sizes);
-                    }
+                for (int j = 0; j < batches; j++) {
+                    int size = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                    chunkService.create(size, m_chunkBatch);
                 }
-
+                if (lastBatchRemainder > 0) {
+                    int size = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                    chunkService.create(size, (int) lastBatchRemainder);
+                }
                 timeEnd[threadIdx] = System.nanoTime();
             });
         }
@@ -152,7 +117,6 @@ public class ChunkCreateTask implements Task {
         p_exporter.writeInt(m_chunkBatch);
         p_exporter.exportObject(m_chunkSizeBytesBegin);
         p_exporter.exportObject(m_chunkSizeBytesEnd);
-        p_exporter.writeBoolean(m_remote);
     }
 
     @Override
@@ -164,11 +128,10 @@ public class ChunkCreateTask implements Task {
         p_importer.importObject(m_chunkSizeBytesBegin);
         m_chunkSizeBytesEnd = new StorageUnit();
         p_importer.importObject(m_chunkSizeBytesEnd);
-        m_remote = p_importer.readBoolean();
     }
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES * 3 + m_chunkSizeBytesBegin.sizeofObject() + m_chunkSizeBytesEnd.sizeofObject() + ObjectSizeUtil.sizeofBoolean();
+        return Integer.BYTES * 3 + m_chunkSizeBytesBegin.sizeofObject() + m_chunkSizeBytesEnd.sizeofObject();
     }
 }

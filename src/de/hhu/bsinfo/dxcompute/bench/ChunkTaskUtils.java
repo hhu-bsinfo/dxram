@@ -12,6 +12,14 @@ final class ChunkTaskUtils {
 
     }
 
+    static short getSuccessorSlaveNodeId(final short[] p_slaveNodeIds, final short p_ownSlaveId) {
+        if (p_ownSlaveId + 1 < p_slaveNodeIds.length) {
+            return p_slaveNodeIds[p_ownSlaveId + 1];
+        } else {
+            return p_slaveNodeIds[0];
+        }
+    }
+
     static long[] distributeChunkCountsToThreads(final long p_chunkCount, final int p_threadCount) {
         long count = p_chunkCount;
         long[] chunkCounts = new long[p_threadCount];
