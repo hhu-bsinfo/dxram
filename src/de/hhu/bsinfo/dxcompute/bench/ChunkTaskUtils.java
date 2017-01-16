@@ -12,6 +12,20 @@ final class ChunkTaskUtils {
 
     }
 
+    static short getRandomNodeIdExceptOwn(final short[] p_slaveNodeIds, final short p_ownNodeId) {
+        short nodeId = p_ownNodeId;
+
+        while (nodeId == p_ownNodeId) {
+            nodeId = getRandomNodeId(p_slaveNodeIds);
+        }
+
+        return nodeId;
+    }
+
+    static short getRandomNodeId(final short[] p_slaveNodeIds) {
+        return p_slaveNodeIds[getRandomRange(0, p_slaveNodeIds.length)];
+    }
+
     static short getSuccessorSlaveNodeId(final short[] p_slaveNodeIds, final short p_ownSlaveId) {
         if (p_ownSlaveId + 1 < p_slaveNodeIds.length) {
             return p_slaveNodeIds[p_ownSlaveId + 1];

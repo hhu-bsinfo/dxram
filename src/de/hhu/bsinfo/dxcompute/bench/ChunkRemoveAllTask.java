@@ -1,16 +1,21 @@
 package de.hhu.bsinfo.dxcompute.bench;
 
+import java.util.ArrayList;
+
 import com.google.gson.annotations.Expose;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import java.util.ArrayList;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 public class ChunkRemoveAllTask implements Task {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkRemoveAllTask.class.getSimpleName());
@@ -19,6 +24,8 @@ public class ChunkRemoveAllTask implements Task {
     private int m_numThreads = 1;
     @Expose
     private int m_chunkBatch = 10;
+    @Expose
+    private boolean m_remote = false;
 
     public ChunkRemoveAllTask() {
 
@@ -26,13 +33,27 @@ public class ChunkRemoveAllTask implements Task {
 
     @Override
     public int execute(final TaskContext p_ctx) {
+        short destNodeId = NodeID.INVALID_ID;
+
+        if (m_remote && p_ctx.getCtxData().getSlaveNodeIds().length < 2) {
+            System.out.println("Not enough slaves (min 2) to execute this task");
+            return -1;
+        } else {
+            destNodeId = ChunkTaskUtils.getSuccessorSlaveNodeId(p_ctx.getCtxData().getSlaveNodeIds(), p_ctx.getCtxData().getSlaveId());
+        }
+
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 
         long activeChunkCount = chunkService.getStatus().getNumberOfActiveChunks();
         // don't remove the index chunk
         activeChunkCount -= 1;
 
-        ArrayList<Long> allChunkRanges = chunkService.getAllLocalChunkIDRanges();
+        ArrayList<Long> allChunkRanges;
+        if (m_remote) {
+            allChunkRanges = chunkService.getAllLocalChunkIDRanges(destNodeId);
+        } else {
+            allChunkRanges = chunkService.getAllLocalChunkIDRanges();
+        }
 
         // modify ranges to avoid deleting an index chunk
         for (int i = 0; i < allChunkRanges.size(); i += 2) {
@@ -49,8 +70,11 @@ public class ChunkRemoveAllTask implements Task {
         long[] timeStart = new long[m_numThreads];
         long[] timeEnd = new long[m_numThreads];
 
-        System.out.printf("Removing all active chunks (total %d) in batches of %d chunk(s) with %d thread(s)...\n",
-                activeChunkCount, m_chunkBatch, m_numThreads);
+        String prefix = "Removing all";
+        if (m_remote) {
+            prefix = "Remote removing all (on " + NodeID.toHexString(destNodeId) + ')';
+        }
+        System.out.printf("%s active chunks (total %d) in batches of %d chunk(s) with %d thread(s)...\n", prefix, activeChunkCount, m_chunkBatch, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
@@ -65,7 +89,7 @@ public class ChunkRemoveAllTask implements Task {
                 }
 
                 // happens if no chunks were created
-                if (chunkRanges.size() > 0) {
+                if (!chunkRanges.isEmpty()) {
                     int rangeIdx = 0;
                     long rangeStart = chunkRanges.get(rangeIdx * 2);
                     long rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
@@ -75,7 +99,7 @@ public class ChunkRemoveAllTask implements Task {
 
                     while (batches > 0) {
                         long chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
-                        //System.out.printf("%d: [0x%X, 0x%X]\n", chunksInRange, rangeStart, rangeEnd);
+
                         if (chunksInRange >= batchChunkCount) {
                             for (int j = 0; j < chunkIds.length; j++) {
                                 chunkIds[j] = rangeStart + j;
@@ -137,7 +161,7 @@ public class ChunkRemoveAllTask implements Task {
         }
 
         if (threadJoinFailed) {
-            return -1;
+            return -2;
         }
 
         System.out.print("Times per thread:");
@@ -178,16 +202,18 @@ public class ChunkRemoveAllTask implements Task {
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeInt(m_numThreads);
         p_exporter.writeInt(m_chunkBatch);
+        p_exporter.writeBoolean(m_remote);
     }
 
     @Override
     public void importObject(final Importer p_importer) {
         m_numThreads = p_importer.readInt();
         m_chunkBatch = p_importer.readInt();
+        m_remote = p_importer.readBoolean();
     }
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES * 2;
+        return Integer.BYTES * 2 + ObjectSizeUtil.sizeofBoolean();
     }
 }

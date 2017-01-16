@@ -5,11 +5,11 @@
 		{
 			"m_task": "de.hhu.bsinfo.dxcompute.bench.CheckChunkMemRequiredSizeTask",
 			"m_minRequiredSize": {
-		        "m_value": 1,
+		        "m_value": 2,
         		"m_unit": "gb"
 			},
 			"m_minRequiredFree": {
-		        "m_value": 800,
+		        "m_value": 1800,
         		"m_unit": "mb"
 			}
 		},
@@ -49,7 +49,8 @@
 			"m_chunkSizeBytesEnd": {
 		        "m_value": 1024,
         		"m_unit": "b"
-			}
+			},
+			"m_pattern": 0
 		},
 		{
 			"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask"

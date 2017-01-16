@@ -9,14 +9,17 @@ import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 public class ChunkCreateTask implements Task {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkCreateTask.class.getSimpleName());
+
+    private static final int PATTERN_LOCAL_ONLY = 0;
+    private static final int PATTERN_REMOTE_ONLY_SUCCESSOR = 1;
+    private static final int PATTERN_REMOTE_ONLY_RANDOM = 2;
+    private static final int PATTERN_REMOTE_LOCAL_MIXED_RANDOM = 3;
 
     @Expose
     private int m_numThreads = 1;
@@ -29,7 +32,7 @@ public class ChunkCreateTask implements Task {
     @Expose
     private StorageUnit m_chunkSizeBytesEnd = new StorageUnit(512, StorageUnit.BYTE);
     @Expose
-    private boolean m_remote = false;
+    private int m_pattern = PATTERN_LOCAL_ONLY;
 
     public ChunkCreateTask() {
 
@@ -37,13 +40,11 @@ public class ChunkCreateTask implements Task {
 
     @Override
     public int execute(final TaskContext p_ctx) {
-        short destNodeId = NodeID.INVALID_ID;
+        boolean remote = m_pattern > PATTERN_LOCAL_ONLY;
 
-        if (m_remote && p_ctx.getCtxData().getSlaveNodeIds().length < 2) {
+        if (remote && p_ctx.getCtxData().getSlaveNodeIds().length < 2) {
             System.out.println("Not enough slaves (min 2) to execute this task");
             return -1;
-        } else {
-            destNodeId = ChunkTaskUtils.getSuccessorSlaveNodeId(p_ctx.getCtxData().getSlaveNodeIds(), p_ctx.getCtxData().getSlaveId());
         }
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
@@ -53,12 +54,11 @@ public class ChunkCreateTask implements Task {
         long[] timeStart = new long[m_numThreads];
         long[] timeEnd = new long[m_numThreads];
 
-        System.out.printf("Creating %d chunks in batches of %d chunk(s) of random sizes between %s and %s with %d thread(s)...\n", m_chunkCount, m_chunkBatch,
-            m_chunkSizeBytesBegin, m_chunkSizeBytesEnd, m_numThreads);
+        System.out.printf("Creating (pattern %d) %d chunks in batches of %d chunk(s) of random sizes between %s and %s with %d thread(s)...\n", m_pattern,
+            m_chunkCount, m_chunkBatch, m_chunkSizeBytesBegin, m_chunkSizeBytesEnd, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
-            short finalDestNodeId = destNodeId;
             threads[i] = new Thread(() -> {
                 int[] sizes = new int[m_chunkBatch];
                 long batches = chunkCountsPerThread[threadIdx] / m_chunkBatch;
@@ -66,35 +66,116 @@ public class ChunkCreateTask implements Task {
 
                 timeStart[threadIdx] = System.nanoTime();
 
-                if (!m_remote) {
-                    for (int j = 0; j < batches; j++) {
-                        for (int k = 0; k < m_chunkBatch; k++) {
-                            chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
-                        }
-                    }
+                switch (m_pattern) {
+                    case PATTERN_LOCAL_ONLY: {
+                        for (int j = 0; j < batches; j++) {
+                            for (int k = 0; k < m_chunkBatch; k++) {
+                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                            }
 
-                    if (lastBatchRemainder > 0) {
-                        for (int k = 0; k < lastBatchRemainder; k++) {
-                            chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
-                        }
-                    }
-                } else {
-                    for (int j = 0; j < batches; j++) {
-                        for (int k = 0; k < m_chunkBatch; k++) {
-                            sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                            for (int k = 0; k < m_chunkBatch; k++) {
+                                chunkService.createSizes(sizes);
+                            }
                         }
 
-                        chunkService.createRemote(finalDestNodeId, sizes);
-                    }
+                        if (lastBatchRemainder > 0) {
+                            sizes = new int[(int) lastBatchRemainder];
+                            for (int k = 0; k < sizes.length; k++) {
+                                chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
+                            }
 
-                    if (lastBatchRemainder > 0) {
-                        sizes = new int[(int) lastBatchRemainder];
-                        for (int k = 0; k < sizes.length; k++) {
-                            chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
+                            for (int k = 0; k < lastBatchRemainder; k++) {
+                                chunkService.createSizes(sizes);
+                            }
                         }
 
-                        chunkService.createRemote(finalDestNodeId, sizes);
+                        break;
                     }
+
+                    case PATTERN_REMOTE_ONLY_SUCCESSOR: {
+                        short destNodeId = ChunkTaskUtils.getSuccessorSlaveNodeId(p_ctx.getCtxData().getSlaveNodeIds(), p_ctx.getCtxData().getSlaveId());
+
+                        for (int j = 0; j < batches; j++) {
+                            for (int k = 0; k < m_chunkBatch; k++) {
+                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                            }
+
+                            chunkService.createRemote(destNodeId, sizes);
+                        }
+
+                        if (lastBatchRemainder > 0) {
+                            sizes = new int[(int) lastBatchRemainder];
+                            for (int k = 0; k < sizes.length; k++) {
+                                chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
+                            }
+
+                            chunkService.createRemote(destNodeId, sizes);
+                        }
+
+                        break;
+                    }
+
+                    case PATTERN_REMOTE_ONLY_RANDOM: {
+                        short ownNodeId = p_ctx.getCtxData().getSlaveNodeIds()[p_ctx.getCtxData().getSlaveId()];
+
+                        for (int j = 0; j < batches; j++) {
+                            short destNodeId = ChunkTaskUtils.getRandomNodeIdExceptOwn(p_ctx.getCtxData().getSlaveNodeIds(), ownNodeId);
+
+                            for (int k = 0; k < m_chunkBatch; k++) {
+                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                            }
+
+                            chunkService.createRemote(destNodeId, sizes);
+                        }
+
+                        if (lastBatchRemainder > 0) {
+                            short destNodeId = ChunkTaskUtils.getRandomNodeIdExceptOwn(p_ctx.getCtxData().getSlaveNodeIds(), ownNodeId);
+                            sizes = new int[(int) lastBatchRemainder];
+
+                            for (int k = 0; k < sizes.length; k++) {
+                                chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
+                            }
+
+                            chunkService.createRemote(destNodeId, sizes);
+                        }
+
+                        break;
+                    }
+
+                    case PATTERN_REMOTE_LOCAL_MIXED_RANDOM: {
+                        short ownNodeId = p_ctx.getCtxData().getSlaveNodeIds()[p_ctx.getCtxData().getSlaveId()];
+
+                        for (int j = 0; j < batches; j++) {
+                            short destNodeId = ChunkTaskUtils.getRandomNodeId(p_ctx.getCtxData().getSlaveNodeIds());
+
+                            for (int k = 0; k < m_chunkBatch; k++) {
+                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                            }
+
+                            if (destNodeId == ownNodeId) {
+                                chunkService.createSizes(sizes);
+                            } else {
+                                chunkService.createRemote(destNodeId, sizes);
+                            }
+                        }
+
+                        if (lastBatchRemainder > 0) {
+                            short destNodeId = ChunkTaskUtils.getRandomNodeIdExceptOwn(p_ctx.getCtxData().getSlaveNodeIds(), ownNodeId);
+                            sizes = new int[(int) lastBatchRemainder];
+
+                            for (int k = 0; k < sizes.length; k++) {
+                                chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
+                            }
+
+                            chunkService.createRemote(destNodeId, sizes);
+                        }
+
+                        break;
+                    }
+
+                    default:
+                        System.out.printf("Unsupported pattern %d", m_pattern);
+                        break;
                 }
 
                 timeEnd[threadIdx] = System.nanoTime();
@@ -152,7 +233,7 @@ public class ChunkCreateTask implements Task {
         p_exporter.writeInt(m_chunkBatch);
         p_exporter.exportObject(m_chunkSizeBytesBegin);
         p_exporter.exportObject(m_chunkSizeBytesEnd);
-        p_exporter.writeBoolean(m_remote);
+        p_exporter.writeInt(m_pattern);
     }
 
     @Override
@@ -164,11 +245,11 @@ public class ChunkCreateTask implements Task {
         p_importer.importObject(m_chunkSizeBytesBegin);
         m_chunkSizeBytesEnd = new StorageUnit();
         p_importer.importObject(m_chunkSizeBytesEnd);
-        m_remote = p_importer.readBoolean();
+        m_pattern = p_importer.readInt();
     }
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES * 3 + m_chunkSizeBytesBegin.sizeofObject() + m_chunkSizeBytesEnd.sizeofObject() + ObjectSizeUtil.sizeofBoolean();
+        return Integer.BYTES * 3 + m_chunkSizeBytesBegin.sizeofObject() + m_chunkSizeBytesEnd.sizeofObject() + Integer.BYTES;
     }
 }
