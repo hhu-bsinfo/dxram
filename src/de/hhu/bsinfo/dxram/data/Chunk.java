@@ -142,7 +142,6 @@ public class Chunk implements DataStructure {
 
     @Override
     public long getID() {
-
         return m_chunkID;
     }
 
@@ -164,21 +163,15 @@ public class Chunk implements DataStructure {
 
     @Override
     public void importObject(final Importer p_importer) {
-
-        // ugly workaround but this is the only place that needs this
-        if (m_data == null ||
-            p_importer instanceof MessagesDataStructureImExporter && m_data.capacity() != ((MessagesDataStructureImExporter) p_importer).getPayloadSize()) {
-            m_data = ByteBuffer.allocate(((MessagesDataStructureImExporter) p_importer).getPayloadSize());
-        }
-
-        p_importer.readBytes(m_data.array());
+        m_data = ByteBuffer.wrap(p_importer.readByteArray());
     }
 
     @Override
     public void exportObject(final Exporter p_exporter) {
-
         if (m_data != null) {
-            p_exporter.writeBytes(m_data.array());
+            p_exporter.writeByteArray(m_data.array());
+        } else {
+            p_exporter.writeByteArray(new byte[0]);
         }
     }
 

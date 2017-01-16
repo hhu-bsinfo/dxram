@@ -422,11 +422,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     /**
      * Create chunks with different sizes.
      *
-     * @parm p_consecutive
-     *      Whether the ChunkIDs must be consecutive or not.
      * @param p_sizes
      *     List of sizes to create chunks for.
      * @return ChunkIDs/Handles identifying the created chunks.
+     * @parm p_consecutive
+     * Whether the ChunkIDs must be consecutive or not.
      */
     public long[] createSizes(final boolean p_consecutive, final int... p_sizes) {
         long[] chunkIDs;
@@ -895,7 +895,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                     remoteChunksOfPeer.add(p_dataStructures[i + p_offset]);
                 } else {
                     // #if LOGGER >= ERROR
-                    LOGGER.error("Location of Chunk is unknown, it cannot be put!");
+                    LOGGER.error("Location of Chunk 0x%X is unknown, it cannot be put!", p_dataStructures[i + p_offset].getID());
                     // #endif /* LOGGER >= ERROR */
                 }
             }
