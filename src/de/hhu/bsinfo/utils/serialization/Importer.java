@@ -37,6 +37,15 @@ public interface Importer {
     // ----------------------------------------------------------------------
 
     /**
+     * Read a single boolean from the target.
+     * Use this call in your importable object in the
+     * import call to read data from the target.
+     *
+     * @return Boolean read.
+     */
+    boolean readBoolean();
+
+    /**
      * Read a single byte from the target.
      * Use this call in your importable object in the
      * import call to read data from the target.

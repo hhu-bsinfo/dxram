@@ -70,6 +70,11 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public void writeBoolean(boolean p_v) {
+        m_messageBuffer.put((byte) (p_v ? 1 : 0));
+    }
+
+    @Override
     public void writeByte(final byte p_v) {
         m_messageBuffer.put(p_v);
     }
@@ -118,6 +123,11 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
     @Override
     public void importObject(final Importable p_object) {
         p_object.importObject(this);
+    }
+
+    @Override
+    public boolean readBoolean() {
+        return m_messageBuffer.get() == 1;
     }
 
     @Override

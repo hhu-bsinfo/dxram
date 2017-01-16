@@ -28,6 +28,15 @@ public final class ObjectSizeUtil {
     }
 
     /**
+     * Get the size of a single boolean value (typical size for an implementation)
+     *
+     * @return Serialization size of a single boolean value
+     */
+    public static int sizeofBoolean() {
+        return Byte.BYTES;
+    }
+
+    /**
      * Get the serialization size for a full byte array (including length field)
      *
      * @param p_arr

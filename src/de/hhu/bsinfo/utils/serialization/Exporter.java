@@ -36,6 +36,16 @@ public interface Exporter {
     // ----------------------------------------------------------------------
 
     /**
+     * Write a single boolean to the target.
+     * Use this call in your exportable object in the
+     * export call to write data to the target.
+     *
+     * @param p_v
+     *     Boolean to write.
+     */
+    void writeBoolean(final boolean p_v);
+
+    /**
      * Write a single byte to the target.
      * Use this call in your exportable object in the
      * export call to write data to the target.

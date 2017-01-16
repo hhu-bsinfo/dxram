@@ -73,6 +73,12 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public void writeBoolean(boolean p_v) {
+        m_heap.writeByte(m_allocatedMemoryStartAddress, m_offset, (byte) (p_v ? 1 : 0));
+        m_offset += Byte.BYTES;
+    }
+
+    @Override
     public void writeByte(final byte p_v) {
         m_heap.writeByte(m_allocatedMemoryStartAddress, m_offset, p_v);
         m_offset += Byte.BYTES;
@@ -128,6 +134,13 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     @Override
     public void importObject(final Importable p_object) {
         p_object.importObject(this);
+    }
+
+    @Override
+    public boolean readBoolean() {
+        byte v = m_heap.readByte(m_allocatedMemoryStartAddress, m_offset);
+        m_offset += Byte.BYTES;
+        return v == 1;
     }
 
     @Override
