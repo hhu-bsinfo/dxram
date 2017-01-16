@@ -14,7 +14,6 @@
 package de.hhu.bsinfo.dxram.mem;
 
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.gson.annotations.Expose;
@@ -29,6 +28,8 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMRuntimeException;
+import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -48,14 +49,6 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
 public final class MemoryManagerComponent extends AbstractDXRAMComponent implements CIDTable.GetNodeIdHook {
-
-    /**
-     * Error codes to be returned by some methods.
-     */
-    public enum MemoryErrorCodes {
-        SUCCESS, UNKNOWN, DOES_NOT_EXIST, READ, WRITE, OUT_OF_MEMORY, INVALID_NODE_ROLE,
-    }
-
     // statistics recording
     static final StatisticsOperation SOP_MALLOC = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Malloc");
     private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
@@ -68,9 +61,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     private static final StatisticsOperation SOP_REMOVE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Remove");
     private static final StatisticsOperation SOP_CREATE_PUT_RECOVERED =
         StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateAndPutRecovered");
+
     // configuration values
     @Expose
     private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
+
     // dependent components
     private AbstractBootComponent m_boot;
     private SmallObjectHeap m_rawMemory;
@@ -98,12 +93,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
         NodeRole role = m_boot.getNodeRole();
         if (role != NodeRole.PEER) {
-            status.m_freeMemoryBytes = 0;
-            status.m_totalMemoryBytes = 0;
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not have any memory", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
         status.m_freeMemoryBytes = m_rawMemory.getStatus().getFree();
@@ -126,10 +116,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public ArrayList<Long> getCIDOfAllMigratedChunks() {
         NodeRole role = m_boot.getNodeRole();
         if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
         return m_cidTable.getCIDOfAllMigratedChunks();
@@ -143,10 +130,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
         NodeRole role = m_boot.getNodeRole();
         if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
         return m_cidTable.getCIDRangesOfAllLocalChunks();
@@ -164,6 +148,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         if (m_boot.getNodeRole() == NodeRole.PEER) {
             m_lock.writeLock().lock();
 
+            // TODO fix custom lock implementation
             // set flag to block further readers from entering
             /*-while (true) {
                 int v = m_lock.get();
@@ -227,20 +212,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      *
      * @param p_size
      *     Size for the index chunk.
-     * @return On success the chunk id 0, -1 on failure.
+     * @return The chunk id 0
      */
     public long createIndex(final int p_size) {
         assert p_size > 0;
 
         long address;
-        long chunkID = -1;
+        long chunkID;
 
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s is not allowed to create an index chunk", role);
-            // #endif /* LOGGER >= ERROR */
-            return chunkID;
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
         if (p_size > SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK) {
@@ -265,13 +246,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 // on demand allocation of new table failed
                 // free previously created chunk for data to avoid memory leak
                 m_rawMemory.free(address);
-                chunkID = -1;
+                throw new OutOfKeyValueStoreMemoryException(getStatus());
             } else {
                 m_numActiveChunks++;
                 m_totalActiveChunkMemory += p_size;
             }
         } else {
-            chunkID = -1;
+            throw new OutOfKeyValueStoreMemoryException(getStatus());
         }
 
         return chunkID;
@@ -284,20 +265,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      *     Chunk id to assign to the chunk.
      * @param p_size
      *     Size of the chunk.
-     * @return The chunk id if successful, -1 if another chunk with the same id already exists or allocation memory failed.
+     * @return The chunk id if successful, -1 if another chunk with the same id already exists.
      */
     public long create(final long p_chunkId, final int p_size) {
         assert p_size > 0;
 
         long address;
-        long chunkID = -1;
+        long chunkID;
 
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s is not allowed to create a chunk with an id", role);
-            // #endif /* LOGGER >= ERROR */
-            return chunkID;
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
         // #ifdef STATISTICS
@@ -322,14 +299,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                     // on demand allocation of new table failed
                     // free previously created chunk for data to avoid memory leak
                     m_rawMemory.free(address);
-                    chunkID = -1;
+                    throw new OutOfKeyValueStoreMemoryException(getStatus());
                 } else {
                     m_numActiveChunks++;
                     m_totalActiveChunkMemory += p_size;
                     chunkID = p_chunkId;
                 }
             } else {
-                chunkID = -1;
+                throw new OutOfKeyValueStoreMemoryException(getStatus());
             }
         }
 
@@ -340,20 +317,32 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         return chunkID;
     }
 
+    /**
+     * Batch/Multi create with a list of sizes
+     *
+     * @param p_sizes
+     *     List of sizes to create chunks for
+     * @return List of chunk ids matching the order of the size list
+     */
     public long[] createMultiSizes(final int... p_sizes) {
         return createMultiSizes(false, p_sizes);
     }
 
+    /**
+     * Batch/Multi create with a list of sizes
+     *
+     * @param p_consecutive
+     *     True to enforce consecutive chunk ids
+     * @param p_sizes
+     *     List of sizes to create chunks for
+     * @return List of chunk ids matching the order of the size list
+     */
     public long[] createMultiSizes(final boolean p_consecutive, final int... p_sizes) {
         long[] addresses;
         long[] lids;
 
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s is not allowed to create a chunk", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
         // #ifdef STATISTICS
@@ -363,7 +352,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         // get new LIDs
         lids = m_cidTable.getFreeLIDs(p_sizes.length, p_consecutive);
         if (lids == null) {
-            return null;
+            throw new OutOfConsecutiveChunkIdsException();
         }
 
         // #ifdef STATISTICS
@@ -387,8 +376,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                         m_rawMemory.free(addresses[j]);
                     }
 
-                    lids = null;
-                    break;
+                    throw new OutOfKeyValueStoreMemoryException(getStatus());
                 } else {
                     m_numActiveChunks++;
                     m_totalActiveChunkMemory += p_sizes[i];
@@ -396,18 +384,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             }
 
         } else {
-            // most likely out of memory
-            // #if LOGGER >= ERROR
-            LOGGER.fatal("Multi create chunks failed, most likely out of memory, free %d, total %d", m_rawMemory.getStatus().getFree(),
-                m_rawMemory.getStatus().getSize());
-            // #endif /* LOGGER >= ERROR */
-
             // put lids back
             for (int i = 0; i < lids.length; i++) {
                 m_cidTable.putChunkIDForReuse(lids[i]);
             }
 
-            return null;
+            throw new OutOfKeyValueStoreMemoryException(getStatus());
         }
 
         // #ifdef STATISTICS
@@ -417,29 +399,69 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         return lids;
     }
 
-    public long[] createMulti(final DataStructure... p_dataStructures) {
-        return createMulti(false, p_dataStructures);
+    /**
+     * Batch/Multi create with a list of data structures
+     *
+     * @param p_dataStructures
+     *     List of data structures. Chunk ids are automatically assigned after creation
+     */
+    public void createMulti(final DataStructure... p_dataStructures) {
+        createMulti(false, p_dataStructures);
     }
 
-    public long[] createMulti(final boolean p_consecutive, final DataStructure... p_dataStructures) {
+    /**
+     * Batch/Multi create with a list of data structures
+     *
+     * @param p_consecutive
+     *     True to enforce consecutive chunk ids
+     * @param p_dataStructures
+     *     List of data structures. Chunk ids are automatically assigned after creation
+     */
+    public void createMulti(final boolean p_consecutive, final DataStructure... p_dataStructures) {
         int[] sizes = new int[p_dataStructures.length];
 
         for (int i = 0; i < p_dataStructures.length; i++) {
             sizes[i] = p_dataStructures[i].sizeofObject();
         }
 
-        return createMultiSizes(p_consecutive, sizes);
+        long[] ids = createMultiSizes(p_consecutive, sizes);
+
+        for (int i = 0; i < ids.length; i++) {
+            p_dataStructures[i].setID(ids[i]);
+        }
     }
 
+    /**
+     * Batch create chunks
+     *
+     * @param p_size
+     *     Size of the chunks
+     * @param p_count
+     *     Number of chunks with the specified size
+     * @return Chunk id list of the created chunks
+     */
     public long[] createMulti(final int p_size, final int p_count) {
         return createMulti(p_size, p_count, false);
     }
 
+    /**
+     * Batch create chunks
+     *
+     * @param p_size
+     *     Size of the chunks
+     * @param p_count
+     *     Number of chunks with the specified size
+     * @param p_consecutive
+     *     True to enforce consecutive chunk ids
+     * @return Chunk id list of the created chunks
+     */
     public long[] createMulti(final int p_size, final int p_count, final boolean p_consecutive) {
-        assert m_boot.getNodeRole() == NodeRole.PEER;
-
         long[] addresses;
         long[] lids;
+
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
 
         // #ifdef STATISTICS
         SOP_MULTI_CREATE.enter();
@@ -448,7 +470,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         // get new LIDs
         lids = m_cidTable.getFreeLIDs(p_count, p_consecutive);
         if (lids == null) {
-            return null;
+            throw new OutOfConsecutiveChunkIdsException();
         }
 
         // first, try to allocate. maybe early return
@@ -473,8 +495,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                         m_rawMemory.free(addresses[j]);
                     }
 
-                    lids = null;
-                    break;
+                    throw new OutOfKeyValueStoreMemoryException(getStatus());
                 } else {
                     m_numActiveChunks++;
                     m_totalActiveChunkMemory += p_size;
@@ -482,16 +503,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             }
 
         } else {
-            // most likely out of memory
-            // #if LOGGER >= ERROR
-            LOGGER.fatal("Multi create chunks failed, most likely out of memory, free %d, total %d", m_rawMemory.getStatus().getFree(),
-                m_rawMemory.getStatus().getSize());
-            // #endif /* LOGGER >= ERROR */
-
             // put lids back
             for (int i = 0; i < lids.length; i++) {
                 m_cidTable.putChunkIDForReuse(lids[i]);
             }
+
+            throw new OutOfKeyValueStoreMemoryException(getStatus());
         }
 
         // #ifdef STATISTICS
@@ -507,15 +524,18 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      *
      * @param p_size
      *     Size in bytes of the payload the chunk contains.
-     * @return Address of the allocated chunk or -1 if creating the chunk failed.
+     * @return Address of the allocated chunk
      */
     public long create(final int p_size) {
         assert p_size > 0;
-        assert m_boot.getNodeRole() == NodeRole.PEER;
 
         long address;
-        long chunkID = -1;
+        long chunkID;
         long lid;
+
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
 
         // #ifdef STATISTICS
         SOP_CREATE.enter();
@@ -541,20 +561,17 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                     // on demand allocation of new table failed
                     // free previously created chunk for data to avoid memory leak
                     m_rawMemory.free(address);
-                    chunkID = -1;
+
+                    throw new OutOfKeyValueStoreMemoryException(getStatus());
                 } else {
                     m_numActiveChunks++;
                     m_totalActiveChunkMemory += p_size;
                 }
             } else {
-                // most likely out of memory
-                // #if LOGGER >= ERROR
-                LOGGER.fatal("Creating chunk with size %d failed, most likely out of memory, free %d, total %d", p_size, m_rawMemory.getStatus().getFree(),
-                    m_rawMemory.getStatus().getSize());
-                // #endif /* LOGGER >= ERROR */
-
                 // put lid back
                 m_cidTable.putChunkIDForReuse(lid);
+
+                throw new OutOfKeyValueStoreMemoryException(getStatus());
             }
         }
 
@@ -574,13 +591,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return Size of the chunk or -1 if the chunkID was invalid.
      */
     public int getSize(final long p_chunkID) {
-        assert m_boot.getNodeRole() != NodeRole.SUPERPEER;
-
         long address;
         int size = -1;
 
-        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
-            return size;
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
         address = m_cidTable.get(p_chunkID);
@@ -599,14 +614,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      *     Data structure to write the data of its specified ID to.
      * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data structure exists.
      */
-    public MemoryErrorCodes get(final DataStructure p_dataStructure) {
-        assert m_boot.getNodeRole() != NodeRole.SUPERPEER;
-
+    public boolean get(final DataStructure p_dataStructure) {
         long address;
-        MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
+        boolean ret = true;
 
-        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
-            return MemoryErrorCodes.DOES_NOT_EXIST;
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
         // #ifdef STATISTICS
@@ -622,7 +635,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             // new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
             importer.importObject(p_dataStructure);
         } else {
-            ret = MemoryErrorCodes.DOES_NOT_EXIST;
+            ret = false;
         }
 
         // #ifdef STATISTICS
@@ -641,13 +654,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return A byte array with payload if getting the chunk payload was successful, null if no chunk with the ID exists.
      */
     public byte[] get(final long p_chunkID) {
-        assert m_boot.getNodeRole() != NodeRole.SUPERPEER;
-
         byte[] ret = null;
         long address;
 
-        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
-            return null;
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
         // #ifdef STATISTICS
@@ -661,15 +672,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
             // pool the im/exporters
             SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
-            // SmallObjectHeapDataStructureImExporter importer =
-            // new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
-            if (importer.readBytes(ret) != chunkSize) {
-                ret = null;
+            int retSize = importer.readBytes(ret);
+            if (retSize != chunkSize) {
+                throw new DXRAMRuntimeException("Unknown error, importer size " + retSize + " != chunk size " + chunkSize);
             }
         } else {
-            // #if LOGGER >= WARN
-            LOGGER.warn("Could not find data for ID=0x%X", p_chunkID);
-            // #endif /* LOGGER >= WARN */
+            ret = null;
         }
 
         // #ifdef STATISTICS
@@ -687,16 +695,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      *
      * @param p_dataStructure
      *     Data structure to put
-     * @return MemoryErrorCodes indicating success or failure
+     * @return True if putting the data was successful, false if no chunk with the specified id exists
      */
-    public MemoryErrorCodes put(final DataStructure p_dataStructure) {
-        assert m_boot.getNodeRole() != NodeRole.SUPERPEER;
-
+    public boolean put(final DataStructure p_dataStructure) {
         long address;
-        MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
+        boolean ret = true;
 
-        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
-            return MemoryErrorCodes.INVALID_NODE_ROLE;
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
         // #ifdef STATISTICS
@@ -707,11 +713,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         if (address > 0) {
             // pool the im/exporters
             SmallObjectHeapDataStructureImExporter exporter = getImExporter(address);
-            // SmallObjectHeapDataStructureImExporter exporter =
-            // new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
             exporter.exportObject(p_dataStructure);
         } else {
-            ret = MemoryErrorCodes.DOES_NOT_EXIST;
+            ret = false;
         }
 
         // #ifdef STATISTICS
@@ -730,14 +734,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @param p_wasMigrated
      *     default value for this parameter should be false!
      *     if chunk was deleted during migration this flag should be set to true
-     * @return MemoryErrorCodes indicating success or failure
+     * @return True if removing the data was successful, false if the chunk with the specified id does not exist
      */
-    public MemoryErrorCodes remove(final long p_chunkID, final boolean p_wasMigrated) {
-        assert m_boot.getNodeRole() == NodeRole.PEER;
-
+    public boolean remove(final long p_chunkID, final boolean p_wasMigrated) {
         long addressDeletedChunk;
         int size;
-        MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
+        boolean ret = true;
+
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
 
         // #ifdef STATISTICS
         SOP_REMOVE.enter();
@@ -770,7 +776,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             m_numActiveChunks--;
             m_totalActiveChunkMemory -= size;
         } else {
-            ret = MemoryErrorCodes.DOES_NOT_EXIST;
+            ret = false;
         }
 
         // #ifdef STATISTICS
@@ -780,12 +786,26 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         return ret;
     }
 
-    public MemoryErrorCodes createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths,
-        final int p_usedEntries) {
-        assert m_boot.getNodeRole() == NodeRole.PEER;
-
-        MemoryErrorCodes ret;
+    /**
+     * Special create and put call optimized for recovery
+     *
+     * @param p_chunkIDs
+     *     List of recovered chunk ids
+     * @param p_data
+     *     Recovered data
+     * @param p_offsets
+     *     Offset list for chunks to address the data array
+     * @param p_lengths
+     *     List of chunk sizes
+     * @param p_usedEntries
+     *     TODO kevin ???
+     */
+    public void createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
         long[] addresses;
+
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
 
         // #ifdef STATISTICS
         SOP_CREATE_PUT_RECOVERED.enter(p_usedEntries);
@@ -810,23 +830,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             for (int i = 0; i < addresses.length; i++) {
                 m_cidTable.set(p_chunkIDs[i], addresses[i]);
             }
-
-            ret = MemoryErrorCodes.SUCCESS;
         } else {
-            // most likely out of memory
-            // #if LOGGER >= ERROR
-            LOGGER.fatal("Creating recovered chunks failed, most likely out of memory, free %d, total %d", m_rawMemory.getStatus().getFree(),
-                m_rawMemory.getStatus().getSize());
-            // #endif /* LOGGER >= ERROR */
-
-            ret = MemoryErrorCodes.OUT_OF_MEMORY;
+            throw new OutOfKeyValueStoreMemoryException(getStatus());
         }
 
         // #ifdef STATISTICS
         SOP_CREATE_PUT_RECOVERED.leave();
         // #endif /* STATISTICS */
-
-        return ret;
     }
 
     // -----------------------------------------------------------------------------
@@ -1027,11 +1037,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return whether this Chunk is stored locally or not
      */
     public boolean exists(final long p_chunkID) {
-        assert m_boot.getNodeRole() != NodeRole.SUPERPEER;
-
         long address;
 
-        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
             return false;
         }
 
@@ -1060,12 +1068,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      *     the ChunkID
      */
     public void prepareChunkIDForReuse(final long p_chunkID) {
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s does not store any chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return;
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
         m_cidTable.putChunkIDForReuse(p_chunkID);
@@ -1228,6 +1232,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
          */
         public long getTotalMemoryCIDTables() {
             return m_totalMemoryCIDTables;
+        }
+
+        @Override
+        public String toString() {
+            return "m_totalMemoryBytes " + m_totalMemoryBytes + ", m_freeMemoryBytes " + m_freeMemoryBytes + ", m_totalPayloadMemoryBytes " +
+                m_totalPayloadMemoryBytes + ", m_numberOfActiveMemoryBlocks " + m_numberOfActiveMemoryBlocks + ", m_numberOfActiveChunks " +
+                m_numberOfActiveChunks + ", m_totalChunkPayloadMemory " + m_totalChunkPayloadMemory + ", m_totalChunkPayloadMemory " +
+                m_totalChunkPayloadMemory + ", m_cidTableCount " + m_cidTableCount + ", m_totalMemoryCIDTables " + m_totalMemoryCIDTables;
         }
     }
 }

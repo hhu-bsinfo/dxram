@@ -53,7 +53,6 @@ import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
@@ -377,24 +376,16 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             }
         } else {
             m_memoryManager.lockManage();
-            long[] chunkIDs = m_memoryManager.createMulti(p_consecutive, p_dataStructures);
+            m_memoryManager.createMulti(p_consecutive, p_dataStructures);
             m_memoryManager.unlockManage();
 
-            if (chunkIDs == null) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Multi create chunks failed");
-                // #endif /* LOGGER >= ERROR */
-                return count;
-            }
-
-            for (int i = 0; i < chunkIDs.length; i++) {
-                p_dataStructures[i].setID(chunkIDs[i]);
+            for (int i = 0; i < p_dataStructures.length; i++) {
                 // tell the superpeer overlay about our newly created chunks, otherwise they can not be found
                 // by other peers (network traffic for backup range initialization only (e.g. every 256 MB))
                 m_backup.initBackupRange(p_dataStructures[i].getID(), p_dataStructures[i].sizeofObject());
             }
 
-            count += chunkIDs.length;
+            count += p_dataStructures.length;
         }
 
         // #ifdef STATISTICS
@@ -689,12 +680,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // remove local chunkIDs
         m_memoryManager.lockManage();
         for (final Long chunkID : localChunks) {
-            MemoryErrorCodes err = m_memoryManager.remove(chunkID, false);
-            if (err == MemoryErrorCodes.SUCCESS) {
+            if (m_memoryManager.remove(chunkID, false)) {
                 chunksRemoved++;
             } else {
                 // #if LOGGER >= ERROR
-                LOGGER.error("Removing chunk ID %s failed: %s", ChunkID.toHexString(chunkID), err);
+                LOGGER.error("Removing chunk ID 0x%X failed, does not exist", chunkID);
                 // #endif /* LOGGER >= ERROR */
             }
         }
@@ -709,12 +699,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 // local remove, migrated data to current node
                 m_memoryManager.lockManage();
                 for (final Long chunkID : remoteChunks) {
-                    MemoryErrorCodes err = m_memoryManager.remove(chunkID, false);
-                    if (err == MemoryErrorCodes.SUCCESS) {
+                    if (m_memoryManager.remove(chunkID, false)) {
                         chunksRemoved++;
                     } else {
                         // #if LOGGER >= ERROR
-                        LOGGER.error("Removing chunk ID %s failed: %s", ChunkID.toHexString(chunkID), err);
+                        LOGGER.error("Removing chunk ID 0x%X failed, does not exist", chunkID);
                         // #endif /* LOGGER >= ERROR */
                     }
                 }
@@ -858,7 +847,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             // try to put every chunk locally, returns false if it does not exist
             // and saves us an additional check
-            if (m_memoryManager.put(p_dataStructures[i + p_offset]) == MemoryErrorCodes.SUCCESS) {
+            if (!m_memoryManager.put(p_dataStructures[i + p_offset])) {
                 chunksPut++;
 
                 // unlock chunk as well
@@ -910,12 +899,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 // local put, migrated data to current node
                 m_memoryManager.lockAccess();
                 for (final DataStructure dataStructure : entry.getValue()) {
-                    MemoryErrorCodes err = m_memoryManager.put(dataStructure);
-                    if (err == MemoryErrorCodes.SUCCESS) {
+                    if (m_memoryManager.put(dataStructure)) {
                         chunksPut++;
                     } else {
                         // #if LOGGER >= ERROR
-                        LOGGER.error("Putting local chunk 0x%X failed: %s", dataStructure.getID(), err);
+                        LOGGER.error("Putting local chunk 0x%X failed: %s", dataStructure.getID());
                         // #endif /* LOGGER >= ERROR */
                     }
                 }
@@ -1053,8 +1041,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             // try to get locally, will check first if it exists and
             // returns false if it doesn't exist
-            MemoryErrorCodes err = m_memoryManager.get(p_dataStructures[i + p_offset]);
-            if (err == MemoryErrorCodes.SUCCESS) {
+            if (m_memoryManager.get(p_dataStructures[i + p_offset])) {
                 totalChunksGot++;
             } else {
                 // remote or migrated, figure out location and sort by peers
@@ -1084,12 +1071,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 // local get, migrated data to current node
                 m_memoryManager.lockAccess();
                 for (final DataStructure dataStructure : remoteChunks) {
-                    MemoryErrorCodes err = m_memoryManager.get(dataStructure);
-                    if (err == MemoryErrorCodes.SUCCESS) {
+                    if (m_memoryManager.get(dataStructure)) {
                         totalChunksGot++;
                     } else {
                         // #if LOGGER >= ERROR
-                        LOGGER.error("Getting local chunk 0x%X failed: %s", dataStructure.getID(), err);
+                        LOGGER.error("Getting local chunk 0x%X failed, does not exist", dataStructure.getID());
                         // #endif /* LOGGER >= ERROR */
                     }
                 }
@@ -1317,8 +1303,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             // try to get locally, will check first if it exists and
             // returns false if it doesn't exist
-            MemoryErrorCodes err = m_memoryManager.get(p_dataStructures[i + p_offset]);
-            if (err == MemoryErrorCodes.SUCCESS) {
+            if (m_memoryManager.get(p_dataStructures[i + p_offset])) {
                 totalChunksGot++;
             } else {
                 // #if LOGGER >= ERROR
@@ -1674,8 +1659,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
         m_memoryManager.lockAccess();
         for (int i = 0; i < chunks.length; i++) {
-            MemoryErrorCodes err = m_memoryManager.put(chunks[i]);
-            if (err != MemoryErrorCodes.SUCCESS) {
+            if (!m_memoryManager.put(chunks[i])) {
                 // does not exist (anymore)
                 statusChunks[i] = -1;
                 // #if LOGGER >= WARN
@@ -1796,8 +1780,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // remove chunks first (local)
         m_memoryManager.lockManage();
         for (int i = 0; i < chunkIDs.length; i++) {
-            MemoryErrorCodes err = m_memoryManager.remove(chunkIDs[i], false);
-            if (err == MemoryErrorCodes.SUCCESS) {
+            if (m_memoryManager.remove(chunkIDs[i], false)) {
                 // remove successful
                 chunkStatusCodes[i] = 0;
             } else {
@@ -1902,6 +1885,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 LOGGER.error("Multi create chunks failed");
                 // #endif /* LOGGER >= ERROR */
 
+                chunkIDs = new long[sizes.length];
                 for (int i = 0; i < chunkIDs.length; i++) {
                     chunkIDs[i] = ChunkID.INVALID_ID;
                 }

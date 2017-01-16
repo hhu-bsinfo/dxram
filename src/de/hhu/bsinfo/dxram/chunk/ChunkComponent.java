@@ -25,7 +25,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NodeID;
@@ -100,12 +99,12 @@ public class ChunkComponent extends AbstractDXRAMComponent {
      * @return True if successful, false otherwise
      */
     public boolean putChunk(final DataStructure p_dataStructure) {
+        boolean ret;
 
-        MemoryErrorCodes err;
         m_memoryManager.lockAccess();
-        err = m_memoryManager.put(p_dataStructure);
+        ret = m_memoryManager.put(p_dataStructure);
         m_memoryManager.unlockAccess();
-        if (err != MemoryErrorCodes.SUCCESS) {
+        if (!ret) {
             return false;
         }
 

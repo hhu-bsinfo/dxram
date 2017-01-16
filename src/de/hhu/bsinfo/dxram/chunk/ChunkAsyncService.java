@@ -34,7 +34,6 @@ import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
@@ -127,43 +126,31 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
                 continue;
             }
 
-            MemoryErrorCodes err = m_memoryManager.put(dataStructure);
-            switch (err) {
-                case SUCCESS: {
-                    // unlock chunks
-                    if (p_chunkUnlockOperation != ChunkLockOperation.NO_LOCK_OPERATION) {
-                        boolean writeLock = false;
-                        if (p_chunkUnlockOperation == ChunkLockOperation.WRITE_LOCK) {
-                            writeLock = true;
-                        }
-
-                        m_lock.unlock(dataStructure.getID(), m_boot.getNodeID(), writeLock);
-                    }
-                    break;
-                }
-                case DOES_NOT_EXIST: {
-                    // remote or migrated, figure out location and sort by peers
-                    LookupRange lookupRange = m_lookup.getLookupRange(dataStructure.getID());
-                    if (lookupRange == null) {
-                        continue;
+            if (m_memoryManager.put(dataStructure)) {
+                // unlock chunks
+                if (p_chunkUnlockOperation != ChunkLockOperation.NO_LOCK_OPERATION) {
+                    boolean writeLock = false;
+                    if (p_chunkUnlockOperation == ChunkLockOperation.WRITE_LOCK) {
+                        writeLock = true;
                     }
 
-                    short peer = lookupRange.getPrimaryPeer();
+                    m_lock.unlock(dataStructure.getID(), m_boot.getNodeID(), writeLock);
+                }
+            } else {
+                // remote or migrated, figure out location and sort by peers
+                LookupRange lookupRange = m_lookup.getLookupRange(dataStructure.getID());
+                if (lookupRange == null) {
+                    continue;
+                }
 
-                    ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
-                    if (remoteChunksOfPeer == null) {
-                        remoteChunksOfPeer = new ArrayList<>();
-                        remoteChunksByPeers.put(peer, remoteChunksOfPeer);
-                    }
-                    remoteChunksOfPeer.add(dataStructure);
-                    break;
+                short peer = lookupRange.getPrimaryPeer();
+
+                ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
+                if (remoteChunksOfPeer == null) {
+                    remoteChunksOfPeer = new ArrayList<>();
+                    remoteChunksByPeers.put(peer, remoteChunksOfPeer);
                 }
-                default: {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Putting local chunk %s failed", ChunkID.toHexString(dataStructure.getID()));
-                    // #endif /* LOGGER >= ERROR */
-                    break;
-                }
+                remoteChunksOfPeer.add(dataStructure);
             }
         }
 
@@ -177,9 +164,9 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
                 // local put, migrated data to current node
                 m_memoryManager.lockAccess();
                 for (final DataStructure dataStructure : entry.getValue()) {
-                    if (m_memoryManager.put(dataStructure) != MemoryErrorCodes.SUCCESS) {
+                    if (!m_memoryManager.put(dataStructure)) {
                         // #if LOGGER >= ERROR
-                        LOGGER.error("Putting local chunk %s failed", ChunkID.toHexString(dataStructure.getID()));
+                        LOGGER.error("Putting local chunk 0x%X failed, does not exist", dataStructure.getID());
                         // #endif /* LOGGER >= ERROR */
                     }
                 }
@@ -299,10 +286,9 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
 
         m_memoryManager.lockAccess();
         for (DataStructure chunk : chunks) {
-            MemoryErrorCodes err = m_memoryManager.put(chunk);
             // #if LOGGER >= WARN
-            if (err != MemoryErrorCodes.SUCCESS) {
-                LOGGER.warn("Putting chunk %s failed: %s", ChunkID.toHexString(chunk.getID()), err);
+            if (!m_memoryManager.put(chunk)) {
+                LOGGER.error("Putting chunk 0x%X failed, does not exist", chunk.getID());
             }
             // #endif /* LOGGER >= WARN */
         }

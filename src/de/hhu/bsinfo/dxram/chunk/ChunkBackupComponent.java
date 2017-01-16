@@ -162,20 +162,12 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      * @lock manage lock from memory manager component must be locked
      */
     public boolean putRecoveredChunks(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
-        boolean ret = true;
+        m_memoryManager.createAndPutRecovered(p_chunkIDs, p_data, p_offsets, p_lengths, p_usedEntries);
+        // #if LOGGER == TRACE
+        LOGGER.trace("Stored %d recovered chunks locally", p_usedEntries);
+        // #endif /* LOGGER == TRACE */
 
-        if (m_memoryManager.createAndPutRecovered(p_chunkIDs, p_data, p_offsets, p_lengths, p_usedEntries) != MemoryManagerComponent.MemoryErrorCodes.SUCCESS) {
-            // #if LOGGER == ERROR
-            LOGGER.error("Recovered chunks could not be stored locally");
-            // #endif /* LOGGER == ERROR */
-            ret = false;
-        } else {
-            // #if LOGGER == TRACE
-            LOGGER.trace("Stored %d recovered chunks locally", p_usedEntries);
-            // #endif /* LOGGER == TRACE */
-        }
-
-        return ret;
+        return true;
     }
 
     /**
@@ -219,7 +211,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
             return false;
         }
 
-        if (m_memoryManager.put(p_dataStructure) != MemoryManagerComponent.MemoryErrorCodes.SUCCESS) {
+        if (!m_memoryManager.put(p_dataStructure)) {
             return false;
         }
 
