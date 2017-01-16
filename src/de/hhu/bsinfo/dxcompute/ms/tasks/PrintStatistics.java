@@ -20,8 +20,8 @@ import java.util.Collection;
 import java.util.Date;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxram.stats.Statistics;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
-import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
@@ -45,10 +45,8 @@ class PrintStatistics {
      *     Output stream to print to.
      * @param p_bootService
      *     BootService
-     * @param p_statisticsService
-     *     StatisticsService
      */
-    static void printStatisticsToOutput(final PrintStream p_outputStream, final BootService p_bootService, final StatisticsService p_statisticsService) {
+    static void printStatisticsToOutput(final PrintStream p_outputStream, final BootService p_bootService) {
         DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         Date date = new Date();
         p_outputStream.println("---------------------------------------------------------");
@@ -60,7 +58,7 @@ class PrintStatistics {
         p_outputStream.println("Role: " + p_bootService.getNodeRole(nodeId));
         p_outputStream.println("---------------------------------------------------------");
 
-        Collection<StatisticsRecorder> recorders = StatisticsService.getRecorders();
+        Collection<StatisticsRecorder> recorders = Statistics.getRecorders();
         for (StatisticsRecorder recorder : recorders) {
             p_outputStream.println(recorder.toString());
             p_outputStream.println("---------------------------------------------------------");

@@ -13,6 +13,7 @@
 
 function imports() {
 
+    importClass(Packages.de.hhu.bsinfo.dxram.stats.Statistics);
 }
 
 function help() {
@@ -23,7 +24,7 @@ function help() {
 
 function exec() {
 
-    var recorders = dxram.service("stats").getRecorders();
+    var recorders = Statistics.getRecorders();
 
     for each (recorder in recorders) {
         dxterm.printfln("> %s", recorder.getName());

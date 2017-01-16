@@ -15,23 +15,18 @@ package de.hhu.bsinfo.dxram.stats;
 
 import java.util.Collection;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-
 /**
- * Exposing the component backend to the front with some
- * additional features like printing, filtering, ...
+ * Recording usage statistics
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
  */
-public class StatisticsService extends AbstractDXRAMService {
+public class Statistics {
 
     /**
      * Constructor
      */
-    public StatisticsService() {
-        super("stats");
+    public Statistics() {
+
     }
 
     /**
@@ -93,20 +88,4 @@ public class StatisticsService extends AbstractDXRAMService {
             System.out.println(recorder);
         }
     }
-
-    @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        // no dependencies
-    }
-
-    @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        return true;
-    }
-
-    @Override
-    protected boolean shutdownService() {
-        return true;
-    }
-
 }

@@ -13,6 +13,7 @@
 
 function imports() {
 
+    importClass(Packages.de.hhu.bsinfo.dxram.stats.Statistics);
 }
 
 function help() {
@@ -25,11 +26,9 @@ function help() {
 
 function exec(className) {
 
-    var stats = dxram.service("stats");
-
     if (className == null) {
-        stats.printStatistics();
+        Statistics.printStatistics();
     } else {
-        stats.printStatistics(className);
+        Statistics.printStatistics(className);
     }
 }

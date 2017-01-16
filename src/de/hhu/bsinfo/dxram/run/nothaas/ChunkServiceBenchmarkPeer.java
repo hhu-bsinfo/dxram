@@ -16,11 +16,11 @@ package de.hhu.bsinfo.dxram.run.nothaas;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.run.DXRAMMain;
-import de.hhu.bsinfo.dxram.stats.StatisticsService;
+import de.hhu.bsinfo.dxram.stats.Statistics;
 
 /**
  * Small test/benchmark to measure execution time of the core methods
- * of ChunkService using the built in StatisticsService.
+ * of ChunkService using the built in Statistics.
  * Run this as a peer, start one superpeer.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
@@ -60,15 +60,15 @@ public final class ChunkServiceBenchmarkPeer extends DXRAMMain {
 
         System.out.println(">>> Test 1");
         test1(numChunks, batchSize, chunkSize);
-        StatisticsService.printStatistics();
+        Statistics.printStatistics();
         System.out.println("=======================================");
-        StatisticsService.resetStatistics();
+        Statistics.resetStatistics();
 
         System.out.println(">>> Test 2");
         test2(numChunks, batchSize, chunkSize);
-        StatisticsService.printStatistics();
+        Statistics.printStatistics();
         System.out.println("=======================================");
-        StatisticsService.resetStatistics();
+        Statistics.resetStatistics();
 
         System.out.println("Done");
 

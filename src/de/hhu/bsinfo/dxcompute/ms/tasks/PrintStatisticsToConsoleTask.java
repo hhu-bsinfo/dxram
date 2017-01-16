@@ -17,7 +17,6 @@ import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -38,8 +37,7 @@ public class PrintStatisticsToConsoleTask implements Task {
     @Override
     public int execute(final TaskContext p_ctx) {
         BootService bootService = p_ctx.getDXRAMServiceAccessor().getService(BootService.class);
-        StatisticsService statisticsService = p_ctx.getDXRAMServiceAccessor().getService(StatisticsService.class);
-        PrintStatistics.printStatisticsToOutput(System.out, bootService, statisticsService);
+        PrintStatistics.printStatisticsToOutput(System.out, bootService);
         return 0;
     }
 

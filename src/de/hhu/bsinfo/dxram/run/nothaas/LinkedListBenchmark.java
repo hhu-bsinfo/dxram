@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.run.nothaas;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.stats.StatisticsService;
+import de.hhu.bsinfo.dxram.stats.Statistics;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
@@ -35,7 +35,6 @@ public final class LinkedListBenchmark extends AbstractMain {
 
     private DXRAM m_dxram;
     private ChunkService m_chunkService;
-    private StatisticsService m_statisticsService;
     private Stopwatch m_stopwatch = new Stopwatch();
 
     /**
@@ -47,7 +46,6 @@ public final class LinkedListBenchmark extends AbstractMain {
         m_dxram = new DXRAM();
         m_dxram.initialize("config/dxram.conf");
         m_chunkService = m_dxram.getService(ChunkService.class);
-        m_statisticsService = m_dxram.getService(StatisticsService.class);
     }
 
     /**
@@ -86,7 +84,7 @@ public final class LinkedListBenchmark extends AbstractMain {
 
         System.out.println("Done");
 
-        StatisticsService.printStatistics();
+        Statistics.printStatistics();
 
         return 0;
     }

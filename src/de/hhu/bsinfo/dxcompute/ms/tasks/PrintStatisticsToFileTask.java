@@ -20,14 +20,13 @@ import java.io.PrintStream;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxcompute.ms.Task;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -64,7 +63,6 @@ public class PrintStatisticsToFileTask implements Task {
     @Override
     public int execute(final TaskContext p_ctx) {
         BootService bootService = p_ctx.getDXRAMServiceAccessor().getService(BootService.class);
-        StatisticsService statisticsService = p_ctx.getDXRAMServiceAccessor().getService(StatisticsService.class);
 
         if (m_path == null) {
             return -1;
@@ -102,7 +100,7 @@ public class PrintStatisticsToFileTask implements Task {
             // #endif /* LOGGER >= ERROR */
             return -5;
         }
-        PrintStatistics.printStatisticsToOutput(out, bootService, statisticsService);
+        PrintStatistics.printStatisticsToOutput(out, bootService);
 
         out.close();
 

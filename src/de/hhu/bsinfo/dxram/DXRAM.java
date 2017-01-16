@@ -45,7 +45,6 @@ import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.dxram.recovery.RecoveryService;
 import de.hhu.bsinfo.dxram.script.ScriptEngineComponent;
 import de.hhu.bsinfo.dxram.script.ScriptEngineService;
-import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.term.TerminalService;
@@ -233,7 +232,6 @@ public class DXRAM {
         p_engine.registerService(SynchronizationService.class);
         p_engine.registerService(TerminalService.class);
         p_engine.registerService(TemporaryStorageService.class);
-        p_engine.registerService(StatisticsService.class);
     }
 
     /**
