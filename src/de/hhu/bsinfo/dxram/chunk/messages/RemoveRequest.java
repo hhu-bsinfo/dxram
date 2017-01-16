@@ -27,7 +27,8 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
  */
 public class RemoveRequest extends AbstractRequest {
 
-    private Long[] m_chunkIDs;
+    private Long[] m_chunkIDsO;
+    private long[] m_chunkIDs;
 
     /**
      * Creates an instance of RemoveRequest.
@@ -49,9 +50,9 @@ public class RemoveRequest extends AbstractRequest {
     public RemoveRequest(final short p_destination, final Long... p_chunkIds) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_REQUEST);
 
-        m_chunkIDs = p_chunkIds;
+        m_chunkIDsO = p_chunkIds;
 
-        setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), m_chunkIDs.length));
+        setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), m_chunkIDsO.length));
     }
 
     /**
@@ -59,21 +60,38 @@ public class RemoveRequest extends AbstractRequest {
      *
      * @return the ID for the Chunk to remove
      */
-    public final Long[] getChunkIDs() {
+    public final long[] getChunkIDs() {
         return m_chunkIDs;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_chunkIDs.length;
+        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+
+        if (m_chunkIDsO != null) {
+            size += Long.BYTES * m_chunkIDsO.length;
+        } else {
+            size += Long.BYTES * m_chunkIDs.length;
+        }
+
+        return size;
     }
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkIDs.length);
 
-        for (long chunkId : m_chunkIDs) {
-            p_buffer.putLong(chunkId);
+        if (m_chunkIDsO != null) {
+            ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkIDsO.length);
+
+            for (long chunkId : m_chunkIDsO) {
+                p_buffer.putLong(chunkId);
+            }
+        } else {
+            ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkIDs.length);
+
+            for (long chunkId : m_chunkIDs) {
+                p_buffer.putLong(chunkId);
+            }
         }
     }
 
@@ -81,7 +99,7 @@ public class RemoveRequest extends AbstractRequest {
     protected final void readPayload(final ByteBuffer p_buffer) {
         int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
 
-        m_chunkIDs = new Long[numChunks];
+        m_chunkIDs = new long[numChunks];
 
         for (int i = 0; i < numChunks; i++) {
             m_chunkIDs[i] = p_buffer.getLong();

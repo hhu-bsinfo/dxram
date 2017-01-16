@@ -705,7 +705,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 if (response != null) {
                     byte[] statusCodes = response.getStatusCodes();
                     // short cut if everything is ok
-                    if (statusCodes[0] == 2) {
+                    if (statusCodes[0] == 1) {
                         chunksRemoved += remoteChunks.size();
                     } else {
                         for (int i = 0; i < statusCodes.length; i++) {
@@ -1736,16 +1736,16 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         SOP_INCOMING_REMOVE.enter(p_request.getChunkIDs().length);
         // #endif /* STATISTICS */
 
-        Long[] chunkIDs = p_request.getChunkIDs();
+        long[] chunkIDs = p_request.getChunkIDs();
         byte[] chunkStatusCodes = new byte[chunkIDs.length];
         boolean allSuccessful = true;
 
         Map<Long, ArrayList<Long>> remoteChunksByBackupPeers = new TreeMap<>();
 
         // remove chunks from superpeer overlay first, so cannot be found before being deleted
-        for (int i = 0; i < chunkIDs.length; i++) {
-            m_lookup.removeChunkIDs(new long[] {chunkIDs[i]});
+        m_lookup.removeChunkIDs(chunkIDs);
 
+        for (int i = 0; i < chunkIDs.length; i++) {
             if (m_backup.isActive()) {
                 // sort by backup peers
                 long backupPeersAsLong = m_backup.getBackupPeersForLocalChunks(chunkIDs[i]);
@@ -1768,6 +1768,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 // remove failed, might be removed recently by someone else
                 chunkStatusCodes[i] = -1;
                 allSuccessful = false;
+
+                // #if LOGGER >= ERROR
+                LOGGER.error("Removing chunk 0x%X failed, does not exist", chunkIDs[i]);
+                // #endif /* LOGGER >= ERROR */
             }
         }
         m_memoryManager.unlockManage();
@@ -1775,7 +1779,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         RemoveResponse response;
         if (allSuccessful) {
             // use a short version to indicate everything is ok
-            response = new RemoveResponse(p_request, (byte) 2);
+            response = new RemoveResponse(p_request, (byte) 1);
         } else {
             // errors occured, send full status report
             response = new RemoveResponse(p_request, chunkStatusCodes);
