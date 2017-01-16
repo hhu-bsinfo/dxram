@@ -1,6 +1,6 @@
 {
-	"m_numRequiredSlaves": 0,
-	"m_name": "ChunkCreateLocalTest",
+	"m_numRequiredSlaves": 2,
+	"m_name": "ChunkCreateRemoteTest",
 	"m_tasks": [
 		{
 			"m_task": "de.hhu.bsinfo.dxcompute.bench.CheckChunkMemRequiredSizeTask",
@@ -50,7 +50,7 @@
 		        "m_value": 1024,
         		"m_unit": "b"
 			},
-			"m_pattern": 0
+			"m_pattern": 1
 		},
 		{
 			"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask"

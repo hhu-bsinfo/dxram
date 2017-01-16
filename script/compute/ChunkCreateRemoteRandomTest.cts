@@ -1,6 +1,6 @@
 {
 	"m_numRequiredSlaves": 2,
-	"m_name": "ChunkCreateRemoteTest",
+	"m_name": "ChunkCreateRemoteRandomTest",
 	"m_tasks": [
 		{
 			"m_task": "de.hhu.bsinfo.dxcompute.bench.CheckChunkMemRequiredSizeTask",
@@ -9,7 +9,7 @@
         		"m_unit": "gb"
 			},
 			"m_minRequiredFree": {
-		        "m_value": 800,
+		        "m_value": 900,
         		"m_unit": "mb"
 			}
 		},
@@ -30,7 +30,7 @@
 					"m_case": {
 						"m_tasks": [
 							{
-						  		"m_abortMsg": "Not enough free key value store memory, min required: 800 MB"
+						  		"m_abortMsg": "Not enough free key value store memory, min required: 900 MB"
 							}
 						]
 					}
@@ -50,7 +50,7 @@
 		        "m_value": 1024,
         		"m_unit": "b"
 			},
-			"m_remote": true
+			"m_pattern": 2
 		},
 		{
 			"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask"

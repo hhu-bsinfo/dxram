@@ -23,7 +23,7 @@ final class ChunkTaskUtils {
     }
 
     static short getRandomNodeId(final short[] p_slaveNodeIds) {
-        return p_slaveNodeIds[getRandomRange(0, p_slaveNodeIds.length)];
+        return p_slaveNodeIds[getRandomRangeExclEnd(0, p_slaveNodeIds.length)];
     }
 
     static short getSuccessorSlaveNodeId(final short[] p_slaveNodeIds, final short p_ownSlaveId) {
@@ -69,7 +69,7 @@ final class ChunkTaskUtils {
                     distRanges[i].add(rangeStart);
                     distRanges[i].add(rangeStart + chunkCount - 1);
 
-                    rangeStart = rangeStart + chunkCount;
+                    rangeStart += chunkCount;
                     chunkCount = 0;
                 } else {
                     // chunksInRange < chunkCount
