@@ -35,6 +35,10 @@ import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
+import de.hhu.bsinfo.utils.serialization.Exportable;
+import de.hhu.bsinfo.utils.serialization.Exporter;
+import de.hhu.bsinfo.utils.serialization.Importable;
+import de.hhu.bsinfo.utils.serialization.Importer;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
@@ -96,14 +100,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
 
-        status.m_freeMemoryBytes = m_rawMemory.getStatus().getFree();
-        status.m_totalMemoryBytes = m_rawMemory.getStatus().getSize();
-        status.m_totalPayloadMemoryBytes = m_rawMemory.getStatus().getAllocatedPayload();
+        status.m_freeMemory = new StorageUnit(m_rawMemory.getStatus().getFree(), StorageUnit.BYTE);
+        status.m_totalMemory = new StorageUnit(m_rawMemory.getStatus().getSize(), StorageUnit.BYTE);
+        status.m_totalPayloadMemory = new StorageUnit(m_rawMemory.getStatus().getAllocatedPayload(), StorageUnit.BYTE);
         status.m_numberOfActiveMemoryBlocks = m_rawMemory.getStatus().getAllocatedBlocks();
-        status.m_totalChunkPayloadMemory = m_totalActiveChunkMemory;
+        status.m_totalChunkPayloadMemory = new StorageUnit(m_totalActiveChunkMemory, StorageUnit.BYTE);
         status.m_numberOfActiveChunks = m_numActiveChunks;
         status.m_cidTableCount = m_cidTable.getTableCount();
-        status.m_totalMemoryCIDTables = m_cidTable.getTotalMemoryTables();
+        status.m_totalMemoryCIDTables = new StorageUnit(m_cidTable.getTotalMemoryTables(), StorageUnit.BYTE);
 
         return status;
     }
@@ -1141,105 +1145,142 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     }
 
     /**
-     * Object containing status information about the memory.
+     * Status object for the memory component containing various information
+     * about it.
      *
-     * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
+     * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.03.2016
      */
-    public static class Status {
-        private long m_totalMemoryBytes = -1;
-        private long m_freeMemoryBytes = -1;
-        private long m_totalPayloadMemoryBytes = -1;
+    public static class Status implements Importable, Exportable {
+        private StorageUnit m_freeMemory = new StorageUnit();
+        private StorageUnit m_totalMemory = new StorageUnit();
+        private StorageUnit m_totalPayloadMemory = new StorageUnit();
         private long m_numberOfActiveMemoryBlocks = -1;
         private long m_numberOfActiveChunks = -1;
-        private long m_totalChunkPayloadMemory = -1;
+        private StorageUnit m_totalChunkPayloadMemory = new StorageUnit();
         private long m_cidTableCount = -1;
-        private long m_totalMemoryCIDTables = -1;
+        private StorageUnit m_totalMemoryCIDTables = new StorageUnit();
 
         /**
-         * Constructor
+         * Default constructor
          */
         public Status() {
 
         }
 
         /**
-         * Get the total amount of memory in bytes.
+         * Get the amount of free memory
          *
-         * @return Total amount of memory in bytes.
+         * @return Free memory
          */
-        public long getTotalMemory() {
-            return m_totalMemoryBytes;
+        public StorageUnit getFreeMemory() {
+            return m_freeMemory;
         }
 
         /**
-         * Get the total amount of free memory in bytes.
+         * Get the total amount of memory available
          *
-         * @return Amount of free memory in bytes.
+         * @return Total amount of memory
          */
-        public long getFreeMemory() {
-            return m_freeMemoryBytes;
+        public StorageUnit getTotalMemory() {
+            return m_totalMemory;
         }
 
         /**
-         * Get the total amount of allocated memory used for payload/chunk data.
+         * Get the total number of active/allocated memory blocks
          *
-         * @return Amount of memory allocated for payload in bytes.
-         */
-        public long getTotalPayloadMemory() {
-            return m_totalPayloadMemoryBytes;
-        }
-
-        /**
-         * Get the number of active/allocated memory blocks.
-         *
-         * @return Number of active blocks.
+         * @return Number of allocated memory blocks
          */
         public long getNumberOfActiveMemoryBlocks() {
             return m_numberOfActiveMemoryBlocks;
         }
 
         /**
-         * Get the number of currently allocated chunks.
+         * Get the total number of currently active chunks
          *
-         * @return Number of currently allocated chunks.
+         * @return Number of active/allocated chunks
          */
         public long getNumberOfActiveChunks() {
             return m_numberOfActiveChunks;
         }
 
         /**
-         * Get the total amount of memory used for chunk payload.
+         * Get the amount of memory used by chunk payload/data
          *
-         * @return Total amount of memory in bytes usable for chunk payload.
+         * @return Amount of memory used by chunk payload
          */
-        public long getTotalChunkMemory() {
+        public StorageUnit getTotalChunkPayloadMemory() {
             return m_totalChunkPayloadMemory;
         }
 
         /**
-         * Get the number of cid tables.
+         * Get the number of currently allocated CID tables
          *
-         * @return Number of cid tables.
+         * @return Number of CID tables
          */
         public long getCIDTableCount() {
             return m_cidTableCount;
         }
 
         /**
-         * Get the amount of memory used by the cid tables.
+         * Get the total memory used by CID tables (payload only)
          *
-         * @return Memory used by cid tables (in bytes).
+         * @return Total memory used by CID tables
          */
-        public long getTotalMemoryCIDTables() {
+        public StorageUnit getTotalMemoryCIDTables() {
             return m_totalMemoryCIDTables;
+        }
+
+        /**
+         * Get the total amount of memory allocated and usable for actual payload/data
+         *
+         * @return Total amount of memory usable for payload
+         */
+        public StorageUnit getTotalPayloadMemory() {
+            return m_totalPayloadMemory;
+        }
+
+        @Override
+        public int sizeofObject() {
+            return Long.BYTES * 3 + m_freeMemory.sizeofObject() + m_totalMemory.sizeofObject() + m_totalPayloadMemory.sizeofObject() +
+                m_totalChunkPayloadMemory.sizeofObject() + m_totalMemoryCIDTables.sizeofObject();
+        }
+
+        @Override
+        public void exportObject(final Exporter p_exporter) {
+            p_exporter.exportObject(m_freeMemory);
+            p_exporter.exportObject(m_totalMemory);
+            p_exporter.exportObject(m_totalPayloadMemory);
+            p_exporter.writeLong(m_numberOfActiveMemoryBlocks);
+            p_exporter.writeLong(m_numberOfActiveChunks);
+            p_exporter.exportObject(m_totalChunkPayloadMemory);
+            p_exporter.writeLong(m_cidTableCount);
+            p_exporter.exportObject(m_totalMemoryCIDTables);
+        }
+
+        @Override
+        public void importObject(final Importer p_importer) {
+            p_importer.importObject(m_freeMemory);
+            p_importer.importObject(m_totalMemory);
+            p_importer.importObject(m_totalPayloadMemory);
+            m_numberOfActiveMemoryBlocks = p_importer.readLong();
+            m_numberOfActiveChunks = p_importer.readLong();
+            p_importer.importObject(m_totalChunkPayloadMemory);
+            m_cidTableCount = p_importer.readLong();
+            p_importer.importObject(m_totalMemoryCIDTables);
         }
 
         @Override
         public String toString() {
-            return "m_totalMemoryBytes " + m_totalMemoryBytes + ", m_freeMemoryBytes " + m_freeMemoryBytes + ", m_totalPayloadMemoryBytes " +
-                m_totalPayloadMemoryBytes + ", m_numberOfActiveMemoryBlocks " + m_numberOfActiveMemoryBlocks + ", m_numberOfActiveChunks " +
-                m_numberOfActiveChunks + ", m_totalChunkPayloadMemory " + m_totalChunkPayloadMemory + ", m_totalChunkPayloadMemory " +
-                m_totalChunkPayloadMemory + ", m_cidTableCount " + m_cidTableCount + ", m_totalMemoryCIDTables " + m_totalMemoryCIDTables;
+            String str = "";
+            str += "Free memory (gb): " + m_freeMemory.getGBDouble() + '\n';
+            str += "Total memory (gb): " + m_totalMemory.getGBDouble() + '\n';
+            str += "Total payload memory (gb): " + m_totalPayloadMemory.getGBDouble() + '\n';
+            str += "Num active memory blocks: " + m_numberOfActiveMemoryBlocks + '\n';
+            str += "Num active chunks: " + m_numberOfActiveChunks + '\n';
+            str += "Total chunk payload memory (gb): " + m_totalChunkPayloadMemory.getGBDouble() + '\n';
+            str += "Num CID tables: " + m_cidTableCount + '\n';
+            str += "Total CID tables memory (gb): " + m_totalMemoryCIDTables.getGBDouble();
+            return str;
         }
     }
 }

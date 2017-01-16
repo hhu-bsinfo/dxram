@@ -15,18 +15,18 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
- * Response with status information about a remote chunk service.
+ * Response with status information about the key value store memory
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 07.04.2016
  */
 public class StatusResponse extends AbstractResponse {
 
-    private ChunkService.Status m_status;
+    private MemoryManagerComponent.Status m_status;
 
     /**
      * Creates an instance of StatusResponse.
@@ -45,18 +45,18 @@ public class StatusResponse extends AbstractResponse {
      * @param p_status
      *     the requested Status
      */
-    public StatusResponse(final StatusRequest p_request, final ChunkService.Status p_status) {
+    public StatusResponse(final StatusRequest p_request, final MemoryManagerComponent.Status p_status) {
         super(p_request, ChunkMessages.SUBTYPE_STATUS_RESPONSE);
 
         m_status = p_status;
     }
 
     /**
-     * Get the chunk service status.
+     * Get the key value store memory status
      *
-     * @return Chunk service status.
+     * @return Key value store memory status
      */
-    public final ChunkService.Status getStatus() {
+    public final MemoryManagerComponent.Status getStatus() {
         return m_status;
     }
 
@@ -74,7 +74,7 @@ public class StatusResponse extends AbstractResponse {
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
         MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
-        m_status = new ChunkService.Status();
+        m_status = new MemoryManagerComponent.Status();
         importer.importObject(m_status);
     }
 }

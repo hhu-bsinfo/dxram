@@ -1,7 +1,8 @@
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
-import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import java.io.PrintStream;
+
+import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 
 /**
  * Helper class to print memory status.
@@ -25,14 +26,12 @@ class PrintMemoryStatus {
      * @param p_status
      *     Status to print.
      */
-    static void printMemoryStatusToOutput(final PrintStream p_outputStream, final ChunkService.Status p_status) {
+    static void printMemoryStatusToOutput(final PrintStream p_outputStream, final MemoryManagerComponent.Status p_status) {
         p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");
-        p_outputStream.println("Chunk service memory:");
-        p_outputStream.println("Total: " + p_status.getTotalMemory());
-        p_outputStream.println("Used: " + (p_status.getTotalMemory() - p_status.getFreeMemory()));
-        p_outputStream.println("Free: " + p_status.getFreeMemory());
+        p_outputStream.println("Key value store memory:");
+        p_outputStream.println(p_status);
         p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");

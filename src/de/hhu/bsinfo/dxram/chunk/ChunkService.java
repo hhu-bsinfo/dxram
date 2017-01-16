@@ -63,10 +63,6 @@ import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
-import de.hhu.bsinfo.utils.serialization.Exportable;
-import de.hhu.bsinfo.utils.serialization.Exporter;
-import de.hhu.bsinfo.utils.serialization.Importable;
-import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * This service provides access to the backend storage system.
@@ -104,27 +100,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     }
 
     /**
-     * Get the status of the chunk service.
+     * Get the memory status
      *
-     * @return Status object with current status of the service.
+     * @return Status object with current status of the key value store memory
      */
-    public Status getStatus() {
-        Status status = new Status();
-
-        MemoryManagerComponent.Status memManStatus = m_memoryManager.getStatus();
-
-        if (memManStatus != null) {
-            status.m_freeMemoryBytes = memManStatus.getFreeMemory();
-            status.m_totalMemoryBytes = memManStatus.getTotalMemory();
-            status.m_totalPayloadMemoryBytes = memManStatus.getTotalPayloadMemory();
-            status.m_numberOfActiveMemoryBlocks = memManStatus.getNumberOfActiveMemoryBlocks();
-            status.m_numberOfActiveChunks = memManStatus.getNumberOfActiveChunks();
-            status.m_totalChunkPayloadMemory = memManStatus.getTotalChunkMemory();
-            status.m_cidTableCount = memManStatus.getCIDTableCount();
-            status.m_totalMemoryCIDTables = memManStatus.getTotalMemoryCIDTables();
-        }
-
-        return status;
+    public MemoryManagerComponent.Status getStatus() {
+        return m_memoryManager.getStatus();
     }
 
     /**
@@ -138,14 +119,14 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         memManStatus = m_memoryManager.getStatus();
 
         if (memManStatus != null) {
-            return memManStatus.getTotalMemory();
+            return memManStatus.getTotalMemory().getBytes();
         } else {
             return -1;
         }
     }
 
     /**
-     * Get the amounf of free memory.
+     * Get the amount of free memory.
      *
      * @return Amount of free memory in bytes.
      */
@@ -155,7 +136,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         memManStatus = m_memoryManager.getStatus();
 
         if (memManStatus != null) {
-            return memManStatus.getFreeMemory();
+            return memManStatus.getFreeMemory().getBytes();
         } else {
             return -1;
         }
@@ -192,14 +173,14 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     }
 
     /**
-     * Get the status of a remote node specified by a node id.
+     * Get the memory status of a remote node specified by a node id.
      *
      * @param p_nodeID
      *     Node id to get the status from.
      * @return Status object with status information of the remote node or null if getting status failed.
      */
-    public Status getStatus(final short p_nodeID) {
-        Status status = null;
+    public MemoryManagerComponent.Status getMemoryStatus(final short p_nodeID) {
+        MemoryManagerComponent.Status status = null;
 
         if (p_nodeID == NodeID.INVALID_ID) {
             // #if LOGGER >= ERROR
@@ -1921,7 +1902,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      *     Request to handle
      */
     private void incomingStatusRequest(final StatusRequest p_request) {
-        Status status = getStatus();
+        MemoryManagerComponent.Status status = getStatus();
 
         StatusResponse response = new StatusResponse(p_request, status);
         try {
@@ -1991,145 +1972,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             // #if LOGGER >= ERROR
             LOGGER.error("Responding to migrated chunk id ranges request %s failed: %s", p_request, e);
             // #endif /* LOGGER >= ERROR */
-        }
-    }
-
-    /**
-     * Status object for the chunk service containing various information
-     * about it.
-     *
-     * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.03.2016
-     */
-    public static class Status implements Importable, Exportable {
-        private long m_freeMemoryBytes = -1;
-        private long m_totalMemoryBytes = -1;
-        private long m_totalPayloadMemoryBytes = -1;
-        private long m_numberOfActiveMemoryBlocks = -1;
-        private long m_numberOfActiveChunks = -1;
-        private long m_totalChunkPayloadMemory = -1;
-        private long m_cidTableCount = -1;
-        private long m_totalMemoryCIDTables = -1;
-
-        /**
-         * Default constructor
-         */
-        public Status() {
-
-        }
-
-        /**
-         * Get the amount of free memory in bytes.
-         *
-         * @return Free memory in bytes.
-         */
-        public long getFreeMemory() {
-            return m_freeMemoryBytes;
-        }
-
-        /**
-         * Get the total amount of memory in bytes available.
-         *
-         * @return Total amount of memory in bytes.
-         */
-        public long getTotalMemory() {
-            return m_totalMemoryBytes;
-        }
-
-        /**
-         * Get the total number of active/allocated memory blocks.
-         *
-         * @return Number of allocated memory blocks.
-         */
-        public long getNumberOfActiveMemoryBlocks() {
-            return m_numberOfActiveMemoryBlocks;
-        }
-
-        /**
-         * Get the total number of currently active chunks.
-         *
-         * @return Number of active/allocated chunks.
-         */
-        public long getNumberOfActiveChunks() {
-            return m_numberOfActiveChunks;
-        }
-
-        /**
-         * Get the amount of memory used by chunk payload/data.
-         *
-         * @return Amount of memory used by chunk payload in bytes.
-         */
-        public long getTotalChunkPayloadMemory() {
-            return m_totalChunkPayloadMemory;
-        }
-
-        /**
-         * Get the number of currently allocated CID tables.
-         *
-         * @return Number of CID tables.
-         */
-        public long getCIDTableCount() {
-            return m_cidTableCount;
-        }
-
-        /**
-         * Get the total memory used by CID tables (payload only).
-         *
-         * @return Total memory used by CID tables in bytes.
-         */
-        public long getTotalMemoryCIDTables() {
-            return m_totalMemoryCIDTables;
-        }
-
-        /**
-         * Get the total amount of memory allocated and usable for actual payload/data.
-         *
-         * @return Total amount of memory usable for payload (in bytes).
-         */
-        public long getTotalPayloadMemory() {
-            return m_totalPayloadMemoryBytes;
-        }
-
-        @Override
-        public int sizeofObject() {
-            return Long.BYTES * 8;
-        }
-
-        @Override
-        public void exportObject(final Exporter p_exporter) {
-            p_exporter.writeLong(m_freeMemoryBytes);
-            p_exporter.writeLong(m_totalMemoryBytes);
-            p_exporter.writeLong(m_totalPayloadMemoryBytes);
-            p_exporter.writeLong(m_numberOfActiveMemoryBlocks);
-            p_exporter.writeLong(m_numberOfActiveChunks);
-            p_exporter.writeLong(m_totalChunkPayloadMemory);
-            p_exporter.writeLong(m_cidTableCount);
-            p_exporter.writeLong(m_totalMemoryCIDTables);
-        }
-
-        @Override
-        public void importObject(final Importer p_importer) {
-            m_freeMemoryBytes = p_importer.readLong();
-            m_totalMemoryBytes = p_importer.readLong();
-            m_totalPayloadMemoryBytes = p_importer.readLong();
-            m_numberOfActiveMemoryBlocks = p_importer.readLong();
-            m_numberOfActiveChunks = p_importer.readLong();
-            m_totalChunkPayloadMemory = p_importer.readLong();
-            m_cidTableCount = p_importer.readLong();
-            m_totalMemoryCIDTables = p_importer.readLong();
-        }
-
-        @Override
-        public String toString() {
-            String str = "";
-            str += "Free memory (bytes): " + m_freeMemoryBytes + '\n';
-            str += "Total memory (bytes): " + m_totalMemoryBytes + '\n';
-            str += "Total payload memory (bytes): " + m_totalPayloadMemoryBytes + '\n';
-            str += "Num active memory blocks: " + m_numberOfActiveMemoryBlocks + '\n';
-            str += "Num active chunks: " + m_numberOfActiveChunks + '\n';
-            str += "Total chunk payload memory (bytes): " + m_totalChunkPayloadMemory + '\n';
-            str += "Num CID tables: " + m_cidTableCount + '\n';
-            str += "Total CID tables memory (bytes): " + m_totalMemoryCIDTables;
-            return str;
         }
     }
 }
