@@ -44,9 +44,9 @@ public class StorageUnit implements Importable, Exportable {
      * Constructor
      *
      * @param p_value
-     *         Value
+     *     Value
      * @param p_unit
-     *         Unit of the value (b, kb, mb, gb, tb)
+     *     Unit of the value (b, kb, mb, gb, tb)
      */
     public StorageUnit(final long p_value, final String p_unit) {
         parse(p_value, p_unit.toLowerCase());
@@ -71,12 +71,30 @@ public class StorageUnit implements Importable, Exportable {
     }
 
     /**
+     * Get as KB (double value)
+     *
+     * @return KB
+     */
+    public double getKBDouble() {
+        return m_bytes / 1024.0;
+    }
+
+    /**
      * Get as MB
      *
      * @return MB
      */
     public long getMB() {
         return m_bytes / 1024 / 1024;
+    }
+
+    /**
+     * Get as MB (double value)
+     *
+     * @return MB
+     */
+    public double getMBDouble() {
+        return m_bytes / 1024.0 / 1024.0;
     }
 
     /**
@@ -89,12 +107,30 @@ public class StorageUnit implements Importable, Exportable {
     }
 
     /**
+     * Get as GB (double value)
+     *
+     * @return GB
+     */
+    public double getGBDouble() {
+        return m_bytes / 1024.0 / 1024.0 / 1024.0;
+    }
+
+    /**
      * Get as TB
      *
      * @return TB
      */
     public long getTB() {
         return m_bytes / 1024 / 1024 / 1024 / 1024;
+    }
+
+    /**
+     * Get as TB (double value)
+     *
+     * @return TB
+     */
+    public double getTBDouble() {
+        return m_bytes / 1024.0 / 1024.0 / 1024.0 / 1024.0;
     }
 
     @Override
@@ -106,9 +142,9 @@ public class StorageUnit implements Importable, Exportable {
      * Parse the value with the specified unit
      *
      * @param p_value
-     *         Value
+     *     Value
      * @param p_unit
-     *         Unit of the value
+     *     Unit of the value
      */
     private void parse(final long p_value, final String p_unit) {
         switch (p_unit) {
