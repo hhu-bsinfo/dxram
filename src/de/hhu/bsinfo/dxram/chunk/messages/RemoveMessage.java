@@ -17,6 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
@@ -25,21 +26,21 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
-public class RemoveRequest extends AbstractRequest {
+public class RemoveMessage extends AbstractMessage {
 
     private Long[] m_chunkIDsO;
     private long[] m_chunkIDs;
 
     /**
-     * Creates an instance of RemoveRequest.
+     * Creates an instance of RemoveMessage.
      * This constructor is used when receiving this message.
      */
-    public RemoveRequest() {
+    public RemoveMessage() {
         super();
     }
 
     /**
-     * Creates an instance of RemoveRequest.
+     * Creates an instance of RemoveMessage.
      * This constructor is used when sending this message.
      *
      * @param p_destination
@@ -47,7 +48,7 @@ public class RemoveRequest extends AbstractRequest {
      * @param p_chunkIds
      *     the chunk IDs to remove
      */
-    public RemoveRequest(final short p_destination, final Long... p_chunkIds) {
+    public RemoveMessage(final short p_destination, final Long... p_chunkIds) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_REQUEST);
 
         m_chunkIDsO = p_chunkIds;

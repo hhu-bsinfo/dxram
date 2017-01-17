@@ -36,8 +36,7 @@ import de.hhu.bsinfo.dxram.chunk.messages.GetRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.PutResponse;
-import de.hhu.bsinfo.dxram.chunk.messages.RemoveRequest;
-import de.hhu.bsinfo.dxram.chunk.messages.RemoveResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.data.Chunk;
@@ -49,7 +48,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
-import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
@@ -691,34 +689,17 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 m_memoryManager.unlockManage();
             } else {
                 // Remote remove from specified peer
-                RemoveRequest request = new RemoveRequest(peer, remoteChunks.toArray(new Long[remoteChunks.size()]));
+                RemoveMessage message = new RemoveMessage(peer, remoteChunks.toArray(new Long[remoteChunks.size()]));
                 try {
-                    m_network.sendSync(request);
+                    m_network.sendMessage(message);
                 } catch (final NetworkException e) {
                     // #if LOGGER >= ERROR
-                    LOGGER.error("Sending chunk remove request to peer 0x%X failed: %s", peer, e);
+                    LOGGER.error("Sending chunk remove to peer 0x%X failed: %s", peer, e);
                     // #endif /* LOGGER >= ERROR */
                     continue;
                 }
 
-                RemoveResponse response = request.getResponse(RemoveResponse.class);
-                if (response != null) {
-                    byte[] statusCodes = response.getStatusCodes();
-                    // short cut if everything is ok
-                    if (statusCodes[0] == 1) {
-                        chunksRemoved += remoteChunks.size();
-                    } else {
-                        for (int i = 0; i < statusCodes.length; i++) {
-                            if (statusCodes[i] < 0) {
-                                // #if LOGGER >= ERROR
-                                LOGGER.error("Remote removing chunk 0x%X failed: %d", remoteChunks.get(i), statusCodes[i]);
-                                // #endif /* LOGGER >= ERROR */
-                            } else {
-                                chunksRemoved++;
-                            }
-                        }
-                    }
-                }
+                chunksRemoved += remoteChunks.size();
             }
         }
 
@@ -735,7 +716,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 for (int i = 0; i < backupPeers.length; i++) {
                     if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
                         try {
-                            m_network.sendMessage(new RemoveMessage(backupPeers[i], ids));
+                            m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(backupPeers[i], ids));
                         } catch (final NetworkException ignore) {
 
                         }
@@ -1481,7 +1462,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                         incomingPutRequest((PutRequest) p_message);
                         break;
                     case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
-                        incomingRemoveRequest((RemoveRequest) p_message);
+                        incomingRemoveMessage((RemoveMessage) p_message);
                         break;
                     case ChunkMessages.SUBTYPE_CREATE_REQUEST:
                         incomingCreateRequest((CreateRequest) p_message);
@@ -1539,8 +1520,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_RESPONSE, GetResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_REQUEST, PutRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_RESPONSE, PutResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_REQUEST, RemoveRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_RESPONSE, RemoveResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_REQUEST, RemoveMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST, CreateRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_CREATE_RESPONSE, CreateResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_STATUS_REQUEST, StatusRequest.class);
@@ -1561,7 +1541,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     private void registerNetworkMessageListener() {
         m_network.register(GetRequest.class, this);
         m_network.register(PutRequest.class, this);
-        m_network.register(RemoveRequest.class, this);
+        m_network.register(RemoveMessage.class, this);
         m_network.register(CreateRequest.class, this);
         m_network.register(StatusRequest.class, this);
         m_network.register(GetLocalChunkIDRangesRequest.class, this);
@@ -1726,24 +1706,29 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     }
 
     /**
-     * Handles an incoming RemoveRequest
+     * Handles an incoming RemoveMessage
      *
-     * @param p_request
-     *     the RemoveRequest
+     * @param p_message
+     *     the RemoveMessage
      */
-    private void incomingRemoveRequest(final RemoveRequest p_request) {
+    private void incomingRemoveMessage(final RemoveMessage p_message) {
         // #ifdef STATISTICS
-        SOP_INCOMING_REMOVE.enter(p_request.getChunkIDs().length);
+        SOP_INCOMING_REMOVE.enter(p_message.getChunkIDs().length);
         // #endif /* STATISTICS */
 
-        long[] chunkIDs = p_request.getChunkIDs();
-        byte[] chunkStatusCodes = new byte[chunkIDs.length];
-        boolean allSuccessful = true;
+        long[] chunkIDs = p_message.getChunkIDs();
 
         Map<Long, ArrayList<Long>> remoteChunksByBackupPeers = new TreeMap<>();
 
+        // this call is sending requests a is waiting for a response, thus
+        // blocking the message handler thread handling the current message.
+        // run this in a separate thread to avoid blocking the handler thread
+        // (full application lock if using one message handler thread, only)
+        // FIXME this causes an out of memory exception very quickly (unable to create new thread)
+        //new Thread(() -> {
         // remove chunks from superpeer overlay first, so cannot be found before being deleted
         m_lookup.removeChunkIDs(chunkIDs);
+        // }).start();
 
         for (int i = 0; i < chunkIDs.length; i++) {
             if (m_backup.isActive()) {
@@ -1761,37 +1746,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // remove chunks first (local)
         m_memoryManager.lockManage();
         for (int i = 0; i < chunkIDs.length; i++) {
-            if (m_memoryManager.remove(chunkIDs[i], false)) {
-                // remove successful
-                chunkStatusCodes[i] = 0;
-            } else {
-                // remove failed, might be removed recently by someone else
-                chunkStatusCodes[i] = -1;
-                allSuccessful = false;
-
+            if (!m_memoryManager.remove(chunkIDs[i], false)) {
                 // #if LOGGER >= ERROR
-                LOGGER.error("Removing chunk 0x%X failed, does not exist", chunkIDs[i]);
+                LOGGER.warn("Removing chunk 0x%X failed, does not exist", chunkIDs[i]);
                 // #endif /* LOGGER >= ERROR */
             }
         }
         m_memoryManager.unlockManage();
-
-        RemoveResponse response;
-        if (allSuccessful) {
-            // use a short version to indicate everything is ok
-            response = new RemoveResponse(p_request, (byte) 1);
-        } else {
-            // errors occured, send full status report
-            response = new RemoveResponse(p_request, chunkStatusCodes);
-        }
-
-        try {
-            m_network.sendMessage(response);
-        } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Sending chunk remove respond to request %s failed: ", p_request, e);
-            // #endif /* LOGGER >= ERROR */
-        }
 
         // TODO for migrated chunks, send remove request to peer currently holding the chunk data
         // for (int i = 0; i < chunkIDs.length; i++) {
@@ -1801,7 +1762,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         //
         // if (m_memoryManager.dataWasMigrated(chunkIDs[i])) {
         // // Inform peer who got the migrated data about removal
-        // RemoveRequest request = new RemoveRequest(ChunkID.getCreatorID(chunkIDs[i]), new Chunk(chunkIDs[i], 0));
+        // RemoveMessage request = new RemoveMessage(ChunkID.getCreatorID(chunkIDs[i]), new Chunk(chunkIDs[i], 0));
         // try {
         // request.sendSync(m_network);
         // request.getResponse(RemoveResponse.class);
@@ -1824,7 +1785,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 for (int i = 0; i < backupPeers.length; i++) {
                     if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
                         try {
-                            m_network.sendMessage(new RemoveMessage(backupPeers[i], ids));
+                            m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(backupPeers[i], ids));
                         } catch (final NetworkException ignore) {
 
                         }
