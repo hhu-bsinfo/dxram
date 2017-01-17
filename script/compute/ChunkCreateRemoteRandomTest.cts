@@ -40,7 +40,7 @@
 		{
 		  	"m_task": "de.hhu.bsinfo.dxcompute.bench.ChunkCreateTask",
 			"m_numThreads": 4,
-			"m_chunkCount": 1000000,
+			"m_chunkCount": 100000,
 			"m_chunkBatch": 10,
 			"m_chunkSizeBytesBegin": {
 		        "m_value": 16,
