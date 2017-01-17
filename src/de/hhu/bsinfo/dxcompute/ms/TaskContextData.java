@@ -80,6 +80,15 @@ public class TaskContextData implements Importable, Exportable {
         return m_slaveNodeIds;
     }
 
+    /**
+     * Get the node id of the current node
+     *
+     * @return Node id of current node
+     */
+    public short getOwnNodeId() {
+        return m_slaveNodeIds[m_slaveId];
+    }
+
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeShort(m_computeGroupId);
