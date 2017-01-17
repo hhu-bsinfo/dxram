@@ -12,82 +12,135 @@ import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
-import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 public class ChunkDataModifyTask implements Task {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkDataModifyTask.class.getSimpleName());
 
-    private static final int OPERATION_GET = 0;
-    private static final int OPERATION_PUT = 1;
+    private static final int PATTERN_GET_LOCAL = 0;
+    private static final int PATTERN_GET_PUT_LOCAL = 1;
+    private static final int PATTERN_GET_REMOTE_ONLY_SUCCESSOR = 2;
+    private static final int PATTERN_GET_PUT_REMOTE_ONLY_SUCCESSOR = 3;
+    private static final int PATTERN_GET_REMOTE_ONLY_RANDOM = 4;
+    private static final int PATTERN_GET_PUT_REMOTE_ONLY_RANDOM = 5;
+    private static final int PATTERN_GET_REMOTE_LOCAL_MIXED_RANDOM = 6;
+    private static final int PATTERN_GET_PUT_REMOTE_LOCAL_MIXED_RANDOM = 7;
 
     @Expose
     private int m_numThreads = 1;
     @Expose
-    private int m_opCount = 1000;
+    private int m_opCount = 100000;
     @Expose
     private int m_chunkBatch = 10;
     @Expose
-    private int m_operation = OPERATION_GET;
+    private int m_pattern = PATTERN_GET_LOCAL;
 
     @Override
     public int execute(final TaskContext p_ctx) {
-        if (m_operation < OPERATION_GET || m_operation > OPERATION_PUT) {
-            System.out.printf("Invalid operation %d specified\n", m_operation);
+        boolean remote = m_pattern > PATTERN_GET_PUT_LOCAL;
+        boolean doPut = m_pattern % 2 == 1;
+
+        if (remote && p_ctx.getCtxData().getSlaveNodeIds().length < 2) {
+            System.out.println("Not enough slaves (min 2) to execute this task");
             return -1;
         }
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 
-        long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_opCount, m_numThreads);
+        long activeChunkCount = chunkService.getStatus().getNumberOfActiveChunks();
+        // don't modify the index chunk
+        activeChunkCount -= 1;
+
+        ArrayList<Long> allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern / 2, p_ctx, chunkService);
+        long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(activeChunkCount, m_numThreads);
+        ArrayList<Long>[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
+
         Thread[] threads = new Thread[m_numThreads];
         long[] timeStart = new long[m_numThreads];
         long[] timeEnd = new long[m_numThreads];
-        Chunk[] chunkBatch = new Chunk[m_chunkBatch];
 
-        for (int i = 0; i < chunkBatch.length; i++) {
-            chunkBatch[i] = new Chunk();
-        }
-
-        ArrayList<Long> chunkRanges = chunkService.getAllLocalChunkIDRanges();
-
-        String opName = "Getting (read only)";
-        if (m_operation == OPERATION_PUT) {
-            opName = "Putting (write only)";
-        }
-        System.out.printf("%s %d random chunks in batches of %d chunk(s) with %d thread(s)...\n", opName, m_opCount, m_chunkBatch, m_numThreads);
+        System.out.printf("Modifying %d random chunks (pattern %d) in batches of %d chunk(s) with %d thread(s)...\n", m_opCount, m_pattern, m_chunkBatch,
+            m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
             threads[i] = new Thread(() -> {
+                long[] chunkIds = new long[m_chunkBatch];
                 long batches = chunkCountsPerThread[threadIdx] / m_chunkBatch;
                 long lastBatchRemainder = chunkCountsPerThread[threadIdx] % m_chunkBatch;
+                ArrayList<Long> chunkRanges = chunkRangesPerThread[threadIdx];
 
-                timeStart[threadIdx] = System.nanoTime();
-                for (int j = 0; j < batches; j++) {
-                    for (Chunk chunk : chunkBatch) {
-                        chunk.setID(ChunkTaskUtils.getRandomChunkIdOfRanges(chunkRanges));
-                    }
-
-                    if (m_operation == OPERATION_GET) {
-                        chunkService.get(chunkBatch);
-                    } else {
-                        chunkService.put(chunkBatch);
-                    }
-                }
                 if (lastBatchRemainder > 0) {
-                    for (int k = 0; k < lastBatchRemainder; k++) {
-                        chunkBatch[k].setID(ChunkTaskUtils.getRandomChunkIdOfRanges(chunkRanges));
+                    batches++;
+                }
+
+                // happens if no chunks were created
+                if (!chunkRanges.isEmpty()) {
+                    int rangeIdx = 0;
+                    long rangeStart = chunkRanges.get(rangeIdx * 2);
+                    long rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
+                    long batchChunkCount = m_chunkBatch;
+
+                    timeStart[threadIdx] = System.nanoTime();
+
+                    while (batches > 0) {
+                        long chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
+
+                        if (chunksInRange >= batchChunkCount) {
+                            for (int j = 0; j < chunkIds.length; j++) {
+                                chunkIds[j] = rangeStart + j;
+                            }
+
+                            Chunk[] chunks = chunkService.get(chunkIds);
+
+                            if (doPut) {
+                                chunkService.put(chunks);
+                            }
+
+                            rangeStart += batchChunkCount;
+                        } else {
+                            // chunksInRange < m_chunkBatch
+
+                            long fillCount = 0;
+
+                            while (fillCount < batchChunkCount) {
+                                for (int j = (int) fillCount; j < chunksInRange; j++) {
+                                    chunkIds[j] = rangeStart + j;
+                                }
+
+                                fillCount += chunksInRange;
+
+                                rangeIdx++;
+                                if (rangeIdx * 2 < chunkRanges.size()) {
+                                    rangeStart = chunkRanges.get(rangeIdx * 2);
+                                    rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
+                                    chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
+                                } else {
+                                    // invalidate spare chunk ids
+                                    for (int j = (int) fillCount; j < chunkIds.length; j++) {
+                                        chunkIds[j] = ChunkID.INVALID_ID;
+                                    }
+
+                                    break;
+                                }
+                            }
+
+                            Chunk[] chunks = chunkService.get(chunkIds);
+
+                            if (doPut) {
+                                chunkService.put(chunks);
+                            }
+
+                            rangeStart += batchChunkCount;
+                        }
+
+                        batches--;
                     }
 
-                    if (m_operation == OPERATION_GET) {
-                        chunkService.get(chunkBatch, 0, (int) lastBatchRemainder);
-                    } else {
-                        chunkService.put(ChunkLockOperation.NO_LOCK_OPERATION, chunkBatch, 0, (int) lastBatchRemainder);
-                    }
+                    timeEnd[threadIdx] = System.nanoTime();
                 }
-                timeEnd[threadIdx] = System.nanoTime();
             });
         }
 
@@ -140,6 +193,7 @@ public class ChunkDataModifyTask implements Task {
         p_exporter.writeInt(m_numThreads);
         p_exporter.writeInt(m_opCount);
         p_exporter.writeInt(m_chunkBatch);
+        p_exporter.writeInt(m_pattern);
     }
 
     @Override
@@ -147,10 +201,11 @@ public class ChunkDataModifyTask implements Task {
         m_numThreads = p_importer.readInt();
         m_opCount = p_importer.readInt();
         m_chunkBatch = p_importer.readInt();
+        m_pattern = p_importer.readInt();
     }
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES * 3;
+        return Integer.BYTES * 4;
     }
 }

@@ -49,46 +49,7 @@ public class ChunkRemoveAllTask implements Task {
         // don't remove the index chunk
         activeChunkCount -= 1;
 
-        ArrayList<Long> allChunkRanges;
-        switch (m_pattern) {
-            case PATTERN_LOCAL_ONLY:
-                allChunkRanges = chunkService.getAllLocalChunkIDRanges();
-                break;
-
-            case PATTERN_REMOTE_ONLY_SUCCESSOR:
-            case PATTERN_REMOTE_ONLY_RANDOM:
-                short ownNodeId = p_ctx.getCtxData().getOwnNodeId();
-
-                allChunkRanges = new ArrayList<>();
-                for (int i = 0; i < p_ctx.getCtxData().getSlaveNodeIds().length; i++) {
-                    if (p_ctx.getCtxData().getSlaveNodeIds()[i] != ownNodeId) {
-                        allChunkRanges.addAll(chunkService.getAllLocalChunkIDRanges(p_ctx.getCtxData().getSlaveNodeIds()[i]));
-                    }
-                }
-
-                break;
-
-            case PATTERN_REMOTE_LOCAL_MIXED_RANDOM:
-                allChunkRanges = new ArrayList<>();
-                for (int i = 0; i < p_ctx.getCtxData().getSlaveNodeIds().length; i++) {
-                    allChunkRanges.addAll(chunkService.getAllLocalChunkIDRanges(p_ctx.getCtxData().getSlaveNodeIds()[i]));
-                }
-
-                break;
-
-            default:
-                System.out.println("Unknown pattern " + m_pattern);
-                return -2;
-        }
-
-        // modify ranges to avoid deleting an index chunk
-        for (int i = 0; i < allChunkRanges.size(); i += 2) {
-            long rangeStart = allChunkRanges.get(i);
-            if (ChunkID.getLocalID(rangeStart) == 0) {
-                allChunkRanges.set(i, rangeStart + 1);
-            }
-        }
-
+        ArrayList<Long> allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern, p_ctx, chunkService);
         long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(activeChunkCount, m_numThreads);
         ArrayList<Long>[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
 
