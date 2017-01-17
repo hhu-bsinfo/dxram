@@ -653,7 +653,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
         // remove local chunks from superpeer overlay first, so cannot be found before being deleted
         for (final Long chunkID : localChunks) {
-            m_lookup.removeChunkIDs(new long[] {chunkID});
+            m_lookup.removeChunkIDs(new long[] {chunkID}, m_boot.getNodeID());
         }
 
         // remove local chunkIDs
@@ -1718,7 +1718,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // FIXME this causes an out of memory exception very quickly (unable to create new thread)
         //new Thread(() -> {
         // remove chunks from superpeer overlay first, so cannot be found before being deleted
-        m_lookup.removeChunkIDs(chunkIDs);
+        m_lookup.removeChunkIDs(chunkIDs, p_message.getSource());
         // }).start();
 
         for (int i = 0; i < chunkIDs.length; i++) {

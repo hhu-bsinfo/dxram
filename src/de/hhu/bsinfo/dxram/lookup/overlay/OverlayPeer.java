@@ -99,8 +99,9 @@ import de.hhu.bsinfo.utils.Pair;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class OverlayPeer implements MessageReceiver {
-
     private static final Logger LOGGER = LogManager.getFormatterLogger(OverlayPeer.class.getSimpleName());
+
+    private static final int MSG_TIMEOUT_MS = 100;
 
     // Attributes
     private AbstractBootComponent m_boot;
@@ -257,7 +258,7 @@ public class OverlayPeer implements MessageReceiver {
                 // Responsible superpeer is not available, try again (superpeers will be updated
                 // automatically by network thread)
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(MSG_TIMEOUT_MS);
                 } catch (final InterruptedException ignored) {
                 }
 
@@ -363,7 +364,7 @@ public class OverlayPeer implements MessageReceiver {
                 // Responsible superpeer is not available, try again (superpeers will be updated
                 // automatically by network thread)
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(MSG_TIMEOUT_MS);
                 } catch (final InterruptedException ignored) {
                 }
                 continue;
@@ -423,7 +424,7 @@ public class OverlayPeer implements MessageReceiver {
                     // Responsible superpeer is not available, try again (superpeers will be updated
                     // automatically by network thread)
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(MSG_TIMEOUT_MS);
                     } catch (final InterruptedException ignored) {
                     }
 
@@ -496,7 +497,7 @@ public class OverlayPeer implements MessageReceiver {
                     // Responsible superpeer is not available, try again (superpeers will be updated
                     // automatically by network thread)
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(MSG_TIMEOUT_MS);
                     } catch (final InterruptedException ignored) {
                     }
 
@@ -551,7 +552,7 @@ public class OverlayPeer implements MessageReceiver {
                 // Responsible superpeer is not available, try again (superpeers will be updated
                 // automatically by network thread)
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(MSG_TIMEOUT_MS);
                 } catch (final InterruptedException ignored) {
                 }
                 continue;
@@ -598,7 +599,7 @@ public class OverlayPeer implements MessageReceiver {
                     // Responsible superpeer is not available, try again (superpeers will be updated
                     // automatically by network thread)
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(MSG_TIMEOUT_MS);
                     } catch (final InterruptedException ignored) {
                     }
                     continue;
@@ -637,7 +638,7 @@ public class OverlayPeer implements MessageReceiver {
                 // Responsible superpeer is not available, try again (superpeers will be updated
                 // automatically by network thread)
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(MSG_TIMEOUT_MS);
                 } catch (final InterruptedException ignored) {
                 }
                 continue;
@@ -965,7 +966,7 @@ public class OverlayPeer implements MessageReceiver {
                     // Responsible superpeer is not available, try again (superpeers will be updated
                     // automatically by network thread)
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(MSG_TIMEOUT_MS);
                     } catch (final InterruptedException ignored) {
                     }
 
@@ -1030,7 +1031,7 @@ public class OverlayPeer implements MessageReceiver {
                     // Responsible superpeer is not available, try again (superpeers will be updated
                     // automatically by network thread)
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(MSG_TIMEOUT_MS);
                     } catch (final InterruptedException ignored) {
                     }
 
@@ -1079,7 +1080,7 @@ public class OverlayPeer implements MessageReceiver {
                     // Responsible superpeer is not available, try again (superpeers will be updated
                     // automatically by network thread)
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(MSG_TIMEOUT_MS);
                     } catch (final InterruptedException ignored) {
                     }
 
@@ -1140,7 +1141,7 @@ public class OverlayPeer implements MessageReceiver {
                     // Responsible superpeer is not available, try again (superpeers will be updated
                     // automatically by network thread)
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(MSG_TIMEOUT_MS);
                     } catch (final InterruptedException ignored) {
                     }
 
@@ -1187,7 +1188,7 @@ public class OverlayPeer implements MessageReceiver {
                     // Responsible superpeer is not available, try again (superpeers will be updated
                     // automatically by network thread)
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(MSG_TIMEOUT_MS);
                     } catch (final InterruptedException ignored) {
                     }
 

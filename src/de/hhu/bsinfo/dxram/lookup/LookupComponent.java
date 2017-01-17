@@ -284,8 +284,10 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *
      * @param p_chunkIDs
      *     the ChunkIDs
+     * @param p_owner
+     *     Node ID of the chunk owner
      */
-    public void removeChunkIDs(final long[] p_chunkIDs) {
+    public void removeChunkIDs(final long[] p_chunkIDs, final short p_owner) {
 
         // #if LOGGER == TRACE
         LOGGER.trace("Entering remove with %d chunkIDs", p_chunkIDs.length);
@@ -299,6 +301,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
             if (m_cachesEnabled) {
                 invalidate(p_chunkIDs);
             }
+
             m_peer.removeChunkIDs(p_chunkIDs);
         }
 

@@ -820,6 +820,34 @@ public final class MetadataHandler {
     }
 
     /**
+     * Removes multiple ChunkIDs
+     *
+     * @param p_chunkIDs
+     *     Chunk IDs to remove
+     * @return whether the ChunkIDs could be removed or not
+     */
+    public boolean removeChunkIDsFromLookupTree(final long... p_chunkIDs) {
+        LookupTree tree;
+
+        if (p_chunkIDs.length == 0) {
+            return false;
+        }
+
+        m_dataLock.writeLock().lock();
+        tree = getLookupTreeLocal(ChunkID.getCreatorID(p_chunkIDs[0]));
+        if (tree == null) {
+            m_dataLock.writeLock().unlock();
+
+            return false;
+        } else {
+            tree.removeObjects(p_chunkIDs);
+            m_dataLock.writeLock().unlock();
+
+            return true;
+        }
+    }
+
+    /**
      * Initializes a new backup range.
      *
      * @param p_creator

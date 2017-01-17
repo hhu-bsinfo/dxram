@@ -532,6 +532,19 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
+     * Removes multiple objects from btree
+     *
+     * @param p_chunkIDs
+     *     ChunkIDs of deleted objects
+     * @note should always be called if an object is deleted
+     */
+    void removeObjects(final long... p_chunkIDs) {
+        for (long chunkId : p_chunkIDs) {
+            removeObject(chunkId);
+        }
+    }
+
+    /**
      * Removes given object from btree
      *
      * @param p_chunkID

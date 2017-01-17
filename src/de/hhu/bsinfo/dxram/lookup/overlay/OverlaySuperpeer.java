@@ -1234,47 +1234,55 @@ public class OverlaySuperpeer implements MessageReceiver {
         chunkIDs = p_removeChunkIDsRequest.getChunkIDs();
         isBackup = p_removeChunkIDsRequest.isBackup();
 
-        for (long chunkID : chunkIDs) {
-            creator = ChunkID.getCreatorID(chunkID);
-            if (OverlayHelper.isPeerInSuperpeerRange(creator, m_predecessor, m_nodeID)) {
-                if (m_metadata.removeChunkIDFromLookupTree(chunkID)) {
-                    m_overlayLock.readLock().lock();
-                    backupSuperpeers = OverlayHelper.getBackupSuperpeers(m_nodeID, m_superpeers);
-                    m_overlayLock.readLock().unlock();
-                    try {
-                        m_network.sendMessage(new RemoveChunkIDsResponse(p_removeChunkIDsRequest, backupSuperpeers));
-                    } catch (final NetworkException e) {
-                        // Requesting peer is not available anymore, ignore it
-                    }
-                } else {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("CIDTree range not initialized on responsible superpeer 0x%X", m_nodeID);
-                    // #endif /* LOGGER >= ERROR */
-                    try {
-                        m_network.sendMessage(new RemoveChunkIDsResponse(p_removeChunkIDsRequest, new short[] {-1}));
-                    } catch (final NetworkException e) {
-                        // Requesting peer is not available anymore, ignore it
-                    }
-                }
-            } else if (isBackup) {
-                if (!m_metadata.removeChunkIDFromLookupTree(chunkID)) {
-                    // #if LOGGER >= WARN
-                    LOGGER.warn("CIDTree range not initialized on backup superpeer 0x%X", m_nodeID);
-                    // #endif /* LOGGER >= WARN */
-                }
+        if (chunkIDs.length == 0) {
+            try {
+                m_network.sendMessage(new RemoveChunkIDsResponse(p_removeChunkIDsRequest, new short[] {-1}));
+            } catch (final NetworkException e) {
+                // Requesting peer is not available anymore, ignore it
+            }
 
+            return;
+        }
+
+        creator = ChunkID.getCreatorID(chunkIDs[0]);
+        if (OverlayHelper.isPeerInSuperpeerRange(creator, m_predecessor, m_nodeID)) {
+            if (m_metadata.removeChunkIDsFromLookupTree(chunkIDs)) {
+                m_overlayLock.readLock().lock();
+                backupSuperpeers = OverlayHelper.getBackupSuperpeers(m_nodeID, m_superpeers);
+                m_overlayLock.readLock().unlock();
                 try {
-                    m_network.sendMessage(new RemoveChunkIDsResponse(p_removeChunkIDsRequest, null));
+                    m_network.sendMessage(new RemoveChunkIDsResponse(p_removeChunkIDsRequest, backupSuperpeers));
                 } catch (final NetworkException e) {
                     // Requesting peer is not available anymore, ignore it
                 }
             } else {
-                // Not responsible for requesting peer
+                // #if LOGGER >= ERROR
+                LOGGER.error("CIDTree range not initialized on responsible superpeer 0x%X", m_nodeID);
+                // #endif /* LOGGER >= ERROR */
                 try {
-                    m_network.sendMessage(new RemoveChunkIDsResponse(p_removeChunkIDsRequest, null));
+                    m_network.sendMessage(new RemoveChunkIDsResponse(p_removeChunkIDsRequest, new short[] {-1}));
                 } catch (final NetworkException e) {
                     // Requesting peer is not available anymore, ignore it
                 }
+            }
+        } else if (isBackup) {
+            if (!m_metadata.removeChunkIDsFromLookupTree(chunkIDs)) {
+                // #if LOGGER >= WARN
+                LOGGER.warn("CIDTree range not initialized on backup superpeer 0x%X", m_nodeID);
+                // #endif /* LOGGER >= WARN */
+            }
+
+            try {
+                m_network.sendMessage(new RemoveChunkIDsResponse(p_removeChunkIDsRequest, null));
+            } catch (final NetworkException e) {
+                // Requesting peer is not available anymore, ignore it
+            }
+        } else {
+            // Not responsible for requesting peer
+            try {
+                m_network.sendMessage(new RemoveChunkIDsResponse(p_removeChunkIDsRequest, null));
+            } catch (final NetworkException e) {
+                // Requesting peer is not available anymore, ignore it
             }
         }
     }
