@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
@@ -26,6 +27,7 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
 public class RemoveChunkIDsRequest extends AbstractRequest {
 
     // Attributes
+    private ArrayListLong m_chunkIDsOut;
     private long[] m_chunkIDs;
     private boolean m_isBackup;
 
@@ -51,12 +53,12 @@ public class RemoveChunkIDsRequest extends AbstractRequest {
      * @param p_isBackup
      *     whether this is a backup message or not
      */
-    public RemoveChunkIDsRequest(final short p_destination, final long[] p_chunkIDs, final boolean p_isBackup) {
+    public RemoveChunkIDsRequest(final short p_destination, final ArrayListLong p_chunkIDs, final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST);
 
         assert p_chunkIDs != null;
 
-        m_chunkIDs = p_chunkIDs;
+        m_chunkIDsOut = p_chunkIDs;
         m_isBackup = p_isBackup;
     }
 
@@ -82,15 +84,20 @@ public class RemoveChunkIDsRequest extends AbstractRequest {
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + Long.BYTES * m_chunkIDs.length + Byte.BYTES;
+
+        if (m_chunkIDsOut != null) {
+            return Integer.BYTES + Long.BYTES * m_chunkIDsOut.getSize() + Byte.BYTES;
+        } else {
+            return Integer.BYTES + Long.BYTES * m_chunkIDs.length + Byte.BYTES;
+        }
     }
 
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_chunkIDs.length);
-        p_buffer.asLongBuffer().put(m_chunkIDs);
-        p_buffer.position(p_buffer.position() + m_chunkIDs.length * Long.BYTES);
+        p_buffer.putInt(m_chunkIDsOut.getSize());
+        p_buffer.asLongBuffer().put(m_chunkIDsOut.getArray(), 0, m_chunkIDsOut.getSize());
+        p_buffer.position(p_buffer.position() + m_chunkIDsOut.getSize() * Long.BYTES);
         if (m_isBackup) {
             p_buffer.put((byte) 1);
         } else {

@@ -43,6 +43,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Cache;
@@ -287,10 +288,10 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @param p_owner
      *     Node ID of the chunk owner
      */
-    public void removeChunkIDs(final long[] p_chunkIDs, final short p_owner) {
+    public void removeChunkIDs(final ArrayListLong p_chunkIDs, final short p_owner) {
 
         // #if LOGGER == TRACE
-        LOGGER.trace("Entering remove with %d chunkIDs", p_chunkIDs.length);
+        LOGGER.trace("Entering remove with %d chunkIDs", p_chunkIDs.getSize());
         // #endif /* LOGGER == TRACE */
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -540,6 +541,13 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         for (long chunkID : p_chunkIDs) {
             assert chunkID != ChunkID.INVALID_ID;
             m_chunkIDCacheTree.invalidateChunkID(chunkID);
+        }
+    }
+
+    public void invalidate(final ArrayListLong p_chunkIDs) {
+        for (int i = 0; i < p_chunkIDs.getSize(); i++) {
+            assert p_chunkIDs.get(i) != ChunkID.INVALID_ID;
+            m_chunkIDCacheTree.invalidateChunkID(p_chunkIDs.get(i));
         }
     }
 

@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.log.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
@@ -26,7 +27,7 @@ import de.hhu.bsinfo.ethnet.AbstractMessage;
 public class RemoveMessage extends AbstractMessage {
 
     // Attributes
-    private Long[] m_chunkIDs;
+    private ArrayListLong m_chunkIDs;
     private byte m_rangeID;
     private ByteBuffer m_buffer;
 
@@ -51,7 +52,7 @@ public class RemoveMessage extends AbstractMessage {
      * @param p_chunkIDs
      *     the ChunkIDs of the Chunks to remove
      */
-    public RemoveMessage(final short p_destination, final Long[] p_chunkIDs) {
+    public RemoveMessage(final short p_destination, final ArrayListLong p_chunkIDs) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
 
         m_chunkIDs = p_chunkIDs;
@@ -69,11 +70,7 @@ public class RemoveMessage extends AbstractMessage {
     public RemoveMessage(final short p_destination, final long[] p_chunkIDs) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
 
-        final Long[] chunkIDs = new Long[p_chunkIDs.length];
-        for (int i = 0; i < p_chunkIDs.length; i++) {
-            chunkIDs[i] = p_chunkIDs[i];
-        }
-        m_chunkIDs = chunkIDs;
+        m_chunkIDs = ArrayListLong.wrap(p_chunkIDs);
         m_rangeID = -1;
     }
 
@@ -87,7 +84,7 @@ public class RemoveMessage extends AbstractMessage {
      * @param p_rangeID
      *     the RangeID
      */
-    public RemoveMessage(final short p_destination, final Long[] p_chunkIDs, final byte p_rangeID) {
+    public RemoveMessage(final short p_destination, final ArrayListLong p_chunkIDs, final byte p_rangeID) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
 
         m_chunkIDs = p_chunkIDs;
@@ -108,7 +105,7 @@ public class RemoveMessage extends AbstractMessage {
     @Override
     protected final int getPayloadLength() {
         if (m_chunkIDs != null) {
-            return Byte.BYTES + Integer.BYTES + Long.BYTES * m_chunkIDs.length;
+            return Byte.BYTES + Integer.BYTES + Long.BYTES * m_chunkIDs.getSize();
         } else {
             return 0;
         }
@@ -118,10 +115,9 @@ public class RemoveMessage extends AbstractMessage {
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.put(m_rangeID);
-        p_buffer.putInt(m_chunkIDs.length);
-        for (int i = 0; i < m_chunkIDs.length; i++) {
-            p_buffer.putLong(m_chunkIDs[i]);
-        }
+        p_buffer.putInt(m_chunkIDs.getSize());
+        p_buffer.asLongBuffer().put(m_chunkIDs.getArray(), 0, m_chunkIDs.getSize());
+        p_buffer.position(p_buffer.position() + m_chunkIDs.getSize() * Long.BYTES);
     }
 
     @Override

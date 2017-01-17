@@ -39,6 +39,7 @@ import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -137,7 +138,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
                         for (int i = 0; i < backupPeers.length; i++) {
                             if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
                                 try {
-                                    m_network.sendMessage(new RemoveMessage(backupPeers[i], new Long[] {p_chunkID}));
+                                    m_network.sendMessage(new RemoveMessage(backupPeers[i], new ArrayListLong(p_chunkID)));
                                 } catch (final NetworkException ignored) {
 
                                 }

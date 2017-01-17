@@ -86,6 +86,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -345,7 +346,7 @@ public class OverlayPeer implements MessageReceiver {
      * @param p_chunkIDs
      *     the ChunkIDs
      */
-    public void removeChunkIDs(final long[] p_chunkIDs) {
+    public void removeChunkIDs(final ArrayListLong p_chunkIDs) {
         short responsibleSuperpeer;
         short[] backupSuperpeers;
 
