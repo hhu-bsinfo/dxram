@@ -1088,9 +1088,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      *     Array with ChunkIDs.
      * @return Int telling how many chunks were successful retrieved and a chunk array with the chunk data
      */
-    public Pair<Integer, Chunk[]> get(final long... p_chunkIDs) {
-        Pair<Integer, Chunk[]> ret;
-        int totalNumberOfChunksGot = 0;
+    public Chunk[] get(final long... p_chunkIDs) {
+        Chunk[] ret;
 
         if (p_chunkIDs.length == 0) {
             return null;
@@ -1115,15 +1114,14 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // sort by local and remote data first
         Map<Short, ArrayList<Integer>> remoteChunkIDsByPeers = new TreeMap<>();
 
-        ret = new Pair<>(0, new Chunk[p_chunkIDs.length]);
+        ret = new Chunk[p_chunkIDs.length];
         m_memoryManager.lockAccess();
         for (int i = 0; i < p_chunkIDs.length; i++) {
             // try to get locally, will check first if it exists and
             // returns false if it doesn't exist
             byte[] data = m_memoryManager.get(p_chunkIDs[i]);
             if (data != null) {
-                totalNumberOfChunksGot++;
-                ret.second()[i] = new Chunk(p_chunkIDs[i], ByteBuffer.wrap(data));
+                ret[i] = new Chunk(p_chunkIDs[i], ByteBuffer.wrap(data));
             } else {
                 // remote or migrated, figure out location and sort by peers
                 LookupRange lookupRange;
@@ -1156,8 +1154,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                     long chunkID = p_chunkIDs[index];
                     byte[] data = m_memoryManager.get(chunkID);
                     if (data != null) {
-                        totalNumberOfChunksGot++;
-                        ret.second()[index] = new Chunk(chunkID, ByteBuffer.wrap(data));
+                        ret[index] = new Chunk(chunkID, ByteBuffer.wrap(data));
                     } else {
                         // #if LOGGER >= ERROR
                         LOGGER.error("Getting local chunk 0x%X failed", chunkID);
@@ -1170,8 +1167,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 int i = 0;
                 Chunk[] chunks = new Chunk[remoteChunkIDIndexes.size()];
                 for (int index : remoteChunkIDIndexes) {
-                    ret.second()[index] = new Chunk(p_chunkIDs[index]);
-                    chunks[i++] = ret.second()[index];
+                    ret[index] = new Chunk(p_chunkIDs[index]);
+                    chunks[i++] = ret[index];
                 }
                 GetRequest request = new GetRequest(peer, chunks);
                 // mike foo requests chunk
@@ -1184,15 +1181,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                     continue;
                 }
 
-                GetResponse response = request.getResponse(GetResponse.class);
-                if (response != null) {
-                    totalNumberOfChunksGot += response.getNumberOfChunksGot();
-                }
+                request.getResponse(GetResponse.class);
             }
         }
-
-        ret.m_first = totalNumberOfChunksGot;
-        // mike foo chunk not found
 
         // #ifdef STATISTICS
         SOP_GET.leave();
