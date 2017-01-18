@@ -30,6 +30,7 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
@@ -38,14 +39,12 @@ import de.hhu.bsinfo.dxram.lookup.events.NameserviceCacheEntryUpdateEvent;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayPeer;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlaySuperpeer;
 import de.hhu.bsinfo.dxram.lookup.overlay.cache.CacheTree;
-import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Cache;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
@@ -105,17 +104,13 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return the number of name service entries
      */
     public int getNameserviceEntryCount() {
-        int ret = -1;
-
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            ret = m_peer.getNameserviceEntryCount();
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
-        return ret;
+        return m_peer.getNameserviceEntryCount();
     }
 
     /**
@@ -124,17 +119,13 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return List of nameservice entries or null on error.
      */
     public ArrayList<Pair<Integer, Long>> getNameserviceEntries() {
-        ArrayList<Pair<Integer, Long>> ret = null;
-
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            ret = m_peer.getNameserviceEntries();
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
-        return ret;
+        return m_peer.getNameserviceEntries();
     }
 
     /**
@@ -170,17 +161,17 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *     NodeID of the recovered peer
      */
     public void setRestorerAfterRecovery(final short p_owner) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         // #if LOGGER == TRACE
         LOGGER.trace("Entering updateAllAfterRecovery with: p_owner=0x%X", p_owner);
         // #endif /* LOGGER == TRACE */
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            m_peer.setRestorerAfterRecovery(p_owner);
-        }
+        m_peer.setRestorerAfterRecovery(p_owner);
 
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting updateAllAfterRecovery");
@@ -198,35 +189,35 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         short ret = -1;
         LookupRange lookupRange;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         // #if LOGGER == TRACE
         LOGGER.trace("Entering getPrimaryPeer with: p_chunkID=0x%X", p_chunkID);
         // #endif /* LOGGER == TRACE */
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            if (m_cachesEnabled) {
-                // Read from cache
-                ret = m_chunkIDCacheTree.getPrimaryPeer(p_chunkID);
-                if (ret == -1) {
-                    // Cache miss -> get LookupRange from superpeer
-                    lookupRange = m_peer.getLookupRange(p_chunkID);
-
-                    // Add response to cache
-                    if (lookupRange != null) {
-                        m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[0],
-                            ((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[1], lookupRange.getPrimaryPeer());
-
-                        ret = lookupRange.getPrimaryPeer();
-                    }
-                }
-            } else {
+        if (m_cachesEnabled) {
+            // Read from cache
+            ret = m_chunkIDCacheTree.getPrimaryPeer(p_chunkID);
+            if (ret == -1) {
+                // Cache miss -> get LookupRange from superpeer
                 lookupRange = m_peer.getLookupRange(p_chunkID);
+
+                // Add response to cache
                 if (lookupRange != null) {
+                    m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[0],
+                        ((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[1], lookupRange.getPrimaryPeer());
+
                     ret = lookupRange.getPrimaryPeer();
                 }
+            }
+        } else {
+            lookupRange = m_peer.getLookupRange(p_chunkID);
+            if (lookupRange != null) {
+                ret = lookupRange.getPrimaryPeer();
             }
         }
 
@@ -247,31 +238,31 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     public LookupRange getLookupRange(final long p_chunkID) {
         LookupRange ret = null;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         // #if LOGGER == TRACE
         LOGGER.trace("Entering getLookupRange with: p_chunkID=0x%X", p_chunkID);
         // #endif /* LOGGER == TRACE */
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            if (m_cachesEnabled) {
-                // Read from cache
-                ret = m_chunkIDCacheTree.getMetadata(p_chunkID);
-                if (ret == null) {
-                    // Cache miss -> get LookupRange from superpeer
-                    ret = m_peer.getLookupRange(p_chunkID);
-
-                    // Add response to cache
-                    if (ret != null) {
-                        m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[0],
-                            ((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1], ret.getPrimaryPeer());
-                    }
-                }
-            } else {
+        if (m_cachesEnabled) {
+            // Read from cache
+            ret = m_chunkIDCacheTree.getMetadata(p_chunkID);
+            if (ret == null) {
+                // Cache miss -> get LookupRange from superpeer
                 ret = m_peer.getLookupRange(p_chunkID);
+
+                // Add response to cache
+                if (ret != null) {
+                    m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[0],
+                        ((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1], ret.getPrimaryPeer());
+                }
             }
+        } else {
+            ret = m_peer.getLookupRange(p_chunkID);
         }
 
         // #if LOGGER == TRACE
@@ -289,22 +280,21 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *     Node ID of the chunk owner
      */
     public void removeChunkIDs(final ArrayListLong p_chunkIDs, final short p_owner) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #if LOGGER == TRACE
         LOGGER.trace("Entering remove with %d chunkIDs", p_chunkIDs.getSize());
         // #endif /* LOGGER == TRACE */
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            if (m_cachesEnabled) {
-                invalidate(p_chunkIDs);
-            }
-
-            m_peer.removeChunkIDs(p_chunkIDs);
+        if (m_cachesEnabled) {
+            invalidate(p_chunkIDs);
         }
+
+        m_peer.removeChunkIDs(p_chunkIDs);
 
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting remove");
@@ -320,23 +310,22 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *     the ChunkID
      */
     public void insertNameserviceEntry(final int p_id, final long p_chunkID) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // Insert ChunkID <-> ApplicationID mapping
         // #if LOGGER == TRACE
         LOGGER.trace("Entering insertID with: p_id=%d, p_chunkID=0x%X", p_id, p_chunkID);
         // #endif /* LOGGER == TRACE */
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            if (m_cachesEnabled) {
-                m_applicationIDCache.put(p_id, p_chunkID);
-            }
-
-            m_peer.insertNameserviceEntry(p_id, p_chunkID);
+        if (m_cachesEnabled) {
+            m_applicationIDCache.put(p_id, p_chunkID);
         }
+
+        m_peer.insertNameserviceEntry(p_id, p_chunkID);
 
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting insertID");
@@ -356,36 +345,36 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     public long getChunkIDForNameserviceEntry(final int p_id, final int p_timeoutMs) {
         long ret = -1;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         // Resolve ChunkID <-> ApplicationID mapping to return corresponding ChunkID
         // #if LOGGER == TRACE
         LOGGER.trace("Entering getChunkID with: p_id=%d", p_id);
         // #endif /* LOGGER == TRACE */
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            if (m_cachesEnabled) {
-                // Read from application cache first
-                final Long chunkID = m_applicationIDCache.get(p_id);
+        if (m_cachesEnabled) {
+            // Read from application cache first
+            final Long chunkID = m_applicationIDCache.get(p_id);
 
-                if (chunkID == null) {
-                    // Cache miss -> ask superpeer
-                    // #if LOGGER == TRACE
-                    LOGGER.trace("Value not cached for application cache: %d", p_id);
-                    // #endif /* LOGGER == TRACE */
+            if (chunkID == null) {
+                // Cache miss -> ask superpeer
+                // #if LOGGER == TRACE
+                LOGGER.trace("Value not cached for application cache: %d", p_id);
+                // #endif /* LOGGER == TRACE */
 
-                    ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
-
-                    // Cache response
-                    m_applicationIDCache.put(p_id, ret);
-                } else {
-                    ret = chunkID;
-                }
-            } else {
                 ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
+
+                // Cache response
+                m_applicationIDCache.put(p_id, ret);
+            } else {
+                ret = chunkID;
             }
+        } else {
+            ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
         }
 
         // #if LOGGER == TRACE
@@ -406,22 +395,21 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *     the new owner
      */
     public void migrate(final long p_chunkID, final short p_nodeID) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #if LOGGER == TRACE
         LOGGER.trace("Entering migrate with: p_chunkID=0x%X, p_nodeID=0x%X", p_chunkID, p_nodeID);
         // #endif /* LOGGER == TRACE */
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            if (m_cachesEnabled) {
-                invalidate(p_chunkID);
-            }
-
-            m_peer.migrate(p_chunkID, p_nodeID);
+        if (m_cachesEnabled) {
+            invalidate(p_chunkID);
         }
+
+        m_peer.migrate(p_chunkID, p_nodeID);
 
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting migrate");
@@ -439,22 +427,21 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *     the new owner
      */
     public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #if LOGGER == TRACE
         LOGGER.trace("Entering migrateRange with: p_startChunkID=0x%X, p_endChunkID=0x%X, p_nodeID=0x%X", p_startCID, p_endCID, p_nodeID);
         // #endif /* LOGGER == TRACE */
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            if (m_cachesEnabled) {
-                invalidate(p_startCID, p_endCID);
-            }
-
-            m_peer.migrateRange(p_startCID, p_endCID, p_nodeID);
+        if (m_cachesEnabled) {
+            invalidate(p_startCID, p_endCID);
         }
+
+        m_peer.migrateRange(p_startCID, p_endCID, p_nodeID);
 
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting migrateRange");
@@ -472,18 +459,17 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *     all backup peers
      */
     public void initRange(final long p_firstChunkIDOrRangeID, final short p_owner, final short[] p_backupPeers) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #if LOGGER == TRACE
         LOGGER.trace("Entering initRange with: p_firstChunkIDOrRangeID=0x%X, p_owner=%s", p_firstChunkIDOrRangeID, p_owner);
         // #endif /* LOGGER == TRACE */
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            m_peer.initRange(p_firstChunkIDOrRangeID, p_owner, p_backupPeers);
-        }
+        m_peer.initRange(p_firstChunkIDOrRangeID, p_owner, p_backupPeers);
 
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting initRange");
@@ -500,17 +486,17 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     public BackupRange[] getAllBackupRanges(final short p_nodeID) {
         BackupRange[] ret = null;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         // #if LOGGER == TRACE
         LOGGER.trace("Entering getAllBackupRanges with: p_nodeID=0x%X", p_nodeID);
         // #endif /* LOGGER == TRACE */
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            ret = m_peer.getAllBackupRanges(p_nodeID);
-        }
+        ret = m_peer.getAllBackupRanges(p_nodeID);
 
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting getAllBackupRanges");
@@ -559,12 +545,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return Barrier identifier on success, -1 on failure.
      */
     public int barrierAllocate(final int p_size) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed to allocate barriers");
-            // #endif /* LOGGER >= ERROR */
-            return BarrierID.INVALID_ID;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         return m_peer.barrierAllocate(p_size);
     }
@@ -577,12 +562,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return True if successful, false otherwise.
      */
     public boolean barrierFree(final int p_barrierId) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed to free barriers");
-            // #endif /* LOGGER >= ERROR */
-            return false;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         return m_peer.barrierFree(p_barrierId);
     }
@@ -597,12 +581,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return True if changing size was successful, false otherwise.
      */
     public boolean barrierChangeSize(final int p_barrierId, final int p_newSize) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed to change barrier sizes");
-            // #endif /* LOGGER >= ERROR */
-            return false;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         return m_peer.barrierChangeSize(p_barrierId, p_newSize);
     }
@@ -617,12 +600,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
      */
     public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed to sign on to barriers");
-            // #endif /* LOGGER >= ERROR */
-            return null;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         return m_peer.barrierSignOn(p_barrierId, p_customData);
     }
@@ -635,12 +617,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return BarrierStatus or null if barrier does not exist
      */
     public BarrierStatus barrierGetStatus(final int p_barrierId) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed get status of barriers");
-            // #endif /* LOGGER >= ERROR */
-            return null;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         return m_peer.barrierGetStatus(p_barrierId);
     }
@@ -655,12 +636,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return True if successful, false on failure (no space, element count exceeded or id used).
      */
     public boolean superpeerStorageCreate(final int p_storageId, final int p_size) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed store data to his storage");
-            // #endif /* LOGGER >= ERROR */
-            return false;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         return m_peer.superpeerStorageCreate(p_storageId, p_size);
     }
@@ -673,12 +653,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return True if successful, false on failure (no space, element count exceeded or id used).
      */
     public boolean superpeerStorageCreate(final DataStructure p_dataStructure) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed store data to a superpeer storage");
-            // #endif /* LOGGER >= ERROR */
-            return false;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
             // #if LOGGER >= ERROR
@@ -698,12 +677,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStoragePut(final DataStructure p_dataStructure) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed store data to a superpeer storage");
-            // #endif /* LOGGER >= ERROR */
-            return false;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
             // #if LOGGER >= ERROR
@@ -723,12 +701,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return Chunk with the data other null on error.
      */
     public Chunk superpeerStorageGet(final int p_id) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed store data to a superpeer storage");
-            // #endif /* LOGGER >= ERROR */
-            return null;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         return m_peer.superpeerStorageGet(p_id);
     }
@@ -741,12 +718,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return True on success, false on failure.
      */
     public boolean superpeerStorageGet(final DataStructure p_dataStructure) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed store data to a superpeer storage");
-            // #endif /* LOGGER >= ERROR */
-            return false;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
             // #if LOGGER >= ERROR
@@ -766,12 +742,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStorageRemove(final int p_id) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed store data to a superpeer storage");
-            // #endif /* LOGGER >= ERROR */
-            return false;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         m_peer.superpeerStorageRemove(p_id);
         return true;
@@ -785,12 +760,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStorageRemove(final DataStructure p_dataStructure) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed store data to a superpeer storage");
-            // #endif /* LOGGER >= ERROR */
-            return false;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
             // #if LOGGER >= ERROR
@@ -809,12 +783,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return Status of the superpeer storage.
      */
     public SuperpeerStorage.Status superpeerStorageGetStatus() {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed store data to a superpeer storage");
-            // #endif /* LOGGER >= ERROR */
-            return null;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         return m_peer.superpeerStorageGetStatus();
     }
@@ -830,12 +803,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *     the replacement
      */
     public void replaceBackupPeer(final long p_firstChunkIDOrRangeID, final short p_failedPeer, final short p_newPeer) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed to change a peer's backup peers");
-            // #endif /* LOGGER >= ERROR */
-            return;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         m_peer.replaceBackupPeer(p_firstChunkIDOrRangeID, p_failedPeer, p_newPeer);
     }
@@ -922,14 +894,13 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return the responsible superpeer
      */
     short getResponsibleSuperpeer(final short p_nodeID) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Superpeer must not call this method!");
-            // #endif /* LOGGER >= ERROR */
-            return NodeID.INVALID_ID;
-        } else {
-            return m_peer.getResponsibleSuperpeer(p_nodeID);
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
+
+        return m_peer.getResponsibleSuperpeer(p_nodeID);
     }
 
     /**
@@ -941,17 +912,19 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @note This method must be called by a superpeer
      */
     LookupTree superPeerGetLookUpTree(final short p_nodeID) {
-        LookupTree ret = null;
+        LookupTree ret;
+
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() != NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #if LOGGER >= TRACE
         LOGGER.trace("Entering getSuperPeerLookUpTree with: p_nodeID=0x%X", p_nodeID);
         // #endif /* LOGGER >= TRACE */
 
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            ret = m_superpeer.getLookupTree(p_nodeID);
-        } else {
-            LOGGER.error("Peer must not call this method!");
-        }
+        ret = m_superpeer.getLookupTree(p_nodeID);
 
         LOGGER.trace("Exiting getSuperPeerLookUpTree");
         return ret;

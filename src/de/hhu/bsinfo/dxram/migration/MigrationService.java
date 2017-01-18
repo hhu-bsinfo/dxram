@@ -30,6 +30,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
@@ -85,76 +86,77 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
         Chunk chunk;
         boolean ret = false;
 
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer must not store chunks");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            m_migrationLock.lock();
-            if (p_target != m_boot.getNodeID() && m_memoryManager.exists(p_chunkID)) {
-                int size;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
 
-                m_memoryManager.lockAccess();
-                size = m_memoryManager.getSize(p_chunkID);
-                chunk = new Chunk(p_chunkID, size);
-                m_memoryManager.get(chunk);
-                m_memoryManager.unlockAccess();
+        m_migrationLock.lock();
+        if (p_target != m_boot.getNodeID() && m_memoryManager.exists(p_chunkID)) {
+            int size;
 
-                // #if LOGGER == TRACE
-                LOGGER.trace("Sending migration request to %s", p_target);
-                // #endif /* LOGGER == TRACE */
+            m_memoryManager.lockAccess();
+            size = m_memoryManager.getSize(p_chunkID);
+            chunk = new Chunk(p_chunkID, size);
+            m_memoryManager.get(chunk);
+            m_memoryManager.unlockAccess();
 
-                MigrationRequest request = new MigrationRequest(p_target, new Chunk[] {chunk});
-                try {
-                    m_network.sendSync(request);
-                } catch (final NetworkException e) {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Could not migrate chunks");
-                    // #endif /* LOGGER >= ERROR */
-                    return false;
-                }
+            // #if LOGGER == TRACE
+            LOGGER.trace("Sending migration request to %s", p_target);
+            // #endif /* LOGGER == TRACE */
 
-                MigrationResponse response = (MigrationResponse) request.getResponse();
-                if (response.getStatusCode() == -1) {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Could not migrate chunks");
-                    // #endif /* LOGGER >= ERROR */
-                    return false;
-                }
+            MigrationRequest request = new MigrationRequest(p_target, new Chunk[] {chunk});
+            try {
+                m_network.sendSync(request);
+            } catch (final NetworkException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not migrate chunks");
+                // #endif /* LOGGER >= ERROR */
+                return false;
+            }
 
-                // Update superpeers
-                m_lookup.migrate(p_chunkID, p_target);
+            MigrationResponse response = (MigrationResponse) request.getResponse();
+            if (response.getStatusCode() == -1) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not migrate chunks");
+                // #endif /* LOGGER >= ERROR */
+                return false;
+            }
 
-                // TODO:
-                // Remove all locks
-                // m_lock.unlockAll(p_chunkID);
+            // Update superpeers
+            m_lookup.migrate(p_chunkID, p_target);
 
-                // Update local memory management
-                m_memoryManager.remove(p_chunkID, true);
-                if (m_backup.isActive()) {
-                    // Update logging
-                    backupPeers = m_backup.getCopyOfBackupPeersForLocalChunks(p_chunkID);
-                    if (backupPeers != null) {
-                        for (int i = 0; i < backupPeers.length; i++) {
-                            if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
-                                try {
-                                    m_network.sendMessage(new RemoveMessage(backupPeers[i], new ArrayListLong(p_chunkID)));
-                                } catch (final NetworkException ignored) {
+            // TODO:
+            // Remove all locks
+            // m_lock.unlockAll(p_chunkID);
 
-                                }
+            // Update local memory management
+            m_memoryManager.remove(p_chunkID, true);
+            if (m_backup.isActive()) {
+                // Update logging
+                backupPeers = m_backup.getCopyOfBackupPeersForLocalChunks(p_chunkID);
+                if (backupPeers != null) {
+                    for (int i = 0; i < backupPeers.length; i++) {
+                        if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
+                            try {
+                                m_network.sendMessage(new RemoveMessage(backupPeers[i], new ArrayListLong(p_chunkID)));
+                            } catch (final NetworkException ignored) {
+
                             }
                         }
                     }
                 }
-                ret = true;
-            } else {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", p_chunkID);
-                // #endif /* LOGGER >= ERROR */
-                ret = false;
             }
-            m_migrationLock.unlock();
+            ret = true;
+        } else {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", p_chunkID);
+            // #endif /* LOGGER >= ERROR */
+            ret = false;
         }
+        m_migrationLock.unlock();
+
         return ret;
     }
 
@@ -199,106 +201,107 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
         // TODO: Handle range properly
 
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer must not store chunks");
-            // #endif /* LOGGER >= ERROR */
-        } else {
-            if (p_startChunkID <= p_endChunkID) {
-                chunkIDs = new long[(int) (p_endChunkID - p_startChunkID + 1)];
-                m_migrationLock.lock();
-                if (p_target != m_boot.getNodeID()) {
-                    iter = p_startChunkID;
-                    while (true) {
-                        // Send chunks to p_target
-                        chunks = new Chunk[(int) (p_endChunkID - iter + 1)];
-                        counter = 0;
-                        size = 0;
-                        m_memoryManager.lockAccess();
-                        while (iter <= p_endChunkID) {
-                            if (m_memoryManager.exists(iter)) {
-                                int sizeChunk;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
 
-                                sizeChunk = m_memoryManager.getSize(iter);
-                                chunk = new Chunk(iter, sizeChunk);
-                                m_memoryManager.get(chunk);
+        if (p_startChunkID <= p_endChunkID) {
+            chunkIDs = new long[(int) (p_endChunkID - p_startChunkID + 1)];
+            m_migrationLock.lock();
+            if (p_target != m_boot.getNodeID()) {
+                iter = p_startChunkID;
+                while (true) {
+                    // Send chunks to p_target
+                    chunks = new Chunk[(int) (p_endChunkID - iter + 1)];
+                    counter = 0;
+                    size = 0;
+                    m_memoryManager.lockAccess();
+                    while (iter <= p_endChunkID) {
+                        if (m_memoryManager.exists(iter)) {
+                            int sizeChunk;
 
-                                chunks[counter] = chunk;
-                                chunkIDs[counter++] = chunk.getID();
-                                size += chunk.getDataSize();
-                            } else {
-                                // #if LOGGER >= ERROR
-                                LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", iter);
-                                // #endif /* LOGGER >= ERROR */
-                            }
-                            iter++;
-                        }
-                        m_memoryManager.unlockAccess();
+                            sizeChunk = m_memoryManager.getSize(iter);
+                            chunk = new Chunk(iter, sizeChunk);
+                            m_memoryManager.get(chunk);
 
-                        // #if LOGGER >= INFO
-                        LOGGER.info("Sending %d Chunks (%d Bytes) to 0x%X", counter, size, p_target);
-                        // #endif /* LOGGER >= INFO */
-                        try {
-                            m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter)));
-                        } catch (final NetworkException e) {
+                            chunks[counter] = chunk;
+                            chunkIDs[counter++] = chunk.getID();
+                            size += chunk.getDataSize();
+                        } else {
                             // #if LOGGER >= ERROR
-                            LOGGER.error("Could not migrate chunks");
+                            LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", iter);
                             // #endif /* LOGGER >= ERROR */
                         }
+                        iter++;
+                    }
+                    m_memoryManager.unlockAccess();
 
-                        if (iter > p_endChunkID) {
-                            break;
-                        }
+                    // #if LOGGER >= INFO
+                    LOGGER.info("Sending %d Chunks (%d Bytes) to 0x%X", counter, size, p_target);
+                    // #endif /* LOGGER >= INFO */
+                    try {
+                        m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter)));
+                    } catch (final NetworkException e) {
+                        // #if LOGGER >= ERROR
+                        LOGGER.error("Could not migrate chunks");
+                        // #endif /* LOGGER >= ERROR */
                     }
 
-                    // Update superpeers
-                    m_lookup.migrateRange(p_startChunkID, p_endChunkID, p_target);
+                    if (iter > p_endChunkID) {
+                        break;
+                    }
+                }
 
-                    if (m_backup.isActive()) {
-                        // Update logging
-                        backupPeers = m_backup.getCopyOfBackupPeersForLocalChunks(iter);
-                        if (backupPeers != null) {
-                            for (int i = 0; i < backupPeers.length; i++) {
-                                if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
-                                    try {
-                                        m_network.sendMessage(new RemoveMessage(backupPeers[i], chunkIDs));
-                                    } catch (final NetworkException ignored) {
+                // Update superpeers
+                m_lookup.migrateRange(p_startChunkID, p_endChunkID, p_target);
 
-                                    }
+                if (m_backup.isActive()) {
+                    // Update logging
+                    backupPeers = m_backup.getCopyOfBackupPeersForLocalChunks(iter);
+                    if (backupPeers != null) {
+                        for (int i = 0; i < backupPeers.length; i++) {
+                            if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
+                                try {
+                                    m_network.sendMessage(new RemoveMessage(backupPeers[i], chunkIDs));
+                                } catch (final NetworkException ignored) {
+
                                 }
                             }
                         }
                     }
-
-                    iter = p_startChunkID;
-                    while (iter <= p_endChunkID) {
-                        // TODO:
-                        // Remove all locks
-                        // m_lock.unlockAll(iter);
-
-                        // Update local memory management
-                        m_memoryManager.remove(iter, true);
-                        iter++;
-                    }
-                    ret = true;
-                } else {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Chunks could not be migrated because end of range is before start of range");
-                    // #endif /* LOGGER >= ERROR */
-                    ret = false;
                 }
+
+                iter = p_startChunkID;
+                while (iter <= p_endChunkID) {
+                    // TODO:
+                    // Remove all locks
+                    // m_lock.unlockAll(iter);
+
+                    // Update local memory management
+                    m_memoryManager.remove(iter, true);
+                    iter++;
+                }
+                ret = true;
             } else {
                 // #if LOGGER >= ERROR
-                LOGGER.error("Chunks could not be migrated");
+                LOGGER.error("Chunks could not be migrated because end of range is before start of range");
                 // #endif /* LOGGER >= ERROR */
                 ret = false;
             }
-            m_migrationLock.unlock();
-
-            // #if LOGGER >= INFO
-            LOGGER.info("All chunks migrated");
-            // #endif /* LOGGER >= INFO */
+        } else {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Chunks could not be migrated");
+            // #endif /* LOGGER >= ERROR */
+            ret = false;
         }
+        m_migrationLock.unlock();
+
+        // #if LOGGER >= INFO
+        LOGGER.info("All chunks migrated");
+        // #endif /* LOGGER >= INFO */
+
         return ret;
     }
 

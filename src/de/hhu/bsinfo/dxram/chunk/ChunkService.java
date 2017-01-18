@@ -46,6 +46,7 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -238,17 +239,15 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
         assert p_size > 0 && p_count > 0;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         // #if LOGGER == TRACE
         LOGGER.trace("create[size %d, count %d]", p_size, p_count);
         // #endif /* LOGGER == TRACE */
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s must not create chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
-        }
 
         // #ifdef STATISTICS
         SOP_CREATE.enter(p_count);
@@ -321,6 +320,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     public int create(final boolean p_consecutive, final DataStructure... p_dataStructures) {
         int count = 0;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         if (p_dataStructures.length == 0) {
             return count;
         }
@@ -328,14 +333,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #if LOGGER == TRACE
         LOGGER.trace("create[numDataStructures %d...]", p_dataStructures.length);
         // #endif /* LOGGER == TRACE */
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s must not create chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return count;
-        }
 
         // #ifdef STATISTICS
         SOP_CREATE.enter(p_dataStructures.length);
@@ -402,6 +399,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     public long[] createSizes(final boolean p_consecutive, final int... p_sizes) {
         long[] chunkIDs;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         if (p_sizes.length == 0) {
             return new long[0];
         }
@@ -409,14 +412,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #if LOGGER == TRACE
         LOGGER.trace("create[sizes(%d) %d, ...]", p_sizes.length, p_sizes[0]);
         // #endif /* LOGGER == TRACE */
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s must not create chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
-        }
 
         // #ifdef STATISTICS
         SOP_CREATE.enter(p_sizes.length);
@@ -520,12 +515,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             return null;
         }
 
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("%s %s is not allowed to create chunks", role, NodeID.toHexString(p_peer));
-            // #endif /* LOGGER >= ERROR */
-            return null;
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_REMOTE_CREATE.enter(p_sizes.length);
@@ -587,6 +581,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     public int remove(final long... p_chunkIDs) {
         int chunksRemoved = 0;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         if (p_chunkIDs.length == 0) {
             return chunksRemoved;
         }
@@ -594,14 +594,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #if LOGGER == TRACE
         LOGGER.trace("remove[dataStructures(%d) %s, ...]", p_chunkIDs.length, ChunkID.toHexString(p_chunkIDs[0]));
         // #endif /* LOGGER == TRACE */
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s must not remove chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return chunksRemoved;
-        }
 
         // #ifdef STATISTICS
         SOP_REMOVE.enter(p_chunkIDs.length);
@@ -775,6 +767,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     public int put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure[] p_dataStructures, final int p_offset, final int p_count) {
         int chunksPut = 0;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         if (p_dataStructures.length == 0) {
             return chunksPut;
         }
@@ -782,14 +780,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #if LOGGER == TRACE
         LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_dataStructures.length);
         // #endif /* LOGGER == TRACE */
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s must not put chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return chunksPut;
-        }
 
         // #ifdef STATISTICS
         SOP_PUT.enter(p_count);
@@ -970,6 +960,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
         assert p_offset >= 0 || p_count >= 0;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         if (p_dataStructures.length == 0) {
             return totalChunksGot;
         }
@@ -977,14 +973,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #if LOGGER == TRACE
         LOGGER.trace("get[dataStructures(%d) ...]", p_count);
         // #endif /* LOGGER == TRACE */
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s must not get chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return totalChunksGot;
-        }
 
         // #ifdef STATISTICS
         SOP_GET.enter(p_count);
@@ -1090,6 +1078,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     public Chunk[] get(final long... p_chunkIDs) {
         Chunk[] ret;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         if (p_chunkIDs.length == 0) {
             return null;
         }
@@ -1097,14 +1091,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #if LOGGER == TRACE
         LOGGER.trace("get[chunkIDs(%d) ...]", p_chunkIDs.length);
         // #endif /* LOGGER == TRACE */
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s must not get chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
-        }
 
         // #ifdef STATISTICS
         SOP_GET.enter(p_chunkIDs.length);
@@ -1226,6 +1212,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
         assert p_offset >= 0 || p_count >= 0;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         if (p_dataStructures.length == 0) {
             return totalChunksGot;
         }
@@ -1233,14 +1225,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #if LOGGER == TRACE
         LOGGER.trace("getLocal[dataStructures(%d) ...]", p_count);
         // #endif /* LOGGER == TRACE */
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s must not get chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return totalChunksGot;
-        }
 
         // #ifdef STATISTICS
         SOP_GET.enter(p_count);
@@ -1290,6 +1274,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         Pair<Integer, Chunk[]> ret;
         int totalNumberOfChunksGot = 0;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         if (p_chunkIDs.length == 0) {
             return null;
         }
@@ -1297,14 +1287,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #if LOGGER == TRACE
         LOGGER.trace("getLocal[chunkIDs(%d) ...]", p_chunkIDs.length);
         // #endif /* LOGGER == TRACE */
-
-        NodeRole role = m_boot.getNodeRole();
-        if (role == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A %s must not get chunks", role);
-            // #endif /* LOGGER >= ERROR */
-            return null;
-        }
 
         // #ifdef STATISTICS
         SOP_GET.enter(p_chunkIDs.length);
@@ -1360,12 +1342,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             return null;
         }
 
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("%s 0x%X is not allowed to get local chunk id ranges (not allowed to have any)", role, p_nodeID);
-            // #endif /* LOGGER >= ERROR */
-            return null;
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_nodeID == m_boot.getNodeID()) {
             list = getAllLocalChunkIDRanges();
@@ -1408,12 +1389,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             return null;
         }
 
-        if (role != NodeRole.PEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("%s 0x%X is not allowed to get migrated chunk id ranges (not allowed to have any)", role, p_nodeID);
-            // #endif /* LOGGER >= ERROR */
-            return null;
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_nodeID == m_boot.getNodeID()) {
             list = getAllLocalChunkIDRanges();

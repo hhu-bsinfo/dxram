@@ -95,10 +95,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public Status getStatus() {
         Status status = new Status();
 
+        // #ifdef ASSERT_NODE_ROLE
         NodeRole role = m_boot.getNodeRole();
         if (role != NodeRole.PEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         status.m_freeMemory = new StorageUnit(m_rawMemory.getStatus().getFree(), StorageUnit.BYTE);
         status.m_totalMemory = new StorageUnit(m_rawMemory.getStatus().getSize(), StorageUnit.BYTE);
@@ -118,10 +120,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return the ChunkIDs of all migrated Chunks
      */
     public ArrayList<Long> getCIDOfAllMigratedChunks() {
+        // #ifdef ASSERT_NODE_ROLE
         NodeRole role = m_boot.getNodeRole();
         if (role != NodeRole.PEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         return m_cidTable.getCIDOfAllMigratedChunks();
     }
@@ -132,10 +136,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return the ChunkID ranges in an ArrayList
      */
     public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
+        // #ifdef ASSERT_NODE_ROLE
         NodeRole role = m_boot.getNodeRole();
         if (role != NodeRole.PEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         return m_cidTable.getCIDRangesOfAllLocalChunks();
     }
@@ -224,9 +230,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long address;
         long chunkID;
 
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() != NodeRole.PEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_size > SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK) {
             // #if LOGGER >= WARN
@@ -277,9 +285,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long address;
         long chunkID;
 
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() != NodeRole.PEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_CREATE.enter();
@@ -345,9 +355,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long[] addresses;
         long[] lids;
 
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() != NodeRole.PEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_MULTI_CREATE.enter();
@@ -463,9 +475,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long[] addresses;
         long[] lids;
 
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() != NodeRole.PEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_MULTI_CREATE.enter();
@@ -537,9 +551,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long chunkID;
         long lid;
 
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() != NodeRole.PEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_CREATE.enter();
@@ -599,14 +615,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         int size = -1;
 
         NodeRole role = m_boot.getNodeRole();
+        if (role == NodeRole.TERMINAL) {
+            return size;
+        }
+
+        // #ifdef ASSERT_NODE_ROLE
         if (role != NodeRole.PEER) {
-
-            if (role == NodeRole.TERMINAL) {
-                return size;
-            }
-
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         address = m_cidTable.get(p_chunkID);
         if (address > 0) {
@@ -629,14 +646,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         boolean ret = true;
 
         NodeRole role = m_boot.getNodeRole();
+        if (role == NodeRole.TERMINAL) {
+            return true;
+        }
+
+        // #ifdef ASSERT_NODE_ROLE
         if (role != NodeRole.PEER) {
-
-            if (role == NodeRole.TERMINAL) {
-                return ret;
-            }
-
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_GET.enter();
@@ -670,18 +688,19 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @return A byte array with payload if getting the chunk payload was successful, null if no chunk with the ID exists.
      */
     public byte[] get(final long p_chunkID) {
-        byte[] ret = null;
+        byte[] ret;
         long address;
 
         NodeRole role = m_boot.getNodeRole();
+        if (role == NodeRole.TERMINAL) {
+            return null;
+        }
+
+        // #ifdef ASSERT_NODE_ROLE
         if (role != NodeRole.PEER) {
-
-            if (role == NodeRole.TERMINAL) {
-                return ret;
-            }
-
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_GET.enter();
@@ -724,14 +743,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         boolean ret = true;
 
         NodeRole role = m_boot.getNodeRole();
+        if (role == NodeRole.TERMINAL) {
+            return true;
+        }
+
+        // #ifdef ASSERT_NODE_ROLE
         if (role != NodeRole.PEER) {
-
-            if (role == NodeRole.TERMINAL) {
-                return ret;
-            }
-
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_PUT.enter();
@@ -770,14 +790,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         boolean ret = true;
 
         NodeRole role = m_boot.getNodeRole();
+        if (role == NodeRole.TERMINAL) {
+            return true;
+        }
+
+        // #ifdef ASSERT_NODE_ROLE
         if (role != NodeRole.PEER) {
-
-            if (role == NodeRole.TERMINAL) {
-                return ret;
-            }
-
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_REMOVE.enter();
@@ -837,15 +858,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public void createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
         long[] addresses;
 
+        // #ifdef ASSERT_NODE_ROLE
         NodeRole role = m_boot.getNodeRole();
         if (role != NodeRole.PEER) {
-
             if (role == NodeRole.TERMINAL) {
                 return;
             }
 
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_CREATE_PUT_RECOVERED.enter(p_usedEntries);
@@ -1108,9 +1130,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      *     the ChunkID
      */
     public void prepareChunkIDForReuse(final long p_chunkID) {
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() != NodeRole.PEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         m_cidTable.putChunkIDForReuse(p_chunkID);
     }

@@ -33,6 +33,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
@@ -49,6 +50,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 /**
  * Service interface to schedule executables jobs. Use this to execute code
  * concurrently and even remotely with DXRAM.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class JobService extends AbstractDXRAMService implements MessageReceiver, JobEventListener {
@@ -79,10 +81,11 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
     /**
      * Register a new implementation/type of Job class.
      * Make sure to register all your Job classes.
+     *
      * @param p_typeID
-     *            Type ID for the job to register.
+     *     Type ID for the job to register.
      * @param p_clazz
-     *            Class to register for the specified ID.
+     *     Class to register for the specified ID.
      */
     public void registerJobType(final short p_typeID, final Class<? extends AbstractJob> p_clazz) {
         // #if LOGGER >= DEBUG
@@ -94,18 +97,18 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
     /**
      * Schedule a job for execution (local).
+     *
      * @param p_job
-     *            Job to be scheduled for execution.
+     *     Job to be scheduled for execution.
      * @return True if scheduling was successful, false otherwise.
      */
     public long pushJob(final AbstractJob p_job) {
         // early return
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed to submit jobs");
-            // #endif /* LOGGER >= ERROR */
-            return JobID.INVALID_ID;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_CREATE.enter();
@@ -131,20 +134,20 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
     /**
      * Schedule a job for remote execution. The job is sent to the node specified and
      * scheduled for execution there.
+     *
      * @param p_job
-     *            Job to schedule.
+     *     Job to schedule.
      * @param p_nodeID
-     *            ID of the node to schedule the job on.
+     *     ID of the node to schedule the job on.
      * @return Valid job ID assigned to the submitted job, false otherwise.
      */
     public long pushJobRemote(final AbstractJob p_job, final short p_nodeID) {
         // early return
+        // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("A superpeer is not allowed to submit remote jobs");
-            // #endif /* LOGGER >= ERROR */
-            return JobID.INVALID_ID;
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_REMOTE_SUBMIT.enter();
@@ -191,6 +194,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
     /**
      * Wait for all locally scheduled and currently executing jobs to finish.
+     *
      * @return True if waiting was successful and all jobs finished, false otherwise.
      */
     public boolean waitForLocalJobsToFinish() {
@@ -199,6 +203,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
     /**
      * Wait for all jobs including remote ones to finish
+     *
      * @return True if all jobs finished successfully, false otherwise.
      */
     public boolean waitForAllJobsToFinish() {
@@ -368,8 +373,9 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
     /**
      * Handle incoming push queue request.
+     *
      * @param p_request
-     *            Incoming request.
+     *     Incoming request.
      */
     private void incomingPushJobQueueMessage(final PushJobQueueMessage p_request) {
         // #ifdef STATISTICS
@@ -398,8 +404,9 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
     /**
      * Handle incoming status request.
+     *
      * @param p_request
-     *            Incoming request.
+     *     Incoming request.
      */
     private void incomingStatusRequest(final StatusRequest p_request) {
         Status status = new Status();
@@ -418,8 +425,9 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
     /**
      * Dispatch for JobEventTriggeredMessage
+     *
      * @param p_message
-     *            The incoming message
+     *     The incoming message
      */
     private void incomingJobEventTriggeredMessage(final JobEventTriggeredMessage p_message) {
         Pair<Byte, AbstractJob> job = m_remoteJobCallbackMap.get(p_message.getJobID());
@@ -466,6 +474,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
     /**
      * Status object holding information about the job service.
+     *
      * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
      */
     public static class Status implements Importable, Exportable {
@@ -480,6 +489,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
         /**
          * Get the number of unfinished jobs
+         *
          * @return Number of unfinished jobs
          */
         public long getNumberOfUnfinishedJobs() {

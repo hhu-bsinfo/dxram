@@ -30,6 +30,7 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
@@ -91,6 +92,12 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
      *     Data structures to put/update.
      */
     public void put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         if (p_dataStructures.length == 0) {
             return;
         }
@@ -105,12 +112,6 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
                 ChunkID.toHexString(p_dataStructures[0].getID()));
             // #endif /* LOGGER == TRACE */
         }
-
-        // #if LOGGER >= ERROR
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            LOGGER.error("A superpeer must not put chunks");
-        }
-        // #endif /* LOGGER >= ERROR */
 
         // #ifdef STATISTICS
         SOP_PUT_ASYNC.enter(p_dataStructures.length);
