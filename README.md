@@ -1,18 +1,21 @@
 # Quick start guide
 
 ## Requirements
-DXRAM needs Java 1.8 to run properly. Currently supported operating 
-systems are MacOSX and Linux. DXRAM uses zookeeper for bootstrapping.
+DXRAM requires Java 1.8 to run on a Linux distribution of your choice
+(MacOSX should work but is not supported, officially). 
+DXRAM uses zookeeper for bootstrapping.
 
 ### Dependencies
 The following dependencies are required and are already included with 
 DXRAM in the "lib" folder:
-* Gson (>= 2.7) for DXRAM
+* ant-contrib (0.6) for building
+* gson (2.7) for DXRAM
+* jline (1.0) for DXRAM
 * Log4j (version 1) for Zookeeper
-* Log4j2 (>= 2.7) for DXRAM
+* Log4j2 (2.7) for DXRAM
 * sl4j (version 1) for Zookeeper
 * sl4j-log4j12 for Zookeeper
-* zokeeper (>= 3.4.3) for DXRAM
+* zokeeper (3.4.3) for DXRAM
 
 ## Building
 An ant build script is included for building the project. Ensure ant
@@ -20,12 +23,13 @@ is installed and run *build.sh*. The output is located in the
 *build/* subdirectory.
 
 ## Starting DXRAM
-TODO
+A bash script to deploy instances to either local host or nodes of a 
+cluster are included in the subfolder */script/sh*. The scripts parses
+a configuration file and starts the specified DXRAM instances 
+accordingly. For examples, refer to the configurations 
+*SimpleTest.conf* and *MailboxTest.conf*.
 
-Ready to use bash scripts to run either superpeer, peer or terminal
-instances of DXRAM are provided in the */script/bash* subfolder.
-
-# Configuring DXRAM
+# Configuration of DXRAM
 
 ## ZooKeeper
 See System Requirements in the admin guide of ZooKeeper.
@@ -71,7 +75,7 @@ Superpeer locally on port 22221:
 -Ddxram.m_engineSettings.m_address.m_port=22221
 -Ddxram.m_engineSettings.m_role=Superpeer
 ```
-And the same for a Peer on port 22222:
+And equivalent for a Peer on port 22222:
 ```
 -Ddxram.m_engineSettings.m_address.m_ip=127.0.0.1
 -Ddxram.m_engineSettings.m_address.m_port=22222
@@ -155,7 +159,3 @@ value provided by the configuration, for example (128 MB):
 -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=128
 -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=mb
 ```
-
-# Development
-
-TODO see other files in doc/
