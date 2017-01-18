@@ -87,7 +87,7 @@
 
     <target name="compile-release" depends="create_base_dirs" description="builds class files, release build">
         <exec dir="util/" executable="/bin/bash">
-            <arg line="preprocessor.sh INFO ENABLED"/>
+            <arg line="preprocessor.sh INFO ENABLED DISABLED"/>
         </exec>
 
         <trycatch>
@@ -109,7 +109,7 @@
 
     <target name="compile-performance" depends="create_base_dirs" description="builds class files, performance build">
         <exec dir="util/" executable="/bin/bash">
-            <arg line="preprocessor.sh DISABLED DISABLED"/>
+            <arg line="preprocessor.sh DISABLED DISABLED DISABLED"/>
         </exec>
 
         <trycatch>

@@ -3,20 +3,22 @@
 
 ######################################################################################
 # Disables all calls that do not match the configuration.                            #
-# Is called in build script.                                                         #
+# Called in build script.                                                            #
 ######################################################################################
 
 
 # Read parameters
-if [ "$#" -ne 2 ];
+if [ "$#" -ne 3 ];
 then
   LOGGER_LEVEL="INFO"
   STATISTICS="ENABLED"
-  echo "Using default parameters (LOGGER_LEVEL=INFO; STATISTICS=ENABLED)"
+  ASSERT_NODE_ROLE="ENABLED"
+  echo "Using default parameters (LOGGER_LEVEL=INFO; STATISTICS=ENABLED; ASSERT_NODE_ROLE=ENABLED)"
 else
   LOGGER_LEVEL="$1"
   STATISTICS="$2"
-  echo "Applying given parameters (LOGGER_LEVEL=$1; STATISTICS=$2)"
+  ASSERT_NODE_ROLE="$3"
+  echo "Applying given parameters (LOGGER_LEVEL=$1; STATISTICS=$2; ASSERT_NODE_ROLE=$3)"
 fi
 
 
@@ -74,6 +76,25 @@ else
 fi
 
 
+####################
+# ASSERT_NODE_ROLE #
+####################
+# Determine assert node role command
+if [ "$ASSERT_NODE_ROLE" == "ENABLED" ];
+then
+  # Nothing to do!
+  assert_node_role_cmd="cat"
+elif [ "$ASSERT_NODE_ROLE" == "DISABLED" ];
+then
+  # Remove
+  assert_node_role_cmd="sed -e '/#ifdef[ \t]*ASSERT_NODE_ROLE/,/#endif[ \t]*\/\*[ \t]*ASSERT_NODE_ROLE/{/#ifdef/n;/#endif/"'!'"s/^\([ \t]*\)/\1\/\/ /' -e '}'"
+else
+  # Invalid!
+  echo "Option $ASSERT_NODE_ROLE not available. Choose between ENABLED and DISABLED."
+  exit -1
+fi
+
+
 find ../src/ -name "*.java" -print | while read input
 do
   ##########
@@ -85,6 +106,11 @@ do
   # STATISTICS #
   ##############
   eval "$statistics_cmd \"$input.preprocessed\" > $input"
+
+  ####################
+  # ASSERT_NODE_ROLE #
+  ####################
+  eval "$assert_node_role_cmd \"$input.preprocessed\" > $input"
 
   rm "$input.preprocessed"
 
