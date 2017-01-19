@@ -523,7 +523,7 @@ check_superpeer_startup() {
 # Arguments:
 #   ip - The IP of the Peer
 #   port - The port of Peer
-#   ram_size_in_gb - The key-value store size (optional)
+#   ram_size_in_mb - The key-value store size (optional)
 #   compute_node_role - The role of the node if part of a compute group (optional)
 #   compute_group_ID - The compute group id if taking part on master-slave computations (optional)
 #   vm_options - Further VM options
@@ -531,7 +531,7 @@ check_superpeer_startup() {
 compile_vm_options_string_peer() {
   local ip=$1
   local port=$2
-  local ram_size_in_gb=$3
+  local ram_size_in_mb=$3
   local compute_node_role=$4
   local compute_group_id=$5
   local vm_options="$6"
@@ -543,9 +543,9 @@ compile_vm_options_string_peer() {
   VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_port=$port"
   VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_role=Peer"
 
-  if [ "$ram_size_in_gb" ] ; then
-    VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb"
-    VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb"
+  if [ "$ram_size_in_mb" ] ; then
+    VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_mb"
+    VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=mb"
   fi    
 
   if [ "$compute_node_role" ] ; then
@@ -567,7 +567,7 @@ compile_vm_options_string_peer() {
 #   ip - The IP of the Peer
 #   port - The port of Peer
 #   hostname - The hostname
-#   ram_size_in_gb - The key-value store size
+#   ram_size_in_mb - The key-value store size
 #   compute_node_role - The role of the node if part of a compute group
 #   compute_group_ID - The compute group id if taking part on master-slave computations
 #   class - The class to execute
@@ -578,14 +578,14 @@ start_remote_peer() {
   local ip=$1
   local port=$2
   local hostname=$3
-  local ram_size_in_gb=$4
+  local ram_size_in_mb=$4
   local compute_node_role=$5
   local compute_group_id=$6
   local class=$7
   local arguments="$8"
   local vm_options="$9"
 
-  compile_vm_options_string_peer $ip $port $ram_size_in_gb $compute_node_role $compute_group_id $vm_options
+  compile_vm_options_string_peer $ip $port $ram_size_in_mb $compute_node_role $compute_group_id $vm_options
 
   echo "Executing peer on $3 ($ip, $port):"
   ssh $hostname -n "cd $REMOTE_EXEC_PATH && java $VM_OPTS -cp $LIBRARIES $class $arguments"
@@ -598,7 +598,7 @@ start_remote_peer() {
 # Arguments:
 #   ip - The IP of the Peer
 #   port - The port of Peer
-#   ram_size_in_gb - The key-value store size
+#   ram_size_in_mb - The key-value store size
 #   compute_node_role - The role of the node if part of a compute group
 #   compute_group_ID - The compute group id if taking part on master-slave computations
 #   class - The class to execute
@@ -608,14 +608,14 @@ start_remote_peer() {
 start_local_peer() {
   local ip=$1
   local port=$2
-  local ram_size_in_gb=$3
+  local ram_size_in_mb=$3
   local compute_node_role=$4
   local compute_group_id=$5
   local class=$6
   local arguments="$7"
   local vm_options="$8"
 
-  compile_vm_options_string_peer $ip $port $ram_size_in_gb $compute_node_role $compute_group_id $vm_options
+  compile_vm_options_string_peer $ip $port $ram_size_in_mb $compute_node_role $compute_group_id $vm_options
 
   cd "$LOCAL_EXEC_PATH"
   java $VM_OPTS -cp $LIBRARIES $class $arguments
@@ -630,7 +630,7 @@ start_local_peer() {
 #   ip - The IP of the Peer
 #   port - The port of Peer
 #   hostname - The hostname
-#   ram_size_in_gb - The key-value store size
+#   ram_size_in_mb - The key-value store size
 #   compute_node_role - The role of the node if part of a compute group
 #   compute_group_ID - The compute group id if taking part on master-slave compu
 #   class - The class to execute
@@ -642,7 +642,7 @@ check_peer_startup() {
   local ip=$1
   local port=$2
   local hostname=$3
-  local ram_size_in_gb=$4
+  local ram_size_in_mb=$4
   local compute_node_role=$5
   local compute_group_id=$6
   local class=$7
@@ -658,13 +658,13 @@ check_peer_startup() {
 	# Abort execution after an exception was thrown (every exception but NetworkResponseTimeoutException)
     local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseTimeoutException"`
     if [ "$success" != "" ] ; then
-      echo "Peer ($ip $port $ram_size_in_gb $compute_node_role $compute_group_id $class $arguments $vm_options) started"
+      echo "Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options) started"
       break
     elif [ "$fail_init" != "" ] ; then
-      echo "ERROR: Peer ($ip $port $ram_size_in_gb $compute_node_role $compute_group_id $class $arguments $vm_options) could not be started. See log file $logfile"
+      echo "ERROR: Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options) could not be started. See log file $logfile"
       close
     elif [ "$fail_error" != "" ] ; then
-      echo "ERROR: Peer ($ip $port $ram_size_in_gb $compute_node_role $compute_group_id $class $arguments $vm_options) failed. See log file $logfile"
+      echo "ERROR: Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options) failed. See log file $logfile"
       close
     fi
     sleep 1.0
@@ -821,7 +821,7 @@ execute() {
           local vm_options=`echo $tmp | cut -d '=' -f 2`
           vm_options=`echo "-$vm_options" | sed 's/\^/ -/'`
         elif [ "$arg_type" = "kvss" ] ; then
-          local ram_size_in_gb=`echo $tmp | cut -d '=' -f 2`
+          local ram_size_in_mb=`echo $tmp | cut -d '=' -f 2`
         elif [ "$arg_type" = "class" ] ; then
           local class=`echo $tmp | cut -d '=' -f 2`
         elif [ "$arg_type" = "args" ] ; then
@@ -849,12 +849,12 @@ execute() {
 
       if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ] ; then
         local_config_was_copied=`copy_local_configuration "$local_config_was_copied"`
-        start_local_peer "$ip" "$port" "$ram_size_in_gb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
-        check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_gb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$condition" "$vm_options"
+        start_local_peer "$ip" "$port" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+        check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$condition" "$vm_options"
       else
         remote_config_was_copied=`copy_remote_configuration "$remote_config_was_copied" "$hostname"`
-        start_remote_peer "$ip" "$port" "$hostname" "$ram_size_in_gb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
-        check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_gb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$condition" "$vm_options"
+        start_remote_peer "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+        check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$condition" "$vm_options"
       fi
 
       if [ "$time_condition" != "" ] ; then

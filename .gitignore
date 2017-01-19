@@ -17,3 +17,4 @@ dxram.iml
 out/*
 config/*.json
 start_dxram_terminal.sh
+tmp/
