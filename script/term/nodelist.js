@@ -39,7 +39,7 @@ function exec(role) {
 		var curRole = boot.getNodeRole(nodeId);
 		
 		if (role == null || role != null && nodeRole.equals(curRole)) {
-			dxterm.printfln("\t0x%X, %s, %s", nodeId, curRole, nodeId);
+			dxterm.printfln("\t0x%04X   %s", nodeId, curRole);
 		}
 	}
 }
