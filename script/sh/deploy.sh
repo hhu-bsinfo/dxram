@@ -416,6 +416,29 @@ check_zookeeper_startup() {
 }
 
 ######################################################
+# Compile the java vm options string for a superpeer
+# Globals:
+#   VM_OPTS - Created by function ("return value")
+# Arguments:
+#   ip - The IP of the superpeer
+#   port - The port of superpeer
+#   vm_options - Further VM options
+######################################################
+compile_vm_options_string_superpeer() {
+  local ip=$1
+  local port=$2
+  local vm_options="$3"
+
+  VM_OPTS=""
+  VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
+  VM_OPTS="$VM_OPTS -Ddxram.config=config/dxram.json"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_ip=$ip"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_port=$port"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_role=Superpeer"
+  VM_OPTS="$VM_OPTS $vm_options"
+}
+
+######################################################
 # Start a Superpeer on a remote node
 # Globals:
 #   REMOTE_EXEC_PATH
@@ -432,8 +455,10 @@ start_remote_superpeer() {
   local hostname=$3
   local vm_options="$4"
 
+  compile_vm_options_string_superpeer $ip $port $vm_options
+
   echo "Executing superpeer on $3 ($ip, $port):"
-  ssh $hostname -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Superpeer -cp $LIBRARIES $DEFAULT_CLASS"
+  ssh $hostname -n "cd $REMOTE_EXEC_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
 }
 
 ######################################################
@@ -452,8 +477,10 @@ start_local_superpeer() {
   local port=$2
   local vm_options="$3"
 
+  compile_vm_options_string_superpeer $ip $port $vm_options
+
   cd "$LOCAL_EXEC_PATH"
-  java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Superpeer -cp $LIBRARIES $DEFAULT_CLASS
+  java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS
   cd "$EXECUTION_DIR"
 }
 
@@ -490,6 +517,49 @@ check_superpeer_startup() {
 }
 
 ######################################################
+# Compile the java vm options string for a peer
+# Globals:
+#   VM_OPTS - Created by function ("return value")
+# Arguments:
+#   ip - The IP of the Peer
+#   port - The port of Peer
+#   ram_size_in_gb - The key-value store size (optional)
+#   compute_node_role - The role of the node if part of a compute group (optional)
+#   compute_group_ID - The compute group id if taking part on master-slave computations (optional)
+#   vm_options - Further VM options
+######################################################
+compile_vm_options_string_peer() {
+  local ip=$1
+  local port=$2
+  local ram_size_in_gb=$3
+  local compute_node_role=$4
+  local compute_group_id=$5
+  local vm_options="$6"
+
+  VM_OPTS=""
+  VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
+  VM_OPTS="$VM_OPTS -Ddxram.config=config/dxram.json"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_ip=$ip"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_port=$port"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_role=Peer"
+
+  if [ "$ram_size_in_gb" ] ; then
+    VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb"
+    VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb"
+  fi    
+
+  if [ "$compute_node_role" ] ; then
+    VM_OPTS="$VM_OPTS -Ddxram.m_services[MasterSlaveComputeService].m_role=$compute_node_role"
+  fi
+
+  if [ "$compute_group_id" ] ; then
+    VM_OPTS="$VM_OPTS -Ddxram.m_services[MasterSlaveComputeService].m_computeGroupId=$compute_group_id"
+  fi
+
+  VM_OPTS="$VM_OPTS $vm_options"
+}
+
+######################################################
 # Start a Peer on a remote node
 # Globals:
 #   REMOTE_EXEC_PATH
@@ -498,6 +568,8 @@ check_superpeer_startup() {
 #   port - The port of Peer
 #   hostname - The hostname
 #   ram_size_in_gb - The key-value store size
+#   compute_node_role - The role of the node if part of a compute group
+#   compute_group_ID - The compute group id if taking part on master-slave computations
 #   class - The class to execute
 #   arguments - The arguments
 #   vm_options - The VM options
@@ -507,17 +579,16 @@ start_remote_peer() {
   local port=$2
   local hostname=$3
   local ram_size_in_gb=$4
-  local class=$5
-  local arguments="$6"
-  local vm_options="$7"
+  local compute_node_role=$5
+  local compute_group_id=$6
+  local class=$7
+  local arguments="$8"
+  local vm_options="$9"
+
+  compile_vm_options_string_peer $ip $port $ram_size_in_gb $compute_node_role $compute_group_id $vm_options
 
   echo "Executing peer on $3 ($ip, $port):"
-  if [ "$ram_size_in_gb" = "" ] ; then
-    # Use default key value store size
-    ssh $hostname -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -cp $LIBRARIES $class $arguments"
-  else
-    ssh $hostname -n "cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb -cp $LIBRARIES $class $arguments"
-  fi
+  ssh $hostname -n "cd $REMOTE_EXEC_PATH && java $VM_OPTS -cp $LIBRARIES $class $arguments"
 }
 
 ######################################################
@@ -528,6 +599,8 @@ start_remote_peer() {
 #   ip - The IP of the Peer
 #   port - The port of Peer
 #   ram_size_in_gb - The key-value store size
+#   compute_node_role - The role of the node if part of a compute group
+#   compute_group_ID - The compute group id if taking part on master-slave computations
 #   class - The class to execute
 #   arguments - The arguments
 #   vm_options - The VM options
@@ -536,17 +609,16 @@ start_local_peer() {
   local ip=$1
   local port=$2
   local ram_size_in_gb=$3
-  local class=$4
-  local arguments="$5"
-  local vm_options="$6"
+  local compute_node_role=$4
+  local compute_group_id=$5
+  local class=$6
+  local arguments="$7"
+  local vm_options="$8"
+
+  compile_vm_options_string_peer $ip $port $ram_size_in_gb $compute_node_role $compute_group_id $vm_options
 
   cd "$LOCAL_EXEC_PATH"
-  if [ "$ram_size_in_gb" = "" ] ; then
-    # Use default key value store size
-    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -cp $LIBRARIES $class $arguments
-  else
-    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json $vm_options -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Peer -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_gb -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=gb -cp $LIBRARIES $class $arguments
-  fi
+  java $VM_OPTS -cp $LIBRARIES $class $arguments
   cd "$EXECUTION_DIR"
 }
 
@@ -559,6 +631,8 @@ start_local_peer() {
 #   port - The port of Peer
 #   hostname - The hostname
 #   ram_size_in_gb - The key-value store size
+#   compute_node_role - The role of the node if part of a compute group
+#   compute_group_ID - The compute group id if taking part on master-slave compu
 #   class - The class to execute
 #   arguments - The arguments
 #   condition - The string to wait for
@@ -569,10 +643,12 @@ check_peer_startup() {
   local port=$2
   local hostname=$3
   local ram_size_in_gb=$4
-  local class=$5
-  local arguments="$6"
-  local condition="$7"
-  local vm_options="$8"
+  local compute_node_role=$5
+  local compute_group_id=$6
+  local class=$7
+  local arguments="$8"
+  local condition="$9"
+  local vm_options="$10"
 
   local logfile="${LOG_DIR}${hostname}_${port}_peer"
 
@@ -582,17 +658,43 @@ check_peer_startup() {
 	# Abort execution after an exception was thrown (every exception but NetworkResponseTimeoutException)
     local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseTimeoutException"`
     if [ "$success" != "" ] ; then
-      echo "Peer ($ip $port $ram_size_in_gb $class $arguments $vm_options) started"
+      echo "Peer ($ip $port $ram_size_in_gb $compute_node_role $compute_group_id $class $arguments $vm_options) started"
       break
     elif [ "$fail_init" != "" ] ; then
-      echo "ERROR: Peer ($ip $port $ram_size_in_gb $class $arguments $vm_options) could not be started. See log file $logfile"
+      echo "ERROR: Peer ($ip $port $ram_size_in_gb $compute_node_role $compute_group_id $class $arguments $vm_options) could not be started. See log file $logfile"
       close
     elif [ "$fail_error" != "" ] ; then
-      echo "ERROR: Peer ($ip $port $ram_size_in_gb $class $arguments $vm_options) failed. See log file $logfile"
+      echo "ERROR: Peer ($ip $port $ram_size_in_gb $compute_node_role $compute_group_id $class $arguments $vm_options) failed. See log file $logfile"
       close
     fi
     sleep 1.0
   done
+}
+
+######################################################
+# Compile the java vm options string for a terminal
+# Globals:
+#   VM_OPTS - Created by function ("return value")
+# Arguments:
+#   ip - The IP of the terminal
+#   port - The port of terminal
+#   script - Terminal script to run after start (optional)
+######################################################
+compile_vm_options_string_terminal() {
+  local ip=$1
+  local port=$2
+  local script=$3
+
+  VM_OPTS=""
+  VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
+  VM_OPTS="$VM_OPTS -Ddxram.config=config/dxram.json"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_ip=$ip"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_port=$port"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_role=Terminal"
+
+  if [ "$script" ] ; then
+    VM_OPTS="$VM_OPTS -Ddxram.m_services[TerminalService].m_autostartScript=script/dxram/$script"
+  fi
 }
 
 ######################################################
@@ -612,12 +714,10 @@ start_remote_terminal() {
   local hostname=$3
   local script=$4
 
+  compile_vm_options_string_terminal $ip $port $script
+
   echo "Executing terminal on $3 ($ip, $port):"
-  if [ "$script" = "" ] ; then
-    ssh $hostname -t "bash -l -c \"cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -cp $LIBRARIES $DEFAULT_CLASS\""
-  else
-    ssh $hostname -t "bash -l -c \"cd $REMOTE_EXEC_PATH && java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -Ddxram.m_services[TerminalService].m_autostartScript=script/dxram/$script -cp $LIBRARIES $DEFAULT_CLASS\""
-  fi
+  ssh $hostname -t "bash -l -c \"cd $REMOTE_EXEC_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS\""
 }
 
 ######################################################
@@ -636,12 +736,10 @@ start_local_terminal() {
   local port=$2
   local script=$3
 
+  compile_vm_options_string_terminal $ip $port $script
+
   cd "$LOCAL_EXEC_PATH"
-  if [ "$script" = "" ] ; then
-    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -cp $LIBRARIES $DEFAULT_CLASS
-  else
-    java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -Ddxram.m_engineSettings.m_address.m_ip=$ip -Ddxram.m_engineSettings.m_address.m_port=$port -Ddxram.m_engineSettings.m_role=Terminal -Ddxram.m_services[TerminalService].m_autostartScript="script/dxram/$script" -cp $LIBRARIES $DEFAULT_CLASS
-  fi
+  java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS
   cd "$EXECUTION_DIR"
 }
 
@@ -733,6 +831,10 @@ execute() {
           condition="^$condition$"
         elif [ "$arg_type" = "tcond" ] ; then
           local time_condition=`echo $tmp | cut -d '=' -f 2`
+        elif [ "$arg_type" = "cnr" ] ; then
+          local compute_node_role=`echo $tmp | cut -d '=' -f 2`
+        elif [ "$arg_type" = "cgid" ] ; then
+          local compute_group_id=`echo $tmp | cut -d '=' -f 2`
         else
 	  echo "ERROR: Unknown parameter type $arg_type"
         fi
@@ -747,12 +849,12 @@ execute() {
 
       if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ] ; then
         local_config_was_copied=`copy_local_configuration "$local_config_was_copied"`
-        start_local_peer "$ip" "$port" "$ram_size_in_gb" "$class" "$arguments" "$vm_options" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
-        check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_gb" "$class" "$arguments" "$condition" "$vm_options"
+        start_local_peer "$ip" "$port" "$ram_size_in_gb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+        check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_gb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$condition" "$vm_options"
       else
         remote_config_was_copied=`copy_remote_configuration "$remote_config_was_copied" "$hostname"`
-        start_remote_peer "$ip" "$port" "$hostname" "$ram_size_in_gb" "$class" "$arguments" "$vm_options" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
-        check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_gb" "$class" "$arguments" "$condition" "$vm_options"
+        start_remote_peer "$ip" "$port" "$hostname" "$ram_size_in_gb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+        check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_gb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$condition" "$vm_options"
       fi
 
       if [ "$time_condition" != "" ] ; then
@@ -863,7 +965,7 @@ fi
 readonly THIS_HOST=`resolve $(hostname)`
 readonly DEFAULT_CLASS="de.hhu.bsinfo.dxram.run.DXRAMMain"
 readonly LIBRARIES="lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:lib/jline-1.0.jar:DXRAM.jar"
-readonly DEFAULT_CONDITION="^>>> DXRAM started <<<$"
+readonly DEFAULT_CONDITION="***!---ooo---!***"
 readonly ZOOKEEPER_PORT="2181"
 
 echo "########################################"
