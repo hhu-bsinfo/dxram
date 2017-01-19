@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.mem;
 
 import java.util.ArrayList;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.annotations.Expose;
 
@@ -74,8 +74,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     private AbstractBootComponent m_boot;
     private SmallObjectHeap m_rawMemory;
     private CIDTable m_cidTable;
-    private ReentrantReadWriteLock m_lock;
-    //private AtomicInteger m_lock;
+    //private ReentrantReadWriteLock m_lock;
+    private AtomicInteger m_lock;
     private long m_numActiveChunks;
     private long m_totalActiveChunkMemory;
     private SmallObjectHeapDataStructureImExporter[] m_imexporter = new SmallObjectHeapDataStructureImExporter[65536];
@@ -156,20 +156,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      */
     public void lockManage() {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            m_lock.writeLock().lock();
+            //m_lock.writeLock().lock();
 
-            // TODO fix custom lock implementation
-            // set flag to block further readers from entering
-            /*-while (true) {
+            do {
                 int v = m_lock.get();
-                if (m_lock.compareAndSet(v, v | 0x40000000)) {
-                    break;
-                }
-            }
-
-            while (!m_lock.compareAndSet(0x40000000, 0x80000000)) {
-                // Wait
-            }*/
+                m_lock.compareAndSet(v, v | 0x40000000);
+            } while (!m_lock.compareAndSet(0x40000000, 0x80000000));
         }
     }
 
@@ -178,15 +170,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      */
     public void lockAccess() {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
+            //m_lock.readLock().lock();
 
-            m_lock.readLock().lock();
-
-            /*-while (true) {
-                int v = m_lock.get() & 0xCFFFFFFF;
+            while (true) {
+                int v = m_lock.get() & 0x3FFFFFFF;
                 if (m_lock.compareAndSet(v, v + 1)) {
                     break;
                 }
-            }*/
+            }
 
         }
     }
@@ -196,9 +187,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      */
     public void unlockManage() {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            m_lock.writeLock().unlock();
+            //m_lock.writeLock().unlock();
 
-            //m_lock.set(0);
+            m_lock.set(0);
         }
     }
 
@@ -207,9 +198,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      */
     public void unlockAccess() {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            m_lock.readLock().unlock();
+            //m_lock.readLock().unlock();
 
-            //m_lock.decrementAndGet();
+            m_lock.decrementAndGet();
         }
     }
 
@@ -1154,8 +1145,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             m_cidTable = new CIDTable(this);
             m_cidTable.initialize(m_rawMemory);
 
-            //m_lock = new AtomicInteger(0);
-            m_lock = new ReentrantReadWriteLock(false);
+            m_lock = new AtomicInteger(0);
+            //m_lock = new ReentrantReadWriteLock(false);
 
             m_numActiveChunks = 0;
             m_totalActiveChunkMemory = 0;
