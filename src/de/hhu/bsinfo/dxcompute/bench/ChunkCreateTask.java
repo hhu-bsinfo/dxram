@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.dxcompute.bench;
 
+import java.util.ArrayList;
+
 import com.google.gson.annotations.Expose;
 
 import org.apache.logging.log4j.LogManager;
@@ -217,6 +219,14 @@ public class ChunkCreateTask implements Task {
 
         System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
         System.out.printf("Throughput: %f chunks/sec\n", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_chunkCount));
+
+        ArrayList<Long> allChunkRanges = chunkService.getAllLocalChunkIDRanges();
+
+        System.out.print("Available chunk ranges after create:");
+        for (int i = 0; i < allChunkRanges.size(); i += 2) {
+            System.out.printf("\n[0x%X, 0x%X]", allChunkRanges.get(i), allChunkRanges.get(i + 1));
+        }
+        System.out.println();
 
         return 0;
     }
