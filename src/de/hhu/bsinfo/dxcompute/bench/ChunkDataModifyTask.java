@@ -69,10 +69,9 @@ public class ChunkDataModifyTask implements Task {
             threads[i] = new Thread(() -> {
                 long[] chunkIds = new long[m_chunkBatch];
                 long batches = chunkCountsPerThread[threadIdx] / m_chunkBatch;
-                long lastBatchRemainder = chunkCountsPerThread[threadIdx] % m_chunkBatch;
                 ArrayList<Long> chunkRanges = chunkRangesPerThread[threadIdx];
 
-                if (lastBatchRemainder > 0) {
+                if (chunkCountsPerThread[threadIdx] % m_chunkBatch > 0) {
                     batches++;
                 }
 
@@ -85,55 +84,44 @@ public class ChunkDataModifyTask implements Task {
 
                     timeStart[threadIdx] = System.nanoTime();
 
+                    int fillCount = 0;
                     while (batches > 0) {
                         long chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
 
                         if (chunksInRange >= batchChunkCount) {
-                            for (int j = 0; j < chunkIds.length; j++) {
-                                chunkIds[j] = rangeStart + j;
+                            for (int j = fillCount; j < chunkIds.length; j++) {
+                                chunkIds[j] = rangeStart++;
                             }
 
-                            Chunk[] chunks = chunkService.get(chunkIds);
-
-                            if (doPut) {
-                                chunkService.put(chunks);
-                            }
-
-                            rangeStart += batchChunkCount;
+                            fillCount = 0;
                         } else {
                             // chunksInRange < m_chunkBatch
 
-                            long fillCount = 0;
-
-                            while (fillCount < batchChunkCount) {
-                                for (int j = (int) fillCount; j < chunksInRange; j++) {
-                                    chunkIds[j] = rangeStart + j;
-                                }
-
-                                fillCount += chunksInRange;
-
-                                rangeIdx++;
-                                if (rangeIdx * 2 < chunkRanges.size()) {
-                                    rangeStart = chunkRanges.get(rangeIdx * 2);
-                                    rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
-                                    chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
-                                } else {
-                                    // invalidate spare chunk ids
-                                    for (int j = (int) fillCount; j < chunkIds.length; j++) {
-                                        chunkIds[j] = ChunkID.INVALID_ID;
-                                    }
-
-                                    break;
-                                }
+                            for (int j = fillCount; j < fillCount + chunksInRange; j++) {
+                                chunkIds[j] = rangeStart++;
                             }
 
-                            Chunk[] chunks = chunkService.get(chunkIds);
+                            fillCount += chunksInRange;
 
-                            if (doPut) {
-                                chunkService.put(chunks);
+                            rangeIdx++;
+                            if (rangeIdx * 2 < chunkRanges.size()) {
+                                rangeStart = chunkRanges.get(rangeIdx * 2);
+                                rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
+                                continue;
                             }
 
-                            rangeStart += batchChunkCount;
+                            // invalidate spare chunk ids
+                            for (int j = fillCount; j < chunkIds.length; j++) {
+                                chunkIds[j] = ChunkID.INVALID_ID;
+                            }
+
+                            fillCount = 0;
+                        }
+
+                        Chunk[] chunks = chunkService.get(chunkIds);
+
+                        if (doPut) {
+                            chunkService.put(chunks);
                         }
 
                         batches--;
