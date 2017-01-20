@@ -1,0 +1,105 @@
+package de.hhu.bsinfo.dxram.engine;
+
+import com.google.gson.annotations.Expose;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public abstract class AbstractDXRAMTest {
+
+    private final Logger LOGGER;
+
+    // config values
+    @Expose
+    private final String m_class = getClass().getName();
+    @Expose
+    private final boolean m_enabled = true;
+
+    private String m_shortName;
+    private DXRAMEngine m_parentEngine;
+    private boolean m_isStarted;
+
+    /**
+     * Constructor
+     */
+    protected AbstractDXRAMTest() {
+        LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
+    }
+
+    /**
+     * Get the name of this test.
+     *
+     * @return Name of this test.
+     */
+    String getTestName() {
+        return getClass().getSimpleName();
+    }
+
+    /**
+     * Start the test.
+     *
+     * @param p_engine
+     *     Engine this test is part of (parent).
+     * @return True if initializing was successful, false otherwise.
+     */
+    public boolean run(final DXRAMEngine p_engine) {
+        boolean ret;
+
+        m_parentEngine = p_engine;
+
+        // #if LOGGER >= INFO
+        LOGGER.info("Running test...");
+        // #endif /* LOGGER >= INFO */
+
+        resolveComponentDependencies(p_engine);
+
+        try {
+            ret = initComponent(m_parentEngine.getSettings());
+        } catch (final Exception e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Initializing component failed", e);
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        if (!ret) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Initializing component failed");
+            // #endif /* LOGGER >= ERROR */
+        } else {
+            // #if LOGGER >= INFO
+            LOGGER.info("Initializing component successful");
+            // #endif /* LOGGER >= INFO */
+
+            m_isInitialized = true;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Called before the test is run. Get all the components your test depends on.
+     *
+     * @param p_componentAccessor
+     *     Component accessor that provides access to other components
+     */
+    protected abstract void resolveTestDependencies(final DXRAMComponentAccessor p_componentAccessor);
+
+    /**
+     * Called when the test is initialized. Setup data structures, get dependent components, read settings etc.
+     *
+     * @param p_engineEngineSettings
+     *     EngineSettings instance provided by the engine.
+     * @return True if initializing was successful, false otherwise.
+     */
+    protected abstract boolean initTest(final DXRAMContext.EngineSettings p_engineEngineSettings);
+
+    /**
+     * Called when the test is run.
+     *
+     * @param p_engineEngineSettings
+     *     EngineSettings instance provided by the engine.
+     * @return True if initializing was successful, false otherwise.
+     */
+    protected abstract boolean runTest(final DXRAMContext.EngineSettings p_engineEngineSettings);
+}
