@@ -59,6 +59,13 @@ public class GraphLoadOrderedEdgeListTask implements Task {
     private ChunkService m_chunkService;
 
     /**
+     * Default constructor
+     */
+    public GraphLoadOrderedEdgeListTask() {
+
+    }
+
+    /**
      * Constructor
      *
      * @param p_path
@@ -227,7 +234,7 @@ public class GraphLoadOrderedEdgeListTask implements Task {
 
             // looking for format xxx.oel.<slave id>
             if (tokens.length > 1) {
-                if (tokens[1].equals("boel")) {
+                if ("boel".equals(tokens[1])) {
                     return true;
                 }
             }
@@ -340,9 +347,9 @@ public class GraphLoadOrderedEdgeListTask implements Task {
                 break;
             }
 
-            // fill in null paddings for unused elements
-            for (int i = readCount; i < vertexBuffer.length; i++) {
-                vertexBuffer[i] = null;
+            // trim array on unused elements
+            if (readCount < vertexBuffer.length) {
+                vertexBuffer = Arrays.copyOf(vertexBuffer, readCount);
             }
 
             int count = m_chunkService.create((DataStructure[]) vertexBuffer);
@@ -363,11 +370,11 @@ public class GraphLoadOrderedEdgeListTask implements Task {
 
             totalVerticesLoaded += readCount;
 
-            float curProgress = ((float) totalVerticesLoaded) / currentPartitionIndexEntry.getVertexCount();
+            float curProgress = (float) totalVerticesLoaded / currentPartitionIndexEntry.getVertexCount();
             if (curProgress - previousProgress > 0.01) {
                 previousProgress = curProgress;
                 // #if LOGGER >= INFO
-                LOGGER.info("Loading progress: %d\\%", (int) (curProgress * 100));
+                LOGGER.info("Loading progress: %d", (int) (curProgress * 100));
                 // #endif /* LOGGER >= INFO */
             }
         }

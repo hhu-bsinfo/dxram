@@ -53,6 +53,13 @@ public class GraphLoadPartitionIndexTask implements Task {
     private LoggerService m_loggerService;
 
     /**
+     * Default constructor
+     */
+    public GraphLoadPartitionIndexTask() {
+
+    }
+
+    /**
      * Constructor
      *
      * @param p_pathFile

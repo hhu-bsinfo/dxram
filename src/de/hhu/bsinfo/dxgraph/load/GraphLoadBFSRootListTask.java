@@ -50,6 +50,13 @@ public class GraphLoadBFSRootListTask implements Task {
     private String m_path = "./";
 
     /**
+     * Default constructor
+     */
+    public GraphLoadBFSRootListTask() {
+
+    }
+
+    /**
      * Constructor
      *
      * @param p_path
@@ -82,7 +89,7 @@ public class GraphLoadBFSRootListTask implements Task {
         // store the result. every other slave can simply grab the
         // root list from chunk memory
         if (p_ctx.getCtxData().getSlaveId() == 0) {
-            TemporaryStorageService m_temporaryStorageService = p_ctx.getDXRAMServiceAccessor().getService(TemporaryStorageService.class);
+            TemporaryStorageService temporaryStorageService = p_ctx.getDXRAMServiceAccessor().getService(TemporaryStorageService.class);
             NameserviceService nameserviceService = p_ctx.getDXRAMServiceAccessor().getService(NameserviceService.class);
 
             // look for the graph partitioned index of the current compute group
@@ -99,7 +106,7 @@ public class GraphLoadBFSRootListTask implements Task {
             graphPartitionIndex.setID(chunkIdPartitionIndex);
 
             // get the index
-            if (!m_temporaryStorageService.get(graphPartitionIndex)) {
+            if (!temporaryStorageService.get(graphPartitionIndex)) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Getting partition index from temporary memory failed");
                 // #endif /* LOGGER >= ERROR */
@@ -122,17 +129,17 @@ public class GraphLoadBFSRootListTask implements Task {
                 return -4;
             }
 
-            rootList.setID(m_temporaryStorageService.generateStorageId(MS_BFS_ROOTS + p_ctx.getCtxData().getComputeGroupId()));
+            rootList.setID(temporaryStorageService.generateStorageId(MS_BFS_ROOTS + p_ctx.getCtxData().getComputeGroupId()));
 
             // store the root list for our current compute group
-            if (!m_temporaryStorageService.create(rootList)) {
+            if (!temporaryStorageService.create(rootList)) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Creating chunk for root list failed");
                 // #endif /* LOGGER >= ERROR */
                 return -5;
             }
 
-            if (!m_temporaryStorageService.put(rootList)) {
+            if (!temporaryStorageService.put(rootList)) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Putting root list failed");
                 // #endif /* LOGGER >= ERROR */
@@ -208,10 +215,11 @@ public class GraphLoadBFSRootListTask implements Task {
 
         // iterate files in dir, filter by pattern
         File[] files = tmpFile.listFiles((p_dir, p_name) -> {
-            String[] tokens = "\\.".split(p_name);
+            String[] tokens = p_name.split("\\.");
 
-            // looking for format xxx.roel
+            // looking for format xxx.broots
             if (tokens.length > 1) {
+                System.out.println(tokens[1]);
                 if ("broots".equals(tokens[1])) {
                     return true;
                 }

@@ -58,6 +58,7 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Compute task to run BFS on a loaded graph.
@@ -99,11 +100,18 @@ public class GraphAlgorithmBFSTask implements Task {
     private short m_nodeId = NodeID.INVALID_ID;
     private GraphPartitionIndex m_graphPartitionIndex;
 
-    private BFS m_curBFS = null;
+    private BFS m_curBFS;
     private Lock m_signalLock = new ReentrantLock(false);
     private volatile boolean m_signalAbortTriggered = false;
 
     private int m_barrierId0 = BarrierID.INVALID_ID;
+
+    /**
+     * Default constructor
+     */
+    public GraphAlgorithmBFSTask() {
+
+    }
 
     /**
      * Constructor
@@ -238,7 +246,7 @@ public class GraphAlgorithmBFSTask implements Task {
 
             m_nameserviceService.register(ChunkID.getChunkID(m_nodeId, m_barrierId0), MS_BARRIER_IDENT_0 + m_ctx.getCtxData().getComputeGroupId());
         } else {
-            m_barrierId0 = (int) (m_nameserviceService.getChunkID(MS_BARRIER_IDENT_0 + m_ctx.getCtxData().getComputeGroupId(), -1));
+            m_barrierId0 = (int) m_nameserviceService.getChunkID(MS_BARRIER_IDENT_0 + m_ctx.getCtxData().getComputeGroupId(), -1);
         }
 
         // #if LOGGER >= INFO
@@ -250,7 +258,7 @@ public class GraphAlgorithmBFSTask implements Task {
         // #endif /* LOGGER >= INFO */
 
         // #if LOGGER >= INFO
-        LOGGER.info("BFS mode: %s", (m_beamerMode ? "BEAMER" : "TOP DOWN ONLY"));
+        LOGGER.info("BFS mode: %s", m_beamerMode ? "BEAMER" : "TOP DOWN ONLY");
         // #endif /* LOGGER >= INFO */
 
         int iteration = 0;
@@ -265,7 +273,7 @@ public class GraphAlgorithmBFSTask implements Task {
             System.gc();
             try {
                 Thread.sleep(2000);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException ignored) {
             }
 
             // #if LOGGER >= INFO
@@ -318,28 +326,21 @@ public class GraphAlgorithmBFSTask implements Task {
 
     @Override
     public void handleSignal(final Signal p_signal) {
-        switch (p_signal) {
-            case SIGNAL_ABORT: {
-                m_signalAbortTriggered = true;
-
-                // kill everything running
-                m_signalLock.lock();
-
-                if (m_curBFS != null) {
-                    m_curBFS.shutdown();
-                    m_curBFS = null;
-                }
-
-                m_signalLock.unlock();
-
-                break;
+        if (p_signal == Signal.SIGNAL_ABORT) {
+            m_signalAbortTriggered = true;
+            m_signalLock.lock();
+            if (m_curBFS != null) {
+                m_curBFS.shutdown();
+                m_curBFS = null;
             }
+            m_signalLock.unlock();
         }
     }
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3 + 2 * Byte.BYTES + Integer.BYTES + Byte.BYTES;
+        return ObjectSizeUtil.sizeofString(m_bfsRootNameserviceEntry) + Integer.BYTES * 3 + 2 * ObjectSizeUtil.sizeofBoolean() + Integer.BYTES +
+            ObjectSizeUtil.sizeofBoolean();
     }
 
     @Override
@@ -348,10 +349,10 @@ public class GraphAlgorithmBFSTask implements Task {
         p_exporter.writeInt(m_vertexBatchSize);
         p_exporter.writeInt(m_vertexMessageBatchSize);
         p_exporter.writeInt(m_numberOfThreadsPerNode);
-        p_exporter.writeByte((byte) (m_markVertices ? 1 : 0));
-        p_exporter.writeByte((byte) (m_beamerMode ? 1 : 0));
+        p_exporter.writeBoolean(m_markVertices);
+        p_exporter.writeBoolean(m_beamerMode);
         p_exporter.writeInt(m_beamerFormulaGraphEdgeDeg);
-        p_exporter.writeByte((byte) (m_abortBFSOnError ? 1 : 0));
+        p_exporter.writeBoolean(m_abortBFSOnError);
     }
 
     @Override
@@ -360,10 +361,10 @@ public class GraphAlgorithmBFSTask implements Task {
         m_vertexBatchSize = p_importer.readInt();
         m_vertexMessageBatchSize = p_importer.readInt();
         m_numberOfThreadsPerNode = p_importer.readInt();
-        m_markVertices = p_importer.readByte() == 1;
-        m_beamerMode = p_importer.readByte() == 1;
+        m_markVertices = p_importer.readBoolean();
+        m_beamerMode = p_importer.readBoolean();
         m_beamerFormulaGraphEdgeDeg = p_importer.readInt();
-        m_abortBFSOnError = p_importer.readByte() == 1;
+        m_abortBFSOnError = p_importer.readBoolean();
     }
 
     /**
@@ -534,7 +535,7 @@ public class GraphAlgorithmBFSTask implements Task {
                 }
 
                 LOGGER.info("BFS iteration %s, curFront size: %d, numEdgesInFrontier %d, vertex count %d, edge count %d",
-                    (bottomUpApproach ? "BOTTOM UP" : "TOP DOWN"), fullGraphNextFrontVertexCount, fullGraphNextFrontEdgeCount, fullGraphVertexCount,
+                    bottomUpApproach ? "BOTTOM UP" : "TOP DOWN", fullGraphNextFrontVertexCount, fullGraphNextFrontEdgeCount, fullGraphVertexCount,
                     fullGraphEdgeCount);
 
                 // kick off threads with current frontier
@@ -552,7 +553,7 @@ public class GraphAlgorithmBFSTask implements Task {
                         if (!m_threads[t].hasIterationFinished()) {
                             try {
                                 Thread.sleep(2);
-                            } catch (InterruptedException e) {
+                            } catch (final InterruptedException ignored) {
                             }
                             if (m_signalAbortTriggered) {
                                 return;
@@ -947,7 +948,7 @@ public class GraphAlgorithmBFSTask implements Task {
              */
             public void shutdown() {
                 m_run = false;
-                this.interrupt();
+                interrupt();
             }
 
             @Override
@@ -981,19 +982,19 @@ public class GraphAlgorithmBFSTask implements Task {
                     m_totalTimeMs = System.currentTimeMillis() - startTime;
 
                     String str = "";
-                    str += "[Running time (ms): " + m_totalTimeMs + "]";
-                    str += "[Vertices/sec: " + verticesPerSec + "]";
-                    str += "[Edges/sec: " + edgesPerSec + "]";
-                    str += "[MaxVerts/sec: " + m_maxVerticesPerSec + "]";
-                    str += "[MaxEdges/sec: " + m_maxEdgesPerSec + "]";
-                    str += "[AvgVerts/sec: " + m_avgVerticesPerSec + "]";
-                    str += "[AvgEdges/sec: " + m_avgEdgesPerSec + "]";
-                    str += "[VertexMsgCntLocal (" + m_syncBFSFinished.getTokenValue() + "): " + m_syncBFSFinished.getSentVertexMsgCountLocal() + "/" +
-                        m_syncBFSFinished.getReceivedVertexMsgCountLocal() + "]";
-                    str += "[VertexMsgCntGlobal (" + m_syncBFSFinished.getTokenValue() + "): " + m_syncBFSFinished.getSentVertexMsgCountGlobal() + "/" +
-                        m_syncBFSFinished.getReceivedVertexMsgCountGlobal() + "]";
-                    str += "[BFSSlavesLevelFinishedCounter: " + m_syncBFSFinished.getBFSSlavesLevelFinishedCounter() + "]";
-                    str += "[BFSSlavesEmptyNextFrontiersCounter: " + m_bfsSlavesEmptyNextFrontiers.get() + "]";
+                    str += "[Running time (ms): " + m_totalTimeMs + ']';
+                    str += "[Vertices/sec: " + verticesPerSec + ']';
+                    str += "[Edges/sec: " + edgesPerSec + ']';
+                    str += "[MaxVerts/sec: " + m_maxVerticesPerSec + ']';
+                    str += "[MaxEdges/sec: " + m_maxEdgesPerSec + ']';
+                    str += "[AvgVerts/sec: " + m_avgVerticesPerSec + ']';
+                    str += "[AvgEdges/sec: " + m_avgEdgesPerSec + ']';
+                    str += "[VertexMsgCntLocal (" + m_syncBFSFinished.getTokenValue() + "): " + m_syncBFSFinished.getSentVertexMsgCountLocal() + '/' +
+                        m_syncBFSFinished.getReceivedVertexMsgCountLocal() + ']';
+                    str += "[VertexMsgCntGlobal (" + m_syncBFSFinished.getTokenValue() + "): " + m_syncBFSFinished.getSentVertexMsgCountGlobal() + '/' +
+                        m_syncBFSFinished.getReceivedVertexMsgCountGlobal() + ']';
+                    str += "[BFSSlavesLevelFinishedCounter: " + m_syncBFSFinished.getBFSSlavesLevelFinishedCounter() + ']';
+                    str += "[BFSSlavesEmptyNextFrontiersCounter: " + m_bfsSlavesEmptyNextFrontiers.get() + ']';
 
                     System.out.println(str);
 
@@ -1156,7 +1157,7 @@ public class GraphAlgorithmBFSTask implements Task {
                     if (!m_runIteration) {
                         try {
                             Thread.sleep(2);
-                        } catch (InterruptedException e) {
+                        } catch (final InterruptedException ignored) {
                         }
                     }
                 } while (!m_runIteration);
