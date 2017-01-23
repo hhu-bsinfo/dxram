@@ -28,6 +28,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -143,51 +144,72 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     /**
-     * Initializes the backup range for current locations
-     * and determines new backup peers if necessary
+     * Checks if a new backup range must be created after adding given chunk
      *
      * @param p_chunkID
-     *     the current ChunkID
+     *     the ChunkID
      * @param p_size
-     *     the size of the new created chunk
-     * @note must be serialized by MemoryManager
+     *     the size
+     * @lock MemoryManager must be write locked
      */
     public void initBackupRange(final long p_chunkID, final int p_size) {
-        final int size;
-        final long localID = ChunkID.getLocalID(p_chunkID);
-        BackupRange backupRange;
+        if (m_backupActive && p_chunkID != ChunkID.INVALID_ID) {
+            initializeBackupRange(p_chunkID, p_size);
+        }
+    }
 
-        m_lastChunkID = p_chunkID;
+    /**
+     * Checks the backup range size for every new chunk and creates/initializes a new backup range if needed
+     *
+     * @param p_dataStructures
+     *     the data structures
+     * @lock MemoryManager must be write locked
+     */
+    public void initBackupRange(final DataStructure... p_dataStructures) {
         if (m_backupActive) {
-            size = p_size + m_log.getApproxHeaderSize(m_nodeID, localID, p_size);
-            if (!m_firstRangeInitialized && localID == 1) {
-                // First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
-                // This is the first put and p_localID is not reused
-                backupRange = determineBackupPeers(0);
-
-                if (backupRange != null) {
-                    m_lookup.initRange((long) m_nodeID << 48, m_nodeID, backupRange.getBackupPeers());
-                    m_log.initBackupRange((long) m_nodeID << 48, backupRange.getBackupPeers());
+            for (DataStructure dataStructure : p_dataStructures) {
+                if (dataStructure.getID() != ChunkID.INVALID_ID) {
+                    initializeBackupRange(dataStructure.getID(), dataStructure.sizeofObject());
                 }
-                m_rangeSize = size;
-                m_firstRangeInitialized = true;
-            } else if (m_rangeSize + size > m_backupRangeSize.getBytes()) {
-                backupRange = determineBackupPeers(localID);
-
-                if (backupRange != null) {
-                    m_lookup.initRange(((long) m_nodeID << 48) + localID, m_nodeID, backupRange.getBackupPeers());
-                    m_log.initBackupRange(((long) m_nodeID << 48) + localID, backupRange.getBackupPeers());
-                }
-                m_rangeSize = size;
-            } else {
-                m_rangeSize += size;
             }
-        } else if (!m_firstRangeInitialized) {
-            short[] backupPeers = new short[m_replicationFactor];
-            Arrays.fill(backupPeers, (short) -1);
+        }
+    }
 
-            m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL, m_nodeID, backupPeers);
-            m_firstRangeInitialized = true;
+    /**
+     * Checks the backup range size for every new chunk and creates/initializes a new backup range if needed
+     *
+     * @param p_chunkIDs
+     *     the ChunkIDs
+     * @param p_size
+     *     every chunks' size
+     * @lock MemoryManager must be write locked
+     */
+    public void initBackupRange(final long[] p_chunkIDs, final int p_size) {
+        if (m_backupActive) {
+            for (long chunkID : p_chunkIDs) {
+                if (chunkID != ChunkID.INVALID_ID) {
+                    initializeBackupRange(chunkID, p_size);
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks the backup range size for every new chunk and creates/initializes a new backup range if needed
+     *
+     * @param p_chunkIDs
+     *     the ChunkIDs
+     * @param p_sizes
+     *     the chunk sizes
+     * @lock MemoryManager must be write locked
+     */
+    public void initBackupRange(final long[] p_chunkIDs, final int[] p_sizes) {
+        if (m_backupActive) {
+            for (int i = 0; i < p_chunkIDs.length; i++) {
+                if (p_chunkIDs[i] != ChunkID.INVALID_ID) {
+                    initializeBackupRange(p_chunkIDs[i], p_sizes[i]);
+                }
+            }
         }
     }
 
@@ -502,27 +524,33 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
             return false;
         }
         BackupRange.setReplicationFactor(m_replicationFactor);
-
-        m_event.registerListener(this, NodeFailureEvent.class);
         m_nodeID = m_boot.getNodeID();
-        if (m_backupActive && m_boot.getNodeRole() == NodeRole.PEER) {
 
-            m_event.registerListener(this, NodeFailureEvent.class);
+        if (m_boot.getNodeRole() == NodeRole.PEER) {
+            if (m_backupActive) {
+                m_event.registerListener(this, NodeFailureEvent.class);
 
-            m_ownBackupRanges = new ArrayList<>();
-            m_migrationBackupRanges = new ArrayList<>();
-            m_migrationsTree = new MigrationBackupTree((short) 10, m_backupRangeSize.getBytes());
-            m_recoveredBackupRanges = new ArrayList<>();
-            m_currentBackupRange = null;
-            m_currentMigrationBackupRange = new BackupRange(-1, null);
-            m_rangeSize = 0;
+                m_ownBackupRanges = new ArrayList<>();
+                m_migrationBackupRanges = new ArrayList<>();
+                m_migrationsTree = new MigrationBackupTree((short) 10, m_backupRangeSize.getBytes());
+                m_recoveredBackupRanges = new ArrayList<>();
+                m_currentBackupRange = null;
+                m_currentMigrationBackupRange = new BackupRange(-1, null);
+                m_rangeSize = 0;
+                m_firstRangeInitialized = false;
 
-            m_lock = new ReentrantReadWriteLock(false);
+                m_lock = new ReentrantReadWriteLock(false);
 
-            m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
-            m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
+                m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
+                m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
+            } else {
+                // Init only "backup" range
+                short[] backupPeers = new short[m_replicationFactor];
+                Arrays.fill(backupPeers, (short) -1);
+
+                m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL, m_nodeID, backupPeers);
+            }
         }
-        m_firstRangeInitialized = false;
 
         return true;
     }
@@ -530,6 +558,46 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     @Override
     protected boolean shutdownComponent() {
         return true;
+    }
+
+    /**
+     * Checks if a new backup range must be created and initialized by adding given chunk
+     *
+     * @param p_chunkID
+     *     the current ChunkID
+     * @param p_size
+     *     the size of the new created chunk
+     * @lock MemoryManager must be write locked
+     */
+    private void initializeBackupRange(final long p_chunkID, final int p_size) {
+        final int size;
+        final long localID = ChunkID.getLocalID(p_chunkID);
+        BackupRange backupRange;
+
+        m_lastChunkID = p_chunkID;
+        size = p_size + m_log.getApproxHeaderSize(m_nodeID, localID, p_size);
+        if (!m_firstRangeInitialized && localID == 1) {
+            // First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
+            // This is the first put and p_localID is not reused
+            backupRange = determineBackupPeers(0);
+
+            if (backupRange != null) {
+                m_lookup.initRange((long) m_nodeID << 48, m_nodeID, backupRange.getBackupPeers());
+                m_log.initBackupRange((long) m_nodeID << 48, backupRange.getBackupPeers());
+            }
+            m_rangeSize = size;
+            m_firstRangeInitialized = true;
+        } else if (m_rangeSize + size > m_backupRangeSize.getBytes()) {
+            backupRange = determineBackupPeers(localID);
+
+            if (backupRange != null) {
+                m_lookup.initRange(((long) m_nodeID << 48) + localID, m_nodeID, backupRange.getBackupPeers());
+                m_log.initBackupRange(((long) m_nodeID << 48) + localID, backupRange.getBackupPeers());
+            }
+            m_rangeSize = size;
+        } else {
+            m_rangeSize += size;
+        }
     }
 
     /**
@@ -544,6 +612,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * @return the replacement
      * @lock m_lock must be write-locked
      */
+
     private short determineReplacementBackupPeer(final short[] p_currentBackupPeers, final short p_failedPeer, final long p_firstChunkIDOrRangeID) {
         short ret;
         short currentPeer;

@@ -52,7 +52,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
     }
 
     /**
-     * Create the index chunk for the nameservice.
+     * Create index chunk for the nameservice.
      *
      * @param p_size
      *     Size of the index chunk.
@@ -63,26 +63,6 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
         m_memoryManager.lockManage();
         chunkId = m_memoryManager.createIndex(p_size);
-        if (chunkId != -1) {
-            m_backup.initBackupRange(chunkId, p_size);
-        }
-        m_memoryManager.unlockManage();
-
-        return chunkId;
-    }
-
-    /**
-     * Internal chunk create for management data
-     *
-     * @param p_size
-     *     Size of the chunk
-     * @return Chunkid of the created chunk.
-     */
-    public long createChunk(final int p_size) {
-        long chunkId;
-
-        m_memoryManager.lockManage();
-        chunkId = m_memoryManager.create(p_size);
         if (chunkId != -1) {
             m_backup.initBackupRange(chunkId, p_size);
         }

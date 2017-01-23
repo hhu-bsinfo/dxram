@@ -213,7 +213,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
         if (!m_indexData.insertMapping(p_key, p_chunkID)) {
             // index chunk full, create new one
             final NameServiceIndexData nextIndexChunk = new NameServiceIndexData();
-            nextIndexChunk.setID(m_chunk.createChunk(nextIndexChunk.sizeofObject()));
+            nextIndexChunk.setID(m_chunk.createIndexChunk(nextIndexChunk.sizeofObject()));
             if (nextIndexChunk.getID() == ChunkID.INVALID_ID) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Creating next index chunk failed");
