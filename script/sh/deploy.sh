@@ -52,9 +52,9 @@ check_programs() {
     exit
   fi
   if ! hash java 2>/dev/null ; then
-	if [ "`cat $node_file | grep localhost`" != "" ] ; then
-	  echo "Please install Java 8 for local execution of DXRAM. Exiting..."
-	  exit
+    if [ "`cat $node_file | grep localhost`" != "" ] ; then
+      echo "Please install Java 8 for local execution of DXRAM. Exiting..."
+      exit
     fi
   fi
 }
@@ -142,6 +142,11 @@ check_configuration() {
   local config_content=`cat "$CONFIG_FILE" 2> /dev/null`
   if [ "$config_content" = "" ] ; then
     # There is no configuration file -> start dxram once to create configuration
+    if ! hash java 2>/dev/null ; then
+      echo "DXRAM configuration was not found and new configuration cannot be created as Java 8 is not installed!"
+      exit
+    fi
+
     cd "$LOCAL_EXEC_PATH"
     java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -cp $LIBRARIES $DEFAULT_CLASS > /dev/null 2>&1
     echo -e "File not found: DXRAM configuration file was created\n"
@@ -151,6 +156,11 @@ check_configuration() {
     local service_header=`echo $config_content | grep "m_services"`
     if [ "$component_header" = "" -o "$service_header" = "" ] ; then
       # Configuration file seems to be corrupted -> start dxram once to create new configuration
+      if ! hash java 2>/dev/null ; then
+	echo "DXRAM configuration is corrupted and new configuration cannot be created as Java 8 is not installed!"
+	exit
+      fi
+
       rm "$CONFIG_FILE"
       cd "$LOCAL_EXEC_PATH"
       java -Dlog4j.configurationFile=config/log4j.xml -Ddxram.config=config/dxram.json -cp $LIBRARIES $DEFAULT_CLASS > /dev/null 2>&1
@@ -546,7 +556,7 @@ compile_vm_options_string_peer() {
   if [ "$ram_size_in_mb" ] ; then
     VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_mb"
     VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=mb"
-  fi    
+  fi
 
   if [ "$compute_node_role" ] ; then
     VM_OPTS="$VM_OPTS -Ddxram.m_services[MasterSlaveComputeService].m_role=$compute_node_role"
@@ -648,7 +658,7 @@ check_peer_startup() {
   local class=$7
   local arguments="$8"
   local condition="$9"
-  local vm_options="$10"
+  local vm_options="${10}"
 
   local logfile="${LOG_DIR}${hostname}_${port}_peer"
 
