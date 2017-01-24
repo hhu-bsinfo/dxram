@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxcompute.bench;
+package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
