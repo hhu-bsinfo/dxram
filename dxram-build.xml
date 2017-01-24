@@ -16,6 +16,7 @@
     <property name="lib_dir" value="lib"/>
     <property name="jni_dir" value="jni"/>
     <property name="log_dir" value="log"/>
+	<property name="script_dir" value="script"/>
     <property name="source_dir" value="src"/>
 
     <property name="build_proj_dir" value="${build_dir}/${name}"/>
@@ -23,19 +24,20 @@
     <property name="build_proj_lib_dir" value="${build_proj_dir}/${lib_dir}"/>
     <property name="build_proj_jni_dir" value="${build_proj_dir}/${jni_dir}"/>
     <property name="build_proj_log_dir" value="${build_proj_dir}/${log_dir}"/>
+	<property name="build_proj_script_dir" value="${build_proj_dir}/${script_dir}"/>
 
     <target name="all"
-            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, compile-release,
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-debug, compile-release,
              compile-performance, move-release"
             description="builds all files"/>
     <target name="debug"
-            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, move-debug"
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-debug, move-debug"
             description="builds dxram-debug.jar (contains all logger calls)"/>
     <target name="release"
-            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-release, move-release"
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-release, move-release"
             description="builds dxram-release-jar"/>
     <target name="performance"
-            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-performance, move-performance"
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-performance, move-performance"
             description="builds dxram-performance.jar (without any logger calls)"/>
 
 
@@ -72,6 +74,13 @@
                 <include name="**/*.xml"/>
                 <include name="**/*.json"/>
             </fileset>
+        </copy>
+    </target>
+
+    <target name="copy_script" depends="create_base_dirs" description="copies the script files">
+        <mkdir dir="${build_proj_script_dir}"/>
+        <copy todir="${build_proj_script_dir}">
+            <fileset dir="${script_dir}"/>
         </copy>
     </target>
 
