@@ -28,6 +28,7 @@ public final class SmallObjectHeap {
     // Constants
     static final byte POINTER_SIZE = 5;
     static final int SIZE_MARKER_BYTE = 1;
+    private static final long MAX_SET_SIZE = (long) Math.pow(2, 30);
     private static final byte SMALL_BLOCK_SIZE = 64;
     private static final byte OCCUPIED_FLAGS_OFFSET = 0x5;
     private static final byte OCCUPIED_FLAGS_OFFSET_MASK = 0x03;
@@ -60,7 +61,15 @@ public final class SmallObjectHeap {
         m_status.m_size = p_size;
 
         m_memory.allocate(p_size);
-        m_memory.set(0, m_memory.getSize(), (byte) 0);
+
+        // Reset the memory block to zero. Do it in rather small sets to avoid ZooKeeper time-out
+        int sets = (int) (p_size / MAX_SET_SIZE);
+        for (int i = 0; i < sets; i++) {
+            m_memory.set(MAX_SET_SIZE * i, MAX_SET_SIZE, (byte) 0);
+        }
+        if (p_size % MAX_SET_SIZE != 0) {
+            m_memory.set(MAX_SET_SIZE * sets, (int) (p_size - sets * MAX_SET_SIZE), (byte) 0);
+        }
 
         // according to memory size, have a proper amount of
         // free memory block lists

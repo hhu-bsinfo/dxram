@@ -36,9 +36,8 @@ public abstract class AbstractDXRAMComponent {
     private final String m_class = getClass().getName();
     @Expose
     private final boolean m_enabled = true;
-    @Expose
+
     private final short m_priorityInit;
-    @Expose
     private final short m_priorityShutdown;
 
     private DXRAMEngine m_parentEngine;

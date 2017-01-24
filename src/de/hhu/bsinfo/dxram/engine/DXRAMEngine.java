@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import de.hhu.bsinfo.utils.unit.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -275,22 +274,16 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      */
     public boolean update() {
         if (Thread.currentThread().getId() != 1) {
-            throw new RuntimeException("Update called by thread-" + Thread.currentThread().getId() +
-                    " (" +Thread.currentThread().getName() + "), not main thread");
+            throw new RuntimeException(
+                "Update called by thread-" + Thread.currentThread().getId() + " (" + Thread.currentThread().getName() + "), not main thread");
         }
 
         if (m_triggerReboot) {
-            TimeUnit reinitDelayMs = m_contextHandler.getContext().getEngineSettings().getSoftRebootDelay();
-
-            LOGGER.info("Executing soft reboot with re-init delay " + reinitDelayMs.getMs() + " ms");
+            LOGGER.info("Executing instant soft reboot");
             if (!shutdown()) {
                 return false;
             }
-            try {
-                Thread.sleep(reinitDelayMs.getMs());
-            } catch (final InterruptedException ignore) {
-
-            }
+            
             if (!init()) {
                 return false;
             }

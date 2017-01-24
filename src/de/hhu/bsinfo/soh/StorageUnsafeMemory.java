@@ -43,6 +43,11 @@ public class StorageUnsafeMemory implements Storage {
     }
 
     @Override
+    public long getSize() {
+        return m_memorySize;
+    }
+
+    @Override
     public void allocate(final long p_size) {
         assert p_size > 0;
 
@@ -95,11 +100,6 @@ public class StorageUnsafeMemory implements Storage {
             } catch (final IOException e) {
             }
         }
-    }
-
-    @Override
-    public long getSize() {
-        return m_memorySize;
     }
 
     @Override
