@@ -257,6 +257,11 @@ class NIOConnection extends AbstractConnection {
         return ret;
     }
 
+    @Override
+    protected void wakeup() {
+        m_nioSelector.getSelector().wakeup();
+    }
+
     /**
      * Closes the connection immediately
      */

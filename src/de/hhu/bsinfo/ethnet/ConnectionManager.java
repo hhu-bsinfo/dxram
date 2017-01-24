@@ -110,19 +110,10 @@ final class ConnectionManager implements ConnectionCreatorListener {
      */
     public void close() {
         // cleanup all opened connections
-        for (AbstractConnection connection : m_connectionList) {
-            closeConnection(connection.getDestination());
-        }
+        closeAllConnections();
 
         m_closed = true;
         m_creator.close();
-
-        try {
-            // wait a moment for the thread to shut down (if it can)
-            Thread.sleep(500);
-        } catch (final InterruptedException ignore) {
-
-        }
 
         m_connectionCreatorHelperThread.interrupt();
         try {
@@ -174,29 +165,6 @@ final class ConnectionManager implements ConnectionCreatorListener {
     }
 
     // Methods
-
-    /**
-     * Closes the connection for the given destination
-     *
-     * @param p_destination
-     *     the destination
-     */
-    public void closeConnection(final short p_destination) {
-        AbstractConnection connection;
-
-        assert p_destination != NodeID.INVALID_ID;
-
-        m_connectionCreationLock.lock();
-        connection = m_connections[p_destination & 0xFFFF];
-        m_connections[p_destination & 0xFFFF] = null;
-        m_connectionList.remove(connection);
-
-        if (connection != null) {
-            connection.close();
-            connection.cleanup();
-        }
-        m_connectionCreationLock.unlock();
-    }
 
     /**
      * Checks if there is a congested connection
@@ -309,6 +277,36 @@ final class ConnectionManager implements ConnectionCreatorListener {
         }
 
         return ret;
+    }
+
+    /**
+     * Closes all connections
+     */
+    private void closeAllConnections() {
+        AbstractConnection connection = null;
+
+        m_connectionCreationLock.lock();
+        Iterator<AbstractConnection> iter = m_connectionList.iterator();
+        while (iter.hasNext()) {
+            connection = iter.next();
+            if (connection != null && connection.isConnected()) {
+                connection = m_connections[connection.getDestination() & 0xFFFF];
+                m_connections[connection.getDestination() & 0xFFFF] = null;
+
+                connection.close();
+                connection.cleanup();
+            }
+        }
+        // Wait for last connection being closed by selector (for NIO)
+        while (connection != null && connection.isConnected()) {
+            connection.wakeup();
+            try {
+                Thread.sleep(100);
+            } catch (final InterruptedException ignore) {
+
+            }
+        }
+        m_connectionCreationLock.unlock();
     }
 
     /**

@@ -300,7 +300,7 @@ class NIOSelector extends Thread {
         m_changeRequests.add(new ChangeOperationsRequest(p_connection, CLOSE));
         m_changeLock.unlock();
 
-        // m_selector.wakeup();
+        m_selector.wakeup();
     }
 
     /**

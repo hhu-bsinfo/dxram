@@ -217,17 +217,18 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
             key = connection.getChannel().keyFor(m_nioSelector.getSelector());
             if (key != null) {
                 key.cancel();
+            }
 
-                try {
-                    connection.getChannel().close();
-                } catch (final IOException e) {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Could not close connection to %s!", p_connection.getDestination());
-                    // #endif /* LOGGER >= ERROR */
-                }
-                if (p_informConnectionManager) {
-                    fireConnectionClosed(p_connection);
-                }
+            try {
+                connection.getChannel().close();
+            } catch (final IOException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not close connection to %s!", p_connection.getDestination());
+                // #endif /* LOGGER >= ERROR */
+            }
+            connection.setConnected(false);
+            if (p_informConnectionManager) {
+                fireConnectionClosed(p_connection);
             }
         }
     }

@@ -326,7 +326,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
     }
 
     @Override
-    public void superpeersNodeFailureHandling(final short p_nodeID, final NodeRole p_role) {
+    public void singleNodeCleanup(final short p_nodeID, final NodeRole p_role) {
         Stat status;
 
         if (p_role == NodeRole.SUPERPEER) {
@@ -503,6 +503,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
             }
         } else {
             // LookupComponent has not been initialized or this node is not responsible for clean-up
+
+            if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.PEER) {
+                // Remove own stuff from ZooKeeper for reboot
+                singleNodeCleanup(m_nodes.getOwnNodeID(), NodeRole.PEER);
+            }
+
             try {
                 m_zookeeper.close(false);
             } catch (final ZooKeeperException e) {

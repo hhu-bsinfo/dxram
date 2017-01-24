@@ -305,7 +305,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
                 // #endif /* LOGGER >= DEBUG */
 
                 // Clean-up zookeeper
-                m_boot.superpeersNodeFailureHandling(p_nodeID, roleOfFailedNode);
+                m_boot.singleNodeCleanup(p_nodeID, roleOfFailedNode);
             } else {
                 // #if LOGGER >= DEBUG
                 LOGGER.debug("Not responsible for failed node, NodeID: 0x%X", p_nodeID);

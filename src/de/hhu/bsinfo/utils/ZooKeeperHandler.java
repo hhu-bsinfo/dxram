@@ -65,6 +65,15 @@ public final class ZooKeeperHandler {
     // Methods
 
     /**
+     * Returns the path
+     *
+     * @return the path
+     */
+    public String getPath() {
+        return m_path;
+    }
+
+    /**
      * Connects to ZooKeeper
      *
      * @throws ZooKeeperException
@@ -127,15 +136,6 @@ public final class ZooKeeperHandler {
             }
             m_zookeeper = null;
         }
-    }
-
-    /**
-     * Returns the path
-     *
-     * @return the path
-     */
-    public String getPath() {
-        return m_path;
     }
 
     /**
@@ -244,34 +244,6 @@ public final class ZooKeeperHandler {
      */
     public void create(final String p_path, final byte[] p_data) throws ZooKeeperException, KeeperException, InterruptedException {
         create(p_path, p_data, CreateMode.PERSISTENT);
-    }
-
-    /**
-     * Creates a node in ZooKeeper
-     *
-     * @param p_path
-     *     the node path
-     * @param p_data
-     *     the node data
-     * @param p_mode
-     *     the creation mode
-     * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
-     * @throws InterruptedException
-     *     if connection to ZooKeeper is interrupted
-     * @throws KeeperException
-     *     if node already exists in ZooKeeper
-     */
-    private void create(final String p_path, final byte[] p_data, final CreateMode p_mode) throws ZooKeeperException, KeeperException, InterruptedException {
-        assert p_path != null;
-        assert p_data != null;
-        assert p_mode != null;
-
-        if (m_zookeeper == null) {
-            connect();
-        }
-
-        m_zookeeper.create(m_path + "/" + p_path, p_data, Ids.OPEN_ACL_UNSAFE, p_mode);
     }
 
     /**
@@ -593,6 +565,34 @@ public final class ZooKeeperHandler {
         } catch (final InterruptedException | KeeperException e) {
             throw new ZooKeeperException("Could not access ZooKeeper", e);
         }
+    }
+
+    /**
+     * Creates a node in ZooKeeper
+     *
+     * @param p_path
+     *     the node path
+     * @param p_data
+     *     the node data
+     * @param p_mode
+     *     the creation mode
+     * @throws ZooKeeperException
+     *     if ZooKeeper could not accessed
+     * @throws InterruptedException
+     *     if connection to ZooKeeper is interrupted
+     * @throws KeeperException
+     *     if node already exists in ZooKeeper
+     */
+    private void create(final String p_path, final byte[] p_data, final CreateMode p_mode) throws ZooKeeperException, KeeperException, InterruptedException {
+        assert p_path != null;
+        assert p_data != null;
+        assert p_mode != null;
+
+        if (m_zookeeper == null) {
+            connect();
+        }
+
+        m_zookeeper.create(m_path + "/" + p_path, p_data, Ids.OPEN_ACL_UNSAFE, p_mode);
     }
 
     // Classes

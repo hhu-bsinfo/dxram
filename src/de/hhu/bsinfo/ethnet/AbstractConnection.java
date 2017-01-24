@@ -165,8 +165,6 @@ abstract class AbstractConnection {
         return m_creationTimestamp;
     }
 
-    // Setters
-
     /**
      * Get the timestamp of the last access
      *
@@ -175,6 +173,8 @@ abstract class AbstractConnection {
     public final long getLastAccessTimestamp() {
         return m_lastAccessTimestamp;
     }
+
+    // Setters
 
     /**
      * Get the closing timestamp
@@ -192,14 +192,14 @@ abstract class AbstractConnection {
      */
     protected abstract boolean isIncomingQueueFull();
 
-    // Methods
-
     /**
      * Returns the size of input and output queues
      *
      * @return the queue sizes
      */
     protected abstract String getInputOutputQueueLength();
+
+    // Methods
 
     /**
      * Set the ConnectionListener
@@ -261,6 +261,19 @@ abstract class AbstractConnection {
     }
 
     /**
+     * Closes the connection immediately
+     */
+    protected final void close() {
+        doClose();
+    }
+
+    /**
+     * Called when the connection was closed.
+     */
+    protected void cleanup() {
+    }
+
+    /**
      * Writes data to the connection
      *
      * @param p_message
@@ -290,15 +303,6 @@ abstract class AbstractConnection {
     /**
      * Closes the connection immediately
      */
-    protected final void close() {
-        m_connected = false;
-
-        doClose();
-    }
-
-    /**
-     * Closes the connection immediately
-     */
     protected abstract void doClose();
 
     /**
@@ -307,10 +311,9 @@ abstract class AbstractConnection {
     protected abstract void doCloseGracefully();
 
     /**
-     * Called when the connection was closed.
+     * Wakes up the connection manager (e.g. Selector for NIO)
      */
-    protected void cleanup() {
-    }
+    protected abstract void wakeup();
 
     /**
      * Set the closing timestamp
@@ -333,8 +336,6 @@ abstract class AbstractConnection {
      * Closes the connection when there is no data left in transfer
      */
     final void closeGracefully() {
-        m_connected = false;
-
         doCloseGracefully();
     }
 
