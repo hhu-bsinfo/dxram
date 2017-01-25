@@ -13,7 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 /**
  * Created by burak on 19.01.17.
@@ -38,6 +37,7 @@ public class NameserviceGetChunkIDTask implements Task {
         ArrayList<Pair<String, Long>> entries = nameserviceService.getAllEntries();
         int entryCnt = entries.size();
         long[] chunkCountsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(entryCnt, m_numThreads);
+
         Thread[] threads = new Thread[m_numThreads];
         long[] timeStart = new long[m_numThreads];
         long[] timeEnd = new long[m_numThreads];
