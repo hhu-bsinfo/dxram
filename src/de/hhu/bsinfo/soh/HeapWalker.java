@@ -216,7 +216,7 @@ public final class HeapWalker {
                     long blockPayloadSize;
 
                     lengthFieldSize = SmallObjectHeap.POINTER_SIZE;
-                    blockPayloadSize = SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK;
+                    blockPayloadSize = p_segment.getStatus().getMaxBlockSize();
 
                     // + 2 marker bytes
                     block.m_endAddress = baseAddress + lengthFieldSize + blockPayloadSize + SmallObjectHeap.SIZE_MARKER_BYTE * 2;
