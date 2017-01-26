@@ -26,7 +26,7 @@ public class ChunkCreateTask implements Task {
     @Expose
     private int m_numThreads = 1;
     @Expose
-    private int m_chunkCount = 1000;
+    private long m_chunkCount = 1000;
     @Expose
     private int m_chunkBatch = 10;
     @Expose
@@ -239,7 +239,7 @@ public class ChunkCreateTask implements Task {
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeInt(m_numThreads);
-        p_exporter.writeInt(m_chunkCount);
+        p_exporter.writeLong(m_chunkCount);
         p_exporter.writeInt(m_chunkBatch);
         p_exporter.exportObject(m_chunkSizeBytesBegin);
         p_exporter.exportObject(m_chunkSizeBytesEnd);
@@ -249,7 +249,7 @@ public class ChunkCreateTask implements Task {
     @Override
     public void importObject(final Importer p_importer) {
         m_numThreads = p_importer.readInt();
-        m_chunkCount = p_importer.readInt();
+        m_chunkCount = p_importer.readLong();
         m_chunkBatch = p_importer.readInt();
         m_chunkSizeBytesBegin = new StorageUnit();
         p_importer.importObject(m_chunkSizeBytesBegin);
@@ -260,6 +260,6 @@ public class ChunkCreateTask implements Task {
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES * 3 + m_chunkSizeBytesBegin.sizeofObject() + m_chunkSizeBytesEnd.sizeofObject() + Integer.BYTES;
+        return Integer.BYTES + Long.BYTES + Integer.BYTES + m_chunkSizeBytesBegin.sizeofObject() + m_chunkSizeBytesEnd.sizeofObject() + Integer.BYTES;
     }
 }

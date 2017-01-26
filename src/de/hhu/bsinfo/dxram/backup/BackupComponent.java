@@ -110,6 +110,15 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     /**
+     * Pass through for segment size of log
+     *
+     * @return Segment size of log in bytes
+     */
+    public int getLogSegmentSizeBytes() {
+        return m_log.getSegmentSizeBytes();
+    }
+
+    /**
      * Return the path to all logs
      *
      * @return the backup directory

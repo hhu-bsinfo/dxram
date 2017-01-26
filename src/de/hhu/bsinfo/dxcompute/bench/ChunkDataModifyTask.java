@@ -31,7 +31,7 @@ public class ChunkDataModifyTask implements Task {
     @Expose
     private int m_numThreads = 1;
     @Expose
-    private int m_opCount = 100000;
+    private long m_opCount = 100000;
     @Expose
     private int m_chunkBatch = 10;
     @Expose
@@ -179,7 +179,7 @@ public class ChunkDataModifyTask implements Task {
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeInt(m_numThreads);
-        p_exporter.writeInt(m_opCount);
+        p_exporter.writeLong(m_opCount);
         p_exporter.writeInt(m_chunkBatch);
         p_exporter.writeInt(m_pattern);
     }
@@ -187,13 +187,13 @@ public class ChunkDataModifyTask implements Task {
     @Override
     public void importObject(final Importer p_importer) {
         m_numThreads = p_importer.readInt();
-        m_opCount = p_importer.readInt();
+        m_opCount = p_importer.readLong();
         m_chunkBatch = p_importer.readInt();
         m_pattern = p_importer.readInt();
     }
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES * 4;
+        return Integer.BYTES * 3 + Long.BYTES;
     }
 }

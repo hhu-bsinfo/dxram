@@ -105,6 +105,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         // #endif /* ASSERT_NODE_ROLE */
 
         status.m_freeMemory = new StorageUnit(m_rawMemory.getStatus().getFree(), StorageUnit.BYTE);
+        status.m_maxChunkSize = new StorageUnit(m_rawMemory.getStatus().getMaxBlockSize(), StorageUnit.BYTE);
         status.m_totalMemory = new StorageUnit(m_rawMemory.getStatus().getSize(), StorageUnit.BYTE);
         status.m_totalPayloadMemory = new StorageUnit(m_rawMemory.getStatus().getAllocatedPayload(), StorageUnit.BYTE);
         status.m_numberOfActiveMemoryBlocks = m_rawMemory.getStatus().getAllocatedBlocks();
@@ -229,12 +230,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        if (p_size > m_rawMemory.getStatus().getMaxBlockSize()) {
-            // #if LOGGER >= WARN
-            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, m_rawMemory.getStatus().getMaxBlockSize());
-            // #endif /* LOGGER >= WARN */
-        }
-
         if (m_cidTable.get(0) != 0) {
             // delete old entry
             address = m_cidTable.delete(0, false);
@@ -289,12 +284,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         // #endif /* STATISTICS */
 
         chunkID = p_chunkId;
-
-        if (p_size > m_rawMemory.getStatus().getMaxBlockSize()) {
-            // #if LOGGER >= WARN
-            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, m_rawMemory.getStatus().getMaxBlockSize());
-            // #endif /* LOGGER >= WARN */
-        }
 
         // verify this id is not used
         if (m_cidTable.get(p_chunkId) == 0) {
@@ -1205,6 +1194,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      */
     public static class Status implements Importable, Exportable {
         private StorageUnit m_freeMemory = new StorageUnit();
+        private StorageUnit m_maxChunkSize = new StorageUnit();
         private StorageUnit m_totalMemory = new StorageUnit();
         private StorageUnit m_totalPayloadMemory = new StorageUnit();
         private long m_numberOfActiveMemoryBlocks = -1;
@@ -1227,6 +1217,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
          */
         public StorageUnit getFreeMemory() {
             return m_freeMemory;
+        }
+
+        /**
+         * Get the max allowed chunk size
+         *
+         * @return Max chunk size
+         */
+        public StorageUnit getMaxChunkSize() {
+            return m_maxChunkSize;
         }
 
         /**

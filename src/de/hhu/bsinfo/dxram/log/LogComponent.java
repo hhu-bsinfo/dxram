@@ -191,6 +191,15 @@ public class LogComponent extends AbstractDXRAMComponent {
     }
 
     /**
+     * Get the segment size of the log
+     *
+     * @return Segment size of log in bytes
+     */
+    public int getSegmentSizeBytes() {
+        return (int) m_logSegmentSize.getBytes();
+    }
+
+    /**
      * Returns the Secondary Logs Reorganization Thread
      *
      * @return the instance of SecondaryLogsReorgThread
