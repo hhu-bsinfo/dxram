@@ -15,6 +15,9 @@ package de.hhu.bsinfo.soh;
 
 import java.io.File;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Very efficient memory allocator for many small objects
  *
@@ -22,6 +25,7 @@ import java.io.File;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
 public final class SmallObjectHeap {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(SmallObjectHeap.class.getSimpleName());
 
     // Constants
     static final byte POINTER_SIZE = 5;
@@ -29,7 +33,6 @@ public final class SmallObjectHeap {
     private static final long MAX_SET_SIZE = (long) Math.pow(2, 30);
     private static final byte SMALL_BLOCK_SIZE = 64;
     private static final byte OCCUPIED_FLAGS_OFFSET = 0x5;
-    private static final byte OCCUPIED_FLAGS_OFFSET_MASK = 0x03;
     private static final byte SINGLE_BYTE_MARKER = 0xF;
 
     // Attributes, have them accessible by the package to enable walking and analyzing the heap
@@ -58,6 +61,10 @@ public final class SmallObjectHeap {
         m_status.m_size = p_size;
         m_status.m_maxBlockSize = p_maxBlockSize;
 
+        // #if LOGGER >= INFO
+        LOGGER.info("Creating SmallObjectHeap, size %d bytes, max block size %d bytes", p_size, p_maxBlockSize);
+        // #endif /* LOGGER >= INFO */
+
         m_memory.allocate(p_size);
 
         // Reset the memory block to zero. Do it in rather small sets to avoid ZooKeeper time-out
@@ -80,13 +87,21 @@ public final class SmallObjectHeap {
 
         // Initializes the list sizes
         m_freeBlockListSizes = new long[m_freeBlocksListCount];
-        for (int i = 0; i < m_freeBlocksListCount; i++) {
-            m_freeBlockListSizes[i] = (long) Math.pow(2, i + 2);
-        }
+
         m_freeBlockListSizes[0] = 12;
         m_freeBlockListSizes[1] = 24;
         m_freeBlockListSizes[2] = 36;
         m_freeBlockListSizes[3] = 48;
+
+        for (int i = 4; i < m_freeBlocksListCount; i++) {
+            // 64, 128, ...
+            m_freeBlockListSizes[i] = (long) Math.pow(2, i + 2);
+        }
+
+        // #if LOGGER >= DEBUG
+        LOGGER.debug("Created free block lists, m_freeBlocksListCount %d, m_freeBlocksListSize %d, m_baseFreeBlockList %d", m_freeBlocksListCount,
+            m_freeBlocksListSize, m_baseFreeBlockList);
+        // #endif /* LOGGER >= DEBUG */
 
         // Create one big free block
         // -2 for the marker bytes
@@ -825,31 +840,35 @@ public final class SmallObjectHeap {
      */
     private long findFreeBlock(final int p_size) {
         int list;
+        int listIdx;
         long address;
         long freeSize;
         int freeLengthFieldSize;
 
-        // Get the list with a free block which is big enough
-        list = getList(p_size) + 1;
-        address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
-        while (list < m_freeBlocksListCount && address == 0) {
-            list++;
-            address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
-        }
+        System.out.println("find free block size: " + p_size);
 
-        if (list >= m_freeBlocksListCount) {
-            // Traverse through the lower list
-            list = getList(p_size);
-            address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
-            if (address != 0) {
-                freeLengthFieldSize = readRightPartOfMarker(address - 1);
-                freeSize = read(address, freeLengthFieldSize);
-                while (freeSize < p_size && address != 0) {
-                    address = readPointer(address + freeLengthFieldSize + POINTER_SIZE);
-                    if (address != 0) {
-                        freeLengthFieldSize = readRightPartOfMarker(address - 1);
-                        freeSize = read(address, freeLengthFieldSize);
-                    }
+        // Get the list with a free block which is big enough
+        list = getList(p_size);
+        listIdx = list;
+        System.out.println("m_baseFreeBlockList: " + m_baseFreeBlockList + ", list: " + list);
+        do {
+            System.out.println("read pointer: " + (m_baseFreeBlockList + listIdx * POINTER_SIZE) + ", list: " + listIdx);
+            address = readPointer(m_baseFreeBlockList + listIdx * POINTER_SIZE);
+            System.out.println("free block addr: " + address);
+            listIdx++;
+        } while (listIdx < m_freeBlocksListCount && address == 0);
+
+        System.out.println("free block list pick: " + address);
+
+        // Traverse through the linked free blocks list
+        if (address != 0) {
+            freeLengthFieldSize = readRightPartOfMarker(address - 1);
+            freeSize = read(address, freeLengthFieldSize);
+            while (freeSize < p_size && address != 0) {
+                address = readPointer(address + freeLengthFieldSize + POINTER_SIZE);
+                if (address != 0) {
+                    freeLengthFieldSize = readRightPartOfMarker(address - 1);
+                    freeSize = read(address, freeLengthFieldSize);
                 }
             }
         }
@@ -1341,7 +1360,7 @@ public final class SmallObjectHeap {
      *
      * @param p_size
      *     the size
-     * @return the suitable list
+     * @return Index of the suitable list
      */
     private int getList(final long p_size) {
         int ret = 0;
