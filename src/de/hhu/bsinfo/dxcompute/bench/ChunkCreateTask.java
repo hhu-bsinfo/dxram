@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
+import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -51,7 +52,7 @@ public class ChunkCreateTask implements Task {
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 
-        long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_chunkCount, m_numThreads);
+        long[] chunkCountsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(m_chunkCount, m_numThreads);
         Thread[] threads = new Thread[m_numThreads];
         long[] timeStart = new long[m_numThreads];
         long[] timeEnd = new long[m_numThreads];

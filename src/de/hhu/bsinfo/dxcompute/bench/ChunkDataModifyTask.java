@@ -10,9 +10,9 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
+import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -49,13 +49,11 @@ public class ChunkDataModifyTask implements Task {
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 
-        long activeChunkCount = chunkService.getStatus().getNumberOfActiveChunks();
-        // don't modify the index chunk
-        activeChunkCount -= 1;
-
         ArrayList<Long> allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern / 2, p_ctx, chunkService);
-        long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(activeChunkCount, m_numThreads);
-        ArrayList<Long>[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
+        long totalChunkCount = ChunkIDRangeUtils.countTotalChunksOfRanges(allChunkRanges);
+        long[] chunkCountsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(totalChunkCount, m_numThreads);
+        ArrayList<Long>[] chunkRangesPerThread = ChunkIDRangeUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
+        long[] operationsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(m_opCount, m_numThreads);
 
         Thread[] threads = new Thread[m_numThreads];
         long[] timeStart = new long[m_numThreads];
@@ -68,54 +66,23 @@ public class ChunkDataModifyTask implements Task {
             int threadIdx = i;
             threads[i] = new Thread(() -> {
                 long[] chunkIds = new long[m_chunkBatch];
-                long batches = chunkCountsPerThread[threadIdx] / m_chunkBatch;
+                long operations = operationsPerThread[threadIdx] / m_chunkBatch;
                 ArrayList<Long> chunkRanges = chunkRangesPerThread[threadIdx];
 
-                if (chunkCountsPerThread[threadIdx] % m_chunkBatch > 0) {
-                    batches++;
+                if (operationsPerThread[threadIdx] % m_chunkBatch > 0) {
+                    operations++;
                 }
 
                 // happens if no chunks were created
                 if (!chunkRanges.isEmpty()) {
-                    int rangeIdx = 0;
-                    long rangeStart = chunkRanges.get(rangeIdx * 2);
-                    long rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
-                    long batchChunkCount = m_chunkBatch;
-
                     timeStart[threadIdx] = System.nanoTime();
 
-                    int fillCount = 0;
-                    while (batches > 0) {
-                        long chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
-
-                        if (chunksInRange >= batchChunkCount) {
-                            for (int j = fillCount; j < chunkIds.length; j++) {
-                                chunkIds[j] = rangeStart++;
-                            }
-
-                            fillCount = 0;
-                        } else {
-                            // chunksInRange < m_chunkBatch
-
-                            for (int j = fillCount; j < fillCount + chunksInRange; j++) {
-                                chunkIds[j] = rangeStart++;
-                            }
-
-                            fillCount += chunksInRange;
-
-                            rangeIdx++;
-                            if (rangeIdx * 2 < chunkRanges.size()) {
-                                rangeStart = chunkRanges.get(rangeIdx * 2);
-                                rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
-                                continue;
-                            }
-
-                            // invalidate spare chunk ids
-                            for (int j = fillCount; j < chunkIds.length; j++) {
-                                chunkIds[j] = ChunkID.INVALID_ID;
-                            }
-
-                            fillCount = 0;
+                    while (operations > 0) {
+                        int batchCnt = 0;
+                        while (operations > 0 && batchCnt < chunkIds.length) {
+                            chunkIds[batchCnt] = ChunkIDRangeUtils.getRandomChunkIdOfRanges(chunkRanges);
+                            operations--;
+                            batchCnt++;
                         }
 
                         Chunk[] chunks = chunkService.get(chunkIds);
@@ -123,8 +90,6 @@ public class ChunkDataModifyTask implements Task {
                         if (doPut) {
                             chunkService.put(chunks);
                         }
-
-                        batches--;
                     }
 
                     timeEnd[threadIdx] = System.nanoTime();
