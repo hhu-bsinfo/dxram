@@ -247,7 +247,7 @@ public class PrimaryWriteBuffer {
 
         // Large chunks are split and chained -> there might be more than one header
         numberOfHeaders = (int) Math.ceil((float) p_payloadLength / AbstractLogEntryHeader.getMaxLogEntrySize());
-        bytesToWrite = numberOfHeaders * logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
+        bytesToWrite = numberOfHeaders * p_header.length + p_payloadLength;
 
         if (p_payloadLength <= 0) {
             throw new IllegalArgumentException("No payload for log entry!");
@@ -320,7 +320,7 @@ public class PrimaryWriteBuffer {
                 // Write header
                 System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
                 // Write payload
-                p_buffer.get(m_buffer, writePointer + p_header.length, writeSize - p_header.length);//p_payloadLength);
+                p_buffer.get(m_buffer, writePointer + p_header.length, writeSize - p_header.length);
             } else {
                 // Twofold cyclic write access
                 if (bytesUntilEnd < p_header.length) {
@@ -328,18 +328,18 @@ public class PrimaryWriteBuffer {
                     System.arraycopy(p_header, 0, m_buffer, writePointer, bytesUntilEnd);
                     System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0, p_header.length - bytesUntilEnd);
                     // Write payload
-                    p_buffer.get(m_buffer, p_header.length - bytesUntilEnd, writeSize - p_header.length);//p_payloadLength);
+                    p_buffer.get(m_buffer, p_header.length - bytesUntilEnd, writeSize - p_header.length);
                 } else if (bytesUntilEnd > p_header.length) {
                     // Write header
                     System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
                     // Write payload
                     p_buffer.get(m_buffer, writePointer + p_header.length, bytesUntilEnd - p_header.length);
-                    p_buffer.get(m_buffer, 0, writeSize - (p_header.length - bytesUntilEnd)); //p_payloadLength - (bytesUntilEnd - p_header.length));
+                    p_buffer.get(m_buffer, 0, writeSize - bytesUntilEnd);
                 } else {
                     // Write header
                     System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
                     // Write payload
-                    p_buffer.get(m_buffer, 0, writeSize - p_header.length);//p_payloadLength);
+                    p_buffer.get(m_buffer, 0, writeSize - p_header.length);
                 }
             }
 
