@@ -13,9 +13,6 @@
 
 package de.hhu.bsinfo.dxram.log.header;
 
-import java.util.zip.CRC32;
-import java.util.zip.Checksum;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,19 +20,14 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.storage.Version;
 
 /**
- * A helper class for the LogEntryHeaderInterface.
- * Provides methods to detect the type of a log entry header or to convert one.
+ * Class for efficiently accessing log entry headers.
  *
- * @author Kevin Beineke, kevin.beineke@hhu.de, 25.06.2015
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 25.01.2017
  */
+@SuppressWarnings("MethodMayBeStatic")
 public abstract class AbstractLogEntryHeader {
 
-    static final byte LID_LENGTH_MASK = (byte) 0x0C;
-    static final byte LEN_LENGTH_MASK = (byte) 0x30;
-    static final byte VER_LENGTH_MASK = (byte) 0xC0;
-    static final byte LID_LENGTH_SHFT = (byte) 2;
-    static final byte LEN_LENGTH_SHFT = (byte) 4;
-    static final byte VER_LENGTH_SHFT = (byte) 6;
+    // Constants
     static final byte LOG_ENTRY_TYP_SIZE = 1;
     static final byte LOG_ENTRY_NID_SIZE = 2;
     static final byte MAX_LOG_ENTRY_LID_SIZE = 6;
@@ -45,524 +37,76 @@ public abstract class AbstractLogEntryHeader {
     static final byte LOG_ENTRY_RID_SIZE = 1;
     static final byte LOG_ENTRY_SRC_SIZE = 2;
     static final byte LOG_ENTRY_EPO_SIZE = 2;
-    static final byte INVALIDATION_MASK = (byte) 0x02;
+    static final byte TYPE_MASK = (byte) 0x01;
+    private static final byte CHAIN_MASK = (byte) 0x02;
+    private static final byte LID_LENGTH_MASK = (byte) 0x0C;
+    private static final byte LEN_LENGTH_MASK = (byte) 0x30;
+    private static final byte VER_LENGTH_MASK = (byte) 0xC0;
+    private static final byte LID_LENGTH_SHFT = (byte) 2;
+    private static final byte LEN_LENGTH_SHFT = (byte) 4;
+    private static final byte VER_LENGTH_SHFT = (byte) 6;
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractLogEntryHeader.class.getSimpleName());
-    // Constants
-    private static final byte PRIMLOG_TYPE_MASK = (byte) 0x03;
-    private static final byte SECLOG_TYPE_MASK = (byte) 0x01;
-    private static final Checksum CRC = new CRC32();
-    private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
-    private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
-    private static final AbstractLogEntryHeader DEFAULT_SEC_LOG_ENTRY_HEADER = new DefaultSecLogEntryHeader();
-    private static final AbstractLogEntryHeader MIGRATION_SEC_LOG_ENTRY_HEADER = new MigrationSecLogEntryHeader();
-    // Attributes
-    private static byte ms_logEntryCRCSize = (byte) 4;
-    private static boolean ms_useChecksum = true;
 
-    // Methods
-
-    /**
-     * Returns the maximum log entry header size
-     *
-     * @return the size
-     */
-    public abstract short getMaxHeaderSize();
-
-    /**
-     * Returns the offset for conversion
-     *
-     * @return the offset
-     */
-    public abstract short getConversionOffset();
-
-    /**
-     * Returns the checksum length
-     *
-     * @return the checksum length
-     */
-    static byte getCRCSize() {
-        return ms_logEntryCRCSize;
-    }
-
-    /**
-     * Sets the crc size
-     *
-     * @param p_useChecksum
-     *     whether a checksum is added or not
-     * @note Must be called before the first log entry header is created
-     */
-    public static void setCRCSize(final boolean p_useChecksum) {
-        if (!p_useChecksum) {
-            ms_logEntryCRCSize = (byte) 0;
-        }
-        ms_useChecksum = p_useChecksum;
-    }
+    private static int ms_segmentSize;
 
     /**
      * Returns the NodeID offset
      *
      * @return the offset
      */
-    protected abstract short getNIDOffset();
+    abstract short getNIDOffset();
 
     /**
      * Returns the LocalID offset
      *
      * @return the offset
      */
-    protected abstract short getLIDOffset();
+    abstract short getLIDOffset();
 
     /**
-     * Adds checksum to entry header
+     * Returns the maximum log entry size
      *
-     * @param p_buffer
-     *     the byte array
-     * @param p_offset
-     *     the offset within buffer
-     * @param p_size
-     *     the size of the complete log entry
-     * @param p_logEntryHeader
-     *     the LogEntryHeader
-     * @param p_bytesUntilEnd
-     *     number of bytes until wrap around
+     * @return the maximum log entry size
      */
-    public static void addChecksum(final byte[] p_buffer, final int p_offset, final int p_size, final AbstractLogEntryHeader p_logEntryHeader,
-        final int p_bytesUntilEnd) {
-        final short headerSize = p_logEntryHeader.getHeaderSize(p_buffer, p_offset);
-        final short crcOffset = p_logEntryHeader.getCRCOffset(p_buffer, p_offset);
-        int checksum;
-
-        CRC.reset();
-        if (p_size <= p_bytesUntilEnd) {
-            CRC.update(p_buffer, p_offset + headerSize, p_size - headerSize);
-            checksum = (int) CRC.getValue();
-
-            for (int i = 0; i < ms_logEntryCRCSize; i++) {
-                p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
-            }
+    public static int getMaxLogEntrySize() {
+        if (ms_segmentSize >= 4) {
+            return 2 * 1024 * 1024;
         } else {
-            if (p_bytesUntilEnd < headerSize) {
-                CRC.update(p_buffer, headerSize - p_bytesUntilEnd, p_size - headerSize);
-                checksum = (int) CRC.getValue();
-
-                if (p_bytesUntilEnd <= crcOffset) {
-                    for (int i = 0; i < ms_logEntryCRCSize; i++) {
-                        p_buffer[crcOffset - p_bytesUntilEnd + i] = (byte) (checksum >> i * 8 & 0xff);
-                    }
-                } else {
-                    for (int i = 0; i < ms_logEntryCRCSize; i++) {
-                        if (p_bytesUntilEnd - crcOffset - i > 0) {
-                            p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
-                        } else {
-                            p_buffer[i - (p_bytesUntilEnd - crcOffset)] = (byte) (checksum >> i * 8 & 0xff);
-                        }
-                    }
-                }
-            } else if (p_bytesUntilEnd > headerSize) {
-                CRC.update(p_buffer, p_offset + headerSize, p_bytesUntilEnd - headerSize);
-                CRC.update(p_buffer, 0, p_size - headerSize - (p_bytesUntilEnd - headerSize));
-                checksum = (int) CRC.getValue();
-
-                for (int i = 0; i < ms_logEntryCRCSize; i++) {
-                    p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
-                }
-            } else {
-                CRC.update(p_buffer, 0, p_size - headerSize);
-                checksum = (int) CRC.getValue();
-
-                for (int i = 0; i < ms_logEntryCRCSize; i++) {
-                    p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
-                }
-            }
+            return ms_segmentSize / 2;
         }
-
     }
 
     /**
-     * Returns the corresponding AbstractLogEntryHeader of a primary log entry
+     * Sets the segment size
+     *
+     * @param p_segmentSize
+     *     the segment size
+     */
+    public static void setSegmentSize(final int p_segmentSize) {
+        ms_segmentSize = p_segmentSize;
+    }
+
+    /**
+     * Returns the ChunkID or the LocalID of a log entry
      *
      * @param p_buffer
      *     buffer with log entries
      * @param p_offset
      *     offset in buffer
-     * @return the AbstractLogEntryHeader
+     * @return the ChunkID if secondary log stores migrations, the LocalID otherwise
      */
-    public static AbstractLogEntryHeader getPrimaryHeader(final byte[] p_buffer, final int p_offset) {
-        AbstractLogEntryHeader ret = null;
-        byte type;
-
-        type = (byte) (p_buffer[p_offset] & PRIMLOG_TYPE_MASK);
-        if (type == 0) {
-            ret = DEFAULT_PRIM_LOG_ENTRY_HEADER;
-        } else if (type == 1) {
-            ret = MIGRATION_PRIM_LOG_ENTRY_HEADER;
-        } else {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Type of log entry header unknown!");
-            // #endif /* LOGGER >= ERROR */
-        }
-
-        return ret;
-    }
+    public abstract long getCID(final byte[] p_buffer, final int p_offset);
 
     /**
-     * Returns the corresponding AbstractLogEntryHeader of a secondary log entry
+     * Returns NodeID of a log entry
      *
      * @param p_buffer
      *     buffer with log entries
      * @param p_offset
      *     offset in buffer
-     * @param p_storesMigrations
-     *     whether the secondary log this entry is in stores migrations or not
-     * @return the AbstractLogEntryHeader
+     * @return the NodeID
      */
-    public static AbstractLogEntryHeader getSecondaryHeader(final byte[] p_buffer, final int p_offset, final boolean p_storesMigrations) {
-        AbstractLogEntryHeader ret = null;
-        byte type;
-
-        type = (byte) (p_buffer[p_offset] & SECLOG_TYPE_MASK);
-        if (type == 0) {
-            if (!p_storesMigrations) {
-                ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
-            } else {
-                ret = MIGRATION_SEC_LOG_ENTRY_HEADER;
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * Converts a log entry header from PrimaryWriteBuffer/Primary Log to a secondary log entry header
-     * and copies the payload
-     *
-     * @param p_input
-     *     the input buffer
-     * @param p_inputOffset
-     *     the input buffer offset
-     * @param p_output
-     *     the output buffer
-     * @param p_outputOffset
-     *     the output buffer offset
-     * @param p_logEntrySize
-     *     the length of the log entry
-     * @param p_bytesUntilEnd
-     *     the number of bytes to the end of the input buffer
-     * @param p_conversionOffset
-     *     the conversion offset
-     * @return the number of written bytes
-     */
-    public static int convertAndPut(final byte[] p_input, final int p_inputOffset, final byte[] p_output, final int p_outputOffset, final int p_logEntrySize,
-        final int p_bytesUntilEnd, final short p_conversionOffset) {
-        int ret;
-
-        // Set type field
-        p_output[p_outputOffset] = p_input[p_inputOffset];
-        if (p_logEntrySize <= p_bytesUntilEnd) {
-            // Copy shortened header and payload
-            System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset + 1, p_logEntrySize - p_conversionOffset);
-        } else {
-            // Entry is bisected
-            if (p_conversionOffset >= p_bytesUntilEnd) {
-                // Copy shortened header and payload
-                System.arraycopy(p_input, p_conversionOffset - p_bytesUntilEnd, p_output, p_outputOffset + 1, p_logEntrySize - p_conversionOffset);
-            } else {
-                // Copy shortened header and payload in two steps
-                System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset + 1, p_bytesUntilEnd - p_conversionOffset);
-                System.arraycopy(p_input, 0, p_output, p_outputOffset + p_bytesUntilEnd - p_conversionOffset + 1,
-                    p_logEntrySize - (p_bytesUntilEnd - p_conversionOffset));
-            }
-        }
-        ret = p_logEntrySize - (p_conversionOffset - 1);
-
-        return ret;
-    }
-
-    /**
-     * Calculates the CRC32 checksum of a log entry's payload
-     *
-     * @param p_payload
-     *     the payload
-     * @return the checksum
-     */
-    public static int calculateChecksumOfPayload(final byte[] p_payload, final int p_offset, final int p_length) {
-
-        CRC.reset();
-        CRC.update(p_payload, p_offset, p_length);
-
-        return (int) CRC.getValue();
-    }
-
-    /**
-     * Returns the approximated log entry header size for secondary log (the version size can only be determined on
-     * backup -> 1 byte as average value)
-     *
-     * @param p_logStoresMigrations
-     *     whether the entry is in a secondary log for migrations or not
-     * @param p_localID
-     *     the LocalID
-     * @param p_size
-     *     the size
-     * @return the maximum log entry header size for secondary log
-     */
-    public static short getApproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
-        // Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation
-        // because the
-        // actual version is determined during logging on backup peer (at creation time it's size is 0 but it might be
-        // bigger at some point)
-        short ret =
-            (short) (LOG_ENTRY_TYP_SIZE + getSizeForLocalIDField(p_localID) + getSizeForLengthField(p_size) + LOG_ENTRY_EPO_SIZE + 1 + ms_logEntryCRCSize);
-
-        if (p_logStoresMigrations) {
-            ret += LOG_ENTRY_NID_SIZE;
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the approximated log entry header size for secondary log (the version size can only be determined on
-     * backup -> 1 byte as average value, without a localID the length can only be approximated -> 4 byte)
-     *
-     * @param p_logStoresMigrations
-     *     whether the entry is in a secondary log for migrations or not
-     * @param p_size
-     *     the size
-     * @return the maximum log entry header size for secondary log
-     */
-    public static short getApproxSecLogHeaderSize(final boolean p_logStoresMigrations, final int p_size) {
-        // Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation
-        // because the
-        // actual version is determined during logging on backup peer (at creation time it's size is 0 but it might be
-        // bigger at some point)
-        short ret = (short) (LOG_ENTRY_TYP_SIZE + 4 + getSizeForLengthField(p_size) + LOG_ENTRY_EPO_SIZE + 1 + ms_logEntryCRCSize);
-
-        if (p_logStoresMigrations) {
-            ret += LOG_ENTRY_NID_SIZE;
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the maximum log entry header size for secondary log
-     *
-     * @param p_logStoresMigrations
-     *     whether the entry is in a secondary log for migrations or not
-     * @return the maximum log entry header size for secondary log
-     */
-    public static short getMaxSecLogHeaderSize(final boolean p_logStoresMigrations) {
-        short ret;
-
-        if (p_logStoresMigrations) {
-            ret = MIGRATION_SEC_LOG_ENTRY_HEADER.getMaxHeaderSize();
-        } else {
-            ret = DEFAULT_SEC_LOG_ENTRY_HEADER.getMaxHeaderSize();
-        }
-
-        return ret;
-    }
-
-    /**
-     * Flip eon in log entry header
-     *
-     * @param p_logEntryHeader
-     *     the AbstractLogEntryHeader
-     * @param p_buffer
-     *     the buffer the log entry header is in
-     * @param p_offset
-     *     the offset within the buffer
-     */
-    public static void flipEon(final AbstractLogEntryHeader p_logEntryHeader, final byte[] p_buffer, final int p_offset) {
-        final int offset = p_offset + p_logEntryHeader.getVEROffset(p_buffer, p_offset);
-
-        p_buffer[offset + 1] ^= 1 << 15;
-    }
-
-    /**
-     * Returns whether there is a checksum in log entry header or not
-     *
-     * @return whether there is a checksum in log entry header or not
-     */
-    static boolean useChecksum() {
-        return ms_useChecksum;
-    }
-
-    /**
-     * Puts type of log entry in log entry header
-     *
-     * @param p_logEntry
-     *     log entry
-     * @param p_type
-     *     the type (0 => normal, 1 => migration)
-     * @param p_offset
-     *     the type-specific offset
-     */
-    static void putType(final byte[] p_logEntry, final byte p_type, final short p_offset) {
-        p_logEntry[p_offset] = p_type;
-    }
-
-    /**
-     * Puts RangeID of log entry in log entry header
-     *
-     * @param p_logEntry
-     *     log entry
-     * @param p_rangeID
-     *     the RangeID
-     * @param p_offset
-     *     the type-specific offset
-     */
-    static void putRangeID(final byte[] p_logEntry, final byte p_rangeID, final short p_offset) {
-        p_logEntry[p_offset] = p_rangeID;
-    }
-
-    /**
-     * Puts source of log entry in log entry header
-     *
-     * @param p_logEntry
-     *     log entry
-     * @param p_source
-     *     the source
-     * @param p_offset
-     *     the type-specific offset
-     */
-    static void putSource(final byte[] p_logEntry, final short p_source, final short p_offset) {
-        for (int i = 0; i < LOG_ENTRY_SRC_SIZE; i++) {
-            p_logEntry[p_offset + i] = (byte) (p_source >> i * 8 & 0xff);
-        }
-    }
-
-    /**
-     * Puts ChunkID in log entry header
-     *
-     * @param p_logEntry
-     *     log entry
-     * @param p_chunkID
-     *     the ChunkID
-     * @param p_localIDSize
-     *     the length of the LocalID field
-     * @param p_offset
-     *     the type-specific offset
-     */
-    static void putChunkID(final byte[] p_logEntry, final long p_chunkID, final byte p_localIDSize, final short p_offset) {
-        // NodeID
-        for (int i = 0; i < LOG_ENTRY_NID_SIZE; i++) {
-            p_logEntry[p_offset + i] = (byte) (ChunkID.getCreatorID(p_chunkID) >> i * 8 & 0xff);
-        }
-
-        // LocalID
-        for (int i = 0; i < p_localIDSize; i++) {
-            p_logEntry[p_offset + LOG_ENTRY_NID_SIZE + i] = (byte) (p_chunkID >> i * 8 & 0xff);
-        }
-    }
-
-    /**
-     * Puts length of log entry in log entry header
-     *
-     * @param p_logEntry
-     *     log entry
-     * @param p_length
-     *     the length
-     * @param p_offset
-     *     the type-specific offset
-     */
-    static void putLength(final byte[] p_logEntry, final byte p_length, final short p_offset) {
-        p_logEntry[p_offset] = (byte) (p_length & 0xff);
-    }
-
-    /**
-     * Puts length of log entry in log entry header
-     *
-     * @param p_logEntry
-     *     log entry
-     * @param p_length
-     *     the length
-     * @param p_offset
-     *     the type-specific offset
-     */
-    static void putLength(final byte[] p_logEntry, final short p_length, final short p_offset) {
-        for (int i = 0; i < Short.BYTES; i++) {
-            p_logEntry[p_offset + i] = (byte) (p_length >> i * 8 & 0xff);
-        }
-    }
-
-    /**
-     * Puts length of log entry in log entry header
-     *
-     * @param p_logEntry
-     *     log entry
-     * @param p_length
-     *     the length
-     * @param p_offset
-     *     the type-specific offset
-     */
-    static void putLength(final byte[] p_logEntry, final int p_length, final short p_offset) {
-        for (int i = 0; i < MAX_LOG_ENTRY_LEN_SIZE; i++) {
-            p_logEntry[p_offset + i] = (byte) (p_length >> i * 8 & 0xff);
-        }
-    }
-
-    /**
-     * Puts epoch of log entry in log entry header
-     *
-     * @param p_logEntry
-     *     log entry
-     * @param p_epoch
-     *     the version
-     * @param p_offset
-     *     the type-specific offset
-     */
-    static void putEpoch(final byte[] p_logEntry, final short p_epoch, final short p_offset) {
-        for (int i = 0; i < Short.BYTES; i++) {
-            p_logEntry[p_offset + i] = (byte) (p_epoch >> i * 8 & 0xff);
-        }
-    }
-
-    /**
-     * Puts version of log entry in log entry header
-     *
-     * @param p_logEntry
-     *     log entry
-     * @param p_version
-     *     the version
-     * @param p_offset
-     *     the type-specific offset
-     */
-    static void putVersion(final byte[] p_logEntry, final byte p_version, final short p_offset) {
-        p_logEntry[p_offset] = (byte) (p_version & 0xff);
-    }
-
-    /**
-     * Puts version of log entry in log entry header
-     *
-     * @param p_logEntry
-     *     log entry
-     * @param p_version
-     *     the version
-     * @param p_offset
-     *     the type-specific offset
-     */
-    static void putVersion(final byte[] p_logEntry, final short p_version, final short p_offset) {
-        for (int i = 0; i < Short.BYTES; i++) {
-            p_logEntry[p_offset + i] = (byte) (p_version >> i * 8 & 0xff);
-        }
-    }
-
-    /**
-     * Puts version of log entry in log entry header
-     *
-     * @param p_logEntry
-     *     log entry
-     * @param p_version
-     *     the version
-     * @param p_offset
-     *     the type-specific offset
-     */
-    static void putVersion(final byte[] p_logEntry, final int p_version, final short p_offset) {
-        for (int i = 0; i < MAX_LOG_ENTRY_VER_SIZE; i++) {
-            p_logEntry[p_offset + i] = (byte) (p_version >> i * 8 & 0xff);
-        }
-    }
+    abstract short getNodeID(final byte[] p_buffer, final int p_offset);
 
     /**
      * Returns the number of bytes necessary to store given value
@@ -633,6 +177,302 @@ public abstract class AbstractLogEntryHeader {
     }
 
     /**
+     * Returns the type of a log entry
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the type
+     */
+    private static short getType(final byte[] p_buffer, final int p_offset) {
+        return (short) (p_buffer[p_offset] & 0x00FF);
+    }
+
+    /**
+     * Checks whether this log entry is chained or not
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return true if this log entry is one part of a large chunk
+     */
+    public boolean isChained(final byte[] p_buffer, final int p_offset) {
+        boolean ret = false;
+        byte type;
+
+        type = (byte) (p_buffer[p_offset] & CHAIN_MASK);
+        return type == 1;
+    }
+
+    /**
+     * Returns the log entry header size
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the size
+     */
+    public short getHeaderSize(final byte[] p_buffer, final int p_offset) {
+        short ret;
+        byte versionSize;
+
+        if (ChecksumHandler.checksumsEnabled()) {
+            ret = (short) (getCRCOffset(p_buffer, p_offset) + ChecksumHandler.getCRCSize());
+        } else {
+            versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
+            ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns whether the length field is completely in this iteration or not
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @param p_bytesUntilEnd
+     *     number of bytes until wrap around
+     * @return whether the length field is completely in this iteration or not
+     */
+    public boolean isReadable(final byte[] p_buffer, final int p_offset, final int p_bytesUntilEnd) {
+        return p_bytesUntilEnd >= getVEROffset(p_buffer, p_offset);
+    }
+
+    /**
+     * Returns length of a log entry
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the length
+     */
+    public int getLength(final byte[] p_buffer, final int p_offset) {
+        int ret = 0;
+        final int offset = p_offset + getLENOffset(p_buffer, p_offset);
+        final byte length = (byte) ((getType(p_buffer, p_offset) & LEN_LENGTH_MASK) >> LEN_LENGTH_SHFT);
+
+        if (length == 1) {
+            ret = p_buffer[offset] & 0xff;
+        } else if (length == 2) {
+            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8);
+        } else if (length == 3) {
+            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns epoch and version of a log entry
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the epoch and version
+     */
+    public Version getVersion(final byte[] p_buffer, final int p_offset) {
+        final int offset = p_offset + getVEROffset(p_buffer, p_offset);
+        final byte length = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
+        short epoch;
+        int version = 1;
+
+        epoch = (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
+        if (length == 1) {
+            version = p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff;
+        } else if (length == 2) {
+            version = (p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff) << 8);
+        } else if (length == 3) {
+            version = (p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff) << 8) +
+                ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 2] & 0xff) << 16);
+        }
+
+        return new Version(epoch, version);
+    }
+
+    /**
+     * Returns the chaining ID of a log entry
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the chaining ID
+     */
+    public byte getChainID(final byte[] p_buffer, final int p_offset) {
+        byte ret;
+        int offset;
+
+        if (isChained(p_buffer, p_offset)) {
+            offset = p_offset + getCHAOffset(p_buffer, p_offset);
+            ret = p_buffer[offset];
+        } else {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Log entry is not chained!");
+            // #endif /* LOGGER >= ERROR */
+            ret = -1;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the checksum of a log entry's payload
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the checksum
+     */
+    public int getChecksum(final byte[] p_buffer, final int p_offset) {
+        int ret;
+        int offset;
+
+        if (ChecksumHandler.checksumsEnabled()) {
+            offset = p_offset + getCRCOffset(p_buffer, p_offset);
+            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) +
+                ((p_buffer[offset + 3] & 0xff) << 24);
+        } else {
+            // #if LOGGER >= ERROR
+            LOGGER.error("No checksum available!");
+            // #endif /* LOGGER >= ERROR */
+            ret = -1;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the LocalID
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the LocalID
+     */
+    long getLID(final byte[] p_buffer, final int p_offset) {
+        long ret = -1;
+        final int offset = p_offset + getLIDOffset();
+        final byte length = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
+
+        if (length == 0) {
+            ret = p_buffer[offset] & 0xff;
+        } else if (length == 1) {
+            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8);
+        } else if (length == 2) {
+            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) +
+                ((p_buffer[offset + 3] & 0xff) << 24);
+        } else if (length == 3) {
+            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) +
+                (((long) p_buffer[offset + 3] & 0xff) << 24) + (((long) p_buffer[offset + 4] & 0xff) << 32) + (((long) p_buffer[offset + 5] & 0xff) << 40);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the length offset
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the offset
+     */
+    short getLENOffset(final byte[] p_buffer, final int p_offset) {
+        short ret = getLIDOffset();
+        final byte localIDSize = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
+
+        switch (localIDSize) {
+            case 0:
+                ret += 1;
+                break;
+            case 1:
+                ret += 2;
+                break;
+            case 2:
+                ret += 4;
+                break;
+            case 3:
+                ret += 6;
+                break;
+            default:
+                // #if LOGGER >= ERROR
+                LOGGER.error("LocalID's length unknown!");
+                // #endif /* LOGGER >= ERROR */
+                break;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the version offset
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the offset
+     */
+    short getVEROffset(final byte[] p_buffer, final int p_offset) {
+        final short ret = getLENOffset(p_buffer, p_offset);
+        final byte lengthSize = (byte) ((getType(p_buffer, p_offset) & LEN_LENGTH_MASK) >> LEN_LENGTH_SHFT);
+
+        return (short) (ret + lengthSize);
+    }
+
+    /**
+     * Returns the chaining ID offset
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the offset
+     */
+    short getCHAOffset(final byte[] p_buffer, final int p_offset) {
+        short ret = (short) (getVEROffset(p_buffer, p_offset) + LOG_ENTRY_EPO_SIZE);
+        final byte versionSize = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
+
+        return (short) (ret + versionSize);
+    }
+
+    /**
+     * Returns the checksum offset
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the offset
+     */
+    short getCRCOffset(final byte[] p_buffer, final int p_offset) {
+        short ret = getCHAOffset(p_buffer, p_offset);
+        final byte chainSize = (byte) (isChained(p_buffer, p_offset) ? 1 : 0);
+
+        if (ChecksumHandler.checksumsEnabled()) {
+            ret += chainSize;
+        } else {
+            // #if LOGGER >= ERROR
+            LOGGER.error("No checksum available!");
+            // #endif /* LOGGER >= ERROR */
+            ret = -1;
+        }
+
+        return ret;
+    }
+
+    /**
      * Returns the number of bytes necessary to store given value
      *
      * @param p_type
@@ -643,10 +483,15 @@ public abstract class AbstractLogEntryHeader {
      *     the size of the length field
      * @param p_versionSize
      *     the size of the version field
+     * @param p_needsChaining
+     *     whether this chunk is too large and must be split or not
      * @return the number of bytes necessary to store given value
      */
-    static byte generateTypeField(final byte p_type, final byte p_localIDSize, final byte p_lengthSize, final byte p_versionSize) {
+    byte generateTypeField(final byte p_type, final byte p_localIDSize, final byte p_lengthSize, final byte p_versionSize, final boolean p_needsChaining) {
         byte ret = p_type;
+
+        // Chaining field present or not
+        ret |= p_needsChaining ? 2 : 0;
 
         // Length of LocalID is between 0 and 6 Bytes, but there are only 2 Bits for storing the length. Different
         // lengths: 1, 2, 4 ,6
@@ -680,198 +525,193 @@ public abstract class AbstractLogEntryHeader {
     }
 
     /**
-     * Puts checksum of log entry in log entry header
+     * Puts type of log entry in log entry header
      *
      * @param p_logEntry
      *     log entry
-     * @param p_checksum
-     *     the checksum
+     * @param p_type
+     *     the type (0 => normal, 1 => migration)
      * @param p_offset
      *     the type-specific offset
      */
-    protected static void putChecksum(final byte[] p_logEntry, final int p_checksum, final short p_offset) {
-        for (int i = 0; i < ms_logEntryCRCSize; i++) {
-            p_logEntry[p_offset + i] = (byte) (p_checksum >> i * 8 & 0xff);
+    void putType(final byte[] p_logEntry, final byte p_type, final short p_offset) {
+        p_logEntry[p_offset] = p_type;
+    }
+
+    /**
+     * Puts RangeID of log entry in log entry header
+     *
+     * @param p_logEntry
+     *     log entry
+     * @param p_rangeID
+     *     the RangeID
+     * @param p_offset
+     *     the type-specific offset
+     */
+    void putRangeID(final byte[] p_logEntry, final byte p_rangeID, final short p_offset) {
+        p_logEntry[p_offset] = p_rangeID;
+    }
+
+    /**
+     * Puts source of log entry in log entry header
+     *
+     * @param p_logEntry
+     *     log entry
+     * @param p_source
+     *     the source
+     * @param p_offset
+     *     the type-specific offset
+     */
+    void putSource(final byte[] p_logEntry, final short p_source, final short p_offset) {
+        for (int i = 0; i < LOG_ENTRY_SRC_SIZE; i++) {
+            p_logEntry[p_offset + i] = (byte) (p_source >> i * 8 & 0xff);
         }
     }
 
     /**
-     * Generates a log entry with filled-in header but without any payload
+     * Puts ChunkID in log entry header
      *
+     * @param p_logEntry
+     *     log entry
      * @param p_chunkID
      *     the ChunkID
-     * @param p_size
-     *     the payload length
+     * @param p_localIDSize
+     *     the length of the LocalID field
+     * @param p_offset
+     *     the type-specific offset
+     */
+    void putChunkID(final byte[] p_logEntry, final long p_chunkID, final byte p_localIDSize, final short p_offset) {
+        // NodeID
+        for (int i = 0; i < LOG_ENTRY_NID_SIZE; i++) {
+            p_logEntry[p_offset + i] = (byte) (ChunkID.getCreatorID(p_chunkID) >> i * 8 & 0xff);
+        }
+
+        // LocalID
+        for (int i = 0; i < p_localIDSize; i++) {
+            p_logEntry[p_offset + LOG_ENTRY_NID_SIZE + i] = (byte) (p_chunkID >> i * 8 & 0xff);
+        }
+    }
+
+    /**
+     * Puts length of log entry in log entry header
+     *
+     * @param p_logEntry
+     *     log entry
+     * @param p_length
+     *     the length
+     * @param p_offset
+     *     the type-specific offset
+     */
+    void putLength(final byte[] p_logEntry, final byte p_length, final short p_offset) {
+        p_logEntry[p_offset] = (byte) (p_length & 0xff);
+    }
+
+    /**
+     * Puts length of log entry in log entry header
+     *
+     * @param p_logEntry
+     *     log entry
+     * @param p_length
+     *     the length
+     * @param p_offset
+     *     the type-specific offset
+     */
+    void putLength(final byte[] p_logEntry, final short p_length, final short p_offset) {
+        for (int i = 0; i < Short.BYTES; i++) {
+            p_logEntry[p_offset + i] = (byte) (p_length >> i * 8 & 0xff);
+        }
+    }
+
+    /**
+     * Puts length of log entry in log entry header
+     *
+     * @param p_logEntry
+     *     log entry
+     * @param p_length
+     *     the length
+     * @param p_offset
+     *     the type-specific offset
+     */
+    void putLength(final byte[] p_logEntry, final int p_length, final short p_offset) {
+        for (int i = 0; i < MAX_LOG_ENTRY_LEN_SIZE; i++) {
+            p_logEntry[p_offset + i] = (byte) (p_length >> i * 8 & 0xff);
+        }
+    }
+
+    /**
+     * Puts epoch of log entry in log entry header
+     *
+     * @param p_logEntry
+     *     log entry
+     * @param p_epoch
+     *     the version
+     * @param p_offset
+     *     the type-specific offset
+     */
+    void putEpoch(final byte[] p_logEntry, final short p_epoch, final short p_offset) {
+        for (int i = 0; i < Short.BYTES; i++) {
+            p_logEntry[p_offset + i] = (byte) (p_epoch >> i * 8 & 0xff);
+        }
+    }
+
+    /**
+     * Puts version of log entry in log entry header
+     *
+     * @param p_logEntry
+     *     log entry
      * @param p_version
      *     the version
-     * @param p_rangeID
-     *     the RangeID
-     * @param p_source
-     *     the source NodeID
-     * @return the log entry
-     */
-    public abstract byte[] createLogEntryHeader(long p_chunkID, int p_size, Version p_version, byte p_rangeID, short p_source);
-
-    /**
-     * Returns the type of a log entry
-     *
-     * @param p_buffer
-     *     buffer with log entries
      * @param p_offset
-     *     offset in buffer
-     * @return the type
+     *     the type-specific offset
      */
-    public abstract short getType(byte[] p_buffer, int p_offset);
+    void putVersion(final byte[] p_logEntry, final byte p_version, final short p_offset) {
+        p_logEntry[p_offset] = (byte) (p_version & 0xff);
+    }
 
     /**
-     * Returns RangeID of a log entry
+     * Puts version of log entry in log entry header
      *
-     * @param p_buffer
-     *     buffer with log entries
+     * @param p_logEntry
+     *     log entry
+     * @param p_version
+     *     the version
      * @param p_offset
-     *     offset in buffer
-     * @return the version
+     *     the type-specific offset
      */
-    public abstract byte getRangeID(byte[] p_buffer, int p_offset);
+    void putVersion(final byte[] p_logEntry, final short p_version, final short p_offset) {
+        for (int i = 0; i < Short.BYTES; i++) {
+            p_logEntry[p_offset + i] = (byte) (p_version >> i * 8 & 0xff);
+        }
+    }
 
     /**
-     * Returns source of a log entry
+     * Puts version of log entry in log entry header
      *
-     * @param p_buffer
-     *     buffer with log entries
+     * @param p_logEntry
+     *     log entry
+     * @param p_version
+     *     the version
      * @param p_offset
-     *     offset in buffer
-     * @return the NodeID
+     *     the type-specific offset
      */
-    public abstract short getSource(byte[] p_buffer, int p_offset);
+    void putVersion(final byte[] p_logEntry, final int p_version, final short p_offset) {
+        for (int i = 0; i < MAX_LOG_ENTRY_VER_SIZE; i++) {
+            p_logEntry[p_offset + i] = (byte) (p_version >> i * 8 & 0xff);
+        }
+    }
 
     /**
-     * Returns NodeID of a log entry
+     * Puts chaining ID of log entry in log entry header
      *
-     * @param p_buffer
-     *     buffer with log entries
+     * @param p_logEntry
+     *     log entry
+     * @param p_chainingID
+     *     the version
      * @param p_offset
-     *     offset in buffer
-     * @return the NodeID
+     *     the type-specific offset
      */
-    public abstract short getNodeID(byte[] p_buffer, int p_offset);
-
-    /**
-     * Returns the ChunkID or the LocalID of a log entry
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @return the ChunkID if secondary log stores migrations, the LocalID otherwise
-     */
-    public abstract long getCID(byte[] p_buffer, int p_offset);
-
-    /**
-     * Returns length of a log entry
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @return the length
-     */
-    public abstract int getLength(byte[] p_buffer, int p_offset);
-
-    /**
-     * Returns epoch and version of a log entry
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @return the epoch and version
-     */
-    public abstract Version getVersion(byte[] p_buffer, int p_offset);
-
-    /**
-     * Returns the checksum of a log entry's payload
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @return the checksum
-     */
-    public abstract int getChecksum(byte[] p_buffer, int p_offset);
-
-    /**
-     * Checks whether this log entry was migrated or not
-     *
-     * @return whether this log entry was migrated or not
-     */
-    public abstract boolean wasMigrated();
-
-    /**
-     * Returns the log entry header size
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @return the size
-     */
-    public abstract short getHeaderSize(byte[] p_buffer, int p_offset);
-
-    /**
-     * Returns whether the length field is completely in this iteration or not
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @param p_bytesUntilEnd
-     *     number of bytes until wrap around
-     * @return whether the length field is completely in this iteration or not
-     */
-    public abstract boolean readable(byte[] p_buffer, int p_offset, int p_bytesUntilEnd);
-
-    /**
-     * Prints the log header
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     */
-    public abstract void print(byte[] p_buffer, int p_offset);
-
-    /**
-     * Returns the length offset
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @return the offset
-     */
-    protected abstract short getLENOffset(byte[] p_buffer, int p_offset);
-
-    /**
-     * Returns the version offset
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @return the offset
-     */
-    protected abstract short getVEROffset(byte[] p_buffer, int p_offset);
-
-    /**
-     * Returns the checksum offset
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @return the offset
-     */
-    protected abstract short getCRCOffset(byte[] p_buffer, int p_offset);
+    void putChainingID(final byte[] p_logEntry, final byte p_chainingID, final short p_offset) {
+        p_logEntry[p_offset] = (byte) (p_chainingID & 0xff);
+    }
 
 }

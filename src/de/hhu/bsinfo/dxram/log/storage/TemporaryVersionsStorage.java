@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.log.storage;
 
 import java.util.Arrays;
 
-import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
+import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 
 /**
  * Class to bundle versions for normal secondary logs and migration secondary logs
@@ -65,7 +65,7 @@ public final class TemporaryVersionsStorage {
     int[] getVersionsForNormalLog() {
         if (m_versionsForNormalLog == null) {
             // Initialize array with default value suitable for 128-byte chunks (might be increased in VersionBuffer)
-            m_versionsForNormalLog = new int[(int) (2 * m_secondaryLogSize / (128 + AbstractLogEntryHeader.getApproxSecLogHeaderSize(false, 128)))];
+            m_versionsForNormalLog = new int[(int) (2 * m_secondaryLogSize / (128 + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, 128)))];
             Arrays.fill(m_versionsForNormalLog, -1);
         }
         return m_versionsForNormalLog;
@@ -80,7 +80,7 @@ public final class TemporaryVersionsStorage {
         if (m_versionsForMigrationLog == null) {
             // Initialize hashtable with default value suitable for 32-byte chunks
             // (we do not want to rehash often, might still be increased in VersionBuffer)
-            m_versionsForMigrationLog = new VersionsHashTable((int) (m_secondaryLogSize / (32 + AbstractLogEntryHeader.getApproxSecLogHeaderSize(true, 32))));
+            m_versionsForMigrationLog = new VersionsHashTable((int) (m_secondaryLogSize / (32 + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(true, 32))));
         }
         return m_versionsForMigrationLog;
     }

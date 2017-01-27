@@ -36,6 +36,9 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
+import de.hhu.bsinfo.dxram.log.header.AbstractPrimLogEntryHeader;
+import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
+import de.hhu.bsinfo.dxram.log.header.ChecksumHandler;
 import de.hhu.bsinfo.dxram.log.header.DefaultPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.MigrationPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.messages.InitRequest;
@@ -50,6 +53,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NetworkException;
+import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.JNIFileRaw;
 import de.hhu.bsinfo.utils.Tools;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
@@ -64,8 +68,8 @@ public class LogComponent extends AbstractDXRAMComponent {
     private static final Logger LOGGER = LogManager.getFormatterLogger(LogService.class.getSimpleName());
 
     // Constants
-    private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
-    private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
+    private static final AbstractPrimLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
+    private static final AbstractPrimLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
     private static final int PAYLOAD_PRINT_LENGTH = 128;
 
     // configuration values
@@ -225,7 +229,7 @@ public class LogComponent extends AbstractDXRAMComponent {
      *     the log entry header
      */
     private static void printMetadata(final short p_nodeID, final long p_localID, final byte[] p_payload, final int p_offset, final int p_length,
-        final Version p_version, final int p_index, final AbstractLogEntryHeader p_logEntryHeader) {
+        final Version p_version, final int p_index, final AbstractSecLogEntryHeader p_logEntryHeader) {
         final long chunkID = ((long) p_nodeID << 48) + p_localID;
         byte[] array;
 
@@ -268,47 +272,7 @@ public class LogComponent extends AbstractDXRAMComponent {
      * @return the header size
      */
     public short getApproxHeaderSize(final short p_nodeID, final long p_localID, final int p_size) {
-        return AbstractLogEntryHeader.getApproxSecLogHeaderSize(m_boot.getNodeID() != p_nodeID, p_localID, p_size);
-    }
-
-    /**
-     * Initializes a new backup range for a single backup peer
-     *
-     * @param p_firstChunkIDOrRangeID
-     *     the beginning of the range
-     * @param p_backupPeer
-     *     the backup peer
-     */
-    public void initBackupRange(final long p_firstChunkIDOrRangeID, final short p_backupPeer) {
-        InitRequest request;
-        InitResponse response;
-        long time;
-
-        time = System.currentTimeMillis();
-        if (p_backupPeer != -1) {
-            while (true) {
-                if (ChunkID.getCreatorID(p_firstChunkIDOrRangeID) != -1) {
-                    request = new InitRequest(p_backupPeer, p_firstChunkIDOrRangeID, ChunkID.getCreatorID(p_firstChunkIDOrRangeID));
-                } else {
-                    request = new InitRequest(p_backupPeer, p_firstChunkIDOrRangeID, m_boot.getNodeID());
-                }
-
-                try {
-                    m_network.sendSync(request);
-                } catch (final NetworkException ignore) {
-                    continue;
-                }
-
-                response = request.getResponse(InitResponse.class);
-
-                if (response.getStatus()) {
-                    break;
-                }
-            }
-        }
-        // #if LOGGER == TRACE
-        LOGGER.trace("Time to initialize range: %d", System.currentTimeMillis() - time);
-        // #endif /* LOGGER == TRACE */
+        return AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(m_boot.getNodeID() != p_nodeID, p_localID, p_size);
     }
 
     /**
@@ -490,6 +454,12 @@ public class LogComponent extends AbstractDXRAMComponent {
         m_secondaryLogCreationLock.readLock().lock();
 
         cat = m_logCatalogs[ChunkID.getCreatorID(p_chunkID) & 0xFFFF];
+        if (cat == null) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Log catalog for peer " + NodeID.toHexString(ChunkID.getCreatorID(p_chunkID)) + " is empty!");
+            // #endif /* LOGGER >= ERROR */
+        }
+
         ret = cat.getRange(p_chunkID);
         m_secondaryLogCreationLock.readLock().unlock();
 
@@ -565,8 +535,10 @@ public class LogComponent extends AbstractDXRAMComponent {
 
             m_backupDirectory = m_backup.getBackupDirectory();
 
+            // Set the segment size. Needed for log entry header to split large chunks (must be called before the first log entry header is created)
+            AbstractLogEntryHeader.setSegmentSize((int) m_logSegmentSize.getBytes());
             // Set the log entry header crc size (must be called before the first log entry header is created)
-            AbstractLogEntryHeader.setCRCSize(m_useChecksum);
+            ChecksumHandler.setCRCSize(m_useChecksum);
 
             // Create primary log
             try {
@@ -577,7 +549,7 @@ public class LogComponent extends AbstractDXRAMComponent {
                 // #endif /* LOGGER >= ERROR */
             }
             // #if LOGGER == TRACE
-            LOGGER.trace("Initialized primary log (%d)", m_primaryLogSize);
+            LOGGER.trace("Initialized primary log (%d)", (int) m_logSegmentSize.getBytes());
             // #endif /* LOGGER == TRACE */
 
             // Create reorganization thread for secondary logs
@@ -790,6 +762,12 @@ public class LogComponent extends AbstractDXRAMComponent {
         } else {
             cat = m_logCatalogs[p_source & 0xFFFF];
         }
+
+        if (cat == null) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Log catalog for peer " + NodeID.toHexString(ChunkID.getCreatorID(p_chunkID)) + " is empty!");
+            // #endif /* LOGGER >= ERROR */
+        }
         ret = cat.getLog(p_chunkID, p_rangeID);
         m_secondaryLogCreationLock.readLock().unlock();
 
@@ -855,7 +833,7 @@ public class LogComponent extends AbstractDXRAMComponent {
         int offset = 0;
         long chunkID;
         Version version;
-        AbstractLogEntryHeader logEntryHeader;
+        AbstractSecLogEntryHeader logEntryHeader;
 
         segments = readBackupRange(p_owner, p_chunkID, p_rangeID);
         if (segments != null) {
@@ -866,7 +844,7 @@ public class LogComponent extends AbstractDXRAMComponent {
                 readBytes = offset;
                 offset = 0;
                 while (readBytes < segments[i].length) {
-                    logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], readBytes, p_owner != ChunkID.getCreatorID(p_chunkID));
+                    logEntryHeader = AbstractSecLogEntryHeader.getHeader(segments[i], readBytes, p_owner != ChunkID.getCreatorID(p_chunkID));
                     chunkID = logEntryHeader.getCID(segments[i], readBytes);
                     length = logEntryHeader.getLength(segments[i], readBytes);
                     version = logEntryHeader.getVersion(segments[i], readBytes);

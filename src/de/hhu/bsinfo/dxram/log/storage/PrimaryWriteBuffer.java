@@ -31,6 +31,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
+import de.hhu.bsinfo.dxram.log.header.AbstractPrimLogEntryHeader;
 
 /**
  * Primary log write buffer Implemented as a ring buffer in a byte array. The
@@ -225,26 +226,36 @@ public class PrimaryWriteBuffer {
      *     if caller is interrupted
      */
     public final int putLogData(final byte[] p_header, final ByteBuffer p_buffer, final int p_payloadLength) throws InterruptedException {
-        AbstractLogEntryHeader logEntryHeader;
+        AbstractPrimLogEntryHeader logEntryHeader;
         int bytesInWriteBuffer;
         int bytesToWrite;
         int bytesUntilEnd;
+        int writtenBytes = 0;
+        int writeSize;
         int writePointer;
+        int numberOfHeaders;
         long rangeID;
         long currentTime;
         Integer counter;
 
-        logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_header, 0);
+        logEntryHeader = AbstractPrimLogEntryHeader.getHeader(p_header, 0);
         if (logEntryHeader.wasMigrated()) {
             rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0);
-            bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
         } else {
             rangeID = m_logComponent.getBackupRange(logEntryHeader.getCID(p_header, 0));
-            bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
         }
+
+        // Large chunks are split and chained -> there might be more than one header
+        numberOfHeaders = (int) Math.ceil((float) p_payloadLength / AbstractLogEntryHeader.getMaxLogEntrySize());
+        bytesToWrite = numberOfHeaders * logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
 
         if (p_payloadLength <= 0) {
             throw new IllegalArgumentException("No payload for log entry!");
+        }
+        if (numberOfHeaders > Byte.MAX_VALUE) {
+            throw new IllegalArgumentException(
+                "Chunk is too large to log. Maximum chunk size for current configuration is " + Byte.MAX_VALUE * AbstractLogEntryHeader.getMaxLogEntrySize() +
+                    "!");
         }
         if (bytesToWrite > m_writeBufferSize) {
             throw new IllegalArgumentException("Data to write exceeds buffer size!");
@@ -295,40 +306,53 @@ public class PrimaryWriteBuffer {
             m_lengthByBackupRange.put(rangeID, counter + bytesToWrite);
         }
 
-        // Determine free space from end of log to end of array
-        if (writePointer >= m_bufferReadPointer) {
-            bytesUntilEnd = m_writeBufferSize - writePointer;
-        } else {
-            bytesUntilEnd = m_bufferReadPointer - writePointer;
-        }
-        if (bytesToWrite <= bytesUntilEnd) {
-            // Write header
-            System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
-            // Write payload
-            p_buffer.get(m_buffer, writePointer + p_header.length, p_payloadLength);
-        } else {
-            // Twofold cyclic write access
-            if (bytesUntilEnd < p_header.length) {
-                // Write header
-                System.arraycopy(p_header, 0, m_buffer, writePointer, bytesUntilEnd);
-                System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0, p_header.length - bytesUntilEnd);
-                // Write payload
-                p_buffer.get(m_buffer, p_header.length - bytesUntilEnd, p_payloadLength);
-            } else if (bytesUntilEnd > p_header.length) {
-                // Write header
-                System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
-                // Write payload
-                p_buffer.get(m_buffer, writePointer + p_header.length, bytesUntilEnd - p_header.length);
-                p_buffer.get(m_buffer, 0, p_payloadLength - (bytesUntilEnd - p_header.length));
+        for (int i = 0; i < numberOfHeaders; i++) {
+            writeSize = Math.min(bytesToWrite - writtenBytes, AbstractLogEntryHeader.getMaxLogEntrySize());
+
+            // Determine free space from end of log to end of array
+            if (writePointer >= m_bufferReadPointer) {
+                bytesUntilEnd = m_writeBufferSize - writePointer;
             } else {
+                bytesUntilEnd = m_bufferReadPointer - writePointer;
+            }
+
+            if (writeSize <= bytesUntilEnd) {
                 // Write header
                 System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
                 // Write payload
-                p_buffer.get(m_buffer, 0, p_payloadLength);
+                p_buffer.get(m_buffer, writePointer + p_header.length, writeSize - p_header.length);//p_payloadLength);
+            } else {
+                // Twofold cyclic write access
+                if (bytesUntilEnd < p_header.length) {
+                    // Write header
+                    System.arraycopy(p_header, 0, m_buffer, writePointer, bytesUntilEnd);
+                    System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0, p_header.length - bytesUntilEnd);
+                    // Write payload
+                    p_buffer.get(m_buffer, p_header.length - bytesUntilEnd, writeSize - p_header.length);//p_payloadLength);
+                } else if (bytesUntilEnd > p_header.length) {
+                    // Write header
+                    System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
+                    // Write payload
+                    p_buffer.get(m_buffer, writePointer + p_header.length, bytesUntilEnd - p_header.length);
+                    p_buffer.get(m_buffer, 0, writeSize - (p_header.length - bytesUntilEnd)); //p_payloadLength - (bytesUntilEnd - p_header.length));
+                } else {
+                    // Write header
+                    System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
+                    // Write payload
+                    p_buffer.get(m_buffer, 0, writeSize - p_header.length);//p_payloadLength);
+                }
             }
-        }
-        if (m_useChecksum) {
-            AbstractLogEntryHeader.addChecksum(m_buffer, writePointer, bytesToWrite, logEntryHeader, bytesUntilEnd);
+
+            if (numberOfHeaders > 1) {
+                AbstractPrimLogEntryHeader.addChainingID(m_buffer, writePointer, (byte) i, logEntryHeader, bytesUntilEnd);
+            }
+
+            if (m_useChecksum) {
+                AbstractPrimLogEntryHeader.addChecksum(m_buffer, writePointer, writeSize, logEntryHeader, bytesUntilEnd);
+            }
+
+            writePointer += writeSize;
+            writtenBytes += writeSize;
         }
 
         // ***Synchronization***//
@@ -540,7 +564,7 @@ public class PrimaryWriteBuffer {
             byte[] primaryLogBuffer;
             byte[] header;
             byte[] segment;
-            AbstractLogEntryHeader logEntryHeader;
+            AbstractPrimLogEntryHeader logEntryHeader;
             HashMap<Long, BufferNode> map;
             Iterator<Entry<Long, Integer>> iter;
             Entry<Long, Integer> entry;
@@ -581,13 +605,13 @@ public class PrimaryWriteBuffer {
                     offset = (p_offset + bytesRead) % p_buffer.length;
                     bytesUntilEnd = p_buffer.length - offset;
 
-                    logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, offset);
+                    logEntryHeader = AbstractPrimLogEntryHeader.getHeader(p_buffer, offset);
                     /*
                      * Because of the log's wrap around three cases must be distinguished 1. Complete entry fits in
                      * current iteration 2.
                      * Offset pointer is already in next iteration 3. Log entry must be split over two iterations
                      */
-                    if (logEntryHeader.readable(p_buffer, offset, bytesUntilEnd)) {
+                    if (logEntryHeader.isReadable(p_buffer, offset, bytesUntilEnd)) {
                         logEntrySize = logEntryHeader.getHeaderSize(p_buffer, offset) + logEntryHeader.getLength(p_buffer, offset);
                         if (logEntryHeader.wasMigrated()) {
                             rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_buffer, offset);
@@ -933,7 +957,7 @@ public class PrimaryWriteBuffer {
 
             if (m_convert) {
                 // More secondary log buffer size for this node: Convert primary log entry header to secondary log header and append entry to node buffer
-                m_writtenBytesPerSegment[index] += AbstractLogEntryHeader
+                m_writtenBytesPerSegment[index] += AbstractPrimLogEntryHeader
                     .convertAndPut(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize, p_bytesUntilEnd, p_conversionOffset);
             } else {
                 // Less secondary log buffer size for this node: Just append entry to node buffer without converting the log entry header

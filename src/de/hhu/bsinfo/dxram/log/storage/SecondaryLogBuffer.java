@@ -19,7 +19,7 @@ import java.util.Arrays;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
+import de.hhu.bsinfo.dxram.log.header.AbstractPrimLogEntryHeader;
 
 /**
  * This class implements the secondary log buffer
@@ -98,16 +98,16 @@ public final class SecondaryLogBuffer {
         int oldBufferOffset = p_bufferOffset;
         int newBufferOffset = 0;
         int logEntrySize;
-        AbstractLogEntryHeader logEntryHeader;
+        AbstractPrimLogEntryHeader logEntryHeader;
 
         buffer = new byte[p_entryOrRangeSize];
         while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
             // Determine header of next log entry
-            logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, oldBufferOffset);
+            logEntryHeader = AbstractPrimLogEntryHeader.getHeader(p_buffer, oldBufferOffset);
             logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) + logEntryHeader.getLength(p_buffer, oldBufferOffset);
 
             // Copy primary log header, but skip NodeID and RangeID
-            newBufferOffset += AbstractLogEntryHeader
+            newBufferOffset += AbstractPrimLogEntryHeader
                 .convertAndPut(p_buffer, oldBufferOffset, buffer, newBufferOffset, logEntrySize, p_buffer.length - oldBufferOffset,
                     logEntryHeader.getConversionOffset());
             oldBufferOffset += logEntrySize;

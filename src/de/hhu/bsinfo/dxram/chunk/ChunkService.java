@@ -849,7 +849,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                         chunksPut++;
                     } else {
                         // #if LOGGER >= ERROR
-                        LOGGER.error("Putting local chunk 0x%X failed: %s", dataStructure.getID());
+                        LOGGER.error("Putting local chunk 0x%X failed", dataStructure.getID());
                         // #endif /* LOGGER >= ERROR */
                     }
                 }

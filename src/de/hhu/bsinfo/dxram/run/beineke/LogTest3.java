@@ -42,7 +42,7 @@ public final class LogTest3 {
     // Constants
     private static final long BYTES_TO_LOAD = 5196002400L;
     private static final long BYTES_TO_UPDATE = 6000128000L;
-    private static final int CHUNK_SIZE = 64;
+    private static final int CHUNK_SIZE = 1 * 1024 * 1024;
     private static final int CHUNKS_PER_PUT = 100;
     private static final int CHUNKS_PER_UPDATE = 512;
     private static final int MASTER_THREADS = 1;

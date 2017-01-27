@@ -21,10 +21,15 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
 
 /**
  * Extends AbstractLogEntryHeader for a migration log entry header (secondary log)
+ * Fields: | Type | NodeID | LocalID | Length  | Epoch | Version | Chaining | Checksum |
+ * Length: |  1   |   2    | 1,2,4,6 | 0,1,2,3 |   2   | 0,1,2,4 |   0,1    |    0,4   |
+ * Type field contains type, length of LocalID field, length of length field and length of version field
+ * Chaining field has length 0 for chunks smaller than 1/2 of segment size (4 MB default) and 1 for larger chunks
+ * Checksum field has length 0 if checksums are deactivated in DXRAM configuration, 4 otherwise
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 25.06.2015
  */
-class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
+class MigrationSecLogEntryHeader extends AbstractSecLogEntryHeader {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(MasterSlaveComputeService.class.getSimpleName());
 
@@ -36,28 +41,16 @@ class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
     // Constructors
 
     /**
-     * Creates an instance of NormalSecondaryLogEntryHeader
+     * Creates an instance of MigrationSecLogEntryHeader
      */
     MigrationSecLogEntryHeader() {
         ms_maximumSize = (short) (LOG_ENTRY_TYP_SIZE + MAX_LOG_ENTRY_CID_SIZE + MAX_LOG_ENTRY_LEN_SIZE + LOG_ENTRY_EPO_SIZE + MAX_LOG_ENTRY_VER_SIZE +
-            AbstractLogEntryHeader.getCRCSize());
+            ChecksumHandler.getCRCSize());
         ms_nidOffset = LOG_ENTRY_TYP_SIZE;
         ms_lidOffset = (byte) (ms_nidOffset + LOG_ENTRY_NID_SIZE);
     }
 
-    @Override
-    public short getMaxHeaderSize() {
-        return ms_maximumSize;
-    }
-
-    @Override
-    public short getConversionOffset() {
-        // #if LOGGER >= ERROR
-        LOGGER.error("No conversion offset available!");
-        // #endif /* LOGGER >= ERROR */
-        return -1;
-    }
-
+    // Getter
     @Override
     protected short getNIDOffset() {
         return ms_nidOffset;
@@ -66,36 +59,6 @@ class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
     @Override
     protected short getLIDOffset() {
         return ms_lidOffset;
-    }
-
-    // Methods
-    @Override
-    public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final byte p_rangeID, final short p_source) {
-        // #if LOGGER >= WARN
-        LOGGER.warn("Do not call createLogEntryHeader() for secondary log entries. Convert instead");
-        // #endif /* LOGGER >= WARN */
-        return null;
-    }
-
-    @Override
-    public short getType(final byte[] p_buffer, final int p_offset) {
-        return (short) (p_buffer[p_offset] & 0x00FF);
-    }
-
-    @Override
-    public byte getRangeID(final byte[] p_buffer, final int p_offset) {
-        // #if LOGGER >= ERROR
-        LOGGER.error("No RangeID available!");
-        // #endif /* LOGGER >= ERROR */
-        return -1;
-    }
-
-    @Override
-    public short getSource(final byte[] p_buffer, final int p_offset) {
-        // #if LOGGER >= ERROR
-        LOGGER.error("No source available!");
-        // #endif /* LOGGER >= ERROR */
-        return -1;
     }
 
     @Override
@@ -110,180 +73,18 @@ class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
         return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_buffer, p_offset);
     }
 
-    @Override
-    public int getLength(final byte[] p_buffer, final int p_offset) {
-        int ret = 0;
-        final int offset = p_offset + getLENOffset(p_buffer, p_offset);
-        final byte length = (byte) ((getType(p_buffer, p_offset) & LEN_LENGTH_MASK) >> LEN_LENGTH_SHFT);
-
-        if (length == 1) {
-            ret = p_buffer[offset] & 0xff;
-        } else if (length == 2) {
-            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8);
-        } else if (length == 3) {
-            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16);
-        }
-
-        return ret;
-    }
-
-    @Override
-    public Version getVersion(final byte[] p_buffer, final int p_offset) {
-        final int offset = p_offset + getVEROffset(p_buffer, p_offset);
-        final byte length = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
-        short epoch;
-        int version = 1;
-
-        epoch = (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
-        if (length == 1) {
-            version = p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff;
-        } else if (length == 2) {
-            version = (p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff) << 8);
-        } else if (length == 3) {
-            version = (p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff) << 8) +
-                ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 2] & 0xff) << 16);
-        }
-
-        return new Version(epoch, version);
-    }
-
-    @Override
-    public int getChecksum(final byte[] p_buffer, final int p_offset) {
-        int ret;
-        int offset;
-
-        if (AbstractLogEntryHeader.useChecksum()) {
-            offset = p_offset + getCRCOffset(p_buffer, p_offset);
-            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) +
-                ((p_buffer[offset + 3] & 0xff) << 24);
-        } else {
-            // #if LOGGER >= ERROR
-            LOGGER.error("No checksum available!");
-            // #endif /* LOGGER >= ERROR */
-            ret = -1;
-        }
-
-        return ret;
-    }
-
-    @Override
-    public boolean wasMigrated() {
-        return true;
-    }
-
-    @Override
-    public short getHeaderSize(final byte[] p_buffer, final int p_offset) {
-        short ret;
-        byte versionSize;
-
-        if (AbstractLogEntryHeader.useChecksum()) {
-            ret = (short) (getCRCOffset(p_buffer, p_offset) + AbstractLogEntryHeader.getCRCSize());
-        } else {
-            versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
-            ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);
-        }
-
-        return ret;
-    }
-
-    @Override
-    public boolean readable(final byte[] p_buffer, final int p_offset, final int p_bytesUntilEnd) {
-        return p_bytesUntilEnd >= getVEROffset(p_buffer, p_offset);
-    }
-
+    // Methods
     @Override
     public void print(final byte[] p_buffer, final int p_offset) {
         final Version version = getVersion(p_buffer, p_offset);
 
-        System.out.println("********************Secondary Log Entry Header (Normal)********************");
+        System.out.println("********************Secondary Log Entry Header (Migration)********************");
         System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
         System.out.println("* Length: " + getLength(p_buffer, p_offset));
         System.out.println("* Version: " + version.getEpoch() + ", " + version.getVersion());
-        if (AbstractLogEntryHeader.useChecksum()) {
+        if (ChecksumHandler.checksumsEnabled()) {
             System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));
         }
-        System.out.println("***************************************************************************");
-    }
-
-    @Override
-    protected short getLENOffset(final byte[] p_buffer, final int p_offset) {
-        short ret = ms_lidOffset;
-        final byte localIDSize = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
-
-        switch (localIDSize) {
-            case 0:
-                ret += 1;
-                break;
-            case 1:
-                ret += 2;
-                break;
-            case 2:
-                ret += 4;
-                break;
-            case 3:
-                ret += 6;
-                break;
-            default:
-                // #if LOGGER >= ERROR
-                LOGGER.error("LocalID's lenght unknown!");
-                // #endif /* LOGGER >= ERROR */
-                break;
-        }
-
-        return ret;
-    }
-
-    @Override
-    protected short getVEROffset(final byte[] p_buffer, final int p_offset) {
-        final short ret = getLENOffset(p_buffer, p_offset);
-        final byte lengthSize = (byte) ((getType(p_buffer, p_offset) & LEN_LENGTH_MASK) >> LEN_LENGTH_SHFT);
-
-        return (short) (ret + lengthSize);
-    }
-
-    @Override
-    protected short getCRCOffset(final byte[] p_buffer, final int p_offset) {
-        short ret = (short) (getVEROffset(p_buffer, p_offset) + LOG_ENTRY_EPO_SIZE);
-        final byte versionSize = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
-
-        if (AbstractLogEntryHeader.useChecksum()) {
-            ret += versionSize;
-        } else {
-            // #if LOGGER >= ERROR
-            LOGGER.error("No checksum available!");
-            // #endif /* LOGGER >= ERROR */
-            ret = -1;
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the LocalID
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @return the LocalID
-     */
-    private long getLID(final byte[] p_buffer, final int p_offset) {
-        long ret = -1;
-        final int offset = p_offset + ms_lidOffset;
-        final byte length = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
-
-        if (length == 0) {
-            ret = p_buffer[offset] & 0xff;
-        } else if (length == 1) {
-            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8);
-        } else if (length == 2) {
-            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) +
-                ((p_buffer[offset + 3] & 0xff) << 24);
-        } else if (length == 3) {
-            ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) +
-                (((long) p_buffer[offset + 3] & 0xff) << 24) + (((long) p_buffer[offset + 4] & 0xff) << 32) + (((long) p_buffer[offset + 5] & 0xff) << 40);
-        }
-
-        return ret;
+        System.out.println("******************************************************************************");
     }
 }
