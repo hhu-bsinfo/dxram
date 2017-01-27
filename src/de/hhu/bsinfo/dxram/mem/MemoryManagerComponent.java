@@ -69,6 +69,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     // configuration values
     @Expose
     private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
+    @Expose
+    private StorageUnit m_keyValueStoreMaxBlockSize = new StorageUnit(8, StorageUnit.MB);
 
     // dependent components
     private AbstractBootComponent m_boot;
@@ -227,9 +229,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        if (p_size > SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK) {
+        if (p_size > m_rawMemory.getStatus().getMaxBlockSize()) {
             // #if LOGGER >= WARN
-            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK);
+            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, m_rawMemory.getStatus().getMaxBlockSize());
             // #endif /* LOGGER >= WARN */
         }
 
@@ -288,9 +290,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
         chunkID = p_chunkId;
 
-        if (p_size > SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK) {
+        if (p_size > m_rawMemory.getStatus().getMaxBlockSize()) {
             // #if LOGGER >= WARN
-            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, SmallObjectHeap.MAX_SIZE_MEMORY_BLOCK);
+            LOGGER.warn("Performance warning, creating a chunk with size %d exceeding max size %d", p_size, m_rawMemory.getStatus().getMaxBlockSize());
             // #endif /* LOGGER >= WARN */
         }
 
@@ -1141,7 +1143,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             // #if LOGGER == INFO
             LOGGER.info("Allocating native memory (%d mb). This may take a while...", m_keyValueStoreSize.getMB());
             // #endif /* LOGGER == INFO */
-            m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory(), m_keyValueStoreSize.getBytes());
+            m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory(), m_keyValueStoreSize.getBytes(), (int) m_keyValueStoreMaxBlockSize.getBytes());
             m_cidTable = new CIDTable(this);
             m_cidTable.initialize(m_rawMemory);
 
