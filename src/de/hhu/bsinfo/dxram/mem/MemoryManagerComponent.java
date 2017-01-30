@@ -33,6 +33,7 @@ import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.soh.MemoryRuntimeException;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
 import de.hhu.bsinfo.utils.serialization.Exportable;
@@ -71,6 +72,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
     @Expose
     private StorageUnit m_keyValueStoreMaxBlockSize = new StorageUnit(8, StorageUnit.MB);
+    @Expose
+    private String m_memDumpFileOnError = "";
 
     // dependent components
     private AbstractBootComponent m_boot;
@@ -224,35 +227,40 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long address;
         long chunkID;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        if (m_cidTable.get(0) != 0) {
-            // delete old entry
-            address = m_cidTable.delete(0, false);
-            m_rawMemory.free(address);
-            m_totalActiveChunkMemory -= m_rawMemory.getSizeBlock(address);
-            m_numActiveChunks--;
-        }
-
-        address = m_rawMemory.malloc(p_size);
-        if (address >= 0) {
-            chunkID = (long) m_boot.getNodeID() << 48;
-            // register new chunk in cid table
-            if (!m_cidTable.set(chunkID, address)) {
-                // on demand allocation of new table failed
-                // free previously created chunk for data to avoid memory leak
-                m_rawMemory.free(address);
-                throw new OutOfKeyValueStoreMemoryException(getStatus());
-            } else {
-                m_numActiveChunks++;
-                m_totalActiveChunkMemory += p_size;
+        try {
+            // #ifdef ASSERT_NODE_ROLE
+            if (m_boot.getNodeRole() != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
             }
-        } else {
-            throw new OutOfKeyValueStoreMemoryException(getStatus());
+            // #endif /* ASSERT_NODE_ROLE */
+
+            if (m_cidTable.get(0) != 0) {
+                // delete old entry
+                address = m_cidTable.delete(0, false);
+                m_rawMemory.free(address);
+                m_totalActiveChunkMemory -= m_rawMemory.getSizeBlock(address);
+                m_numActiveChunks--;
+            }
+
+            address = m_rawMemory.malloc(p_size);
+            if (address >= 0) {
+                chunkID = (long) m_boot.getNodeID() << 48;
+                // register new chunk in cid table
+                if (!m_cidTable.set(chunkID, address)) {
+                    // on demand allocation of new table failed
+                    // free previously created chunk for data to avoid memory leak
+                    m_rawMemory.free(address);
+                    throw new OutOfKeyValueStoreMemoryException(getStatus());
+                } else {
+                    m_numActiveChunks++;
+                    m_totalActiveChunkMemory += p_size;
+                }
+            } else {
+                throw new OutOfKeyValueStoreMemoryException(getStatus());
+            }
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
 
         return chunkID;
@@ -273,42 +281,47 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long address;
         long chunkID;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        // #ifdef STATISTICS
-        SOP_CREATE.enter();
-        // #endif /* STATISTICS */
-
-        chunkID = p_chunkId;
-
-        // verify this id is not used
-        if (m_cidTable.get(p_chunkId) == 0) {
-            address = m_rawMemory.malloc(p_size);
-            if (address >= 0) {
-                // register new chunk
-                // register new chunk in cid table
-                if (!m_cidTable.set(chunkID, address)) {
-                    // on demand allocation of new table failed
-                    // free previously created chunk for data to avoid memory leak
-                    m_rawMemory.free(address);
-                    throw new OutOfKeyValueStoreMemoryException(getStatus());
-                } else {
-                    m_numActiveChunks++;
-                    m_totalActiveChunkMemory += p_size;
-                    chunkID = p_chunkId;
-                }
-            } else {
-                throw new OutOfKeyValueStoreMemoryException(getStatus());
+        try {
+            // #ifdef ASSERT_NODE_ROLE
+            if (m_boot.getNodeRole() != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
             }
-        }
+            // #endif /* ASSERT_NODE_ROLE */
 
-        // #ifdef STATISTICS
-        SOP_CREATE.leave();
-        // #endif /* STATISTICS */
+            // #ifdef STATISTICS
+            SOP_CREATE.enter();
+            // #endif /* STATISTICS */
+
+            chunkID = p_chunkId;
+
+            // verify this id is not used
+            if (m_cidTable.get(p_chunkId) == 0) {
+                address = m_rawMemory.malloc(p_size);
+                if (address >= 0) {
+                    // register new chunk
+                    // register new chunk in cid table
+                    if (!m_cidTable.set(chunkID, address)) {
+                        // on demand allocation of new table failed
+                        // free previously created chunk for data to avoid memory leak
+                        m_rawMemory.free(address);
+                        throw new OutOfKeyValueStoreMemoryException(getStatus());
+                    } else {
+                        m_numActiveChunks++;
+                        m_totalActiveChunkMemory += p_size;
+                        chunkID = p_chunkId;
+                    }
+                } else {
+                    throw new OutOfKeyValueStoreMemoryException(getStatus());
+                }
+            }
+
+            // #ifdef STATISTICS
+            SOP_CREATE.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
+        }
 
         return chunkID;
     }
@@ -337,62 +350,67 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long[] addresses;
         long[] lids;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        try {
+            // #ifdef ASSERT_NODE_ROLE
+            if (m_boot.getNodeRole() != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            }
+            // #endif /* ASSERT_NODE_ROLE */
 
-        // #ifdef STATISTICS
-        SOP_MULTI_CREATE.enter();
-        // #endif /* STATISTICS */
+            // #ifdef STATISTICS
+            SOP_MULTI_CREATE.enter();
+            // #endif /* STATISTICS */
 
-        // get new LIDs
-        lids = m_cidTable.getFreeLIDs(p_sizes.length, p_consecutive);
-        if (lids == null) {
-            throw new OutOfConsecutiveChunkIdsException();
-        }
+            // get new LIDs
+            lids = m_cidTable.getFreeLIDs(p_sizes.length, p_consecutive);
+            if (lids == null) {
+                throw new OutOfConsecutiveChunkIdsException();
+            }
 
-        // #ifdef STATISTICS
-        SOP_MULTI_MALLOC.enter(p_sizes.length);
-        // #endif /* STATISTICS */
-        addresses = m_rawMemory.multiMallocSizes(p_sizes);
-        // #ifdef STATISTICS
-        SOP_MULTI_MALLOC.leave();
-        // #endif /* STATISTICS */
-        if (addresses != null) {
+            // #ifdef STATISTICS
+            SOP_MULTI_MALLOC.enter(p_sizes.length);
+            // #endif /* STATISTICS */
+            addresses = m_rawMemory.multiMallocSizes(p_sizes);
+            // #ifdef STATISTICS
+            SOP_MULTI_MALLOC.leave();
+            // #endif /* STATISTICS */
+            if (addresses != null) {
 
-            for (int i = 0; i < lids.length; i++) {
-                lids[i] = ((long) m_boot.getNodeID() << 48) + lids[i];
+                for (int i = 0; i < lids.length; i++) {
+                    lids[i] = ((long) m_boot.getNodeID() << 48) + lids[i];
 
-                // register new chunk in cid table
-                if (!m_cidTable.set(lids[i], addresses[i])) {
+                    // register new chunk in cid table
+                    if (!m_cidTable.set(lids[i], addresses[i])) {
 
-                    for (int j = i; j >= 0; j--) {
-                        // on demand allocation of new table failed
-                        // free previously created chunk for data to avoid memory leak
-                        m_rawMemory.free(addresses[j]);
+                        for (int j = i; j >= 0; j--) {
+                            // on demand allocation of new table failed
+                            // free previously created chunk for data to avoid memory leak
+                            m_rawMemory.free(addresses[j]);
+                        }
+
+                        throw new OutOfKeyValueStoreMemoryException(getStatus());
+                    } else {
+                        m_numActiveChunks++;
+                        m_totalActiveChunkMemory += p_sizes[i];
                     }
-
-                    throw new OutOfKeyValueStoreMemoryException(getStatus());
-                } else {
-                    m_numActiveChunks++;
-                    m_totalActiveChunkMemory += p_sizes[i];
                 }
+
+            } else {
+                // put lids back
+                for (int i = 0; i < lids.length; i++) {
+                    m_cidTable.putChunkIDForReuse(lids[i]);
+                }
+
+                throw new OutOfKeyValueStoreMemoryException(getStatus());
             }
 
-        } else {
-            // put lids back
-            for (int i = 0; i < lids.length; i++) {
-                m_cidTable.putChunkIDForReuse(lids[i]);
-            }
-
-            throw new OutOfKeyValueStoreMemoryException(getStatus());
+            // #ifdef STATISTICS
+            SOP_MULTI_CREATE.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
-
-        // #ifdef STATISTICS
-        SOP_MULTI_CREATE.leave();
-        // #endif /* STATISTICS */
 
         return lids;
     }
@@ -457,63 +475,68 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long[] addresses;
         long[] lids;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        try {
+            // #ifdef ASSERT_NODE_ROLE
+            if (m_boot.getNodeRole() != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            }
+            // #endif /* ASSERT_NODE_ROLE */
 
-        // #ifdef STATISTICS
-        SOP_MULTI_CREATE.enter();
-        // #endif /* STATISTICS */
+            // #ifdef STATISTICS
+            SOP_MULTI_CREATE.enter();
+            // #endif /* STATISTICS */
 
-        // get new LIDs
-        lids = m_cidTable.getFreeLIDs(p_count, p_consecutive);
-        if (lids == null) {
-            throw new OutOfConsecutiveChunkIdsException();
-        }
+            // get new LIDs
+            lids = m_cidTable.getFreeLIDs(p_count, p_consecutive);
+            if (lids == null) {
+                throw new OutOfConsecutiveChunkIdsException();
+            }
 
-        // first, try to allocate. maybe early return
-        // #ifdef STATISTICS
-        SOP_MULTI_MALLOC.enter(p_size);
-        // #endif /* STATISTICS */
-        addresses = m_rawMemory.multiMalloc(p_size, p_count);
-        // #ifdef STATISTICS
-        SOP_MULTI_MALLOC.leave();
-        // #endif /* STATISTICS */
-        if (addresses != null) {
+            // first, try to allocate. maybe early return
+            // #ifdef STATISTICS
+            SOP_MULTI_MALLOC.enter(p_size);
+            // #endif /* STATISTICS */
+            addresses = m_rawMemory.multiMalloc(p_size, p_count);
+            // #ifdef STATISTICS
+            SOP_MULTI_MALLOC.leave();
+            // #endif /* STATISTICS */
+            if (addresses != null) {
 
-            for (int i = 0; i < lids.length; i++) {
-                lids[i] = ((long) m_boot.getNodeID() << 48) + lids[i];
+                for (int i = 0; i < lids.length; i++) {
+                    lids[i] = ((long) m_boot.getNodeID() << 48) + lids[i];
 
-                // register new chunk in cid table
-                if (!m_cidTable.set(lids[i], addresses[i])) {
+                    // register new chunk in cid table
+                    if (!m_cidTable.set(lids[i], addresses[i])) {
 
-                    for (int j = i; j >= 0; j--) {
-                        // on demand allocation of new table failed
-                        // free previously created chunk for data to avoid memory leak
-                        m_rawMemory.free(addresses[j]);
+                        for (int j = i; j >= 0; j--) {
+                            // on demand allocation of new table failed
+                            // free previously created chunk for data to avoid memory leak
+                            m_rawMemory.free(addresses[j]);
+                        }
+
+                        throw new OutOfKeyValueStoreMemoryException(getStatus());
+                    } else {
+                        m_numActiveChunks++;
+                        m_totalActiveChunkMemory += p_size;
                     }
-
-                    throw new OutOfKeyValueStoreMemoryException(getStatus());
-                } else {
-                    m_numActiveChunks++;
-                    m_totalActiveChunkMemory += p_size;
                 }
+
+            } else {
+                // put lids back
+                for (int i = 0; i < lids.length; i++) {
+                    m_cidTable.putChunkIDForReuse(lids[i]);
+                }
+
+                throw new OutOfKeyValueStoreMemoryException(getStatus());
             }
 
-        } else {
-            // put lids back
-            for (int i = 0; i < lids.length; i++) {
-                m_cidTable.putChunkIDForReuse(lids[i]);
-            }
-
-            throw new OutOfKeyValueStoreMemoryException(getStatus());
+            // #ifdef STATISTICS
+            SOP_MULTI_CREATE.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
-
-        // #ifdef STATISTICS
-        SOP_MULTI_CREATE.leave();
-        // #endif /* STATISTICS */
 
         return lids;
     }
@@ -533,53 +556,58 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long chunkID;
         long lid;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        try {
+            // #ifdef ASSERT_NODE_ROLE
+            if (m_boot.getNodeRole() != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            }
+            // #endif /* ASSERT_NODE_ROLE */
 
-        // #ifdef STATISTICS
-        SOP_CREATE.enter();
-        // #endif /* STATISTICS */
+            // #ifdef STATISTICS
+            SOP_CREATE.enter();
+            // #endif /* STATISTICS */
 
-        // get new LID from CIDTable
-        lid = m_cidTable.getFreeLID();
-        if (lid == -1) {
-            chunkID = -1;
-        } else {
-            // first, try to allocate. maybe early return
-            // #ifdef STATISTICS
-            SOP_MALLOC.enter(p_size);
-            // #endif /* STATISTICS */
-            address = m_rawMemory.malloc(p_size);
-            // #ifdef STATISTICS
-            SOP_MALLOC.leave();
-            // #endif /* STATISTICS */
-            if (address >= 0) {
-                chunkID = ((long) m_boot.getNodeID() << 48) + lid;
-                // register new chunk in cid table
-                if (!m_cidTable.set(chunkID, address)) {
-                    // on demand allocation of new table failed
-                    // free previously created chunk for data to avoid memory leak
-                    m_rawMemory.free(address);
+            // get new LID from CIDTable
+            lid = m_cidTable.getFreeLID();
+            if (lid == -1) {
+                chunkID = -1;
+            } else {
+                // first, try to allocate. maybe early return
+                // #ifdef STATISTICS
+                SOP_MALLOC.enter(p_size);
+                // #endif /* STATISTICS */
+                address = m_rawMemory.malloc(p_size);
+                // #ifdef STATISTICS
+                SOP_MALLOC.leave();
+                // #endif /* STATISTICS */
+                if (address >= 0) {
+                    chunkID = ((long) m_boot.getNodeID() << 48) + lid;
+                    // register new chunk in cid table
+                    if (!m_cidTable.set(chunkID, address)) {
+                        // on demand allocation of new table failed
+                        // free previously created chunk for data to avoid memory leak
+                        m_rawMemory.free(address);
+
+                        throw new OutOfKeyValueStoreMemoryException(getStatus());
+                    } else {
+                        m_numActiveChunks++;
+                        m_totalActiveChunkMemory += p_size;
+                    }
+                } else {
+                    // put lid back
+                    m_cidTable.putChunkIDForReuse(lid);
 
                     throw new OutOfKeyValueStoreMemoryException(getStatus());
-                } else {
-                    m_numActiveChunks++;
-                    m_totalActiveChunkMemory += p_size;
                 }
-            } else {
-                // put lid back
-                m_cidTable.putChunkIDForReuse(lid);
-
-                throw new OutOfKeyValueStoreMemoryException(getStatus());
             }
-        }
 
-        // #ifdef STATISTICS
-        SOP_CREATE.leave();
-        // #endif /* STATISTICS */
+            // #ifdef STATISTICS
+            SOP_CREATE.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
+        }
 
         return chunkID;
     }
@@ -596,20 +624,25 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long address;
         int size = -1;
 
-        NodeRole role = m_boot.getNodeRole();
-        if (role == NodeRole.TERMINAL) {
-            return size;
-        }
+        try {
+            NodeRole role = m_boot.getNodeRole();
+            if (role == NodeRole.TERMINAL) {
+                return size;
+            }
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (role != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+            // #ifdef ASSERT_NODE_ROLE
+            if (role != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            }
+            // #endif /* ASSERT_NODE_ROLE */
 
-        address = m_cidTable.get(p_chunkID);
-        if (address > 0) {
-            size = m_rawMemory.getSizeBlock(address);
+            address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                size = m_rawMemory.getSizeBlock(address);
+            }
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
 
         return size;
@@ -627,36 +660,41 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long address;
         boolean ret = true;
 
-        NodeRole role = m_boot.getNodeRole();
-        if (role == NodeRole.TERMINAL) {
-            return true;
+        try {
+            NodeRole role = m_boot.getNodeRole();
+            if (role == NodeRole.TERMINAL) {
+                return true;
+            }
+
+            // #ifdef ASSERT_NODE_ROLE
+            if (role != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            }
+            // #endif /* ASSERT_NODE_ROLE */
+
+            // #ifdef STATISTICS
+            SOP_GET.enter();
+            // #endif /* STATISTICS */
+
+            address = m_cidTable.get(p_dataStructure.getID());
+            if (address > 0) {
+                // pool the im/exporters
+                SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
+
+                // SmallObjectHeapDataStructureImExporter importer =
+                // new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+                importer.importObject(p_dataStructure);
+            } else {
+                ret = false;
+            }
+
+            // #ifdef STATISTICS
+            SOP_GET.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (role != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        // #ifdef STATISTICS
-        SOP_GET.enter();
-        // #endif /* STATISTICS */
-
-        address = m_cidTable.get(p_dataStructure.getID());
-        if (address > 0) {
-            // pool the im/exporters
-            SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
-
-            // SmallObjectHeapDataStructureImExporter importer =
-            // new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
-            importer.importObject(p_dataStructure);
-        } else {
-            ret = false;
-        }
-
-        // #ifdef STATISTICS
-        SOP_GET.leave();
-        // #endif /* STATISTICS */
 
         return ret;
     }
@@ -673,39 +711,44 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         byte[] ret;
         long address;
 
-        NodeRole role = m_boot.getNodeRole();
-        if (role == NodeRole.TERMINAL) {
-            return null;
-        }
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (role != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        // #ifdef STATISTICS
-        SOP_GET.enter();
-        // #endif /* STATISTICS */
-
-        address = m_cidTable.get(p_chunkID);
-        if (address > 0) {
-            int chunkSize = m_rawMemory.getSizeBlock(address);
-            ret = new byte[chunkSize];
-
-            // pool the im/exporters
-            SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
-            int retSize = importer.readBytes(ret);
-            if (retSize != chunkSize) {
-                throw new DXRAMRuntimeException("Unknown error, importer size " + retSize + " != chunk size " + chunkSize);
+        try {
+            NodeRole role = m_boot.getNodeRole();
+            if (role == NodeRole.TERMINAL) {
+                return null;
             }
-        } else {
-            ret = null;
-        }
 
-        // #ifdef STATISTICS
-        SOP_GET.leave();
-        // #endif /* STATISTICS */
+            // #ifdef ASSERT_NODE_ROLE
+            if (role != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            }
+            // #endif /* ASSERT_NODE_ROLE */
+
+            // #ifdef STATISTICS
+            SOP_GET.enter();
+            // #endif /* STATISTICS */
+
+            address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                int chunkSize = m_rawMemory.getSizeBlock(address);
+                ret = new byte[chunkSize];
+
+                // pool the im/exporters
+                SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
+                int retSize = importer.readBytes(ret);
+                if (retSize != chunkSize) {
+                    throw new DXRAMRuntimeException("Unknown error, importer size " + retSize + " != chunk size " + chunkSize);
+                }
+            } else {
+                ret = null;
+            }
+
+            // #ifdef STATISTICS
+            SOP_GET.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
+        }
 
         return ret;
     }
@@ -724,33 +767,38 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         long address;
         boolean ret = true;
 
-        NodeRole role = m_boot.getNodeRole();
-        if (role == NodeRole.TERMINAL) {
-            return true;
+        try {
+            NodeRole role = m_boot.getNodeRole();
+            if (role == NodeRole.TERMINAL) {
+                return true;
+            }
+
+            // #ifdef ASSERT_NODE_ROLE
+            if (role != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            }
+            // #endif /* ASSERT_NODE_ROLE */
+
+            // #ifdef STATISTICS
+            SOP_PUT.enter();
+            // #endif /* STATISTICS */
+
+            address = m_cidTable.get(p_dataStructure.getID());
+            if (address > 0) {
+                // pool the im/exporters
+                SmallObjectHeapDataStructureImExporter exporter = getImExporter(address);
+                exporter.exportObject(p_dataStructure);
+            } else {
+                ret = false;
+            }
+
+            // #ifdef STATISTICS
+            SOP_PUT.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (role != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        // #ifdef STATISTICS
-        SOP_PUT.enter();
-        // #endif /* STATISTICS */
-
-        address = m_cidTable.get(p_dataStructure.getID());
-        if (address > 0) {
-            // pool the im/exporters
-            SmallObjectHeapDataStructureImExporter exporter = getImExporter(address);
-            exporter.exportObject(p_dataStructure);
-        } else {
-            ret = false;
-        }
-
-        // #ifdef STATISTICS
-        SOP_PUT.leave();
-        // #endif /* STATISTICS */
 
         return ret;
     }
@@ -771,54 +819,59 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         int size;
         boolean ret = true;
 
-        NodeRole role = m_boot.getNodeRole();
-        if (role == NodeRole.TERMINAL) {
-            return true;
-        }
+        try {
+            NodeRole role = m_boot.getNodeRole();
+            if (role == NodeRole.TERMINAL) {
+                return true;
+            }
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (role != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+            // #ifdef ASSERT_NODE_ROLE
+            if (role != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            }
+            // #endif /* ASSERT_NODE_ROLE */
 
-        // #ifdef STATISTICS
-        SOP_REMOVE.enter();
-        // #endif /* STATISTICS */
+            // #ifdef STATISTICS
+            SOP_REMOVE.enter();
+            // #endif /* STATISTICS */
 
-        // Get and delete the address from the CIDTable, mark as zombie first
-        addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
-        if (addressDeletedChunk != -1) {
-            // more space for another zombie for reuse in LID store?
-            if (p_wasMigrated) {
+            // Get and delete the address from the CIDTable, mark as zombie first
+            addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
+            if (addressDeletedChunk != -1) {
+                // more space for another zombie for reuse in LID store?
+                if (p_wasMigrated) {
 
-                m_cidTable.delete(p_chunkID, false);
-            } else {
-
-                if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
-                    // detach reference to zombie
                     m_cidTable.delete(p_chunkID, false);
                 } else {
-                    // no space for zombie in LID store, keep him "alive" in table
-                }
-            }
-            size = m_rawMemory.getSizeBlock(addressDeletedChunk);
-            // #ifdef STATISTICS
-            SOP_FREE.enter(size);
-            // #endif /* STATISTICS */
-            m_rawMemory.free(addressDeletedChunk);
-            // #ifdef STATISTICS
-            SOP_FREE.leave();
-            // #endif /* STATISTICS */
-            m_numActiveChunks--;
-            m_totalActiveChunkMemory -= size;
-        } else {
-            ret = false;
-        }
 
-        // #ifdef STATISTICS
-        SOP_REMOVE.leave();
-        // #endif /* STATISTICS */
+                    if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
+                        // detach reference to zombie
+                        m_cidTable.delete(p_chunkID, false);
+                    } else {
+                        // no space for zombie in LID store, keep him "alive" in table
+                    }
+                }
+                size = m_rawMemory.getSizeBlock(addressDeletedChunk);
+                // #ifdef STATISTICS
+                SOP_FREE.enter(size);
+                // #endif /* STATISTICS */
+                m_rawMemory.free(addressDeletedChunk);
+                // #ifdef STATISTICS
+                SOP_FREE.leave();
+                // #endif /* STATISTICS */
+                m_numActiveChunks--;
+                m_totalActiveChunkMemory -= size;
+            } else {
+                ret = false;
+            }
+
+            // #ifdef STATISTICS
+            SOP_REMOVE.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
+        }
 
         return ret;
     }
@@ -840,47 +893,52 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public void createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
         long[] addresses;
 
-        // #ifdef ASSERT_NODE_ROLE
-        NodeRole role = m_boot.getNodeRole();
-        if (role != NodeRole.PEER) {
-            if (role == NodeRole.TERMINAL) {
-                return;
+        try {
+            // #ifdef ASSERT_NODE_ROLE
+            NodeRole role = m_boot.getNodeRole();
+            if (role != NodeRole.PEER) {
+                if (role == NodeRole.TERMINAL) {
+                    return;
+                }
+
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            }
+            // #endif /* ASSERT_NODE_ROLE */
+
+            // #ifdef STATISTICS
+            SOP_CREATE_PUT_RECOVERED.enter(p_usedEntries);
+            // #endif /* STATISTICS */
+
+            // #ifdef STATISTICS
+            SOP_MULTI_MALLOC.enter(p_usedEntries);
+            // #endif /* STATISTICS */
+            addresses = m_rawMemory.multiMallocSizesUsedEntries(p_usedEntries, p_lengths);
+            // #ifdef STATISTICS
+            SOP_MULTI_MALLOC.leave();
+            // #endif /* STATISTICS */
+            if (addresses != null) {
+
+                for (int i = 0; i < addresses.length; i++) {
+                    m_rawMemory.writeBytes(addresses[i], 0, p_data, p_offsets[i], p_lengths[i]);
+                    m_totalActiveChunkMemory += p_lengths[i];
+                }
+
+                m_numActiveChunks += addresses.length;
+
+                for (int i = 0; i < addresses.length; i++) {
+                    m_cidTable.set(p_chunkIDs[i], addresses[i]);
+                }
+            } else {
+                throw new OutOfKeyValueStoreMemoryException(getStatus());
             }
 
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            // #ifdef STATISTICS
+            SOP_CREATE_PUT_RECOVERED.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        // #ifdef STATISTICS
-        SOP_CREATE_PUT_RECOVERED.enter(p_usedEntries);
-        // #endif /* STATISTICS */
-
-        // #ifdef STATISTICS
-        SOP_MULTI_MALLOC.enter(p_usedEntries);
-        // #endif /* STATISTICS */
-        addresses = m_rawMemory.multiMallocSizesUsedEntries(p_usedEntries, p_lengths);
-        // #ifdef STATISTICS
-        SOP_MULTI_MALLOC.leave();
-        // #endif /* STATISTICS */
-        if (addresses != null) {
-
-            for (int i = 0; i < addresses.length; i++) {
-                m_rawMemory.writeBytes(addresses[i], 0, p_data, p_offsets[i], p_lengths[i]);
-                m_totalActiveChunkMemory += p_lengths[i];
-            }
-
-            m_numActiveChunks += addresses.length;
-
-            for (int i = 0; i < addresses.length; i++) {
-                m_cidTable.set(p_chunkIDs[i], addresses[i]);
-            }
-        } else {
-            throw new OutOfKeyValueStoreMemoryException(getStatus());
-        }
-
-        // #ifdef STATISTICS
-        SOP_CREATE_PUT_RECOVERED.leave();
-        // #endif /* STATISTICS */
     }
 
     // -----------------------------------------------------------------------------
@@ -898,11 +956,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public byte readByte(final long p_chunkID, final int p_offset) {
         assert m_boot.getNodeRole() == NodeRole.PEER;
 
-        long address = m_cidTable.get(p_chunkID);
-        if (address > 0) {
-            return m_rawMemory.readByte(address, p_offset);
-        } else {
-            return -1;
+        try {
+            long address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                return m_rawMemory.readByte(address, p_offset);
+            } else {
+                return -1;
+            }
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
     }
 
@@ -919,11 +982,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public short readShort(final long p_chunkID, final int p_offset) {
         assert m_boot.getNodeRole() == NodeRole.PEER;
 
-        long address = m_cidTable.get(p_chunkID);
-        if (address > 0) {
-            return m_rawMemory.readShort(address, p_offset);
-        } else {
-            return -1;
+        try {
+            long address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                return m_rawMemory.readShort(address, p_offset);
+            } else {
+                return -1;
+            }
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
     }
 
@@ -940,11 +1008,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public int readInt(final long p_chunkID, final int p_offset) {
         assert m_boot.getNodeRole() == NodeRole.PEER;
 
-        long address = m_cidTable.get(p_chunkID);
-        if (address > 0) {
-            return m_rawMemory.readInt(address, p_offset);
-        } else {
-            return -1;
+        try {
+            long address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                return m_rawMemory.readInt(address, p_offset);
+            } else {
+                return -1;
+            }
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
     }
 
@@ -961,11 +1034,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public long readLong(final long p_chunkID, final int p_offset) {
         assert m_boot.getNodeRole() == NodeRole.PEER;
 
-        long address = m_cidTable.get(p_chunkID);
-        if (address > 0) {
-            return m_rawMemory.readLong(address, p_offset);
-        } else {
-            return -1;
+        try {
+            long address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                return m_rawMemory.readLong(address, p_offset);
+            } else {
+                return -1;
+            }
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
     }
 
@@ -984,11 +1062,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public boolean writeByte(final long p_chunkID, final int p_offset, final byte p_value) {
         assert m_boot.getNodeRole() == NodeRole.PEER;
 
-        long address = m_cidTable.get(p_chunkID);
-        if (address > 0) {
-            m_rawMemory.writeByte(address, p_offset, p_value);
-        } else {
-            return false;
+        try {
+            long address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                m_rawMemory.writeByte(address, p_offset, p_value);
+            } else {
+                return false;
+            }
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
 
         return true;
@@ -1009,11 +1092,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public boolean writeShort(final long p_chunkID, final int p_offset, final short p_value) {
         assert m_boot.getNodeRole() == NodeRole.PEER;
 
-        long address = m_cidTable.get(p_chunkID);
-        if (address > 0) {
-            m_rawMemory.writeShort(address, p_offset, p_value);
-        } else {
-            return false;
+        try {
+            long address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                m_rawMemory.writeShort(address, p_offset, p_value);
+            } else {
+                return false;
+            }
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
 
         return true;
@@ -1034,11 +1122,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public boolean writeInt(final long p_chunkID, final int p_offset, final int p_value) {
         assert m_boot.getNodeRole() == NodeRole.PEER;
 
-        long address = m_cidTable.get(p_chunkID);
-        if (address > 0) {
-            m_rawMemory.writeInt(address, p_offset, p_value);
-        } else {
-            return false;
+        try {
+            long address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                m_rawMemory.writeInt(address, p_offset, p_value);
+            } else {
+                return false;
+            }
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
 
         return true;
@@ -1059,11 +1152,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     public boolean writeLong(final long p_chunkID, final int p_offset, final long p_value) {
         assert m_boot.getNodeRole() == NodeRole.PEER;
 
-        long address = m_cidTable.get(p_chunkID);
-        if (address > 0) {
-            m_rawMemory.writeLong(address, p_offset, p_value);
-        } else {
-            return false;
+        try {
+            long address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                m_rawMemory.writeLong(address, p_offset, p_value);
+            } else {
+                return false;
+            }
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
         }
 
         return true;
@@ -1087,8 +1185,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             return false;
         }
 
-        // Get the address from the CIDTable
-        address = m_cidTable.get(p_chunkID);
+        try {
+            // Get the address from the CIDTable
+            address = m_cidTable.get(p_chunkID);
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e);
+            throw e;
+        }
 
         // If address <= 0, the Chunk does not exists in memory
         return address > 0;
@@ -1184,6 +1287,29 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         }
 
         return importer;
+    }
+
+    /**
+     * Execute a memory dump (if enabled) on a memory error (corruption)
+     * Note: MemoryRuntimeException is only thrown if assertions are enabled (disabled for performance)
+     * Otherwise, some memory access errors result in segmentation faults, others aren't detected.
+     *
+     * @param p_e
+     *     Exception thrown on memory error
+     */
+    private void handleMemDumpOnError(final MemoryRuntimeException p_e) {
+        LOGGER.fatal("Encountered memory error (most likely corruption)", p_e);
+        if (!m_memDumpFileOnError.isEmpty()) {
+            LOGGER.fatal("Full memory dump to file: %s...", m_memDumpFileOnError);
+
+            lockManage();
+            m_rawMemory.dump(m_memDumpFileOnError);
+            unlockManage();
+
+            LOGGER.fatal("Memory dump finished");
+        } else {
+            LOGGER.fatal("Memory dump to file disabled");
+        }
     }
 
     /**
