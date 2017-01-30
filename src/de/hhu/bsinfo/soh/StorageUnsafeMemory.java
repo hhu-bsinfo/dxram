@@ -13,10 +13,6 @@
 
 package de.hhu.bsinfo.soh;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-
 import sun.misc.Unsafe;
 
 import de.hhu.bsinfo.utils.UnsafeHandler;
@@ -62,6 +58,10 @@ public class StorageUnsafeMemory implements Storage {
 
     @Override
     public void free() {
+        if (m_memoryBase == -1) {
+            return;
+        }
+
         try {
             UNSAFE.freeMemory(m_memoryBase);
         } catch (final Throwable e) {
@@ -73,33 +73,6 @@ public class StorageUnsafeMemory implements Storage {
     @Override
     public String toString() {
         return "m_memoryBase=0x" + Long.toHexString(m_memoryBase) + ", m_memorySize: " + m_memorySize;
-    }
-
-    @Override
-    public void dump(final File p_file, final long p_ptr, final long p_length) {
-        assert p_ptr >= 0;
-        assert p_ptr < m_memorySize;
-        assert p_ptr + p_length <= m_memorySize;
-
-        RandomAccessFile outFile = null;
-        try {
-            outFile = new RandomAccessFile(p_file, "rw");
-
-            long offset = 0;
-            while (offset < p_length) {
-                outFile.writeByte(UNSAFE.getByte(m_memoryBase + p_ptr + offset));
-                offset++;
-            }
-        } catch (final IOException e) {
-            throw new MemoryRuntimeException(e.getMessage());
-        } finally {
-            try {
-                if (outFile != null) {
-                    outFile.close();
-                }
-            } catch (final IOException ignored) {
-            }
-        }
     }
 
     @Override

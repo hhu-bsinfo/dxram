@@ -78,34 +78,6 @@ public class StorageRandomAccessFile implements Storage {
     }
 
     @Override
-    public void dump(final File p_file, final long p_ptr, final long p_length) {
-        assert p_ptr >= 0;
-        assert p_ptr < m_size;
-        assert p_ptr + p_length <= m_size;
-
-        RandomAccessFile outFile = null;
-        try {
-            outFile = new RandomAccessFile(p_file, "rw");
-
-            m_file.seek(p_ptr);
-            int offset = 0;
-            while (offset < p_length) {
-                outFile.writeByte((byte) m_file.read());
-                offset++;
-            }
-        } catch (final IOException e) {
-            throw new MemoryRuntimeException(e.getMessage());
-        } finally {
-            try {
-                if (outFile != null) {
-                    outFile.close();
-                }
-            } catch (final IOException ignored) {
-            }
-        }
-    }
-
-    @Override
     public long getSize() {
         return m_size;
     }

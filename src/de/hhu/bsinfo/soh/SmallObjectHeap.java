@@ -14,9 +14,18 @@
 package de.hhu.bsinfo.soh;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import de.hhu.bsinfo.utils.serialization.Exportable;
+import de.hhu.bsinfo.utils.serialization.Exporter;
+import de.hhu.bsinfo.utils.serialization.Importable;
+import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.utils.serialization.RandomAccessFileImExporter;
 
 /**
  * Very efficient memory allocator for many small objects
@@ -24,26 +33,26 @@ import org.apache.logging.log4j.Logger;
  * @author Florian Klein, florian.klein@hhu.de, 13.02.2014
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
-public final class SmallObjectHeap {
+public final class SmallObjectHeap implements Importable, Exportable {
     private static final Logger LOGGER = LogManager.getFormatterLogger(SmallObjectHeap.class.getSimpleName());
 
     // Constants
     static final byte POINTER_SIZE = 5;
     static final int SIZE_MARKER_BYTE = 1;
+    static final byte ALLOC_BLOCK_FLAGS_OFFSET = 0x5;
     private static final long MAX_SET_SIZE = (long) Math.pow(2, 30);
     private static final byte SMALL_BLOCK_SIZE = 64;
-    private static final byte OCCUPIED_FLAGS_OFFSET = 0x5;
     private static final byte SINGLE_BYTE_MARKER = 0xF;
 
     // Attributes, have them accessible by the package to enable walking and analyzing the heap
     // don't modify or access them otherwise
-    Storage m_memory;
-    int m_maxBlockSize;
+    private int m_maxBlockSize;
     long m_baseFreeBlockList;
     int m_freeBlocksListSize = -1;
     long[] m_freeBlockListSizes;
-    private Status m_status;
     private int m_freeBlocksListCount = -1;
+    private Status m_status;
+    Storage m_memory;
 
     // Constructors
 
@@ -111,6 +120,26 @@ public final class SmallObjectHeap {
         m_status.m_freeSmall64ByteBlocks = 0;
     }
 
+    public SmallObjectHeap(final String p_memDumpFile, final Storage p_memory) {
+        m_memory = p_memory;
+
+        File file = new File(p_memDumpFile);
+
+        if (!file.exists()) {
+            throw new MemoryRuntimeException("Cannot create heap from mem dump " + p_memDumpFile + ": file does not exist");
+        }
+
+        RandomAccessFileImExporter importer;
+        try {
+            importer = new RandomAccessFileImExporter(file);
+        } catch (final FileNotFoundException e) {
+            // cannot happen
+            throw new MemoryRuntimeException("Illegal state", e);
+        }
+
+        importer.importObject(this);
+    }
+
     /**
      * Gets the status
      *
@@ -131,12 +160,12 @@ public final class SmallObjectHeap {
     private static int getSizeFromMarker(final int p_marker) {
         int ret;
 
-        if (p_marker <= OCCUPIED_FLAGS_OFFSET) {
+        if (p_marker <= ALLOC_BLOCK_FLAGS_OFFSET) {
             // free block size
             ret = p_marker;
         } else {
             // allocated block sizes 1, 2, 3, 4 are used
-            ret = p_marker - OCCUPIED_FLAGS_OFFSET;
+            ret = p_marker - ALLOC_BLOCK_FLAGS_OFFSET;
         }
 
         return ret;
@@ -151,17 +180,33 @@ public final class SmallObjectHeap {
     }
 
     /**
-     * Dump a range of memory to a file.
+     * Full memory dump
      *
      * @param p_file
-     *     Destination file to dump to.
-     * @param p_addr
-     *     Start address.
-     * @param p_count
-     *     Number of bytes to dump.
+     *     Destination for the memory file to dump to
      */
-    public void dump(final File p_file, final long p_addr, final long p_count) {
-        m_memory.dump(p_file, p_addr, p_count);
+    public void dump(final String p_file) {
+        File file = new File(p_file);
+
+        if (file.exists()) {
+            file.delete();
+        } else {
+            try {
+                file.createNewFile();
+            } catch (final IOException e) {
+                throw new MemoryRuntimeException("Creating file for memory dump failed", e);
+            }
+        }
+
+        RandomAccessFileImExporter exporter;
+        try {
+            exporter = new RandomAccessFileImExporter(file);
+        } catch (final FileNotFoundException e) {
+            // not possible
+            throw new MemoryRuntimeException("Illegal state", e);
+        }
+
+        exporter.exportObject(this);
     }
 
     /**
@@ -169,7 +214,7 @@ public final class SmallObjectHeap {
      *
      * @param p_size
      *     the size of the block in bytes.
-     * @return the address of the block
+     * @return the address of the block or 0 if no free blocks available for the specified size
      */
     public long malloc(final int p_size) {
         return reserveBlock(p_size);
@@ -743,7 +788,7 @@ public final class SmallObjectHeap {
      *     the number of bytes
      * @return the combined bytes
      */
-    protected long read(final long p_address, final int p_count) {
+    long read(final long p_address, final int p_count) {
         return m_memory.readVal(p_address, p_count);
     }
 
@@ -756,6 +801,17 @@ public final class SmallObjectHeap {
      */
     int readRightPartOfMarker(final long p_address) {
         return m_memory.readByte(p_address) & 0xF;
+    }
+
+    /**
+     * Read the left part of a marker byte
+     *
+     * @param p_address
+     *     the address
+     * @return the left part of a marker byte
+     */
+    int readLeftPartOfMarker(final long p_address) {
+        return (m_memory.readByte(p_address) & 0xF0) >> 4;
     }
 
     /**
@@ -807,10 +863,8 @@ public final class SmallObjectHeap {
 
         lengthFieldSize = calculateLengthFieldSize(p_size);
 
-        blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
-
+        blockMarker = (byte) (ALLOC_BLOCK_FLAGS_OFFSET + lengthFieldSize);
         blockSize = p_size + lengthFieldSize;
-
         address = findFreeBlock(blockSize);
 
         if (address != 0) {
@@ -821,7 +875,6 @@ public final class SmallObjectHeap {
             writeLeftPartOfMarker(address + blockSize, blockMarker);
             writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
 
-            // Write block size (or ptr to next block)
             write(address, p_size, lengthFieldSize);
 
             m_status.m_allocatedPayload += p_size;
@@ -845,30 +898,27 @@ public final class SmallObjectHeap {
         long freeSize;
         int freeLengthFieldSize;
 
-        System.out.println("find free block size: " + p_size);
-
         // Get the list with a free block which is big enough
-        list = getList(p_size);
-        listIdx = list;
-        System.out.println("m_baseFreeBlockList: " + m_baseFreeBlockList + ", list: " + list);
-        do {
-            System.out.println("read pointer: " + (m_baseFreeBlockList + listIdx * POINTER_SIZE) + ", list: " + listIdx);
-            address = readPointer(m_baseFreeBlockList + listIdx * POINTER_SIZE);
-            System.out.println("free block addr: " + address);
-            listIdx++;
-        } while (listIdx < m_freeBlocksListCount && address == 0);
-
-        System.out.println("free block list pick: " + address);
-
-        // Traverse through the linked free blocks list
-        if (address != 0) {
-            freeLengthFieldSize = readRightPartOfMarker(address - 1);
-            freeSize = read(address, freeLengthFieldSize);
-            while (freeSize < p_size && address != 0) {
-                address = readPointer(address + freeLengthFieldSize + POINTER_SIZE);
-                if (address != 0) {
-                    freeLengthFieldSize = readRightPartOfMarker(address - 1);
-                    freeSize = read(address, freeLengthFieldSize);
+        list = getList(p_size) + 1;
+        while (list < m_freeBlocksListCount && readPointer(m_baseFreeBlockList + list * POINTER_SIZE) == 0) {
+            list++;
+        }
+        if (list < m_freeBlocksListCount) {
+            // A list is found
+            address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
+        } else {
+            // Traverse through the lower list
+            list = getList(p_size);
+            address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
+            if (address != 0) {
+                freeLengthFieldSize = readRightPartOfMarker(address - 1);
+                freeSize = read(address, freeLengthFieldSize);
+                while (freeSize < p_size && address != 0) {
+                    address = readPointer(address + freeLengthFieldSize + POINTER_SIZE);
+                    if (address != 0) {
+                        freeLengthFieldSize = readRightPartOfMarker(address - 1);
+                        freeSize = read(address, freeLengthFieldSize);
+                    }
                 }
             }
         }
@@ -958,7 +1008,7 @@ public final class SmallObjectHeap {
 
             lengthFieldSize = calculateLengthFieldSize(size);
 
-            blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
+            blockMarker = (byte) (ALLOC_BLOCK_FLAGS_OFFSET + lengthFieldSize);
 
             writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
             writeLeftPartOfMarker(address + lengthFieldSize + size, blockMarker);
@@ -1016,7 +1066,7 @@ public final class SmallObjectHeap {
 
             lengthFieldSize = calculateLengthFieldSize(size);
 
-            blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
+            blockMarker = (byte) (ALLOC_BLOCK_FLAGS_OFFSET + lengthFieldSize);
 
             writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
             writeLeftPartOfMarker(address + lengthFieldSize + size, blockMarker);
@@ -1373,17 +1423,6 @@ public final class SmallObjectHeap {
     }
 
     /**
-     * Read the left part of a marker byte
-     *
-     * @param p_address
-     *     the address
-     * @return the left part of a marker byte
-     */
-    private int readLeftPartOfMarker(final long p_address) {
-        return (m_memory.readByte(p_address) & 0xF0) >> 4;
-    }
-
-    /**
      * Writes a marker byte
      *
      * @param p_address
@@ -1565,6 +1604,72 @@ public final class SmallObjectHeap {
         return p_length;
     }
 
+    @Override
+    public void exportObject(final Exporter p_exporter) {
+        p_exporter.writeInt(m_maxBlockSize);
+        p_exporter.writeLong(m_baseFreeBlockList);
+        p_exporter.writeInt(m_freeBlocksListSize);
+        p_exporter.writeLongArray(m_freeBlockListSizes);
+        p_exporter.writeInt(m_freeBlocksListCount);
+        p_exporter.exportObject(m_status);
+
+        // write "chunks" of the raw memory to speed up the process
+        byte[] buffer = new byte[1024 * 32];
+
+        int chunkSize = buffer.length;
+        long ptr = 0;
+
+        while (ptr < m_status.getSize()) {
+            if (m_status.getSize() - ptr < chunkSize) {
+                chunkSize = (int) (m_status.getSize() - ptr);
+            }
+
+            m_memory.readBytes(ptr, buffer, 0, chunkSize);
+            p_exporter.writeBytes(buffer, 0, chunkSize);
+
+            ptr += chunkSize;
+        }
+    }
+
+    @Override
+    public void importObject(final Importer p_importer) {
+        m_maxBlockSize = p_importer.readInt();
+        m_baseFreeBlockList = p_importer.readLong();
+        m_freeBlocksListSize = p_importer.readInt();
+        m_freeBlockListSizes = p_importer.readLongArray();
+        m_freeBlocksListCount = p_importer.readInt();
+        m_status = new Status();
+        p_importer.importObject(m_status);
+
+        // free previously allocated VMB
+        m_memory.free();
+
+        // allocate VMB
+        m_memory.allocate(m_status.getSize());
+
+        // read "chunks" from file and write to raw memory to speed up the process
+        byte[] buffer = new byte[1024 * 32];
+
+        int chunkSize = buffer.length;
+        long ptr = 0;
+
+        while (ptr < m_status.getSize()) {
+            if (m_status.getSize() - ptr < chunkSize) {
+                chunkSize = (int) (m_status.getSize() - ptr);
+            }
+
+            p_importer.readBytes(buffer, 0, chunkSize);
+            m_memory.writeBytes(ptr, buffer, 0, chunkSize);
+            ptr += chunkSize;
+        }
+    }
+
+    @Override
+    public int sizeofObject() {
+        return (int) (Integer.BYTES + Long.BYTES + Integer.BYTES + ObjectSizeUtil.sizeofLongArray(m_freeBlockListSizes) + Integer.BYTES +
+            m_status.sizeofObject() + m_status.getSize());
+    }
+
     // --------------------------------------------------------------------------------------
 
     // Classes
@@ -1574,7 +1679,7 @@ public final class SmallObjectHeap {
      *
      * @author Florian Klein 10.04.2014
      */
-    public static final class Status {
+    public static final class Status implements Importable, Exportable {
 
         private long m_size;
         private int m_maxBlockSize;
@@ -1667,6 +1772,33 @@ public final class SmallObjectHeap {
             return "Status [m_size=" + m_size + ", m_free=" + m_free + ", m_allocatedPayload=" + m_allocatedPayload + ", m_allocatedBlocks=" +
                 m_allocatedBlocks + ", m_freeBlocks=" + m_freeBlocks + ", m_freeSmall64ByteBlocks=" + m_freeSmall64ByteBlocks + ", fragmentation=" +
                 getFragmentation() + ']';
+        }
+
+        @Override
+        public void exportObject(final Exporter p_exporter) {
+            p_exporter.writeLong(m_size);
+            p_exporter.writeInt(m_maxBlockSize);
+            p_exporter.writeLong(m_free);
+            p_exporter.writeLong(m_allocatedPayload);
+            p_exporter.writeLong(m_allocatedBlocks);
+            p_exporter.writeLong(m_freeBlocks);
+            p_exporter.writeLong(m_freeSmall64ByteBlocks);
+        }
+
+        @Override
+        public void importObject(final Importer p_importer) {
+            m_size = p_importer.readLong();
+            m_maxBlockSize = p_importer.readInt();
+            m_free = p_importer.readLong();
+            m_allocatedPayload = p_importer.readLong();
+            m_allocatedBlocks = p_importer.readLong();
+            m_freeBlocks = p_importer.readLong();
+            m_freeSmall64ByteBlocks = p_importer.readLong();
+        }
+
+        @Override
+        public int sizeofObject() {
+            return Long.BYTES + Integer.BYTES + Long.BYTES * 5;
         }
     }
 
