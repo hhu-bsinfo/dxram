@@ -399,7 +399,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
         MigrationResponse response = new MigrationResponse(p_request);
 
-        if (!m_chunk.putMigratedChunks((Chunk[]) p_request.getDataStructures())) {
+        if (!m_chunk.putMigratedChunks(p_request.getDataStructures())) {
             response.setStatusCode((byte) -1);
         }
 

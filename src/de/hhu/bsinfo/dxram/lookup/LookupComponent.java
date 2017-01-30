@@ -129,15 +129,6 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     /**
-     * Returns all known superpeers
-     *
-     * @return array with all superpeers
-     */
-    ArrayList<Short> getAllSuperpeers() {
-        return m_peer.getAllSuperpeers();
-    }
-
-    /**
      * Checks if all superpeers are offline
      *
      * @return if all superpeers are offline
@@ -176,56 +167,6 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting updateAllAfterRecovery");
         // #endif /* LOGGER == TRACE */
-    }
-
-    /**
-     * Get the corresponding primary peer (the peer storing the Chunk in RAM) for the given ChunkID
-     *
-     * @param p_chunkID
-     *     the ChunkID
-     * @return the primary peer
-     */
-    short getPrimaryPeer(final long p_chunkID) {
-        short ret = -1;
-        LookupRange lookupRange;
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        // #if LOGGER == TRACE
-        LOGGER.trace("Entering getPrimaryPeer with: p_chunkID=0x%X", p_chunkID);
-        // #endif /* LOGGER == TRACE */
-
-        if (m_cachesEnabled) {
-            // Read from cache
-            ret = m_chunkIDCacheTree.getPrimaryPeer(p_chunkID);
-            if (ret == -1) {
-                // Cache miss -> get LookupRange from superpeer
-                lookupRange = m_peer.getLookupRange(p_chunkID);
-
-                // Add response to cache
-                if (lookupRange != null) {
-                    m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[0],
-                        ((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[1], lookupRange.getPrimaryPeer());
-
-                    ret = lookupRange.getPrimaryPeer();
-                }
-            }
-        } else {
-            lookupRange = m_peer.getLookupRange(p_chunkID);
-            if (lookupRange != null) {
-                ret = lookupRange.getPrimaryPeer();
-            }
-        }
-
-        // #if LOGGER == TRACE
-        LOGGER.trace("Exiting getPrimaryPeer");
-        // #endif /* LOGGER == TRACE */
-
-        return ret;
     }
 
     /**
@@ -384,8 +325,6 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         return ret;
     }
 
-    //
-
     /**
      * Store migration of given ChunkID to a new location
      *
@@ -448,6 +387,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         // #endif /* LOGGER == TRACE */
     }
 
+    //
+
     /**
      * Initialize a new backup range
      *
@@ -459,6 +400,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *     all backup peers
      */
     public void initRange(final long p_firstChunkIDOrRangeID, final short p_owner, final short[] p_backupPeers) {
+        System.out.println("Init range " + p_firstChunkIDOrRangeID);
+
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
@@ -882,6 +825,65 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         return true;
+    }
+
+    /**
+     * Returns all known superpeers
+     *
+     * @return array with all superpeers
+     */
+    ArrayList<Short> getAllSuperpeers() {
+        return m_peer.getAllSuperpeers();
+    }
+
+    /**
+     * Get the corresponding primary peer (the peer storing the Chunk in RAM) for the given ChunkID
+     *
+     * @param p_chunkID
+     *     the ChunkID
+     * @return the primary peer
+     */
+    short getPrimaryPeer(final long p_chunkID) {
+        short ret = -1;
+        LookupRange lookupRange;
+
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("Entering getPrimaryPeer with: p_chunkID=0x%X", p_chunkID);
+        // #endif /* LOGGER == TRACE */
+
+        if (m_cachesEnabled) {
+            // Read from cache
+            ret = m_chunkIDCacheTree.getPrimaryPeer(p_chunkID);
+            if (ret == -1) {
+                // Cache miss -> get LookupRange from superpeer
+                lookupRange = m_peer.getLookupRange(p_chunkID);
+
+                // Add response to cache
+                if (lookupRange != null) {
+                    m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[0],
+                        ((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[1], lookupRange.getPrimaryPeer());
+
+                    ret = lookupRange.getPrimaryPeer();
+                }
+            }
+        } else {
+            lookupRange = m_peer.getLookupRange(p_chunkID);
+            if (lookupRange != null) {
+                ret = lookupRange.getPrimaryPeer();
+            }
+        }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("Exiting getPrimaryPeer");
+        // #endif /* LOGGER == TRACE */
+
+        return ret;
     }
 
     // --------------------------------------------------------------------------------

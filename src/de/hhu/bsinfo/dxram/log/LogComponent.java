@@ -31,6 +31,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -128,87 +129,6 @@ public class LogComponent extends AbstractDXRAMComponent {
     }
 
     /**
-     * Returns the current utilization of primary log and all secondary logs
-     *
-     * @return the current utilization
-     */
-    String getCurrentUtilization() {
-        String ret;
-        long allBytes = 0;
-        long counter;
-        SecondaryLog[] secondaryLogs;
-        SecondaryLogBuffer[] secLogBuffers;
-        LogCatalog cat;
-
-        if (m_loggingIsActive) {
-            ret =
-                "***********************************************************************\n" + "*Primary log: " + m_primaryLog.getOccupiedSpace() + " bytes\n" +
-                    "***********************************************************************\n\n" +
-                    "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" + "+Secondary logs:\n";
-
-            for (int i = 0; i < m_logCatalogs.length; i++) {
-                cat = m_logCatalogs[i];
-                if (cat != null) {
-                    counter = 0;
-                    ret += "++Node " + (short) i + ":\n";
-                    secondaryLogs = cat.getAllCreatorLogs();
-                    secLogBuffers = cat.getAllCreatorBuffers();
-                    for (int j = 0; j < secondaryLogs.length; j++) {
-                        ret += "+++Creator backup range " + j + ": ";
-                        if (secondaryLogs[j] != null) {
-                            if (secondaryLogs[j].isAccessed()) {
-                                ret += "#Active log# ";
-                            }
-                            ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
-                            ret += secondaryLogs[j].getSegmentDistribution() + '\n';
-                            counter += secondaryLogs[j].getLogFileSize() + secondaryLogs[j].getVersionsFileSize();
-                        }
-                    }
-                    secondaryLogs = cat.getAllMigrationLogs();
-                    secLogBuffers = cat.getAllMigrationBuffers();
-                    for (int j = 0; j < secondaryLogs.length; j++) {
-                        ret += "+++Migration backup range " + j + ": ";
-                        if (secondaryLogs[j] != null) {
-                            if (secondaryLogs[j].isAccessed()) {
-                                ret += "#Active log# ";
-                            }
-                            ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
-                            ret += secondaryLogs[j].getSegmentDistribution() + '\n';
-                            counter += secondaryLogs[j].getLogFileSize() + secondaryLogs[j].getVersionsFileSize();
-                        }
-                    }
-                    ret += "++Bytes per node: " + counter + '\n';
-                    allBytes += counter;
-                }
-            }
-            ret += "Complete size: " + allBytes + '\n';
-            ret += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
-        } else {
-            ret = "Backup is deactivated!\n";
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the Secondary Logs Reorganization Thread
-     *
-     * @return the instance of SecondaryLogsReorgThread
-     */
-    public SecondaryLogsReorgThread getReorganizationThread() {
-        return m_secondaryLogsReorgThread;
-    }
-
-    /**
-     * Returns all log catalogs
-     *
-     * @return the array of log catalogs
-     */
-    LogCatalog[] getAllLogCatalogs() {
-        return m_logCatalogs;
-    }
-
-    /**
      * Prints the metadata of one log entry
      *
      * @param p_nodeID
@@ -258,6 +178,26 @@ public class LogComponent extends AbstractDXRAMComponent {
                     p_version.getEpoch() + ',' + p_version.getVersion() + " \t Payload is no String");
         }
         // p_localID: -1 can only be printed as an int
+    }
+
+    /**
+     * Returns the Secondary Logs Reorganization Thread
+     *
+     * @return the instance of SecondaryLogsReorgThread
+     */
+    public SecondaryLogsReorgThread getReorganizationThread() {
+        return m_secondaryLogsReorgThread;
+    }
+
+    /**
+     * Returns the header size
+     *
+     * @param p_dataStructure
+     *     the DataStructure
+     * @return the header size
+     */
+    public short getApproxHeaderSize(final DataStructure p_dataStructure) {
+        return getApproxHeaderSize(ChunkID.getCreatorID(p_dataStructure.getID()), ChunkID.getLocalID(p_dataStructure.getID()), p_dataStructure.sizeofObject());
     }
 
     /**
@@ -627,6 +567,78 @@ public class LogComponent extends AbstractDXRAMComponent {
         }
 
         return true;
+    }
+
+    /**
+     * Returns the current utilization of primary log and all secondary logs
+     *
+     * @return the current utilization
+     */
+    String getCurrentUtilization() {
+        String ret;
+        long allBytes = 0;
+        long counter;
+        SecondaryLog[] secondaryLogs;
+        SecondaryLogBuffer[] secLogBuffers;
+        LogCatalog cat;
+
+        if (m_loggingIsActive) {
+            ret =
+                "***********************************************************************\n" + "*Primary log: " + m_primaryLog.getOccupiedSpace() + " bytes\n" +
+                    "***********************************************************************\n\n" +
+                    "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" + "+Secondary logs:\n";
+
+            for (int i = 0; i < m_logCatalogs.length; i++) {
+                cat = m_logCatalogs[i];
+                if (cat != null) {
+                    counter = 0;
+                    ret += "++Node " + (short) i + ":\n";
+                    secondaryLogs = cat.getAllCreatorLogs();
+                    secLogBuffers = cat.getAllCreatorBuffers();
+                    for (int j = 0; j < secondaryLogs.length; j++) {
+                        ret += "+++Creator backup range " + j + ": ";
+                        if (secondaryLogs[j] != null) {
+                            if (secondaryLogs[j].isAccessed()) {
+                                ret += "#Active log# ";
+                            }
+                            ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
+                            ret += secondaryLogs[j].getSegmentDistribution() + '\n';
+                            counter += secondaryLogs[j].getLogFileSize() + secondaryLogs[j].getVersionsFileSize();
+                        }
+                    }
+                    secondaryLogs = cat.getAllMigrationLogs();
+                    secLogBuffers = cat.getAllMigrationBuffers();
+                    for (int j = 0; j < secondaryLogs.length; j++) {
+                        ret += "+++Migration backup range " + j + ": ";
+                        if (secondaryLogs[j] != null) {
+                            if (secondaryLogs[j].isAccessed()) {
+                                ret += "#Active log# ";
+                            }
+                            ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
+                            ret += secondaryLogs[j].getSegmentDistribution() + '\n';
+                            counter += secondaryLogs[j].getLogFileSize() + secondaryLogs[j].getVersionsFileSize();
+                        }
+                    }
+                    ret += "++Bytes per node: " + counter + '\n';
+                    allBytes += counter;
+                }
+            }
+            ret += "Complete size: " + allBytes + '\n';
+            ret += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+        } else {
+            ret = "Backup is deactivated!\n";
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns all log catalogs
+     *
+     * @return the array of log catalogs
+     */
+    LogCatalog[] getAllLogCatalogs() {
+        return m_logCatalogs;
     }
 
     /**

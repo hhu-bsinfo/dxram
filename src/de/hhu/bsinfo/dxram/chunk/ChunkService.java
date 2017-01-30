@@ -259,7 +259,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
             // Must be locked together with create call to memory manager
-            m_backup.initBackupRange(chunkId, p_size);
+            m_backup.registerChunk(chunkId, p_size);
             m_memoryManager.unlockManage();
 
             if (chunkId != -1) {
@@ -271,7 +271,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
             // Must be locked together with create call to memory manager
-            m_backup.initBackupRange(chunkIDs, p_size);
+            m_backup.registerChunks(chunkIDs, p_size);
             m_memoryManager.unlockManage();
         }
 
@@ -344,7 +344,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
             // Must be locked together with create call to memory manager
-            m_backup.initBackupRange(chunkID, p_dataStructures[0].sizeofObject());
+            m_backup.registerChunk(chunkID, p_dataStructures[0].sizeofObject());
             m_memoryManager.unlockManage();
             if (chunkID != ChunkID.INVALID_ID) {
                 p_dataStructures[0].setID(chunkID);
@@ -358,7 +358,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
             // Must be locked together with create call to memory manager
-            m_backup.initBackupRange(p_dataStructures);
+            m_backup.registerChunks(p_dataStructures);
             m_memoryManager.unlockManage();
 
             count += p_dataStructures.length;
@@ -424,7 +424,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
             // Must be locked together with create call to memory manager
-            m_backup.initBackupRange(chunkIDs[0], p_sizes[0]);
+            m_backup.registerChunk(chunkIDs[0], p_sizes[0]);
             m_memoryManager.unlockManage();
         } else {
             m_memoryManager.lockManage();
@@ -432,7 +432,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
             // Must be locked together with create call to memory manager
-            m_backup.initBackupRange(chunkIDs, p_sizes);
+            m_backup.registerChunks(chunkIDs, p_sizes);
             m_memoryManager.unlockManage();
 
             if (chunkIDs == null) {
@@ -1784,7 +1784,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
             // Must be locked together with create call to memory manager
-            m_backup.initBackupRange(chunkIDs[0], sizes[0]);
+            m_backup.registerChunk(chunkIDs[0], sizes[0]);
             m_memoryManager.unlockManage();
         } else {
             m_memoryManager.lockManage();
@@ -1792,7 +1792,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
             // Must be locked together with create call to memory manager
-            m_backup.initBackupRange(chunkIDs, sizes);
+            m_backup.registerChunks(chunkIDs, sizes);
             m_memoryManager.unlockManage();
 
             if (chunkIDs == null) {

@@ -64,7 +64,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
         m_memoryManager.lockManage();
         chunkId = m_memoryManager.createIndex(p_size);
         if (chunkId != -1) {
-            m_backup.initBackupRange(chunkId, p_size);
+            m_backup.registerChunk(chunkId, p_size);
         }
         m_memoryManager.unlockManage();
 

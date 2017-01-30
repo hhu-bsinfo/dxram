@@ -230,64 +230,6 @@ public class OverlaySuperpeer implements MessageReceiver {
     }
 
     /**
-     * Returns current predecessor
-     *
-     * @return the predecessor
-     * @lock overlay lock must be write-locked
-     */
-    protected short getPredecessor() {
-        return m_predecessor;
-    }
-
-    /**
-     * Sets the predecessor for the current superpeer
-     *
-     * @param p_nodeID
-     *     NodeID of the predecessor
-     * @lock overlay lock must be write-locked
-     */
-    protected void setPredecessor(final short p_nodeID) {
-        m_predecessor = p_nodeID;
-        if (m_predecessor != m_successor) {
-            OverlayHelper.insertSuperpeer(m_predecessor, m_superpeers);
-        }
-    }
-
-    /**
-     * Returns current successor
-     *
-     * @return the sucessor
-     * @lock overlay lock must be write-locked
-     */
-    protected short getSuccessor() {
-        return m_successor;
-    }
-
-    /**
-     * Sets the successor for the current superpeer
-     *
-     * @param p_nodeID
-     *     NodeID of the successor
-     * @lock overlay lock must be write-locked
-     */
-    protected void setSuccessor(final short p_nodeID) {
-        m_successor = p_nodeID;
-        if (m_successor != -1 && m_nodeID != m_successor) {
-            OverlayHelper.insertSuperpeer(m_successor, m_superpeers);
-        }
-    }
-
-    /**
-     * Returns all peers
-     *
-     * @return all peers
-     * @lock overlay lock must be write-locked
-     */
-    protected ArrayList<Short> getPeers() {
-        return m_peers;
-    }
-
-    /**
      * Shuts down the stabilization thread
      */
     public void shutdown() {
@@ -423,6 +365,64 @@ public class OverlaySuperpeer implements MessageReceiver {
                 }
             }
         }
+    }
+
+    /**
+     * Returns current predecessor
+     *
+     * @return the predecessor
+     * @lock overlay lock must be write-locked
+     */
+    protected short getPredecessor() {
+        return m_predecessor;
+    }
+
+    /**
+     * Sets the predecessor for the current superpeer
+     *
+     * @param p_nodeID
+     *     NodeID of the predecessor
+     * @lock overlay lock must be write-locked
+     */
+    protected void setPredecessor(final short p_nodeID) {
+        m_predecessor = p_nodeID;
+        if (m_predecessor != m_successor) {
+            OverlayHelper.insertSuperpeer(m_predecessor, m_superpeers);
+        }
+    }
+
+    /**
+     * Returns current successor
+     *
+     * @return the sucessor
+     * @lock overlay lock must be write-locked
+     */
+    protected short getSuccessor() {
+        return m_successor;
+    }
+
+    /**
+     * Sets the successor for the current superpeer
+     *
+     * @param p_nodeID
+     *     NodeID of the successor
+     * @lock overlay lock must be write-locked
+     */
+    protected void setSuccessor(final short p_nodeID) {
+        m_successor = p_nodeID;
+        if (m_successor != -1 && m_nodeID != m_successor) {
+            OverlayHelper.insertSuperpeer(m_successor, m_superpeers);
+        }
+    }
+
+    /**
+     * Returns all peers
+     *
+     * @return all peers
+     * @lock overlay lock must be write-locked
+     */
+    protected ArrayList<Short> getPeers() {
+        return m_peers;
     }
 
     /**
@@ -1165,6 +1165,7 @@ public class OverlaySuperpeer implements MessageReceiver {
             if (OverlayHelper.isPeerInSuperpeerRange(joiningNode, m_predecessor, m_nodeID)) {
                 m_overlayLock.writeLock().lock();
                 OverlayHelper.insertPeer(joiningNode, m_peers);
+                addToAssignedPeers(joiningNode);
                 // Lock downgrade
                 m_overlayLock.readLock().lock();
                 m_overlayLock.writeLock().unlock();
