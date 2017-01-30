@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2016 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxcompute.bench;
 
 import java.util.ArrayList;
@@ -10,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
+import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -26,7 +40,7 @@ public class ChunkCreateTask implements Task {
     @Expose
     private int m_numThreads = 1;
     @Expose
-    private int m_chunkCount = 1000;
+    private long m_chunkCount = 1000;
     @Expose
     private int m_chunkBatch = 10;
     @Expose
@@ -51,7 +65,7 @@ public class ChunkCreateTask implements Task {
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 
-        long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_chunkCount, m_numThreads);
+        long[] chunkCountsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(m_chunkCount, m_numThreads);
         Thread[] threads = new Thread[m_numThreads];
         long[] timeStart = new long[m_numThreads];
         long[] timeEnd = new long[m_numThreads];
@@ -239,7 +253,7 @@ public class ChunkCreateTask implements Task {
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeInt(m_numThreads);
-        p_exporter.writeInt(m_chunkCount);
+        p_exporter.writeLong(m_chunkCount);
         p_exporter.writeInt(m_chunkBatch);
         p_exporter.exportObject(m_chunkSizeBytesBegin);
         p_exporter.exportObject(m_chunkSizeBytesEnd);
@@ -249,7 +263,7 @@ public class ChunkCreateTask implements Task {
     @Override
     public void importObject(final Importer p_importer) {
         m_numThreads = p_importer.readInt();
-        m_chunkCount = p_importer.readInt();
+        m_chunkCount = p_importer.readLong();
         m_chunkBatch = p_importer.readInt();
         m_chunkSizeBytesBegin = new StorageUnit();
         p_importer.importObject(m_chunkSizeBytesBegin);
@@ -260,6 +274,6 @@ public class ChunkCreateTask implements Task {
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES * 3 + m_chunkSizeBytesBegin.sizeofObject() + m_chunkSizeBytesEnd.sizeofObject() + Integer.BYTES;
+        return Integer.BYTES + Long.BYTES + Integer.BYTES + m_chunkSizeBytesBegin.sizeofObject() + m_chunkSizeBytesEnd.sizeofObject() + Integer.BYTES;
     }
 }

@@ -22,14 +22,15 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Tests concurrent allocation and freeing of memory
+ * Integrity checker and tests for the SmallObjectHeap
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
-public final class SmallObjectHeapTest {
+public final class SmallObjectHeapIntegrityTest {
     private static final Lock LOCK = new ReentrantLock(false);
 
     private SmallObjectHeap m_memory;
+    private int m_testId = -1;
     private int m_numThreads = -1;
     private int m_numOperations = -1;
     private float m_mallocFreeRatio;
@@ -41,6 +42,8 @@ public final class SmallObjectHeapTest {
     /**
      * Constructor
      *
+     * @param p_testId
+     *     Identifier for the test
      * @param p_memorySize
      *     Total raw memory size in bytes.
      * @param p_maxBlockSize
@@ -58,19 +61,19 @@ public final class SmallObjectHeapTest {
      * @param p_debugPrint
      *     Enable debug prints
      */
-    private SmallObjectHeapTest(final long p_memorySize, final int p_maxBlockSize, final int p_numThreads, final int p_numOperations,
-        final float p_mallocFreeRatio, final int p_blockSizeMin, final int p_blockSizeMax, final int p_multiMallocCount, final boolean p_debugPrint) {
+    private SmallObjectHeapIntegrityTest(final int p_testId, final long p_memorySize, final int p_maxBlockSize, final int p_numThreads,
+        final int p_numOperations, final float p_mallocFreeRatio, final int p_blockSizeMin, final int p_blockSizeMax, final int p_multiMallocCount,
+        final boolean p_debugPrint) {
         assert p_memorySize > 0;
         assert p_numThreads > 0;
-        assert p_numOperations > 0;
         assert p_mallocFreeRatio >= 0.5;
         assert p_blockSizeMin > 0;
         assert p_blockSizeMax > 0;
-        assert p_blockSizeMax > p_blockSizeMin;
+        assert p_blockSizeMax >= p_blockSizeMin;
 
-        // m_memory = new SmallObjectHeap(new StorageRandomAccessFile(new File("memory.raw")), p_memorySize);
         m_memory = new SmallObjectHeap(new StorageUnsafeMemory(), p_memorySize, p_maxBlockSize);
 
+        m_testId = p_testId;
         m_numThreads = p_numThreads;
         m_numOperations = p_numOperations;
         m_mallocFreeRatio = p_mallocFreeRatio;
@@ -98,33 +101,32 @@ public final class SmallObjectHeapTest {
 
         System.out.println("Waiting for workers to finish...");
 
-        for (Future<?> future : submittedTasks) {
-            try {
-                future.get();
-            } catch (final ExecutionException | InterruptedException e) {
-                e.printStackTrace();
+        try {
+            for (Future<?> future : submittedTasks) {
+                try {
+                    future.get();
+                } catch (final InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-        }
+        } catch (final ExecutionException mem) {
+            executor.shutdown();
 
-        //        File file = new File("rawMemory.dump");
-        //        if (file.exists()) {
-        //            file.delete();
-        //            try {
-        //                file.createNewFile();
-        //            } catch (final IOException e) {
-        //                e.printStackTrace();
-        //            }
-        //        }
-        //        m_memory.dump(file, 0, m_memory.getStatus().getSize());
+            System.out.println("!!! ERROR: " + mem.getMessage());
+            mem.printStackTrace();
+            String fileName = "SohInTest-" + m_testId + ".dump";
+
+            System.out.println("Dumping memory to " + fileName);
+            m_memory.dump(fileName);
+
+            System.exit(-1);
+        }
 
         System.out.println("All workers finished.");
 
-        System.out.println("Final memory status:\n" + m_memory);
-
-        HeapWalker.Results results = HeapWalker.walk(m_memory);
-        System.out.println(results);
-
         executor.shutdown();
+
+        m_memory.destroy();
     }
 
     /**
@@ -136,7 +138,8 @@ public final class SmallObjectHeapTest {
     public static void main(final String[] p_args) {
         if (p_args.length >= 1 && p_args.length < 8) {
             System.out.println(
-                "Usage: RawMemoryTest <memorySize> <maxBlockSize> <numThreads> <numOperations> <mallocFreeRatio> <blockSizeMin> <blockSizeMax> <multiMallocCount> <debugPrint>");
+                "Usage: RawMemoryTest <memorySize> <maxBlockSize> <numThreads> <numOperations> <mallocFreeRatio> <blockSizeMin> <blockSizeMax> " +
+                    "<multiMallocCount> <debugPrint>");
             return;
         }
 
@@ -162,46 +165,55 @@ public final class SmallObjectHeapTest {
      */
     private static void runTests() {
         final int maxBlockSize = 1024 * 1024 * 8;
+        final int maxBlockSizeHuge = 1024 * 1024 * 16;
+
+        // create heap, only
+        runTest(0, 1024, maxBlockSize, 1, 0, 0.5f, 16, 16, 0, false);
 
         // single malloc
-        runTest(0, 1024, maxBlockSize, 1, 1, 1.0f, 16, 16, 0, false);
+        runTest(1, 1024, maxBlockSize, 1, 1, 1.0f, 16, 16, 0, false);
         // a few more mallocs
-        runTest(1, 1024, maxBlockSize, 1, 3, 1.0f, 16, 16, 0, false);
+        runTest(2, 1024, maxBlockSize, 1, 3, 1.0f, 16, 16, 0, false);
         // single malloc + free
-        runTest(2, 1024, maxBlockSize, 1, 2, 0.5f, 16, 16, 0, false);
+        runTest(3, 1024, maxBlockSize, 1, 2, 0.5f, 16, 16, 0, false);
         // multiple malloc + free
-        runTest(3, 1024, maxBlockSize, 1, 6, 0.5f, 16, 16, 0, false);
+        runTest(4, 1024, maxBlockSize, 1, 6, 0.5f, 16, 16, 0, false);
 
-        // some greater tests
-        runTest(4, 1024 * 1024, maxBlockSize, 1, 10, 0.5f, 16, 1024, 0, false);
-        runTest(5, 1024 * 1024 * 1024, maxBlockSize, 1, 100, 0.5f, 16, 1024 * 1024, 0, false);
-        runTest(6, 1024 * 1024 * 1024, maxBlockSize, 1, 1000, 0.5f, 16, 1024 * 1024, 0, false);
-        runTest(7, 1024 * 1024 * 1024, maxBlockSize, 1, 10000, 0.5f, 16, 1024 * 1024, 0, false);
-        runTest(8, 1024 * 1024 * 1024, maxBlockSize, 1, 100000, 0.5f, 16, 1024 * 1024, 0, false);
-        runTest(9, 1024 * 1024 * 1024, maxBlockSize, 1, 1000000, 0.5f, 16, 1024 * 1024, 0, false);
+        // greater tests, malloc only
+        runTest(5, 1024 * 1024, maxBlockSize, 1, 10, 1.0f, 16, 1024, 0, false);
+        runTest(6, 1024 * 1024 * 1024, maxBlockSize, 1, 100, 1.0f, 16, 1024 * 1024, 0, false);
+        runTest(7, 1024 * 1024 * 1024, maxBlockSize, 1, 1000, 1.0f, 16, 1024 * 1024, 0, false);
+        runTest(8, 1024 * 1024 * 1024, maxBlockSize, 1, 5000, 1.0f, 16, 1024 * 100, 0, false);
+        runTest(9, 1024 * 1024 * 1024, maxBlockSize, 1, 100000, 1.0f, 16, 1024 * 10, 0, false);
+        runTest(10, 1024 * 1024 * 1024, maxBlockSize, 1, 1000000, 1.0f, 16, 1024, 0, false);
+
+        // some greater tests with malloc and free
+        runTest(11, 1024 * 1024, maxBlockSize, 1, 10, 0.5f, 16, 1024, 0, false);
+        runTest(12, 1024 * 1024 * 1024, maxBlockSize, 1, 100, 0.5f, 16, 1024 * 1024, 0, false);
+        runTest(13, 1024 * 1024 * 1024, maxBlockSize, 1, 1000, 0.5f, 16, 1024 * 1024, 0, false);
+        runTest(14, 1024 * 1024 * 1024, maxBlockSize, 1, 10000, 0.5f, 16, 1024 * 1024, 0, false);
+        runTest(15, 1024 * 1024 * 1024, maxBlockSize, 1, 100000, 0.5f, 16, 1024 * 1024, 0, false);
+        runTest(16, 1024 * 1024 * 1024, maxBlockSize, 1, 1000000, 0.5f, 16, 1024 * 1024, 0, false);
 
         // multi malloc
-        runTest(10, 1024, maxBlockSize, 1, 2, 1.0f, 16, 16, 2, false);
-        runTest(11, 1024, maxBlockSize, 1, 4, 0.5f, 16, 16, 2, false);
-        runTest(12, 1024 * 1024 * 1024, maxBlockSize, 1, 100, 1.0f, 16, 1024 * 1024, 10, false);
+        runTest(17, 1024, maxBlockSize, 1, 2, 1.0f, 16, 16, 2, false);
+        runTest(18, 1024, maxBlockSize, 1, 4, 0.5f, 16, 16, 2, false);
+        runTest(19, 1024 * 1024 * 1024, maxBlockSize, 1, 100, 1.0f, 16, 1024 * 1024, 10, false);
 
-        runTest(13, 1024 * 1024 * 1024, maxBlockSize, 1, 100, 0.5f, 16, 1024 * 1024, 10, false);
-        runTest(14, 1024 * 1024 * 1024 * 2L, maxBlockSize, 1, 1000, 0.5f, 16, 1024 * 1024, 10, false);
-        runTest(15, 1024 * 1024 * 1024 * 4L, maxBlockSize, 1, 10000, 0.5f, 16, 1024 * 1024, 10, false);
+        runTest(20, 1024 * 1024 * 1024, maxBlockSize, 1, 100, 0.5f, 16, 1024 * 1024, 10, false);
+        runTest(21, 1024 * 1024 * 1024 * 2L, maxBlockSize, 1, 1000, 0.5f, 16, 1024 * 1024, 10, false);
+        runTest(22, 1024 * 1024 * 1024 * 4L, maxBlockSize, 1, 10000, 0.5f, 16, 1024 * 1024, 10, false);
 
-        runTest(16, 1024 * 1024 * 1024 * 16L, maxBlockSize, 1, 10000, 0.5f, 16, 1024 * 1024, 10, false);
-        runTest(17, 1024 * 1024 * 1024 * 16L, maxBlockSize, 1, 10000, 0.5f, 16, 1024 * 1024, 100, false);
-        runTest(18, 1024 * 1024 * 1024 * 16L, maxBlockSize, 1, 10000, 0.5f, 16, 1024 * 1024, 1000, false);
+        runTest(23, 1024 * 1024 * 1024 * 16L, maxBlockSize, 1, 10000, 0.5f, 16, 1024 * 1024, 10, false);
+        runTest(24, 1024 * 1024 * 1024 * 16L, maxBlockSize, 1, 10000, 0.5f, 16, 1024 * 1024, 100, false);
+        runTest(25, 1024 * 1024 * 1024 * 16L, maxBlockSize, 1, 10000, 0.5f, 16, 1024 * 1024, 1000, false);
 
-        // block chaining
-        runTest(19, 1024 * 1024 * 10, maxBlockSize, 1, 1, 1.0f, 1024 * 1024 * 9, 1024 * 1024 * 9, 0, false);
-        runTest(20, 1024 * 1024 * 128, maxBlockSize, 1, 6, 0.5f, 1024 * 1024 * 9, 1024 * 1024 * 16, 0, false);
-        runTest(21, 1024 * 1024 * 1024, maxBlockSize, 1, 100, 0.5f, 1024 * 1024 * 9, 1024 * 1024 * 16, 0, false);
+        // huge blocks
+        runTest(26, 1024 * 1024 * 10, maxBlockSizeHuge, 1, 1, 1.0f, 1024 * 1024 * 9, 1024 * 1024 * 9, 0, false);
+        runTest(27, 1024 * 1024 * 128, maxBlockSizeHuge, 1, 6, 0.5f, 1024 * 1024 * 9, 1024 * 1024 * 16, 0, false);
+        runTest(28, 1024 * 1024 * 1024, maxBlockSizeHuge, 1, 100, 0.5f, 1024 * 1024 * 9, 1024 * 1024 * 16, 0, false);
 
-        runTest(22, 1024 * 1024 * 1024, maxBlockSize, 1, 100, 0.5f, 1024 * 1024 * 9, 1024 * 1024 * 16, 10, false);
-
-        // huge test (32gb ram necessary!)
-        runTest(23, 1024 * 1024 * 1024 * 32L, maxBlockSize, 1, 10000, 0.5f, 16, 1024 * 1024 * 64, 0, false);
+        runTest(29, 1024 * 1024 * 1024, maxBlockSizeHuge, 1, 100, 0.5f, 1024 * 1024 * 9, 1024 * 1024 * 16, 10, false);
     }
 
     /**
@@ -231,9 +243,9 @@ public final class SmallObjectHeapTest {
 
         System.out.println("===============================================================");
         System.out.println("Initializing RawMemory test (" + p_testId + ")...");
-        SmallObjectHeapTest test =
-            new SmallObjectHeapTest(p_memorySize, p_maxBlockSize, p_numThreads, p_numOperations, p_mallocFreeRatio, p_blockSizeMin, p_blockSizeMax,
-                p_multiMallocCount, p_debugPrint);
+        SmallObjectHeapIntegrityTest test =
+            new SmallObjectHeapIntegrityTest(p_testId, p_memorySize, p_maxBlockSize, p_numThreads, p_numOperations, p_mallocFreeRatio, p_blockSizeMin,
+                p_blockSizeMax, p_multiMallocCount, p_debugPrint);
         System.out.println("Running test (" + p_testId + ")...");
         long timeStart = System.nanoTime();
         test.run();
@@ -277,9 +289,9 @@ public final class SmallObjectHeapTest {
          */
         MemoryThread(final SmallObjectHeap p_rawMemory, final int p_numOperations, final float p_mallocFreeRatio, final int p_blockSizeMin,
             final int p_blockSizeMax, final int p_multiMallocCount, final boolean p_debugPrint) {
-            assert m_blockSizeMin > 0;
-            assert m_blockSizeMax > 0;
-            assert m_mallocFreeRatio > 0;
+            assert p_blockSizeMin > 0;
+            assert p_blockSizeMax > 0;
+            assert p_mallocFreeRatio > 0;
 
             m_memory = p_rawMemory;
             m_blockSizeMin = p_blockSizeMin;
@@ -331,8 +343,9 @@ public final class SmallObjectHeapTest {
                         LOCK.unlock();
 
                         if (ptrs == null) {
-                            System.out.println("Multi malloc failed");
-                            return;
+                            System.out.println("Multi malloc failed, check for out of memory, otherwise error");
+                            System.out.println(m_memory.getStatus());
+                            System.exit(-1);
                         }
 
                         for (int i = 0; i < ptrs.length; i++) {
@@ -349,6 +362,12 @@ public final class SmallObjectHeapTest {
                         LOCK.lock();
                         long ptr = m_memory.malloc(size);
                         LOCK.unlock();
+
+                        if (ptr == 0) {
+                            System.out.println("!!! Allocation of size " + size + " failed, check for out of memory, otherwise error");
+                            System.out.println(m_memory.getStatus());
+                            System.exit(-1);
+                        }
 
                         if (m_debugPrint) {
                             System.out.println(">>> Allocated " + size + ":\n" + m_memory);

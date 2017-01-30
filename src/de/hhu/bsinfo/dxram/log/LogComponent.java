@@ -181,6 +181,15 @@ public class LogComponent extends AbstractDXRAMComponent {
     }
 
     /**
+     * Get the segment size of the log
+     *
+     * @return Segment size of log in bytes
+     */
+    public int getSegmentSizeBytes() {
+        return (int) m_logSegmentSize.getBytes();
+    }
+
+    /**
      * Returns the Secondary Logs Reorganization Thread
      *
      * @return the instance of SecondaryLogsReorgThread
@@ -396,8 +405,10 @@ public class LogComponent extends AbstractDXRAMComponent {
         cat = m_logCatalogs[ChunkID.getCreatorID(p_chunkID) & 0xFFFF];
         if (cat == null) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Log catalog for peer " + NodeID.toHexString(ChunkID.getCreatorID(p_chunkID)) + " is empty!");
+            LOGGER.error("Log catalog for peer 0x%X is empty!", NodeID.toHexString(ChunkID.getCreatorID(p_chunkID)));
             // #endif /* LOGGER >= ERROR */
+
+            return -1;
         }
 
         ret = cat.getRange(p_chunkID);
@@ -777,9 +788,11 @@ public class LogComponent extends AbstractDXRAMComponent {
 
         if (cat == null) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Log catalog for peer " + NodeID.toHexString(ChunkID.getCreatorID(p_chunkID)) + " is empty!");
+            LOGGER.error("Log catalog for peer 0x%X is empty!", NodeID.toHexString(ChunkID.getCreatorID(p_chunkID)));
             // #endif /* LOGGER >= ERROR */
+            return null;
         }
+
         ret = cat.getLog(p_chunkID, p_rangeID);
         m_secondaryLogCreationLock.readLock().unlock();
 

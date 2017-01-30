@@ -116,6 +116,15 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     /**
+     * Pass through for segment size of log
+     *
+     * @return Segment size of log in bytes
+     */
+    public int getLogSegmentSizeBytes() {
+        return m_log.getSegmentSizeBytes();
+    }
+
+    /**
      * Return the path to all logs
      *
      * @return the backup directory
@@ -522,9 +531,6 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 
                 m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
                 m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
-            } else {
-                // Register peer in superpeer overlay by initializing "backup" range in lookup
-                m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL, m_nodeID, backupPeers);
             }
         }
 
