@@ -24,7 +24,6 @@ import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
-import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 import de.hhu.bsinfo.utils.serialization.RandomAccessFileImExporter;
 
 /**
@@ -1666,8 +1665,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
 
     @Override
     public int sizeofObject() {
-        return (int) (Integer.BYTES + Long.BYTES + Integer.BYTES + ObjectSizeUtil.sizeofLongArray(m_freeBlockListSizes) + Integer.BYTES +
-            m_status.sizeofObject() + m_status.getSize());
+        throw new UnsupportedOperationException("Heap can be > 2 GB not fitting int type");
+        // return (int) (Integer.BYTES + Long.BYTES + Integer.BYTES + ObjectSizeUtil.sizeofLongArray(m_freeBlockListSizes) + Integer.BYTES +
+        //     m_status.sizeofObject() + m_status.getSize());
     }
 
     // --------------------------------------------------------------------------------------
