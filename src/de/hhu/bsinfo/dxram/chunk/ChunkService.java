@@ -352,6 +352,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 count++;
             } else {
                 p_dataStructures[0].setID(ChunkID.INVALID_ID);
+                // #if LOGGER == ERROR
+                LOGGER.error("Creating chunk for size %d failed", p_dataStructures[0].sizeofObject());
+                // #endif /* LOGGER == ERROR */
             }
         } else {
             m_memoryManager.lockManage();
