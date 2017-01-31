@@ -183,6 +183,12 @@ public class ChunkRemoveAllTask implements Task {
         }
         System.out.println();
 
+        // the index chunk will always be there (> 1)
+        if (ChunkIDRangeUtils.countTotalChunksOfRanges(allChunkRanges) > 1) {
+            System.out.println("Remove all failed, not all chunks are removed");
+            return -4;
+        }
+
         return 0;
     }
 
