@@ -725,7 +725,8 @@ public final class CIDTable {
 
         // Attributes
         private final long[] m_localIDs;
-        private int m_position;
+        private int m_getPosition;
+        private int m_putPosition;
         // available free lid elements stored in our array
         private int m_count;
         // This counts the total available lids in the array
@@ -741,7 +742,8 @@ public final class CIDTable {
          */
         private LIDStore() {
             m_localIDs = new long[STORE_CAPACITY];
-            m_position = 0;
+            m_getPosition = 0;
+            m_putPosition = 0;
             m_count = 0;
 
             m_overallCount = 0;
@@ -763,9 +765,9 @@ public final class CIDTable {
                 }
 
                 if (m_count > 0) {
-                    ret = m_localIDs[m_position];
+                    ret = m_localIDs[m_getPosition];
 
-                    m_position = (m_position + 1) % m_localIDs.length;
+                    m_getPosition = (m_getPosition + 1) % m_localIDs.length;
                     m_count--;
                     m_overallCount--;
                 }
@@ -798,9 +800,9 @@ public final class CIDTable {
                 }
 
                 if (m_count > 0) {
-                    currentID = m_localIDs[m_position];
+                    currentID = m_localIDs[m_getPosition];
 
-                    m_position = (m_position + 1) % m_localIDs.length;
+                    m_getPosition = (m_getPosition + 1) % m_localIDs.length;
                     m_count--;
                     m_overallCount--;
 
@@ -827,10 +829,12 @@ public final class CIDTable {
         public boolean put(final long p_localID) {
             boolean ret;
 
-            if (m_position + m_count < m_localIDs.length) {
-                m_localIDs[m_position + m_count] = p_localID;
+            if (m_count < m_localIDs.length) {
+                m_localIDs[m_putPosition] = p_localID;
 
+                m_putPosition = (m_putPosition + 1) % m_localIDs.length;
                 m_count++;
+
                 ret = true;
             } else {
                 ret = false;
@@ -894,7 +898,8 @@ public final class CIDTable {
                         // cleanup zombie in table
                         writeEntry(p_addressTable, i, FREE_ENTRY);
 
-                        m_localIDs[m_position + m_count] = localID;
+                        m_localIDs[m_putPosition] = localID;
+                        m_putPosition = (m_putPosition + 1) % m_localIDs.length;
                         m_count++;
 
                         ret = true;
