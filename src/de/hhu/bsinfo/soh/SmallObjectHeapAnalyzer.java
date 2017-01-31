@@ -98,6 +98,7 @@ public final class SmallObjectHeapAnalyzer {
                     // check actual size in range
                     if (sizeBlock >= 12 || sizeBlock <= 1) {
                         block.m_error = MemoryBlock.ERROR.INVALID_LENGTH_FIELD_CONTENTS;
+                        block.m_errorText = Integer.toString(sizeBlock);
                     }
 
                     // + 2 marker bytes
@@ -110,6 +111,8 @@ public final class SmallObjectHeapAnalyzer {
                     // check end marker byte
                     if (block.m_markerByte != m_memory.readLeftPartOfMarker(block.m_endAddress - 1)) {
                         block.m_error = MemoryBlock.ERROR.MARKER_BYTES_NOT_MATCHING;
+                        block.m_errorText = "0x" + Integer.toHexString(block.m_markerByte) + " != 0x" +
+                            Integer.toHexString(m_memory.readLeftPartOfMarker(block.m_endAddress - 1));
                     }
 
                     // proceed
@@ -135,16 +138,20 @@ public final class SmallObjectHeapAnalyzer {
                     block.m_prevFreeBlock = m_memory.readPointer(baseAddress + lengthFieldSize);
                     if (block.m_prevFreeBlock < 0 || block.m_prevFreeBlock >= blockAreaSize) {
                         block.m_error = MemoryBlock.ERROR.INVALID_POINTERS;
+                        block.m_errorText = "0x" + Long.toHexString(block.m_prevFreeBlock);
                     }
 
                     block.m_nextFreeBlock = m_memory.readPointer(baseAddress + lengthFieldSize + SmallObjectHeap.POINTER_SIZE);
                     if (block.m_nextFreeBlock < 0 || block.m_nextFreeBlock >= blockAreaSize) {
                         block.m_error = MemoryBlock.ERROR.INVALID_POINTERS;
+                        block.m_errorText = "0x" + Long.toHexString(block.m_nextFreeBlock);
                     }
 
                     // check end marker byte
                     if (block.m_markerByte != m_memory.readLeftPartOfMarker(block.m_endAddress - 1)) {
                         block.m_error = MemoryBlock.ERROR.MARKER_BYTES_NOT_MATCHING;
+                        block.m_errorText = "0x" + Integer.toHexString(block.m_markerByte) + " != 0x" +
+                            Integer.toHexString(m_memory.readLeftPartOfMarker(block.m_endAddress - 1));
                     }
 
                     // check actual size in range
@@ -152,30 +159,35 @@ public final class SmallObjectHeapAnalyzer {
                         case 1:
                             if (!(freeBlockSize >= 12 && freeBlockSize <= 0xFF)) {
                                 block.m_error = MemoryBlock.ERROR.INVALID_LENGTH_FIELD_CONTENTS;
+                                block.m_errorText = Long.toString(freeBlockSize);
                             }
                             break;
 
                         case 2:
                             if (!(freeBlockSize > 0xFF && freeBlockSize <= 0xFFFF)) {
                                 block.m_error = MemoryBlock.ERROR.INVALID_LENGTH_FIELD_CONTENTS;
+                                block.m_errorText = Long.toString(freeBlockSize);
                             }
                             break;
 
                         case 3:
                             if (!(freeBlockSize > 0xFFFF && freeBlockSize <= 0xFFFFFF)) {
                                 block.m_error = MemoryBlock.ERROR.INVALID_LENGTH_FIELD_CONTENTS;
+                                block.m_errorText = Long.toString(freeBlockSize);
                             }
                             break;
 
                         case 4:
                             if (!(freeBlockSize > 0xFFFFFF && freeBlockSize <= 0xFFFFFFFFL)) {
                                 block.m_error = MemoryBlock.ERROR.INVALID_LENGTH_FIELD_CONTENTS;
+                                block.m_errorText = Long.toString(freeBlockSize);
                             }
                             break;
 
                         case 5:
                             if (!(freeBlockSize > 0xFFFFFFFFL && freeBlockSize <= 0xFFFFFFFFFFL)) {
                                 block.m_error = MemoryBlock.ERROR.INVALID_LENGTH_FIELD_CONTENTS;
+                                block.m_errorText = Long.toString(freeBlockSize);
                             }
                             break;
 
@@ -205,24 +217,28 @@ public final class SmallObjectHeapAnalyzer {
                         case 1:
                             if (!(blockPayloadSize >= 12 && blockPayloadSize <= 0xFF)) {
                                 block.m_error = MemoryBlock.ERROR.INVALID_LENGTH_FIELD_CONTENTS;
+                                block.m_errorText = Long.toString(blockPayloadSize);
                             }
                             break;
 
                         case 2:
                             if (!(blockPayloadSize > 0xFF && blockPayloadSize <= 0xFFFF)) {
                                 block.m_error = MemoryBlock.ERROR.INVALID_LENGTH_FIELD_CONTENTS;
+                                block.m_errorText = Long.toString(blockPayloadSize);
                             }
                             break;
 
                         case 3:
                             if (!(blockPayloadSize > 0xFFFF && blockPayloadSize <= 0xFFFFFF)) {
                                 block.m_error = MemoryBlock.ERROR.INVALID_LENGTH_FIELD_CONTENTS;
+                                block.m_errorText = Long.toString(blockPayloadSize);
                             }
                             break;
 
                         case 4:
                             if (!(blockPayloadSize > 0xFFFFFF && blockPayloadSize <= 0xFFFFFFFF)) {
                                 block.m_error = MemoryBlock.ERROR.INVALID_LENGTH_FIELD_CONTENTS;
+                                block.m_errorText = Long.toString(blockPayloadSize);
                             }
                             break;
 
@@ -259,6 +275,7 @@ public final class SmallObjectHeapAnalyzer {
 
                 default: {
                     block.m_error = MemoryBlock.ERROR.INVALID_MARKER_BYTE;
+                    block.m_errorText = Integer.toHexString(block.m_markerByte);
                     break;
                 }
             }
@@ -334,16 +351,19 @@ public final class SmallObjectHeapAnalyzer {
                                 // sanity check block size
                                 if (blockSize < 12) {
                                     block.m_error = FreeBlockListElement.ERROR.INVALID_BLOCK_SIZE;
+                                    block.m_errorText = Long.toString(blockSize);
                                 }
 
                                 ptrPrev = m_memory.readPointer(ptr + lengthFieldSize);
                                 if (ptrPrev < 0 || ptrPrev >= m_memory.m_baseFreeBlockList) {
                                     block.m_error = FreeBlockListElement.ERROR.INVALID_POINTERS;
+                                    block.m_errorText = Long.toHexString(ptrPrev);
                                 }
 
                                 ptrNext = m_memory.readPointer(ptr + lengthFieldSize + SmallObjectHeap.POINTER_SIZE);
                                 if (ptrNext < 0 || ptrNext >= m_memory.m_baseFreeBlockList) {
                                     block.m_error = FreeBlockListElement.ERROR.INVALID_POINTERS;
+                                    block.m_errorText = Long.toHexString(ptrNext);
                                 }
 
                                 // have block position before the marker byte for the walker
@@ -365,7 +385,8 @@ public final class SmallObjectHeapAnalyzer {
                             }
 
                             default: {
-                                System.out.println("!!! Block with invalid marker detected: ptr " + ptr + ", marker " + marker);
+                                block.m_error = FreeBlockListElement.ERROR.INVALID_MARKER_BYTE;
+                                block.m_errorText = Integer.toHexString(marker);
                                 break;
                             }
                         }
@@ -504,6 +525,7 @@ public final class SmallObjectHeapAnalyzer {
         private long m_nextFreeBlock = -1;
         private long m_prevFreeBlock = -1;
         private ERROR m_error = ERROR.OK;
+        private String m_errorText = "";
 
         /**
          * Constructor
@@ -585,6 +607,15 @@ public final class SmallObjectHeapAnalyzer {
         }
 
         /**
+         * Get additional text for the flagged error
+         *
+         * @return Text for flagged error
+         */
+        public String getErrorText() {
+            return m_errorText;
+        }
+
+        /**
          * Check if the block is corrupted
          *
          * @return True if corrupted, false otherwise
@@ -615,7 +646,7 @@ public final class SmallObjectHeapAnalyzer {
         public String toString() {
             String strBad = "";
             if (isCorrupted()) {
-                strBad = "!!! CORRUPTED: " + m_error + " !!! ";
+                strBad = "!!! CORRUPTED: " + m_error + ": " + m_errorText + " !!! ";
             }
 
             if (m_blockPayloadSize == -1) {
@@ -633,13 +664,14 @@ public final class SmallObjectHeapAnalyzer {
      */
     private static class FreeBlockListElement {
         enum ERROR {
-            OK, INVALID_BLOCK_SIZE, INVALID_POINTERS
+            OK, INVALID_BLOCK_SIZE, INVALID_POINTERS, INVALID_MARKER_BYTE
         }
 
         private long m_blockAddress = -1;
         private long m_prevBlockAddress = -1;
         private long m_nextBlockAddress = -1;
         private ERROR m_error = ERROR.OK;
+        private String m_errorText = "";
 
         /**
          * Constructor
@@ -684,6 +716,15 @@ public final class SmallObjectHeapAnalyzer {
         }
 
         /**
+         * Get additional text for the flagged error
+         *
+         * @return Text for flagged error
+         */
+        public String getErrorText() {
+            return m_errorText;
+        }
+
+        /**
          * Check if the block is corrupted
          *
          * @return True if corrupted, false otherwise
@@ -696,7 +737,7 @@ public final class SmallObjectHeapAnalyzer {
         public String toString() {
             String strBad = "";
             if (isCorrupted()) {
-                strBad = "!!! CORRUPTED: " + m_error + " !!! ";
+                strBad = "!!! CORRUPTED: " + m_error + ": " + m_errorText + " !!! ";
             }
 
             return strBad + "FreeBlockListElement[m_blockAddress " + m_blockAddress + ", m_prevBlockAddress " + m_prevBlockAddress + ", m_nextBlockAddress " +
