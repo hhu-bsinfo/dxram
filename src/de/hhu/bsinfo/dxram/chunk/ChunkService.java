@@ -1560,7 +1560,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             int size = m_memoryManager.getSize(chunkIDs[i]);
             if (size < 0) {
                 // #if LOGGER >= WARN
-                LOGGER.warn("Getting size of chunk 0x%X failed, does not exist", chunkIDs[i]);
+                LOGGER.warn("Getting chunk 0x%X failed, does not exist", chunkIDs[i]);
                 // #endif /* LOGGER >= WARN */
                 size = 0;
             } else {
