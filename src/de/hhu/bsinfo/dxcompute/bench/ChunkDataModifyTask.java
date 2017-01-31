@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxcompute.bench;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
@@ -28,6 +29,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 public class ChunkDataModifyTask implements Task {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkDataModifyTask.class.getSimpleName());
@@ -47,6 +49,8 @@ public class ChunkDataModifyTask implements Task {
     private long m_opCount = 100000;
     @Expose
     private int m_chunkBatch = 10;
+    @Expose
+    private boolean m_writeContentsAndVerify = false;
     @Expose
     private int m_pattern = PATTERN_GET_LOCAL;
 
@@ -100,8 +104,45 @@ public class ChunkDataModifyTask implements Task {
 
                         Chunk[] chunks = chunkService.get(chunkIds);
 
+                        if (m_writeContentsAndVerify) {
+                            for (int j = 0; j < chunks.length; j++) {
+                                ByteBuffer buffer = chunks[j].getData();
+
+                                if (buffer == null) {
+                                    throw new IllegalStateException("Buffer of valid chunk null");
+                                }
+
+                                buffer.position(0);
+                                for (int k = 0; k < buffer.capacity(); k++) {
+                                    buffer.put((byte) k);
+                                }
+                            }
+                        }
+
                         if (doPut) {
                             chunkService.put(chunks);
+
+                            if (m_writeContentsAndVerify) {
+                                Chunk[] chunksToVerify = chunkService.get(chunkIds);
+
+                                for (int j = 0; j < chunksToVerify.length; j++) {
+                                    ByteBuffer buffer = chunksToVerify[j].getData();
+
+                                    if (buffer == null) {
+                                        throw new IllegalStateException("Buffer of valid chunk null");
+                                    }
+
+                                    buffer.position(0);
+                                    for (int k = 0; k < buffer.capacity(); k++) {
+                                        byte b = buffer.get();
+                                        if (b != (byte) k) {
+                                            LOGGER
+                                                .error("Contents of chunk 0x%16X are not matching written contents: 0x%X != 0x%X", chunksToVerify[j].getID(), b,
+                                                    k);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -159,6 +200,7 @@ public class ChunkDataModifyTask implements Task {
         p_exporter.writeInt(m_numThreads);
         p_exporter.writeLong(m_opCount);
         p_exporter.writeInt(m_chunkBatch);
+        p_exporter.writeBoolean(m_writeContentsAndVerify);
         p_exporter.writeInt(m_pattern);
     }
 
@@ -167,11 +209,12 @@ public class ChunkDataModifyTask implements Task {
         m_numThreads = p_importer.readInt();
         m_opCount = p_importer.readLong();
         m_chunkBatch = p_importer.readInt();
+        m_writeContentsAndVerify = p_importer.readBoolean();
         m_pattern = p_importer.readInt();
     }
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES * 3 + Long.BYTES;
+        return Integer.BYTES * 3 + ObjectSizeUtil.sizeofBoolean() + Long.BYTES;
     }
 }
