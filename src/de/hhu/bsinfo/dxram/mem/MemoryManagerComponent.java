@@ -116,6 +116,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         status.m_numberOfActiveChunks = m_numActiveChunks;
         status.m_cidTableCount = m_cidTable.getTableCount();
         status.m_totalMemoryCIDTables = new StorageUnit(m_cidTable.getTotalMemoryTables(), StorageUnit.BYTE);
+        status.m_cachedFreeLIDs = m_cidTable.getNumCachedFreeLIDs();
+        status.m_availableFreeLIDs = m_cidTable.getNumAvailableFreeLIDs();
+        status.m_newLIDCounter = m_cidTable.getNextLocalIDCounter();
 
         return status;
     }
@@ -837,7 +840,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
             // Get and delete the address from the CIDTable, mark as zombie first
             addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
-            if (addressDeletedChunk != -1) {
+            if (addressDeletedChunk > 0) {
                 // more space for another zombie for reuse in LID store?
                 if (p_wasMigrated) {
 
@@ -1303,6 +1306,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             LOGGER.fatal("Full memory dump to file: %s...", m_memDumpFileOnError);
 
             lockManage();
+            LOGGER.fatal("Dumping...");
             m_rawMemory.dump(m_memDumpFileOnError);
             unlockManage();
 
@@ -1328,6 +1332,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         private StorageUnit m_totalChunkPayloadMemory = new StorageUnit();
         private long m_cidTableCount = -1;
         private StorageUnit m_totalMemoryCIDTables = new StorageUnit();
+        private int m_cachedFreeLIDs = -1;
+        private long m_availableFreeLIDs = -1;
+        private long m_newLIDCounter = -1;
 
         /**
          * Default constructor
@@ -1417,10 +1424,37 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             return m_totalPayloadMemory;
         }
 
+        /**
+         * Get the number of cached LIDs in the LID store
+         *
+         * @return Number of cached LIDs
+         */
+        public int getCachedFreeLIDs() {
+            return m_cachedFreeLIDs;
+        }
+
+        /**
+         * Get the number of total available free LIDs of the LIDStore
+         *
+         * @return Total number of available free LIDs
+         */
+        public long getAvailableFreeLIDs() {
+            return m_availableFreeLIDs;
+        }
+
+        /**
+         * Get the current state of the counter generating new LIDs
+         *
+         * @return LID counter state
+         */
+        public long getNewLIDCounter() {
+            return m_newLIDCounter;
+        }
+
         @Override
         public int sizeofObject() {
             return Long.BYTES * 3 + m_freeMemory.sizeofObject() + m_totalMemory.sizeofObject() + m_totalPayloadMemory.sizeofObject() +
-                m_totalChunkPayloadMemory.sizeofObject() + m_totalMemoryCIDTables.sizeofObject();
+                m_totalChunkPayloadMemory.sizeofObject() + m_totalMemoryCIDTables.sizeofObject() + Integer.BYTES + Long.BYTES * 2;
         }
 
         @Override
@@ -1433,6 +1467,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             p_exporter.exportObject(m_totalChunkPayloadMemory);
             p_exporter.writeLong(m_cidTableCount);
             p_exporter.exportObject(m_totalMemoryCIDTables);
+            p_exporter.writeInt(m_cachedFreeLIDs);
+            p_exporter.writeLong(m_availableFreeLIDs);
+            p_exporter.writeLong(m_newLIDCounter);
         }
 
         @Override
@@ -1445,6 +1482,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             p_importer.importObject(m_totalChunkPayloadMemory);
             m_cidTableCount = p_importer.readLong();
             p_importer.importObject(m_totalMemoryCIDTables);
+            m_cachedFreeLIDs = p_importer.readInt();
+            m_availableFreeLIDs = p_importer.readLong();
+            m_newLIDCounter = p_importer.readLong();
         }
 
         @Override
@@ -1457,7 +1497,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             str += "Num active chunks: " + m_numberOfActiveChunks + '\n';
             str += "Total chunk payload memory (gb): " + m_totalChunkPayloadMemory.getGBDouble() + '\n';
             str += "Num CID tables: " + m_cidTableCount + '\n';
-            str += "Total CID tables memory (gb): " + m_totalMemoryCIDTables.getGBDouble();
+            str += "Total CID tables memory (gb): " + m_totalMemoryCIDTables.getGBDouble() + '\n';
+            str += "Num of free LIDs cached in LIDStore: " + m_cachedFreeLIDs + '\n';
+            str += "Num of total available free LIDs in LIDStore: " + m_availableFreeLIDs + '\n';
+            str += "New LID counter state: " + m_newLIDCounter;
             return str;
         }
     }

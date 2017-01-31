@@ -90,6 +90,33 @@ public final class CIDTable {
     }
 
     /**
+     * Get the number of cached free LIDs of the LIDStore
+     *
+     * @return Number of cached free LIDs
+     */
+    int getNumCachedFreeLIDs() {
+        return m_store.m_count;
+    }
+
+    /**
+     * Get the number of total available free LIDs of the LIDStore
+     *
+     * @return Number of total available free LIDs
+     */
+    long getNumAvailableFreeLIDs() {
+        return m_store.m_overallCount;
+    }
+
+    /**
+     * Get the current state of the counter generating new LIDs
+     *
+     * @return LID counter state
+     */
+    long getNextLocalIDCounter() {
+        return m_nextLocalID;
+    }
+
+    /**
      * Get a free LID from the CIDTable
      *
      * @return a free LID and version, or -1 if there is none
