@@ -35,9 +35,9 @@ public final class CIDTable {
     private static final byte ENTRY_SIZE = 5;
     static final byte LID_TABLE_LEVELS = 4;
     private static final long BITMASK_ADDRESS = 0x7FFFFFFFFFL;
-    private static final long BIT_FLAG = 0x8000000000L;
-    private static final long FULL_FLAG = BIT_FLAG;
-    private static final long DELETED_FLAG = BIT_FLAG;
+    private static final long FULL_FLAG = 0x8000000000L;
+    private static final long FREE_ENTRY = 0;
+    private static final long ZOMBIE_ENTRY = 0xFFFFFFFFFFL;
     private static final Logger LOGGER = LogManager.getFormatterLogger(CIDTable.class.getSimpleName());
     // statistics recorder
     private static final StatisticsOperation SOP_CREATE_NID_TABLE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateNIDTable");
@@ -441,13 +441,12 @@ public final class CIDTable {
                 ret = readEntry(addressTable, index) & BITMASK_ADDRESS;
 
                 // Delete the level 0 entry
-                // invalid + active address but deleted flag 1
+                // invalid + active address but deleted
                 // -> zombie entry
                 if (p_flagZombie) {
-                    writeEntry(addressTable, index, ret | DELETED_FLAG);
+                    writeEntry(addressTable, index, ZOMBIE_ENTRY);
                 } else {
-                    // delete flag cleared, but address is 0 -> free entry
-                    writeEntry(addressTable, index, 0);
+                    writeEntry(addressTable, index, FREE_ENTRY);
                 }
             }
 
@@ -623,11 +622,11 @@ public final class CIDTable {
             entry = readEntry(p_table, i);
             if (entry > 0) {
 
-                if ((entry & DELETED_FLAG) == 0) {
+                if (p_level > 0) {
+                    ret.addAll(getAllRanges(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level), entry & BITMASK_ADDRESS, p_level - 1));
+                } else {
 
-                    if (p_level > 0) {
-                        ret.addAll(getAllRanges(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level), entry & BITMASK_ADDRESS, p_level - 1));
-                    } else {
+                    if (entry != ZOMBIE_ENTRY) {
                         if (range == 0) {
                             range = 1;
                             ret.add(p_unfinishedCID + i);
@@ -722,7 +721,7 @@ public final class CIDTable {
     private final class LIDStore {
 
         // Constants
-        private static final int STORE_CAPACITY = 100000;
+        private static final int STORE_CAPACITY = 10000;
 
         // Attributes
         private final long[] m_localIDs;
@@ -889,11 +888,11 @@ public final class CIDTable {
                     }
                 } else {
                     // check if we got an entry referencing a zombie
-                    if ((entry & DELETED_FLAG) > 0 && (entry & BITMASK_ADDRESS) > 0) {
+                    if (entry == ZOMBIE_ENTRY) {
                         localID = p_offset + i;
 
                         // cleanup zombie in table
-                        writeEntry(p_addressTable, i, 0);
+                        writeEntry(p_addressTable, i, FREE_ENTRY);
 
                         m_localIDs[m_position + m_count] = localID;
                         m_count++;
