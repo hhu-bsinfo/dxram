@@ -331,8 +331,10 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
     /**
      * Execute the give task script node
      *
-     * @param p_taskScriptNode Script node to execute
-     * @param p_prevReturnCode Return code of the previous task executed
+     * @param p_taskScriptNode
+     *     Script node to execute
+     * @param p_prevReturnCode
+     *     Return code of the previous task executed
      * @return Return value of the node executed
      */
     private Integer executeTaskScriptNode(final TaskScriptNode p_taskScriptNode, final Integer p_prevReturnCode) {

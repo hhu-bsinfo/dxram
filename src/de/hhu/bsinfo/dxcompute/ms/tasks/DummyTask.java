@@ -21,17 +21,16 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Dummy task which is used to add comments/visual separators
- * to a task script. This task is parsed when used in a
- * script.
+ * to a task script.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.01.2017
  */
-public class CommentTask implements Task {
+public class DummyTask implements Task {
 
     /**
      * Constructor
      */
-    public CommentTask() {
+    public DummyTask() {
 
     }
 
