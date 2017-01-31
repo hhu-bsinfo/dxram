@@ -527,7 +527,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         }
 
         // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
         // #endif /* ASSERT_NODE_ROLE */
@@ -1401,7 +1401,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         }
 
         // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
         // #endif /* ASSERT_NODE_ROLE */
