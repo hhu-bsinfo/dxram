@@ -50,7 +50,7 @@ public final class CIDTable {
     static final int ENTRIES_FOR_NID_LEVEL = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL);
     private static final int NID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_FOR_NID_LEVEL + 7;
     private static final long NID_LEVEL_BITMASK = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL) - 1;
-    private GetNodeIdHook m_nodeIdHook;
+    private short m_ownNodeID;
     private long m_addressTableDirectory = -1;
     private SmallObjectHeap m_rawMemory;
     private int m_tableCount = -1;
@@ -64,11 +64,11 @@ public final class CIDTable {
     /**
      * Creates an instance of CIDTable
      *
-     * @param p_nodeIdHook
-     *     Instance of a class implementing the node id hook.
+     * @param p_ownNodeID
+     *     Own node ID
      */
-    public CIDTable(final GetNodeIdHook p_nodeIdHook) {
-        m_nodeIdHook = p_nodeIdHook;
+    public CIDTable(final short p_ownNodeID) {
+        m_ownNodeID = p_ownNodeID;
     }
 
     /**
@@ -195,7 +195,7 @@ public final class CIDTable {
         for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
             entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
             if (entry > 0) {
-                if (i == (m_nodeIdHook.getNodeId() & 0xFFFF)) {
+                if (i == (m_ownNodeID & 0xFFFF)) {
                     ret.addAll(getAllRanges((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
                 }
             }
@@ -236,7 +236,7 @@ public final class CIDTable {
         ret = new ArrayList<Long>();
         for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
             entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
-            if (entry > 0 && i != (m_nodeIdHook.getNodeId() & 0xFFFF)) {
+            if (entry > 0 && i != (m_ownNodeID & 0xFFFF)) {
                 ret.addAll(getAllEntries((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
             }
         }
@@ -856,7 +856,7 @@ public final class CIDTable {
          * Finds free LIDs in the CIDTable
          */
         private void findFreeLIDs() {
-            findFreeLIDs(readEntry(m_addressTableDirectory, m_nodeIdHook.getNodeId() & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1, 0);
+            findFreeLIDs(readEntry(m_addressTableDirectory, m_ownNodeID & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1, 0);
         }
 
         /**
@@ -913,21 +913,6 @@ public final class CIDTable {
 
             return ret;
         }
-    }
-
-    /**
-     * Special interface to allow booting the memory manager before the
-     * boot component but still getting the node id after the boot
-     * component has booted.
-     */
-    interface GetNodeIdHook {
-
-        /**
-         * Returns the NodeID
-         *
-         * @return the NodeID
-         */
-        short getNodeId();
     }
 
     /**

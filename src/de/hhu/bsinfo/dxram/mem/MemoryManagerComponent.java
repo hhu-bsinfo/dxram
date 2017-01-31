@@ -53,7 +53,7 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  * @author Florian Klein, florian.klein@hhu.de, 13.02.2014
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
-public final class MemoryManagerComponent extends AbstractDXRAMComponent implements CIDTable.GetNodeIdHook {
+public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     // statistics recording
     static final StatisticsOperation SOP_MALLOC = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Malloc");
     private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
@@ -153,11 +153,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         // #endif /* ASSERT_NODE_ROLE */
 
         return m_cidTable.getCIDRangesOfAllLocalChunks();
-    }
-
-    @Override
-    public short getNodeId() {
-        return m_boot.getNodeID();
     }
 
     /**
@@ -1239,7 +1234,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             LOGGER.info("Allocating native memory (%d mb). This may take a while...", m_keyValueStoreSize.getMB());
             // #endif /* LOGGER == INFO */
             m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory(), m_keyValueStoreSize.getBytes(), (int) m_keyValueStoreMaxBlockSize.getBytes());
-            m_cidTable = new CIDTable(this);
+            m_cidTable = new CIDTable(m_boot.getNodeID());
             m_cidTable.initialize(m_rawMemory);
 
             m_lock = new AtomicInteger(0);
