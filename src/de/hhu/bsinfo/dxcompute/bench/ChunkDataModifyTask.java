@@ -76,8 +76,8 @@ public class ChunkDataModifyTask implements Task {
         long[] timeStart = new long[m_numThreads];
         long[] timeEnd = new long[m_numThreads];
 
-        System.out.printf("Modifying %d random chunks (pattern %d) in batches of %d chunk(s) with %d thread(s)...\n", m_opCount, m_pattern, m_chunkBatch,
-            m_numThreads);
+        System.out.printf("Modifying (and checking %d) %d random chunks (pattern %d) in batches of %d chunk(s) with %d thread(s)...\n",
+            m_writeContentsAndVerify ? 1 : 0, m_opCount, m_pattern, m_chunkBatch, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
