@@ -1612,6 +1612,8 @@ public final class SmallObjectHeap implements Importable, Exportable {
         p_exporter.writeLongArray(m_freeBlockListSizes);
         p_exporter.writeInt(m_freeBlocksListCount);
         p_exporter.exportObject(m_status);
+        // separate metadata from VMB with padding
+        p_exporter.writeLong(0xFFFFEEDDDDEEFFFFL);
 
         // write "chunks" of the raw memory to speed up the process
         byte[] buffer = new byte[1024 * 32];
@@ -1640,6 +1642,8 @@ public final class SmallObjectHeap implements Importable, Exportable {
         m_freeBlocksListCount = p_importer.readInt();
         m_status = new Status();
         p_importer.importObject(m_status);
+        // get rid of padding separating metadata from VMB
+        p_importer.readLong();
 
         // free previously allocated VMB
         m_memory.free();
@@ -1668,7 +1672,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
     public int sizeofObject() {
         throw new UnsupportedOperationException("Heap can be > 2 GB not fitting int type");
         // return (int) (Integer.BYTES + Long.BYTES + Integer.BYTES + ObjectSizeUtil.sizeofLongArray(m_freeBlockListSizes) + Integer.BYTES +
-        //     m_status.sizeofObject() + m_status.getSize());
+        //     m_status.sizeofObject() + Long.BYTES + m_status.getSize());
     }
 
     // --------------------------------------------------------------------------------------
