@@ -73,7 +73,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
     @Expose
     private StorageUnit m_keyValueStoreMaxBlockSize = new StorageUnit(8, StorageUnit.MB);
     @Expose
-    private String m_memDumpFileOnError = "";
+    private String m_memDumpFolderOnError = "";
 
     // dependent components
     private AbstractBootComponent m_boot;
@@ -1302,9 +1302,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      */
     private void handleMemDumpOnError(final MemoryRuntimeException p_e, final boolean p_acquireManageLock) {
         LOGGER.fatal("Encountered memory error (most likely corruption)", p_e);
-        if (!m_memDumpFileOnError.isEmpty()) {
+        if (!m_memDumpFolderOnError.isEmpty()) {
+            if (!m_memDumpFolderOnError.endsWith("/")) {
+                m_memDumpFolderOnError += "/";
+            }
+
             // create unique file name for each thread to avoid collisions
-            String fileName = Thread.currentThread().getId() + "-" + System.currentTimeMillis() + '-' + m_memDumpFileOnError;
+            String fileName = m_memDumpFolderOnError + "memdump-" + Thread.currentThread().getId() + '-' + System.currentTimeMillis() + ".soh";
 
             LOGGER.fatal("Full memory dump to file: %s...", fileName);
 
