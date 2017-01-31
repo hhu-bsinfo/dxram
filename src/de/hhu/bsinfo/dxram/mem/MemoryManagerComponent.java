@@ -666,7 +666,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         try {
             NodeRole role = m_boot.getNodeRole();
             if (role == NodeRole.TERMINAL) {
-                return true;
+                return false;
             }
 
             // #ifdef ASSERT_NODE_ROLE
@@ -773,7 +773,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         try {
             NodeRole role = m_boot.getNodeRole();
             if (role == NodeRole.TERMINAL) {
-                return true;
+                return false;
             }
 
             // #ifdef ASSERT_NODE_ROLE
@@ -825,7 +825,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
         try {
             NodeRole role = m_boot.getNodeRole();
             if (role == NodeRole.TERMINAL) {
-                return true;
+                return false;
             }
 
             // #ifdef ASSERT_NODE_ROLE
