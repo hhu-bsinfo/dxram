@@ -166,6 +166,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     public ArrayList<Long> getAllLocalChunkIDRanges() {
         ArrayList<Long> list;
 
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         m_memoryManager.lockAccess();
         list = m_memoryManager.getCIDRangesOfAllLocalChunks();
         m_memoryManager.unlockAccess();
@@ -1342,7 +1348,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         }
 
         // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
         // #endif /* ASSERT_NODE_ROLE */
