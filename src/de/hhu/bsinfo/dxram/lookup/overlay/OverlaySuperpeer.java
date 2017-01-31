@@ -603,14 +603,12 @@ public class OverlaySuperpeer implements MessageReceiver {
             startIndex = index;
             currentPeer = m_assignedPeersIncludingBackups.get(index++);
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, firstPeer, p_nodeID)) {
-                if (m_metadata.getLookupTree(currentPeer).getStatus()) {
-                    if (Collections.binarySearch(m_peers, currentPeer) < 0 && Collections.binarySearch(m_superpeers, currentPeer) < 0) {
-                        // #if LOGGER >= INFO
-                        LOGGER.info("** Taking over 0x%X", currentPeer);
-                        // #endif /* LOGGER >= INFO */
-                        OverlayHelper.insertPeer(currentPeer, m_peers);
-                        addToAssignedPeers(currentPeer);
-                    }
+                if (Collections.binarySearch(m_peers, currentPeer) < 0 && Collections.binarySearch(m_superpeers, currentPeer) < 0) {
+                    // #if LOGGER >= INFO
+                    LOGGER.info("** Taking over 0x%X", currentPeer);
+                    // #endif /* LOGGER >= INFO */
+                    OverlayHelper.insertPeer(currentPeer, m_peers);
+                    addToAssignedPeers(currentPeer);
                 }
                 if (index == m_assignedPeersIncludingBackups.size()) {
                     index = 0;
@@ -1203,7 +1201,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         LOGGER.trace("Got request: GET_LOOKUP_RANGE_REQUEST 0x%X chunkID: 0x%X", p_getLookupRangeRequest.getSource(), chunkID);
         // #endif /* LOGGER == TRACE */
 
-        result = m_metadata.getLookupRangeFromLookupTree(chunkID);
+        result = m_metadata.getLookupRangeFromLookupTree(chunkID, m_backupActive);
 
         // #if LOGGER == TRACE
         LOGGER.trace("GET_LOOKUP_RANGE_REQUEST 0x%X chunkID 0x%X reply location: %s", p_getLookupRangeRequest.getSource(), chunkID, result);
@@ -1247,7 +1245,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         creator = ChunkID.getCreatorID(chunkIDs[0]);
         if (OverlayHelper.isPeerInSuperpeerRange(creator, m_predecessor, m_nodeID)) {
-            if (m_metadata.removeChunkIDsFromLookupTree(chunkIDs)) {
+            if (m_metadata.removeChunkIDsFromLookupTree(m_backupActive, chunkIDs)) {
                 m_overlayLock.readLock().lock();
                 backupSuperpeers = OverlayHelper.getBackupSuperpeers(m_nodeID, m_superpeers);
                 m_overlayLock.readLock().unlock();
@@ -1267,7 +1265,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                 }
             }
         } else if (isBackup) {
-            if (!m_metadata.removeChunkIDsFromLookupTree(chunkIDs)) {
+            if (!m_metadata.removeChunkIDsFromLookupTree(m_backupActive, chunkIDs)) {
                 // #if LOGGER >= WARN
                 LOGGER.warn("CIDTree range not initialized on backup superpeer 0x%X", m_nodeID);
                 // #endif /* LOGGER >= WARN */
@@ -1435,7 +1433,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         m_overlayLock.readLock().lock();
         if (OverlayHelper.isPeerInSuperpeerRange(creator, m_predecessor, m_nodeID)) {
-            if (m_metadata.putChunkIDInLookupTree(chunkID, nodeID)) {
+            if (m_metadata.putChunkIDInLookupTree(chunkID, nodeID, m_backupActive)) {
                 backupSuperpeers = OverlayHelper.getBackupSuperpeers(m_nodeID, m_superpeers);
                 m_overlayLock.readLock().unlock();
                 if (backupSuperpeers[0] != -1) {
@@ -1472,7 +1470,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                 }
             }
         } else if (isBackup) {
-            if (!m_metadata.putChunkIDInLookupTree(chunkID, nodeID)) {
+            if (!m_metadata.putChunkIDInLookupTree(chunkID, nodeID, m_backupActive)) {
                 // #if LOGGER >= WARN
                 LOGGER.warn("CIDTree range not initialized on backup superpeer 0x%X", m_nodeID);
                 // #endif /* LOGGER >= WARN */
@@ -1529,7 +1527,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         m_overlayLock.readLock().lock();
         if (OverlayHelper.isPeerInSuperpeerRange(creator, m_predecessor, m_nodeID)) {
-            if (m_metadata.putChunkIDRangeInLookupTree(startChunkID, endChunkID, nodeID)) {
+            if (m_metadata.putChunkIDRangeInLookupTree(startChunkID, endChunkID, nodeID, m_backupActive)) {
                 backupSuperpeers = OverlayHelper.getBackupSuperpeers(m_nodeID, m_superpeers);
                 m_overlayLock.readLock().unlock();
                 if (backupSuperpeers[0] != -1) {
@@ -1567,7 +1565,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                 }
             }
         } else if (isBackup) {
-            if (!m_metadata.putChunkIDRangeInLookupTree(startChunkID, endChunkID, nodeID)) {
+            if (!m_metadata.putChunkIDRangeInLookupTree(startChunkID, endChunkID, nodeID, m_backupActive)) {
                 // #if LOGGER >= WARN
                 LOGGER.warn("CIDTree range not initialized on backup superpeer 0x%X", m_nodeID);
                 // #endif /* LOGGER >= WARN */

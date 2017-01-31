@@ -17,7 +17,6 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
-import de.hhu.bsinfo.dxram.lookup.overlay.storage.MetadataHandler;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
@@ -76,15 +75,22 @@ public class GetLookupTreeResponse extends AbstractResponse {
     protected final void writePayload(final ByteBuffer p_buffer) {
         final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 
-        exporter.exportObject(m_tree);
+        if (m_tree == null) {
+            exporter.writeByte((byte) 0);
+        } else {
+            exporter.writeByte((byte) 1);
+            exporter.exportObject(m_tree);
+        }
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
         final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
-        m_tree = new LookupTree();
-        importer.importObject(m_tree);
+        if (importer.readByte() == 1) {
+            m_tree = new LookupTree();
+            importer.importObject(m_tree);
+        }
     }
 
 }

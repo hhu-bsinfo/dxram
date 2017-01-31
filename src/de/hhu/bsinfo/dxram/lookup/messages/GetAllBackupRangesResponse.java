@@ -75,20 +75,28 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
     protected final void writePayload(final ByteBuffer p_buffer) {
         final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 
-        p_buffer.putInt(m_backupRanges.length);
-        for (BackupRange backupRange : m_backupRanges) {
-            exporter.exportObject(backupRange);
+        if (m_backupRanges == null) {
+            p_buffer.putInt(0);
+        } else {
+            p_buffer.putInt(m_backupRanges.length);
+            for (BackupRange backupRange : m_backupRanges) {
+                exporter.exportObject(backupRange);
+            }
         }
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
         final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+        int size;
 
-        m_backupRanges = new BackupRange[p_buffer.getInt()];
-        for (int i = 0; i < m_backupRanges.length; i++) {
-            m_backupRanges[i] = new BackupRange();
-            importer.importObject(m_backupRanges[i]);
+        size = p_buffer.getInt();
+        if (size > 0) {
+            m_backupRanges = new BackupRange[size];
+            for (int i = 0; i < m_backupRanges.length; i++) {
+                m_backupRanges[i] = new BackupRange();
+                importer.importObject(m_backupRanges[i]);
+            }
         }
     }
 

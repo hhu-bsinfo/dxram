@@ -131,6 +131,7 @@ public final class MetadataHandler {
         byte[] storages;
         byte[] barriers;
         ByteBuffer data;
+        LookupTree tree;
         MessagesDataStructureImExporter exporter;
 
         m_dataLock.readLock().lock();
@@ -161,8 +162,12 @@ public final class MetadataHandler {
             startIndex = index;
             currentPeer = m_assignedPeersIncludingBackups.get(index++);
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_beginOfArea, p_endOfArea)) {
-                size += getLookupTreeLocal(currentPeer).sizeofObject() + Short.BYTES;
-                count++;
+                tree = getLookupTreeLocal(currentPeer);
+                // no tree available -> no chunks were created or backup system is deactivated
+                if (tree != null) {
+                    size += tree.sizeofObject() + Short.BYTES;
+                    count++;
+                }
 
                 if (index == m_assignedPeersIncludingBackups.size()) {
                     index = 0;
@@ -193,8 +198,12 @@ public final class MetadataHandler {
                 LOGGER.trace("Including LookupTree of 0x%X", currentPeer);
                 // #endif /* LOGGER == TRACE */
 
-                data.putShort(currentPeer);
-                exporter.exportObject(getLookupTreeLocal(currentPeer));
+                tree = getLookupTreeLocal(currentPeer);
+                // no tree available -> no chunks were created or backup system is deactivated
+                if (tree != null) {
+                    data.putShort(currentPeer);
+                    exporter.exportObject(tree);
+                }
 
                 if (index == m_assignedPeersIncludingBackups.size()) {
                     index = 0;
@@ -255,12 +264,13 @@ public final class MetadataHandler {
         // Get all barriers
         barriers = m_barriers.receiveAllMetadata();
 
-        // Get all lookup trees
+        // Get all nameservice entries
         size = nameserviceEntries.length + storages.length + barriers.length + Integer.BYTES * 4;
 
         // Iterate over all peers and count lookup tree sizes
         for (int i = 0; i < Short.MAX_VALUE * 2; i++) {
             tree = getLookupTreeLocal((short) i);
+            // no tree available -> no chunks were created or backup system is deactivated
             if (tree != null) {
                 size += tree.sizeofObject() + Short.BYTES;
                 count++;
@@ -282,6 +292,7 @@ public final class MetadataHandler {
         exporter = new MessagesDataStructureImExporter(data);
         for (int i = 0; i < Short.MAX_VALUE * 2; i++) {
             tree = getLookupTreeLocal((short) i);
+            // no tree available -> no chunks were created or backup system is deactivated
             if (tree != null) {
                 // #if LOGGER == TRACE
                 LOGGER.trace("Including LookupTree of 0x%X", (short) i);
@@ -379,6 +390,7 @@ public final class MetadataHandler {
         ret += "Storing LookupTrees of following peers:\n";
         for (int i = 0; i < Short.MAX_VALUE * 2; i++) {
             tree = getLookupTreeLocal((short) i);
+            // no tree available -> no chunks were created or backup system is deactivated
             if (tree != null) {
                 if (OverlayHelper.isPeerInSuperpeerRange((short) i, p_predecessor, p_nodeID)) {
                     ret += "--> " + NodeID.toHexString((short) i);
@@ -423,6 +435,7 @@ public final class MetadataHandler {
         byte[] storages = null;
         byte[] barriers = null;
         ByteBuffer data;
+        LookupTree tree;
         MessagesDataStructureImExporter exporter;
 
         m_dataLock.readLock().lock();
@@ -468,8 +481,12 @@ public final class MetadataHandler {
             currentPeer = m_assignedPeersIncludingBackups.get(index++);
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_predecessor, p_nodeID)) {
                 if (Collections.binarySearch(p_peers, currentPeer) < 0) {
-                    size += getLookupTreeLocal(currentPeer).sizeofObject() + Short.BYTES;
-                    count++;
+                    tree = getLookupTreeLocal(currentPeer);
+                    // no tree available -> no chunks were created or backup system is deactivated
+                    if (tree != null) {
+                        size += tree.sizeofObject() + Short.BYTES;
+                        count++;
+                    }
                 }
 
                 if (index == m_assignedPeersIncludingBackups.size()) {
@@ -514,9 +531,12 @@ public final class MetadataHandler {
                     LOGGER.trace("Including LookupTree of 0x%X", currentPeer);
                     // #endif /* LOGGER == TRACE */
 
-                    data.putShort(currentPeer);
-
-                    exporter.exportObject(getLookupTreeLocal(currentPeer));
+                    tree = getLookupTreeLocal(currentPeer);
+                    // no tree available -> no chunks were created or backup system is deactivated
+                    if (tree != null) {
+                        data.putShort(currentPeer);
+                        exporter.exportObject(tree);
+                    }
                 }
 
                 if (index == m_assignedPeersIncludingBackups.size()) {
@@ -561,8 +581,6 @@ public final class MetadataHandler {
 
         return ret;
     }
-
-    /* LookupTrees */
 
     /**
      * Deletes all metadata that is not in the responsible area.
@@ -703,6 +721,40 @@ public final class MetadataHandler {
     }
 
     /**
+     * Initializes a new backup range.
+     *
+     * @param p_creator
+     *     the creator of the backup range
+     * @param p_backupPeers
+     *     the assigned backup peers for the backup range
+     * @param p_startChunkIDOrRangeID
+     *     the first ChunkID of the range or the RangeID (for migrations)
+     * @return whether a new LookupTree was added or not
+     */
+    public boolean initBackupRangeInLookupTree(final short p_creator, final short[] p_backupPeers, final long p_startChunkIDOrRangeID) {
+        boolean ret = false;
+        LookupTree tree;
+
+        m_dataLock.writeLock().lock();
+        tree = getLookupTreeLocal(p_creator);
+        // no tree available -> no chunks were created yet
+        if (tree == null) {
+            // With backup activated this is the place to initialize a lookup tree
+            tree = new LookupTree(ORDER);
+            m_lookupTrees[p_creator & 0xFFFF] = tree;
+            ret = true;
+        }
+        if (ChunkID.getCreatorID(p_startChunkIDOrRangeID) != -1) {
+            tree.initRange(p_startChunkIDOrRangeID, p_creator, p_backupPeers);
+        } else {
+            tree.initMigrationRange((int) p_startChunkIDOrRangeID, p_backupPeers);
+        }
+        m_dataLock.writeLock().unlock();
+
+        return ret;
+    }
+
+    /**
      * Gets corresponding lookup tree.
      *
      * @param p_nodeID
@@ -726,13 +778,17 @@ public final class MetadataHandler {
      *     the ChunkID
      * @return the lookup range
      */
-    public LookupRange getLookupRangeFromLookupTree(final long p_chunkID) {
+    public LookupRange getLookupRangeFromLookupTree(final long p_chunkID, boolean p_backupActive) {
         LookupRange ret = null;
 
         m_dataLock.readLock().lock();
         LookupTree tree = getLookupTreeLocal(ChunkID.getCreatorID(p_chunkID));
+        // no tree available -> no chunks were created or backup system is deactivated
         if (tree != null) {
             ret = tree.getMetadata(p_chunkID);
+        } else if (!p_backupActive) {
+            // With backup deactivated a lookup tree is only created for migrations -> no migrations -> return complete range
+            ret = new LookupRange(ChunkID.getCreatorID(p_chunkID), new long[] {0, (long) Math.pow(2, 48) - 1});
         }
         m_dataLock.readLock().unlock();
 
@@ -748,13 +804,22 @@ public final class MetadataHandler {
      *     the NodeID of the new owner
      * @return whether the ChunkID could be put or not
      */
-    public boolean putChunkIDInLookupTree(final long p_chunkID, final short p_owner) {
+    public boolean putChunkIDInLookupTree(final long p_chunkID, final short p_owner, final boolean p_backupActive) {
         boolean ret;
         LookupTree tree;
 
         m_dataLock.writeLock().lock();
         tree = getLookupTreeLocal(ChunkID.getCreatorID(p_chunkID));
+        // no tree available -> no chunks were created or backup system is deactivated
         if (tree == null) {
+            if (!p_backupActive) {
+                // With backup deactivated this is the place to initialize a lookup tree
+                short creator = ChunkID.getCreatorID(p_chunkID);
+                tree = new LookupTree(ORDER);
+                m_lookupTrees[creator & 0xFFFF] = tree;
+                tree.initRange(0, creator, null);
+                return tree.migrateObject(p_chunkID, p_owner);
+            }
             m_dataLock.writeLock().unlock();
 
             return false;
@@ -777,13 +842,22 @@ public final class MetadataHandler {
      *     the NodeID of the new owner
      * @return whether the ChunkID could be put or not
      */
-    public boolean putChunkIDRangeInLookupTree(final long p_firstChunkID, final long p_lastChunkID, final short p_owner) {
+    public boolean putChunkIDRangeInLookupTree(final long p_firstChunkID, final long p_lastChunkID, final short p_owner, final boolean p_backupActive) {
         boolean ret;
         LookupTree tree;
 
         m_dataLock.writeLock().lock();
         tree = getLookupTreeLocal(ChunkID.getCreatorID(p_firstChunkID));
+        // no tree available -> no chunks were created or backup system is deactivated
         if (tree == null) {
+            if (!p_backupActive) {
+                // With backup deactivated this is the place to initialize a lookup tree
+                short creator = ChunkID.getCreatorID(p_firstChunkID);
+                tree = new LookupTree(ORDER);
+                m_lookupTrees[creator & 0xFFFF] = tree;
+                tree.initRange(0, creator, null);
+                return tree.migrateRange(p_firstChunkID, p_lastChunkID, p_owner);
+            }
             m_dataLock.writeLock().unlock();
 
             return false;
@@ -796,37 +870,13 @@ public final class MetadataHandler {
     }
 
     /**
-     * Removes a ChunkID.
-     *
-     * @param p_chunkID
-     *     the ChunkID
-     * @return whether the ChunkID could be removed or not
-     */
-    public boolean removeChunkIDFromLookupTree(final long p_chunkID) {
-        LookupTree tree;
-
-        m_dataLock.writeLock().lock();
-        tree = getLookupTreeLocal(ChunkID.getCreatorID(p_chunkID));
-        if (tree == null) {
-            m_dataLock.writeLock().unlock();
-
-            return false;
-        } else {
-            tree.removeObject(p_chunkID);
-            m_dataLock.writeLock().unlock();
-
-            return true;
-        }
-    }
-
-    /**
      * Removes multiple ChunkIDs
      *
      * @param p_chunkIDs
      *     Chunk IDs to remove
      * @return whether the ChunkIDs could be removed or not
      */
-    public boolean removeChunkIDsFromLookupTree(final long... p_chunkIDs) {
+    public boolean removeChunkIDsFromLookupTree(final boolean p_backupActive, final long... p_chunkIDs) {
         LookupTree tree;
 
         if (p_chunkIDs.length == 0) {
@@ -835,73 +885,19 @@ public final class MetadataHandler {
 
         m_dataLock.writeLock().lock();
         tree = getLookupTreeLocal(ChunkID.getCreatorID(p_chunkIDs[0]));
+        // no tree available -> no chunks were created or backup system is deactivated
         if (tree == null) {
             m_dataLock.writeLock().unlock();
 
-            return false;
+            // Backup activated and no tree -> error
+            // Backup deactivated and no migrations (-> tree is null) -> no need to remove ChunkIDs
+            return !p_backupActive;
         } else {
             tree.removeObjects(p_chunkIDs);
             m_dataLock.writeLock().unlock();
 
             return true;
         }
-    }
-
-    /**
-     * Initializes a new backup range.
-     *
-     * @param p_creator
-     *     the creator of the backup range
-     * @param p_backupPeers
-     *     the assigned backup peers for the backup range
-     * @param p_startChunkIDOrRangeID
-     *     the first ChunkID of the range or the RangeID (for migrations)
-     * @return whether a new LookupTree was added or not
-     */
-    public boolean initBackupRangeInLookupTree(final short p_creator, final short[] p_backupPeers, final long p_startChunkIDOrRangeID) {
-        boolean ret = false;
-        LookupTree tree;
-
-        m_dataLock.writeLock().lock();
-        tree = getLookupTreeLocal(p_creator);
-        if (tree == null) {
-            tree = new LookupTree(ORDER);
-            m_lookupTrees[p_creator & 0xFFFF] = tree;
-            ret = true;
-        }
-        if (ChunkID.getCreatorID(p_startChunkIDOrRangeID) != -1) {
-            tree.initRange(p_startChunkIDOrRangeID, p_creator, p_backupPeers);
-        } else {
-            tree.initMigrationRange((int) p_startChunkIDOrRangeID, p_backupPeers);
-        }
-        m_dataLock.writeLock().unlock();
-
-        return ret;
-    }
-
-    /**
-     * Gets corresponding lookup tree.
-     *
-     * @param p_nodeID
-     *     lookup tree's creator
-     * @return the lookup tree
-     */
-    public ArrayList<long[]> getBackupRangesFromLookupTree(final short p_nodeID) {
-        ArrayList<long[]> ret;
-        LookupTree tree;
-
-        m_dataLock.readLock().lock();
-        tree = getLookupTreeLocal(p_nodeID);
-        // no tree available -> no chunks were created
-        if (tree == null) {
-            ret = null;
-        } else {
-            ret = tree.getAllBackupRanges();
-        }
-
-        m_dataLock.readLock().unlock();
-
-        return ret;
     }
 
     /**
@@ -920,6 +916,7 @@ public final class MetadataHandler {
 
         m_dataLock.readLock().lock();
         tree = getLookupTreeLocal(p_nodeID);
+        // no tree available -> no chunks were created or backup system is deactivated
         if (tree != null) {
             ownBackupRanges = tree.getAllBackupRanges();
             migrationBackupRanges = tree.getAllMigratedBackupRanges();
@@ -952,6 +949,7 @@ public final class MetadataHandler {
 
         m_dataLock.writeLock().lock();
         tree = getLookupTreeLocal(p_owner);
+        // no tree available -> no chunks were created or backup system is deactivated
         if (tree != null) {
             tree.setRestorer(p_source);
         }
@@ -971,9 +969,15 @@ public final class MetadataHandler {
      *     the replacement
      */
     public void replaceFailedPeerInLookupTree(final long p_firstChunkIDOrRangeID, final short p_failedPeer, final short p_newBackupPeer) {
+        LookupTree tree;
+
         m_dataLock.writeLock().lock();
-        // Replace failedPeer from specific backup peer lists
-        getLookupTreeLocal(p_failedPeer).replaceBackupPeer(p_firstChunkIDOrRangeID, p_failedPeer, p_failedPeer);
+        tree = getLookupTreeLocal(p_failedPeer);
+        // no tree available -> no chunks were created or backup system is deactivated
+        if (tree != null) {
+            // Replace failedPeer from specific backup peer lists
+            tree.replaceBackupPeer(p_firstChunkIDOrRangeID, p_failedPeer, p_newBackupPeer);
+        }
         m_dataLock.writeLock().unlock();
     }
 

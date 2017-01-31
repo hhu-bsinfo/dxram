@@ -106,15 +106,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Get the status of this peer
-     *
-     * @return whether this node is online or not
-     */
-    public boolean getStatus() {
-        return m_status;
-    }
-
-    /**
      * Set the status of this peer
      *
      * @param p_status
@@ -122,34 +113,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      */
     public void setStatus(final boolean p_status) {
         m_status = p_status;
-    }
-
-    /**
-     * Returns the backup peers for every range
-     *
-     * @return an ArrayList with all backup peers
-     */
-    ArrayList<long[]> getAllBackupRanges() {
-        return m_backupRanges;
-    }
-
-    /**
-     * Returns the backup peers for migrated chunks
-     *
-     * @return an ArrayList with all backup peers for migrated
-     */
-    ArrayList<Long> getAllMigratedBackupRanges() {
-        return m_migrationBackupRanges;
-    }
-
-    /**
-     * Set the restorer
-     *
-     * @param p_nodeID
-     *     the NodeID of the peer that restored this peer
-     */
-    void setRestorer(final short p_nodeID) {
-        m_restorer = p_nodeID;
     }
 
     /**
@@ -241,8 +204,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
             p_exporter.writeInt(-1);
         }
     }
-
-    // Setters
 
     /**
      * @author michael.birkhoff@hhu.de
@@ -338,6 +299,8 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         return ret;
     }
 
+    // Setters
+
     /**
      * Returns the number of entries in btree
      *
@@ -378,6 +341,34 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         }
 
         return ret;
+    }
+
+    /**
+     * Returns the backup peers for every range
+     *
+     * @return an ArrayList with all backup peers
+     */
+    ArrayList<long[]> getAllBackupRanges() {
+        return m_backupRanges;
+    }
+
+    /**
+     * Returns the backup peers for migrated chunks
+     *
+     * @return an ArrayList with all backup peers for migrated
+     */
+    ArrayList<Long> getAllMigratedBackupRanges() {
+        return m_migrationBackupRanges;
+    }
+
+    /**
+     * Set the restorer
+     *
+     * @param p_nodeID
+     *     the NodeID of the peer that restored this peer
+     */
+    void setRestorer(final short p_nodeID) {
+        m_restorer = p_nodeID;
     }
 
     /**
@@ -1638,43 +1629,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         }
 
         /**
-         * Returns the parent node
-         *
-         * @return the parent node
-         */
-        private Node getParent() {
-            return m_parent;
-        }
-
-        /**
-         * Returns the parent node
-         *
-         * @param p_parent
-         *     the parent node
-         */
-        private void setParent(final Node p_parent) {
-            m_parent = p_parent;
-        }
-
-        /**
-         * Returns the number of entries
-         *
-         * @return the number of entries
-         */
-        private int getNumberOfEntries() {
-            return m_numberOfEntries;
-        }
-
-        /**
-         * Returns the number of children
-         *
-         * @return the number of children
-         */
-        private int getNumberOfChildren() {
-            return m_numberOfChildren;
-        }
-
-        /**
          * Compares two nodes
          *
          * @param p_cmp
@@ -1750,6 +1704,43 @@ public final class LookupTree implements Serializable, Importable, Exportable {
             }
 
             return ret.toString();
+        }
+
+        /**
+         * Returns the parent node
+         *
+         * @return the parent node
+         */
+        private Node getParent() {
+            return m_parent;
+        }
+
+        /**
+         * Returns the parent node
+         *
+         * @param p_parent
+         *     the parent node
+         */
+        private void setParent(final Node p_parent) {
+            m_parent = p_parent;
+        }
+
+        /**
+         * Returns the number of entries
+         *
+         * @return the number of entries
+         */
+        private int getNumberOfEntries() {
+            return m_numberOfEntries;
+        }
+
+        /**
+         * Returns the number of children
+         *
+         * @return the number of children
+         */
+        private int getNumberOfChildren() {
+            return m_numberOfChildren;
         }
 
         /**

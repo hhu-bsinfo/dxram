@@ -214,6 +214,27 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     /**
+     * Puts a migrated chunk into the migration tree. Creates a new migration backup range if necessary.
+     *
+     * @param p_dataStructure
+     *     the migrated chunk
+     * @return current migration backup range
+     * @lock MemoryManager must be write locked
+     */
+    public BackupRange registerMigratedChunk(final DataStructure p_dataStructure) {
+
+        if (!m_migrationsTree.fits(p_dataStructure.sizeofObject() + m_log.getApproxHeaderSize(p_dataStructure))) {
+            initializeNewMigrationBackupRange();
+        }
+
+        m_lock.writeLock().lock();
+        m_migrationsTree.putObject(p_dataStructure.getID(), (byte) m_currentMigrationBackupRange.getRangeID(), p_dataStructure.sizeofObject());
+        m_lock.writeLock().unlock();
+
+        return m_currentMigrationBackupRange;
+    }
+
+    /**
      * Returns the corresponding backup peers
      *
      * @param p_chunkID
@@ -287,27 +308,6 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         m_lock.readLock().unlock();
 
         return ret;
-    }
-
-    /**
-     * Puts a migrated chunk into the migration tree. Creates a new migration backup range if necessary.
-     *
-     * @param p_dataStructure
-     *     the migrated chunk
-     * @return current migration backup range
-     * @lock MemoryManager must be write locked
-     */
-    public BackupRange registerMigratedChunk(final DataStructure p_dataStructure) {
-
-        if (!m_migrationsTree.fits(p_dataStructure.sizeofObject() + m_log.getApproxHeaderSize(p_dataStructure))) {
-            initializeNewMigrationBackupRange();
-        }
-
-        m_lock.writeLock().lock();
-        m_migrationsTree.putObject(p_dataStructure.getID(), (byte) m_currentMigrationBackupRange.getRangeID(), p_dataStructure.sizeofObject());
-        m_lock.writeLock().unlock();
-
-        return m_currentMigrationBackupRange;
     }
 
     /**
