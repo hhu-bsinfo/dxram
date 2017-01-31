@@ -89,9 +89,7 @@ public class ChunkCreateTask implements Task {
                                 sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
-                            for (int k = 0; k < m_chunkBatch; k++) {
-                                chunkService.createSizes(sizes);
-                            }
+                            chunkService.createSizes(sizes);
                         }
 
                         if (lastBatchRemainder > 0) {
@@ -100,9 +98,7 @@ public class ChunkCreateTask implements Task {
                                 chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
                             }
 
-                            for (int k = 0; k < lastBatchRemainder; k++) {
-                                chunkService.createSizes(sizes);
-                            }
+                            chunkService.createSizes(sizes);
                         }
 
                         break;
