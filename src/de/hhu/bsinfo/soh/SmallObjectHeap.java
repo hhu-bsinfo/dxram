@@ -206,6 +206,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
         }
 
         exporter.exportObject(this);
+        exporter.close();
     }
 
     /**

@@ -50,6 +50,17 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
         m_file = new RandomAccessFile(p_file, "rw");
     }
 
+    /**
+     * Close the backend flushing all buffers
+     */
+    public void close() {
+        try {
+            m_file.close();
+        } catch (final IOException ignored) {
+
+        }
+    }
+
     @Override
     public void exportObject(final Exportable p_object) {
         p_object.exportObject(this);
