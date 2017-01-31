@@ -96,45 +96,40 @@ public class ChunkRemoveAllTask implements Task {
                     timeStart[threadIdx] = System.nanoTime();
 
                     while (batches > 0) {
+                        int fillCount = 0;
                         long chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
 
                         if (chunksInRange >= batchChunkCount) {
-                            for (int j = 0; j < chunkIds.length; j++) {
+                            for (int j = fillCount; j < batchChunkCount; j++) {
                                 chunkIds[j] = rangeStart + j;
                             }
 
-                            chunkService.remove(chunkIds);
-                            rangeStart += batchChunkCount;
+                            fillCount = 0;
                         } else {
                             // chunksInRange < m_chunkBatch
 
-                            long fillCount = 0;
-
-                            while (fillCount < batchChunkCount) {
-                                for (int j = (int) fillCount; j < chunksInRange; j++) {
-                                    chunkIds[j] = rangeStart + j;
-                                }
-
-                                fillCount += chunksInRange;
-
-                                rangeIdx++;
-                                if (rangeIdx * 2 < chunkRanges.size()) {
-                                    rangeStart = chunkRanges.get(rangeIdx * 2);
-                                    rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
-                                    chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
-                                } else {
-                                    // invalidate spare chunk ids
-                                    for (int j = (int) fillCount; j < chunkIds.length; j++) {
-                                        chunkIds[j] = ChunkID.INVALID_ID;
-                                    }
-
-                                    break;
-                                }
+                            for (int j = fillCount; j < chunksInRange; j++) {
+                                chunkIds[j] = rangeStart + j;
+                                fillCount++;
                             }
 
-                            chunkService.remove(chunkIds);
-                            rangeStart += batchChunkCount;
+                            rangeIdx++;
+                            if (rangeIdx * 2 < chunkRanges.size()) {
+                                rangeStart = chunkRanges.get(rangeIdx * 2);
+                                rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
+                                continue;
+                            } else {
+                                // invalidate spare chunk ids
+                                for (int j = fillCount; j < chunkIds.length; j++) {
+                                    chunkIds[j] = ChunkID.INVALID_ID;
+                                }
+
+                                batches = 0;
+                            }
                         }
+
+                        chunkService.remove(chunkIds);
+                        rangeStart += batchChunkCount;
 
                         batches--;
                     }
