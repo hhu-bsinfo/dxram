@@ -186,7 +186,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      *     Node id to get the status from.
      * @return Status object with status information of the remote node or null if getting status failed.
      */
-    public MemoryManagerComponent.Status getMemoryStatus(final short p_nodeID) {
+    public MemoryManagerComponent.Status getStatus(final short p_nodeID) {
         MemoryManagerComponent.Status status = null;
 
         if (p_nodeID == NodeID.INVALID_ID) {
@@ -195,6 +195,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             // #endif /* LOGGER >= ERROR */
             return null;
         }
+
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
 
         // own status?
         if (p_nodeID == m_boot.getNodeID()) {
