@@ -94,6 +94,8 @@ public class ChunkIDRangeUtils {
                     if (rangeIdx * 2 < p_ranges.size()) {
                         rangeStart = p_ranges.get(rangeIdx * 2);
                         rangeEnd = p_ranges.get(rangeIdx * 2 + 1);
+                    } else {
+                        break;
                     }
                 }
             }
