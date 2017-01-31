@@ -841,14 +841,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             // Get and delete the address from the CIDTable, mark as zombie first
             addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
             if (addressDeletedChunk > 0) {
-                // more space for another zombie for reuse in LID store?
-                if (p_wasMigrated) {
 
+                if (p_wasMigrated) {
+                    // deleted and previously migrated chunks don't end up in the LID store
                     m_cidTable.delete(p_chunkID, false);
                 } else {
-
+                    // more space for another zombie for reuse in LID store?
                     if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
-                        // detach reference to zombie
+                        // kill zombie entry
                         m_cidTable.delete(p_chunkID, false);
                     } else {
                         // no space for zombie in LID store, keep him "alive" in table
