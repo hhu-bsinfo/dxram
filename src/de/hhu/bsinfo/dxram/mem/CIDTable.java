@@ -721,7 +721,7 @@ public final class CIDTable {
     private final class LIDStore {
 
         // Constants
-        private static final int STORE_CAPACITY = 10000;
+        private static final int STORE_CAPACITY = 100000;
 
         // Attributes
         private final long[] m_localIDs;
