@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.soh.MemoryRuntimeException;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 
 /**
@@ -94,11 +95,9 @@ public final class CIDTable {
      * @return a free LID and version, or -1 if there is none
      */
     long getFreeLID() {
-        long ret = -1;
+        long ret;
 
-        if (m_store != null) {
-            ret = m_store.get();
-        }
+        ret = m_store.get();
 
         // If no free ID exist, get next local ID
         if (ret == -1) {
@@ -119,9 +118,7 @@ public final class CIDTable {
         if (!p_consecutive) {
             ret = new long[p_size];
             for (int i = 0; i < p_size; i++) {
-                if (m_store != null) {
-                    ret[i] = m_store.get();
-                }
+                ret[i] = m_store.get();
 
                 // If no free ID exist, get next local ID
                 if (ret[i] == -1) {
@@ -162,30 +159,25 @@ public final class CIDTable {
      * @return the ChunkID ranges in an ArrayList
      */
     ArrayList<Long> getCIDRangesOfAllLocalChunks() {
-        ArrayList<Long> ret = null;
+        ArrayList<Long> ret;
         long entry;
         long intervalStart;
         long intervalEnd;
 
-        if (m_store != null) {
-            ret = new ArrayList<Long>();
-            for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
-                entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
-                if (entry > 0) {
-                    if (i == (m_nodeIdHook.getNodeId() & 0xFFFF)) {
-                        ret.addAll(
-                            getAllRanges((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
-                    }
+        ret = new ArrayList<Long>();
+        for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
+            entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
+            if (entry > 0) {
+                if (i == (m_nodeIdHook.getNodeId() & 0xFFFF)) {
+                    ret.addAll(getAllRanges((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
                 }
             }
         }
 
         // compress intervals
-        assert ret != null;
         if (ret.size() >= 2) {
             if (ret.size() % 2 != 0) {
-                // throw new MemoryException("internal error in getChunkIDRangesOfAllChunks");
-                // System.out.println("error: in ChunkIDRange list");
+                throw new MemoryRuntimeException("Internal error in getChunkIDRangesOfAllChunks");
             } else {
                 for (int i = 0; i < ret.size() - 2; i += 2) {
                     intervalEnd = ChunkID.getLocalID(ret.get(i + 1));
@@ -211,17 +203,14 @@ public final class CIDTable {
      * @return the ChunkIDs of all migrated Chunks
      */
     ArrayList<Long> getCIDOfAllMigratedChunks() {
-        ArrayList<Long> ret = null;
+        ArrayList<Long> ret;
         long entry;
 
-        if (m_store != null) {
-            ret = new ArrayList<Long>();
-            for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
-                entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
-                if (entry > 0 && i != (m_nodeIdHook.getNodeId() & 0xFFFF)) {
-                    ret.addAll(
-                        getAllEntries((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
-                }
+        ret = new ArrayList<Long>();
+        for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
+            entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
+            if (entry > 0 && i != (m_nodeIdHook.getNodeId() & 0xFFFF)) {
+                ret.addAll(getAllEntries((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
             }
         }
 
@@ -644,8 +633,6 @@ public final class CIDTable {
         ArrayList<Long> ret;
         long entry;
 
-        // System.out.println("Entering with " + ChunkID.toHexString(p_unfinishedCID));
-
         ret = new ArrayList<Long>();
         for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
             entry = readEntry(p_table, i);
@@ -698,8 +685,6 @@ public final class CIDTable {
             }
         }
     }
-
-    // Classes
 
     /**
      * Stores free LocalIDs
