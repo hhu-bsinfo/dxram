@@ -262,7 +262,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 throw new OutOfKeyValueStoreMemoryException(getStatus());
             }
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, false);
             throw e;
         }
 
@@ -322,7 +322,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             SOP_CREATE.leave();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, false);
             throw e;
         }
 
@@ -411,7 +411,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             SOP_MULTI_CREATE.leave();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, false);
             throw e;
         }
 
@@ -537,7 +537,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             SOP_MULTI_CREATE.leave();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, false);
             throw e;
         }
 
@@ -608,7 +608,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             SOP_CREATE.leave();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, false);
             throw e;
         }
 
@@ -644,7 +644,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 size = m_rawMemory.getSizeBlock(address);
             }
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
 
@@ -695,7 +695,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             SOP_GET.leave();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
 
@@ -749,7 +749,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             SOP_GET.leave();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
 
@@ -799,7 +799,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             SOP_PUT.leave();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
 
@@ -872,7 +872,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             SOP_REMOVE.leave();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, false);
             throw e;
         }
 
@@ -939,7 +939,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             SOP_CREATE_PUT_RECOVERED.leave();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, false);
             throw e;
         }
     }
@@ -967,7 +967,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 return -1;
             }
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
     }
@@ -993,7 +993,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 return -1;
             }
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
     }
@@ -1019,7 +1019,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 return -1;
             }
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
     }
@@ -1045,7 +1045,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 return -1;
             }
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
     }
@@ -1073,7 +1073,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 return false;
             }
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
 
@@ -1103,7 +1103,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 return false;
             }
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
 
@@ -1133,7 +1133,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 return false;
             }
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
 
@@ -1163,7 +1163,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
                 return false;
             }
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
 
@@ -1192,7 +1192,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
             // Get the address from the CIDTable
             address = m_cidTable.get(p_chunkID);
         } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e);
+            handleMemDumpOnError(e, true);
             throw e;
         }
 
@@ -1300,17 +1300,29 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
      * @param p_e
      *     Exception thrown on memory error
      */
-    private void handleMemDumpOnError(final MemoryRuntimeException p_e) {
+    private void handleMemDumpOnError(final MemoryRuntimeException p_e, final boolean p_acquireManageLock) {
         LOGGER.fatal("Encountered memory error (most likely corruption)", p_e);
         if (!m_memDumpFileOnError.isEmpty()) {
-            LOGGER.fatal("Full memory dump to file: %s...", m_memDumpFileOnError);
+            // create unique file name for each thread to avoid collisions
+            String fileName = Thread.currentThread().getId() + "-" + System.currentTimeMillis() + '-' + m_memDumpFileOnError;
 
-            lockManage();
+            LOGGER.fatal("Full memory dump to file: %s...", fileName);
+
+            // ugly: we entered this with a access lock, acquire the managed lock to ensure full blocking of the memory before dumping
+            if (p_acquireManageLock) {
+                unlockAccess();
+                lockManage();
+            }
+
             LOGGER.fatal("Dumping...");
-            m_rawMemory.dump(m_memDumpFileOnError);
-            unlockManage();
+            m_rawMemory.dump(fileName);
 
-            LOGGER.fatal("Memory dump finished");
+            if (p_acquireManageLock) {
+                unlockManage();
+                lockAccess();
+            }
+
+            LOGGER.fatal("Memory dump to file finished: %s", fileName);
         } else {
             LOGGER.fatal("Memory dump to file disabled");
         }
