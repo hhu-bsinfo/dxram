@@ -207,15 +207,19 @@ public class TerminalService extends AbstractDXRAMService {
             if ("help".equals(text)) {
                 m_terminal.getScriptTerminalContext().help();
             } else {
-                String cmd = text.split(" ")[1].replaceAll("\\(\\)", "");
-                de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(cmd);
-                if (scriptCtx != null) {
-                    m_terminal.getScriptContext().eval("dxterm.cmd(\"" + cmd + "\").help()");
-                } else {
-                    System.out.println("Could not find help for terminal command '" + cmd + '\'');
+                String[] tokens = text.split(" ");
+                if (tokens.length > 1) {
+                    String cmd = tokens[1].replaceAll("\\(\\)", "");
+                    de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(cmd);
+                    if (scriptCtx != null) {
+                        m_terminal.getScriptContext().eval("dxterm.cmd(\"" + cmd + "\").help()");
+                    } else {
+                        System.out.println("Could not find help for terminal command '" + cmd + '\'');
+                    }
+
+                    return;
                 }
             }
-            return;
         }
 
         if (Pattern.matches("[a-z]++ [a-zA-Z0-9\"]++", text)) {
