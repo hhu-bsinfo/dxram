@@ -148,7 +148,7 @@ function exec_raw(cid, type, hex, offset, length) {
 
     var chunks = chunkService.get(cid);
 
-    if (chunks == null) {
+    if (chunks == null || chunks[0].getDataSize() == 0) {
         dxterm.printflnErr("Getting chunk 0x%X failed", cid);
         return;
     }

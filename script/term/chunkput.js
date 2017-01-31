@@ -93,8 +93,8 @@ function exec_cid(cid, data, offset, type) {
     var chunkService = dxram.service("chunk");
     var chunks = chunkService.get(cid);
 
-    if (chunks == null) {
-        dxmterm.printflnErr("Getting chunk 0x%X failed", cid);
+    if (chunks == null || chunks[0].getDataSize() == 0) {
+        dxterm.printflnErr("Getting chunk 0x%X failed", cid);
         return;
     }
 
