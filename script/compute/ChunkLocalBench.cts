@@ -67,7 +67,7 @@
 		  	"m_task": "de.hhu.bsinfo.dxcompute.bench.ChunkDataModifyTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 10,
-			"m_opCount": 10000000,
+			"m_opCount": 100000000,
 			"m_writeContentsAndVerify": false,
 			"m_pattern": 0
 		},
@@ -75,7 +75,7 @@
 		  	"m_task": "de.hhu.bsinfo.dxcompute.bench.ChunkDataModifyTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 10,
-			"m_opCount": 10000000,
+			"m_opCount": 100000000,
 			"m_writeContentsAndVerify": false,
 			"m_pattern": 1
 		},
