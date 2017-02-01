@@ -357,13 +357,13 @@ public final class SmallObjectHeapAnalyzer {
                                 ptrPrev = m_memory.readPointer(ptr + lengthFieldSize);
                                 if (ptrPrev < 0 || ptrPrev >= m_memory.m_baseFreeBlockList) {
                                     block.m_error = FreeBlockListElement.ERROR.INVALID_POINTERS;
-                                    block.m_errorText = Long.toHexString(ptrPrev);
+                                    block.m_errorText = "0x" + Long.toHexString(ptrPrev);
                                 }
 
                                 ptrNext = m_memory.readPointer(ptr + lengthFieldSize + SmallObjectHeap.POINTER_SIZE);
                                 if (ptrNext < 0 || ptrNext >= m_memory.m_baseFreeBlockList) {
                                     block.m_error = FreeBlockListElement.ERROR.INVALID_POINTERS;
-                                    block.m_errorText = Long.toHexString(ptrNext);
+                                    block.m_errorText = "0x" + Long.toHexString(ptrNext);
                                 }
 
                                 // have block position before the marker byte for the walker
@@ -386,7 +386,7 @@ public final class SmallObjectHeapAnalyzer {
 
                             default: {
                                 block.m_error = FreeBlockListElement.ERROR.INVALID_MARKER_BYTE;
-                                block.m_errorText = Integer.toHexString(marker);
+                                block.m_errorText = "0x" + Integer.toHexString(marker);
                                 break;
                             }
                         }
@@ -650,11 +650,12 @@ public final class SmallObjectHeapAnalyzer {
             }
 
             if (m_blockPayloadSize == -1) {
-                return strBad + "FreeBlock [m_startAddress " + m_startAddress + ", m_endAddress " + m_endAddress + ", m_rawBlockSize " + m_rawBlockSize +
-                    ", m_markerByte " + m_markerByte + ", m_prevFreeBlock " + m_prevFreeBlock + ", m_nextFreeBlock " + m_nextFreeBlock + ']';
+                return strBad + "FreeBlock [m_startAddress 0x" + Long.toHexString(m_startAddress) + ", m_endAddress 0x" + Long.toHexString(m_endAddress) +
+                    ", m_rawBlockSize " + m_rawBlockSize + ", m_markerByte " + m_markerByte + ", m_prevFreeBlock 0x" + Long.toHexString(m_prevFreeBlock) +
+                    ", m_nextFreeBlock 0x" + Long.toHexString(m_nextFreeBlock) + ']';
             } else {
-                return strBad + "AllocatedBlock [m_startAddress " + m_startAddress + ", m_endAddress " + m_endAddress + ", m_rawBlockSize " + m_rawBlockSize +
-                    ", m_markerByte " + m_markerByte + ", m_blockPayloadSize " + m_blockPayloadSize + ']';
+                return strBad + "AllocatedBlock [m_startAddress 0x" + Long.toHexString(m_startAddress) + ", m_endAddress 0x" + Long.toHexString(m_endAddress) +
+                    ", m_rawBlockSize " + m_rawBlockSize + ", m_markerByte " + m_markerByte + ", m_blockPayloadSize " + m_blockPayloadSize + ']';
             }
         }
     }
@@ -740,8 +741,8 @@ public final class SmallObjectHeapAnalyzer {
                 strBad = "!!! CORRUPTED: " + m_error + ": " + m_errorText + " !!! ";
             }
 
-            return strBad + "FreeBlockListElement[m_blockAddress " + m_blockAddress + ", m_prevBlockAddress " + m_prevBlockAddress + ", m_nextBlockAddress " +
-                m_nextBlockAddress + ']';
+            return strBad + "FreeBlockListElement[m_blockAddress 0x" + Long.toHexString(m_blockAddress) + ", m_prevBlockAddress 0x" +
+                Long.toHexString(m_prevBlockAddress) + ", m_nextBlockAddress 0x" + Long.toHexString(m_nextBlockAddress) + ']';
         }
     }
 
@@ -803,7 +804,7 @@ public final class SmallObjectHeapAnalyzer {
                 strBad = "!!! CORRUPTED !!! ";
             }
 
-            String str = strBad + "FreeBlockList[m_minFreeBlockSize " + m_minFreeBlockSize + ", m_addressRoot " + m_addressRoot + "]:";
+            String str = strBad + "FreeBlockList[m_minFreeBlockSize " + m_minFreeBlockSize + ", m_addressRoot 0x" + Long.toHexString(m_addressRoot) + "]:";
 
             Iterator<FreeBlockListElement> it;
             it = m_blocks.iterator();
