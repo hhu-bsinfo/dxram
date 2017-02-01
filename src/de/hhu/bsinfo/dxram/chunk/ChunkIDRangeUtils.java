@@ -113,6 +113,10 @@ public class ChunkIDRangeUtils {
     }
 
     private static int getRandomRange(final int p_start, final int p_end) {
+        if (p_start == p_end) {
+            return p_start;
+        }
+
         return (int) (Math.random() * (p_end - p_start + 1) + p_start);
     }
 
@@ -121,6 +125,10 @@ public class ChunkIDRangeUtils {
     }
 
     private static long getRandomRange(final long p_start, final long p_end) {
+        if (p_start == p_end) {
+            return p_start;
+        }
+
         return (long) (Math.random() * (p_end - p_start + 1) + p_start);
     }
 }
