@@ -95,7 +95,7 @@ public class ChunkCreateTask implements Task {
                         if (lastBatchRemainder > 0) {
                             sizes = new int[(int) lastBatchRemainder];
                             for (int k = 0; k < sizes.length; k++) {
-                                chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
+                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             chunkService.createSizes(sizes);
@@ -118,7 +118,7 @@ public class ChunkCreateTask implements Task {
                         if (lastBatchRemainder > 0) {
                             sizes = new int[(int) lastBatchRemainder];
                             for (int k = 0; k < sizes.length; k++) {
-                                chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
+                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             chunkService.createRemote(destNodeId, sizes);
@@ -145,7 +145,7 @@ public class ChunkCreateTask implements Task {
                             sizes = new int[(int) lastBatchRemainder];
 
                             for (int k = 0; k < sizes.length; k++) {
-                                chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
+                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             chunkService.createRemote(destNodeId, sizes);
@@ -176,7 +176,7 @@ public class ChunkCreateTask implements Task {
                             sizes = new int[(int) lastBatchRemainder];
 
                             for (int k = 0; k < sizes.length; k++) {
-                                chunkService.create(ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd), 1);
+                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             chunkService.createRemote(destNodeId, sizes);
