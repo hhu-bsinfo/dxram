@@ -103,9 +103,18 @@ public class ChunkDataModifyTask implements Task {
                         }
 
                         Chunk[] chunks = chunkService.get(chunkIds);
+                        if (chunks == null) {
+                            System.out.println("Error getting chunks");
+                            return;
+                        }
 
                         if (m_writeContentsAndVerify) {
                             for (int j = 0; j < chunks.length; j++) {
+                                if (chunks[j] == null) {
+                                    System.out.printf("Error getting chunk 0x%X\n", chunkIds[j]);
+                                    continue;
+                                }
+
                                 ByteBuffer buffer = chunks[j].getData();
 
                                 if (buffer == null) {
@@ -124,8 +133,17 @@ public class ChunkDataModifyTask implements Task {
 
                             if (m_writeContentsAndVerify) {
                                 Chunk[] chunksToVerify = chunkService.get(chunkIds);
+                                if (chunksToVerify == null) {
+                                    System.out.println("Error getting chunks (verify)");
+                                    return;
+                                }
 
                                 for (int j = 0; j < chunksToVerify.length; j++) {
+                                    if (chunksToVerify[j] == null) {
+                                        System.out.printf("Error getting chunk 0x%X (verify)\n", chunkIds[j]);
+                                        continue;
+                                    }
+
                                     ByteBuffer buffer = chunksToVerify[j].getData();
 
                                     if (buffer == null) {
