@@ -28,6 +28,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.DumpMemoryMessage;
 import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.GetMigratedChunkIDRangesRequest;
@@ -1427,6 +1428,73 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         return list;
     }
 
+    /**
+     * Dump the chunk memory to a file
+     *
+     * @param p_fileName
+     *     File to dump memory to
+     */
+    public void dumpChunkMemory(final String p_fileName) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
+        // #if LOGGER >= INFO
+        LOGGER.info("Dumping chunk memory to %s, wait", p_fileName);
+        // #endif /* LOGGER >= INFO */
+
+        m_memoryManager.lockManage();
+
+        // #if LOGGER >= INFO
+        LOGGER.info("Dumping chunk memory to %s...", p_fileName);
+        // #endif /* LOGGER >= INFO */
+
+        m_memoryManager.dumpMemory(p_fileName);
+        m_memoryManager.unlockManage();
+
+        // #if LOGGER >= INFO
+        LOGGER.info("Dumping chunk memory to %s, done", p_fileName);
+        // #endif /* LOGGER >= INFO */
+    }
+
+    /**
+     * Dump the chunk memory of a remote peer to a file
+     *
+     * @param p_fileName
+     *     File to dump memory to
+     * @return True if dumping memory of remote peer successful, false on failure
+     */
+    public boolean dumpChunkMemory(final String p_fileName, final short p_remoteNodeId) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
+        // #if LOGGER >= INFO
+        LOGGER.info("Dumping remote chunk memory of 0x%X to %s...", p_remoteNodeId, p_fileName);
+        // #endif /* LOGGER >= INFO */
+
+        DumpMemoryMessage message = new DumpMemoryMessage(p_remoteNodeId, p_fileName);
+
+        try {
+            m_network.sendMessage(message);
+        } catch (final NetworkException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Sending request to dump memory of node 0x%X failed: %s", p_remoteNodeId, e);
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        // #if LOGGER >= INFO
+        LOGGER.info("Triggered async chunk memory dump to %s", p_fileName);
+        // #endif /* LOGGER >= INFO */
+
+        return true;
+    }
+
     @Override
     public void onIncomingMessage(final AbstractMessage p_message) {
         // #if LOGGER == TRACE
@@ -1456,6 +1524,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                         break;
                     case ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST:
                         incomingGetMigratedChunkIDRangesRequest((GetMigratedChunkIDRangesRequest) p_message);
+                        break;
+                    case ChunkMessages.SUBTYPE_DUMP_MEMORY_MESSAGE:
+                        incomingDumpMemoryMessage((DumpMemoryMessage) p_message);
                         break;
                     default:
                         break;
@@ -1521,6 +1592,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             GetMigratedChunkIDRangesRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_RESPONSE,
             GetMigratedChunkIDRangesResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_DUMP_MEMORY_MESSAGE, DumpMemoryMessage.class);
     }
 
     /**
@@ -1534,6 +1606,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         m_network.register(StatusRequest.class, this);
         m_network.register(GetLocalChunkIDRangesRequest.class, this);
         m_network.register(GetMigratedChunkIDRangesRequest.class, this);
+        m_network.register(DumpMemoryMessage.class, this);
     }
 
     // -----------------------------------------------------------------------------------
@@ -1922,5 +1995,33 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             LOGGER.error("Responding to migrated chunk id ranges request %s failed: %s", p_request, e);
             // #endif /* LOGGER >= ERROR */
         }
+    }
+
+    /**
+     * Handle incoming dump memory request
+     *
+     * @param p_request
+     *     Request to handle
+     */
+    private void incomingDumpMemoryMessage(final DumpMemoryMessage p_request) {
+        // #if LOGGER >= INFO
+        LOGGER.info("Async dumping chunk memory to %s, (remote req 0x%X)", p_request.getFileName(), p_request.getSource());
+        // #endif /* LOGGER >= INFO */
+
+        // don't block message handler, this might take a few seconds depending on the memory size
+        new Thread(() -> {
+            m_memoryManager.lockManage();
+
+            // #if LOGGER >= INFO
+            LOGGER.info("Dumping chunk memory to %s...", p_request.getFileName());
+            // #endif /* LOGGER >= INFO */
+
+            m_memoryManager.dumpMemory(p_request.getFileName());
+            m_memoryManager.unlockManage();
+
+            // #if LOGGER >= INFO
+            LOGGER.info("Dumping chunk memory to %s, done", p_request.getFileName());
+            // #endif /* LOGGER >= INFO */
+        }).start();
     }
 }

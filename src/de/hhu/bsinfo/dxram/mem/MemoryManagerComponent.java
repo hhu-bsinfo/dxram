@@ -876,6 +876,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
     /**
      * Special create and put call optimized for recovery
+     * This is a management call and has to be locked using lockManage().
      *
      * @param p_chunkIDs
      *     List of recovered chunk ids
@@ -937,6 +938,17 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
             handleMemDumpOnError(e, false);
             throw e;
         }
+    }
+
+    /**
+     * Create a full heap dump
+     * This is a management call and has to be locked using lockManage().
+     *
+     * @param p_fileName
+     *     Name of the file to write the dump to
+     */
+    public void dumpMemory(final String p_fileName) {
+        m_rawMemory.dump(p_fileName);
     }
 
     // -----------------------------------------------------------------------------
