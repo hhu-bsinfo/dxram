@@ -129,6 +129,7 @@ public class ChunkIDRangeUtils {
             return p_start;
         }
 
-        return (long) (Math.random() * (p_end - p_start + 1)) + p_start;
+        long tmp = (long) (Math.random() * (p_end - p_start + 1));
+        return tmp + p_start;
     }
 }
