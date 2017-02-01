@@ -30,7 +30,7 @@ public final class StatisticsOperation {
     private static int ms_blockSizeStatsMap = 100;
     private String m_name;
     private boolean m_enabled = true;
-    private Stats[][] m_statsMap = new Stats[ms_blockSizeStatsMap][];
+    private Stats[][] m_statsMap = new Stats[10000][0];
     private int m_statsMapBlockPos;
     private Lock m_mapLock = new ReentrantLock(false);
 
