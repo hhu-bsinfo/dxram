@@ -101,15 +101,15 @@ public final class SmallObjectHeapAnalyzer {
                         block.m_errorText = Integer.toString(sizeBlock);
                     }
 
-                    // + 2 marker bytes
-                    block.m_endAddress = baseAddress + sizeBlock + SmallObjectHeap.SIZE_MARKER_BYTE * 2;
+                    // + 2 half marker bytes
+                    block.m_endAddress = baseAddress + sizeBlock + SmallObjectHeap.SIZE_MARKER_BYTE;
                     block.m_rawBlockSize = sizeBlock;
                     block.m_prevFreeBlock = -1;
                     block.m_nextFreeBlock = -1;
                     block.m_blockPayloadSize = -1;
 
                     // check end marker byte
-                    if (block.m_markerByte != m_memory.readLeftPartOfMarker(block.m_endAddress - 1)) {
+                    if (block.m_markerByte != m_memory.readLeftPartOfMarker(block.m_endAddress)) {
                         block.m_error = MemoryBlock.ERROR.MARKER_BYTES_NOT_MATCHING;
                         block.m_errorText = "0x" + Integer.toHexString(block.m_markerByte) + " != 0x" +
                             Integer.toHexString(m_memory.readLeftPartOfMarker(block.m_endAddress - 1));
@@ -130,15 +130,20 @@ public final class SmallObjectHeapAnalyzer {
                     long freeBlockSize;
 
                     lengthFieldSize = block.m_markerByte;
+                    // size includes length field already
                     freeBlockSize = m_memory.read(baseAddress + SmallObjectHeap.SIZE_MARKER_BYTE, lengthFieldSize);
 
-                    // + 2 marker bytes
-                    block.m_endAddress = baseAddress + freeBlockSize + SmallObjectHeap.SIZE_MARKER_BYTE * 2;
+                    // + 2 half marker bytes
+                    block.m_endAddress = baseAddress + freeBlockSize + SmallObjectHeap.SIZE_MARKER_BYTE;
                     block.m_rawBlockSize = freeBlockSize;
-                    block.m_prevFreeBlock = m_memory.readPointer(baseAddress + lengthFieldSize);
+                    block.m_prevFreeBlock = m_memory.readPointer(baseAddress + SmallObjectHeap.SIZE_MARKER_BYTE + lengthFieldSize);
                     if (block.m_prevFreeBlock < 0 || block.m_prevFreeBlock >= blockAreaSize) {
-                        block.m_error = MemoryBlock.ERROR.INVALID_POINTERS;
-                        block.m_errorText = "0x" + Long.toHexString(block.m_prevFreeBlock);
+
+                        // prev free block can be the root of the free memory linked list at the end after the VMB area
+                        if (!(block.m_prevFreeBlock >= m_memory.m_baseFreeBlockList && block.m_prevFreeBlock < m_memory.getStatus().getSize())) {
+                            block.m_error = MemoryBlock.ERROR.INVALID_POINTERS;
+                            block.m_errorText = "0x" + Long.toHexString(block.m_prevFreeBlock);
+                        }
                     }
 
                     block.m_nextFreeBlock = m_memory.readPointer(baseAddress + lengthFieldSize + SmallObjectHeap.POINTER_SIZE);
@@ -148,7 +153,7 @@ public final class SmallObjectHeapAnalyzer {
                     }
 
                     // check end marker byte
-                    if (block.m_markerByte != m_memory.readLeftPartOfMarker(block.m_endAddress - 1)) {
+                    if (block.m_markerByte != m_memory.readLeftPartOfMarker(block.m_endAddress)) {
                         block.m_error = MemoryBlock.ERROR.MARKER_BYTES_NOT_MATCHING;
                         block.m_errorText = "0x" + Integer.toHexString(block.m_markerByte) + " != 0x" +
                             Integer.toHexString(m_memory.readLeftPartOfMarker(block.m_endAddress - 1));
@@ -246,12 +251,19 @@ public final class SmallObjectHeapAnalyzer {
                             break;
                     }
 
-                    // + 2 marker bytes
-                    block.m_endAddress = baseAddress + lengthFieldSize + blockPayloadSize + SmallObjectHeap.SIZE_MARKER_BYTE * 2;
+                    // + 2 half marker bytes
+                    block.m_endAddress = baseAddress + lengthFieldSize + blockPayloadSize + SmallObjectHeap.SIZE_MARKER_BYTE;
                     block.m_rawBlockSize = lengthFieldSize + blockPayloadSize;
                     block.m_prevFreeBlock = -1;
                     block.m_nextFreeBlock = -1;
                     block.m_blockPayloadSize = blockPayloadSize;
+
+                    // check end marker byte
+                    if (block.m_markerByte != m_memory.readLeftPartOfMarker(block.m_endAddress)) {
+                        block.m_error = MemoryBlock.ERROR.MARKER_BYTES_NOT_MATCHING;
+                        block.m_errorText = "0x" + Integer.toHexString(block.m_markerByte) + " != 0x" +
+                            Integer.toHexString(m_memory.readLeftPartOfMarker(block.m_endAddress - 1));
+                    }
 
                     // proceed
                     baseAddress += SmallObjectHeap.SIZE_MARKER_BYTE + lengthFieldSize + blockPayloadSize;
@@ -356,8 +368,12 @@ public final class SmallObjectHeapAnalyzer {
 
                                 ptrPrev = m_memory.readPointer(ptr + lengthFieldSize);
                                 if (ptrPrev < 0 || ptrPrev >= m_memory.m_baseFreeBlockList) {
-                                    block.m_error = FreeBlockListElement.ERROR.INVALID_POINTERS;
-                                    block.m_errorText = "0x" + Long.toHexString(ptrPrev);
+
+                                    // prev free block can be the root of the free memory linked list at the end after the VMB area
+                                    if (!(ptrPrev >= m_memory.m_baseFreeBlockList && ptrPrev < m_memory.getStatus().getSize())) {
+                                        block.m_error = FreeBlockListElement.ERROR.INVALID_POINTERS;
+                                        block.m_errorText = "0x" + Long.toHexString(ptrPrev);
+                                    }
                                 }
 
                                 ptrNext = m_memory.readPointer(ptr + lengthFieldSize + SmallObjectHeap.POINTER_SIZE);
@@ -491,7 +507,7 @@ public final class SmallObjectHeapAnalyzer {
                 output.append(entry.getValue());
             }
 
-            output.append("\n\n----- Free blocks lists -----");
+            output.append("\n\n----- Free blocks lists (" + m_freeBlockLists.size() + ")-----");
 
             Iterator<FreeBlockList> it2;
             it2 = m_freeBlockLists.iterator();
