@@ -72,9 +72,6 @@
 			"m_pattern": 0
 		},
 		{
-			"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToConsoleTask"
-		},
-		{
 		  	"m_task": "de.hhu.bsinfo.dxcompute.bench.ChunkDataModifyTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 10,
