@@ -948,6 +948,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      *     Name of the file to write the dump to
      */
     public void dumpMemory(final String p_fileName) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
         m_rawMemory.dump(p_fileName);
     }
 
