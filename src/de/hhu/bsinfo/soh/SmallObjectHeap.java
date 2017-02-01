@@ -254,6 +254,10 @@ public final class SmallObjectHeap implements Importable, Exportable {
                 throw new MemoryRuntimeException("Req allocation size " + p_sizes[i] + " is exceeding max memory block size " + m_status.m_maxBlockSize);
             }
 
+            if (p_sizes[i] <= 0) {
+                throw new MemoryRuntimeException("Invalid size " + p_sizes[i]);
+            }
+
             bigChunkSize += p_sizes[i];
             bigChunkSize += calculateLengthFieldSize(p_sizes[i]);
         }
@@ -298,6 +302,10 @@ public final class SmallObjectHeap implements Importable, Exportable {
 
         if (p_size > m_status.m_maxBlockSize) {
             throw new MemoryRuntimeException("Req allocation size " + p_size + " is exceeding max memory block size " + m_status.m_maxBlockSize);
+        }
+
+        if (p_size <= 0) {
+            throw new MemoryRuntimeException("Invalid size " + p_size);
         }
 
         // number of marker bytes to separate blocks
