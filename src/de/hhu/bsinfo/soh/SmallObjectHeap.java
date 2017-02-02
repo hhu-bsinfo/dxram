@@ -259,7 +259,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
             }
 
             bigChunkSize += p_sizes[i];
-            bigChunkSize += calculateLengthFieldSize(p_sizes[i]);
+            bigChunkSize += calculateLengthFieldSizeAllocBlock(p_sizes[i]);
         }
 
         ret = multiReserveBlocks(bigChunkSize, p_sizes, p_usedEntries);
@@ -313,7 +313,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
         int bigChunkSize = p_count - 1;
 
         bigChunkSize += p_size * p_count;
-        bigChunkSize += calculateLengthFieldSize(p_size) * p_count;
+        bigChunkSize += calculateLengthFieldSizeAllocBlock(p_size) * p_count;
 
         ret = multiReserveBlocks(bigChunkSize, p_size, p_count);
 
@@ -869,7 +869,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
             throw new MemoryRuntimeException("Req allocation size " + p_size + " is exceeding max memory block size " + m_status.m_maxBlockSize);
         }
 
-        lengthFieldSize = calculateLengthFieldSize(p_size);
+        lengthFieldSize = calculateLengthFieldSizeAllocBlock(p_size);
 
         blockMarker = (byte) (ALLOC_BLOCK_FLAGS_OFFSET + lengthFieldSize);
         blockSize = p_size + lengthFieldSize;
@@ -1014,7 +1014,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
                 throw new MemoryRuntimeException("Req allocation size " + size + " is exceeding max memory block size " + m_status.m_maxBlockSize);
             }
 
-            lengthFieldSize = calculateLengthFieldSize(size);
+            lengthFieldSize = calculateLengthFieldSizeAllocBlock(size);
 
             blockMarker = (byte) (ALLOC_BLOCK_FLAGS_OFFSET + lengthFieldSize);
 
@@ -1072,7 +1072,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
                 throw new MemoryRuntimeException("Req allocation size " + size + " is exceeding max memory block size " + m_status.m_maxBlockSize);
             }
 
-            lengthFieldSize = calculateLengthFieldSize(size);
+            lengthFieldSize = calculateLengthFieldSizeAllocBlock(size);
 
             blockMarker = (byte) (ALLOC_BLOCK_FLAGS_OFFSET + lengthFieldSize);
 
@@ -1252,7 +1252,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      *     Memory block size
      * @return Size of the length field to fit the size of the memory block
      */
-    private static int calculateLengthFieldSize(final int p_size) {
+    private static int calculateLengthFieldSizeAllocBlock(final int p_size) {
         if (p_size >= 1 << 24) {
             return 4;
         } else if (p_size >= 1 << 16) {
