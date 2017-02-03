@@ -69,6 +69,12 @@ public interface Storage {
      */
     int readBytes(long p_ptr, byte[] p_array, int p_arrayOffset, int p_length);
 
+    int readShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length);
+
+    int readInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length);
+
+    int readLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length);
+
     /**
      * Read a single byte value.
      *
@@ -119,6 +125,12 @@ public interface Storage {
      * @return Number of written elements
      */
     int writeBytes(long p_ptr, byte[] p_array, int p_arrayOffset, int p_length);
+
+    int writeShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length);
+
+    int writeInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length);
+
+    int writeLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length);
 
     /**
      * Write a single byte value to the storage.

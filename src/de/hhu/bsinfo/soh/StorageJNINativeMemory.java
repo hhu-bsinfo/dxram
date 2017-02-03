@@ -74,6 +74,36 @@ public class StorageJNINativeMemory implements Storage {
     }
 
     @Override
+    public int readShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
+        assert p_ptr >= 0;
+        assert p_ptr < m_memorySize;
+        assert p_ptr + p_length * Short.BYTES <= m_memorySize;
+
+        JNINativeMemory.readShorts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
+        return p_length;
+    }
+
+    @Override
+    public int readInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length) {
+        assert p_ptr >= 0;
+        assert p_ptr < m_memorySize;
+        assert p_ptr + p_length * Integer.BYTES <= m_memorySize;
+
+        JNINativeMemory.readInts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
+        return p_length;
+    }
+
+    @Override
+    public int readLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length) {
+        assert p_ptr >= 0;
+        assert p_ptr < m_memorySize;
+        assert p_ptr + p_length * Long.BYTES <= m_memorySize;
+
+        JNINativeMemory.readLongs(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
+        return p_length;
+    }
+
+    @Override
     public byte readByte(final long p_ptr) {
         assert p_ptr >= 0;
         assert p_ptr < m_memorySize;
@@ -111,6 +141,33 @@ public class StorageJNINativeMemory implements Storage {
         assert p_ptr + p_length <= m_memorySize;
 
         JNINativeMemory.write(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
+        return p_length;
+    }
+
+    @Override
+    public int writeShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
+        assert p_ptr >= 0;
+        assert p_ptr + p_length * Short.BYTES <= m_memorySize;
+
+        JNINativeMemory.writeShorts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
+        return p_length;
+    }
+
+    @Override
+    public int writeInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length) {
+        assert p_ptr >= 0;
+        assert p_ptr + p_length * Integer.BYTES <= m_memorySize;
+
+        JNINativeMemory.writeInts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
+        return p_length;
+    }
+
+    @Override
+    public int writeLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length) {
+        assert p_ptr >= 0;
+        assert p_ptr + p_length * Long.BYTES <= m_memorySize;
+
+        JNINativeMemory.writeLongs(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
         return p_length;
     }
 

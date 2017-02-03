@@ -527,7 +527,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
 
         assert assertMemoryBlockBounds(p_address, lengthFieldSize, read(p_address, lengthFieldSize), p_offset, p_length * Short.BYTES);
 
-        return readShorts(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+        return m_memory.readShorts(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
     }
 
     /**
@@ -554,7 +554,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
 
         assert assertMemoryBlockBounds(p_address, lengthFieldSize, read(p_address, lengthFieldSize), p_offset, p_length * Integer.BYTES);
 
-        return readInts(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+        return m_memory.readInts(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
     }
 
     /**
@@ -581,7 +581,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
 
         assert assertMemoryBlockBounds(p_address, lengthFieldSize, read(p_address, lengthFieldSize), p_offset, p_length * Long.BYTES);
 
-        return readLongs(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+        return m_memory.readLongs(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
     }
 
     /**
@@ -723,7 +723,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
 
         assert assertMemoryBlockBounds(p_address, lengthFieldSize, read(p_address, lengthFieldSize), p_offset, Short.BYTES);
 
-        return writeShorts(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
+        return m_memory.writeShorts(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
     }
 
     /**
@@ -750,7 +750,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
 
         assert assertMemoryBlockBounds(p_address, lengthFieldSize, read(p_address, lengthFieldSize), p_offset, Integer.BYTES);
 
-        return writeInts(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
+        return m_memory.writeInts(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
     }
 
     /**
@@ -777,7 +777,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
 
         assert assertMemoryBlockBounds(p_address, lengthFieldSize, read(p_address, lengthFieldSize), p_offset, Long.BYTES);
 
-        return writeLongs(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
+        return m_memory.writeLongs(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
     }
 
     // -------------------------------------------------------------------------------------------
@@ -1484,132 +1484,6 @@ public final class SmallObjectHeap implements Importable, Exportable {
      */
     private void write(final long p_address, final long p_bytes, final int p_count) {
         m_memory.writeVal(p_address, p_bytes, p_count);
-    }
-
-    /**
-     * Read data from the storage into a short array.
-     *
-     * @param p_ptr
-     *     Start position in storage.
-     * @param p_array
-     *     Array to read the data into.
-     * @param p_arrayOffset
-     *     Start offset in array to start writing the shorts to.
-     * @param p_length
-     *     Number of shorts to read from specified start.
-     * @return Number of read elements.
-     */
-    private int readShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
-        for (int i = 0; i < p_length; i++) {
-            p_array[i + p_arrayOffset] = m_memory.readShort(p_ptr + i * Short.BYTES);
-        }
-
-        return p_length;
-    }
-
-    /**
-     * Read data from the storage into a int array.
-     *
-     * @param p_ptr
-     *     Start position in storage.
-     * @param p_array
-     *     Array to read the data into.
-     * @param p_arrayOffset
-     *     Start offset in array to start writing the ints to.
-     * @param p_length
-     *     Number of ints to read from specified start.
-     * @return Number of read elements.
-     */
-    private int readInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
-        for (int i = 0; i < p_length; i++) {
-            p_array[i + p_arrayOffset] = m_memory.readInt(p_ptr + i * Integer.BYTES);
-        }
-
-        return p_length;
-    }
-
-    /**
-     * Read data from the storage into a long array.
-     *
-     * @param p_ptr
-     *     Start position in storage.
-     * @param p_array
-     *     Array to read the data into.
-     * @param p_arrayOffset
-     *     Start offset in array to start writing the longs to.
-     * @param p_length
-     *     Number of longs to read from specified start.
-     * @return Number of read elements.
-     */
-    private int readLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
-        for (int i = 0; i < p_length; i++) {
-            p_array[i + p_arrayOffset] = m_memory.readLong(p_ptr + i * Long.BYTES);
-        }
-
-        return p_length;
-    }
-
-    /**
-     * Write an array of shorts to the storage.
-     *
-     * @param p_ptr
-     *     Start address to write to.
-     * @param p_array
-     *     Array with data to write.
-     * @param p_arrayOffset
-     *     Offset in array to start reading the data from.
-     * @param p_length
-     *     Number of elements to write.
-     * @return Number of written elements
-     */
-    private int writeShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
-        for (int i = 0; i < p_length; i++) {
-            m_memory.writeShort(p_ptr + i * Short.BYTES, p_array[i + p_arrayOffset]);
-        }
-
-        return p_length;
-    }
-
-    /**
-     * Write an array of ints to the storage.
-     *
-     * @param p_ptr
-     *     Start address to write to.
-     * @param p_array
-     *     Array with data to write.
-     * @param p_arrayOffset
-     *     Offset in array to start reading the data from.
-     * @param p_length
-     *     Number of elements to write.
-     * @return Number of written elements
-     */
-    private int writeInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
-        for (int i = 0; i < p_length; i++) {
-            m_memory.writeInt(p_ptr + i * Integer.BYTES, p_array[i + p_arrayOffset]);
-        }
-
-        return p_length;
-    }
-
-    /**
-     * Write an array of longs to the storage.
-     *
-     * @param p_ptr
-     *     Start address to write to.
-     * @param p_array
-     *     Array with data to write.
-     * @param p_arrayOffset
-     *     Offset in array to start reading the data from.
-     * @param p_length
-     *     Number of elements to write.
-     * @return Number of written elements
-     */
-    private int writeLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
-        for (int i = 0; i < p_length; i++) {
-            m_memory.writeLong(p_ptr + i * Long.BYTES, p_array[i + p_arrayOffset]);
-        }
-
-        return p_length;
     }
 
     @Override

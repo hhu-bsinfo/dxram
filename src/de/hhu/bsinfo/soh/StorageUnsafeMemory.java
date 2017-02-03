@@ -94,6 +94,39 @@ public class StorageUnsafeMemory implements Storage {
     }
 
     @Override
+    public int readShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
+        assert assertMemoryBounds(p_ptr, Short.BYTES * p_length);
+
+        for (int i = 0; i < p_length; i++) {
+            p_array[i + p_arrayOffset] = UNSAFE.getShort(m_memoryBase + p_ptr + i * Short.BYTES);
+        }
+
+        return p_length;
+    }
+
+    @Override
+    public int readInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length) {
+        assert assertMemoryBounds(p_ptr, Integer.BYTES * p_length);
+
+        for (int i = 0; i < p_length; i++) {
+            p_array[i + p_arrayOffset] = UNSAFE.getInt(m_memoryBase + p_ptr + i * Integer.BYTES);
+        }
+
+        return p_length;
+    }
+
+    @Override
+    public int readLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length) {
+        assert assertMemoryBounds(p_ptr, Long.BYTES * p_length);
+
+        for (int i = 0; i < p_length; i++) {
+            p_array[i + p_arrayOffset] = UNSAFE.getLong(m_memoryBase + p_ptr + i * Long.BYTES);
+        }
+
+        return p_length;
+    }
+
+    @Override
     public byte readByte(final long p_ptr) {
         assert assertMemoryBounds(p_ptr, Byte.BYTES);
 
@@ -127,6 +160,39 @@ public class StorageUnsafeMemory implements Storage {
 
         for (int i = 0; i < p_length; i++) {
             UNSAFE.putByte(m_memoryBase + p_ptr + i, p_array[p_arrayOffset + i]);
+        }
+
+        return p_length;
+    }
+
+    @Override
+    public int writeShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
+        assert assertMemoryBounds(p_ptr, Short.BYTES * p_length);
+
+        for (int i = 0; i < p_length; i++) {
+            UNSAFE.putShort(m_memoryBase + p_ptr + i * Short.BYTES, p_array[i + p_arrayOffset]);
+        }
+
+        return p_length;
+    }
+
+    @Override
+    public int writeInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length) {
+        assert assertMemoryBounds(p_ptr, Integer.BYTES * p_length);
+
+        for (int i = 0; i < p_length; i++) {
+            UNSAFE.putInt(m_memoryBase + p_ptr + i * Integer.BYTES, p_array[i + p_arrayOffset]);
+        }
+
+        return p_length;
+    }
+
+    @Override
+    public int writeLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length) {
+        assert assertMemoryBounds(p_ptr, Long.BYTES * p_length);
+
+        for (int i = 0; i < p_length; i++) {
+            UNSAFE.putLong(m_memoryBase + p_ptr + i * Long.BYTES, p_array[i + p_arrayOffset]);
         }
 
         return p_length;
