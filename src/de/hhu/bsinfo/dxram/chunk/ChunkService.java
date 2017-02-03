@@ -28,7 +28,6 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateResponse;
-import de.hhu.bsinfo.dxram.chunk.messages.DumpMemoryMessage;
 import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.GetMigratedChunkIDRangesRequest;
@@ -38,7 +37,6 @@ import de.hhu.bsinfo.dxram.chunk.messages.GetResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.PutResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.RemoveMessage;
-import de.hhu.bsinfo.dxram.chunk.messages.ResetMemoryMessage;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.data.Chunk;
@@ -55,7 +53,6 @@ import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
-import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
@@ -95,7 +92,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
     private AbstractLockComponent m_lock;
-    private NameserviceComponent m_nameservice;
 
     /**
      * Constructor
@@ -1492,141 +1488,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         return list;
     }
 
-    /**
-     * Dump the chunk memory to a file
-     *
-     * @param p_fileName
-     *     File to dump memory to
-     */
-    public void dumpChunkMemory(final String p_fileName) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        // #if LOGGER >= INFO
-        LOGGER.info("Dumping chunk memory to %s, wait", p_fileName);
-        // #endif /* LOGGER >= INFO */
-
-        try {
-            m_memoryManager.lockManage();
-
-            // #if LOGGER >= INFO
-            LOGGER.info("Dumping chunk memory to %s...", p_fileName);
-            // #endif /* LOGGER >= INFO */
-
-            m_memoryManager.dumpMemory(p_fileName);
-        } finally {
-            m_memoryManager.unlockManage();
-        }
-
-        // #if LOGGER >= INFO
-        LOGGER.info("Dumping chunk memory to %s, done", p_fileName);
-        // #endif /* LOGGER >= INFO */
-    }
-
-    /**
-     * Dump the chunk memory of a remote peer to a file
-     *
-     * @param p_fileName
-     *     File to dump memory to
-     * @return True if dumping memory of remote peer successful, false on failure
-     */
-    public boolean dumpChunkMemory(final String p_fileName, final short p_remoteNodeId) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        // #if LOGGER >= INFO
-        LOGGER.info("Dumping remote chunk memory of 0x%X to %s...", p_remoteNodeId, p_fileName);
-        // #endif /* LOGGER >= INFO */
-
-        DumpMemoryMessage message = new DumpMemoryMessage(p_remoteNodeId, p_fileName);
-
-        try {
-            m_network.sendMessage(message);
-        } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Sending request to dump memory of node 0x%X failed: %s", p_remoteNodeId, e);
-            // #endif /* LOGGER >= ERROR */
-            return false;
-        }
-
-        // #if LOGGER >= INFO
-        LOGGER.info("Triggered async chunk memory dump to %s", p_fileName);
-        // #endif /* LOGGER >= INFO */
-
-        return true;
-    }
-
-    /**
-     * Reset the complete key value memory.
-     * NOTE: This is used for testing and benchmarks of the memory and does
-     * not properly reset anything involved in the backup or nameservice
-     */
-    public void resetMemory() {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        // #if LOGGER >= WARN
-        LOGGER.warn("FULL chunk memory reset/wipe...");
-        // #endif /* LOGGER >= WARN */
-
-        try {
-            m_memoryManager.lockManage();
-            m_memoryManager.reset();
-
-            // re-init nameservice
-            m_nameservice.reinit();
-        } finally {
-            m_memoryManager.unlockManage();
-        }
-
-        // #if LOGGER >= WARN
-        LOGGER.warn("Resetting chunk memory finished. Backup and nameservice are NOW BROKEN because they were not involved in this reset process");
-        // #endif /* LOGGER >= WARN */
-    }
-
-    /**
-     * Reset the complete key value memory.
-     * NOTE: This is used for testing and benchmarks of the memory and does
-     * not properly reset anything involved in the backup or nameservice
-     *
-     * @param p_nodeId
-     *     Remote peer to reset the memory of
-     */
-    public void resetMemory(final short p_nodeId) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        // #if LOGGER >= INFO
-        LOGGER.info("Resetting remote chunk memory of 0x%X ", p_nodeId);
-        // #endif /* LOGGER >= INFO */
-
-        ResetMemoryMessage message = new ResetMemoryMessage(p_nodeId);
-
-        try {
-            m_network.sendMessage(message);
-        } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Sending request to reset memory of node 0x%X failed: %s", p_nodeId, e);
-            // #endif /* LOGGER >= ERROR */
-        }
-
-        // #if LOGGER >= INFO
-        LOGGER.info("Triggered async chunk memory reset");
-        // #endif /* LOGGER >= INFO */
-    }
-
     @Override
     public void onIncomingMessage(final AbstractMessage p_message) {
         // #if LOGGER == TRACE
@@ -1657,12 +1518,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                     case ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST:
                         incomingGetMigratedChunkIDRangesRequest((GetMigratedChunkIDRangesRequest) p_message);
                         break;
-                    case ChunkMessages.SUBTYPE_DUMP_MEMORY_MESSAGE:
-                        incomingDumpMemoryMessage((DumpMemoryMessage) p_message);
-                        break;
-                    case ChunkMessages.SUBTYPE_RESET_MEMORY_MESSAGE:
-                        incomingResetMemoryMessage((ResetMemoryMessage) p_message);
-                        break;
                     default:
                         break;
                 }
@@ -1682,7 +1537,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
-        m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
     }
 
     @Override
@@ -1728,8 +1582,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             GetMigratedChunkIDRangesRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_RESPONSE,
             GetMigratedChunkIDRangesResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_DUMP_MEMORY_MESSAGE, DumpMemoryMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_RESET_MEMORY_MESSAGE, ResetMemoryMessage.class);
     }
 
     /**
@@ -1743,8 +1595,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         m_network.register(StatusRequest.class, this);
         m_network.register(GetLocalChunkIDRangesRequest.class, this);
         m_network.register(GetMigratedChunkIDRangesRequest.class, this);
-        m_network.register(DumpMemoryMessage.class, this);
-        m_network.register(ResetMemoryMessage.class, this);
     }
 
     // -----------------------------------------------------------------------------------
@@ -2154,51 +2004,5 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             LOGGER.error("Responding to migrated chunk id ranges request %s failed: %s", p_request, e);
             // #endif /* LOGGER >= ERROR */
         }
-    }
-
-    /**
-     * Handle incoming dump memory messages
-     *
-     * @param p_message
-     *     Message to handle
-     */
-    private void incomingDumpMemoryMessage(final DumpMemoryMessage p_message) {
-        // #if LOGGER >= INFO
-        LOGGER.info("Async dumping chunk memory to %s, (remote req 0x%X)", p_message.getFileName(), p_message.getSource());
-        // #endif /* LOGGER >= INFO */
-
-        // don't block message handler, this might take a few seconds depending on the memory size
-        new Thread(() -> {
-            try {
-                m_memoryManager.lockManage();
-
-                // #if LOGGER >= INFO
-                LOGGER.info("Dumping chunk memory to %s...", p_message.getFileName());
-                // #endif /* LOGGER >= INFO */
-
-                m_memoryManager.dumpMemory(p_message.getFileName());
-            } finally {
-                m_memoryManager.unlockManage();
-            }
-
-            // #if LOGGER >= INFO
-            LOGGER.info("Dumping chunk memory to %s, done", p_message.getFileName());
-            // #endif /* LOGGER >= INFO */
-        }).start();
-    }
-
-    /**
-     * Handle incoming reset memory messages
-     *
-     * @param p_message
-     *     Message to handle
-     */
-    private void incomingResetMemoryMessage(final ResetMemoryMessage p_message) {
-        // #if LOGGER >= WARN
-        LOGGER.warn("Remote memory reset from 0x%X...", p_message.getSource());
-        // #endif /* LOGGER >= WARN */
-
-        // don't block message handler, this might take a few seconds depending on the memory size
-        new Thread(this::resetMemory).start();
     }
 }

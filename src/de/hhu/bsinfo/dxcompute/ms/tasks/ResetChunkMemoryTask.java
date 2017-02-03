@@ -16,8 +16,7 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.chunk.ChunkDebugService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -30,8 +29,7 @@ public class ResetChunkMemoryTask implements Task {
 
     @Override
     public int execute(final TaskContext p_ctx) {
-        ChunkService chunk = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
-        chunk.resetMemory();
+        p_ctx.getDXRAMServiceAccessor().getService(ChunkDebugService.class).resetMemory();
 
         return 0;
     }
