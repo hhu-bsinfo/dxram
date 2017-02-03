@@ -161,6 +161,15 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
         return ret;
     }
 
+    public void reinit() {
+        // #if LOGGER == WARN
+        LOGGER.warn("Re-initializing");
+        // #endif /* LOGGER == WARN */
+
+        shutdownName();
+        initName();
+    }
+
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
@@ -170,6 +179,22 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
     @Override
     protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        return initName();
+    }
+
+    @Override
+    protected boolean shutdownComponent() {
+        shutdownName();
+
+        return true;
+    }
+
+    /**
+     * Initialize the nameservice
+     *
+     * @return True on success, false on error
+     */
+    private boolean initName() {
         m_converter = new NameServiceStringConverter(m_type);
 
         m_indexData = new NameServiceIndexData();
@@ -189,14 +214,14 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
         return true;
     }
 
-    @Override
-    protected boolean shutdownComponent() {
+    /**
+     * Shut down the nameservice
+     */
+    private void shutdownName() {
         m_converter = null;
 
         m_indexData = null;
         m_indexDataLock = null;
-
-        return true;
     }
 
     /**

@@ -17,20 +17,21 @@ import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Task to reboot a node
+ * Task to reset the chunk memory (only used for testing and benchmarks)
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 01.02.2017
  */
-public class RebootNodeTask implements Task {
+public class ResetChunkMemoryTask implements Task {
 
     @Override
     public int execute(final TaskContext p_ctx) {
-        BootService boot = p_ctx.getDXRAMServiceAccessor().getService(BootService.class);
-        boot.rebootThisNode();
+        ChunkService chunk = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
+        chunk.resetMemory();
 
         return 0;
     }

@@ -78,8 +78,8 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
 
             // #if LOGGER == TRACE
             LOGGER.trace("Stored migrated chunk %s locally", ChunkID.toHexString(chunk.getID()));
-            // #endif  LOGGER == TRACE
-
+            // #endif /* LOGGER == TRACE */
+/*
             if (m_backup.isActive()) {
                 logEntrySize = chunk.getDataSize() +
                     m_log.getApproxHeaderSize(ChunkID.getCreatorID(chunk.getID()), ChunkID.getLocalID(chunk.getID()), chunk.getDataSize());

@@ -35,6 +35,7 @@ public final class ChunkMessages {
     public static final byte SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST = 14;
     public static final byte SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_RESPONSE = 15;
     public static final byte SUBTYPE_DUMP_MEMORY_MESSAGE = 16;
+    public static final byte SUBTYPE_RESET_MEMORY_MESSAGE = 17;
 
     /**
      * Static class

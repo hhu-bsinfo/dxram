@@ -957,6 +957,24 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         m_rawMemory.dump(p_fileName);
     }
 
+    /**
+     * Reset the whole memory, i.e. wipe it (all chunks and IDs gone) and re-init
+     */
+    public void reset() {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() != NodeRole.PEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
+        // #if LOGGER == ERROR
+        LOGGER.warn("Resetting FULL memory");
+        // #endif /* LOGGER == ERROR */
+
+        shutdownMemory();
+        initMemory();
+    }
+
     // -----------------------------------------------------------------------------
 
     /**
@@ -1248,18 +1266,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     @Override
     protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         if (p_engineEngineSettings.getRole() == NodeRole.PEER) {
-            // #if LOGGER == INFO
-            LOGGER.info("Allocating native memory (%d mb). This may take a while...", m_keyValueStoreSize.getMB());
-            // #endif /* LOGGER == INFO */
-            m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory(), m_keyValueStoreSize.getBytes(), (int) m_keyValueStoreMaxBlockSize.getBytes());
-            m_cidTable = new CIDTable(m_boot.getNodeID());
-            m_cidTable.initialize(m_rawMemory);
-
-            m_lock = new AtomicInteger(0);
-            //m_lock = new ReentrantReadWriteLock(false);
-
-            m_numActiveChunks = 0;
-            m_totalActiveChunkMemory = 0;
+            initMemory();
         }
 
         return true;
@@ -1268,15 +1275,40 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     @Override
     protected boolean shutdownComponent() {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            m_cidTable.disengage();
-            m_rawMemory.destroy();
-
-            m_cidTable = null;
-            m_rawMemory = null;
-            m_lock = null;
+            shutdownMemory();
         }
 
         return true;
+    }
+
+    /**
+     * Initialize the memory manager
+     */
+    private void initMemory() {
+        // #if LOGGER == INFO
+        LOGGER.info("Allocating native memory (%d mb). This may take a while...", m_keyValueStoreSize.getMB());
+        // #endif /* LOGGER == INFO */
+        m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory(), m_keyValueStoreSize.getBytes(), (int) m_keyValueStoreMaxBlockSize.getBytes());
+        m_cidTable = new CIDTable(m_boot.getNodeID());
+        m_cidTable.initialize(m_rawMemory);
+
+        m_lock = new AtomicInteger(0);
+        //m_lock = new ReentrantReadWriteLock(false);
+
+        m_numActiveChunks = 0;
+        m_totalActiveChunkMemory = 0;
+    }
+
+    /**
+     * Shut down the memory manager
+     */
+    private void shutdownMemory() {
+        m_cidTable.disengage();
+        m_rawMemory.destroy();
+
+        m_cidTable = null;
+        m_rawMemory = null;
+        m_lock = null;
     }
 
     /**
@@ -1314,7 +1346,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      *     Exception thrown on memory error
      */
     private void handleMemDumpOnError(final MemoryRuntimeException p_e, final boolean p_acquireManageLock) {
+        // #if LOGGER == ERROR
         LOGGER.fatal("Encountered memory error (most likely corruption)", p_e);
+        // #endif /* LOGGER == ERROR */
+
         if (!m_memDumpFolderOnError.isEmpty()) {
             if (!m_memDumpFolderOnError.endsWith("/")) {
                 m_memDumpFolderOnError += "/";
@@ -1323,7 +1358,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
             // create unique file name for each thread to avoid collisions
             String fileName = m_memDumpFolderOnError + "memdump-" + Thread.currentThread().getId() + '-' + System.currentTimeMillis() + ".soh";
 
+            // #if LOGGER == ERROR
             LOGGER.fatal("Full memory dump to file: %s...", fileName);
+            // #endif /* LOGGER == ERROR */
 
             // ugly: we entered this with a access lock, acquire the managed lock to ensure full blocking of the memory before dumping
             if (p_acquireManageLock) {
@@ -1331,7 +1368,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
                 lockManage();
             }
 
+            // #if LOGGER == ERROR
             LOGGER.fatal("Dumping...");
+            // #endif /* LOGGER == ERROR */
             m_rawMemory.dump(fileName);
 
             if (p_acquireManageLock) {
@@ -1339,9 +1378,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
                 lockAccess();
             }
 
+            // #if LOGGER == ERROR
             LOGGER.fatal("Memory dump to file finished: %s", fileName);
+            // #endif /* LOGGER == ERROR */
         } else {
+            // #if LOGGER == ERROR
             LOGGER.fatal("Memory dump to file disabled");
+            // #endif /* LOGGER == ERROR */
         }
     }
 
