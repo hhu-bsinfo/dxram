@@ -251,9 +251,6 @@ public class TerminalService extends AbstractDXRAMService {
             // resolve cmd call
             de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(tokensFunc[0]);
             if (scriptCtx != null) {
-                // load imports
-                m_terminal.getScriptContext().eval("dxterm.cmd(\"" + tokensFunc[0] + "\").imports()");
-
                 // assemble long call
                 String call = "dxterm.cmd(\"" + tokensFunc[0] + "\").exec(";
 

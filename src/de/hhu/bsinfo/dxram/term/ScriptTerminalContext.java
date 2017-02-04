@@ -224,13 +224,6 @@ public class ScriptTerminalContext {
         }
 
         /**
-         * Load imports for the terminal command
-         */
-        public void imports() {
-            m_scriptEngine.getContext(m_name).call("imports");
-        }
-
-        /**
          * Print the terminal command's help message
          */
         public void help() {
@@ -245,6 +238,7 @@ public class ScriptTerminalContext {
          * @return Return value of the command
          */
         public Object exec(final Object... p_args) {
+            m_scriptEngine.getContext(m_name).call("imports");
             return m_scriptEngine.getContext(m_name).call("exec", p_args);
         }
     }
