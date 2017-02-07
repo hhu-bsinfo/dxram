@@ -25,6 +25,7 @@ import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
@@ -67,8 +68,10 @@ public class ChunkCreateTask implements Task {
 
         long[] chunkCountsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(m_chunkCount, m_numThreads);
         Thread[] threads = new Thread[m_numThreads];
-        long[] timeStart = new long[m_numThreads];
-        long[] timeEnd = new long[m_numThreads];
+        Stopwatch[] time = new Stopwatch[m_numThreads];
+        for (int i = 0; i < time.length; i++) {
+            time[i] = new Stopwatch();
+        }
 
         System.out.printf("Creating (pattern %d) %d chunks in batches of %d chunk(s) of random sizes between %s and %s with %d thread(s)...\n", m_pattern,
             m_chunkCount, m_chunkBatch, m_chunkSizeBytesBegin, m_chunkSizeBytesEnd, m_numThreads);
@@ -80,8 +83,6 @@ public class ChunkCreateTask implements Task {
                 long batches = chunkCountsPerThread[threadIdx] / m_chunkBatch;
                 long lastBatchRemainder = chunkCountsPerThread[threadIdx] % m_chunkBatch;
 
-                timeStart[threadIdx] = System.nanoTime();
-
                 switch (m_pattern) {
                     case PATTERN_LOCAL_ONLY: {
                         for (int j = 0; j < batches; j++) {
@@ -89,7 +90,9 @@ public class ChunkCreateTask implements Task {
                                 sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
+                            time[threadIdx].start();
                             chunkService.createSizes(sizes);
+                            time[threadIdx].stopAndAccumulate();
                         }
 
                         if (lastBatchRemainder > 0) {
@@ -98,7 +101,9 @@ public class ChunkCreateTask implements Task {
                                 sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
+                            time[threadIdx].start();
                             chunkService.createSizes(sizes);
+                            time[threadIdx].stopAndAccumulate();
                         }
 
                         break;
@@ -112,7 +117,9 @@ public class ChunkCreateTask implements Task {
                                 sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
+                            time[threadIdx].start();
                             chunkService.createRemote(destNodeId, sizes);
+                            time[threadIdx].stopAndAccumulate();
                         }
 
                         if (lastBatchRemainder > 0) {
@@ -121,7 +128,9 @@ public class ChunkCreateTask implements Task {
                                 sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
+                            time[threadIdx].start();
                             chunkService.createRemote(destNodeId, sizes);
+                            time[threadIdx].stopAndAccumulate();
                         }
 
                         break;
@@ -137,7 +146,9 @@ public class ChunkCreateTask implements Task {
                                 sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
+                            time[threadIdx].start();
                             chunkService.createRemote(destNodeId, sizes);
+                            time[threadIdx].stopAndAccumulate();
                         }
 
                         if (lastBatchRemainder > 0) {
@@ -148,7 +159,9 @@ public class ChunkCreateTask implements Task {
                                 sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
+                            time[threadIdx].start();
                             chunkService.createRemote(destNodeId, sizes);
+                            time[threadIdx].stopAndAccumulate();
                         }
 
                         break;
@@ -165,9 +178,13 @@ public class ChunkCreateTask implements Task {
                             }
 
                             if (destNodeId == ownNodeId) {
+                                time[threadIdx].start();
                                 chunkService.createSizes(sizes);
+                                time[threadIdx].stopAndAccumulate();
                             } else {
+                                time[threadIdx].start();
                                 chunkService.createRemote(destNodeId, sizes);
+                                time[threadIdx].stopAndAccumulate();
                             }
                         }
 
@@ -179,7 +196,9 @@ public class ChunkCreateTask implements Task {
                                 sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
+                            time[threadIdx].start();
                             chunkService.createRemote(destNodeId, sizes);
+                            time[threadIdx].stopAndAccumulate();
                         }
 
                         break;
@@ -189,8 +208,6 @@ public class ChunkCreateTask implements Task {
                         System.out.printf("Unsupported pattern %d", m_pattern);
                         break;
                 }
-
-                timeEnd[threadIdx] = System.nanoTime();
             });
         }
 
@@ -214,16 +231,16 @@ public class ChunkCreateTask implements Task {
 
         System.out.print("Times per thread:");
         for (int i = 0; i < m_numThreads; i++) {
-            System.out.printf("\nThread-%d: %f sec", i, (timeEnd[i] - timeStart[i]) / 1000.0 / 1000.0 / 1000.0);
+            System.out.printf("\nThread-%d: %f sec", i, time[i].getAccumulatedTimeAsUnit().getSecDouble());
         }
         System.out.println();
 
         // total time is measured by the slowest thread
         long totalTime = 0;
         for (int i = 0; i < m_numThreads; i++) {
-            long time = timeEnd[i] - timeStart[i];
-            if (time > totalTime) {
-                totalTime = time;
+            long t = time[i].getAccumulatedTime();
+            if (t > totalTime) {
+                totalTime = t;
             }
         }
 

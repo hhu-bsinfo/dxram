@@ -26,6 +26,7 @@ import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -68,8 +69,10 @@ public class ChunkRemoveAllTask implements Task {
         ArrayList<Long>[] chunkRangesPerThread = ChunkIDRangeUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
 
         Thread[] threads = new Thread[m_numThreads];
-        long[] timeStart = new long[m_numThreads];
-        long[] timeEnd = new long[m_numThreads];
+        Stopwatch[] time = new Stopwatch[m_numThreads];
+        for (int i = 0; i < time.length; i++) {
+            time[i] = new Stopwatch();
+        }
 
         System.out.printf("Removing all (pattern %d) active chunks (total %d) in batches of %d chunk(s) with %d thread(s)...\n", m_pattern, activeChunkCount,
             m_chunkBatch, m_numThreads);
@@ -92,8 +95,7 @@ public class ChunkRemoveAllTask implements Task {
                     long rangeStart = chunkRanges.get(rangeIdx * 2);
                     long rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
                     long batchChunkCount = m_chunkBatch;
-
-                    timeStart[threadIdx] = System.nanoTime();
+                    ;
 
                     while (batches > 0) {
                         int fillCount = 0;
@@ -128,13 +130,13 @@ public class ChunkRemoveAllTask implements Task {
                             }
                         }
 
+                        time[threadIdx].start();
                         chunkService.remove(chunkIds);
+                        time[threadIdx].stopAndAccumulate();
                         rangeStart += batchChunkCount;
 
                         batches--;
                     }
-
-                    timeEnd[threadIdx] = System.nanoTime();
                 }
             });
         }
@@ -159,16 +161,16 @@ public class ChunkRemoveAllTask implements Task {
 
         System.out.print("Times per thread:");
         for (int i = 0; i < m_numThreads; i++) {
-            System.out.printf("\nThread-%d: %f sec", i, (timeEnd[i] - timeStart[i]) / 1000.0 / 1000.0 / 1000.0);
+            System.out.printf("\nThread-%d: %f sec", i, time[i].getAccumulatedTimeAsUnit().getSecDouble());
         }
         System.out.println();
 
         // total time is measured by the slowest thread
         long totalTime = 0;
         for (int i = 0; i < m_numThreads; i++) {
-            long time = timeEnd[i] - timeStart[i];
-            if (time > totalTime) {
-                totalTime = time;
+            long t = time[i].getAccumulatedTime();
+            if (t > totalTime) {
+                totalTime = t;
             }
         }
 

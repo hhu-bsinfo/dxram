@@ -27,6 +27,7 @@ import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
@@ -52,6 +53,8 @@ public class ChunkDataModifyTask implements Task {
     @Expose
     private boolean m_writeContentsAndVerify = false;
     @Expose
+    private boolean m_continousChunksPerBatch = false;
+    @Expose
     private int m_pattern = PATTERN_GET_LOCAL;
 
     @Override
@@ -73,8 +76,10 @@ public class ChunkDataModifyTask implements Task {
         long[] operationsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(m_opCount, m_numThreads);
 
         Thread[] threads = new Thread[m_numThreads];
-        long[] timeStart = new long[m_numThreads];
-        long[] timeEnd = new long[m_numThreads];
+        Stopwatch[] time = new Stopwatch[m_numThreads];
+        for (int i = 0; i < time.length; i++) {
+            time[i] = new Stopwatch();
+        }
 
         System.out.printf("Modifying (and checking %d) %d random chunks (pattern %d) in batches of %d chunk(s) with %d thread(s)...\n",
             m_writeContentsAndVerify ? 1 : 0, m_opCount, m_pattern, m_chunkBatch, m_numThreads);
@@ -92,17 +97,39 @@ public class ChunkDataModifyTask implements Task {
 
                 // happens if no chunks were created
                 if (!chunkRanges.isEmpty()) {
-                    timeStart[threadIdx] = System.nanoTime();
-
                     while (operations > 0) {
                         int batchCnt = 0;
-                        while (operations > 0 && batchCnt < chunkIds.length) {
-                            chunkIds[batchCnt] = ChunkIDRangeUtils.getRandomChunkIdOfRanges(chunkRanges);
-                            operations--;
-                            batchCnt++;
+
+                        if (!m_continousChunksPerBatch) {
+                            // all random chunk IDs for batch
+                            while (operations > 0 && batchCnt < chunkIds.length) {
+                                chunkIds[batchCnt] = ChunkIDRangeUtils.getRandomChunkIdOfRanges(chunkRanges);
+
+                                operations--;
+                                batchCnt++;
+                            }
+                        } else {
+                            while (operations > 0 && batchCnt < chunkIds.length) {
+                                operations--;
+                                batchCnt++;
+                            }
+
+                            // ensure continuous chunk IDs
+                            while (true) {
+                                chunkIds[0] = ChunkIDRangeUtils.getRandomChunkIdOfRanges(chunkRanges);
+                                if (ChunkIDRangeUtils.isInRanges(chunkIds[0] + batchCnt, chunkRanges)) {
+                                    for (int j = 0; j < batchCnt; j++) {
+                                        chunkIds[j] = chunkIds[0] + j;
+                                    }
+
+                                    break;
+                                }
+                            }
                         }
 
+                        time[threadIdx].start();
                         Chunk[] chunks = chunkService.get(chunkIds);
+                        time[threadIdx].stopAndAccumulate();
                         if (chunks == null) {
                             System.out.println("Error getting chunks");
                             return;
@@ -129,7 +156,9 @@ public class ChunkDataModifyTask implements Task {
                         }
 
                         if (doPut) {
+                            time[threadIdx].start();
                             chunkService.put(chunks);
+                            time[threadIdx].stopAndAccumulate();
 
                             if (m_writeContentsAndVerify) {
                                 Chunk[] chunksToVerify = chunkService.get(chunkIds);
@@ -163,8 +192,6 @@ public class ChunkDataModifyTask implements Task {
                             }
                         }
                     }
-
-                    timeEnd[threadIdx] = System.nanoTime();
                 }
             });
         }
@@ -189,16 +216,16 @@ public class ChunkDataModifyTask implements Task {
 
         System.out.print("Times per thread:");
         for (int i = 0; i < m_numThreads; i++) {
-            System.out.printf("\nThread-%d: %f sec", i, (timeEnd[i] - timeStart[i]) / 1000.0 / 1000.0 / 1000.0);
+            System.out.printf("\nThread-%d: %f sec", i, time[i].getAccumulatedTimeAsUnit().getSecDouble());
         }
         System.out.println();
 
         // total time is measured by the slowest thread
         long totalTime = 0;
         for (int i = 0; i < m_numThreads; i++) {
-            long time = timeEnd[i] - timeStart[i];
-            if (time > totalTime) {
-                totalTime = time;
+            long t = time[i].getAccumulatedTime();
+            if (t > totalTime) {
+                totalTime = t;
             }
         }
 
@@ -219,6 +246,7 @@ public class ChunkDataModifyTask implements Task {
         p_exporter.writeLong(m_opCount);
         p_exporter.writeInt(m_chunkBatch);
         p_exporter.writeBoolean(m_writeContentsAndVerify);
+        p_exporter.writeBoolean(m_continousChunksPerBatch);
         p_exporter.writeInt(m_pattern);
     }
 
@@ -228,11 +256,12 @@ public class ChunkDataModifyTask implements Task {
         m_opCount = p_importer.readLong();
         m_chunkBatch = p_importer.readInt();
         m_writeContentsAndVerify = p_importer.readBoolean();
+        m_continousChunksPerBatch = p_importer.readBoolean();
         m_pattern = p_importer.readInt();
     }
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES * 3 + ObjectSizeUtil.sizeofBoolean() + Long.BYTES;
+        return Integer.BYTES * 3 + ObjectSizeUtil.sizeofBoolean() * 2 + Long.BYTES;
     }
 }
