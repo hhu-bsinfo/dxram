@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.utils.eval;
 
+import de.hhu.bsinfo.utils.unit.TimeUnit;
+
 /**
  * Methods to stop time
  *
@@ -78,6 +80,33 @@ public final class Stopwatch {
      */
     public long getTime() {
         return m_endTime - m_startTime;
+    }
+
+    /**
+     * Get the recently stopped time
+     *
+     * @return TimeUnit of the recently stopped time
+     */
+    public TimeUnit getTimeAsUnit() {
+        return new TimeUnit(m_endTime - m_startTime, TimeUnit.NS);
+    }
+
+    /**
+     * Get the total accumulated time
+     *
+     * @return Accumulated time in ns
+     */
+    public long getAccumulatedTime() {
+        return m_accu;
+    }
+
+    /**
+     * Get the accumulated time
+     *
+     * @return TimeUnit of accumulated time
+     */
+    public TimeUnit getAccumulatedTimeAsUnit() {
+        return new TimeUnit(m_accu, TimeUnit.NS);
     }
 
     /**
