@@ -33,9 +33,9 @@ public class TimeUnit {
      * Constructor
      *
      * @param p_value
-     *         Value
+     *     Value
      * @param p_unit
-     *         Unit of the value (ns, us, ms, sec, min, h)
+     *     Unit of the value (ns, us, ms, sec, min, h)
      */
     public TimeUnit(final long p_value, final String p_unit) {
         parse(p_value, p_unit);
@@ -96,12 +96,21 @@ public class TimeUnit {
     }
 
     /**
+     * Get the time in seconds
+     *
+     * @return Time in seconds as double value
+     */
+    public double getSecDouble() {
+        return ((double) m_timeNs) / 1000.0 / 1000.0 / 1000.0;
+    }
+
+    /**
      * Parse the value with the specified unit
      *
      * @param p_value
-     *         Value
+     *     Value
      * @param p_unit
-     *         Unit of the value
+     *     Unit of the value
      */
     private void parse(final long p_value, final String p_unit) {
         switch (p_unit) {
