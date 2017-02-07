@@ -139,15 +139,13 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
         LOGGER.warn("FULL chunk memory reset/wipe...");
         // #endif /* LOGGER >= WARN */
 
-        try {
-            m_memoryManager.lockManage();
-            m_memoryManager.reset();
+        m_memoryManager.lockManage();
+        m_memoryManager.reset();
 
-            // re-init nameservice
-            m_nameservice.reinit();
-        } finally {
-            m_memoryManager.unlockManage();
-        }
+        // re-init nameservice
+        m_nameservice.reinit();
+
+        // don't unlock after the reset because the lock is also reset'd
 
         // #if LOGGER >= WARN
         LOGGER.warn("Resetting chunk memory finished. Backup and nameservice are NOW BROKEN because they were not involved in this reset process");
