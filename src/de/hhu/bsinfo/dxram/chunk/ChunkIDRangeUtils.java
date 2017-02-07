@@ -27,10 +27,20 @@ public class ChunkIDRangeUtils {
 
     }
 
-    public static long getRandomChunkIdOfRanges(final List<Long> chunkIdRanges) {
-        int rangeIdx = getRandomRangeExclEnd(0, chunkIdRanges.size() / 2);
+    public static boolean isInRanges(final long p_chunkID, final List<Long> p_chunkIdRanges) {
+        for (int i = 0; i < p_chunkIdRanges.size(); i += 2) {
+            if (p_chunkIdRanges.get(i) <= p_chunkID && p_chunkID <= p_chunkIdRanges.get(i + 1)) {
+                return true;
+            }
+        }
 
-        return getRandomChunkId(chunkIdRanges.get(rangeIdx * 2), chunkIdRanges.get(rangeIdx * 2 + 1));
+        return false;
+    }
+
+    public static long getRandomChunkIdOfRanges(final List<Long> p_chunkIdRanges) {
+        int rangeIdx = getRandomRangeExclEnd(0, p_chunkIdRanges.size() / 2);
+
+        return getRandomChunkId(p_chunkIdRanges.get(rangeIdx * 2), p_chunkIdRanges.get(rangeIdx * 2 + 1));
     }
 
     public static long countTotalChunksOfRanges(final List<Long> p_ranges) {

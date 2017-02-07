@@ -1288,6 +1288,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         // #if LOGGER == INFO
         LOGGER.info("Allocating native memory (%d mb). This may take a while...", m_keyValueStoreSize.getMB());
         // #endif /* LOGGER == INFO */
+        // Runtime.getRuntime().load("/home/nothaas/dxram/jni/libJNINativeMemory.so");
         m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory(), m_keyValueStoreSize.getBytes(), (int) m_keyValueStoreMaxBlockSize.getBytes());
         m_cidTable = new CIDTable(m_boot.getNodeID());
         m_cidTable.initialize(m_rawMemory);
