@@ -1,0 +1,103 @@
+#!/bin/bash
+
+######################################################
+# Compile the java vm options string for a terminal
+# Globals:
+#   VM_OPTS - Created by function ("return value")
+# Arguments:
+#   ip - The IP of the terminal
+#   port - The port of terminal
+#   script - Terminal script to run after start (optional)
+######################################################
+compile_vm_options_string_terminal() {
+  local ip=$1
+  local port=$2
+  local script=$3
+
+  VM_OPTS=""
+  VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
+  VM_OPTS="$VM_OPTS -Ddxram.config=config/dxram.json"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_ip=$ip"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_port=$port"
+  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_role=Terminal"
+
+  if [ "$script" ] ; then
+    VM_OPTS="$VM_OPTS -Ddxram.m_services[TerminalService].m_autostartScript=script/dxram/$script"
+  fi
+}
+
+######################################################
+# Start a Terminal on a remote node
+# Globals:
+#   DXRAM_PATH
+#   DEFAULT_CLASS
+# Arguments:
+#   ip - The IP of the Peer
+#   port - The port of Peer
+#   hostname - The hostname
+#   script - The script with terminal commands
+######################################################
+start_remote_terminal() {
+  local ip=$1
+  local port=$2
+  local hostname=$3
+  local script=$4
+
+  compile_vm_options_string_terminal $ip $port $script
+
+  echo "Executing terminal on $3 ($ip, $port):"
+  ssh $hostname -t "bash -l -c \"cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS\""
+}
+
+######################################################
+# Start a Terminal locally
+# Globals:
+#   DXRAM_PATH
+#   DEFAULT_CLASS
+#   EXECUTION_DIR
+# Arguments:
+#   ip - The IP of the Peer
+#   port - The port of Peer
+#   script - The script with terminal commands
+######################################################
+start_local_terminal() {
+  local ip=$1
+  local port=$2
+  local script=$3
+
+  compile_vm_options_string_terminal $ip $port $script
+
+  cd "$DXRAM_PATH"
+  java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS
+  cd "$EXECUTION_DIR"
+}
+
+###############
+# Entry point #
+###############
+
+EXECUTION_DIR=$1
+LOG_DIR=$2
+DXRAM_PATH=$3
+DEFAULT_CLASS=$4
+LIBRARIES=$5
+DEFAULT_CONDITION=$6
+
+ip=$7
+port=$8
+hostname=$9
+role=${10}
+is_remote=${11}
+node_conf_entry=${12}
+
+script=`echo $node_conf_entry | cut -d ',' -f 5`
+
+echo "Starting terminal ($ip $port $script)"
+echo "Quit with ctrl+c or by typing \"quit\""
+echo "Output:"
+
+if [ "$is_remote" = false ] ; then
+	start_local_terminal "$ip" "$port" "$script"
+else
+	start_remote_terminal "$ip" "$port" "$hostname" "$script"
+fi
