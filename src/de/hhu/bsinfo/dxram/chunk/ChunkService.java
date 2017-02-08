@@ -685,9 +685,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             m_memoryManager.unlockAccess();
         }
 
-        // remove local chunks from superpeer overlay first, so cannot be found before being deleted
-        m_lookup.removeChunkIDs(localChunks, m_boot.getNodeID());
-
         // remove local chunkIDs
         try {
             m_memoryManager.lockManage();
@@ -711,6 +708,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             if (peer == m_boot.getNodeID()) {
                 // local remove, migrated data to current node
+                
+                // FIXME kevin (refer to onIncomingRemoveRequest
+                // remove local chunks from superpeer overlay first, so cannot be found before being deleted
+                //m_lookup.removeChunkIDs(localChunks, m_boot.getNodeID());
+
                 try {
                     m_memoryManager.lockManage();
                     for (int i = 0; i < remoteChunks.getSize(); i++) {
