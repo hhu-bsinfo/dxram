@@ -17,5 +17,8 @@ hostname=$9
 role=${10}
 is_remote=${11}
 node_conf_entry=${12}
+zookeeper_ip=${13}
+zookeeper_port=${14}
 
-echo "Dummy deploy node: $EXECUTION_DIR $LOG_DIR $DXRAM_PATH $DEFAULT_CLASS $LIBRARIES $DEFAULT_CONDITION $ip $port $hostname $role $is_remote $node_conf_entry"
+echo "Dummy deploy node: $EXECUTION_DIR $LOG_DIR $DXRAM_PATH $DEFAULT_CLASS $LIBRARIES $DEFAULT_CONDITION $ip $port $hostname $role $is_remote $node_conf_entry $zookeeper_ip $zookeeper_port"
+exit 0

@@ -1,0 +1,238 @@
+#!/bin/bash
+
+######################################################
+# Compile the parameter string for dxram
+# Globals:
+#   YCSP_PARAMS - Created by function ("return value")
+# Arguments:
+#   ip - The IP of the Peer
+#   port - The port of Peer
+#   ram_size_in_mb - The key-value store size (optional)
+#   total_storage_nodes - Total number of DXRAM storage nodes
+#   zookeeper_string - String for zookeeper connection (format: <ip>:<port>)
+#   insertstart - Start record offset for node
+#   recordcount - Total number of records for node
+######################################################
+compile_ycsb_application_options_string_peer() {
+  local ip=$1
+  local port=$2
+  local ram_size_in_mb=$3
+  local total_storage_nodes=$4
+  local zookeeper_string=$5
+  local insertstart=$6
+  local recordcount=$7
+
+  YCSP_PARAMS=""
+  YCSP_PARAMS="$YCSP_PARAMS -p log4j.configurationFile=dxram/config/log4j.xml"
+  YCSP_PARAMS="$YCSP_PARAMS -p dxram.config=dxram/config/dxram.json"
+  YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_engineSettings.m_address.m_ip=$ip"
+  YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_engineSettings.m_address.m_port=$port"
+  YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_engineSettings.m_role=Peer"
+
+  YCSP_PARAMS="$YCSP_PARAMS -p zookeeper.string=$zookeeper_string"
+  YCSP_PARAMS="$YCSP_PARAMS -p recordcount=$recordcount"
+
+  # parameters only used on storage instance
+  if [ "$ram_size_in_mb" != "-" ] ; then
+    YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_mb"
+    YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=mb"
+  fi
+
+  if [ "$total_storage_nodes" != "-" ] ; then
+    YCSP_PARAMS="$YCSP_PARAMS -p dxram.nodes=$total_storage_nodes"
+  fi
+  if [ "$insertstart" != "-" ] ; then
+    YCSP_PARAMS="$YCSP_PARAMS -p insertstart=$insertstart"
+  fi
+}
+
+######################################################
+# Start a Peer on a remote node
+# Globals:
+#   DXRAM_PATH
+# Arguments:
+#   ip - The IP of the Peer
+#   port - The port of Peer
+#   hostname - The hostname
+#   ram_size_in_mb - The key-value store size
+#   total_storage_nodes - Total number of DXRAM storage nodes
+#   zookeeper_string - String for zookeeper connection (format: <ip>:<port>)
+#   insertstart - Start record offset for node
+#   recordcount - Total number of records for node
+#   ycsb_type - Type of YCSB instance (load or run)
+#   ycsb_threads - Number of threads for YCSB instance
+#   ycsb_workload - Workload to execute
+######################################################
+start_remote_peer() {
+  local ip=$1
+  local port=$2
+  local ram_size_in_mb=$3
+  local total_storage_nodes=$4
+  local zookeeper_string=$5
+  local insertstart=$6
+  local recordcount=$7
+  local ycsb_type=$8
+  local ycsb_threads=$9
+  local ycsb_workload=${10}
+
+  compile_ycsb_application_options_string_peer $ip $port $ram_size_in_mb $total_storage_nodes $zookeeper_string $insertstart $recordcount
+
+  echo "Executing peer on $3 ($ip, $port):"
+  # we assume the dxram folder is within the YCSB root folder
+  ssh $hostname -n "cd ${DXRAM_PATH}../ && ./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSP_PARAMS"
+}
+
+######################################################
+# Start a Peer locally
+# Globals:
+#   DXRAM_PATH
+# Arguments:
+#   ip - The IP of the Peer
+#   port - The port of Peer
+#   ram_size_in_mb - The key-value store size
+#   total_storage_nodes - Total number of DXRAM storage nodes
+#   zookeeper_string - String for zookeeper connection (format: <ip>:<port>)
+#   insertstart - Start record offset for node
+#   recordcount - Total number of records for node
+#   ycsb_type - Type of YCSB instance (load or run)
+#   ycsb_threads - Number of threads for YCSB instance
+#   ycsb_workload - Workload to execute
+######################################################
+start_local_peer() {
+  local ip=$1
+  local port=$2
+  local ram_size_in_mb=$3
+  local total_storage_nodes=$4
+  local zookeeper_string=$5
+  local insertstart=$6
+  local recordcount=$7
+  local ycsb_type=$8
+  local ycsb_threads=$9
+  local ycsb_workload=${10}
+
+  compile_ycsb_application_options_string_peer $ip $port $ram_size_in_mb $total_storage_nodes $zookeeper_string $insertstart $recordcount
+
+  # we assume the dxram folder is within the YCSB root folder
+  cd "${DXRAM_PATH}../"
+  ./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSP_PARAMS
+  cd "$EXECUTION_DIR"
+}
+
+######################################################
+# Check Peer startup, exit on failure
+# Globals:
+#   LOG_DIR
+# Arguments:
+#   ip - The IP of the Peer
+#   port - The port of Peer
+#   hostname - The hostname
+#   ram_size_in_mb - The key-value store size
+#   zookeeper_string - String for zookeeper connection (format: <ip>:<port>)
+#   insertstart - Start record offset for node
+#   recordcount - Total number of records for node
+#   ycsb_type - Type of YCSB instance (load or run)
+#   ycsb_threads - Number of threads for YCSB instance
+#   ycsb_workload - Workload to execute
+#   condition - The string to wait for
+######################################################
+check_peer_startup() {
+  local ip=$1
+  local port=$2
+  local hostname=$3
+  local ram_size_in_mb=$4
+  local zookeeper_string=$5
+  local insertstart=$6
+  local recordcount=$7
+  local ycsb_type=$8
+  local ycsb_threads=$9
+  local ycsb_workload=${10}
+  local condition="${11}"
+
+  local logfile="${LOG_DIR}${hostname}_${port}_peer"
+
+  while true ; do
+    local success=`cat "$logfile" 2> /dev/null | grep "$condition"`
+    local fail_init=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
+	# Abort execution after an exception was thrown (every exception but NetworkResponseTimeoutException)
+    local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseTimeoutException"`
+    if [ "$success" != "" ] ; then
+      echo "Peer ($ip $port $ram_size_in_mb $zookeeper_string $insertstart $recordcount $ycsb_type $ycsb_threads $ycsb_workload) started"
+      break
+    elif [ "$fail_init" != "" ] ; then
+      echo "ERROR: Peer ($ip $port $ram_size_in_mb $zookeeper_string $insertstart $recordcount $ycsb_type $ycsb_threads $ycsb_workload) could not be started. See log file $logfile"
+      close
+    elif [ "$fail_error" != "" ] ; then
+      echo "ERROR: Peer ($ip $port $ram_size_in_mb $zookeeper_string $insertstart $recordcount $ycsb_type $ycsb_threads $ycsb_workload) failed. See log file $logfile"
+      close
+    fi
+    sleep 1.0
+  done
+}
+
+
+
+###############
+# Entry point #
+###############
+
+EXECUTION_DIR=$1
+LOG_DIR=$2
+DXRAM_PATH=$3
+DEFAULT_CLASS=$4
+LIBRARIES=$5
+DEFAULT_CONDITION=$6
+
+ip=$7
+port=$8
+hostname=$9
+role=${10}
+is_remote=${11}
+node_conf_entry=${12}
+zookeeper_ip=${13}
+zookeeper_port=${14}
+
+# default values: unused indicator
+ram_size_in_mb="-"
+ycsb_nodes="-"
+ycsb_insertstart="-"
+
+iter=5
+while true ; do
+	tmp=`echo $node_conf_entry | cut -d ',' -f $iter`
+    iter=$((iter + 1))
+
+    arg_type=`echo $tmp | cut -d '=' -f 1`
+    if [ "$arg_type" = "" ] ; then
+  		break
+    elif [ "$arg_type" = "kvss" ] ; then
+      	ram_size_in_mb=`echo $tmp | cut -d '=' -f 2`
+    elif [ "$arg_type" = "type" ] ; then
+      	ycsb_type=`echo $tmp | cut -d '=' -f 2`
+    elif [ "$arg_type" = "threads" ] ; then
+      	ycsb_threads=`echo $tmp | cut -d '=' -f 2`
+    elif [ "$arg_type" = "workload" ] ; then
+      	ycsb_workload=`echo $tmp | cut -d '=' -f 2`
+    elif [ "$arg_type" = "nodes" ] ; then
+      	ycsb_nodes=`echo $tmp | cut -d '=' -f 2`
+    elif [ "$arg_type" = "insertstart" ] ; then
+      	ycsb_insertstart=`echo $tmp | cut -d '=' -f 2`
+    elif [ "$arg_type" = "recordcount" ] ; then
+      	ycsb_recordcount=`echo $tmp | cut -d '=' -f 2`
+    else
+	  	echo "ERROR: Unknown parameter type $arg_type"
+    fi
+done
+
+# Condition for load instances to wait until everything is loaded
+if [ "$ycsb_type" = "load" ] ; then
+	condition="\[INSERT\], Return=OK"
+fi
+
+if [ "$is_remote" = false ] ; then
+	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$ycsb_nodes" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+else
+	start_remote_peer "$ip" "$port" "$ram_size_in_mb" "$ycsb_nodes" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+fi
+
+check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_mb" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$condition"
+exit 0

@@ -89,6 +89,8 @@ hostname=$9
 role=${10}
 is_remote=${11}
 node_conf_entry=${12}
+zookeeper_ip=${13}
+zookeeper_port=${14}
 
 script=`echo $node_conf_entry | cut -d ',' -f 5`
 
@@ -101,3 +103,4 @@ if [ "$is_remote" = false ] ; then
 else
 	start_remote_terminal "$ip" "$port" "$hostname" "$script"
 fi
+exit 0

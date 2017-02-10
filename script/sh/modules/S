@@ -95,7 +95,7 @@ check_superpeer_startup() {
      break
     elif [ "$fail" != "" ] ; then
       echo "ERROR: Superpeer ($ip $port $vm_options) could not be started. See log file $logfile"
-      close
+      exit -1
     fi
     sleep 1.0
   done
@@ -118,6 +118,8 @@ hostname=$9
 role=${10}
 is_remote=${11}
 node_conf_entry=${12}
+zookeeper_ip=${13}
+zookeeper_port=${14}
 
 tmp=`echo $node | cut -d ',' -f 5`
 arg_type=`echo $tmp | cut -d '=' -f 1`
@@ -135,3 +137,4 @@ else
 fi
 
 check_superpeer_startup "$ip" "$port" "$hostname" "$vm_options"
+exit 0

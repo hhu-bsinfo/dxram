@@ -227,7 +227,11 @@ write_configuration() {
       NODE_ARRAY["$hostname"]=$current_port
 
       role="SUPERPEER"
-    elif [ "$role" = "P" ] ; then
+    elif [ "$role" = "T" ] ; then
+      port="22220"
+
+      role="TERMINAL"
+    else
       current_port=${NODE_ARRAY["$hostname"]}
       if [ "$current_port" = "" ] ; then
 	current_port=22222
@@ -238,11 +242,7 @@ write_configuration() {
       NODE_ARRAY["$hostname"]=$current_port
 
       role="PEER"
-    elif [ "$role" = "T" ] ; then
-      port="22220"
-
-      role="TERMINAL"
-    fi
+	fi
 
     local node_string=`echo "$default_node" | sed "s/IP_TEMPLATE/$ip/" | sed "s/PORT_TEMPLATE/$port/" | sed "s/ROLE_TEMPLATE/$role/"`
 
@@ -421,6 +421,9 @@ execute() {
   	local local_config_was_copied=false
   	local remote_config_was_copied=false
   
+    local zookeeper_ip=""
+    local zookeeper_port=""
+
   	local node=""
   	local number_of_lines=`echo "$NODES" | wc -l`
   	local counter=1
@@ -452,6 +455,8 @@ execute() {
 	  				check_zookeeper_startup "$ip" "$port" "$hostname"
 				fi
 				zookeeper_started=true
+				zookeeper_ip="$ip"
+				zookeeper_port="$port"
       		else
 				echo "ERROR: More than one ZooKeeper instance defined."
 				close
@@ -460,7 +465,16 @@ execute() {
 			# call "external" module
 			local module="${DEPLOY_SCRIPT_DIR}/modules/${role}"
 			if [ -f "$module" ] ; then
-				$module "$EXECUTION_DIR" "$LOG_DIR" "$DXRAM_PATH" "$DEFAULT_CLASS" "$LIBRARIES" "$DEFAULT_CONDITION" "$ip" "$port" "asdf" "$hostname" "$is_remote" "$node"
+				# fix role on non S, T or P, everything else is a P (peer)
+				if [[ "$role" != "S" || "$role" != "P" || "$role" != "T" ]] ; then
+					role="P"
+				fi
+
+				$module "$EXECUTION_DIR" "$LOG_DIR" "$DXRAM_PATH" "$DEFAULT_CLASS" "$LIBRARIES" "$DEFAULT_CONDITION" "$ip" "$port" "$hostname" "$role" "$is_remote" "$node" "$zookeeper_ip" "$zookeeper_port"
+
+				if [ "$?" != "0" ] ; then
+					close
+				fi
 			else
 				echo "ERROR: Unknown role $role defined in deploy configuration"
 				close
