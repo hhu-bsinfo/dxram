@@ -283,7 +283,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             if (!shutdown()) {
                 return false;
             }
-            
+
             if (!init()) {
                 return false;
             }
@@ -384,11 +384,17 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         // check if a config needs to be created
         if (config.isEmpty() || !new File(config).exists()) {
             m_contextHandler.createDefaultConfiguration(config);
+            // #if LOGGER >= INFO
+            LOGGER.info("Default configuration created: %s", config);
+            // #endif /* LOGGER >= INFO */
             return false;
         }
 
         // load existing configuration
         if (!m_contextHandler.loadConfiguration(config)) {
+            // #if LOGGER >= ERROR
+            LOGGER.info("Loading configuration failed: %s", config);
+            // #endif /* LOGGER >= ERROR */
             return false;
         }
 
