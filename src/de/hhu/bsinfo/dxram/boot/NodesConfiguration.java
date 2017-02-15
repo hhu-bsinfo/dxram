@@ -43,7 +43,7 @@ final class NodesConfiguration {
      *
      * @return the configured nodes
      */
-    public synchronized NodeEntry[] getNodes() {
+    NodeEntry[] getNodes() {
         return m_nodes;
     }
 
@@ -52,7 +52,7 @@ final class NodesConfiguration {
      *
      * @return Own node ID (or -1 if invalid).
      */
-    synchronized short getOwnNodeID() {
+    short getOwnNodeID() {
         return m_ownID;
     }
 
@@ -62,7 +62,7 @@ final class NodesConfiguration {
      * @param p_nodeID
      *     Node id to set.
      */
-    synchronized void setOwnNodeID(final short p_nodeID) {
+    void setOwnNodeID(final short p_nodeID) {
         m_ownID = p_nodeID;
     }
 
@@ -71,14 +71,14 @@ final class NodesConfiguration {
      *
      * @return NodeEntry or null if invalid.
      */
-    synchronized NodeEntry getOwnNodeEntry() {
+    NodeEntry getOwnNodeEntry() {
         return m_nodes[m_ownID & 0xFFFF];
     }
 
     // ---------------------------------------------------------------------------
 
     @Override
-    public synchronized String toString() {
+    public String toString() {
         String str = "";
 
         str += "NodesConfiguration[ownID: " + m_ownID + "]:";
@@ -98,7 +98,7 @@ final class NodesConfiguration {
      *     Node ID to get the entry of.
      * @return NodeEntry containing information about the node or null if it does not exist.
      */
-    synchronized NodeEntry getNode(final short p_nodeID) {
+    NodeEntry getNode(final short p_nodeID) {
         return m_nodes[p_nodeID & 0xFFFF];
     }
 
