@@ -73,7 +73,7 @@ determine_configurable_paths() {
   if [ "$tmp" != "" ] ; then
     local dxram_path=`echo "$tmp" | cut -d '=' -f 2`
 
-    if [[ "$dxram_path" = /* ]]; then
+    if [[ "$dxram_path" = /* || "${dxram_path:0:1}" = "~" ]]; then
        readonly DXRAM_PATH=$dxram_path
     else
 		readonly DXRAM_PATH="$(cd "${NODE_FILE_DIR}$dxram_path"; pwd)/"
@@ -89,7 +89,7 @@ determine_configurable_paths() {
   if [ "$tmp" != "" ] ; then
     local zookeeper_path=`echo "$tmp" | cut -d '=' -f 2`
 
-    if [[ "$zookeeper_path" = /* ]]; then
+    if [[ "$zookeeper_path" = /* || "${zookeeper_path:0:1}" = "~" ]]; then
        readonly ZOOKEEPER_PATH=$zookeeper_path
     else
 		readonly ZOOKEEPER_PATH="$(cd "${NODE_FILE_DIR}$zookeeper_path"; pwd)/"
