@@ -24,12 +24,26 @@ is installed and run *build.sh*. The output is located in the
 
 ## Starting DXRAM
 A bash script to deploy instances to either local host or nodes of a 
-cluster are included in the subfolder */script/sh*. The scripts parses
+cluster is included in the subfolder *script/deploy*. The script parses
 a configuration file and starts the specified DXRAM instances 
-accordingly. For examples, refer to the configurations 
-*SimpleTest.conf* and *MailboxTest.conf*.
+accordingly. For examples, refer to the configurations in the 
+subfolders *script/deploy/conf*, especially the *examples* 
+category with *SimpleTest.conf*.
 
-# Configuration of DXRAM
+To run a minimal DXRAM setup, compile dxram using the *build.sh* script.
+Adjust the paths at the top of the *SimpleTest.conf* 
+and run the deploy script with the *SimpleTest.conf* from the
+root of the dxram folder:
+```
+./build.sh
+script/deploy/deploy.sh script/deploy/conf/example/SimpleTest.conf
+```
+The deployment starts zookeeper, one superpeer, one peer and the terminal
+locally. Any log output of the instances is written to log files in
+a directory called *logs*. If you encounter any errors, this is the first
+place to look for errors.
+
+# Manual configuration of DXRAM
 
 ## ZooKeeper
 See System Requirements in the admin guide of ZooKeeper.
