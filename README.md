@@ -22,6 +22,9 @@ An ant build script is included for building the project. Ensure ant
 is installed and run *build.sh*. The output is located in the 
 *build/* subdirectory.
 
+## Deploying to a remote machine (cluster)
+Copy the *build/dxram* directory to your cluster (typically, NFS mounted home directory).
+
 ## Starting DXRAM
 A bash script to deploy instances to either local host or nodes of a 
 cluster is included in the subfolder *script/deploy*. The script parses
