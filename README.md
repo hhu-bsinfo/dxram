@@ -23,7 +23,7 @@ is installed and run *build.sh*. The output is located in the
 *build/* subdirectory.
 
 ## Deploying to a remote machine (cluster)
-Copy the *build/dxram* directory to your cluster (typically, NFS mounted home directory).
+Copy the *build/dxram* directory to your cluster.
 
 ## Starting DXRAM
 A bash script to deploy instances to either local host or nodes of a 
@@ -39,12 +39,12 @@ and run the deploy script with the *SimpleTest.conf* from the
 root of the dxram folder:
 ```
 ./build.sh
-script/deploy/deploy.sh script/deploy/conf/example/SimpleTest.conf
+./script/deploy/deploy.sh ./script/deploy/conf/example/SimpleTest.conf
 ```
-The deployment starts zookeeper, one superpeer, one peer and the terminal
-locally. Any log output of the instances is written to log files in
-a directory called *logs*. If you encounter any errors, this is the first
-place to look for errors.
+The deployment starts zookeeper, one superpeer, one peer and the 
+terminal locally. Any log output of the instances is written to log 
+files in a directory called *deploy_tmp/logs*. 
+If you encounter any errors, this is the first place to look for errors.
 
 # Manual configuration of DXRAM
 
