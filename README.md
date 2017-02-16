@@ -46,6 +46,16 @@ terminal locally. Any log output of the instances is written to log
 files in a directory called *deploy_tmp/logs*. 
 If you encounter any errors, this is the first place to look for errors.
 
+# First applications and benchmarks
+
+Refer to [this readme](doc/Benchmark.md) on how to run built in benchmarks or 
+external applications/benchmarks.
+
+# Writing your own applications using DXRAM
+
+Refer to [this readme](doc/Development.md) on how to develop your own applications
+with DXRAM.
+
 # Manual configuration of DXRAM
 
 ## ZooKeeper
