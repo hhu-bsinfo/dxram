@@ -20,6 +20,7 @@ package de.hhu.bsinfo.dxcompute;
 public final class DXComputeMessageTypes {
     public static final byte JOB_MESSAGES_TYPE = 48;
     public static final byte MASTERSLAVE_MESSAGES_TYPE = 49;
+    public static final byte BENCH_MESSAGE_TYPE = 50;
 
     /**
      * Static class
