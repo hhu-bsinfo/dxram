@@ -27,8 +27,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.02.2016
  */
 public class DXRAMMain {
-    private static final String STARTUP_DONE_STR = "***!---ooo---!***";
-
     private DXRAM m_dxram;
     private String m_nodeTypeName;
     private volatile boolean m_triggerSoftReboot;
@@ -120,8 +118,6 @@ public class DXRAMMain {
 
             if (role == NodeRole.TERMINAL) {
                 System.out.println(">>> " + m_nodeTypeName + " Terminal started <<<");
-                // used for deploy script
-                System.out.println(STARTUP_DONE_STR);
                 if (!runTerminal()) {
                     return -1;
                 } else {
@@ -129,8 +125,6 @@ public class DXRAMMain {
                 }
             } else {
                 System.out.println(">>> " + m_nodeTypeName + " started <<<");
-                // used for deploy script
-                System.out.println(STARTUP_DONE_STR);
 
                 while (m_dxram.update()) {
                     // run

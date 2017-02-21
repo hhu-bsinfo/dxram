@@ -58,6 +58,7 @@ import de.hhu.bsinfo.utils.ManifestHelper;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class DXRAM {
+    private static final String STARTUP_DONE_STR = "***!---ooo---!***";
 
     private DXRAMEngine m_engine;
 
@@ -240,7 +241,8 @@ public class DXRAM {
      * DXRAM has booted.
      */
     protected void postInit() {
-        // stub
+        // used for deploy script
+        System.out.println(STARTUP_DONE_STR);
     }
 
     /**
