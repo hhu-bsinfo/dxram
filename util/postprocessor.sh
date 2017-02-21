@@ -19,6 +19,6 @@ find ../src/ -name "*.java" -print | while read input
 do  
   eval "$logger_cmd $input > \"$input.postprocessed\""
   eval "$statistics_cmd \"$input.postprocessed\" > $input"
-  eval "$assert_node_role_cmd \"$input.postprocessed\" > $input"
-  rm "$input.postprocessed"
+  eval "$assert_node_role_cmd $input > \"$input.postprocessed\""
+  mv "$input.postprocessed" $input
 done

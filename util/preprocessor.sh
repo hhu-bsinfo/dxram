@@ -110,8 +110,8 @@ do
   ####################
   # ASSERT_NODE_ROLE #
   ####################
-  eval "$assert_node_role_cmd \"$input.preprocessed\" > $input"
+  eval "$assert_node_role_cmd $input > \"$input.preprocessed\""
 
-  rm "$input.preprocessed"
+  mv "$input.preprocessed" $input
 
 done
