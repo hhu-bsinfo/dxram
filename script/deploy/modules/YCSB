@@ -225,7 +225,9 @@ done
 
 # Condition for load instances to wait until everything is loaded
 if [ "$ycsb_type" = "load" ] ; then
-	condition="\[INSERT\], Return=OK"
+#	condition="\[INSERT\], Return=OK"
+
+condition="DB storage node, keep running..."
 fi
 
 if [ "$is_remote" = false ] ; then
