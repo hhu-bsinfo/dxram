@@ -160,10 +160,10 @@ check_peer_startup() {
       break
     elif [ "$fail_init" != "" ] ; then
       echo "ERROR: Peer ($ip $port $ram_size_in_mb $zookeeper_string $insertstart $recordcount $ycsb_type $ycsb_threads $ycsb_workload) could not be started. See log file $logfile"
-      close
+      exit -1
     elif [ "$fail_error" != "" ] ; then
       echo "ERROR: Peer ($ip $port $ram_size_in_mb $zookeeper_string $insertstart $recordcount $ycsb_type $ycsb_threads $ycsb_workload) failed. See log file $logfile"
-      close
+      exit -1
     fi
     sleep 1.0
   done
