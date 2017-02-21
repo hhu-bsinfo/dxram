@@ -128,8 +128,8 @@ check_programs "$node_file"
 
 # Trim node file
 NODES=`cat "$node_file" | grep -v '#' | sed 's/, /,/g' | sed 's/,\t/,/g'`
-NODES=`echo "$NODES" | grep -v '_EXEC_PATH'`
-NODES=`echo "$NODES" | grep -v '_ZOOKEEPER_PATH'`
+NODES=`echo "$NODES" | grep -v 'DXRAM_PATH'`
+NODES=`echo "$NODES" | grep -v 'ZOOKEEPER_PATH'`
 
 # Set default values
 readonly LOCALHOST=`resolve "localhost"`
