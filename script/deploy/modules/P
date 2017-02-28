@@ -57,6 +57,7 @@ compile_vm_options_string_peer() {
 #   class - The class to execute
 #   arguments - The arguments
 #   vm_options - The VM options
+#   additional_shell_cmds - Shell commands to execute before execution dxram
 ######################################################
 start_remote_peer() {
   local ip=$1
@@ -68,11 +69,16 @@ start_remote_peer() {
   local class=$7
   local arguments="$8"
   local vm_options="$9"
+  local additional_shell_cmds="${10}"
 
   compile_vm_options_string_peer $ip $port $ram_size_in_mb $compute_node_role $compute_group_id $vm_options
 
   echo "Executing peer on $3 ($ip, $port):"
-  ssh $hostname -n "cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $class $arguments"
+  if [ "$additional_shell_cmds" != "" ]; then
+    ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $class $arguments"
+  else
+    ssh $hostname -n "cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $class $arguments"
+  fi
 }
 
 ######################################################
@@ -88,6 +94,7 @@ start_remote_peer() {
 #   class - The class to execute
 #   arguments - The arguments
 #   vm_options - The VM options
+#   additional_shell_cmds - Shell commands to execute before execution dxram
 ######################################################
 start_local_peer() {
   local ip=$1
@@ -98,8 +105,13 @@ start_local_peer() {
   local class=$6
   local arguments="$7"
   local vm_options="$8"
+  local additional_shell_cmds="$9"
 
   compile_vm_options_string_peer $ip $port $ram_size_in_mb $compute_node_role $compute_group_id $vm_options
+
+  if [ "$additional_shell_cmds" != "" ]; then
+    eval $additional_shell_cmds
+  fi
 
   cd "$DXRAM_PATH"
   java $VM_OPTS -cp $LIBRARIES $class $arguments
@@ -203,6 +215,8 @@ while true ; do
       	compute_node_role=`echo $tmp | cut -d '=' -f 2`
     elif [ "$arg_type" = "cgid" ] ; then
       	compute_group_id=`echo $tmp | cut -d '=' -f 2`
+    elif [ "$arg_type" = "shellcmd" ] ; then
+      	additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
     else
 	  	echo "ERROR: Unknown parameter type $arg_type"
     fi
@@ -216,9 +230,9 @@ if [ "$condition" = "" ] ; then
 fi
 
 if [ "$is_remote" = false ] ; then
-	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
 else
-    start_remote_peer "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+    start_remote_peer "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
 fi
 
 check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$condition" "$vm_options"

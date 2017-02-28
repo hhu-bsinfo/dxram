@@ -36,17 +36,23 @@ compile_vm_options_string_terminal() {
 #   port - The port of Peer
 #   hostname - The hostname
 #   script - The script with terminal commands
+#   additional_shell_cmds - Shell commands to execute before execution dxram
 ######################################################
 start_remote_terminal() {
   local ip=$1
   local port=$2
   local hostname=$3
   local script=$4
+  local additional_shell_cmds="$5"
 
   compile_vm_options_string_terminal $ip $port $script
 
   echo "Executing terminal on $3 ($ip, $port):"
-  ssh $hostname -t "bash -l -c \"cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS\""
+  if [ "$additional_shell_cmds" != "" ]; then
+    ssh $hostname -t "bash -l -c \"$additional_shell_cmds && cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS\""
+  else
+    ssh $hostname -t "bash -l -c \"cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS\""
+  fi
 }
 
 ######################################################
@@ -59,14 +65,20 @@ start_remote_terminal() {
 #   ip - The IP of the Peer
 #   port - The port of Peer
 #   script - The script with terminal commands
+#   additional_shell_cmds - Shell commands to execute before execution dxram
 ######################################################
 start_local_terminal() {
   local ip=$1
   local port=$2
   local script=$3
+  local additional_shell_cmds="$4"
 
   compile_vm_options_string_terminal $ip $port $script
 
+  if [ "$additional_shell_cmds" != "" ]; then
+    eval $additional_shell_cmds
+  fi
+ 
   cd "$DXRAM_PATH"
   java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS
   cd "$EXECUTION_DIR"
@@ -91,16 +103,32 @@ is_remote=${11}
 node_conf_entry=${12}
 zookeeper_ip=${13}
 zookeeper_port=${14}
+additional_shell_cmds=${15}
 
-script=`echo $node_conf_entry | cut -d ',' -f 5`
+iter=5
+while true ; do
+	tmp=`echo $node_conf_entry | cut -d ',' -f $iter`
+    iter=$((iter + 1))
+
+    arg_type=`echo $tmp | cut -d '=' -f 1`
+    if [ "$arg_type" = "" ] ; then
+  		break
+    elif [ "$arg_type" = "script" ] ; then
+      	script=`echo $tmp | cut -d '=' -f 2`
+    elif [ "$arg_type" = "shellcmd" ] ; then
+      	additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
+    else
+	  	echo "ERROR: Unknown parameter type $arg_type"
+    fi
+done
 
 echo "Starting terminal ($ip $port $script)"
 echo "Quit with ctrl+c or by typing \"quit\""
 echo "Output:"
 
 if [ "$is_remote" = false ] ; then
-	start_local_terminal "$ip" "$port" "$script"
+	start_local_terminal "$ip" "$port" "$script" "$additional_shell_cmds"
 else
-	start_remote_terminal "$ip" "$port" "$hostname" "$script"
+	start_remote_terminal "$ip" "$port" "$hostname" "$script" "$additional_shell_cmds"
 fi
 exit 0

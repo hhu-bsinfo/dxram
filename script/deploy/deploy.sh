@@ -563,7 +563,7 @@ if [ "$1" = "" ] ; then
   exit
 fi
 
-node_file="./$1"
+node_file="$1"
 if [ "${node_file: -5}" != ".conf" ] ; then
   node_file="${node_file}.conf"
 fi
