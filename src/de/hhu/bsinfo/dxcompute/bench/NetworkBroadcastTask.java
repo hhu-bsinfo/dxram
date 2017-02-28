@@ -6,7 +6,6 @@ import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -16,7 +15,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -25,12 +23,10 @@ import java.util.concurrent.atomic.AtomicLong;
 public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceiver{
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkEndToEndTask.class.getSimpleName());
 
-    private volatile AtomicBoolean isFinished = new AtomicBoolean(false);
-    private volatile AtomicLong m_receivedCnt = new AtomicLong(0);
-    private int m_slaveCnt = 0;
+    private AtomicLong m_receivedCnt;
+    private AtomicLong m_receiveTimeStart, m_receiveTimeEnd;
 
-    private boolean m_isFirstMessage = true;
-    private long m_receiveTimeStart, m_receiveTimeEnd;
+    private int m_slaveCnt;
 
     @Expose
     private int m_messageCnt = 100;
@@ -39,9 +35,18 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
     @Expose
     private int m_threadCnt = 10;
 
+    public NetworkBroadcastTask() {
+
+    }
 
     @Override
     public int execute(TaskContext p_ctx) {
+
+        m_receivedCnt = new AtomicLong(0);
+        m_receiveTimeStart = new AtomicLong(0);
+        m_receiveTimeEnd = new AtomicLong(0);
+
+        m_slaveCnt = 0;
 
         short[] slaveNodeIds = p_ctx.getCtxData().getSlaveNodeIds();
         m_slaveCnt = slaveNodeIds.length;
@@ -112,10 +117,6 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
             return -2;
         }
 
-        // Wait until all messages received
-        //while(!isFinished.get());
-
-
         System.out.print("Times per thread:");
         for (int i = 0; i < m_threadCnt; i++) {
             System.out.printf("\nThread-%d: %f sec", i, (timeEnd[i] - timeStart[i]) / 1000.0 / 1000.0 / 1000.0);
@@ -137,10 +138,19 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
         double throughput = sizeInMB / timeInS;
         System.out.printf("Throughput Tx: %f MB/s\n", throughput);
 
-        while(!isFinished.get());
+        while(m_receiveTimeEnd.get() == 0){
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        networkService.unregisterReceiver(NetworkTestMessage.class, this);
 
         sizeInMB = m_messageCnt*m_messageSize*(m_slaveCnt-1)/1000.0/1000.0;
-        timeInS = (m_receiveTimeEnd-m_receiveTimeStart) / 1000.0 / 1000.0 / 1000.0;
+        timeInS = (m_receiveTimeEnd.get()-m_receiveTimeStart.get()) / 1000.0 / 1000.0 / 1000.0;
         System.out.printf("Throughput Rx: %f MB/s\n", sizeInMB/timeInS);
 
         return 0;
@@ -173,17 +183,16 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
 
     @Override
     public void onIncomingMessage(AbstractMessage p_message) {
-        if(m_isFirstMessage){
-            m_receiveTimeStart = System.nanoTime();
-            m_isFirstMessage = false;
+        if(p_message instanceof NetworkTestMessage) {
+            if (m_receiveTimeStart.get() == 0) {
+                m_receiveTimeStart.compareAndSet(0, System.nanoTime());
+            }
+
+            m_receivedCnt.incrementAndGet();
+
+            if (m_receivedCnt.get() == (m_messageCnt * (m_slaveCnt - 1))) {
+                m_receiveTimeEnd.compareAndSet(0, System.nanoTime());
+            }
         }
-
-        m_receivedCnt.incrementAndGet();
-
-        if(m_receivedCnt.get() == (m_messageCnt * (m_slaveCnt-1))) {
-            m_receiveTimeEnd = System.nanoTime();
-            isFinished.compareAndSet(false, true);
-        }
-
     }
 }
