@@ -114,10 +114,10 @@ determine_configurable_paths() {
 #   None
 ######################################################
 clean_up() {
-  rm -rf "${EXECUTION_DIR}deploy_tmp"
+  rm -rf $DEPLOY_TMP_DIR
 
-  mkdir "${EXECUTION_DIR}deploy_tmp"
-  mkdir "${EXECUTION_DIR}deploy_tmp/logs"
+  mkdir $DEPLOY_TMP_DIR
+  mkdir $LOG_DIR
 }
 
 ######################################################
@@ -280,7 +280,7 @@ write_configuration() {
   end=`echo "$end" | sed -ne '/],/{s///; :a' -e 'n;p;ba' -e '}'`
   new_config=`echo -e "$new_config\n$end"`
   
-  echo "$new_config" > "${EXECUTION_DIR}deploy_tmp/dxram.json"
+  echo "$new_config" > "${DEPLOY_TMP_DIR}dxram.json"
 }
 
 ######################################################
@@ -300,7 +300,7 @@ copy_remote_configuration() {
     local hostname=$2
 
     if [ "$NFS_MODE" = false -o "$copied" = false ] ; then
-      scp "${EXECUTION_DIR}deploy_tmp/dxram.json" "${hostname}:${DXRAM_PATH}config/"
+      scp "${DEPLOY_TMP_DIR}dxram.json" "${hostname}:${DXRAM_PATH}config/"
       copied=true
     fi
     echo "$copied"
@@ -320,7 +320,7 @@ copy_local_configuration() {
   local copied=$1
 
   if [ "$copied" = false ] ; then
-    cp ${EXECUTION_DIR}deploy_tmp/dxram.json "${DXRAM_PATH}config/"
+    cp ${DEPLOY_TMP_DIR}/dxram.json "${DXRAM_PATH}config/"
     copied=true
   fi
   echo "$copied"
@@ -596,7 +596,8 @@ readonly NODE_FILE_DIR="$(cd "$(dirname "$1")"; pwd)/"
 readonly EXECUTION_DIR="`pwd`/"
 readonly DEPLOY_SCRIPT_DIR=$(dirname "$0")
 determine_configurable_paths
-readonly LOG_DIR="${EXECUTION_DIR}deploy_tmp/logs/"
+readonly DEPLOY_TMP_DIR="${EXECUTION_DIR}deploy_tmp_"$(date +%s)"/"
+readonly LOG_DIR="${DEPLOY_TMP_DIR}logs/"
 readonly CONFIG_FILE="${DXRAM_PATH}config/dxram.json"
 echo -e "\n\n"
 
