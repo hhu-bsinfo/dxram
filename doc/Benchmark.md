@@ -1,13 +1,8 @@
 # Built in benchmarks using the terminal
 
-DXRAM comes with built in benchmarks for different modules of the 
-system. The benchmarks are implemented as compute tasks for the
-MasterSlaveComputeService. Multiple tasks can be scripted and started
-from the DXRAM terminal.
+DXRAM comes with built in micro benchmarks for different modules of the system. The benchmarks are implemented as compute tasks for the MasterSlaveComputeService. Multiple tasks can be scripted and started from the DXRAM terminal.
 
-The *script/compute* folder contains a collection of tasks split into
-different categories (refer to [the readme](../script/compute/README.md)). 
-The subfolder *bench* contains scripts to run different benchmarks.
+The *script/compute* folder contains a collection of tasks split into different categories (refer to [the readme](../script/compute/README.md)). The subfolder *bench* contains scripts to run different benchmarks.
 
 # YCSB
 
