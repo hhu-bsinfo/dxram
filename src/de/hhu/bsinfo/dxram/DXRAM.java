@@ -58,7 +58,7 @@ import de.hhu.bsinfo.utils.ManifestHelper;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class DXRAM {
-    private static final String STARTUP_DONE_STR = "***!---ooo---!***";
+    private static final String STARTUP_DONE_STR = "!---ooo---!";
 
     private DXRAMEngine m_engine;
 
