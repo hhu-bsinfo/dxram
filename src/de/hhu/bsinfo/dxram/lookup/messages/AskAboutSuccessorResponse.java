@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.ethnet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Response to a AskAboutSuccessorRequest
@@ -35,7 +36,7 @@ public class AskAboutSuccessorResponse extends AbstractResponse {
     public AskAboutSuccessorResponse() {
         super();
 
-        m_successor = -1;
+        m_successor = NodeID.INVALID_ID;
     }
 
     /**

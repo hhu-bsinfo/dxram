@@ -37,7 +37,7 @@ public class GetLookupRangeRequest extends AbstractRequest {
     public GetLookupRangeRequest() {
         super();
 
-        m_chunkID = -1;
+        m_chunkID = ChunkID.INVALID_ID;
     }
 
     /**

@@ -17,6 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Get Backup Ranges Request
@@ -36,7 +37,7 @@ public class GetAllBackupRangesRequest extends AbstractRequest {
     public GetAllBackupRangesRequest() {
         super();
 
-        m_nodeID = -1;
+        m_nodeID = NodeID.INVALID_ID;
     }
 
     /**

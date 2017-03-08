@@ -186,7 +186,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
     private void performStabilization() {
 
         m_overlayLock.readLock().lock();
-        while (m_superpeer.getPredecessor() != -1 && m_nodeID != m_superpeer.getPredecessor()) {
+        while (m_superpeer.getPredecessor() != NodeID.INVALID_ID && m_nodeID != m_superpeer.getPredecessor()) {
             // #if LOGGER == TRACE
             LOGGER.trace("Performing stabilization by sending NodeID to predecessor=0x%X", m_superpeer.getPredecessor());
             // #endif /* LOGGER == TRACE */
@@ -204,7 +204,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
             break;
         }
 
-        while (m_superpeer.getSuccessor() != -1 && m_nodeID != m_superpeer.getSuccessor()) {
+        while (m_superpeer.getSuccessor() != NodeID.INVALID_ID && m_nodeID != m_superpeer.getSuccessor()) {
             // #if LOGGER == TRACE
             LOGGER.trace("Performing stabilization by sending NodeID to successor=0x%X", m_superpeer.getSuccessor());
             // #endif /* LOGGER == TRACE */
@@ -278,7 +278,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 
             hisSuccessor = response.getSuccessor();
 
-            if (hisSuccessor != possibleSuccessor && hisSuccessor != -1) {
+            if (hisSuccessor != possibleSuccessor && hisSuccessor != NodeID.INVALID_ID) {
                 m_overlayLock.writeLock().lock();
                 OverlayHelper.insertSuperpeer(hisSuccessor, m_otherSuperpeers);
                 m_overlayLock.writeLock().unlock();
@@ -367,7 +367,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
                 oldSuperpeer = p_responsibleArea[0];
                 currentSuperpeer = OverlayHelper.getResponsibleSuperpeer((short) (p_responsibleArea[0] + 1), m_otherSuperpeers);
             }
-            while (currentSuperpeer != -1) {
+            while (currentSuperpeer != NodeID.INVALID_ID) {
                 peers = m_superpeer.getPeersInResponsibleArea(oldSuperpeer, currentSuperpeer);
 
                 // #if LOGGER == TRACE

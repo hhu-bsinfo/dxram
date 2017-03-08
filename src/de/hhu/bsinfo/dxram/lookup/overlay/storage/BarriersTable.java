@@ -226,7 +226,7 @@ public class BarriersTable extends AbstractMetadata {
         }
         ret = m_barrierNodes[p_nodeId & 0xFFFF].allocateBarrier(p_size);
 
-        if (ret != -1) {
+        if (ret != BarrierID.INVALID_ID) {
             m_allBarriersCount++;
             m_allBarrierEntriesCount += p_size;
         }

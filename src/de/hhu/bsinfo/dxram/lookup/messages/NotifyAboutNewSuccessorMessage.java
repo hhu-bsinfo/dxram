@@ -37,7 +37,7 @@ public class NotifyAboutNewSuccessorMessage extends AbstractMessage {
     public NotifyAboutNewSuccessorMessage() {
         super();
 
-        m_newSuccessor = -1;
+        m_newSuccessor = NodeID.INVALID_ID;
     }
 
     /**

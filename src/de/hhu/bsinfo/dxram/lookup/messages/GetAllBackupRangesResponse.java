@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
+
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
@@ -67,7 +68,13 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + BackupRange.sizeofObjectStatic() * m_backupRanges.length;
+        int ret = Integer.BYTES;
+
+        for (BackupRange backupRange : m_backupRanges) {
+            ret += backupRange.sizeofObject();
+        }
+
+        return ret;
     }
 
     // Methods

@@ -17,7 +17,9 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Tools;
 
 /**
@@ -70,7 +72,7 @@ public final class CacheTree {
 
         m_changedEntry = null;
 
-        createOrReplaceEntry(Long.MAX_VALUE, (short) -1);
+        createOrReplaceEntry(Long.MAX_VALUE, NodeID.INVALID_ID);
 
         m_lock = new ReentrantReadWriteLock();
         m_ttlHandler = new TTLHandler(ttl);
@@ -411,7 +413,7 @@ public final class CacheTree {
             } else {
                 range[0] = 0;
             }
-            if (nodeID != -1) {
+            if (nodeID != NodeID.INVALID_ID) {
                 ret = new LookupRange(nodeID, range);
             }
         }
@@ -595,30 +597,30 @@ public final class CacheTree {
                     predecessor = getPredecessorsEntry(p_chunkID, node);
                     currentEntry = new Entry(currentCID, node.getNodeID(index));
                     successor = getSuccessorsEntry(p_chunkID, node);
-                    if (currentEntry.getNodeID() != -1 && predecessor != null) {
+                    if (currentEntry.getNodeID() != NodeID.INVALID_ID && predecessor != null) {
                         if (p_chunkID - 1 == predecessor.getCID()) {
                             // Predecessor is direct neighbor: AB
                             // Successor might be direct neighbor or not: ABC or AB___C
-                            if (successor.getNodeID() == -1) {
+                            if (successor.getNodeID() == NodeID.INVALID_ID) {
                                 // Successor is barrier: ABC -> A_C or AB___C -> A___C
                                 remove(p_chunkID);
                             } else {
                                 // Successor is no barrier: ABC -> AXC or AB___C -> AX___C
-                                node.changeEntry(p_chunkID, (short) -1, index);
+                                node.changeEntry(p_chunkID, NodeID.INVALID_ID, index);
                             }
-                            if (predecessor.getNodeID() == -1) {
+                            if (predecessor.getNodeID() == NodeID.INVALID_ID) {
                                 // Predecessor is barrier: A_C -> ___C or AXC -> ___XC
                                 // or A___C -> ___C or AX___C -> ___X___C
                                 remove(predecessor.getCID());
                             }
                         } else {
                             // Predecessor is no direct neighbor: A___B
-                            if (successor.getNodeID() == -1) {
+                            if (successor.getNodeID() == NodeID.INVALID_ID) {
                                 // Successor is barrier: A___BC -> A___C or A___B___C -> A___'___C
                                 remove(p_chunkID);
                             } else {
                                 // Successor is no barrier: A___BC -> A___XC or A___B___C -> A___X___C
-                                node.changeEntry(p_chunkID, (short) -1, index);
+                                node.changeEntry(p_chunkID, NodeID.INVALID_ID, index);
                             }
                             // Predecessor is barrier: A___C -> A___(B-1)_C or A___XC -> ___(B-1)XC
                             // or A___'___C -> A___(B-1)___C or A___X___C -> A___(B-1)X___C
@@ -630,13 +632,13 @@ public final class CacheTree {
                     index = index * -1 - 1;
                     successor = new Entry(node.getCID(index), node.getNodeID(index));
                     predecessor = getPredecessorsEntry(successor.getCID(), node);
-                    if (successor.getNodeID() != -1 && predecessor != null) {
+                    if (successor.getNodeID() != NodeID.INVALID_ID && predecessor != null) {
                         // Entry is in range
                         if (p_chunkID - 1 == predecessor.getCID()) {
                             // Predecessor is direct neighbor: A'B'
                             // Successor might be direct neighbor or not: A'B'C -> AXC or A'B'___C -> AX___C
-                            createOrReplaceEntry(p_chunkID, (short) -1);
-                            if (predecessor.getNodeID() == -1) {
+                            createOrReplaceEntry(p_chunkID, NodeID.INVALID_ID);
+                            if (predecessor.getNodeID() == NodeID.INVALID_ID) {
                                 // Predecessor is barrier: AXC -> ___XC or AX___C -> ___X___C
                                 remove(p_chunkID - 1);
                             }
@@ -644,7 +646,7 @@ public final class CacheTree {
                             // Predecessor is no direct neighbor: A___'B'
                             // Successor might be direct neighbor or not: A___'B'C -> A___(B-1)XC
                             // or A___'B'___C -> A___(B-1)X___C
-                            createOrReplaceEntry(p_chunkID, (short) -1);
+                            createOrReplaceEntry(p_chunkID, NodeID.INVALID_ID);
                             createOrReplaceEntry(p_chunkID - 1, successor.getNodeID());
                         }
                     }
@@ -738,7 +740,7 @@ public final class CacheTree {
 
         predecessor = getPredecessorsEntry(p_chunkID, p_node);
         if (predecessor == null) {
-            createOrReplaceEntry(p_chunkID - 1, (short) -1);
+            createOrReplaceEntry(p_chunkID - 1, NodeID.INVALID_ID);
         } else {
             if (p_chunkID - 1 == predecessor.getCID()) {
                 if (p_nodeID == predecessor.getNodeID()) {
@@ -877,7 +879,7 @@ public final class CacheTree {
      * @return p_chunkID if p_chunkID is in btree or successor of p_chunkID, (-1) if there is no successor
      */
     private long getCIDOrSuccessorsCID(final long p_chunkID) {
-        long ret = -1;
+        long ret = ChunkID.INVALID_ID;
         int index;
         Node node;
 
@@ -902,7 +904,7 @@ public final class CacheTree {
      * @return NodeID for p_chunkID if p_chunkID is in btree or successors NodeID
      */
     private short getNodeIDOrSuccessorsNodeID(final long p_chunkID) {
-        short ret = -1;
+        short ret = NodeID.INVALID_ID;
         int index;
         Node node;
 
@@ -1021,7 +1023,7 @@ public final class CacheTree {
      * @return p_chunkID or (-1) if there is no entry for p_chunkID
      */
     private long remove(final long p_chunkID, final Node p_node) {
-        long ret = -1;
+        long ret = ChunkID.INVALID_ID;
         int index;
         Node greatest;
         long replaceCID;
@@ -1046,8 +1048,8 @@ public final class CacheTree {
                 while (greatest.getNumberOfChildren() > 0) {
                     greatest = greatest.getChild(greatest.getNumberOfChildren() - 1);
                 }
-                replaceCID = -1;
-                replaceNodeID = -1;
+                replaceCID = ChunkID.INVALID_ID;
+                replaceNodeID = NodeID.INVALID_ID;
                 if (greatest.getNumberOfEntries() > 0) {
                     replaceNodeID = greatest.getNodeID(greatest.getNumberOfEntries() - 1);
                     replaceCID = greatest.removeEntry(greatest.getNumberOfEntries() - 1);
@@ -1330,52 +1332,6 @@ public final class CacheTree {
         }
 
         /**
-         * Returns the parent node
-         *
-         * @return the parent node
-         */
-        private Node getParent() {
-            return m_parent;
-        }
-
-        /**
-         * Returns the parent node
-         *
-         * @param p_parent
-         *     the parent node
-         */
-        private void setParent(final Node p_parent) {
-            m_parent = p_parent;
-        }
-
-        /**
-         * Returns time of the last access
-         *
-         * @return the timestamp
-         */
-        private long getLastAccess() {
-            return m_lastAccess;
-        }
-
-        /**
-         * Returns the number of entries
-         *
-         * @return the number of entries
-         */
-        private int getNumberOfEntries() {
-            return m_numberOfEntries;
-        }
-
-        /**
-         * Returns the number of children
-         *
-         * @return the number of children
-         */
-        private int getNumberOfChildren() {
-            return m_numberOfChildren;
-        }
-
-        /**
          * Compares two nodes
          *
          * @param p_cmp
@@ -1451,6 +1407,52 @@ public final class CacheTree {
             }
 
             return ret.toString();
+        }
+
+        /**
+         * Returns the parent node
+         *
+         * @return the parent node
+         */
+        private Node getParent() {
+            return m_parent;
+        }
+
+        /**
+         * Returns the parent node
+         *
+         * @param p_parent
+         *     the parent node
+         */
+        private void setParent(final Node p_parent) {
+            m_parent = p_parent;
+        }
+
+        /**
+         * Returns time of the last access
+         *
+         * @return the timestamp
+         */
+        private long getLastAccess() {
+            return m_lastAccess;
+        }
+
+        /**
+         * Returns the number of entries
+         *
+         * @return the number of entries
+         */
+        private int getNumberOfEntries() {
+            return m_numberOfEntries;
+        }
+
+        /**
+         * Returns the number of children
+         *
+         * @return the number of children
+         */
+        private int getNumberOfChildren() {
+            return m_numberOfChildren;
         }
 
         /**
@@ -1623,7 +1625,7 @@ public final class CacheTree {
          * @return p_chunkID or (-1) if there is no entry for p_chunkID in this node
          */
         private long removeEntry(final long p_chunkID) {
-            long ret = -1;
+            long ret = ChunkID.INVALID_ID;
             int index;
 
             index = indexOf(p_chunkID);
@@ -1646,7 +1648,7 @@ public final class CacheTree {
          * @return p_chunkID or (-1) if p_index is to large
          */
         private long removeEntry(final int p_index) {
-            long ret = -1;
+            long ret = ChunkID.INVALID_ID;
 
             if (p_index < m_numberOfEntries) {
                 ret = getCID(p_index);
@@ -1850,15 +1852,6 @@ public final class CacheTree {
         }
 
         /**
-         * Returns the ChunkID
-         *
-         * @return the ChunkID
-         */
-        long getCID() {
-            return m_chunkID;
-        }
-
-        /**
          * Returns the location
          *
          * @return the location
@@ -1875,6 +1868,15 @@ public final class CacheTree {
         @Override
         public String toString() {
             return "(ChunkID: " + m_chunkID + ", NodeID: " + m_nodeID + ')';
+        }
+
+        /**
+         * Returns the ChunkID
+         *
+         * @return the ChunkID
+         */
+        long getCID() {
+            return m_chunkID;
         }
     }
 
@@ -2017,18 +2019,18 @@ public final class CacheTree {
                 m_lock.writeLock().lock();
                 // Remove all ranges between p_startCID and p_endCID (excluding p_startCID)
                 node = getNodeOrSuccessorsNode(p_endCID, false);
-                if (node.getCID(node.indexOf(p_endCID)) != -1) {
+                if (node.getCID(node.indexOf(p_endCID)) != ChunkID.INVALID_ID) {
                     successor = getSuccessorsEntry(p_endCID, node);
-                    if (successor != null && successor.getNodeID() == -1) {
+                    if (successor != null && successor.getNodeID() == NodeID.INVALID_ID) {
                         remove(p_endCID);
                     } else {
-                        node.changeEntry(p_endCID, (short) -1, node.indexOf(p_endCID));
+                        node.changeEntry(p_endCID, NodeID.INVALID_ID, node.indexOf(p_endCID));
                     }
                 }
 
                 startNodeID = getNodeIDOrSuccessorsNodeID(p_startCID);
                 removeEntriesWithinRange(p_startCID, p_endCID);
-                if (startNodeID != -1) {
+                if (startNodeID != NodeID.INVALID_ID) {
                     createOrReplaceEntry(p_startCID, startNodeID);
                 }
                 m_lock.writeLock().unlock();

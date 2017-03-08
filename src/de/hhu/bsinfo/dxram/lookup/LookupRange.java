@@ -35,7 +35,7 @@ public final class LookupRange implements Importable, Exportable {
      * Default constructor
      */
     public LookupRange() {
-        m_primaryPeer = -1;
+        m_primaryPeer = NodeID.INVALID_ID;
         m_range = null;
     }
 
@@ -86,24 +86,6 @@ public final class LookupRange implements Importable, Exportable {
 
     // Getter
 
-    /**
-     * Get the start LocalID
-     *
-     * @return the start LocalID
-     */
-    private long getStartID() {
-        return m_range[0];
-    }
-
-    /**
-     * Get the end LocalID
-     *
-     * @return the end LocalID
-     */
-    private long getEndID() {
-        return m_range[1];
-    }
-
     @Override
     public void importObject(final Importer p_importer) {
         m_primaryPeer = p_importer.readShort();
@@ -117,14 +99,10 @@ public final class LookupRange implements Importable, Exportable {
         p_exporter.writeLong(getEndID());
     }
 
-    // Setter
-
     @Override
     public int sizeofObject() {
         return Short.BYTES + 2 * Long.BYTES;
     }
-
-    // Methods
 
     /**
      * Prints the LookupRange
@@ -140,5 +118,27 @@ public final class LookupRange implements Importable, Exportable {
             ret += ", (" + ChunkID.toHexString(m_range[0]) + ", " + ChunkID.toHexString(m_range[1]) + ')';
         }
         return ret;
+    }
+
+    // Setter
+
+    /**
+     * Get the start LocalID
+     *
+     * @return the start LocalID
+     */
+    private long getStartID() {
+        return m_range[0];
+    }
+
+    // Methods
+
+    /**
+     * Get the end LocalID
+     *
+     * @return the end LocalID
+     */
+    private long getEndID() {
+        return m_range[1];
     }
 }

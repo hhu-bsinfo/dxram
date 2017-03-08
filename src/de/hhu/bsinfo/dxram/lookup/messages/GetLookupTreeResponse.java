@@ -67,7 +67,11 @@ public class GetLookupTreeResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        return m_tree.sizeofObject();
+        if (m_tree == null) {
+            return Byte.BYTES;
+        } else {
+            return Byte.BYTES + m_tree.sizeofObject();
+        }
     }
 
     // Methods

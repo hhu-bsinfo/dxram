@@ -45,6 +45,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Cache;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
@@ -146,30 +147,6 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     /**
-     * Set restorer as new creator for recovered chunks
-     *
-     * @param p_owner
-     *     NodeID of the recovered peer
-     */
-    public void setRestorerAfterRecovery(final short p_owner) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        // #if LOGGER == TRACE
-        LOGGER.trace("Entering updateAllAfterRecovery with: p_owner=0x%X", p_owner);
-        // #endif /* LOGGER == TRACE */
-
-        m_peer.setRestorerAfterRecovery(p_owner);
-
-        // #if LOGGER == TRACE
-        LOGGER.trace("Exiting updateAllAfterRecovery");
-        // #endif /* LOGGER == TRACE */
-    }
-
-    /**
      * Get the corresponding LookupRange for the given ChunkID
      *
      * @param p_chunkID
@@ -177,7 +154,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return the current location and the range borders
      */
     public LookupRange getLookupRange(final long p_chunkID) {
-        LookupRange ret = null;
+        LookupRange ret;
 
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -217,10 +194,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      *
      * @param p_chunkIDs
      *     the ChunkIDs
-     * @param p_owner
-     *     Node ID of the chunk owner
      */
-    public void removeChunkIDs(final ArrayListLong p_chunkIDs, final short p_owner) {
+    public void removeChunkIDs(final ArrayListLong p_chunkIDs) {
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
@@ -284,7 +259,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return the corresponding ChunkID
      */
     public long getChunkIDForNameserviceEntry(final int p_id, final int p_timeoutMs) {
-        long ret = -1;
+        long ret;
 
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -392,15 +367,10 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     /**
      * Initialize a new backup range
      *
-     * @param p_firstChunkIDOrRangeID
-     *     the RangeID or ChunkID of the first chunk in range
-     * @param p_owner
-     *     the creator and all backup peers
-     * @param p_backupPeers
-     *     all backup peers
+     * @param p_backupRange
+     *     the backup range to initialize
      */
-    public void initRange(final long p_firstChunkIDOrRangeID, final short p_owner, final short[] p_backupPeers) {
-        System.out.println("Init range " + p_firstChunkIDOrRangeID);
+    public void initRange(final BackupRange p_backupRange) {
 
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -409,10 +379,10 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         // #endif /* ASSERT_NODE_ROLE */
 
         // #if LOGGER == TRACE
-        LOGGER.trace("Entering initRange with: p_firstChunkIDOrRangeID=0x%X, p_owner=%s", p_firstChunkIDOrRangeID, p_owner);
+        LOGGER.trace("Entering initRange with: p_backupRange=%s", p_backupRange);
         // #endif /* LOGGER == TRACE */
 
-        m_peer.initRange(p_firstChunkIDOrRangeID, p_owner, p_backupPeers);
+        m_peer.initRange(p_backupRange);
 
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting initRange");
@@ -427,7 +397,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return all backup ranges for given node
      */
     public BackupRange[] getAllBackupRanges(final short p_nodeID) {
-        BackupRange[] ret = null;
+        BackupRange[] ret;
 
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -738,21 +708,21 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     /**
      * Replaces the backup peer for given range on responsible superpeer
      *
-     * @param p_firstChunkIDOrRangeID
-     *     the RangeID or first ChunkID of range
+     * @param p_rangeID
+     *     the RangeID
      * @param p_failedPeer
      *     the failed peer
      * @param p_newPeer
      *     the replacement
      */
-    public void replaceBackupPeer(final long p_firstChunkIDOrRangeID, final short p_failedPeer, final short p_newPeer) {
+    public void replaceBackupPeer(final short p_rangeID, final short p_failedPeer, final short p_newPeer) {
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        m_peer.replaceBackupPeer(p_firstChunkIDOrRangeID, p_failedPeer, p_newPeer);
+        m_peer.replaceBackupPeer(p_rangeID, p_failedPeer, p_newPeer);
     }
 
     @Override
@@ -844,7 +814,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * @return the primary peer
      */
     short getPrimaryPeer(final long p_chunkID) {
-        short ret = -1;
+        short ret = NodeID.INVALID_ID;
         LookupRange lookupRange;
 
         // #ifdef ASSERT_NODE_ROLE
@@ -860,7 +830,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         if (m_cachesEnabled) {
             // Read from cache
             ret = m_chunkIDCacheTree.getPrimaryPeer(p_chunkID);
-            if (ret == -1) {
+            if (ret == NodeID.INVALID_ID) {
                 // Cache miss -> get LookupRange from superpeer
                 lookupRange = m_peer.getLookupRange(p_chunkID);
 

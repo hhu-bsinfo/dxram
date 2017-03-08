@@ -17,6 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Join Request
@@ -37,7 +38,7 @@ public class JoinRequest extends AbstractRequest {
     public JoinRequest() {
         super();
 
-        m_newNode = -1;
+        m_newNode = NodeID.INVALID_ID;
         m_nodeIsSuperpeer = false;
     }
 
@@ -71,11 +72,6 @@ public class JoinRequest extends AbstractRequest {
         return m_newNode;
     }
 
-    @Override
-    protected final int getPayloadLength() {
-        return Short.BYTES + Byte.BYTES;
-    }
-
     /**
      * Get role of new node
      *
@@ -83,6 +79,11 @@ public class JoinRequest extends AbstractRequest {
      */
     public final boolean nodeIsSuperpeer() {
         return m_nodeIsSuperpeer;
+    }
+
+    @Override
+    protected final int getPayloadLength() {
+        return Short.BYTES + Byte.BYTES;
     }
 
     // Methods

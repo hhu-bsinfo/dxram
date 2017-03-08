@@ -17,6 +17,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.ethnet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Response to a JoinRequest
@@ -41,9 +42,9 @@ public class JoinResponse extends AbstractResponse {
     public JoinResponse() {
         super();
 
-        m_newContactSuperpeer = -1;
-        m_predecessor = -1;
-        m_successor = -1;
+        m_newContactSuperpeer = NodeID.INVALID_ID;
+        m_predecessor = NodeID.INVALID_ID;
+        m_successor = NodeID.INVALID_ID;
         m_superpeers = null;
         m_peers = null;
         m_metadata = null;
@@ -139,7 +140,7 @@ public class JoinResponse extends AbstractResponse {
     protected final int getPayloadLength() {
         int ret;
 
-        if (m_newContactSuperpeer == -1) {
+        if (m_newContactSuperpeer == NodeID.INVALID_ID) {
             ret = Byte.BYTES + Short.BYTES * 2;
 
             ret += Integer.BYTES;
@@ -166,7 +167,7 @@ public class JoinResponse extends AbstractResponse {
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        if (m_newContactSuperpeer == -1) {
+        if (m_newContactSuperpeer == NodeID.INVALID_ID) {
             p_buffer.put((byte) 1);
             p_buffer.putShort(m_predecessor);
             p_buffer.putShort(m_successor);

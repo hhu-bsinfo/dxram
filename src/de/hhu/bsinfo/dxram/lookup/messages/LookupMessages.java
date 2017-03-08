@@ -44,7 +44,7 @@ public final class LookupMessages {
     public static final byte SUBTYPE_INIT_RANGE_RESPONSE = 21;
     public static final byte SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST = 22;
     public static final byte SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE = 23;
-    public static final byte SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE = 24;
+    public static final byte SUBTYPE_UPDATE_METADATA_AFTER_RECOVERY_MESSAGE = 24;
     public static final byte SUBTYPE_PING_SUPERPEER_MESSAGE = 25;
 
     public static final byte SUBTYPE_SEND_BACKUPS_MESSAGE = 26;

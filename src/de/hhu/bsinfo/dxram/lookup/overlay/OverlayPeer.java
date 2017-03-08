@@ -70,7 +70,6 @@ import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.ReplaceBackupPeerRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.ReplaceBackupPeerResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
-import de.hhu.bsinfo.dxram.lookup.messages.SetRestorerAfterRecoveryMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageGetRequest;
@@ -80,6 +79,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStoragePutResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageRemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.UpdateMetadataAfterRecoveryMessage;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
@@ -109,8 +109,8 @@ public class OverlayPeer implements MessageReceiver {
     private NetworkComponent m_network;
     private EventComponent m_event;
 
-    private short m_nodeID = -1;
-    private short m_mySuperpeer = -1;
+    private short m_nodeID = NodeID.INVALID_ID;
+    private short m_mySuperpeer = NodeID.INVALID_ID;
     private ArrayList<Short> m_superpeers;
     private int m_initialNumberOfSuperpeers;
     private ReentrantReadWriteLock m_overlayLock;
@@ -235,45 +235,6 @@ public class OverlayPeer implements MessageReceiver {
         return entries;
     }
 
-    /**
-     * Set restorer as new creator for recovered chunks
-     *
-     * @param p_owner
-     *     NodeID of the recovered peer
-     */
-    public void setRestorerAfterRecovery(final short p_owner) {
-        short responsibleSuperpeer;
-        boolean check = false;
-
-        m_overlayLock.readLock().lock();
-        if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
-            check = true;
-        }
-        responsibleSuperpeer = getResponsibleSuperpeer(p_owner, check);
-        m_overlayLock.readLock().unlock();
-
-        while (true) {
-            try {
-                m_network.sendMessage(new SetRestorerAfterRecoveryMessage(responsibleSuperpeer, p_owner, m_nodeID));
-            } catch (final NetworkException e) {
-                // Responsible superpeer is not available, try again (superpeers will be updated
-                // automatically by network thread)
-                try {
-                    Thread.sleep(MSG_TIMEOUT_MS);
-                } catch (final InterruptedException ignored) {
-                }
-
-                m_overlayLock.readLock().lock();
-                responsibleSuperpeer = getResponsibleSuperpeer(p_owner, check);
-                m_overlayLock.readLock().unlock();
-
-                continue;
-            }
-
-            break;
-        }
-    }
-
     /* Name Service */
 
     /**
@@ -302,7 +263,7 @@ public class OverlayPeer implements MessageReceiver {
         responsibleSuperpeer = getResponsibleSuperpeer(nodeID, check);
         m_overlayLock.readLock().unlock();
 
-        if (responsibleSuperpeer != -1) {
+        if (responsibleSuperpeer != NodeID.INVALID_ID) {
             request = new GetLookupRangeRequest(responsibleSuperpeer, p_chunkID);
             try {
                 m_network.sendSync(request);
@@ -375,7 +336,7 @@ public class OverlayPeer implements MessageReceiver {
 
             backupSuperpeers = response.getBackupSuperpeers();
             if (backupSuperpeers != null) {
-                if (backupSuperpeers[0] != -1) {
+                if (backupSuperpeers[0] != NodeID.INVALID_ID) {
                     // Send backups
                     for (short backupSuperpeer : backupSuperpeers) {
                         request = new RemoveChunkIDsRequest(backupSuperpeer, p_chunkIDs, true);
@@ -417,7 +378,7 @@ public class OverlayPeer implements MessageReceiver {
         m_overlayLock.readLock().unlock();
 
         while (true) {
-            if (responsibleSuperpeer != -1) {
+            if (responsibleSuperpeer != NodeID.INVALID_ID) {
                 request = new InsertNameserviceEntriesRequest(responsibleSuperpeer, p_id, p_chunkID, false);
                 try {
                     m_network.sendSync(request);
@@ -440,7 +401,7 @@ public class OverlayPeer implements MessageReceiver {
 
                 backupSuperpeers = response.getBackupSuperpeers();
                 if (backupSuperpeers != null) {
-                    if (backupSuperpeers[0] != -1) {
+                    if (backupSuperpeers[0] != NodeID.INVALID_ID) {
                         // Send backups
                         for (short backupSuperpeer : backupSuperpeers) {
                             request = new InsertNameserviceEntriesRequest(backupSuperpeer, p_id, p_chunkID, true);
@@ -475,7 +436,7 @@ public class OverlayPeer implements MessageReceiver {
      * @return the corresponding ChunkID
      */
     public long getChunkIDForNameserviceEntry(final int p_id, final int p_timeoutMs) {
-        long ret = -1;
+        long ret = ChunkID.INVALID_ID;
         short responsibleSuperpeer;
         boolean check = false;
         GetChunkIDForNameserviceEntryRequest request;
@@ -490,7 +451,7 @@ public class OverlayPeer implements MessageReceiver {
 
         long start = System.currentTimeMillis();
         do {
-            if (responsibleSuperpeer != -1) {
+            if (responsibleSuperpeer != NodeID.INVALID_ID) {
                 request = new GetChunkIDForNameserviceEntryRequest(responsibleSuperpeer, p_id);
                 try {
                     m_network.sendSync(request);
@@ -614,14 +575,10 @@ public class OverlayPeer implements MessageReceiver {
     /**
      * Initialize a new backup range
      *
-     * @param p_firstChunkIDOrRangeID
-     *     the RangeID or ChunkID of the first chunk in range
-     * @param p_owner
-     *     the creator and all backup peers
-     * @param p_backupPeers
-     *     all backup peers
+     * @param p_backupRange
+     *     the backup range to initialize
      */
-    public void initRange(final long p_firstChunkIDOrRangeID, final short p_owner, final short[] p_backupPeers) {
+    public void initRange(final BackupRange p_backupRange) {
         short responsibleSuperpeer;
         boolean finished = false;
 
@@ -632,7 +589,7 @@ public class OverlayPeer implements MessageReceiver {
             responsibleSuperpeer = m_mySuperpeer;
             m_overlayLock.readLock().unlock();
 
-            request = new InitRangeRequest(responsibleSuperpeer, p_firstChunkIDOrRangeID, p_owner, p_backupPeers, false);
+            request = new InitRangeRequest(responsibleSuperpeer, m_nodeID, p_backupRange, false);
             try {
                 m_network.sendSync(request);
             } catch (final NetworkException e) {
@@ -674,7 +631,7 @@ public class OverlayPeer implements MessageReceiver {
         m_overlayLock.readLock().unlock();
 
         while (ret == null) {
-            if (responsibleSuperpeer != -1) {
+            if (responsibleSuperpeer != NodeID.INVALID_ID) {
                 request = new GetAllBackupRangesRequest(responsibleSuperpeer, p_nodeID);
                 try {
                     m_network.sendSync(request);
@@ -959,7 +916,7 @@ public class OverlayPeer implements MessageReceiver {
         m_overlayLock.readLock().unlock();
 
         while (true) {
-            if (responsibleSuperpeer != -1) {
+            if (responsibleSuperpeer != NodeID.INVALID_ID) {
                 SuperpeerStorageCreateRequest request = new SuperpeerStorageCreateRequest(responsibleSuperpeer, p_storageId, p_size, false);
                 try {
                     m_network.sendSync(request);
@@ -1024,7 +981,7 @@ public class OverlayPeer implements MessageReceiver {
         m_overlayLock.readLock().unlock();
 
         while (true) {
-            if (responsibleSuperpeer != -1) {
+            if (responsibleSuperpeer != NodeID.INVALID_ID) {
                 SuperpeerStoragePutRequest request = new SuperpeerStoragePutRequest(responsibleSuperpeer, p_dataStructure, false);
                 try {
                     m_network.sendSync(request);
@@ -1072,7 +1029,7 @@ public class OverlayPeer implements MessageReceiver {
         m_overlayLock.readLock().unlock();
 
         while (true) {
-            if (responsibleSuperpeer != -1) {
+            if (responsibleSuperpeer != NodeID.INVALID_ID) {
                 Chunk chunk = new Chunk((long) p_id);
                 SuperpeerStorageGetRequest request = new SuperpeerStorageGetRequest(responsibleSuperpeer, chunk);
                 try {
@@ -1134,7 +1091,7 @@ public class OverlayPeer implements MessageReceiver {
         m_overlayLock.readLock().unlock();
 
         while (true) {
-            if (responsibleSuperpeer != -1) {
+            if (responsibleSuperpeer != NodeID.INVALID_ID) {
                 SuperpeerStorageGetRequest request = new SuperpeerStorageGetRequest(responsibleSuperpeer, p_dataStructure);
                 try {
                     m_network.sendSync(request);
@@ -1181,7 +1138,7 @@ public class OverlayPeer implements MessageReceiver {
         m_overlayLock.readLock().unlock();
 
         while (true) {
-            if (responsibleSuperpeer != -1) {
+            if (responsibleSuperpeer != NodeID.INVALID_ID) {
                 SuperpeerStorageRemoveMessage message = new SuperpeerStorageRemoveMessage(responsibleSuperpeer, p_superpeerStorageId, false);
                 try {
                     m_network.sendMessage(message);
@@ -1258,21 +1215,21 @@ public class OverlayPeer implements MessageReceiver {
     /**
      * Replaces the backup peer for given range on responsible superpeer
      *
-     * @param p_firstChunkIDOrRangeID
-     *     the RangeID or first ChunkID or range
+     * @param p_rangeID
+     *     the RangeID
      * @param p_failedPeer
      *     the failed peer
      * @param p_newPeer
      *     the replacement
      */
-    public void replaceBackupPeer(final long p_firstChunkIDOrRangeID, final short p_failedPeer, final short p_newPeer) {
+    public void replaceBackupPeer(final short p_rangeID, final short p_failedPeer, final short p_newPeer) {
         short responsibleSuperpeer;
 
         m_overlayLock.readLock().lock();
         responsibleSuperpeer = m_mySuperpeer;
         m_overlayLock.readLock().unlock();
 
-        ReplaceBackupPeerRequest request = new ReplaceBackupPeerRequest(responsibleSuperpeer, p_firstChunkIDOrRangeID, p_failedPeer, p_newPeer, false);
+        ReplaceBackupPeerRequest request = new ReplaceBackupPeerRequest(responsibleSuperpeer, p_rangeID, p_failedPeer, p_newPeer, false);
 
         try {
             m_network.sendSync(request);
@@ -1333,7 +1290,7 @@ public class OverlayPeer implements MessageReceiver {
             return false;
         }
 
-        while (contactSuperpeer != -1) {
+        while (contactSuperpeer != NodeID.INVALID_ID) {
             // #if LOGGER == TRACE
             LOGGER.trace("Contacting 0x%X to get the responsible superpeer, I am 0x%X", contactSuperpeer, m_nodeID);
             // #endif /* LOGGER == TRACE */
@@ -1373,7 +1330,7 @@ public class OverlayPeer implements MessageReceiver {
      * @lock overlay lock must be read-locked
      */
     private short getResponsibleSuperpeer(final short p_nodeID, final boolean p_check) {
-        short responsibleSuperpeer = -1;
+        short responsibleSuperpeer = NodeID.INVALID_ID;
         short predecessor;
         short hisSuccessor;
         int index;
@@ -1515,8 +1472,8 @@ public class OverlayPeer implements MessageReceiver {
             .registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST, GetAllBackupRangesRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE,
             GetAllBackupRangesResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE,
-            SetRestorerAfterRecoveryMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_UPDATE_METADATA_AFTER_RECOVERY_MESSAGE,
+            UpdateMetadataAfterRecoveryMessage.class);
 
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE, PingSuperpeerMessage.class);
 

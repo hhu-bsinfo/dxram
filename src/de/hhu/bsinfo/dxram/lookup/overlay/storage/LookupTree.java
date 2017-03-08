@@ -14,11 +14,11 @@
 package de.hhu.bsinfo.dxram.lookup.overlay.storage;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -42,12 +42,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
     private Node m_root;
     private int m_size;
-    private short m_creator;
-    private short m_restorer;
-    private boolean m_status;
 
-    private ArrayList<long[]> m_backupRanges;
-    private ArrayList<Long> m_migrationBackupRanges;
+    private short m_creator;
+    private ArrayListLong m_backupRanges;
 
     private Entry m_changedEntry;
 
@@ -59,12 +56,8 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     public LookupTree() {
         m_root = null;
         m_size = -1;
-        m_creator = -1;
-        m_restorer = -1;
-        m_status = true;
 
-        m_backupRanges = new ArrayList<long[]>();
-        m_migrationBackupRanges = new ArrayList<Long>();
+        m_backupRanges = new ArrayListLong();
 
         m_changedEntry = null;
     }
@@ -75,7 +68,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * @param p_order
      *     order of the btree
      */
-    LookupTree(final short p_order) {
+    LookupTree(final short p_order, final short p_creator) {
         // too small order for BTree
         assert p_order > 1;
 
@@ -86,33 +79,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         m_root = null;
         m_size = -1;
-        m_creator = -1;
-        m_restorer = -1;
-        m_status = true;
 
-        m_backupRanges = new ArrayList<long[]>();
-        m_migrationBackupRanges = new ArrayList<Long>();
+        m_creator = p_creator;
+        m_backupRanges = new ArrayListLong();
 
         m_changedEntry = null;
-    }
-
-    /**
-     * Returns the creator
-     *
-     * @return the creator
-     */
-    public short getCreator() {
-        return m_creator;
-    }
-
-    /**
-     * Set the status of this peer
-     *
-     * @param p_status
-     *     whether this node is online or not
-     */
-    public void setStatus(final boolean p_status) {
-        m_status = p_status;
     }
 
     /**
@@ -121,40 +92,17 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     @Override
     public void importObject(final Importer p_importer) {
 
-        // Size is read before!
-
+        m_creator = p_importer.readShort();
         m_minEntries = p_importer.readShort();
         m_minChildren = (short) (m_minEntries + 1);
         m_maxEntries = (short) (2 * m_minEntries);
         m_maxChildren = (short) (m_maxEntries + 1);
 
-        m_creator = p_importer.readShort();
-        m_restorer = p_importer.readShort();
-        m_status = p_importer.readByte() != 0;
-
-        int backupRangesSize = p_importer.readInt();
-
-        for (int i = 0; i < backupRangesSize; i++) {
-
-            long[] longArray = new long[p_importer.readInt()];
-            p_importer.readLongs(longArray);
-            m_backupRanges.add(longArray);
-
-        }
-
-        int migrationBackupRangesSize = p_importer.readInt();
-
-        for (int i = 0; i < migrationBackupRangesSize; i++) {
-
-            m_migrationBackupRanges.add(p_importer.readLong());
-
-        }
-
-        // Init initial range
-        createOrReplaceEntry((long) Math.pow(2, 48) - 1, m_creator);
-
         int elementsInBTree = p_importer.readInt();
         if (elementsInBTree > 0) {
+
+            // Init initial range
+            createOrReplaceEntry((long) Math.pow(2, 48) - 1, m_creator);
 
             for (int i = 0; i < elementsInBTree; i++) {
                 long lid = p_importer.readLong();
@@ -170,28 +118,10 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      */
     @Override
     public void exportObject(final Exporter p_exporter) {
-
-        p_exporter.writeShort(m_minEntries);
+        System.out.println(this);
 
         p_exporter.writeShort(m_creator);
-        p_exporter.writeShort(m_restorer);
-        p_exporter.writeByte((byte) (m_status ? 1 : 0));
-
-        p_exporter.writeInt(m_backupRanges.size());
-
-        for (int i = 0; i < m_backupRanges.size(); i++) {
-
-            p_exporter.writeInt(m_backupRanges.get(i).length);
-            p_exporter.writeLongs(m_backupRanges.get(i));
-
-        }
-
-        p_exporter.writeInt(m_migrationBackupRanges.size());
-
-        for (int i = 0; i < m_migrationBackupRanges.size(); i++) {
-
-            p_exporter.writeLong(m_migrationBackupRanges.get(i));
-        }
+        p_exporter.writeShort(m_minEntries);
 
         if (m_root != null) {
             // Push Size
@@ -210,7 +140,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      */
     @Override
     public int sizeofObject() {
-        int numberOfBytesWritten = Integer.BYTES;
+        int numberOfBytesWritten = 2 * Short.BYTES;
+
+        numberOfBytesWritten += Integer.BYTES;
 
         // Size of the b tree list
         // Integer represents the bytes where the size of the list is stored, m_size + 1 for number of entries including the
@@ -219,95 +151,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
             numberOfBytesWritten += (m_size + 1) * (Long.BYTES + Short.BYTES);
         }
 
-        numberOfBytesWritten += Short.BYTES;
-
-        numberOfBytesWritten += Short.BYTES;
-        numberOfBytesWritten += Short.BYTES;
-        numberOfBytesWritten += Byte.BYTES;
-
-        numberOfBytesWritten += Integer.BYTES;
-
-        for (int i = 0; i < m_backupRanges.size(); i++) {
-
-            numberOfBytesWritten += Integer.BYTES;
-            numberOfBytesWritten += m_backupRanges.get(i).length * Long.BYTES;
-        }
-
-        numberOfBytesWritten += Integer.BYTES;
-
-        for (int i = 0; i < m_migrationBackupRanges.size(); i++) {
-
-            numberOfBytesWritten += Long.BYTES;
-        }
-
         return numberOfBytesWritten;
-    }
-
-    /**
-     * Returns the primary peer for given object
-     *
-     * @param p_chunkID
-     *     ChunkID of requested object
-     * @return the NodeID of the primary peer for given object
-     */
-    public short getPrimaryPeer(final long p_chunkID) {
-        if (m_root != null) {
-            return getNodeIDOrSuccessorsNodeID(p_chunkID & 0x0000FFFFFFFFFFFFL);
-        } else {
-            return -1;
-        }
-    }
-
-    /**
-     * Returns all the backup peers for given object
-     *
-     * @param p_chunkID
-     *     ChunkID of requested object
-     * @param p_wasMigrated
-     *     whether this Chunk was migrated or not
-     * @return the NodeIDs of all backup peers for given object
-     */
-    public short[] getBackupPeers(final long p_chunkID, final boolean p_wasMigrated) {
-        short[] ret = null;
-        short backupPeer;
-        Long tempResult = null;
-        long result;
-
-        if (m_root != null) {
-            if (!p_wasMigrated) {
-                for (int i = m_backupRanges.size() - 1; i >= 0; i--) {
-                    if (m_backupRanges.get(i)[0] <= p_chunkID) {
-                        tempResult = m_backupRanges.get(i)[1];
-                    }
-                }
-
-                ret = new short[] {-1, -1, -1};
-                if (tempResult != null) {
-                    result = tempResult;
-                    for (int i = 0; i < ret.length; i++) {
-                        backupPeer = (short) (result >> i * 16);
-                        if (backupPeer != 0) {
-                            ret[i] = backupPeer;
-                        }
-                    }
-                }
-            } else {
-                ret = new short[] {-1, -1, -1};
-            }
-        }
-
-        return ret;
-    }
-
-    // Setters
-
-    /**
-     * Returns the number of entries in btree
-     *
-     * @return the number of entries in btree
-     */
-    public int size() {
-        return m_size;
     }
 
     /**
@@ -344,35 +188,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Returns the backup peers for every range
+     * Returns the backup peers for all backup ranges
      *
-     * @return an ArrayList with all backup peers
+     * @return an ArrayList with all backup peers for migrated
      */
-    ArrayList<long[]> getAllBackupRanges() {
+    ArrayListLong getAllBackupRanges() {
         return m_backupRanges;
     }
 
     /**
-     * Returns the backup peers for migrated chunks
-     *
-     * @return an ArrayList with all backup peers for migrated
-     */
-    ArrayList<Long> getAllMigratedBackupRanges() {
-        return m_migrationBackupRanges;
-    }
-
-    /**
-     * Set the restorer
-     *
-     * @param p_nodeID
-     *     the NodeID of the peer that restored this peer
-     */
-    void setRestorer(final short p_nodeID) {
-        m_restorer = p_nodeID;
-    }
-
-    /**
-     * Stores the migration for a single object
+     * Stores the migration for a single chunk
      *
      * @param p_chunkID
      *     ChunkID of migrated object
@@ -380,7 +205,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      *     new primary peer
      * @return true if insertion was successful
      */
-    boolean migrateObject(final long p_chunkID, final short p_nodeID) {
+    boolean migrate(final long p_chunkID, final short p_nodeID) {
         long localID;
         Node node;
 
@@ -419,7 +244,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         assert startLID <= endLID && startLID > 0;
 
         if (startLID == endLID) {
-            migrateObject(p_startCID, p_nodeID);
+            migrate(p_startCID, p_nodeID);
         } else {
             startNode = createOrReplaceEntry(startLID, p_nodeID);
 
@@ -435,44 +260,34 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Initializes a range
+     * Initializes a new backup range
      *
-     * @param p_startID
-     *     ChunkID of first chunk
-     * @param p_creator
-     *     the creator
-     * @param p_backupPeers
-     *     the backup peers
+     * @param p_backupRange
+     *     the backup range to initialize
      * @return true if insertion was successful
      */
-    boolean initRange(final long p_startID, final short p_creator, final short[] p_backupPeers) {
+    boolean initRange(final BackupRange p_backupRange) {
+        byte rangeID;
         long backupPeers;
 
-        if (p_startID == 0) {
-            m_creator = p_creator;
-            createOrReplaceEntry((long) Math.pow(2, 48) - 1, p_creator);
-        } else {
-            backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
-            m_backupRanges.add(new long[] {p_startID, backupPeers});
-        }
+        m_backupRanges.add(p_backupRange.getRangeID(), BackupRange.convert(p_backupRange.getBackupPeers()));
+
         return true;
     }
 
     /**
-     * Initializes a range for migrated chunks
+     * Returns the primary peer for given object
      *
-     * @param p_rangeID
-     *     the RangeID
-     * @param p_backupPeers
-     *     the backup peers
-     * @return true if insertion was successful
+     * @param p_chunkID
+     *     ChunkID of requested object
+     * @return the NodeID of the primary peer for given object
      */
-    boolean initMigrationRange(final int p_rangeID, final short[] p_backupPeers) {
-
-        m_migrationBackupRanges.add(p_rangeID,
-            ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF));
-
-        return true;
+    short getPrimaryPeer(final long p_chunkID) {
+        if (m_root != null) {
+            return getNodeIDOrSuccessorsNodeID(p_chunkID & 0x0000FFFFFFFFFFFFL);
+        } else {
+            return m_creator;
+        }
     }
 
     /**
@@ -500,8 +315,12 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                     // LocalID was found: Store NodeID and determine successor
                     range = new long[2];
                     nodeID = node.getNodeID(index);
-                    range[1] = localID;
-                    // range[1] = getSuccessorsEntry(localID, node).getLocalID();
+                    Entry successor = getSuccessorsEntry(localID, node);
+                    if (successor != null) {
+                        range[1] = successor.getLocalID();
+                    } else {
+                        range[1] = localID;
+                    }
                 } else {
                     // LocalID was not found, but successor: Store NodeID and LocalID of successor
                     range = new long[2];
@@ -517,32 +336,36 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                 }
                 ret = new LookupRange(nodeID, range);
             }
+        } else {
+            // Lookup tree is empty -> no migrations
+            ret = new LookupRange(m_creator, new long[] {0, (long) (Math.pow(2, 48) - 1)});
         }
 
         return ret;
     }
 
     /**
-     * Removes multiple objects from btree
+     * Removes multiple chunks from btree
      *
      * @param p_chunkIDs
      *     ChunkIDs of deleted objects
      * @note should always be called if an object is deleted
      */
+
     void removeObjects(final long... p_chunkIDs) {
         for (long chunkId : p_chunkIDs) {
-            removeObject(chunkId);
+            remove(chunkId);
         }
     }
 
     /**
-     * Removes given object from btree
+     * Removes given chunk from btree
      *
      * @param p_chunkID
      *     ChunkID of deleted object
      * @note should always be called if an object is deleted
      */
-    void removeObject(final long p_chunkID) {
+    void remove(final long p_chunkID) {
         short creatorOrRestorer;
         int index;
         Node node;
@@ -554,11 +377,8 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
         if (m_root != null) {
-            if (m_restorer == -1) {
-                creatorOrRestorer = m_creator;
-            } else {
-                creatorOrRestorer = m_restorer;
-            }
+            // This is a placeholder, the right NodeID is set in getter, only
+            creatorOrRestorer = NodeID.INVALID_ID;
             node = getNodeOrSuccessorsNode(localID);
             if (node != null) {
                 index = node.indexOf(localID);
@@ -574,7 +394,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                             // Successor might be direct neighbor or not: ABC or AB___C
                             if (creatorOrRestorer == successor.getNodeID()) {
                                 // Successor is barrier: ABC -> A_C or AB___C -> A___C
-                                remove(localID);
+                                removeInternal(localID);
                             } else {
                                 // Successor is no barrier: ABC -> AXC or AB___C -> AX___C
                                 node.changeEntry(localID, creatorOrRestorer, index);
@@ -582,13 +402,13 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                             if (creatorOrRestorer == predecessor.getNodeID()) {
                                 // Predecessor is barrier: A_C -> ___C or AXC -> ___XC
                                 // or A___C -> ___C or AX___C -> ___X___C
-                                remove(predecessor.getLocalID());
+                                removeInternal(predecessor.getLocalID());
                             }
                         } else {
                             // Predecessor is no direct neighbor: A___B
                             if (creatorOrRestorer == successor.getNodeID()) {
                                 // Successor is barrier: A___BC -> A___C or A___B___C -> A___'___C
-                                remove(localID);
+                                removeInternal(localID);
                             } else {
                                 // Successor is no barrier: A___BC -> A___XC or A___B___C -> A___X___C
                                 node.changeEntry(localID, creatorOrRestorer, index);
@@ -611,7 +431,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                             createOrReplaceEntry(localID, creatorOrRestorer);
                             if (creatorOrRestorer == predecessor.getNodeID()) {
                                 // Predecessor is barrier: AXC -> ___XC or AX___C -> ___X___C
-                                remove(localID - 1);
+                                removeInternal(localID - 1);
                             }
                         } else {
                             // Predecessor is no direct neighbor: A___'B'
@@ -627,31 +447,21 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Replaces given peer from all backup ranges
+     * Replaces given peer from specific backup range
      *
-     * @param p_firstChunkIDOrRangeID
-     *     first ChunkID or RangeID
+     * @param p_rangeID
+     *     the RangeID
      * @param p_failedPeer
      *     NodeID of failed peer
      * @param p_replacement
      *     NodeID of new backup peer
      */
-    void replaceBackupPeer(final long p_firstChunkIDOrRangeID, final short p_failedPeer, final short p_replacement) {
+    void replaceBackupPeer(final short p_rangeID, final short p_failedPeer, final short p_replacement) {
         long backupPeers;
 
-        if (ChunkID.getCreatorID(p_firstChunkIDOrRangeID) != -1) {
-            // This is a normal backup range
-            for (long[] backupRangeArray : m_backupRanges) {
-                if (backupRangeArray[0] == p_firstChunkIDOrRangeID) {
-                    backupRangeArray[1] = BackupRange.replaceBackupPeer(backupRangeArray[1], p_failedPeer, p_replacement);
-                    break;
-                }
-            }
-        } else {
-            // This is a migration backup range
-            backupPeers = BackupRange.replaceBackupPeer(m_migrationBackupRanges.get((int) p_firstChunkIDOrRangeID), p_failedPeer, p_replacement);
-            m_migrationBackupRanges.set((int) p_firstChunkIDOrRangeID, backupPeers);
-        }
+        // This is a migration backup range
+        backupPeers = BackupRange.replaceBackupPeer(m_backupRanges.get(p_rangeID), p_failedPeer, p_replacement);
+        m_backupRanges.set(p_rangeID, backupPeers);
     }
 
     /**
@@ -773,11 +583,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         predecessor = getPredecessorsEntry(p_localID, p_node);
         if (predecessor == null) {
-            createOrReplaceEntry(p_localID - 1, m_creator);
+            createOrReplaceEntry(p_localID - 1, NodeID.INVALID_ID);
         } else {
             if (p_localID - 1 == predecessor.getLocalID()) {
                 if (p_nodeID == predecessor.getNodeID()) {
-                    remove(predecessor.getLocalID(), getPredecessorsNode(p_localID, p_node));
+                    removeInternal(predecessor.getLocalID(), getPredecessorsNode(p_localID, p_node));
                 }
             } else {
                 successor = getSuccessorsEntry(p_localID, p_node);
@@ -787,7 +597,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                         createOrReplaceEntry(p_localID - 1, successor.getNodeID());
                     } else {
                         // New Object is in range that already was migrated to the same destination
-                        remove(p_localID, p_node);
+                        removeInternal(p_localID, p_node);
                     }
                 } else {
                     if (p_nodeID != m_changedEntry.getNodeID()) {
@@ -813,7 +623,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         node = getNodeOrSuccessorsNode(p_localID);
         successor = getSuccessorsEntry(p_localID, node);
         if (successor != null && p_nodeID == successor.getNodeID()) {
-            remove(p_localID, node);
+            removeInternal(p_localID, node);
         }
     }
 
@@ -828,11 +638,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     private void removeEntriesWithinRange(final long p_start, final long p_end) {
         long successor;
 
-        remove(p_start, getNodeOrSuccessorsNode(p_start));
+        removeInternal(p_start, getNodeOrSuccessorsNode(p_start));
 
         successor = getLIDOrSuccessorsLID(p_start);
         while (successor != -1 && successor < p_end) {
-            remove(successor);
+            removeInternal(successor);
             successor = getLIDOrSuccessorsLID(p_start);
         }
     }
@@ -923,7 +733,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * @return NodeID for p_localID if p_localID is in btree or successors NodeID
      */
     private short getNodeIDOrSuccessorsNodeID(final long p_localID) {
-        short ret = -1;
+        short ret = NodeID.INVALID_ID;
         int index;
         Node node;
 
@@ -1184,12 +994,12 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      *     the LocalID
      * @return p_localID or (-1) if there is no entry for p_localID
      */
-    private long remove(final long p_localID) {
+    private long removeInternal(final long p_localID) {
         long ret;
         Node node;
 
         node = getNodeOrSuccessorsNode(p_localID);
-        ret = remove(p_localID, node);
+        ret = removeInternal(p_localID, node);
 
         return ret;
     }
@@ -1203,7 +1013,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      *     the node in which p_localID should be stored
      * @return p_localID or (-1) if there is no entry for p_localID
      */
-    private long remove(final long p_localID, final Node p_node) {
+    private long removeInternal(final long p_localID, final Node p_node) {
         long ret = -1;
         int index;
         Node greatest;
@@ -1230,7 +1040,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                     greatest = greatest.getChild(greatest.getNumberOfChildren() - 1);
                 }
                 replaceLID = -1;
-                replaceNodeID = -1;
+                replaceNodeID = NodeID.INVALID_ID;
                 if (greatest.getNumberOfEntries() > 0) {
                     replaceNodeID = greatest.getNodeID(greatest.getNumberOfEntries() - 1);
                     replaceLID = greatest.removeEntry(greatest.getNumberOfEntries() - 1);
@@ -1762,15 +1572,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * @return the data leaf to given index
          */
         private short getNodeID(final int p_index) {
-            short ret;
-
-            ret = m_dataLeafs[p_index];
-            if (m_restorer != -1 && ret == m_creator) {
-                m_dataLeafs[p_index] = m_restorer;
-                ret = m_restorer;
-            }
-
-            return ret;
+            return m_dataLeafs[p_index];
         }
 
         /**

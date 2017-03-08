@@ -15,8 +15,10 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Replace Backup Peer Request
@@ -26,7 +28,7 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
 public class ReplaceBackupPeerRequest extends AbstractRequest {
 
     // Attributes
-    private long m_firstChunkIDOrRangeID;
+    private short m_rangeID;
     private short m_failedBackupPeer;
     private short m_newBackupPeer;
     private boolean m_isBackup;
@@ -39,9 +41,9 @@ public class ReplaceBackupPeerRequest extends AbstractRequest {
     public ReplaceBackupPeerRequest() {
         super();
 
-        m_firstChunkIDOrRangeID = -1;
-        m_failedBackupPeer = -1;
-        m_newBackupPeer = -1;
+        m_rangeID = RangeID.INVALID_ID;
+        m_failedBackupPeer = NodeID.INVALID_ID;
+        m_newBackupPeer = NodeID.INVALID_ID;
         m_isBackup = false;
     }
 
@@ -50,8 +52,8 @@ public class ReplaceBackupPeerRequest extends AbstractRequest {
      *
      * @param p_destination
      *     the destination
-     * @param p_firstChunkIDOrRangeID
-     *     the first ChunkID or RangeID
+     * @param p_rangeID
+     *     the RangeID
      * @param p_failedBackupPeer
      *     the failed backup peer
      * @param p_newBackupPeer
@@ -59,11 +61,11 @@ public class ReplaceBackupPeerRequest extends AbstractRequest {
      * @param p_isBackup
      *     whether this is a backup or not
      */
-    public ReplaceBackupPeerRequest(final short p_destination, final long p_firstChunkIDOrRangeID, final short p_failedBackupPeer, final short p_newBackupPeer,
+    public ReplaceBackupPeerRequest(final short p_destination, final short p_rangeID, final short p_failedBackupPeer, final short p_newBackupPeer,
         final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REPLACE_BACKUP_PEER_REQUEST);
 
-        m_firstChunkIDOrRangeID = p_firstChunkIDOrRangeID;
+        m_rangeID = p_rangeID;
         m_failedBackupPeer = p_failedBackupPeer;
         m_newBackupPeer = p_newBackupPeer;
         m_isBackup = p_isBackup;
@@ -72,12 +74,12 @@ public class ReplaceBackupPeerRequest extends AbstractRequest {
     // Getters
 
     /**
-     * Get the first ChunkID
+     * Get the RangeID
      *
      * @return the ID
      */
-    public final long getFirstChunkIDOrRangeIDhunkID() {
-        return m_firstChunkIDOrRangeID;
+    public final short getRangeID() {
+        return m_rangeID;
     }
 
     /**
@@ -109,13 +111,13 @@ public class ReplaceBackupPeerRequest extends AbstractRequest {
 
     @Override
     protected final int getPayloadLength() {
-        return Long.BYTES + Short.BYTES * 2 + Byte.BYTES;
+        return 3 * Short.BYTES + Byte.BYTES;
     }
 
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putLong(m_firstChunkIDOrRangeID);
+        p_buffer.putShort(m_rangeID);
         p_buffer.putShort(m_failedBackupPeer);
         p_buffer.putShort(m_newBackupPeer);
         p_buffer.put((byte) (m_isBackup ? 1 : 0));
@@ -123,7 +125,7 @@ public class ReplaceBackupPeerRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        m_firstChunkIDOrRangeID = p_buffer.getLong();
+        m_rangeID = p_buffer.getShort();
         m_failedBackupPeer = p_buffer.getShort();
         m_newBackupPeer = p_buffer.getShort();
         m_isBackup = p_buffer.get() == 1;
