@@ -810,17 +810,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * @param p_wasMigrated
      *     default value for this parameter should be false!
      *     if chunk was deleted during migration this flag should be set to true
-     * @return True if removing the data was successful, false if the chunk with the specified id does not exist
+     * @return The size of the deleted chunk if removing the data was successful, -1 if the chunk with the specified id does not exist
      */
-    public boolean remove(final long p_chunkID, final boolean p_wasMigrated) {
+    public int remove(final long p_chunkID, final boolean p_wasMigrated) {
+        int ret = 0;
         long addressDeletedChunk;
-        int size;
-        boolean ret = true;
 
         try {
             NodeRole role = m_boot.getNodeRole();
             if (role == NodeRole.TERMINAL) {
-                return false;
+                return ret;
             }
 
             // #ifdef ASSERT_NODE_ROLE
@@ -849,23 +848,17 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
                         // no space for zombie in LID store, keep him "alive" in table
                     }
                 }
-                size = m_rawMemory.getSizeBlock(addressDeletedChunk);
+                ret = m_rawMemory.getSizeBlock(addressDeletedChunk);
                 // #ifdef STATISTICS
-                SOP_FREE.enter(size);
+                SOP_FREE.enter(ret);
                 // #endif /* STATISTICS */
                 m_rawMemory.free(addressDeletedChunk);
                 // #ifdef STATISTICS
                 SOP_FREE.leave();
                 // #endif /* STATISTICS */
                 m_numActiveChunks--;
-                m_totalActiveChunkMemory -= size;
-            } else {
-                ret = false;
+                m_totalActiveChunkMemory -= ret;
             }
-
-            // #ifdef STATISTICS
-            SOP_REMOVE.leave();
-            // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, false);
             throw e;

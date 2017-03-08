@@ -691,19 +691,21 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // remove local chunks from superpeer overlay first, so cannot be found before being deleted
         m_lookup.removeChunkIDs(localChunks);
 
-        // remove local chunkIDs
-        m_memoryManager.lockManage();
-        for (int i = 0; i < localChunks.getSize(); i++) {
-            size = m_memoryManager.remove(localChunks.get(i), false);
-            if (size > 0) {
-                chunksRemoved++;
-                m_backup.deregisterChunk(localChunks.get(i), size);
-            } else {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Removing chunk ID 0x%X failed, does not exist", localChunks.get(i));
-                // #endif /* LOGGER >= ERROR */
+        try {
+            // remove local chunkIDs
+            m_memoryManager.lockManage();
+            for (int i = 0; i < localChunks.getSize(); i++) {
+                size = m_memoryManager.remove(localChunks.get(i), false);
+                if (size > 0) {
+                    chunksRemoved++;
+                    m_backup.deregisterChunk(localChunks.get(i), size);
+                } else {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Removing chunk ID 0x%X failed, does not exist", localChunks.get(i));
+                    // #endif /* LOGGER >= ERROR */
+                }
             }
-        } finally{
+        } finally {
             m_memoryManager.unlockManage();
         }
 
@@ -719,18 +721,20 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 // remove local chunks from superpeer overlay first, so cannot be found before being deleted
                 //m_lookup.removeChunkIDs(localChunks, m_boot.getNodeID());
 
-                m_memoryManager.lockManage();
-                for (int i = 0; i < remoteChunks.getSize(); i++) {
-                    size = m_memoryManager.remove(localChunks.get(i), false);
-                    if (size > 0) {
-                        chunksRemoved++;
-                        m_backup.deregisterChunk(localChunks.get(i), size);
-                    } else {
-                        // #if LOGGER >= ERROR
-                        LOGGER.error("Removing chunk ID 0x%X failed, does not exist", remoteChunks.get(i));
-                        // #endif /* LOGGER >= ERROR */
+                try {
+                    m_memoryManager.lockManage();
+                    for (int i = 0; i < remoteChunks.getSize(); i++) {
+                        size = m_memoryManager.remove(localChunks.get(i), false);
+                        if (size > 0) {
+                            chunksRemoved++;
+                            m_backup.deregisterChunk(localChunks.get(i), size);
+                        } else {
+                            // #if LOGGER >= ERROR
+                            LOGGER.error("Removing chunk ID 0x%X failed, does not exist", remoteChunks.get(i));
+                            // #endif /* LOGGER >= ERROR */
+                        }
                     }
-                } finally{
+                } finally {
                     m_memoryManager.unlockManage();
                 }
             } else {
