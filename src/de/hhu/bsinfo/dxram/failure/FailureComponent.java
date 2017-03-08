@@ -259,16 +259,12 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
          *      b) Failed node was a peer:
          *          Fire NodeFailureEvent:
          *              In BackupComponent (if backup is active):
-         *              i)   Iterate over all backup ranges (normal, migration, TODO) and search for the failed peer in all backup ranges' backup peers
+         *              i)   Iterate over all backup ranges
          *                      For every hit:
          *                      - Determine a new backup peer
          *                      - Replace it in local backup range
          *                      In ChunkBackupComponent:
          *                      - Replicate every single chunk of this backup range to the new backup peer
-         *                          + Normal: Determine last ChunkID of range (begin of next backup range - 1 or last known ChunkID for last backup range)
-         *                              and replicate every chunk between (and including) first ChunkID (stored in backup range) and last ChunkID
-         *                          + Migration: Get every ChunkID of this backup range by iterating the MigrationBackupTree, send chunk for every ChunkID
-         *                          + Recovery: TODO
          *                      In LookupComponent
          *                      - Replace the failed backup peer by the new determined backup peer on the responsible superpeer
          *              In LookupComponent (if caches are enabled):
