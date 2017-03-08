@@ -1,18 +1,19 @@
 package de.hhu.bsinfo.dxcompute.bench;
 
+import java.util.Random;
+
 import com.google.gson.annotations.Expose;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
-
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.Random;
 
 /**
  * Created by burak on 19.01.17.
@@ -25,15 +26,12 @@ public class NameserviceRegisterTask implements Task {
     @Expose
     private int m_chunkCount = 1000;
 
-
-
     public NameserviceRegisterTask() {
 
     }
 
     @Override
     public int execute(TaskContext p_ctx) {
-
 
         NameserviceService nameserviceService = p_ctx.getDXRAMServiceAccessor().getService(NameserviceService.class);
 
@@ -43,15 +41,13 @@ public class NameserviceRegisterTask implements Task {
         long[] timeStart = new long[m_numThreads];
         long[] timeEnd = new long[m_numThreads];
 
-
-        System.out.printf("Registering %d chunks with %d thread(s)...\n",
-                m_chunkCount, m_numThreads);
+        System.out.printf("Registering %d chunks with %d thread(s)...\n", m_chunkCount, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
             threads[i] = new Thread(() -> {
 
-                String[] randomNames = new String[(int)chunkCountsPerThread[threadIdx]];
+                String[] randomNames = new String[(int) chunkCountsPerThread[threadIdx]];
                 for (int k = 0; k < chunkCountsPerThread[threadIdx]; k++) {
                     randomNames[k] = getRandomValue();
                 }
@@ -128,7 +124,6 @@ public class NameserviceRegisterTask implements Task {
         return Integer.BYTES * 2;
     }
 
-
     // vieleicht in NameServiceUtils auslagen
     private String allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGRHIJKLMNOPQRSTUVWXYZ0123456789-";
 
@@ -136,7 +131,7 @@ public class NameserviceRegisterTask implements Task {
         Random random = new Random();
         int length = random.nextInt(5 - 0 + 1) + 0;
         StringBuilder sb = new StringBuilder();
-        for(int i = 0; i < length; i++) {
+        for (int i = 0; i < length; i++) {
             sb.append(allowedChars.charAt(random.nextInt(allowedChars.length())));
         }
         return sb.toString();
