@@ -15,7 +15,6 @@ package de.hhu.bsinfo.dxram.backup;
 
 import java.util.Arrays;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -27,14 +26,18 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 10.06.2015
  */
-public final class BackupRange implements Importable, Exportable {
+public class BackupRange implements Comparable<BackupRange>, Importable, Exportable {
 
     // Attributes
     // The replication factor is set by BackupComponent and is in [1, 4]
     private static byte ms_replicationFactor;
+    // The backup range size is set by BackupComponent
+    private static long ms_backupRangeSize;
 
-    private long m_firstChunkIDORRangeID = -1;
+    private short m_rangeID;
     private short[] m_backupPeers;
+
+    private int m_size;
 
     // Constructors
 
@@ -47,80 +50,15 @@ public final class BackupRange implements Importable, Exportable {
     /**
      * Creates an instance of BackupRange
      *
-     * @param p_firstChunkIDORRangeID
-     *     the RangeID or the first ChunkID
+     * @param p_rangeID
+     *     the RangeID
      * @param p_backupPeers
      *     the backup peers
      */
-    public BackupRange(final long p_firstChunkIDORRangeID, final short[] p_backupPeers) {
-        super();
-
-        m_firstChunkIDORRangeID = p_firstChunkIDORRangeID;
-
-        if (p_backupPeers == null) {
-            m_backupPeers = new short[ms_replicationFactor];
-            Arrays.fill(m_backupPeers, (short) -1);
-        } else {
-            m_backupPeers = p_backupPeers;
-        }
-    }
-
-    /**
-     * Creates an instance of BackupRange
-     *
-     * @param p_firstChunkIDORRangeID
-     *     the RangeID or the first ChunkID
-     * @param p_backupPeers
-     *     the backup range in long representation
-     */
-    public BackupRange(final long p_firstChunkIDORRangeID, final long p_backupPeers) {
-        this(p_firstChunkIDORRangeID, BackupRange.convert(p_backupPeers));
-    }
-
-    /**
-     * Returns RangeID or first ChunkID
-     *
-     * @return RangeID or first ChunkID
-     */
-    public long getRangeID() {
-        return m_firstChunkIDORRangeID;
-    }
-
-    /**
-     * Get backup peers
-     *
-     * @return the backup peers
-     */
-    public short[] getBackupPeers() {
-        return m_backupPeers;
-    }
-
-    /**
-     * Get backup peers
-     *
-     * @return the backup peers
-     */
-    short[] getCopyOfBackupPeers() {
-        return Arrays.copyOf(m_backupPeers, m_backupPeers.length);
-    }
-
-    /**
-     * Get backup peers as long
-     *
-     * @return the backup peers
-     */
-    long getBackupPeersAsLong() {
-        return BackupRange.convert(m_backupPeers);
-    }
-
-    /**
-     * Sets the replication factor
-     *
-     * @param p_replicationFactor
-     *     the replication factor
-     */
-    static void setReplicationFactor(final byte p_replicationFactor) {
-        ms_replicationFactor = p_replicationFactor;
+    public BackupRange(final short p_rangeID, final short[] p_backupPeers) {
+        m_rangeID = p_rangeID;
+        m_backupPeers = p_backupPeers;
+        m_size = 0;
     }
 
     /**
@@ -140,8 +78,6 @@ public final class BackupRange implements Importable, Exportable {
 
         return ret;
     }
-
-    // Getter
 
     /**
      * Converts backup peers from short[] to long
@@ -203,7 +139,7 @@ public final class BackupRange implements Importable, Exportable {
             if (p_failedPeer == (short) ((backupPeers & 0xFFFF << i * 16) >> i * 16)) {
                 for (lastPos = i; lastPos < ms_replicationFactor - 1; lastPos++) {
                     nextBackupPeer = (short) ((backupPeers & 0xFFFF << (lastPos + 1) * 16) >> (lastPos + 1) * 16);
-                    if (nextBackupPeer == -1) {
+                    if (nextBackupPeer == NodeID.INVALID_ID) {
                         // Break if backups are incomplete
                         break;
                     }
@@ -218,15 +154,24 @@ public final class BackupRange implements Importable, Exportable {
     }
 
     /**
-     * The size of all attributes
+     * Sets the replication factor
      *
-     * @return the size
+     * @param p_replicationFactor
+     *     the replication factor
      */
-    public static int sizeofObjectStatic() {
-        return 2 * Long.BYTES;
+    static void setReplicationFactor(final byte p_replicationFactor) {
+        ms_replicationFactor = p_replicationFactor;
     }
 
-    // Methods
+    /**
+     * Sets the replication factor
+     *
+     * @param p_backupRangeSize
+     *     the backup range size that must not be exceeded
+     */
+    static void setBackupRangeSize(final long p_backupRangeSize) {
+        ms_backupRangeSize = p_backupRangeSize;
+    }
 
     /**
      * Replaces the backup peer at given index
@@ -244,17 +189,34 @@ public final class BackupRange implements Importable, Exportable {
     }
 
     /**
+     * Get RangeID
+     *
+     * @return the RangeID
+     */
+    public short getRangeID() {
+        return m_rangeID;
+    }
+
+    // Getter
+
+    /**
+     * Get backup peers
+     *
+     * @return the backup peers
+     */
+    public short[] getBackupPeers() {
+        return m_backupPeers;
+    }
+
+    /**
      * Prints the backup range
      *
      * @return String interpretation of BackupRange
      */
     @Override
     public String toString() {
-        String ret;
+        String ret = m_rangeID + " [";
 
-        ret = ChunkID.toHexString(m_firstChunkIDORRangeID);
-
-        ret += "[";
         for (int i = 0; i < ms_replicationFactor; i++) {
             ret += NodeID.toHexString(m_backupPeers[i]);
 
@@ -268,47 +230,113 @@ public final class BackupRange implements Importable, Exportable {
         return ret;
     }
 
+    /**
+     * Compares this backup range with another; Only compares the RangeIDs
+     *
+     * @param p_otherBackupRange
+     *     the other backup range
+     * @return 0 if backup ranges are equal; value smaller than 0 if this backup range is smaller; value greater than 0 if the other backup range is smaller
+     */
+    @Override
+    public int compareTo(BackupRange p_otherBackupRange) {
+        return Short.compare(m_rangeID, p_otherBackupRange.m_rangeID);
+    }
+
     @Override
     public void importObject(final Importer p_importer) {
         long backupPeers;
 
-        m_firstChunkIDORRangeID = p_importer.readLong();
+        m_rangeID = p_importer.readShort();
         backupPeers = p_importer.readLong();
         m_backupPeers = BackupRange.convert(backupPeers);
     }
 
+    // Methods
+
     @Override
     public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeLong(m_firstChunkIDORRangeID);
+        p_exporter.writeShort(m_rangeID);
         p_exporter.writeLong(getBackupPeersAsLong());
     }
 
     @Override
     public int sizeofObject() {
-        return sizeofObjectStatic();
+        return Short.BYTES + Long.BYTES;
     }
 
     /**
-     * Replaces the failed backup peer at given index
+     * Get backup peers as long
      *
-     * @param p_index
-     *     the index
+     * @return the backup peers
+     */
+    public long getBackupPeersAsLong() {
+        return BackupRange.convert(m_backupPeers);
+    }
+
+    /**
+     * Replaces the backup peer with another one
+     *
+     * @param p_oldPeer
+     *     the old backup peer
      * @param p_newPeer
      *     the new backup peer
-     * @return all backup peers in a short array
      */
-    short[] replaceBackupPeer(final int p_index, final short p_newPeer) {
-        int lastPos;
-
-        for (lastPos = p_index; lastPos < m_backupPeers.length - 1; lastPos++) {
-            if (m_backupPeers[lastPos + 1] == -1) {
-                // Break if backups are incomplete
+    void replaceBackupPeer(final short p_oldPeer, final short p_newPeer) {
+        for (int i = 0; i < m_backupPeers.length; i++) {
+            if (m_backupPeers[i] == p_oldPeer) {
+                m_backupPeers[i] = p_newPeer;
                 break;
             }
-            m_backupPeers[lastPos] = m_backupPeers[lastPos + 1];
         }
-        m_backupPeers[lastPos + 1] = p_newPeer;
+    }
 
-        return m_backupPeers;
+    /**
+     * Get backup peers
+     *
+     * @return the backup peers
+     */
+    short[] getCopyOfBackupPeers() {
+        return Arrays.copyOf(m_backupPeers, m_backupPeers.length);
+    }
+
+    /**
+     * Checks if the Chunk fits in backup range
+     *
+     * @param p_size
+     *     the size of the chunk + log header size
+     * @return true if it fits
+     */
+    boolean fits(final long p_size) {
+        return p_size + m_size <= ms_backupRangeSize;
+    }
+
+    /**
+     * Puts chunks to the backup range. Increases size only
+     *
+     * @param p_size
+     *     the size of all chunks including log headers
+     */
+    void addChunks(final long p_size) {
+        m_size += p_size;
+    }
+
+    /**
+     * Puts a chunk to the backup range. Increases size only
+     *
+     * @param p_size
+     *     the size of the chunk + log header size
+     */
+    void addChunk(final long p_size) {
+        m_size += p_size;
+    }
+
+    /**
+     * Removes a chunk from the backup range. Decreases size only
+     *
+     * @param p_size
+     *     the size of the chunk + log header size
+     */
+    void removeChunk(final long p_size) {
+        m_size -= p_size;
     }
 }
