@@ -18,7 +18,9 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
+import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -63,7 +65,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
         m_memoryManager.lockManage();
         chunkId = m_memoryManager.createIndex(p_size);
-        if (chunkId != -1) {
+        if (chunkId != ChunkID.INVALID_ID) {
             m_backup.registerChunk(chunkId, p_size);
         }
         m_memoryManager.unlockManage();
@@ -89,7 +91,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
         }
 
         if (m_backup.isActive()) {
-            short[] backupPeers = m_backup.getCopyOfBackupPeersForLocalChunks(p_dataStructure.getID());
+            BackupRange backupRange = m_backup.getBackupRange(p_dataStructure.getID());
+            short[] backupPeers = backupRange.getBackupPeers();
 
             if (backupPeers != null) {
                 for (short peer : backupPeers) {
@@ -99,7 +102,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
                         // #endif /* LOGGER == TRACE */
 
                         try {
-                            m_network.sendMessage(new LogMessage(peer, p_dataStructure));
+                            m_network.sendMessage(new LogMessage(peer, backupRange.getRangeID(), p_dataStructure));
                         } catch (final NetworkException ignore) {
 
                         }

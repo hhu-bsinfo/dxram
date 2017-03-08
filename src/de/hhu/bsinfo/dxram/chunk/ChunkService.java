@@ -285,7 +285,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 m_memoryManager.unlockManage();
             }
 
-            if (chunkId != -1) {
+            if (chunkId != ChunkID.INVALID_ID) {
                 chunkIDs = new long[] {chunkId};
             }
         } else {
@@ -618,6 +618,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      */
     public int remove(final long... p_chunkIDs) {
         int chunksRemoved = 0;
+        int size;
 
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -685,19 +686,24 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             m_memoryManager.unlockAccess();
         }
 
+        m_memoryManager.unlockAccess();
+
+        // remove local chunks from superpeer overlay first, so cannot be found before being deleted
+        m_lookup.removeChunkIDs(localChunks);
+
         // remove local chunkIDs
-        try {
-            m_memoryManager.lockManage();
-            for (int i = 0; i < localChunks.getSize(); i++) {
-                if (m_memoryManager.remove(localChunks.get(i), false)) {
-                    chunksRemoved++;
-                } else {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Removing chunk ID 0x%X failed, does not exist", localChunks.get(i));
-                    // #endif /* LOGGER >= ERROR */
-                }
+        m_memoryManager.lockManage();
+        for (int i = 0; i < localChunks.getSize(); i++) {
+            size = m_memoryManager.remove(localChunks.get(i), false);
+            if (size > 0) {
+                chunksRemoved++;
+                m_backup.deregisterChunk(localChunks.get(i), size);
+            } else {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Removing chunk ID 0x%X failed, does not exist", localChunks.get(i));
+                // #endif /* LOGGER >= ERROR */
             }
-        } finally {
+        } finally{
             m_memoryManager.unlockManage();
         }
 
@@ -708,23 +714,23 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
             if (peer == m_boot.getNodeID()) {
                 // local remove, migrated data to current node
-                
+
                 // FIXME kevin (refer to onIncomingRemoveRequest
                 // remove local chunks from superpeer overlay first, so cannot be found before being deleted
                 //m_lookup.removeChunkIDs(localChunks, m_boot.getNodeID());
 
-                try {
-                    m_memoryManager.lockManage();
-                    for (int i = 0; i < remoteChunks.getSize(); i++) {
-                        if (m_memoryManager.remove(remoteChunks.get(i), false)) {
-                            chunksRemoved++;
-                        } else {
-                            // #if LOGGER >= ERROR
-                            LOGGER.error("Removing chunk ID 0x%X failed, does not exist", remoteChunks.get(i));
-                            // #endif /* LOGGER >= ERROR */
-                        }
+                m_memoryManager.lockManage();
+                for (int i = 0; i < remoteChunks.getSize(); i++) {
+                    size = m_memoryManager.remove(localChunks.get(i), false);
+                    if (size > 0) {
+                        chunksRemoved++;
+                        m_backup.deregisterChunk(localChunks.get(i), size);
+                    } else {
+                        // #if LOGGER >= ERROR
+                        LOGGER.error("Removing chunk ID 0x%X failed, does not exist", remoteChunks.get(i));
+                        // #endif /* LOGGER >= ERROR */
                     }
-                } finally {
+                } finally{
                     m_memoryManager.unlockManage();
                 }
             } else {
@@ -754,7 +760,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
                 backupPeers = BackupRange.convert(backupPeersAsLong);
                 for (int i = 0; i < backupPeers.length; i++) {
-                    if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
+                    if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
                         try {
                             m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(backupPeers[i], ids));
                         } catch (final NetworkException ignore) {
@@ -835,7 +841,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #endif /* STATISTICS */
 
         Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<>();
-        Map<Long, ArrayList<DataStructure>> remoteChunksByBackupPeers = new TreeMap<>();
+        Map<BackupRange, ArrayList<DataStructure>> remoteChunksByBackupRange = new TreeMap<>();
 
         // sort by local/remote chunks
         try {
@@ -857,19 +863,18 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                         if (p_chunkUnlockOperation == ChunkLockOperation.WRITE_LOCK) {
                             writeLock = true;
                         }
-
                         m_lock.unlock(p_dataStructures[i + p_offset].getID(), m_boot.getNodeID(), writeLock);
                     }
 
                     if (m_backup.isActive()) {
                         // sort by backup peers
-                        long backupPeersAsLong = m_backup.getBackupPeersForLocalChunks(p_dataStructures[i + p_offset].getID());
-                        ArrayList<DataStructure> remoteChunksOfBackupPeers = remoteChunksByBackupPeers.get(backupPeersAsLong);
-                        if (remoteChunksOfBackupPeers == null) {
-                            remoteChunksOfBackupPeers = new ArrayList<>();
-                            remoteChunksByBackupPeers.put(backupPeersAsLong, remoteChunksOfBackupPeers);
+                        BackupRange backupRange = m_backup.getBackupRange(p_dataStructures[i + p_offset].getID());
+                        ArrayList<DataStructure> remoteChunksOfBackupRange = remoteChunksByBackupRange.get(backupRange);
+                        if (remoteChunksOfBackupRange == null) {
+                            remoteChunksOfBackupRange = new ArrayList<>();
+                            remoteChunksByBackupRange.put(backupRange, remoteChunksOfBackupRange);
                         }
-                        remoteChunksOfBackupPeers.add(p_dataStructures[i + p_offset]);
+                        remoteChunksOfBackupRange.add(p_dataStructures[i + p_offset]);
                     }
                 } else {
                     // remote or migrated, figure out location and sort by peers
@@ -953,22 +958,22 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
         // Send backups
         if (m_backup.isActive()) {
-            long backupPeersAsLong;
+            BackupRange backupRange;
             short[] backupPeers;
             DataStructure[] dataStructures;
-            for (Entry<Long, ArrayList<DataStructure>> entry : remoteChunksByBackupPeers.entrySet()) {
-                backupPeersAsLong = entry.getKey();
+            for (Entry<BackupRange, ArrayList<DataStructure>> entry : remoteChunksByBackupRange.entrySet()) {
+                backupRange = entry.getKey();
                 dataStructures = entry.getValue().toArray(new DataStructure[entry.getValue().size()]);
 
-                backupPeers = BackupRange.convert(backupPeersAsLong);
-                for (int i = 0; i < backupPeers.length; i++) {
-                    if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
+                backupPeers = backupRange.getBackupPeers();
+                for (short backupPeer : backupPeers) {
+                    if (backupPeer != NodeID.INVALID_ID) {
                         // #if LOGGER == TRACE
-                        LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeers[i]);
+                        LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeer);
                         // #endif /* LOGGER == TRACE */
 
                         try {
-                            m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
+                            m_network.sendMessage(new LogMessage(backupPeer, backupRange.getRangeID(), dataStructures));
                         } catch (final NetworkException ignore) {
 
                         }
@@ -1670,7 +1675,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         SOP_INCOMING_PUT.enter(chunks.length);
         // #endif /* STATISTICS */
 
-        Map<Long, ArrayList<DataStructure>> remoteChunksByBackupPeers = new TreeMap<>();
+        Map<BackupRange, ArrayList<DataStructure>> remoteChunksByBackupRange = new TreeMap<>();
 
         try {
             m_memoryManager.lockAccess();
@@ -1689,13 +1694,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
                 if (m_backup.isActive()) {
                     // sort by backup peers
-                    long backupPeersAsLong = m_backup.getBackupPeersForLocalChunks(chunks[i].getID());
-                    ArrayList<DataStructure> remoteChunksOfBackupPeers = remoteChunksByBackupPeers.get(backupPeersAsLong);
-                    if (remoteChunksOfBackupPeers == null) {
-                        remoteChunksOfBackupPeers = new ArrayList<>();
-                        remoteChunksByBackupPeers.put(backupPeersAsLong, remoteChunksOfBackupPeers);
+                    BackupRange backupRange = m_backup.getBackupRange(chunks[i].getID());
+                    ArrayList<DataStructure> remoteChunksOfBackupRange = remoteChunksByBackupRange.get(backupRange);
+                    if (remoteChunksOfBackupRange == null) {
+                        remoteChunksOfBackupRange = new ArrayList<>();
+                        remoteChunksByBackupRange.put(backupRange, remoteChunksOfBackupRange);
                     }
-                    remoteChunksOfBackupPeers.add(chunks[i]);
+                    remoteChunksOfBackupRange.add(chunks[i]);
                 }
             }
         } finally {
@@ -1733,22 +1738,22 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
         // Send backups
         if (m_backup.isActive()) {
-            long backupPeersAsLong;
+            BackupRange backupRange;
             short[] backupPeers;
             DataStructure[] dataStructures;
-            for (Entry<Long, ArrayList<DataStructure>> entry : remoteChunksByBackupPeers.entrySet()) {
-                backupPeersAsLong = entry.getKey();
+            for (Entry<BackupRange, ArrayList<DataStructure>> entry : remoteChunksByBackupRange.entrySet()) {
+                backupRange = entry.getKey();
                 dataStructures = entry.getValue().toArray(new DataStructure[entry.getValue().size()]);
 
-                backupPeers = BackupRange.convert(backupPeersAsLong);
-                for (int i = 0; i < backupPeers.length; i++) {
-                    if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
+                backupPeers = backupRange.getBackupPeers();
+                for (short backupPeer : backupPeers) {
+                    if (backupPeer != NodeID.INVALID_ID) {
                         // #if LOGGER == TRACE
-                        LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeers[i]);
+                        LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeer);
                         // #endif /* LOGGER == TRACE */
 
                         try {
-                            m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
+                            m_network.sendMessage(new LogMessage(backupPeer, backupRange.getRangeID(), dataStructures));
                         } catch (final NetworkException ignore) {
 
                         }
@@ -1768,7 +1773,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      * @param p_message
      *     the RemoveMessage
      */
+
     private void incomingRemoveMessage(final RemoveMessage p_message) {
+        int size;
+
         // #ifdef STATISTICS
         SOP_INCOMING_REMOVE.enter(p_message.getChunkIDs().length);
         // #endif /* STATISTICS */
@@ -1784,7 +1792,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // FIXME this causes an out of memory exception very quickly (unable to create new thread)
         //new Thread(() -> {
         // remove chunks from superpeer overlay first, so cannot be found before being deleted
-        m_lookup.removeChunkIDs(ArrayListLong.wrap(chunkIDs), p_message.getSource());
+        m_lookup.removeChunkIDs(ArrayListLong.wrap(chunkIDs));
         // }).start();
 
         for (int i = 0; i < chunkIDs.length; i++) {
@@ -1804,7 +1812,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         try {
             m_memoryManager.lockManage();
             for (int i = 0; i < chunkIDs.length; i++) {
-                if (!m_memoryManager.remove(chunkIDs[i], false)) {
+                size = m_memoryManager.remove(chunkIDs[i], false);
+                m_backup.deregisterChunk(chunkIDs[i], size);
+                if (size == -1) {
                     // #if LOGGER >= ERROR
                     LOGGER.warn("Removing chunk 0x%X failed, does not exist", chunkIDs[i]);
                     // #endif /* LOGGER >= ERROR */
@@ -1843,7 +1853,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
                 backupPeers = BackupRange.convert(backupPeersAsLong);
                 for (int i = 0; i < backupPeers.length; i++) {
-                    if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
+                    if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
                         try {
                             m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(backupPeers[i], ids));
                         } catch (final NetworkException ignore) {
@@ -1865,6 +1875,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      * @param p_request
      *     Request to handle
      */
+
     private void incomingCreateRequest(final CreateRequest p_request) {
         // #ifdef STATISTICS
         SOP_INCOMING_CREATE.enter(p_request.getSizes().length);

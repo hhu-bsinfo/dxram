@@ -17,7 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -26,7 +25,6 @@ import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.recovery.RecoveryDataStructure;
 import de.hhu.bsinfo.ethnet.NetworkException;
 
 /**
@@ -39,7 +37,6 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkBackupComponent.class.getSimpleName());
 
     // dependent components
-    private AbstractBootComponent m_boot;
     private MemoryManagerComponent m_memoryManager;
     private NetworkComponent m_network;
 
@@ -51,49 +48,49 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
     }
 
     /**
-     * Replicates all local Chunks of given range to a specific backup peer
+     * Replicates all local Chunks to a specific backup peer
      *
      * @param p_backupPeer
      *     the new backup peer
-     * @param p_firstChunkID
-     *     the first ChunkID
-     * @param p_lastChunkID
-     *     the last ChunkID
+     * @param p_chunkIDRanges
+     *     the ChunkIDs of the Chunks to replicate arranged in ranges
+     * @param p_rangeID
+     *     the RangeID
      */
-    public void replicateBackupRange(final short p_backupPeer, final long p_firstChunkID, final long p_lastChunkID) {
+    public void replicateBackupRange(final short p_backupPeer, final long[] p_chunkIDRanges, final short p_rangeID) {
         int counter = 0;
         Chunk currentChunk;
         Chunk[] chunks;
 
         // Initialize backup range on backup peer
-        InitRequest request = new InitRequest(p_backupPeer, p_firstChunkID, m_boot.getNodeID());
+        InitRequest request = new InitRequest(p_backupPeer, p_rangeID);
+
         try {
             m_network.sendMessage(request);
         } catch (final NetworkException e) {
             // #if LOGGER == ERROR
-            LOGGER.error("Replicating backup range 0x%X to 0x%X failed. Could not initialize backup range", p_firstChunkID, p_backupPeer);
+            LOGGER.error("Replicating backup range 0x%X to 0x%X failed. Could not initialize backup range", p_rangeID, p_backupPeer);
             // #endif /* LOGGER == ERROR */
             return;
         }
 
-        if (p_lastChunkID == -1) {
-            // TODO
-        }
         // Gather all chunks of backup range
-        chunks = new Chunk[(int) (p_lastChunkID - p_firstChunkID + 1)];
-        for (long chunkID = p_firstChunkID; chunkID <= p_lastChunkID; chunkID++) {
-            currentChunk = new Chunk(chunkID);
+        chunks = new Chunk[p_chunkIDRanges.length];
+        m_memoryManager.lockAccess();
+        for (int i = 0; i < p_chunkIDRanges.length; i += 2) {
+            for (long currentChunkID = p_chunkIDRanges[i]; currentChunkID <= p_chunkIDRanges[i + 1]; currentChunkID++) {
+                currentChunk = new Chunk(currentChunkID);
 
-            m_memoryManager.lockAccess();
-            m_memoryManager.get(currentChunk);
-            m_memoryManager.unlockAccess();
+                m_memoryManager.get(currentChunk);
 
-            chunks[counter++] = currentChunk;
+                chunks[counter++] = currentChunk;
+            }
         }
+        m_memoryManager.unlockAccess();
 
         // Send all chunks to backup peer
         try {
-            m_network.sendMessage(new LogMessage(p_backupPeer, chunks));
+            m_network.sendMessage(new LogMessage(p_backupPeer, p_rangeID, chunks));
         } catch (final NetworkException ignore) {
 
         }
@@ -109,13 +106,13 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      * @param p_rangeID
      *     the RangeID
      */
-    public void replicateBackupRange(final short p_backupPeer, final long[] p_chunkIDs, final byte p_rangeID) {
+    public void replicateBackupRange(final short p_backupPeer, final short p_rangeID, final long[] p_chunkIDs) {
         int counter = 0;
         Chunk currentChunk;
         Chunk[] chunks;
 
         // Initialize backup range on backup peer
-        InitRequest request = new InitRequest(p_backupPeer, p_rangeID, m_boot.getNodeID());
+        InitRequest request = new InitRequest(p_backupPeer, p_rangeID);
 
         try {
             m_network.sendMessage(request);
@@ -128,19 +125,20 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
 
         // Gather all chunks of backup range
         chunks = new Chunk[p_chunkIDs.length];
-        for (long chunkID : p_chunkIDs) {
-            currentChunk = new Chunk(chunkID);
+        m_memoryManager.lockAccess();
+        for (int i = 0; i < p_chunkIDs.length; i++) {
+            currentChunk = new Chunk(p_chunkIDs[i]);
 
-            m_memoryManager.lockAccess();
-            m_memoryManager.get(currentChunk);
-            m_memoryManager.unlockAccess();
-
-            chunks[counter++] = currentChunk;
+            // The ChunkID list might contain migrated and deleted chunks -> only replicate locally existing chunks
+            if (m_memoryManager.get(currentChunk)) {
+                chunks[counter++] = currentChunk;
+            }
         }
+        m_memoryManager.unlockAccess();
 
         // Send all chunks to backup peer
         try {
-            m_network.sendMessage(new LogMessage(p_backupPeer, chunks));
+            m_network.sendMessage(new LogMessage(p_backupPeer, p_rangeID, chunks));
         } catch (final NetworkException ignore) {
 
         }
@@ -199,32 +197,8 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
         m_memoryManager.unlockManage();
     }
 
-    /**
-     * Put a recovered chunks into local memory.
-     *
-     * @lock manage lock of memory manager must be acquired
-     */
-    public boolean putRecoveredChunk(final RecoveryDataStructure p_dataStructure) {
-        long chunkID = p_dataStructure.getID();
-
-        if (m_memoryManager.create(chunkID, p_dataStructure.getLength()) != chunkID) {
-            return false;
-        }
-
-        if (!m_memoryManager.put(p_dataStructure)) {
-            return false;
-        }
-
-        // #if LOGGER == TRACE
-        LOGGER.trace("Stored recovered chunk 0x%X locally", chunkID);
-        // #endif /* LOGGER == TRACE */
-
-        return true;
-    }
-
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
