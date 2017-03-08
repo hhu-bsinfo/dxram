@@ -359,7 +359,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
     @Override
     public void process(final WatchedEvent p_event) {
-        // TODO: Check this!
         String path;
         String prefix;
 

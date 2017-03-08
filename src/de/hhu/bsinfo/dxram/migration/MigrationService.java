@@ -85,7 +85,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
     public boolean migrate(final long p_chunkID, final short p_target) {
         short[] backupPeers;
         Chunk chunk;
-        boolean ret = false;
+        boolean ret;
 
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {

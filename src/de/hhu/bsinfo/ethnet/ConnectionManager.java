@@ -88,24 +88,6 @@ final class ConnectionManager implements ConnectionCreatorListener {
     }
 
     /**
-     * Returns the status of all connections
-     *
-     * @return the statuses
-     */
-    String getConnectionStatuses() {
-        String ret = "";
-
-        m_connectionCreationLock.lock();
-        Iterator<AbstractConnection> iter = m_connectionList.iterator();
-        while (iter.hasNext()) {
-            ret += iter.next().toString();
-        }
-        m_connectionCreationLock.unlock();
-
-        return ret;
-    }
-
-    /**
      * Closes the ConnectionManager
      */
     public void close() {
@@ -162,6 +144,24 @@ final class ConnectionManager implements ConnectionCreatorListener {
     @Override
     public void connectionClosed(final AbstractConnection p_connection) {
         m_connectionCreatorHelperThread.pushJob(new Job((byte) 2, p_connection));
+    }
+
+    /**
+     * Returns the status of all connections
+     *
+     * @return the statuses
+     */
+    String getConnectionStatuses() {
+        String ret = "";
+
+        m_connectionCreationLock.lock();
+        Iterator<AbstractConnection> iter = m_connectionList.iterator();
+        while (iter.hasNext()) {
+            ret += iter.next().toString();
+        }
+        m_connectionCreationLock.unlock();
+
+        return ret;
     }
 
     // Methods
@@ -320,9 +320,6 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
         // TODO: If maximum number of connections is reached, locally deleting connection does not impact remote node
         // TODO: Double connections problems
-        // TODO:
-        // TODO:
-        // TODO:
 
         remoteNodeID = p_connection.getDestination();
 
@@ -471,7 +468,6 @@ final class ConnectionManager implements ConnectionCreatorListener {
                         m_connectionList.remove(tmp);
 
                         connection.cleanup();
-                        // TODO: Inform and update system
                     }
                     m_connectionCreationLock.unlock();
 

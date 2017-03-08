@@ -655,8 +655,6 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
     boolean putChunkIDRange(final long p_firstChunkID, final long p_lastChunkID, final short p_rangeID) {
         Node startNode;
 
-        // FIXME: causes null pointer exception after recovery
-
         // end larger than start or start smaller than 1
         assert p_firstChunkID <= p_lastChunkID && p_firstChunkID > 0;
 
