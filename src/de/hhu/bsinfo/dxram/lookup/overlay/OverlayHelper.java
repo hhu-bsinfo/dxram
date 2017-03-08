@@ -82,7 +82,7 @@ public final class OverlayHelper {
     static boolean isSuperpeerInRange(final short p_nodeID, final short p_startID, final short p_endID) {
         boolean ret = false;
 
-        if (p_startID == p_endID || p_startID == -1 || p_endID == -1) {
+        if (p_startID == p_endID || p_startID == NodeID.INVALID_ID || p_endID == NodeID.INVALID_ID) {
             // There is only one superpeer
             if (p_nodeID != p_startID && p_nodeID != p_endID) {
                 ret = true;
@@ -270,7 +270,7 @@ public final class OverlayHelper {
      * @lock overlay lock must be read-locked
      */
     static short getResponsibleSuperpeer(final short p_nodeID, final ArrayList<Short> p_superpeers) {
-        short responsibleSuperpeer = -1;
+        short responsibleSuperpeer = NodeID.INVALID_ID;
         int index;
 
         // #if LOGGER == TRACE
@@ -299,6 +299,51 @@ public final class OverlayHelper {
     }
 
     /**
+     * Determines the responsible superpeers (including backups) for given NodeID
+     *
+     * @param p_nodeID
+     *     the NodeID
+     * @param p_superpeers
+     *     all superpeers
+     * @return the responsible superpeers for given NodeID
+     * @lock overlay lock must be read-locked
+     */
+    static short[] getResponsibleSuperpeers(final short p_nodeID, final ArrayList<Short> p_superpeers) {
+        short[] ret;
+        short responsibleSuperpeer;
+        short[] backupSuperpeers;
+        int index;
+
+        if (p_superpeers.isEmpty()) {
+            return null;
+        }
+
+        if (p_superpeers.size() <= 4) {
+            ret = new short[p_superpeers.size()];
+            for (int i = 0; i < ret.length; i++) {
+                ret[i] = p_superpeers.get(i);
+            }
+            return ret;
+        }
+
+        index = Collections.binarySearch(p_superpeers, p_nodeID);
+        if (index < 0) {
+            index = index * -1 - 1;
+            if (index == p_superpeers.size()) {
+                index = 0;
+            }
+        }
+        responsibleSuperpeer = p_superpeers.get(index);
+
+        backupSuperpeers = getBackupSuperpeers(responsibleSuperpeer, p_superpeers);
+        ret = new short[backupSuperpeers.length + 1];
+        System.arraycopy(backupSuperpeers, 0, ret, 1, backupSuperpeers.length);
+        ret[0] = responsibleSuperpeer;
+
+        return ret;
+    }
+
+    /**
      * Determines the backup superpeers for this superpeer
      *
      * @param p_nodeID
@@ -314,7 +359,7 @@ public final class OverlayHelper {
         int index;
 
         if (p_superpeers.isEmpty()) {
-            superpeers = new short[] {-1};
+            superpeers = new short[] {NodeID.INVALID_ID};
         } else {
             size = Math.min(p_superpeers.size(), 3);
             superpeers = new short[size];
@@ -374,7 +419,7 @@ public final class OverlayHelper {
     private static boolean isIDInSuperpeerRange(final short p_id, final short p_firstSuperpeer, final short p_lastSuperpeer) {
         boolean ret = false;
 
-        if (p_firstSuperpeer == p_lastSuperpeer || p_firstSuperpeer == -1 || p_lastSuperpeer == -1) {
+        if (p_firstSuperpeer == p_lastSuperpeer || p_firstSuperpeer == NodeID.INVALID_ID || p_lastSuperpeer == NodeID.INVALID_ID) {
             // In all three cases there is no other superpeer -> the only superpeer must be responsible
             ret = true;
         } else if (p_firstSuperpeer < p_lastSuperpeer) {
