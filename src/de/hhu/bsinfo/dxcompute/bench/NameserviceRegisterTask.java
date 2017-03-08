@@ -29,7 +29,9 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Created by burak on 19.01.17.
+ * Task to benchmark/test registering of nameservice entries
+ *
+ * @author Burak Akguel, burak.akguel@hhu.de, 19.01.2017
  */
 public class NameserviceRegisterTask implements Task {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceRegisterTask.class.getSimpleName());

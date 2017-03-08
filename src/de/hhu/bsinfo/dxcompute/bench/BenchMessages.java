@@ -14,7 +14,9 @@
 package de.hhu.bsinfo.dxcompute.bench;
 
 /**
- * Created by akguel on 13.02.17.
+ * List of network messages of the bench package
+ *
+ * @author Burak Akguel, burak.akguel@hhu.de, 13.02.2017
  */
 public class BenchMessages {
 

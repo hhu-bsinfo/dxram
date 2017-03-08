@@ -19,14 +19,16 @@ import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
- * Created by akguel on 25.01.17.
+ * Network message for running tests/benchmarks.
+ *
+ * @author Burak Akguel, burak.akguel@hhu.de, 25.01.2017
  */
 public class NetworkTestMessage extends AbstractMessage {
 
     private byte[] m_data;
 
     /**
-     * Creates an instance of TaskRemoteCallbackMessage.
+     * Creates an instance of NetworkTestMessage.
      * This constructor is used when receiving this message.
      */
     public NetworkTestMessage() {
@@ -34,7 +36,7 @@ public class NetworkTestMessage extends AbstractMessage {
     }
 
     /**
-     * Creates an instance of TaskRemoteCallbackMessage.
+     * Creates an instance of NetworkTestMessage.
      * This constructor is used when sending this message.
      *
      * @param p_destination

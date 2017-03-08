@@ -30,7 +30,9 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Created by burak on 19.01.17.
+ * Task to benchmark/test getting entries from the nameservice
+ *
+ * @author Burak Akguel, burak.akguel@hhu.de, 19.01.2017
  */
 public class NameserviceGetChunkIDTask implements Task {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceGetChunkIDTask.class.getSimpleName());

@@ -34,7 +34,9 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Created by akguel on 25.01.17.
+ * Task to benchmark/test end-to-end communication of two nodes using the network interface
+ *
+ * @author Burak Akguel, burak.akguel@hhu.de, 25.01.2017
  */
 public class NetworkEndToEndTask implements Task, MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkEndToEndTask.class.getSimpleName());
