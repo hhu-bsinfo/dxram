@@ -13,26 +13,39 @@
 
 package de.hhu.bsinfo.dxram.backup;
 
+import java.io.Serializable;
+
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.serialization.Exportable;
+import de.hhu.bsinfo.utils.serialization.Exporter;
+import de.hhu.bsinfo.utils.serialization.Importable;
+import de.hhu.bsinfo.utils.serialization.Importer;
+
 /**
  * Btree to store backup ranges of migrated chunks.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.06.2015
  */
-final class MigrationBackupTree {
+public final class BackupRangeTree implements Serializable, Importable, Exportable {
 
     // Constants
-    private static final byte INVALID = -1;
+    private static final short INVALID = -1;
+    private static final long LOCAL_MAXIMUM_ID = (long) (Math.pow(2, 48) - 1);
 
     // Attributes
     private short m_minEntries;
-    private long m_backupRangeSize;
     private short m_minChildren;
     private short m_maxEntries;
     private short m_maxChildren;
 
     private Node m_root;
     private int m_entrySize;
-    private long m_currentSecLogSize;
+
+    private short m_creator = NodeID.INVALID_ID;
+    private boolean m_initNeeded = false;
+    private short m_oldRangeID = RangeID.INVALID_ID;
+    private short m_newRangeID = RangeID.INVALID_ID;
 
     private Entry m_changedEntry;
 
@@ -43,19 +56,19 @@ final class MigrationBackupTree {
      *
      * @param p_order
      *     order of the btree
-     * @param p_backupRangeSize
-     *     the backup range size
+     * @param p_nodeID
+     *     this node's NodeID
      */
-    MigrationBackupTree(final short p_order, final long p_backupRangeSize) {
+    public BackupRangeTree(final short p_order, final short p_nodeID) {
         m_minEntries = p_order;
-        m_backupRangeSize = p_backupRangeSize;
         m_minChildren = (short) (m_minEntries + 1);
         m_maxEntries = (short) (2 * m_minEntries);
         m_maxChildren = (short) (m_maxEntries + 1);
 
         m_root = null;
         m_entrySize = -1;
-        m_currentSecLogSize = 0;
+
+        m_creator = p_nodeID;
 
         m_changedEntry = null;
 
@@ -73,7 +86,7 @@ final class MigrationBackupTree {
      *     the RangeID
      * @return all ChunkIDs
      */
-    private static long[] iterateNode(final Node p_node, final byte p_rangeID) {
+    private static long[] iterateNode(final Node p_node, final short p_rangeID) {
         long[] ret;
         int allEntriesCounter;
         int fittingEntriesCounter = 0;
@@ -336,50 +349,99 @@ final class MigrationBackupTree {
     }
 
     /**
-     * Stores the backup range ID for a range
+     * Adds one node as pair of long and short from the btree to the byte buffer and walks down the btree recursively
      *
-     * @param p_startID
-     *     ChunkID of first migrated object
-     * @param p_endID
-     *     ChunkID of last migrated object
-     * @param p_rangeID
-     *     the backup range ID
-     * @param p_rangeSize
-     *     the size of the range + log header sizes
-     * @return true if insertion was successful
+     * @param p_node
+     *     the current node
+     * @param p_exporter
+     *     bytebuffer to write into
      */
-    public boolean putRange(final long p_startID, final long p_endID, final byte p_rangeID, final long p_rangeSize) {
-        // end larger than start
-        assert p_startID <= p_endID;
+    private static void putTreeInByteBuffer(final Node p_node, final Exporter p_exporter) {
+        Node obj;
 
-        Node startNode;
+        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
 
-        if (p_startID == p_endID) {
-            putObject(p_startID, p_rangeID, p_rangeSize);
-        } else {
-            startNode = createOrReplaceEntry(p_startID, p_rangeID);
+            p_exporter.writeLong(p_node.getChunkID(i));
+            p_exporter.writeShort(p_node.getRangeID(i));
 
-            mergeWithPredecessorOrBound(p_startID, p_rangeID, startNode);
-
-            createOrReplaceEntry(p_endID, p_rangeID);
-
-            removeEntriesWithinRange(p_startID, p_endID);
-
-            mergeWithSuccessor(p_endID, p_rangeID);
-
-            m_currentSecLogSize += p_rangeSize;
         }
-        return true;
+
+        for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
+            obj = p_node.getChild(i);
+
+            if (obj != null) {
+                putTreeInByteBuffer(obj, p_exporter);
+            }
+
+        }
+        if (p_node.getNumberOfChildren() >= 1) {
+            obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
+
+            putTreeInByteBuffer(obj, p_exporter);
+        }
+
+    }
+
+    @Override
+    public void importObject(final Importer p_importer) {
+        // Size is read before!
+        m_minEntries = p_importer.readShort();
+        m_minChildren = (short) (m_minEntries + 1);
+        m_maxEntries = (short) (2 * m_minEntries);
+        m_maxChildren = (short) (m_maxEntries + 1);
+
+        int elementsInBTree = p_importer.readInt();
+        if (elementsInBTree > 0) {
+            for (int i = 0; i < elementsInBTree; i++) {
+                long cid = p_importer.readLong();
+                short rid = p_importer.readShort();
+
+                createOrReplaceEntry(cid, rid);
+            }
+        }
+    }
+
+    @Override
+    public void exportObject(final Exporter p_exporter) {
+        p_exporter.writeShort(m_minEntries);
+        if (m_root != null) {
+            // Push Size
+            int numberOfTreeElements = m_entrySize + 1;
+            p_exporter.writeInt(numberOfTreeElements);
+
+            // Push elements
+            putTreeInByteBuffer(m_root, p_exporter);
+        } else {
+            p_exporter.writeInt(-1);
+        }
+    }
+
+    @Override
+    public int sizeofObject() {
+        int numberOfBytesWritten = Integer.BYTES;
+
+        // Size of the b tree list
+        // Integer represents the bytes where the size of the list is stored, m_size + 1 for number of entries including the
+        // default (LocalID: 0x1000000000000 NodeID: 0xNID), long and short for key and value
+        if (m_root != null) {
+            numberOfBytesWritten += (m_entrySize + 1) * (Long.BYTES + Short.BYTES);
+        }
+
+        numberOfBytesWritten += Short.BYTES;
+
+        numberOfBytesWritten += Short.BYTES;
+
+        return numberOfBytesWritten;
     }
 
     /**
-     * Removes given object from btree
+     * Removes given chunk from btree
      *
      * @param p_chunkID
      *     ChunkID of deleted object
      * @note should always be called if an object is deleted
      */
-    public void removeObject(final long p_chunkID) {
+    public void remove(final long p_chunkID) {
         int index;
         Node node;
         long currentCID;
@@ -403,7 +465,7 @@ final class MigrationBackupTree {
                             // Successor might be direct neighbor or not: ABC or AB___C
                             if (successor.getRangeID() == INVALID) {
                                 // Successor is barrier: ABC -> A_C or AB___C -> A___C
-                                remove(p_chunkID);
+                                removeInternal(p_chunkID);
                             } else {
                                 // Successor is no barrier: ABC -> AXC or AB___C -> AX___C
                                 node.changeEntry(p_chunkID, INVALID, index);
@@ -411,13 +473,13 @@ final class MigrationBackupTree {
                             if (predecessor.getRangeID() == INVALID) {
                                 // Predecessor is barrier: A_C -> ___C or AXC -> ___XC
                                 // or A___C -> ___C or AX___C -> ___X___C
-                                remove(predecessor.getChunkID());
+                                removeInternal(predecessor.getChunkID());
                             }
                         } else {
                             // Predecessor is no direct neighbor: A___B
                             if (successor.getRangeID() == INVALID) {
                                 // Successor is barrier: A___BC -> A___C or A___B___C -> A___'___C
-                                remove(p_chunkID);
+                                removeInternal(p_chunkID);
                             } else {
                                 // Successor is no barrier: A___BC -> A___XC or A___B___C -> A___X___C
                                 node.changeEntry(p_chunkID, INVALID, index);
@@ -440,7 +502,7 @@ final class MigrationBackupTree {
                             createOrReplaceEntry(p_chunkID, INVALID);
                             if (predecessor.getRangeID() == INVALID) {
                                 // Predecessor is barrier: AXC -> ___XC or AX___C -> ___X___C
-                                remove(p_chunkID - 1);
+                                removeInternal(p_chunkID - 1);
                             }
                         } else {
                             // Predecessor is no direct neighbor: A___'B'
@@ -498,60 +560,21 @@ final class MigrationBackupTree {
     }
 
     /**
-     * Checks if the Chunk fits in current log
-     *
-     * @param p_size
-     *     the size of the chunk + log header size
-     * @return true if it fits
-     */
-    boolean fits(final long p_size) {
-        return p_size + m_currentSecLogSize <= m_backupRangeSize;
-    }
-
-    /**
-     * Resets the byte counter for current backup range
-     */
-    void initNewBackupRange() {
-        m_currentSecLogSize = 0;
-    }
-
-    /**
-     * Stores the backup range ID for a single object
+     * Stores the backup range ID for a single chunk
      *
      * @param p_chunkID
-     *     ChunkID of migrated object
+     *     ChunkIDs of created/migrated/recovered chunks
      * @param p_rangeID
      *     the backup range ID
-     * @param p_size
-     *     the size of the chunk + log header size
      * @return true if insertion was successful
      */
-    boolean putObject(final long p_chunkID, final byte p_rangeID, final long p_size) {
-        Node node;
+    public boolean putChunkIDs(final long[] p_chunkID, final short p_rangeID) {
+        boolean ret = true;
 
-        node = createOrReplaceEntry(p_chunkID, p_rangeID);
-
-        mergeWithPredecessorOrBound(p_chunkID, p_rangeID, node);
-
-        mergeWithSuccessor(p_chunkID, p_rangeID);
-
-        m_currentSecLogSize += p_size;
-
-        return true;
-    }
-
-    /**
-     * Returns ChunkIDs of all Chunks in given range
-     *
-     * @param p_rangeID
-     *     the RangeID
-     * @return all ChunkIDs
-     */
-    long[] getAllChunkIDsOfRange(final byte p_rangeID) {
-        long[] ret = null;
-
-        if (m_root != null) {
-            ret = iterateNode(m_root, p_rangeID);
+        for (long chunkID : p_chunkID) {
+            if (!putChunkID(chunkID, p_rangeID)) {
+                ret = false;
+            }
         }
 
         return ret;
@@ -564,8 +587,124 @@ final class MigrationBackupTree {
      *     ChunkID of requested object
      * @return the backup range ID
      */
-    byte getBackupRange(final long p_chunkID) {
-        return getRangeIDOrSuccessorsRangeID(p_chunkID);
+    public short getBackupRange(final long p_chunkID) {
+        long chunkID;
+        // Store localID for local chunks, only
+        if (ChunkID.getCreatorID(p_chunkID) == m_creator) {
+            chunkID = ChunkID.getLocalID(p_chunkID);
+        } else {
+            chunkID = p_chunkID;
+        }
+
+        return getRangeIDOrSuccessorsRangeID(chunkID);
+    }
+
+    /**
+     * Stores the backup range ID for a single chunk
+     *
+     * @param p_chunkID
+     *     ChunkID of created/migrated/recovered chunk
+     * @param p_rangeID
+     *     the backup range ID
+     * @return true if insertion was successful
+     */
+    boolean putChunkID(final long p_chunkID, final short p_rangeID) {
+        long chunkID;
+        Node node;
+
+        // Store localID for local chunks, only
+        if (ChunkID.getCreatorID(p_chunkID) == m_creator) {
+            chunkID = ChunkID.getLocalID(p_chunkID);
+
+            // Continue initialization of new backup range with first known localID of new range
+            if (m_initNeeded) {
+                // Init new range
+                createOrReplaceEntry(LOCAL_MAXIMUM_ID, m_newRangeID);
+                // Close old range
+                createOrReplaceEntry(chunkID - 1, m_oldRangeID);
+                m_initNeeded = false;
+            }
+        } else {
+            chunkID = p_chunkID;
+        }
+
+        node = createOrReplaceEntry(chunkID, p_rangeID);
+
+        // Do not merge with predecessor and successor if successor has same RangeID
+        if (node != null) {
+
+            mergeWithPredecessorOrBound(chunkID, p_rangeID, node);
+
+            mergeWithSuccessor(chunkID, p_rangeID);
+        }
+
+        return true;
+    }
+
+    /**
+     * Stores the backup range ID for a chunk range
+     *
+     * @param p_firstChunkID
+     *     first ChunkID of migrated/recovered chunk range
+     * @param p_lastChunkID
+     *     last ChunkID of migrated/recovered chunk range
+     * @param p_rangeID
+     *     the backup range ID
+     * @return true if insertion was successful
+     */
+    boolean putChunkIDRange(final long p_firstChunkID, final long p_lastChunkID, final short p_rangeID) {
+        Node startNode;
+
+        // FIXME: causes null pointer exception after recovery
+
+        // end larger than start or start smaller than 1
+        assert p_firstChunkID <= p_lastChunkID && p_firstChunkID > 0;
+
+        if (p_firstChunkID == p_lastChunkID) {
+            putChunkID(p_firstChunkID, p_rangeID);
+        } else {
+            startNode = createOrReplaceEntry(p_firstChunkID, p_rangeID);
+
+            if (startNode != null) {
+                mergeWithPredecessorOrBound(p_firstChunkID, p_rangeID, startNode);
+            }
+
+            createOrReplaceEntry(p_lastChunkID, p_rangeID);
+
+            removeEntriesWithinRange(p_firstChunkID, p_lastChunkID);
+
+            mergeWithSuccessor(p_lastChunkID, p_rangeID);
+        }
+        return true;
+    }
+
+    /**
+     * Initialize new backup range. Is continued with first local insertion.
+     *
+     * @param p_rangeID
+     *     the new backup range ID
+     */
+    void initializeNewBackupRange(final short p_rangeID) {
+        m_oldRangeID = getRangeIDOrSuccessorsRangeID(LOCAL_MAXIMUM_ID);
+        m_newRangeID = p_rangeID;
+        m_initNeeded = true;
+    }
+
+    /**
+     * Returns ChunkIDs of all Chunks in given range
+     *
+     * @param p_rangeID
+     *     the RangeID
+     * @return all ChunkIDs
+     */
+    long[] getAllChunkIDsOfRange(final short p_rangeID) {
+        long[] ret = null;
+
+        if (m_root != null) {
+            ret = iterateNode(m_root, p_rangeID);
+        }
+
+        return ret;
     }
 
     /**
@@ -577,7 +716,7 @@ final class MigrationBackupTree {
      *     the backup range ID
      * @return the node in which the entry is stored
      */
-    private Node createOrReplaceEntry(final long p_chunkID, final byte p_rangeID) {
+    private Node createOrReplaceEntry(final long p_chunkID, final short p_rangeID) {
         Node ret;
         Node node;
         int index;
@@ -596,11 +735,16 @@ final class MigrationBackupTree {
                         m_changedEntry = new Entry(node.getChunkID(index), node.getRangeID(index));
                         node.changeEntry(p_chunkID, p_rangeID, index);
                     } else {
-                        m_changedEntry = null;
-                        node.addEntry(p_chunkID, p_rangeID, index * -1 - 1);
-                        if (m_maxEntries < node.getNumberOfEntries()) {
-                            // Need to split up
-                            node = split(p_chunkID, node);
+                        if (getRangeIDOrSuccessorsRangeID(p_chunkID) == p_rangeID) {
+                            // The successor entry is equal -> no need for insertion
+                            return null;
+                        } else {
+                            m_changedEntry = null;
+                            node.addEntry(p_chunkID, p_rangeID, index * -1 - 1);
+                            if (m_maxEntries < node.getNumberOfEntries()) {
+                                // Need to split up
+                                node = split(p_chunkID, node);
+                            }
                         }
                     }
                     break;
@@ -646,7 +790,7 @@ final class MigrationBackupTree {
      * @param p_node
      *     anchor node
      */
-    private void mergeWithPredecessorOrBound(final long p_chunkID, final byte p_rangeID, final Node p_node) {
+    private void mergeWithPredecessorOrBound(final long p_chunkID, final short p_rangeID, final Node p_node) {
         Entry predecessor;
         Entry successor;
 
@@ -656,7 +800,7 @@ final class MigrationBackupTree {
         } else {
             if (p_chunkID - 1 == predecessor.getChunkID()) {
                 if (p_rangeID == predecessor.getRangeID()) {
-                    remove(predecessor.getChunkID(), getPredecessorsNode(p_chunkID, p_node));
+                    removeInternal(predecessor.getChunkID(), getPredecessorsNode(p_chunkID, p_node));
                 }
             } else {
                 successor = getSuccessorsEntry(p_chunkID, p_node);
@@ -666,7 +810,7 @@ final class MigrationBackupTree {
                         createOrReplaceEntry(p_chunkID - 1, successor.getRangeID());
                     } else {
                         // New Object is in range that already was migrated to the same destination
-                        remove(p_chunkID, p_node);
+                        removeInternal(p_chunkID, p_node);
                     }
                 } else {
                     if (p_rangeID != m_changedEntry.getRangeID()) {
@@ -685,14 +829,14 @@ final class MigrationBackupTree {
      * @param p_rangeID
      *     the backup range ID
      */
-    private void mergeWithSuccessor(final long p_chunkID, final byte p_rangeID) {
+    private void mergeWithSuccessor(final long p_chunkID, final short p_rangeID) {
         Node node;
         Entry successor;
 
         node = getNodeOrSuccessorsNode(p_chunkID);
         successor = getSuccessorsEntry(p_chunkID, node);
         if (successor != null && p_rangeID == successor.getRangeID()) {
-            remove(p_chunkID, node);
+            removeInternal(p_chunkID, node);
         }
     }
 
@@ -707,11 +851,11 @@ final class MigrationBackupTree {
     private void removeEntriesWithinRange(final long p_start, final long p_end) {
         long successor;
 
-        remove(p_start, getNodeOrSuccessorsNode(p_start));
+        removeInternal(p_start, getNodeOrSuccessorsNode(p_start));
 
         successor = getCIDOrSuccessorsCID(p_start);
         while (successor != -1 && successor < p_end) {
-            remove(successor);
+            removeInternal(successor);
             successor = getCIDOrSuccessorsCID(p_start);
         }
     }
@@ -801,8 +945,8 @@ final class MigrationBackupTree {
      *     the ChunkID whose corresponding RangeID is searched
      * @return RangeID for p_chunkID if p_chunkID is in btree or successors NodeID
      */
-    private byte getRangeIDOrSuccessorsRangeID(final long p_chunkID) {
-        byte ret = INVALID;
+    private short getRangeIDOrSuccessorsRangeID(final long p_chunkID) {
+        short ret = INVALID;
         int index;
         Node node;
 
@@ -835,7 +979,7 @@ final class MigrationBackupTree {
         int size;
         int medianIndex;
         long medianCID;
-        byte medianRangeID;
+        short medianRangeID;
 
         Node left;
         Node right;
@@ -901,12 +1045,12 @@ final class MigrationBackupTree {
      *     the ChunkID
      * @return p_chunkID or (-1) if there is no entry for p_chunkID
      */
-    private long remove(final long p_chunkID) {
+    private long removeInternal(final long p_chunkID) {
         long ret;
         Node node;
 
         node = getNodeOrSuccessorsNode(p_chunkID);
-        ret = remove(p_chunkID, node);
+        ret = removeInternal(p_chunkID, node);
 
         return ret;
     }
@@ -920,12 +1064,12 @@ final class MigrationBackupTree {
      *     the node in which p_chunkID should be stored
      * @return p_chunkID or (-1) if there is no entry for p_chunkID
      */
-    private long remove(final long p_chunkID, final Node p_node) {
+    private long removeInternal(final long p_chunkID, final Node p_node) {
         long ret = -1;
         int index;
         Node greatest;
         long replaceCID;
-        byte replaceRangeID;
+        short replaceRangeID;
 
         assert p_node != null;
 
@@ -984,10 +1128,10 @@ final class MigrationBackupTree {
 
         long removeCID;
         int prev;
-        byte parentRangeID;
+        short parentRangeID;
         long parentCID;
 
-        byte neighborRangeID;
+        short neighborRangeID;
         long neighborCID;
 
         parent = p_node.getParent();
@@ -1196,7 +1340,7 @@ final class MigrationBackupTree {
         private Node m_parent;
 
         private long[] m_keys;
-        private byte[] m_dataLeafs;
+        private short[] m_dataLeafs;
         private short m_numberOfEntries;
 
         private Node[] m_children;
@@ -1217,47 +1361,10 @@ final class MigrationBackupTree {
         private Node(final Node p_parent, final short p_maxEntries, final int p_maxChildren) {
             m_parent = p_parent;
             m_keys = new long[p_maxEntries + 1];
-            m_dataLeafs = new byte[p_maxEntries + 1];
+            m_dataLeafs = new short[p_maxEntries + 1];
             m_numberOfEntries = 0;
             m_children = new Node[p_maxChildren + 1];
             m_numberOfChildren = 0;
-        }
-
-        /**
-         * Returns the parent node
-         *
-         * @return the parent node
-         */
-        private Node getParent() {
-            return m_parent;
-        }
-
-        /**
-         * Returns the parent node
-         *
-         * @param p_parent
-         *     the parent node
-         */
-        private void setParent(final Node p_parent) {
-            m_parent = p_parent;
-        }
-
-        /**
-         * Returns the number of entries
-         *
-         * @return the number of entries
-         */
-        private int getNumberOfEntries() {
-            return m_numberOfEntries;
-        }
-
-        /**
-         * Returns the number of children
-         *
-         * @return the number of children
-         */
-        private int getNumberOfChildren() {
-            return m_numberOfChildren;
         }
 
         /**
@@ -1339,6 +1446,43 @@ final class MigrationBackupTree {
         }
 
         /**
+         * Returns the parent node
+         *
+         * @return the parent node
+         */
+        private Node getParent() {
+            return m_parent;
+        }
+
+        /**
+         * Returns the parent node
+         *
+         * @param p_parent
+         *     the parent node
+         */
+        private void setParent(final Node p_parent) {
+            m_parent = p_parent;
+        }
+
+        /**
+         * Returns the number of entries
+         *
+         * @return the number of entries
+         */
+        private int getNumberOfEntries() {
+            return m_numberOfEntries;
+        }
+
+        /**
+         * Returns the number of children
+         *
+         * @return the number of children
+         */
+        private int getNumberOfChildren() {
+            return m_numberOfChildren;
+        }
+
+        /**
          * Returns the ChunkID to given index
          *
          * @param p_index
@@ -1356,7 +1500,7 @@ final class MigrationBackupTree {
          *     the index
          * @return the data leaf to given index
          */
-        private byte getRangeID(final int p_index) {
+        private short getRangeID(final int p_index) {
             return m_dataLeafs[p_index];
         }
 
@@ -1406,7 +1550,7 @@ final class MigrationBackupTree {
          * @param p_rangeID
          *     the backup range ID
          */
-        private void addEntry(final long p_chunkID, final byte p_rangeID) {
+        private void addEntry(final long p_chunkID, final short p_rangeID) {
             int index;
 
             index = indexOf(p_chunkID) * -1 - 1;
@@ -1430,7 +1574,7 @@ final class MigrationBackupTree {
          * @param p_index
          *     the index to store the element at
          */
-        private void addEntry(final long p_chunkID, final byte p_rangeID, final int p_index) {
+        private void addEntry(final long p_chunkID, final short p_rangeID, final int p_index) {
             System.arraycopy(m_keys, p_index, m_keys, p_index + 1, m_numberOfEntries - p_index);
             System.arraycopy(m_dataLeafs, p_index, m_dataLeafs, p_index + 1, m_numberOfEntries - p_index);
 
@@ -1454,7 +1598,7 @@ final class MigrationBackupTree {
          */
         private void addEntries(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
             long[] aux1;
-            byte[] aux2;
+            short[] aux2;
 
             if (p_offsetDst != -1) {
                 System.arraycopy(p_node.m_keys, p_offsetSrc, m_keys, p_offsetDst, p_endSrc - p_offsetSrc);
@@ -1466,7 +1610,7 @@ final class MigrationBackupTree {
                 System.arraycopy(m_keys, 0, aux1, p_node.m_numberOfEntries, m_numberOfEntries);
                 m_keys = aux1;
 
-                aux2 = new byte[m_dataLeafs.length];
+                aux2 = new short[m_dataLeafs.length];
                 System.arraycopy(p_node.m_dataLeafs, 0, aux2, 0, p_node.m_numberOfEntries);
                 System.arraycopy(m_dataLeafs, 0, aux2, p_node.m_numberOfEntries, m_numberOfEntries);
                 m_dataLeafs = aux2;
@@ -1485,7 +1629,7 @@ final class MigrationBackupTree {
          * @param p_index
          *     the index of given entry in this node
          */
-        private void changeEntry(final long p_chunkID, final byte p_rangeID, final int p_index) {
+        private void changeEntry(final long p_chunkID, final short p_rangeID, final int p_index) {
 
             if (p_chunkID == getChunkID(p_index)) {
                 m_keys[p_index] = p_chunkID;
@@ -1710,7 +1854,7 @@ final class MigrationBackupTree {
     private static final class Entry {
         // Attributes
         private long m_chunkID;
-        private byte m_rangeID;
+        private short m_rangeID;
 
         // Constructors
 
@@ -1722,7 +1866,7 @@ final class MigrationBackupTree {
          * @param p_rangeID
          *     the backup range ID
          */
-        Entry(final long p_chunkID, final byte p_rangeID) {
+        Entry(final long p_chunkID, final short p_rangeID) {
             m_chunkID = p_chunkID;
             m_rangeID = p_rangeID;
         }
@@ -1741,7 +1885,7 @@ final class MigrationBackupTree {
          *
          * @return the backup range ID
          */
-        public byte getRangeID() {
+        public short getRangeID() {
             return m_rangeID;
         }
 
