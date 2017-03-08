@@ -18,8 +18,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import sun.misc.Unsafe;
-
 import de.hhu.bsinfo.utils.UnsafeHandler;
 
 /**
@@ -30,7 +28,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
 public final class JNIReadWriteSpinLock implements ReadWriteLock {
 
     // Constants
-    private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
+    @SuppressWarnings("sunapi")
+    private static final sun.misc.Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
 
     // Attributes
     private long m_lock;

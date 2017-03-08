@@ -18,8 +18,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import sun.misc.Unsafe;
-
 import de.hhu.bsinfo.utils.UnsafeHandler;
 
 /**
@@ -30,7 +28,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
 public final class ReadWriteSpinLock implements ReadWriteLock {
 
     // Constants
-    private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
+    @SuppressWarnings("sunapi")
+    private static final sun.misc.Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
     private static final long OFFSET = getLockOffset();
 
     private static final int READER_BITMASK = 0x7FFFFFFF;

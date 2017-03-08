@@ -13,8 +13,6 @@
 
 package de.hhu.bsinfo.utils.run;
 
-import sun.misc.Unsafe;
-
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.UnsafeHandler;
 import de.hhu.bsinfo.utils.eval.EvaluationTable;
@@ -162,7 +160,8 @@ public final class NativeMemoryBenchmark {
      *     Name of the row in the table to put the data into.
      */
     private void runUnsafe(final int p_numRuns, final String p_rowName) {
-        Unsafe unsafe = UnsafeHandler.getInstance().getUnsafe();
+        @SuppressWarnings("sunapi")
+        sun.misc.Unsafe unsafe = UnsafeHandler.getInstance().getUnsafe();
         Stopwatch[] stopwatches = new Stopwatch[6];
         for (int i = 0; i < stopwatches.length; i++) {
             stopwatches[i] = new Stopwatch();

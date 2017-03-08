@@ -168,6 +168,7 @@
         <javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false"
                debug="${debugOn}" optimize="${optimizeOn}"
                target="1.8" encoding="UTF-8">
+			<compilerarg line="-Xlint:sunapi -XDenableSunApiLintControl"/>
             <include name="de/hhu/bsinfo/dxgraph/**/*.java"/>
             <include name="de/hhu/bsinfo/dxcompute/**/*.java"/>
             <include name="de/hhu/bsinfo/dxram/**/*.java"/>

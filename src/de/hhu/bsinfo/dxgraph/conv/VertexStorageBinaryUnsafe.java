@@ -16,7 +16,6 @@ package de.hhu.bsinfo.dxgraph.conv;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
-import sun.misc.Unsafe;
 import de.hhu.bsinfo.utils.UnsafeHandler;
 
 /**
@@ -37,7 +36,8 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 
     // private int m_vertexIdOffset;
 
-    private Unsafe m_unsafe;
+    @SuppressWarnings("sunapi")
+    private sun.misc.Unsafe m_unsafe;
 
     private AtomicLong m_vertexCount = new AtomicLong(0);
     private AtomicLong m_edgeCount = new AtomicLong(0);

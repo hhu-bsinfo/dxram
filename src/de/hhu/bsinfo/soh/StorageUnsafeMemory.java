@@ -13,8 +13,6 @@
 
 package de.hhu.bsinfo.soh;
 
-import sun.misc.Unsafe;
-
 import de.hhu.bsinfo.utils.UnsafeHandler;
 
 /**
@@ -26,7 +24,8 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
 public class StorageUnsafeMemory implements Storage {
-    private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
+    @SuppressWarnings("sunapi")
+    private static final sun.misc.Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
 
     private long m_memoryBase = -1;
     private long m_memorySize = -1;

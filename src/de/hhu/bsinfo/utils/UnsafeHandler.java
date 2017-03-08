@@ -15,17 +15,16 @@ package de.hhu.bsinfo.utils;
 
 import java.lang.reflect.Field;
 
-import sun.misc.Unsafe;
-
 /**
  * Enables direct access to the main memory
  *
  * @author Florian Klein, florian.klein@hhu.de, 22.07.2013
  */
+@SuppressWarnings("sunapi")
 public final class UnsafeHandler {
 
     // Attributes
-    private Unsafe m_unsafe;
+    private sun.misc.Unsafe m_unsafe;
 
     // Constructors
 
@@ -36,9 +35,9 @@ public final class UnsafeHandler {
         Field field;
 
         try {
-            field = Unsafe.class.getDeclaredField("theUnsafe");
+            field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
             field.setAccessible(true);
-            m_unsafe = (Unsafe) field.get(null);
+            m_unsafe = (sun.misc.Unsafe) field.get(null);
         } catch (final Exception e) {
             throw new AssertionError(e);
         }
@@ -51,7 +50,7 @@ public final class UnsafeHandler {
      *
      * @return the instance of the Unsafe class
      */
-    public Unsafe getUnsafe() {
+    public sun.misc.Unsafe getUnsafe() {
         return m_unsafe;
     }
 
