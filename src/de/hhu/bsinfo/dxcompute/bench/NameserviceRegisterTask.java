@@ -36,14 +36,12 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 public class NameserviceRegisterTask implements Task {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceRegisterTask.class.getSimpleName());
 
+    private String m_allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGRHIJKLMNOPQRSTUVWXYZ0123456789-";
+
     @Expose
     private int m_numThreads = 1;
     @Expose
     private int m_chunkCount = 1000;
-
-    public NameserviceRegisterTask() {
-
-    }
 
     @Override
     public int execute(TaskContext p_ctx) {
@@ -139,17 +137,13 @@ public class NameserviceRegisterTask implements Task {
         return Integer.BYTES * 2;
     }
 
-    // vieleicht in NameServiceUtils auslagen
-    private String allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGRHIJKLMNOPQRSTUVWXYZ0123456789-";
-
     private String getRandomValue() {
         Random random = new Random();
-        int length = random.nextInt(5 - 0 + 1) + 0;
+        int length = random.nextInt(5 + 1);
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
-            sb.append(allowedChars.charAt(random.nextInt(allowedChars.length())));
+            sb.append(m_allowedChars.charAt(random.nextInt(m_allowedChars.length())));
         }
         return sb.toString();
     }
-
 }

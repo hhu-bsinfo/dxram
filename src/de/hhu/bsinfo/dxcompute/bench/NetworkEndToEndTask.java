@@ -41,11 +41,12 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 public class NetworkEndToEndTask implements Task, MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkEndToEndTask.class.getSimpleName());
 
-    private volatile AtomicBoolean isFinished = new AtomicBoolean(false);
+    private volatile AtomicBoolean m_isFinished = new AtomicBoolean(false);
     private volatile AtomicLong m_receivedCnt = new AtomicLong(0);
 
     private boolean m_isFirstMessage = true;
-    private long m_receiveTimeStart, m_receiveTimeEnd;
+    private long m_receiveTimeStart;
+    private long m_receiveTimeEnd;
 
     @Expose
     private int m_messageCnt = 100;
@@ -71,10 +72,11 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
         // get Messages per Thread and destination node id
         long[] messagesPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(m_messageCnt, m_threadCnt);
         short sendNodeId;
-        if (ownSlaveID % 2 == 0)
-            sendNodeId = slaveNodeIds[(ownSlaveID + 1)];
-        else
-            sendNodeId = slaveNodeIds[(ownSlaveID - 1)];
+        if (ownSlaveID % 2 == 0) {
+            sendNodeId = slaveNodeIds[ownSlaveID + 1];
+        } else {
+            sendNodeId = slaveNodeIds[ownSlaveID - 1];
+        }
 
         Thread[] threads = new Thread[m_threadCnt];
         long[] timeStart = new long[m_threadCnt];
@@ -136,16 +138,18 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
         }
 
         System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
-        double throughput = (m_messageCnt * m_messageSize / (totalTime / 1000.0 / 1000.0 / 1000.0));
-        if (throughput > 1000000)
+        double throughput = m_messageCnt * m_messageSize / (totalTime / 1000.0 / 1000.0 / 1000.0);
+        if (throughput > 1000000) {
             System.out.printf("Throughput Tx: %f MB/s", throughput / 1000.0 / 1000.0);
-        else if (throughput > 1000)
+        } else if (throughput > 1000) {
             System.out.printf("Throughput Tx: %f KB/s", throughput / 1000.0);
-        else
+        } else {
             System.out.printf("Throughput Tx: %f B/s", throughput);
+        }
 
-        while (!isFinished.get())
-            ;
+        while (!m_isFinished.get()) {
+            // wait until finished
+        }
 
         double sizeInMB = (m_messageCnt * m_messageSize) / 1000.0 / 1000.0;
         double timeInS = (m_receiveTimeEnd - m_receiveTimeStart) / 1000.0 / 1000.0 / 1000.0;
@@ -189,7 +193,7 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
 
         if (m_receivedCnt.get() == m_messageCnt) {
             m_receiveTimeEnd = System.nanoTime();
-            isFinished.compareAndSet(false, true);
+            m_isFinished.compareAndSet(false, true);
         }
     }
 }

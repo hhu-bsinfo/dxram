@@ -41,7 +41,8 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkEndToEndTask.class.getSimpleName());
 
     private AtomicLong m_receivedCnt;
-    private AtomicLong m_receiveTimeStart, m_receiveTimeEnd;
+    private AtomicLong m_receiveTimeStart;
+    private AtomicLong m_receiveTimeEnd;
 
     private int m_slaveCnt;
 
@@ -51,10 +52,6 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
     private int m_messageSize = 1000;
     @Expose
     private int m_threadCnt = 10;
-
-    public NetworkBroadcastTask() {
-
-    }
 
     @Override
     public int execute(TaskContext p_ctx) {
@@ -86,7 +83,7 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
         long[] timeEnd = new long[m_threadCnt];
 
         // pre create threads to use pooling
-        NetworkTestMessage messages[] = new NetworkTestMessage[m_slaveCnt];
+        NetworkTestMessage[] messages = new NetworkTestMessage[m_slaveCnt];
         for (int i = 0; i < m_slaveCnt; i++) {
             messages[i] = new NetworkTestMessage(slaveNodeIds[i], m_messageSize);
         }
@@ -103,8 +100,10 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
                 for (int j = 0; j < messagesToSend; j++) {
                     // send message to every slave
                     for (int k = 0; k < m_slaveCnt; k++) {
-                        if (k == ownSlaveID)
+                        if (k == ownSlaveID) {
                             continue;
+                        }
+
                         try {
                             networkService.sendMessage(messages[k]);
                         } catch (NetworkException e) {
@@ -207,7 +206,7 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
 
             m_receivedCnt.incrementAndGet();
 
-            if (m_receivedCnt.get() == (m_messageCnt * (m_slaveCnt - 1))) {
+            if (m_receivedCnt.get() == m_messageCnt * (m_slaveCnt - 1)) {
                 m_receiveTimeEnd.compareAndSet(0, System.nanoTime());
             }
         }

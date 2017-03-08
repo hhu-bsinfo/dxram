@@ -40,10 +40,6 @@ public class NameserviceGetChunkIDTask implements Task {
     @Expose
     private int m_numThreads = 1;
 
-    public NameserviceGetChunkIDTask() {
-
-    }
-
     @Override
     public int execute(TaskContext p_ctx) {
 
@@ -62,7 +58,6 @@ public class NameserviceGetChunkIDTask implements Task {
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
             threads[i] = new Thread(() -> {
-                long[] chunkIDs = new long[(int) chunkCountsPerThread[threadIdx]];
                 timeStart[threadIdx] = System.nanoTime();
 
                 int base = 0;
@@ -71,7 +66,7 @@ public class NameserviceGetChunkIDTask implements Task {
                 }
 
                 for (int j = 0; j < chunkCountsPerThread[threadIdx]; j++) {
-                    chunkIDs[j] = nameserviceService.getChunkID(entries.get(base + j).m_first, 100);
+                    nameserviceService.getChunkID(entries.get(base + j).m_first, 100);
                 }
 
                 timeEnd[threadIdx] = System.nanoTime();
