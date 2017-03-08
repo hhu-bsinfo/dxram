@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxram.chunk;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,10 +37,13 @@ import de.hhu.bsinfo.ethnet.NetworkException;
 public class ChunkBackupComponent extends AbstractDXRAMComponent {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkBackupComponent.class.getSimpleName());
+    private static final int MAXIMUM_QUEUE_SIZE = 10;
 
     // dependent components
     private MemoryManagerComponent m_memoryManager;
     private NetworkComponent m_network;
+
+    private ConcurrentLinkedQueue<Entry> m_recoveryChunkQueue;
 
     /**
      * Constructor
@@ -145,6 +150,21 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
     }
 
     /**
+     * Initializes a new thread for storing all recovered Chunks in memory
+     *
+     * @return the Thread
+     */
+    public RecoveryWriterThread initRecoveryThread() {
+        m_recoveryChunkQueue = new ConcurrentLinkedQueue<Entry>();
+
+        RecoveryWriterThread thread = new RecoveryWriterThread();
+        thread.setName("Recovery: Writer-Thread");
+        thread.start();
+
+        return thread;
+    }
+
+    /**
      * Put recovered chunks into local memory.
      *
      * @param p_chunkIDs
@@ -160,7 +180,12 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      * @lock manage lock from memory manager component must be locked
      */
     public boolean putRecoveredChunks(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
-        m_memoryManager.createAndPutRecovered(p_chunkIDs, p_data, p_offsets, p_lengths, p_usedEntries);
+
+        while (m_recoveryChunkQueue.size() >= MAXIMUM_QUEUE_SIZE) {
+            Thread.yield();
+        }
+        m_recoveryChunkQueue.add(new Entry(p_chunkIDs, p_data, p_offsets, p_lengths, p_usedEntries));
+
         // #if LOGGER == TRACE
         LOGGER.trace("Stored %d recovered chunks locally", p_usedEntries);
         // #endif /* LOGGER == TRACE */
@@ -211,6 +236,72 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
     @Override
     protected boolean shutdownComponent() {
         return true;
+    }
+
+    private static final class Entry {
+
+        private long[] m_chunkIDs;
+        private byte[] m_data;
+        private int[] m_offsets;
+        private int[] m_lengths;
+        private int m_usedEntries;
+
+        private Entry(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
+            m_chunkIDs = p_chunkIDs;
+            m_data = p_data;
+            m_offsets = p_offsets;
+            m_lengths = p_lengths;
+            m_usedEntries = p_usedEntries;
+        }
+    }
+
+    /**
+     * Recovery helper thread. Writes all given Chunks to memory.
+     */
+    public class RecoveryWriterThread extends Thread {
+
+        private int m_timeToPut = 0;
+
+        /**
+         * Returns the duration for putting all chunks
+         *
+         * @return the time in ms
+         */
+        public int getTimeToPut() {
+            return m_timeToPut;
+        }
+
+        /**
+         * Returns if all chunks were already put to memory
+         *
+         * @return true if queue is empty
+         */
+        public boolean finished() {
+            return m_recoveryChunkQueue.isEmpty();
+        }
+
+        @Override
+        public void run() {
+            long time;
+            Entry entry;
+
+            while (!Thread.currentThread().isInterrupted()) {
+                entry = null;
+                while (entry == null) {
+                    entry = m_recoveryChunkQueue.poll();
+
+                    if (entry == null) {
+                        Thread.yield();
+                    }
+                }
+
+                time = System.currentTimeMillis();
+                m_memoryManager.lockManage();
+                m_memoryManager.createAndPutRecovered(entry.m_chunkIDs, entry.m_data, entry.m_offsets, entry.m_lengths, entry.m_usedEntries);
+                m_memoryManager.unlockManage();
+                m_timeToPut += System.currentTimeMillis() - time;
+            }
+        }
     }
 
 }
