@@ -10,9 +10,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
+
 package de.hhu.bsinfo.dxcompute.bench;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+
 import com.google.gson.annotations.Expose;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
@@ -24,11 +32,6 @@ import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by akguel on 25.01.17.
@@ -54,7 +57,7 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
 
         short[] slaveNodeIds = p_ctx.getCtxData().getSlaveNodeIds();
         short ownSlaveID = p_ctx.getCtxData().getSlaveId();
-        if(slaveNodeIds.length % 2 != 0 || slaveNodeIds.length == 0) {
+        if (slaveNodeIds.length % 2 != 0 || slaveNodeIds.length == 0) {
             System.out.println("The number of slave have to be a multiple of two to execute this task");
             return -1;
         }
@@ -66,7 +69,7 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
         // get Messages per Thread and destination node id
         long[] messagesPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(m_messageCnt, m_threadCnt);
         short sendNodeId;
-        if(ownSlaveID % 2 == 0)
+        if (ownSlaveID % 2 == 0)
             sendNodeId = slaveNodeIds[(ownSlaveID + 1)];
         else
             sendNodeId = slaveNodeIds[(ownSlaveID - 1)];
@@ -97,7 +100,7 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
             });
         }
 
-        for(Thread t : threads) {
+        for (Thread t : threads) {
             t.start();
         }
 
@@ -115,7 +118,6 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
             return -2;
         }
 
-
         System.out.print("Times per thread:");
         for (int i = 0; i < m_threadCnt; i++) {
             System.out.printf("\nThread-%d: %f sec", i, (timeEnd[i] - timeStart[i]) / 1000.0 / 1000.0 / 1000.0);
@@ -132,19 +134,20 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
         }
 
         System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
-        double throughput = (m_messageCnt*m_messageSize / (totalTime / 1000.0 / 1000.0 / 1000.0));
-        if(throughput > 1000000)
-            System.out.printf("Throughput Tx: %f MB/s", throughput/1000.0/1000.0);
-        else if(throughput > 1000)
-            System.out.printf("Throughput Tx: %f KB/s", throughput/1000.0);
+        double throughput = (m_messageCnt * m_messageSize / (totalTime / 1000.0 / 1000.0 / 1000.0));
+        if (throughput > 1000000)
+            System.out.printf("Throughput Tx: %f MB/s", throughput / 1000.0 / 1000.0);
+        else if (throughput > 1000)
+            System.out.printf("Throughput Tx: %f KB/s", throughput / 1000.0);
         else
             System.out.printf("Throughput Tx: %f B/s", throughput);
 
-        while(!isFinished.get());
+        while (!isFinished.get())
+            ;
 
-        double sizeInMB = (m_messageCnt*m_messageSize)/1000.0/1000.0;
-        double timeInS = (m_receiveTimeEnd-m_receiveTimeStart) / 1000.0 / 1000.0 / 1000.0;
-        System.out.printf("Throughput Rx: %f MB/s\n", sizeInMB/timeInS);
+        double sizeInMB = (m_messageCnt * m_messageSize) / 1000.0 / 1000.0;
+        double timeInS = (m_receiveTimeEnd - m_receiveTimeStart) / 1000.0 / 1000.0 / 1000.0;
+        System.out.printf("Throughput Rx: %f MB/s\n", sizeInMB / timeInS);
 
         return 0;
     }
@@ -175,14 +178,14 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
 
     @Override
     public void onIncomingMessage(AbstractMessage p_message) {
-        if(m_isFirstMessage){
+        if (m_isFirstMessage) {
             m_receiveTimeStart = System.nanoTime();
             m_isFirstMessage = false;
         }
 
         m_receivedCnt.incrementAndGet();
 
-        if(m_receivedCnt.get() == m_messageCnt) {
+        if (m_receivedCnt.get() == m_messageCnt) {
             m_receiveTimeEnd = System.nanoTime();
             isFinished.compareAndSet(false, true);
         }

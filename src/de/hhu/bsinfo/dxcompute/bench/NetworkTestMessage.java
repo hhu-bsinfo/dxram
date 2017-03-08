@@ -1,10 +1,22 @@
+/*
+ * Copyright (C) 2016 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxcompute.bench;
 
-import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
-import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-
 import java.nio.ByteBuffer;
+
+import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * Created by akguel on 25.01.17.
@@ -24,17 +36,17 @@ public class NetworkTestMessage extends AbstractMessage {
     /**
      * Creates an instance of TaskRemoteCallbackMessage.
      * This constructor is used when sending this message.
+     *
      * @param p_destination
-     *            the destination node id.
+     *     the destination node id.
      * @param p_messageSize
-     *            Size of byte array.
+     *     Size of byte array.
      */
     public NetworkTestMessage(final short p_destination, final int p_messageSize) {
         super(p_destination, DXComputeMessageTypes.BENCH_MESSAGE_TYPE, BenchMessages.NETWORK_TEST_MESSAGE);
 
         m_data = new byte[p_messageSize];
     }
-
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {

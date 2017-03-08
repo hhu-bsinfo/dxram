@@ -1,6 +1,25 @@
+/*
+ * Copyright (C) 2016 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxcompute.bench;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import com.google.gson.annotations.Expose;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
@@ -12,15 +31,11 @@ import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by akguel on 14.02.17.
  */
-public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceiver{
+public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkEndToEndTask.class.getSimpleName());
 
     private AtomicLong m_receivedCnt;
@@ -52,7 +67,7 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
         m_slaveCnt = slaveNodeIds.length;
         short ownSlaveID = p_ctx.getCtxData().getSlaveId();
 
-        if(slaveNodeIds.length <= 1) {
+        if (slaveNodeIds.length <= 1) {
             System.out.println("The number of slave have to be at least two!");
             return -1;
         }
@@ -85,8 +100,9 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
 
                 for (int j = 0; j < messagesToSend; j++) {
                     // send message to every slave
-                    for(int k = 0; k < m_slaveCnt; k++) {
-                        if(k == ownSlaveID) continue;
+                    for (int k = 0; k < m_slaveCnt; k++) {
+                        if (k == ownSlaveID)
+                            continue;
                         try {
                             networkService.sendMessage(messages[k]);
                         } catch (NetworkException e) {
@@ -99,7 +115,7 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
             });
         }
 
-        for(Thread t : threads) {
+        for (Thread t : threads) {
             t.start();
         }
 
@@ -133,12 +149,12 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
         }
 
         System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
-        double sizeInMB = m_messageCnt*m_messageSize*(m_slaveCnt-1)/1000.0/1000.0;
+        double sizeInMB = m_messageCnt * m_messageSize * (m_slaveCnt - 1) / 1000.0 / 1000.0;
         double timeInS = totalTime / 1000.0 / 1000.0 / 1000.0;
         double throughput = sizeInMB / timeInS;
         System.out.printf("Throughput Tx: %f MB/s\n", throughput);
 
-        while(m_receiveTimeEnd.get() == 0){
+        while (m_receiveTimeEnd.get() == 0) {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -149,9 +165,9 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
 
         networkService.unregisterReceiver(NetworkTestMessage.class, this);
 
-        sizeInMB = m_messageCnt*m_messageSize*(m_slaveCnt-1)/1000.0/1000.0;
-        timeInS = (m_receiveTimeEnd.get()-m_receiveTimeStart.get()) / 1000.0 / 1000.0 / 1000.0;
-        System.out.printf("Throughput Rx: %f MB/s\n", sizeInMB/timeInS);
+        sizeInMB = m_messageCnt * m_messageSize * (m_slaveCnt - 1) / 1000.0 / 1000.0;
+        timeInS = (m_receiveTimeEnd.get() - m_receiveTimeStart.get()) / 1000.0 / 1000.0 / 1000.0;
+        System.out.printf("Throughput Rx: %f MB/s\n", sizeInMB / timeInS);
 
         return 0;
     }
@@ -180,10 +196,9 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
         return Integer.BYTES * 3;
     }
 
-
     @Override
     public void onIncomingMessage(AbstractMessage p_message) {
-        if(p_message instanceof NetworkTestMessage) {
+        if (p_message instanceof NetworkTestMessage) {
             if (m_receiveTimeStart.get() == 0) {
                 m_receiveTimeStart.compareAndSet(0, System.nanoTime());
             }
