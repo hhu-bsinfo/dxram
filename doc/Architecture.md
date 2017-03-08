@@ -1,15 +1,15 @@
 # DXRAM Architecture
 
-DXRAM's core architecture is driven by a minimal foundation called the *DXRAMEngine*. All features that form the DXRAM system are encapsuled in either *components* and *services*.
+DXRAM's core architecture is driven by a minimal foundation called the *DXRAMEngine*. All features that form the DXRAM system are encapsulated in either *components* and *services*.
 
-TODO include arch image
+<img src="img/arch/dxram_arch.png" width="600">
 
 ## DXRAM Engine
 
-The *DXRAMEngine* class provides a minimal foundation to run *components* and *services* which implement the actual functionality for the DXRAM system. 
-The engine bootstrap using a JSON formated configuration file. A list of components and services (including their settings) are loaded into an instance of *DXRAMContext*. This allows enabling/disabling of components or services to configure a DXRAM instance to your needs. Configuration parameters for components or services are embedded with each class.
+The *DXRAMEngine* class provides a minimal foundation to run *components* and *services* which implement the actual functionality for the DXRAM system.
+The engine bootstraps using a JSON formatted configuration file. A list of components and services (including their settings) are loaded into an instance of *DXRAMContext*. This allows enabling/disabling of components or services to configure a DXRAM instance according to your requirements. Configuration parameters for components or services are embedded within each class.
 
-After bootstrapping with a configuration file, DXRAM first initializes all components using a fixed order which ensures resolving component dependencies correctly. Next, all services are initialized and the boot sequence is terminated by entering the main DXRAM application loop in the *DXRAMMain* class.
+After bootstrapping with a configuration file, DXRAM initializes all components using a fixed order which ensures resolving component dependencies correctly. Next, all services are initialized and the boot sequence is terminated by entering the main DXRAM application loop in the *DXRAMMain* class.
 
 ## Components
 
@@ -17,9 +17,7 @@ Components are the core building blocks for DXRAM and are based on the abstract 
 
 ## Services
 
-Services are using components to establish an API for the application programmer to access the backend as well handle network communication with other DXRAM instances, e.g. access to the key-value store (*ChunkService*) or using the network interface to send your own messages (*NetworkService*). A service can use all components provided by DXRAM. But, services are isolated and not allowed to rely or use other services. This allows us to enable/disable services we don't need on a DXRAM instance and keeps the API highly modular and flexible. Furthermore, one can lower the resource requirements of a DXRAM instance by switching off services that are not used.
-
-## 
+Services are using components to establish an API for the application programmer to access the back-end as well handle network communication with other DXRAM instances, e.g. access to the key-value store (*ChunkService*) or using the network interface to send your own messages (*NetworkService*). A service can use all components provided by DXRAM. But, services are isolated and not allowed to rely on or use other services. This allows us to enable/disable services we don't need on a DXRAM instance and keeps the API modular and flexible. Furthermore, one can lower the resource requirements of a DXRAM instance by switching off services that are not used.
 
 # DXCompute
 
@@ -35,13 +33,15 @@ The *MasterSlaveService* implements compute groups within the DXRAM network topo
 
 ### Compute tasks
 
-Tasks are submitted using the *MasterSlaveComputeService* and can be submitted either locally (if running on a peer) or to a remote peer. To write your own tasks, implement the *Task* interface. 
+Tasks are submitted using the *MasterSlaveComputeService* and can be submitted either locally (if running on a peer) or to a remote peer. To write your own tasks, implement the *Task* interface.
 
 Multiple tasks can be aggregated to form a task script. A task script is a series of tasks executed in order. A number of common tasks that can be reused for many scripts are already available such as *PrintTask*, *EmptyTask*, *WaitTask* etc.
 
+Examples for task scripts that can be started from a DXRAM terminal are located in the sub-folder *script/compute*.
+
 ### Micro benchmarks
 
-The subpackage *bench* contains tasks used for benchmarking various components/services of DXRAM. Refer to the each task for a description and the available parameters. Furthermore, the subfolder *script/compute* contains task scripts that can be executed using the terminal (refer to the readme).
+The Java sub-package *bench* under the DXCompute package contains tasks used for benchmarking various components/services of DXRAM. Refer to each task for a description and the available parameters. Furthermore, the sub-folder *script/compute* contains task scripts that can be executed using the terminal (refer to the readme file there).
 
 # DXGraph
 
