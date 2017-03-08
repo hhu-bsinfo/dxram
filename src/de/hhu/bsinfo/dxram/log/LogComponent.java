@@ -58,7 +58,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.JNIFileRaw;
-import de.hhu.bsinfo.utils.JNINativeCRCGenerator;
 import de.hhu.bsinfo.utils.Tools;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
@@ -554,8 +553,10 @@ public class LogComponent extends AbstractDXRAMComponent {
      */
     String getCurrentUtilization() {
         String ret;
-        long allBytes = 0;
-        long counter;
+        long allBytesAllocated = 0;
+        long allBytesOccupied = 0;
+        long counterAllocated;
+        long counterOccupied;
         SecondaryLog[] secondaryLogs;
         SecondaryLogBuffer[] secLogBuffers;
         LogCatalog cat;
@@ -569,26 +570,30 @@ public class LogComponent extends AbstractDXRAMComponent {
             for (int i = 0; i < m_logCatalogs.length; i++) {
                 cat = m_logCatalogs[i];
                 if (cat != null) {
-                    counter = 0;
+                    counterAllocated = 0;
+                    counterOccupied = 0;
                     ret += "++Node " + (short) i + ":\n";
                     secondaryLogs = cat.getAllLogs();
                     secLogBuffers = cat.getAllBuffers();
                     for (int j = 0; j < secondaryLogs.length; j++) {
-                        ret += "+++Backup range " + j + ": ";
                         if (secondaryLogs[j] != null) {
+                            ret += "+++Backup range " + j + ": ";
                             if (secondaryLogs[j].isAccessed()) {
                                 ret += "#Active log# ";
                             }
-                            ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
+                            counterAllocated += secondaryLogs[j].getLogFileSize() + secondaryLogs[j].getVersionsFileSize();
+                            counterOccupied += secondaryLogs[j].getOccupiedSpace();
+
+                            ret += counterOccupied + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
                             ret += secondaryLogs[j].getSegmentDistribution() + '\n';
-                            counter += secondaryLogs[j].getLogFileSize() + secondaryLogs[j].getVersionsFileSize();
                         }
                     }
-                    ret += "++Bytes per node: " + counter + '\n';
-                    allBytes += counter;
+                    ret += "++Bytes per node: allocated -> " + counterAllocated + ", occupied -> " + counterOccupied + '\n';
+                    allBytesAllocated += counterAllocated;
+                    allBytesOccupied += counterOccupied;
                 }
             }
-            ret += "Complete size: " + allBytes + '\n';
+            ret += "Complete size: allocated -> " + allBytesAllocated + ", occupied -> " + allBytesOccupied + '\n';
             ret += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
         } else {
             ret = "Backup is deactivated!\n";
