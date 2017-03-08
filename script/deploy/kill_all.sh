@@ -115,7 +115,7 @@ close() {
 
 if [ "$1" = "" ] ; then
   echo "Missing parameter: Configuration file"
-  echo "  Example: ./kill_all.sh SimpleTest.conf"
+  echo "  Example: $0 SimpleTest.conf"
   exit
 fi
 
