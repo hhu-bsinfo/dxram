@@ -68,4 +68,50 @@ public final class CRC16 {
         return (short) crc;
     }
 
+    /**
+     * Returns the crc16 hash to given integer
+     *
+     * @param p_seed
+     *     the byte array with the data to hash
+     * @param p_offset
+     *     the offset within the byte array
+     * @param p_length
+     *     the length
+     * @return the crc16 hash
+     */
+    public short hash(final byte[] p_seed, final int p_offset, final int p_length) {
+        int crc;
+        byte[] bytes;
+
+        crc = 0x0000;
+        for (int i = p_offset; i < p_offset + p_length; i++) {
+            crc = crc >>> 8 ^ TABLE[(crc ^ p_seed[i]) & 0xff];
+        }
+        return (short) crc;
+    }
+
+    /**
+     * Returns the crc16 hash to given integer
+     *
+     * @param p_hash
+     *     the previous hash value
+     * @param p_seed
+     *     the byte array with the data to hash
+     * @param p_offset
+     *     the offset within the byte array
+     * @param p_length
+     *     the length
+     * @return the crc16 hash
+     */
+    public short hash(final short p_hash, final byte[] p_seed, final int p_offset, final int p_length) {
+        int crc;
+        byte[] bytes;
+
+        crc = p_hash;
+        for (int i = p_offset; i < p_offset + p_length; i++) {
+            crc = crc >>> 8 ^ TABLE[(crc ^ p_seed[i]) & 0xff];
+        }
+        return (short) crc;
+    }
+
 }
