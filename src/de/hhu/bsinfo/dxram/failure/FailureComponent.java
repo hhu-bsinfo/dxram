@@ -40,6 +40,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Handles a node failure.
@@ -76,7 +77,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
             ConnectionLostEvent event = (ConnectionLostEvent) p_event;
             short nodeID = event.getNodeID();
 
-            if (nodeID != -1) {
+            if (nodeID != NodeID.INVALID_ID) {
                 m_failureLock.lock();
                 if (m_nodeStatus[nodeID & 0xFFFF] < 5) {
                     m_nodeStatus[nodeID & 0xFFFF] = 5;
@@ -122,7 +123,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
             ResponseDelayedEvent event = (ResponseDelayedEvent) p_event;
             short nodeID = event.getNodeID();
 
-            if (nodeID != -1) {
+            if (nodeID != NodeID.INVALID_ID) {
                 m_failureLock.lock();
                 if (m_nodeStatus[nodeID & 0xFFFF] == 0) {
                     m_nodeStatus[nodeID & 0xFFFF]++;
@@ -294,7 +295,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
             LOGGER.debug("********** ********** Node Failure ********** **********");
             // #endif /* LOGGER >= DEBUG */
 
-            // Restore superpeer overlay and/or initiate recovery
+            // Restore superpeer overlay, cleanup ZooKeeper and/or initiate recovery
             responsible = m_lookup.superpeersNodeFailureHandling(p_nodeID, roleOfFailedNode);
 
             if (responsible) {
@@ -303,9 +304,6 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
                 // #if LOGGER >= DEBUG
                 LOGGER.debug("Failed node was a %s, NodeID: 0x%X", roleOfFailedNode, p_nodeID);
                 // #endif /* LOGGER >= DEBUG */
-
-                // Clean-up zookeeper
-                m_boot.singleNodeCleanup(p_nodeID, roleOfFailedNode);
             } else {
                 // #if LOGGER >= DEBUG
                 LOGGER.debug("Not responsible for failed node, NodeID: 0x%X", p_nodeID);

@@ -841,7 +841,7 @@ public class GraphAlgorithmBFSTask implements Task {
          */
         private void onIncomingBFSTerminateMessage(final BFSTerminateMessage p_message) {
 
-            // System.out.println(">>>> onIncomingBFSTerminateMessage " + NodeID.toHexString(p_message.getSource()));
+            // System.out.println(">>>> onIncomingBFSTerminateMessage " + NodeID.toHexString(p_message.getOwner()));
 
             long nextFrontVerts = p_message.getFrontierNextVertices();
             long nextFrontEdges = p_message.getFrontierNextEdges();

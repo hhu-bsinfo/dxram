@@ -175,6 +175,18 @@ public class NetworkComponent extends AbstractDXRAMComponent {
      *     If sending the message failed
      */
     public void sendSync(final AbstractRequest p_request) throws NetworkException {
+        sendSync(p_request, true);
+    }
+
+    /**
+     * Send the Request and wait for fulfillment (wait for response).
+     *
+     * @param p_request
+     *     The request to send.
+     * @throws NetworkException
+     *     If sending the message failed
+     */
+    public void sendSync(final AbstractRequest p_request, final boolean p_waitForResponses) throws NetworkException {
         // #if LOGGER == TRACE
         LOGGER.trace("Sending request (sync): %s", p_request);
         // #endif /* LOGGER == TRACE */
@@ -190,7 +202,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
         LOGGER.trace("Waiting for response to request: %s", p_request);
         // #endif /* LOGGER == TRACE */
 
-        if (!p_request.waitForResponses((int) m_requestTimeout.getMs())) {
+        if (p_waitForResponses && !p_request.waitForResponses((int) m_requestTimeout.getMs())) {
             // #if LOGGER >= ERROR
             LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
             // #endif /* LOGGER >= ERROR */

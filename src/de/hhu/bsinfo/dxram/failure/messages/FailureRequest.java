@@ -17,6 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Failure Request
@@ -36,7 +37,7 @@ public class FailureRequest extends AbstractRequest {
     public FailureRequest() {
         super();
 
-        m_failedNode = -1;
+        m_failedNode = NodeID.INVALID_ID;
     }
 
     /**

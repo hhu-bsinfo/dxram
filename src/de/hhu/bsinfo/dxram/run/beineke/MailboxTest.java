@@ -207,8 +207,10 @@ public final class MailboxTest {
             System.out.println("Client started");
 
             chunkID = nameService.getChunkID("anc", -1);
+            System.out.println(ChunkID.toHexString(chunkID));
             anchor = new Chunk(chunkID);
             chunkService.get(anchor);
+            System.out.println(anchor);
 
             data = anchor.getData();
             assert data != null;

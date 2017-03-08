@@ -58,6 +58,39 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
     }
 
     /**
+     * Handler an incoming ShutdownMessage.
+     *
+     * @param p_message
+     *     Message to handle.
+     */
+    private static void incomingShutdownMessage(final ShutdownMessage p_message) {
+        shutdown(p_message.isHardShutdown());
+    }
+
+    /**
+     * Shutdown the current node.
+     *
+     * @param p_hardShutdown
+     *     True to kill the node without shutting down DXRAM, false for proper DXRAM shutdown.
+     */
+    private static void shutdown(final boolean p_hardShutdown) {
+        if (p_hardShutdown) {
+            // suicide
+            // note: this might not work correctly on every jvm implementation
+            String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+            try {
+                Runtime.getRuntime().exec("kill -9 " + pid);
+            } catch (final IOException ignored) {
+
+            }
+
+        } else {
+            // triggers the registered cleanup handler
+            System.exit(0);
+        }
+    }
+
+    /**
      * Get the ID of the node, you are currently running on.
      *
      * @return NodeID.
@@ -100,44 +133,6 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
      */
     public List<Short> getOnlinePeerNodeIDs() {
         return m_boot.getIDsOfOnlinePeers();
-    }
-
-    @Override
-    protected boolean isEngineAccessor() {
-        return true;
-    }
-
-    /**
-     * Handler an incoming ShutdownMessage.
-     *
-     * @param p_message
-     *     Message to handle.
-     */
-    private static void incomingShutdownMessage(final ShutdownMessage p_message) {
-        shutdown(p_message.isHardShutdown());
-    }
-
-    /**
-     * Shutdown the current node.
-     *
-     * @param p_hardShutdown
-     *     True to kill the node without shutting down DXRAM, false for proper DXRAM shutdown.
-     */
-    private static void shutdown(final boolean p_hardShutdown) {
-        if (p_hardShutdown) {
-            // suicide
-            // note: this might not work correctly on every jvm implementation
-            String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
-            try {
-                Runtime.getRuntime().exec("kill -9 " + pid);
-            } catch (final IOException ignored) {
-
-            }
-
-        } else {
-            // triggers the registered cleanup handler
-            System.exit(0);
-        }
     }
 
     /**
@@ -201,7 +196,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
             return false;
         }
 
-        if (p_nodeID == -1) {
+        if (p_nodeID == NodeID.INVALID_ID) {
             List<Short> nodeIds = m_boot.getIDsOfOnlineNodes();
 
             // shutdown peers first
@@ -317,6 +312,11 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
                 }
             }
         }
+    }
+
+    @Override
+    protected boolean isEngineAccessor() {
+        return true;
     }
 
     @Override

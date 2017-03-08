@@ -78,7 +78,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
     // private state
     private IPV4Unit m_ownAddress;
     private ZooKeeperHandler m_zookeeper;
-    private short m_bootstrap = -1;
+    private short m_bootstrap = NodeID.INVALID_ID;
     private CRC16 m_hashGenerator;
     private BloomFilter m_bloomFilter;
 
@@ -206,47 +206,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
             return Short.parseShort(new String(data));
         } else {
             return NodeID.INVALID_ID;
-        }
-    }
-
-    /**
-     * Replaces the current bootstrap with p_nodeID if the failed bootstrap has not been replaced by another superpeer
-     *
-     * @param p_nodeID
-     *     the new bootstrap candidate
-     */
-    private void setBootstrapPeer(final short p_nodeID) {
-        short currentBootstrap;
-        Stat status;
-        String entry;
-
-        try {
-            status = zookeeperGetStatus("nodes/bootstrap");
-        } catch (final ZooKeeperException e) {
-            // Entry should be available, even if another node updated the bootstrap first
-
-            // #if LOGGER >= ERROR
-            LOGGER.error("Getting status from zookeeper failed", e);
-            // #endif /* LOGGER >= ERROR */
-
-            return;
-        }
-
-        entry = new String(zookeeperGetData("nodes/bootstrap", status));
-        currentBootstrap = Short.parseShort(entry);
-        if (currentBootstrap == m_bootstrap) {
-            try {
-                if (!zookeeperSetData("nodes/bootstrap", String.valueOf(p_nodeID).getBytes(), status.getVersion())) {
-                    m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
-                } else {
-                    m_bootstrap = p_nodeID;
-                }
-            } catch (final ZooKeeperException e) {
-                // Entry was already updated by another node, try again
-                setBootstrapPeer(p_nodeID);
-            }
-        } else {
-            m_bootstrap = currentBootstrap;
         }
     }
 
@@ -398,12 +357,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
         // m_nodesConfiguration.removeNode(p_nodeID);
     }
 
-    //@Override
-    //public void eventTriggered(final NodeFailureEvent p_event) {
-    // TODO: Remove failed node from nodes configuration?
-    // m_nodesConfiguration.removeNode(p_event.getNodeID());
-    //}
-
     @Override
     public void process(final WatchedEvent p_event) {
         // TODO: Check this!
@@ -454,6 +407,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
         }
     }
 
+    //@Override
+    //public void eventTriggered(final NodeFailureEvent p_event) {
+    // TODO: Remove failed node from nodes configuration?
+    // m_nodesConfiguration.removeNode(p_event.getNodeID());
+    //}
+
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
@@ -482,8 +441,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
         return true;
     }
-
-    // -----------------------------------------------------------------------------------
 
     @Override
     protected boolean shutdownComponent() {
@@ -519,6 +476,49 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
         }
 
         return true;
+    }
+
+    // -----------------------------------------------------------------------------------
+
+    /**
+     * Replaces the current bootstrap with p_nodeID if the failed bootstrap has not been replaced by another superpeer
+     *
+     * @param p_nodeID
+     *     the new bootstrap candidate
+     */
+    private void setBootstrapPeer(final short p_nodeID) {
+        short currentBootstrap;
+        Stat status;
+        String entry;
+
+        try {
+            status = zookeeperGetStatus("nodes/bootstrap");
+        } catch (final ZooKeeperException e) {
+            // Entry should be available, even if another node updated the bootstrap first
+
+            // #if LOGGER >= ERROR
+            LOGGER.error("Getting status from zookeeper failed", e);
+            // #endif /* LOGGER >= ERROR */
+
+            return;
+        }
+
+        entry = new String(zookeeperGetData("nodes/bootstrap", status));
+        currentBootstrap = Short.parseShort(entry);
+        if (currentBootstrap == m_bootstrap) {
+            try {
+                if (!zookeeperSetData("nodes/bootstrap", String.valueOf(p_nodeID).getBytes(), status.getVersion())) {
+                    m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
+                } else {
+                    m_bootstrap = p_nodeID;
+                }
+            } catch (final ZooKeeperException e) {
+                // Entry was already updated by another node, try again
+                setBootstrapPeer(p_nodeID);
+            }
+        } else {
+            m_bootstrap = currentBootstrap;
+        }
     }
 
     /**
@@ -607,7 +607,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
             for (NodeEntry entry : p_nodes) {
                 nodeID = m_hashGenerator.hash(seed);
-                while (m_bloomFilter.contains(nodeID) || nodeID == -1) {
+                while (m_bloomFilter.contains(nodeID) || nodeID == NodeID.INVALID_ID) {
                     nodeID = m_hashGenerator.hash(++seed);
                 }
                 seed++;
@@ -712,7 +712,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
             for (NodeEntry entry : p_nodes) {
                 nodeID = m_hashGenerator.hash(seed);
-                while (m_bloomFilter.contains(nodeID) || nodeID == -1) {
+                while (m_bloomFilter.contains(nodeID) || nodeID == NodeID.INVALID_ID) {
                     nodeID = m_hashGenerator.hash(++seed);
                 }
                 seed++;
@@ -779,7 +779,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                     splits = m_ownAddress.getIP().split("\\.");
                     seed = ((Integer.parseInt(splits[1]) << 16) + (Integer.parseInt(splits[2]) << 8) + Integer.parseInt(splits[3])) * -1;
                     nodeID = m_hashGenerator.hash(seed);
-                    while (m_bloomFilter.contains(nodeID) || nodeID == -1) {
+                    while (m_bloomFilter.contains(nodeID) || nodeID == NodeID.INVALID_ID) {
                         nodeID = m_hashGenerator.hash(--seed);
                     }
                     m_bloomFilter.add(nodeID);

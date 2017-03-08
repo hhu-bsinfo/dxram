@@ -47,7 +47,7 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
      *
      * @return Payload size.
      */
-    int getPayloadSize() {
+    public int getPayloadSize() {
         return m_payloadSize;
     }
 

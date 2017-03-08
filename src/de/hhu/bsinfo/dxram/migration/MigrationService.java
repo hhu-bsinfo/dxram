@@ -45,6 +45,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Migration service providing migration of chunks.
@@ -133,12 +134,13 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
             // Update local memory management
             m_memoryManager.remove(p_chunkID, true);
+            m_backup.deregisterChunk(p_chunkID, size);
             if (m_backup.isActive()) {
                 // Update logging
-                backupPeers = m_backup.getCopyOfBackupPeersForLocalChunks(p_chunkID);
+                backupPeers = m_backup.getArrayOfBackupPeersForLocalChunks(p_chunkID);
                 if (backupPeers != null) {
                     for (int i = 0; i < backupPeers.length; i++) {
-                        if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
+                        if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
                             try {
                                 m_network.sendMessage(new RemoveMessage(backupPeers[i], new ArrayListLong(p_chunkID)));
                             } catch (final NetworkException ignored) {
@@ -193,11 +195,12 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
         long[] chunkIDs;
         short[] backupPeers;
         int counter;
+        int chunkSize;
         long iter;
         long size;
         Chunk chunk;
         Chunk[] chunks;
-        boolean ret = false;
+        boolean ret;
 
         // TODO: Handle range properly
 
@@ -259,10 +262,10 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
                 if (m_backup.isActive()) {
                     // Update logging
-                    backupPeers = m_backup.getCopyOfBackupPeersForLocalChunks(iter);
+                    backupPeers = m_backup.getArrayOfBackupPeersForLocalChunks(iter);
                     if (backupPeers != null) {
                         for (int i = 0; i < backupPeers.length; i++) {
-                            if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
+                            if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
                                 try {
                                     m_network.sendMessage(new RemoveMessage(backupPeers[i], chunkIDs));
                                 } catch (final NetworkException ignored) {
@@ -280,7 +283,8 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
                     // m_lock.unlockAll(iter);
 
                     // Update local memory management
-                    m_memoryManager.remove(iter, true);
+                    chunkSize = m_memoryManager.remove(iter, true);
+                    m_backup.deregisterChunk(iter, chunkSize);
                     iter++;
                 }
                 ret = true;

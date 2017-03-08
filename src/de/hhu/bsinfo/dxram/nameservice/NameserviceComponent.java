@@ -68,32 +68,6 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
     }
 
     /**
-     * Remove the name of a registered DataStructure from lookup.
-     *
-     * @return the number of entries in name service
-     */
-    int getEntryCount() {
-        return m_lookup.getNameserviceEntryCount();
-    }
-
-    /**
-     * Get all available name mappings
-     *
-     * @return List of available name mappings
-     */
-    ArrayList<Pair<String, Long>> getAllEntries() {
-        ArrayList<Pair<String, Long>> list = new ArrayList<>();
-
-        ArrayList<Pair<Integer, Long>> entries = m_lookup.getNameserviceEntries();
-        // convert index representation
-        for (Pair<Integer, Long> entry : entries) {
-            list.add(new Pair<>(m_converter.convert(entry.first()), entry.second()));
-        }
-
-        return list;
-    }
-
-    /**
      * Register a DataStructure for a specific name.
      *
      * @param p_dataStructure
@@ -140,7 +114,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
      * @return If the name was registered with a chunk ID before, returns the chunk ID, -1 otherwise.
      */
     public long getChunkID(final String p_name, final int p_timeoutMs) {
-        long ret = -1;
+        long ret = ChunkID.INVALID_ID;
         try {
             final int id = m_converter.convert(p_name);
             // #if LOGGER == TRACE
@@ -222,6 +196,32 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
         m_indexData = null;
         m_indexDataLock = null;
+    }
+
+    /**
+     * Remove the name of a registered DataStructure from lookup.
+     *
+     * @return the number of entries in name service
+     */
+    int getEntryCount() {
+        return m_lookup.getNameserviceEntryCount();
+    }
+
+    /**
+     * Get all available name mappings
+     *
+     * @return List of available name mappings
+     */
+    ArrayList<Pair<String, Long>> getAllEntries() {
+        ArrayList<Pair<String, Long>> list = new ArrayList<>();
+
+        ArrayList<Pair<Integer, Long>> entries = m_lookup.getNameserviceEntries();
+        // convert index representation
+        for (Pair<Integer, Long> entry : entries) {
+            list.add(new Pair<>(m_converter.convert(entry.first()), entry.second()));
+        }
+
+        return list;
     }
 
     /**

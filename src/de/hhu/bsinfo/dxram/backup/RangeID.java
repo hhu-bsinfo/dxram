@@ -11,22 +11,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.recovery.messages;
+package de.hhu.bsinfo.dxram.backup;
 
 /**
- * Encapsulates messages for the RecoveryService
+ * Helper class for RangeID related issues.
  *
- * @author Kevin Beineke, kevin.beineke@hhu.de, 03.06.2013
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 07.02.2017
  */
-public final class RecoveryMessages {
+public final class RangeID {
 
-    // Constants
-    public static final byte SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST = 1;
-    public static final byte SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE = 2;
+    public static final short INVALID_ID = -1;
 
     /**
-     * Static class
+     * Static class.
      */
-    private RecoveryMessages() {
+    private RangeID() {
     }
 }

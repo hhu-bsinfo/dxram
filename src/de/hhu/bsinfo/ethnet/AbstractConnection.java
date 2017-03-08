@@ -103,49 +103,62 @@ abstract class AbstractConnection {
     }
 
     /**
-     * Checks if the connection is connected
+     * Returns whether the incoming buffer queue is full or not
      *
-     * @return true if the connection is connected, false otherwise
+     * @return whether the incoming buffer queue is full or not
      */
-    final boolean isConnected() {
-        boolean ret;
-
-        m_lock.lock();
-        ret = m_connected;
-        m_lock.unlock();
-
-        return ret;
-    }
+    protected abstract boolean isIncomingQueueFull();
 
     /**
-     * Marks the connection as (not) connected
+     * Returns the size of input and output queues
      *
-     * @param p_connected
-     *     if true the connection is marked as connected, otherwise the connections marked as not connected
+     * @return the queue sizes
      */
-    final void setConnected(final boolean p_connected) {
-        m_lock.lock();
-        m_connected = p_connected;
-        m_lock.unlock();
-    }
+    protected abstract String getInputOutputQueueLength();
 
     /**
-     * Checks if the connection is connected
+     * Writes data to the connection
      *
-     * @return true if the connection is connected, false otherwise
+     * @param p_message
+     *     the AbstractMessage to send
+     * @throws NetworkException
+     *     if message buffer is too small
      */
-    final boolean isCongested() {
-        return m_unconfirmedBytes > m_flowControlWindowSize || isIncomingQueueFull();
-    }
+    protected abstract void doWrite(AbstractMessage p_message) throws NetworkException;
 
     /**
-     * Get node map
+     * Writes data to the connection without delay
      *
-     * @return the NodeMap
+     * @param p_message
+     *     the AbstractMessage to send
+     * @throws NetworkException
+     *     if message buffer is too small
      */
-    final NodeMap getNodeMap() {
-        return m_nodeMap;
-    }
+    protected abstract void doForceWrite(AbstractMessage p_message) throws NetworkException;
+
+    /**
+     * Returns whether there is data left to send in output queue
+     *
+     * @return whether the output queue is empty (false) or not (true)
+     */
+    protected abstract boolean dataLeftToWrite();
+
+    /**
+     * Closes the connection immediately
+     */
+    protected abstract void doClose();
+
+    /**
+     * Closes the connection when there is no data left in transfer
+     */
+    protected abstract void doCloseGracefully();
+
+    // Setters
+
+    /**
+     * Wakes up the connection manager (e.g. Selector for NIO)
+     */
+    protected abstract void wakeup();
 
     /**
      * Get the destination
@@ -165,6 +178,8 @@ abstract class AbstractConnection {
         return m_creationTimestamp;
     }
 
+    // Methods
+
     /**
      * Get the timestamp of the last access
      *
@@ -172,43 +187,6 @@ abstract class AbstractConnection {
      */
     public final long getLastAccessTimestamp() {
         return m_lastAccessTimestamp;
-    }
-
-    // Setters
-
-    /**
-     * Get the closing timestamp
-     *
-     * @return the closing timestamp
-     */
-    final long getClosingTimestamp() {
-        return m_closingTimestamp;
-    }
-
-    /**
-     * Returns whether the incoming buffer queue is full or not
-     *
-     * @return whether the incoming buffer queue is full or not
-     */
-    protected abstract boolean isIncomingQueueFull();
-
-    /**
-     * Returns the size of input and output queues
-     *
-     * @return the queue sizes
-     */
-    protected abstract String getInputOutputQueueLength();
-
-    // Methods
-
-    /**
-     * Set the ConnectionListener
-     *
-     * @param p_listener
-     *     the ConnectionListener
-     */
-    final void setListener(final DataReceiver p_listener) {
-        m_listener = p_listener;
     }
 
     /**
@@ -274,46 +252,68 @@ abstract class AbstractConnection {
     }
 
     /**
-     * Writes data to the connection
+     * Checks if the connection is connected
      *
-     * @param p_message
-     *     the AbstractMessage to send
-     * @throws NetworkException
-     *     if message buffer is too small
+     * @return true if the connection is connected, false otherwise
      */
-    protected abstract void doWrite(AbstractMessage p_message) throws NetworkException;
+    final boolean isConnected() {
+        boolean ret;
+
+        m_lock.lock();
+        ret = m_connected;
+        m_lock.unlock();
+
+        return ret;
+    }
 
     /**
-     * Writes data to the connection without delay
+     * Marks the connection as (not) connected
      *
-     * @param p_message
-     *     the AbstractMessage to send
-     * @throws NetworkException
-     *     if message buffer is too small
+     * @param p_connected
+     *     if true the connection is marked as connected, otherwise the connections marked as not connected
      */
-    protected abstract void doForceWrite(AbstractMessage p_message) throws NetworkException;
+    final void setConnected(final boolean p_connected) {
+        m_lock.lock();
+        m_connected = p_connected;
+        m_lock.unlock();
+    }
 
     /**
-     * Returns whether there is data left to send in output queue
+     * Checks if the connection is connected
      *
-     * @return whether the output queue is empty (false) or not (true)
+     * @return true if the connection is connected, false otherwise
      */
-    protected abstract boolean dataLeftToWrite();
+    final boolean isCongested() {
+        return m_unconfirmedBytes > m_flowControlWindowSize || isIncomingQueueFull();
+    }
 
     /**
-     * Closes the connection immediately
+     * Get node map
+     *
+     * @return the NodeMap
      */
-    protected abstract void doClose();
+    final NodeMap getNodeMap() {
+        return m_nodeMap;
+    }
 
     /**
-     * Closes the connection when there is no data left in transfer
+     * Get the closing timestamp
+     *
+     * @return the closing timestamp
      */
-    protected abstract void doCloseGracefully();
+    final long getClosingTimestamp() {
+        return m_closingTimestamp;
+    }
 
     /**
-     * Wakes up the connection manager (e.g. Selector for NIO)
+     * Set the ConnectionListener
+     *
+     * @param p_listener
+     *     the ConnectionListener
      */
-    protected abstract void wakeup();
+    final void setListener(final DataReceiver p_listener) {
+        m_listener = p_listener;
+    }
 
     /**
      * Set the closing timestamp
@@ -370,26 +370,6 @@ abstract class AbstractConnection {
         // Getters
 
         /**
-         * Get the created Message
-         *
-         * @return the created Message
-         */
-        final ByteBuffer getMessageBuffer() {
-            return m_messageBytes;
-        }
-
-        /**
-         * Checks if Message is complete
-         *
-         * @return true if the Message is complete, false otherwise
-         */
-        boolean isMessageComplete() {
-            return m_step == Step.DONE;
-        }
-
-        // Methods
-
-        /**
          * Clear all data
          */
         public void clear() {
@@ -419,6 +399,26 @@ abstract class AbstractConnection {
                         break;
                 }
             }
+        }
+
+        // Methods
+
+        /**
+         * Get the created Message
+         *
+         * @return the created Message
+         */
+        final ByteBuffer getMessageBuffer() {
+            return m_messageBytes;
+        }
+
+        /**
+         * Checks if Message is complete
+         *
+         * @return true if the Message is complete, false otherwise
+         */
+        boolean isMessageComplete() {
+            return m_step == Step.DONE;
         }
 
         /**
@@ -668,7 +668,8 @@ abstract class AbstractConnection {
                 int bufPos = p_buffer.position();
                 int readPayloadSize = message.getPayloadLength() + AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH;
                 if (bufPos < readPayloadSize) {
-                    throw new IOException("Message buffer is too large: " + readPayloadSize + " > " + bufPos);
+                    throw new IOException("Message buffer is too large: " + readPayloadSize + " > " + bufPos + " (read payload without metadata: " +
+                        (bufPos - AbstractMessage.HEADER_SIZE + AbstractMessage.PAYLOAD_SIZE_LENGTH) + " bytes)");
                 }
             } catch (final Exception e) {
                 // #if LOGGER >= ERROR

@@ -42,7 +42,7 @@ public final class LogTest3 {
     // Constants
     private static final long BYTES_TO_LOAD = 5196002400L;
     private static final long BYTES_TO_UPDATE = 6000128000L;
-    private static final int CHUNK_SIZE = 1 * 1024 * 1024;
+    private static final int CHUNK_SIZE = 64;
     private static final int CHUNKS_PER_PUT = 100;
     private static final int CHUNKS_PER_UPDATE = 512;
     private static final int MASTER_THREADS = 1;
@@ -165,6 +165,7 @@ public final class LogTest3 {
             numberOfRequests = (int) (BYTES_TO_LOAD / CHUNK_SIZE / CHUNKS_PER_PUT / MASTER_THREADS);
             for (int i = 0; i < numberOfRequests; i++) {
                 // Create new chunks in MemoryManagement
+                //System.out.println("Created " + m_chunkService.create(chunks) + " chunks á " + CHUNK_SIZE + " bytes");
                 m_chunkService.create(chunks);
 
                 counter += CHUNK_SIZE * CHUNKS_PER_PUT;
@@ -310,7 +311,7 @@ public final class LogTest3 {
             nodeIDs[1] = -15807;
             nodeIDs[2] = -14847;*/
             final short[] nodeIDs = new short[1];
-            nodeIDs[0] = 960;
+            nodeIDs[0] = 320;
             ByteBuffer data;
 
             long start;

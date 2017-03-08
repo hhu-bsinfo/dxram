@@ -248,7 +248,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
         try {
             remoteNodeID = m_nioInterface.readRemoteNodeID(p_channel, m_nioSelector);
-            if (remoteNodeID != -1) {
+            if (remoteNodeID != NodeID.INVALID_ID) {
                 if (remoteNodeID > m_ownNodeID) {
                     // Remote node is allowed to open this connection -> proceed
                     connection = new NIOConnection(remoteNodeID, m_nodeMap, m_messageDirectory, p_channel, m_messageCreator, m_nioSelector,

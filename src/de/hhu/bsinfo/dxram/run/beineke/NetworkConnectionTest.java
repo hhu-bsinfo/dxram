@@ -18,6 +18,7 @@ import java.util.Iterator;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 
@@ -53,7 +54,7 @@ public final class NetworkConnectionTest {
      *     The program arguments
      */
     public static void main(final String[] p_arguments) {
-        int barrierID = -1;
+        int barrierID = BarrierID.INVALID_ID;
 
         // Initialize DXRAM
         final DXRAM dxram = new DXRAM();
@@ -65,7 +66,7 @@ public final class NetworkConnectionTest {
 
         // Barrier
         if (p_arguments.length == 0) {
-            while (barrierID == -1) {
+            while (barrierID == BarrierID.INVALID_ID) {
                 barrierID = (int) nameService.getChunkID("bar", -1);
             }
 
