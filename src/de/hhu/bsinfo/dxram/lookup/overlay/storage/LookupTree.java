@@ -55,7 +55,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      */
     public LookupTree() {
         m_root = null;
-        m_size = -1;
+        m_size = 0;
 
         m_backupRanges = new ArrayListLong();
 
@@ -78,7 +78,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         m_maxChildren = (short) (m_maxEntries + 1);
 
         m_root = null;
-        m_size = -1;
+        m_size = 0;
 
         m_creator = p_creator;
         m_backupRanges = new ArrayListLong();
@@ -100,10 +100,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         int elementsInBTree = p_importer.readInt();
         if (elementsInBTree > 0) {
-
-            // Init initial range
-            createOrReplaceEntry((long) Math.pow(2, 48) - 1, m_creator);
-
             for (int i = 0; i < elementsInBTree; i++) {
                 long lid = p_importer.readLong();
                 short nid = p_importer.readShort();
@@ -118,14 +114,12 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      */
     @Override
     public void exportObject(final Exporter p_exporter) {
-        System.out.println(this);
-
         p_exporter.writeShort(m_creator);
         p_exporter.writeShort(m_minEntries);
 
         if (m_root != null) {
             // Push Size
-            int numberOfTreeElements = m_size + 1;
+            int numberOfTreeElements = m_size;
             p_exporter.writeInt(numberOfTreeElements);
 
             // Push elements
@@ -148,7 +142,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         // Integer represents the bytes where the size of the list is stored, m_size + 1 for number of entries including the
         // default (LocalID: 0x1000000000000 NodeID: 0xNID), long and short for key and value
         if (m_root != null) {
-            numberOfBytesWritten += (m_size + 1) * (Long.BYTES + Short.BYTES);
+            numberOfBytesWritten += m_size * (Long.BYTES + Short.BYTES);
         }
 
         return numberOfBytesWritten;

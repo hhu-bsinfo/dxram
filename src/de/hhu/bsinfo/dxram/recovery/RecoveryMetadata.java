@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxram.recovery;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Object to hand metadata over recovered chunks
  *
@@ -21,32 +23,16 @@ package de.hhu.bsinfo.dxram.recovery;
 public class RecoveryMetadata {
 
     private long[] m_chunkIDRanges;
-    private int m_numberOfChunks;
-    private int m_size;
+    private AtomicInteger m_numberOfChunks;
+    private AtomicInteger m_size;
 
     /**
      * Constructor
      */
     public RecoveryMetadata() {
         m_chunkIDRanges = null;
-        m_numberOfChunks = 0;
-        m_size = 0;
-    }
-
-    /**
-     * Constructor
-     *
-     * @param p_chunkIDRanges
-     *     the ChunkIDs of all recovered chunks arranged in ranges
-     * @param p_numberOfChunks
-     *     the actual number of ChunkIDs in array
-     * @param p_size
-     *     the number of bytes recovered
-     */
-    public RecoveryMetadata(final long[] p_chunkIDRanges, final int p_numberOfChunks, final int p_size) {
-        m_chunkIDRanges = p_chunkIDRanges;
-        m_numberOfChunks = p_numberOfChunks;
-        m_size = p_size;
+        m_numberOfChunks = new AtomicInteger(0);
+        m_size = new AtomicInteger(0);
     }
 
     /**
@@ -65,8 +51,21 @@ public class RecoveryMetadata {
      *     the size of the chunk (header + payload)
      */
     public void add(final int p_size) {
-        m_numberOfChunks++;
-        m_size += p_size;
+        m_numberOfChunks.incrementAndGet();
+        m_size.addAndGet(p_size);
+    }
+
+    /**
+     * Registers multiple chunks
+     *
+     * @param p_count
+     *     the number of chunks to add
+     * @param p_size
+     *     the size of all chunks (header + payload each)
+     */
+    public void add(final int p_count, final int p_size) {
+        m_numberOfChunks.addAndGet(p_count);
+        m_size.addAndGet(p_size);
     }
 
     /**
@@ -75,7 +74,7 @@ public class RecoveryMetadata {
      * @return the number of chunks
      */
     public int getNumberOfChunks() {
-        return m_numberOfChunks;
+        return m_numberOfChunks.get();
     }
 
     /**
@@ -84,7 +83,7 @@ public class RecoveryMetadata {
      * @return the size
      */
     public int getSizeInBytes() {
-        return m_size;
+        return m_size.get();
     }
 
     /**
