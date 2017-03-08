@@ -1,9 +1,4 @@
 #!/bin/bash
-SHELL_TYPE=`readlink /proc/$$/exe | tr '/' '\n' | tail -1`
-if [ "$SHELL_TYPE" != "bash" ] ; then
-  echo "Script must be executed in bash. Exiting..."
-  exit
-fi
 
 
 #############
@@ -43,8 +38,8 @@ check_programs() {
     echo "Please install bind9-host. Used for host. Exiting..."
     exit
   fi
-  if ! hash getent 2>/dev/null ; then
-    echo "Please install libc-bin. Used for getent. Exiting..."
+  if ! hash dig 2>/dev/null ; then
+    echo "Please install dnsutils. Used for dig. Existing..."
     exit
   fi
   if ! hash ssh 2>/dev/null ; then
@@ -78,13 +73,13 @@ determine_configurable_paths() {
     else
 		readonly DXRAM_PATH="$(cd "${NODE_FILE_DIR}$dxram_path"; pwd)/"
     fi
-    
+
     echo "DXRAM root folder path: $DXRAM_PATH"
   else
     readonly DXRAM_PATH="~/dxram/"
     echo "DXRAM root folder path undefined. Using default: $DXRAM_PATH"
   fi
-  
+
   tmp=`echo "$NODES" | grep ZOOKEEPER_PATH`
   if [ "$tmp" != "" ] ; then
     local zookeeper_path=`echo "$tmp" | cut -d '=' -f 2`
@@ -174,7 +169,7 @@ check_configuration() {
 ######################################################
 write_configuration() {
   # Initialize hashtable for port determination
-  declare -A NODE_ARRAY
+  declare -a NODE_ARRAY
   local current_port=0
 
   # Create replacement string for nodes configuration:
@@ -279,7 +274,7 @@ write_configuration() {
   end=`echo "$current_config" | sed -ne '/m_nodesConfig/{s///; :a' -e 'n;p;ba' -e '}'`
   end=`echo "$end" | sed -ne '/],/{s///; :a' -e 'n;p;ba' -e '}'`
   new_config=`echo -e "$new_config\n$end"`
-  
+
   echo "$new_config" > "${DEPLOY_TMP_DIR}dxram.json"
 }
 
@@ -340,7 +335,7 @@ start_remote_zookeeper() {
   local port=$2
   local hostname=$3
 
-  ssh $hostname -n "cd $ZOOKEEPER_PATH && sed -i \"s/clientPort=[0-9]*/clientPort=$port/g\" \"conf/zoo.cfg\" && bin/zkServer.sh start"
+  ssh $hostname -n "cd $ZOOKEEPER_PATH && sed -i -e \"s/clientPort=[0-9]*/clientPort=$port/g\" \"conf/zoo.cfg\" && rm conf/zoo.cfg-e && bin/zkServer.sh start"
 }
 
 ######################################################
@@ -353,9 +348,11 @@ start_remote_zookeeper() {
 ######################################################
 start_local_zookeeper() {
   local port=$1
+  cd $ZOOKEEPER_PATH
+  sed -i -e "s/clientPort=[0-9]*/clientPort=$port/g" conf/zoo.cfg
+  # delete backup config file created by sed -e
+  rm conf/zoo.cfg-e
 
-  cd "$ZOOKEEPER_PATH"
-  sed -i "s/clientPort=[0-9]*/clientPort=$port/g" "conf/zoo.cfg"
   "bin/zkServer.sh" start
   cd "$EXECUTION_DIR"
 }
@@ -434,7 +431,7 @@ execute() {
 	local zookeeper_started=false
   	local local_config_was_copied=false
   	local remote_config_was_copied=false
-  
+
     local zookeeper_ip=""
     local zookeeper_port=""
 
@@ -442,6 +439,7 @@ execute() {
   	local number_of_lines=`echo "$NODES" | wc -l`
   	local counter=1
   	while [  $counter -le $number_of_lines ]; do
+
 		node=`echo "$NODES" | sed "${counter}q;d"`
 		counter=$(($counter + 1))
 		local ip=`echo $node | cut -d ',' -f 1`
@@ -485,8 +483,7 @@ execute() {
 				fi
 
 				$module "$EXECUTION_DIR" "$LOG_DIR" "$DXRAM_PATH" "$DEFAULT_CLASS" "$LIBRARIES" "$DEFAULT_CONDITION" "$ip" "$port" "$hostname" "$role" "$is_remote" "$node" "$zookeeper_ip" "$zookeeper_port"
-
-				if [ "$?" != "0" ] ; then
+	    		if [ "$?" != "0" ] ; then
 					close
 				fi
 			else
@@ -511,12 +508,12 @@ resolve() {
 
   ip=`host $hostname | cut -d ' ' -f 4 | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"`
   if [ "$ip" = "" ] ; then
-    ip=`getent hosts $hostname | cut -d ' ' -f 1 | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"`
+    read ip <<< $(dig $hostname | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" | awk '{ if ($3 == "IN" && $4 == "A") print $5 }')
     if [ "$ip" = "" ] ; then
       echo "ERROR: $hostname could not be identified. Seting default 127.0.0.1"
     fi
   fi
-  echo "$ip"
+  echo $ip
 }
 
 ######################################################
@@ -583,7 +580,7 @@ fi
 readonly THIS_HOST=`resolve $(hostname)`
 readonly DEFAULT_CLASS="de.hhu.bsinfo.dxram.run.DXRAMMain"
 readonly LIBRARIES="lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:lib/jline-1.0.jar:DXRAM.jar"
-readonly DEFAULT_CONDITION="***!---ooo---!***"
+readonly DEFAULT_CONDITION="!---ooo---!"
 readonly ZOOKEEPER_PORT="2181"
 
 echo "########################################"
