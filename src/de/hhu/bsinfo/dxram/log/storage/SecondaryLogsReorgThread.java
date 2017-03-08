@@ -370,8 +370,10 @@ public final class SecondaryLogsReorgThread extends Thread {
             cat = cats.get(Tools.getRandomValue(cats.size() - 1));
             secLogs = cat.getAllLogs();
             if (secLogs.length > 0) {
-                // Skip last log to speed up loading phase
-                ret = secLogs[Tools.getRandomValue(secLogs.length - 2)];
+                while (ret == null) {
+                    // Skip last log to speed up loading phase
+                    ret = secLogs[Tools.getRandomValue(secLogs.length - 2)];
+                }
             }
         }
 

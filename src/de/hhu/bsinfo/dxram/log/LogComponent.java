@@ -58,6 +58,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.JNIFileRaw;
+import de.hhu.bsinfo.utils.JNINativeCRCGenerator;
 import de.hhu.bsinfo.utils.Tools;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
@@ -438,6 +439,7 @@ public class LogComponent extends AbstractDXRAMComponent {
 
         m_loggingIsActive = m_boot.getNodeRole() == NodeRole.PEER && m_backup.isActive();
         if (m_loggingIsActive) {
+            DXRAMJNIManager.loadJNIModule("JNINativeCRCGenerator");
 
             m_mode = HarddriveAccessMode.convert(m_harddriveAccess);
             if (m_mode == HarddriveAccessMode.ODIRECT) {

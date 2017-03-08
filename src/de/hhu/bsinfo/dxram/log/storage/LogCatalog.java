@@ -27,21 +27,21 @@ import org.apache.logging.log4j.Logger;
 public final class LogCatalog {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(LogCatalog.class.getSimpleName());
+    private static final int CHUNK_SIZE = 10;
 
     // Attributes
-    private ArrayList<SecondaryLog> m_logs;
-    private ArrayList<SecondaryLogBuffer> m_buffers;
-
-    // FIXME: Replace ArrayList because of oob exceptions
+    private SecondaryLog[] m_logs;
+    private SecondaryLogBuffer[] m_buffers;
+    private int m_numberOfLogs = 0;
 
     // Constructors
 
     /**
-     * Creates an instance of SecondaryLogsReorgThread
+     * Creates an instance of LogCatalog
      */
     public LogCatalog() {
-        m_logs = new ArrayList<>();
-        m_buffers = new ArrayList<>();
+        m_logs = new SecondaryLog[CHUNK_SIZE];
+        m_buffers = new SecondaryLogBuffer[CHUNK_SIZE];
     }
 
     // Getter
@@ -51,8 +51,7 @@ public final class LogCatalog {
      *
      * @return the secondary log array
      */
-    public SecondaryLog[] getAllLogs() {
-        return m_logs.toArray(new SecondaryLog[m_logs.size()]);
+    public SecondaryLog[] getAllLogs() { return m_logs;
     }
 
     /**
@@ -61,20 +60,7 @@ public final class LogCatalog {
      * @return the secondary log buffer array
      */
     public SecondaryLogBuffer[] getAllBuffers() {
-        return m_buffers.toArray(new SecondaryLogBuffer[m_buffers.size()]);
-    }
-
-    /**
-     * Removes buffer and secondary log for given range
-     */
-    public void removeBufferAndLog(final short p_rangeID) throws IOException {
-        SecondaryLog secondaryLog;
-        SecondaryLogBuffer secondaryLogBuffer;
-
-        secondaryLogBuffer = m_buffers.set(p_rangeID, null);
-        secondaryLogBuffer.close();
-        secondaryLog = m_logs.set(p_rangeID, null);
-        secondaryLog.closeAndRemove();
+        return m_buffers;
     }
 
     /**
@@ -86,7 +72,7 @@ public final class LogCatalog {
      */
     public boolean exists(final short p_rangeID) {
 
-        return p_rangeID < m_logs.size() && m_logs.get(p_rangeID) != null;
+        return p_rangeID < m_logs.length && m_logs[p_rangeID] != null;
     }
 
     /**
@@ -99,7 +85,7 @@ public final class LogCatalog {
     public SecondaryLog getLog(final short p_rangeID) {
         SecondaryLog ret;
 
-        ret = m_logs.get(p_rangeID);
+        ret = m_logs[p_rangeID];
         // #if LOGGER >= ERROR
         if (ret == null) {
             LOGGER.error("There is no secondary log for RID=%d", p_rangeID);
@@ -118,9 +104,8 @@ public final class LogCatalog {
      */
     public SecondaryLogBuffer getBuffer(final short p_rangeID) {
         SecondaryLogBuffer ret;
-        int rangeID;
 
-        ret = m_buffers.get(p_rangeID);
+        ret = m_buffers[p_rangeID];
 
         // #if LOGGER >= ERROR
         if (ret == null) {
@@ -146,11 +131,39 @@ public final class LogCatalog {
     public void insertRange(short p_rangeID, final SecondaryLog p_log, final int p_secondaryLogBufferSize, final int p_logSegmentSize) {
         SecondaryLogBuffer buffer;
 
-        m_logs.add(p_rangeID, p_log);
+        if (p_rangeID >= m_logs.length) {
+            SecondaryLog[] temp1 = new SecondaryLog[m_logs.length + CHUNK_SIZE];
+            System.arraycopy(m_logs, 0, temp1, 0, m_logs.length);
+            m_logs = temp1;
+
+            SecondaryLogBuffer[] temp2 = new SecondaryLogBuffer[m_buffers.length + CHUNK_SIZE];
+            System.arraycopy(m_buffers, 0, temp2, 0, m_buffers.length);
+            m_buffers = temp2;
+        }
+        m_logs[p_rangeID] = p_log;
 
         // Create new secondary log buffer
         buffer = new SecondaryLogBuffer(p_log, p_secondaryLogBufferSize, p_logSegmentSize);
-        m_buffers.add(p_rangeID, buffer);
+        m_buffers[p_rangeID] = buffer;
+
+        m_numberOfLogs++;
+    }
+
+    /**
+     * Removes buffer and secondary log for given range
+     */
+    public void removeBufferAndLog(final short p_rangeID) throws IOException {
+        SecondaryLog secondaryLog;
+        SecondaryLogBuffer secondaryLogBuffer;
+
+        secondaryLogBuffer = m_buffers[p_rangeID];
+        m_buffers[p_rangeID] = null;
+        secondaryLogBuffer.close();
+        secondaryLog = m_logs[p_rangeID];
+        m_logs[p_rangeID] = null;
+        secondaryLog.closeAndRemove();
+
+        m_numberOfLogs--;
     }
 
     /**
@@ -160,16 +173,17 @@ public final class LogCatalog {
      *     if the log could not be closed
      */
     public void closeLogsAndBuffers() throws IOException {
-        for (int i = 0; i < m_logs.size(); i++) {
-            if (m_buffers.get(i) != null) {
-                m_buffers.get(i).close();
+        for (int i = 0; i < m_logs.length; i++) {
+            if (m_buffers[i] != null) {
+                m_buffers[i].close();
             }
-            if (m_logs.get(i) != null) {
-                m_logs.get(i).close();
+            if (m_logs[i] != null) {
+                m_logs[i].close();
             }
         }
         m_buffers = null;
         m_logs = null;
+        m_numberOfLogs = 0;
     }
 
     // Methods
@@ -178,8 +192,12 @@ public final class LogCatalog {
     public String toString() {
         String ret = "Cat:[";
 
-        for (SecondaryLog log : m_logs) {
-            ret += log + "\n     ";
+        for (int i = 0; i < m_logs.length; i++) {
+            if (m_logs[i] == null) {
+                ret += "null\n     ";
+            } else {
+                ret += m_logs[i] + "\n     ";
+            }
         }
 
         return ret + ']';
@@ -191,7 +209,7 @@ public final class LogCatalog {
      * @return the number of logs
      */
     int getNumberOfLogs() {
-        return m_logs.size();
+        return m_numberOfLogs;
     }
 
 }
