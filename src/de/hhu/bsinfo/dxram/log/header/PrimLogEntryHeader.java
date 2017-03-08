@@ -21,22 +21,22 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
 
 /**
  * Extends AbstractLogEntryHeader for a migration log entry header (primary log)
- * Fields: | Type | RangeID | Source | NodeID | LocalID | Length  | Epoch | Version | Chaining | Checksum |
- * Length: |  1   |    1    |   2    |   2    | 1,2,4,6 | 0,1,2,3 |   2   | 0,1,2,4 |   0,1    |    0,4   |
+ * Fields: | Type | RangeID | Owner | NodeID | LocalID | Length  | Epoch | Version | Chaining | Checksum |
+ * Length: |  1   |    1    |   2   |   2    | 1,2,4,6 | 0,1,2,3 |   2   | 0,1,2,4 |   0,1    |    0,4   |
  * Type field contains type, length of LocalID field, length of length field and length of version field
  * Chaining field has length 0 for chunks smaller than 1/2 of segment size (4 MB default) and 1 for larger chunks
  * Checksum field has length 0 if checksums are deactivated in DXRAM configuration, 4 otherwise
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 25.06.2015
  */
-public class MigrationPrimLogEntryHeader extends AbstractPrimLogEntryHeader {
+public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(MigrationPrimLogEntryHeader.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(PrimLogEntryHeader.class.getSimpleName());
 
     // Attributes
     private static short ms_maximumSize;
     private static byte ms_ridOffset;
-    private static byte ms_srcOffset;
+    private static byte ms_ownOffset;
     private static byte ms_nidOffset;
     private static byte ms_lidOffset;
 
@@ -45,58 +45,38 @@ public class MigrationPrimLogEntryHeader extends AbstractPrimLogEntryHeader {
     /**
      * Creates an instance of MigrationPrimLogEntryHeader
      */
-    public MigrationPrimLogEntryHeader() {
+    public PrimLogEntryHeader() {
         ms_maximumSize =
-            (short) (LOG_ENTRY_TYP_SIZE + LOG_ENTRY_RID_SIZE + LOG_ENTRY_SRC_SIZE + MAX_LOG_ENTRY_CID_SIZE + LOG_ENTRY_EPO_SIZE + MAX_LOG_ENTRY_LEN_SIZE +
+            (short) (LOG_ENTRY_TYP_SIZE + LOG_ENTRY_RID_SIZE + LOG_ENTRY_OWN_SIZE + MAX_LOG_ENTRY_CID_SIZE + LOG_ENTRY_EPO_SIZE + MAX_LOG_ENTRY_LEN_SIZE +
                 MAX_LOG_ENTRY_VER_SIZE + ChecksumHandler.getCRCSize());
         ms_ridOffset = LOG_ENTRY_TYP_SIZE;
-        ms_srcOffset = (byte) (ms_ridOffset + LOG_ENTRY_RID_SIZE);
-        ms_nidOffset = (byte) (ms_srcOffset + LOG_ENTRY_SRC_SIZE);
+        ms_ownOffset = (byte) (ms_ridOffset + LOG_ENTRY_RID_SIZE);
+        ms_nidOffset = (byte) (ms_ownOffset + LOG_ENTRY_OWN_SIZE);
         ms_lidOffset = (byte) (ms_nidOffset + LOG_ENTRY_NID_SIZE);
     }
 
     // Getter
-    @Override
-    public short getConversionOffset() {
-        return ms_nidOffset;
-    }
-
-    @Override
-    protected short getNIDOffset() {
-        return ms_nidOffset;
-    }
-
-    @Override
-    protected short getLIDOffset() {
-        return ms_lidOffset;
-    }
-
     @Override
     public byte getRangeID(final byte[] p_buffer, final int p_offset) {
         return p_buffer[p_offset + ms_ridOffset];
     }
 
     @Override
-    public short getSource(final byte[] p_buffer, final int p_offset) {
-        final int offset = p_offset + ms_srcOffset;
+    public short getOwner(final byte[] p_buffer, final int p_offset) {
+        final int offset = p_offset + ms_ownOffset;
 
         return (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
     }
 
-    @Override
-    public boolean wasMigrated() {
-        return true;
-    }
-
     // Methods
     @Override
-    public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final byte p_rangeID, final short p_source) {
+    public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner) {
         byte[] result;
         byte lengthSize;
         byte localIDSize;
         byte versionSize;
         byte checksumSize = 0;
-        byte type = 1;
+        byte type;
 
         localIDSize = getSizeForLocalIDField(ChunkID.getLocalID(p_chunkID));
         lengthSize = getSizeForLengthField(p_size);
@@ -106,13 +86,18 @@ public class MigrationPrimLogEntryHeader extends AbstractPrimLogEntryHeader {
             checksumSize = ChecksumHandler.getCRCSize();
         }
 
+        if (ChunkID.getCreatorID(p_chunkID) == p_owner) {
+            type = 0;
+        } else {
+            type = 1;
+        }
         type = generateTypeField(type, localIDSize, lengthSize, versionSize, getMaxLogEntrySize() < p_size);
 
         result = new byte[ms_lidOffset + localIDSize + lengthSize + LOG_ENTRY_EPO_SIZE + versionSize + checksumSize];
 
         putType(result, type, (byte) 0);
         putRangeID(result, p_rangeID, ms_ridOffset);
-        putSource(result, p_source, ms_srcOffset);
+        putOwner(result, p_owner, ms_ownOffset);
 
         putChunkID(result, p_chunkID, localIDSize, ms_nidOffset);
 
@@ -140,7 +125,7 @@ public class MigrationPrimLogEntryHeader extends AbstractPrimLogEntryHeader {
     public void print(final byte[] p_buffer, final int p_offset) {
         final Version version = getVersion(p_buffer, p_offset);
 
-        System.out.println("********************Primary Log Entry Header (Migration)********************");
+        System.out.println("********************Primary Log Entry Header (Default)*********************");
         System.out.println("* NodeID: " + getNodeID(p_buffer, p_offset));
         System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
         System.out.println("* Length: " + getLength(p_buffer, p_offset));
@@ -149,6 +134,16 @@ public class MigrationPrimLogEntryHeader extends AbstractPrimLogEntryHeader {
             System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));
         }
         System.out.println("****************************************************************************");
+    }
+
+    @Override
+    protected short getNIDOffset() {
+        return ms_nidOffset;
+    }
+
+    @Override
+    protected short getLIDOffset() {
+        return ms_lidOffset;
     }
 
 }

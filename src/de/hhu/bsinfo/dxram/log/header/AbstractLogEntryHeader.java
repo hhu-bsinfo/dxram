@@ -34,8 +34,8 @@ public abstract class AbstractLogEntryHeader {
     static final byte MAX_LOG_ENTRY_CID_SIZE = LOG_ENTRY_NID_SIZE + MAX_LOG_ENTRY_LID_SIZE;
     static final byte MAX_LOG_ENTRY_LEN_SIZE = 3;
     static final byte MAX_LOG_ENTRY_VER_SIZE = 3;
-    static final byte LOG_ENTRY_RID_SIZE = 1;
-    static final byte LOG_ENTRY_SRC_SIZE = 2;
+    static final byte LOG_ENTRY_RID_SIZE = 2;
+    static final byte LOG_ENTRY_OWN_SIZE = 2;
     static final byte LOG_ENTRY_EPO_SIZE = 2;
     static final byte TYPE_MASK = (byte) 0x01;
     private static final byte CHAIN_MASK = (byte) 0x02;
@@ -64,6 +64,28 @@ public abstract class AbstractLogEntryHeader {
     abstract short getLIDOffset();
 
     /**
+     * Returns the ChunkID or the LocalID of a log entry
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the ChunkID if secondary log stores migrations, the LocalID otherwise
+     */
+    public abstract long getCID(final byte[] p_buffer, final int p_offset);
+
+    /**
+     * Returns NodeID of a log entry
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the NodeID
+     */
+    abstract short getNodeID(final byte[] p_buffer, final int p_offset);
+
+    /**
      * Returns the maximum log entry size
      *
      * @return the maximum log entry size
@@ -85,28 +107,6 @@ public abstract class AbstractLogEntryHeader {
     public static void setSegmentSize(final int p_segmentSize) {
         ms_segmentSize = p_segmentSize;
     }
-
-    /**
-     * Returns the ChunkID or the LocalID of a log entry
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @return the ChunkID if secondary log stores migrations, the LocalID otherwise
-     */
-    public abstract long getCID(final byte[] p_buffer, final int p_offset);
-
-    /**
-     * Returns NodeID of a log entry
-     *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
-     * @return the NodeID
-     */
-    abstract short getNodeID(final byte[] p_buffer, final int p_offset);
 
     /**
      * Returns the number of bytes necessary to store given value
@@ -548,8 +548,10 @@ public abstract class AbstractLogEntryHeader {
      * @param p_offset
      *     the type-specific offset
      */
-    void putRangeID(final byte[] p_logEntry, final byte p_rangeID, final short p_offset) {
-        p_logEntry[p_offset] = p_rangeID;
+    void putRangeID(final byte[] p_logEntry, final short p_rangeID, final short p_offset) {
+        for (int i = 0; i < LOG_ENTRY_RID_SIZE; i++) {
+            p_logEntry[p_offset + i] = (byte) (p_rangeID >> i * 8 & 0xff);
+        }
     }
 
     /**
@@ -562,8 +564,8 @@ public abstract class AbstractLogEntryHeader {
      * @param p_offset
      *     the type-specific offset
      */
-    void putSource(final byte[] p_logEntry, final short p_source, final short p_offset) {
-        for (int i = 0; i < LOG_ENTRY_SRC_SIZE; i++) {
+    void putOwner(final byte[] p_logEntry, final short p_source, final short p_offset) {
+        for (int i = 0; i < LOG_ENTRY_OWN_SIZE; i++) {
             p_logEntry[p_offset + i] = (byte) (p_source >> i * 8 & 0xff);
         }
     }

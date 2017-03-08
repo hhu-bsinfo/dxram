@@ -74,6 +74,11 @@ class DefaultSecLogEntryHeader extends AbstractSecLogEntryHeader {
         return getLID(p_buffer, p_offset);
     }
 
+    @Override
+    public boolean isMigrated() {
+        return false;
+    }
+
     // Methods
     @Override
     public void print(final byte[] p_buffer, final int p_offset) {

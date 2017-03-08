@@ -25,7 +25,8 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
 public class RecoverBackupRangeResponse extends AbstractResponse {
 
     // Attributes
-    private int m_numberOfRecoveredChunks;
+    private int m_numberOfChunks;
+    private long[] m_chunkIDRanges;
 
     // Constructors
 
@@ -35,7 +36,8 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
     public RecoverBackupRangeResponse() {
         super();
 
-        m_numberOfRecoveredChunks = 0;
+        m_numberOfChunks = 0;
+        m_chunkIDRanges = null;
     }
 
     /**
@@ -43,13 +45,16 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
      *
      * @param p_request
      *     the corresponding RecoverBackupRangeRequest
-     * @param p_numberOfRecoveredChunks
-     *     number of recovered chunks
+     * @param p_numberOfChunks
+     *     the number of recovered chunks
+     * @param p_chunkIDRanges
+     *     all ChunkIDs in ranges
      */
-    public RecoverBackupRangeResponse(final RecoverBackupRangeRequest p_request, final int p_numberOfRecoveredChunks) {
+    public RecoverBackupRangeResponse(final RecoverBackupRangeRequest p_request, final int p_numberOfChunks, final long[] p_chunkIDRanges) {
         super(p_request, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE);
 
-        m_numberOfRecoveredChunks = p_numberOfRecoveredChunks;
+        m_numberOfChunks = p_numberOfChunks;
+        m_chunkIDRanges = p_chunkIDRanges;
     }
 
     // Getters
@@ -59,24 +64,45 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
      *
      * @return the number of recovered chunks
      */
-    public final int getNumberOfRecoveredChunks() {
-        return m_numberOfRecoveredChunks;
+    public final int getNumberOfChunks() {
+        return m_numberOfChunks;
+    }
+
+    /**
+     * Returns the ChunkIDs of all recovered chunks arranged in ranges
+     *
+     * @return the new backup peer
+     */
+    public final long[] getChunkIDRanges() {
+        return m_chunkIDRanges;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES;
+        return 2 * Integer.BYTES + m_chunkIDRanges.length * Long.BYTES;
     }
 
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_numberOfRecoveredChunks);
+        p_buffer.putInt(m_numberOfChunks);
+
+        p_buffer.putInt(m_chunkIDRanges.length);
+        for (int i = 0; i < m_chunkIDRanges.length; i++) {
+            p_buffer.putLong(m_chunkIDRanges[i]);
+        }
+
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        m_numberOfRecoveredChunks = p_buffer.getInt();
+        m_numberOfChunks = p_buffer.getInt();
+
+        int size = p_buffer.getInt();
+        m_chunkIDRanges = new long[size];
+        for (int i = 0; i < size; i++) {
+            m_chunkIDRanges[i] = p_buffer.getLong();
+        }
     }
 
 }

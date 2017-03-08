@@ -15,11 +15,14 @@ package de.hhu.bsinfo.dxram.recovery.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.backup.BackupRange;
+import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
- * Recover Backup Range Request
+ * Recover Backup Range Message
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 08.10.2015
  */
@@ -27,8 +30,7 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
 
     // Attributes
     private short m_owner;
-    private short[] m_backupPeers;
-    private long m_firstChunkIDOrRangeID;
+    private BackupRange m_backupRange;
 
     // Constructors
 
@@ -38,9 +40,8 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
     public RecoverBackupRangeRequest() {
         super();
 
-        m_owner = (short) -1;
-        m_backupPeers = null;
-        m_firstChunkIDOrRangeID = -1;
+        m_owner = NodeID.INVALID_ID;
+        m_backupRange = null;
     }
 
     /**
@@ -50,17 +51,14 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
      *     the destination
      * @param p_owner
      *     the NodeID of the owner
-     * @param p_backupPeers
-     *     the backup peers for to be recovered range
-     * @param p_firstChunkIDOrRangeID
-     *     the first ChunkID of the backup range or the RangeID for migrations
+     * @param p_backupRange
+     *     the backup range to recover
      */
-    public RecoverBackupRangeRequest(final short p_destination, final short p_owner, final short[] p_backupPeers, final long p_firstChunkIDOrRangeID) {
+    public RecoverBackupRangeRequest(final short p_destination, final short p_owner, final BackupRange p_backupRange) {
         super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, true);
 
         m_owner = p_owner;
-        m_backupPeers = p_backupPeers;
-        m_firstChunkIDOrRangeID = p_firstChunkIDOrRangeID;
+        m_backupRange = p_backupRange;
     }
 
     // Getters
@@ -75,54 +73,35 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
     }
 
     /**
-     * Get the backup peers
+     * Get the backup range
      *
-     * @return the backup peers
+     * @return the backup range
      */
-    public final short[] getBackupPeers() {
-        return m_backupPeers;
-    }
-
-    /**
-     * Get the ChunkID or RangeID
-     *
-     * @return the ChunkID or RangeID
-     */
-    public final long getFirstChunkIDOrRangeID() {
-        return m_firstChunkIDOrRangeID;
+    public final BackupRange getBackupRange() {
+        return m_backupRange;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Short.BYTES + Byte.BYTES + m_backupPeers.length * Short.BYTES + Long.BYTES;
+        return Short.BYTES + m_backupRange.sizeofObject();
     }
 
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
+        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        exporter.exportObject(m_backupRange);
+
         p_buffer.putShort(m_owner);
-
-        p_buffer.put((byte) m_backupPeers.length);
-        for (short peer : m_backupPeers) {
-            p_buffer.putShort(peer);
-        }
-
-        p_buffer.putLong(m_firstChunkIDOrRangeID);
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        byte length;
+        MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+        m_backupRange = new BackupRange();
+        importer.importObject(m_backupRange);
 
         m_owner = p_buffer.getShort();
-
-        length = p_buffer.get();
-        m_backupPeers = new short[length];
-        for (int i = 0; i < length; i++) {
-            m_backupPeers[i] = p_buffer.getShort();
-        }
-
-        m_firstChunkIDOrRangeID = p_buffer.getLong();
     }
 
 }

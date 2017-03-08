@@ -13,20 +13,18 @@
 
 package de.hhu.bsinfo.dxram.log.storage;
 
-import java.util.Arrays;
-
 import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 
 /**
- * Class to bundle versions for normal secondary logs and migration secondary logs
+ * Class to bundle versions for secondary logs
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 24.11.2016
  */
-public final class TemporaryVersionsStorage {
+final class TemporaryVersionsStorage {
 
-    private long m_secondaryLogSize;
-    private int[] m_versionsForNormalLog;
-    private VersionsHashTable m_versionsForMigrationLog;
+    private long m_maximumBackupRangeSize;
+    private VersionsArray m_versionsArray;
+    private VersionsHashTable m_versionsHashTable;
 
     // Constructors
 
@@ -36,93 +34,89 @@ public final class TemporaryVersionsStorage {
      * @param p_secondaryLogSize
      *     the size of the secondary log
      */
-    public TemporaryVersionsStorage(final long p_secondaryLogSize) {
-        m_secondaryLogSize = p_secondaryLogSize;
-    }
+    TemporaryVersionsStorage(final long p_secondaryLogSize) {
+        m_maximumBackupRangeSize = p_secondaryLogSize / 2;
 
-    /**
-     * Creates an instance of TemporaryVersionsStorage
-     *
-     * @param p_secondaryLogSize
-     *     the size of the secondary log
-     * @param p_size
-     *     the size of the int-array
-     */
-    TemporaryVersionsStorage(final long p_secondaryLogSize, final int p_size) {
-        m_secondaryLogSize = p_secondaryLogSize;
+        // Initialize array with default value suitable for 64-byte chunks; use localID 0 to fit first backup range as well; size: ~28 MB
+        m_versionsArray = new VersionsArray(AbstractSecLogEntryHeader.getMaximumNumberOfVersions(m_maximumBackupRangeSize, 64, false));
 
-        m_versionsForNormalLog = new int[p_size];
-        Arrays.fill(m_versionsForNormalLog, -1);
+        // Initialize hashtable with default value suitable for 64-byte chunks; size: ~54 MB
+        // (we do not want to rehash often, might still be increased)
+        m_versionsHashTable = new VersionsHashTable(AbstractSecLogEntryHeader.getMaximumNumberOfVersions(m_maximumBackupRangeSize, 64, true));
     }
 
     // Methods
 
     /**
-     * Returns the int-array for storing versions of normal logs
-     *
-     * @return the int-array
+     * Clears the versions data structures
      */
-    int[] getVersionsForNormalLog() {
-        if (m_versionsForNormalLog == null) {
-            // Initialize array with default value suitable for 128-byte chunks (might be increased in VersionBuffer)
-            m_versionsForNormalLog = new int[(int) (2 * m_secondaryLogSize / (128 + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, 128)))];
-            Arrays.fill(m_versionsForNormalLog, -1);
-        }
-        return m_versionsForNormalLog;
+    public void clear() {
+        m_versionsArray.clear();
+        m_versionsHashTable.clear();
     }
 
     /**
-     * Returns the hashtable for storing versions of migration logs
+     * Returns the current version for given ChunkID
+     *
+     * @param p_chunkID
+     *     the ChunkID
+     * @return the version
+     */
+    Version get(final long p_chunkID) {
+        return m_versionsHashTable.get(p_chunkID);
+    }
+
+    /**
+     * Returns the current version for given ChunkID
+     *
+     * @param p_chunkID
+     *     the ChunkID
+     * @param p_lowestLID
+     *     the lowest localID
+     * @return the version
+     */
+    Version get(final long p_chunkID, final long p_lowestLID) {
+        if (p_chunkID >= p_lowestLID && p_chunkID < p_lowestLID + m_versionsArray.capacity()) {
+            return m_versionsArray.get(p_chunkID, p_lowestLID);
+        } else {
+            return m_versionsHashTable.get(p_chunkID);
+        }
+    }
+
+    /**
+     * Returns the current version for given ChunkID
+     *
+     * @param p_chunkID
+     *     the ChunkID
+     * @param p_lowestLID
+     *     the lowest localID
+     * @return the version
+     */
+    Version get(final long p_chunkID, final long p_lowestLID, final SecondaryLog.Statistics p_stat) {
+        if (p_chunkID >= p_lowestLID && p_chunkID < p_lowestLID + m_versionsArray.capacity()) {
+            p_stat.m_readVersionsFromArray++;
+            return m_versionsArray.get(p_chunkID, p_lowestLID);
+        } else {
+            p_stat.m_readVersionsFromHashTable++;
+            return m_versionsHashTable.get(p_chunkID);
+        }
+    }
+
+    /**
+     * Returns the versions array for storing versions of normal log entries (created sequentially)
+     *
+     * @return the versions array
+     */
+    VersionsArray getVersionsArray() {
+        return m_versionsArray;
+    }
+
+    /**
+     * Returns the hashtable for storing versions of migration/recovered log entries
      *
      * @return the hashtable
      */
-    VersionsHashTable getVersionsForMigrationLog() {
-        if (m_versionsForMigrationLog == null) {
-            // Initialize hashtable with default value suitable for 32-byte chunks
-            // (we do not want to rehash often, might still be increased in VersionBuffer)
-            m_versionsForMigrationLog = new VersionsHashTable((int) (m_secondaryLogSize / (32 + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(true, 32))));
-        }
-        return m_versionsForMigrationLog;
-    }
-
-    /**
-     * Clears the versions data structure
-     *
-     * @param p_logStoresMigrations
-     *     whether to clear the int-array (false) or hashtable (true)
-     */
-    public void clear(final boolean p_logStoresMigrations) {
-        if (!p_logStoresMigrations) {
-            Arrays.fill(m_versionsForNormalLog, -1);
-        } else {
-            m_versionsForMigrationLog.clear();
-        }
-    }
-
-    /**
-     * Resizes the int-array
-     *
-     * @param p_size
-     *     the new size
-     * @return the new int-array
-     */
-    int[] resizeVersionsForNormalLog(final int p_size) {
-        m_versionsForNormalLog = new int[p_size];
-        Arrays.fill(m_versionsForNormalLog, -1);
-
-        return m_versionsForNormalLog;
-    }
-
-    /**
-     * Resizes the hashtable
-     *
-     * @param p_size
-     *     the new size
-     * @return the new hashtable
-     */
-    VersionsHashTable resizeVersionsForMigrationLog(final int p_size) {
-        m_versionsForMigrationLog = new VersionsHashTable(p_size);
-
-        return m_versionsForMigrationLog;
+    VersionsHashTable getVersionsHashTable() {
+        return m_versionsHashTable;
     }
 }

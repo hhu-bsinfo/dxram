@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.LogComponent;
+import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.utils.JNIFileDirect;
 import de.hhu.bsinfo.utils.JNIFileRaw;
@@ -44,6 +45,7 @@ class VersionsBuffer {
     private static final int FLUSH_THRESHOLD = (int) (VERSIONS_BUFFER_CAPACITY * FLUSH_FACTOR);
     private static final int WAIT_THRESHOLD = (int) (VERSIONS_BUFFER_CAPACITY * LOAD_FACTOR);
     private static final int SSD_ENTRY_SIZE = 13;
+    private static final int OUTLIERS_THRESHOLD = 1000;
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(VersionsBuffer.class.getSimpleName());
 
@@ -53,13 +55,15 @@ class VersionsBuffer {
     private LogComponent m_logComponent;
     private HarddriveAccessMode m_mode;
 
-    private long m_highestChunkID = 0;
     private int[] m_table;
     private int m_count;
-    private int m_logCount;
     private int m_intCapacity;
     private byte m_eon;
     private short m_epoch;
+
+    private int m_windowSize;
+    private long m_numberOfLIDs = 0;
+    private double m_averageLID = 0;
 
     private String m_path;
     private RandomAccessFile m_versionsFile;
@@ -80,19 +84,22 @@ class VersionsBuffer {
      *
      * @param p_logComponent
      *     the log component to enable calling access granting methods
+     * @param p_secondaryLogSize
+     *     the secondary log size
      * @param p_path
      *     the versions file's path
      * @param p_mode
      *     the harddrive access mode
      */
-    VersionsBuffer(final LogComponent p_logComponent, final String p_path, final HarddriveAccessMode p_mode) {
+    VersionsBuffer(final LogComponent p_logComponent, final long p_secondaryLogSize, final String p_path, final HarddriveAccessMode p_mode) {
         super();
 
         m_logComponent = p_logComponent;
         m_mode = p_mode;
 
+        m_windowSize = AbstractSecLogEntryHeader.getMaximumNumberOfVersions(p_secondaryLogSize / 2, 64, false);
+
         m_count = 0;
-        m_logCount = 0;
         m_intCapacity = VERSIONS_BUFFER_CAPACITY * 3;
 
         m_table = new int[m_intCapacity];
@@ -165,59 +172,6 @@ class VersionsBuffer {
     }
 
     /**
-     * Returns the number of keys in VersionsBuffer
-     *
-     * @return the number of keys in VersionsBuffer
-     */
-
-    final boolean isThresholdReached() {
-        return m_count >= FLUSH_THRESHOLD;
-    }
-
-    // Getter
-
-    /**
-     * Returns the number of keys in VersionsBuffer
-     *
-     * @return the number of keys in VersionsBuffer
-     */
-    final long getFileSize() {
-
-        if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
-            try {
-                return m_versionsFile.length();
-            } catch (final IOException e) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Could not read versions file's size", e);
-                // #endif /* LOGGER >= ERROR */
-                return -1;
-            }
-        } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-            return JNIFileDirect.length(m_fileID);
-        } else {
-            return JNIFileRaw.dlength(m_fileID);
-        }
-    }
-
-    /**
-     * Returns the current epoch
-     *
-     * @return the current epoch
-     */
-    final short getEpoch() {
-        return m_epoch;
-    }
-
-    /**
-     * Returns the current eon
-     *
-     * @return the current eon
-     */
-    final byte getEon() {
-        return m_eon;
-    }
-
-    /**
      * Hashes the given key with MurmurHash3
      *
      * @param p_key
@@ -256,6 +210,8 @@ class VersionsBuffer {
         return h1;
     }
 
+    // Getter
+
     /**
      * Write all versions to SSD and clear hash table
      *
@@ -277,7 +233,6 @@ class VersionsBuffer {
             newTable = new int[m_intCapacity];
             oldTable = m_table;
             m_table = newTable;
-            m_logCount += m_count;
             m_count = 0;
 
             ret = incrementEpoch();
@@ -381,6 +336,59 @@ class VersionsBuffer {
     }
 
     /**
+     * Returns the number of keys in VersionsBuffer
+     *
+     * @return the number of keys in VersionsBuffer
+     */
+
+    final boolean isThresholdReached() {
+        return m_count >= FLUSH_THRESHOLD;
+    }
+
+    /**
+     * Returns the number of keys in VersionsBuffer
+     *
+     * @return the number of keys in VersionsBuffer
+     */
+    final long getFileSize() {
+
+        if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+            try {
+                return m_versionsFile.length();
+            } catch (final IOException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not read versions file's size", e);
+                // #endif /* LOGGER >= ERROR */
+                return -1;
+            }
+        } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+            return JNIFileDirect.length(m_fileID);
+        } else {
+            return JNIFileRaw.dlength(m_fileID);
+        }
+    }
+
+    /**
+     * Returns the current epoch
+     *
+     * @return the current epoch
+     */
+    final short getEpoch() {
+        return m_epoch;
+    }
+
+    /**
+     * Returns the current eon
+     *
+     * @return the current eon
+     */
+    final byte getEon() {
+        return m_eon;
+    }
+
+    // Methods
+
+    /**
      * Closes the version buffer and deletes the version log
      */
     void closeAndRemove() throws IOException {
@@ -407,21 +415,6 @@ class VersionsBuffer {
         }
     }
 
-    // Methods
-
-    /**
-     * Returns the number of entries in this range. Might differ from m_logCount as not every Chunk in range might have been put, already.
-     * Only usable without migrations.
-     *
-     * @param p_offset
-     *     the first ChunkID in range
-     * @return the number of entries in this range
-     */
-
-    final int getRangeSize(final long p_offset) {
-        return (int) (ChunkID.getLocalID(m_highestChunkID) - ChunkID.getLocalID(p_offset)) + 1;
-    }
-
     /**
      * Maps the given key to the given value in VersionsBuffer if VersionBuffer is not completely filled
      *
@@ -444,34 +437,20 @@ class VersionsBuffer {
     }
 
     /**
-     * Read all versions from SSD, add current versions and write back
-     *
-     * @param p_allVersions
-     *     the array to put eons, epochs and versions in
-     * @param p_offset
-     *     the first ChunkID in backup range
-     * @return the former epoch
-     */
-    final short readAll(final TemporaryVersionsStorage p_allVersions, final boolean p_logStoresMigrations, final long p_offset, final boolean p_writeBack) {
-        if (!p_logStoresMigrations) {
-            return readAll(p_allVersions, p_offset, p_writeBack);
-        } else {
-            return readAllMigrations(p_allVersions, p_writeBack);
-        }
-    }
-
-    /**
      * Returns the next value to which the specified key is mapped in VersionsBuffer
      *
      * @param p_key
      *     the searched key (is incremented before insertion to avoid 0)
+     * @param p_owner
+     *     the owner
      * @return the 1 + value to which the key is mapped in VersionsBuffer
      */
-    final Version getNext(final long p_key) {
+    final Version getNext(final long p_key, final short p_owner) {
         Version ret = null;
         int index;
+        long localID = -1;
         long iter;
-        final long key = p_key + 1;
+        long key;
 
         // Avoid rehashing by waiting
         while (m_count == WAIT_THRESHOLD) {
@@ -479,11 +458,31 @@ class VersionsBuffer {
             Thread.yield();
         }
 
+        if (p_owner == ChunkID.getCreatorID(p_key)) {
+            // Use localID for not migrated/recovered chunks
+            localID = ChunkID.getLocalID(p_key);
+            key = localID + 1;
+        } else {
+            // Use complete ChunkID for migrated/recovered chunks
+            key = p_key + 1;
+        }
+
         index = (hash(key) & 0x7FFFFFFF) % VERSIONS_BUFFER_CAPACITY;
 
         m_accessLock.lock();
-        if (ChunkID.getLocalID(p_key) > m_highestChunkID) {
-            m_highestChunkID = p_key;
+        // Determine range barriers for not migrated/recovered chunks
+        if (localID != -1) {
+            if (m_numberOfLIDs == 0) {
+                m_averageLID = localID;
+            } else {
+                if (m_numberOfLIDs < OUTLIERS_THRESHOLD || Math.abs(localID - m_averageLID) <= m_windowSize) {
+                    // If the euclidean distance is less than or equal to the window size, adjust the window
+                    // -> Chunks with re-used ChunkIDs are not considered for average calculation
+                    // Initially, use all ChunkIDs to reduce probability of a misplaced window because of re-used ChunkIDs at the beginning
+                    m_averageLID += ((double) localID - m_averageLID) / (m_numberOfLIDs + 1);
+                }
+            }
+            m_numberOfLIDs++;
         }
 
         iter = getKey(index);
@@ -508,36 +507,38 @@ class VersionsBuffer {
 
     /**
      * Read all versions from SSD, add current versions and write back (if specified, only)
-     * Is used for normal secondary logs, as ChunkID range is known.
      *
      * @param p_allVersions
-     *     the array to put eons, epochs and versions in
-     * @param p_offset
-     *     the first ChunkID in backup range
+     *     the array and hashtable to put eons, epochs and versions in
      * @param p_writeBack
      *     whether the versions should be written-back for compactification
-     * @return the versions (might have been enlarged)
+     * @return the lowest LID at the time the versions are read-in
      */
-    private short readAll(final TemporaryVersionsStorage p_allVersions, final long p_offset, final boolean p_writeBack) {
-        short ret;
+    long readAll(final TemporaryVersionsStorage p_allVersions, final boolean p_writeBack) {
         int length;
         int version;
         boolean update = false;
         long chunkID;
+        long averageLID;
+        long lowestLID;
+        long highestLID;
         byte[] data;
         int[] newTable;
         int[] oldTable;
         ByteBuffer buffer;
-        int counter = 0;
-        int[] versions;
+        VersionsHashTable versionsHashTable;
+        VersionsArray versionsArray;
 
-        versions = p_allVersions.getVersionsForNormalLog();
-        if (getRangeSize(p_offset) > versions.length / 2) {
-            // There are more log entries in this secondary log than in any before -> increase array size
-            versions = p_allVersions.resizeVersionsForNormalLog(2 * getRangeSize(p_offset));
-        }
+        m_accessLock.lock();
+        averageLID = (long) m_averageLID;
+        m_accessLock.unlock();
 
-        ret = m_epoch;
+        versionsHashTable = p_allVersions.getVersionsHashTable();
+        versionsArray = p_allVersions.getVersionsArray();
+        int size = versionsArray.capacity();
+        lowestLID = Math.max(0, averageLID - size / 2);
+        highestLID = lowestLID + size - 1;
+
         try {
             if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
                 length = (int) m_versionsFile.length();
@@ -559,11 +560,11 @@ class VersionsBuffer {
                     m_versionsFile.readFully(data);
                 } else if (m_mode == HarddriveAccessMode.ODIRECT) {
                     if (JNIFileDirect.read(m_fileID, data, 0, data.length, 0, m_readBufferPointer, m_readBufferSize) < 0) {
-                        throw new IOException("JNI error: error reading file");
+                        throw new IOException("JNI error: Could not read file");
                     }
                 } else {
                     if (JNIFileRaw.dread(m_fileID, data, 0, data.length, 0, m_readBufferPointer, m_readBufferSize) < 0) {
-                        throw new IOException("JNI error: Error reading file");
+                        throw new IOException("JNI error: Could not read file");
                     }
                 }
 
@@ -571,14 +572,16 @@ class VersionsBuffer {
 
                 for (int i = 0; i * SSD_ENTRY_SIZE < length; i++) {
                     chunkID = buffer.getLong();
-                    if (versions[(int) (chunkID - p_offset) * 2] == -1) {
-                        counter++;
+                    if (chunkID >= lowestLID && chunkID <= highestLID) {
+                        // ChunkID is in range -> put in array
+                        versionsArray.put(chunkID, buffer.getShort(), buffer.get() << 16 | buffer.get() << 8 | buffer.get(), lowestLID);
+                    } else {
+                        // ChunkID is outside of range -> put in hashtable
+                        versionsHashTable.put(chunkID, buffer.getShort(), buffer.get() << 16 | buffer.get() << 8 | buffer.get());
                     }
-                    versions[(int) (chunkID - p_offset) * 2] = buffer.getShort();
-                    versions[(int) (chunkID - p_offset) * 2 + 1] = buffer.get() << 16 | buffer.get() << 8 | buffer.get();
                 }
 
-                if (counter * SSD_ENTRY_SIZE < length) {
+                if ((versionsArray.size() + versionsHashTable.size()) * SSD_ENTRY_SIZE < length) {
                     // Versions log was not empty -> compact
                     update = true;
                 }
@@ -601,188 +604,46 @@ class VersionsBuffer {
                 for (int i = 0; i < oldTable.length; i += 3) {
                     chunkID = (long) oldTable[i] << 32 | oldTable[i + 1] & 0xFFFFFFFFL;
                     if (chunkID != 0) {
-                        if (versions[(int) (chunkID - p_offset - 1) * 2] == -1) {
-                            counter++;
-                        }
-
                         // ChunkID: -1 because 1 is added before putting to avoid LID 0; epoch was incremented before
-                        versions[(int) (chunkID - p_offset - 1) * 2] = (short) (m_epoch - 1 + (m_eon << 15));
-                        versions[(int) (chunkID - p_offset - 1) * 2 + 1] = oldTable[i + 2];
+                        if (chunkID - 1 >= lowestLID && chunkID - 1 <= highestLID) {
+                            // ChunkID is in range -> put in array
+                            versionsArray.put(chunkID - 1, (short) (m_epoch - 1 + (m_eon << 15)), oldTable[i + 2], lowestLID);
+                        } else {
+                            // ChunkID is outside of range -> put in hashtable
+                            versionsHashTable.put(chunkID - 1, (short) (m_epoch - 1 + (m_eon << 15)), oldTable[i + 2]);
+                        }
                     }
                 }
                 update = true;
-                m_logCount = counter;
             } else {
-                m_logCount = counter;
                 m_accessLock.unlock();
             }
 
             if (p_writeBack && update) {
                 // Write back current hashtable compactified
-                data = new byte[counter * SSD_ENTRY_SIZE];
+                data = new byte[(versionsArray.size() + versionsHashTable.size()) * SSD_ENTRY_SIZE];
                 buffer = ByteBuffer.wrap(data);
 
-                for (int i = 0; i < versions.length; i += 2) {
-                    chunkID = i / 2 + p_offset;
-                    if (versions[i] != -1) {
-                        // ChunkID (-1 because 1 is added before putting to avoid LID 0)
+                // Gather all entries from array
+                short epoch;
+                for (int i = 0; i < versionsArray.capacity(); i++) {
+                    chunkID = i + lowestLID;
+                    epoch = versionsArray.getEpoch(i, 0);
+
+                    if (epoch != -1) {
                         buffer.putLong(chunkID);
                         // Epoch (4 Bytes in hashtable, 2 in persistent table)
-                        buffer.putShort((short) versions[i]);
+                        buffer.putShort(epoch);
                         // Version (4 Bytes in hashtable, 3 in persistent table)
-                        version = versions[i + 1];
+                        version = versionsArray.getVersion(i, 0);
                         buffer.put((byte) (version >>> 16));
                         buffer.put((byte) (version >>> 8));
                         buffer.put((byte) version);
                     }
                 }
 
-                if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
-                    m_versionsFile.seek(0);
-                    m_versionsFile.write(data);
-                    m_versionsFile.setLength(data.length);
-                } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                    if (JNIFileDirect.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
-                        throw new IOException("JNI Error: Could not write to file");
-                    }
-                } else {
-                    if (JNIFileRaw.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
-                        throw new IOException("JNI Error: Could not write to file");
-                    }
-                    if (JNIFileRaw.setDFileLength(m_fileID, data.length) < 0) {
-                        throw new IOException("JNI error: could not set file length");
-                    }
-                }
-            }
-        } catch (final IOException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Could write to versions file", e);
-            // #endif /* LOGGER >= ERROR */
-        }
-
-        return ret;
-    }
-
-    /**
-     * Read all versions from SSD, add current versions and write back (if specified, only)
-     * Is used for secondary logs storing migrations, as ChunkIDs are not in a specific range.
-     *
-     * @param p_allVersions
-     *     the VersionsHashTable to put all current versions in
-     * @param p_writeBack
-     *     whether the versions should be written-back for compactification
-     * @return the versions (might have been enlarged)
-     */
-    private short readAllMigrations(final TemporaryVersionsStorage p_allVersions, final boolean p_writeBack) {
-        short ret;
-        int length;
-        int version;
-        boolean update = false;
-        long chunkID;
-        byte[] data;
-        int[] newTable;
-        int[] oldTable;
-        int[] hashTable;
-        ByteBuffer buffer;
-        VersionsHashTable versions;
-
-        versions = p_allVersions.getVersionsForMigrationLog();
-        if (m_logCount > versions.capacity()) {
-            // There may be too many versions in versions log to fit in hashtable -> resize
-            versions = p_allVersions.resizeVersionsForMigrationLog(m_logCount);
-        }
-
-        ret = m_epoch;
-        try {
-            if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
-                length = (int) m_versionsFile.length();
-            } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                length = (int) JNIFileDirect.length(m_fileID);
-            } else {
-                length = (int) JNIFileRaw.dlength(m_fileID);
-            }
-
-            if (length > 0) {
-                // Read all entries from SSD to hashtable
-
-                // Read old versions from SSD and add to hashtable
-                // Then read all new versions from versions log and add to hashtable (overwrites older entries!)
-                data = new byte[length];
-
-                if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
-                    m_versionsFile.seek(0);
-                    m_versionsFile.readFully(data);
-                } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                    if (JNIFileDirect.read(m_fileID, data, 0, data.length, 0, m_readBufferPointer, m_readBufferSize) < 0) {
-                        throw new IOException("JNI error: error reading file");
-                    }
-                } else {
-                    if (JNIFileRaw.dread(m_fileID, data, 0, data.length, 0, m_readBufferPointer, m_readBufferSize) < 0) {
-                        throw new IOException("JNI error: Error reading file");
-                    }
-                }
-
-                buffer = ByteBuffer.wrap(data);
-
-                for (int i = 0; i * SSD_ENTRY_SIZE < length; i++) {
-                    versions.put(buffer.getLong(), buffer.getShort(), buffer.get() << 16 | buffer.get() << 8 | buffer.get());
-                }
-
-                if (versions.size() * SSD_ENTRY_SIZE < length) {
-                    // Versions log was not empty -> compact
-                    update = true;
-                }
-            } else {
-                // There is nothing on SSD yet
-            }
-
-            if (versions.size() + m_count > versions.capacity()) {
-                // There may too many versions in versions buffer to fit in hashtable -> resize
-                hashTable = versions.getTable();
-                versions = p_allVersions.resizeVersionsForMigrationLog(versions.size() + m_count);
-
-                // We need to rehash now
-                for (int i = 0; i < hashTable.length; i += 4) {
-                    chunkID = (long) hashTable[i] << 32 | hashTable[i + 1] & 0xFFFFFFFFL;
-                    if (chunkID != 0) {
-                        // ChunkID (-1 because 1 is added before putting to avoid LID 0)
-                        versions.put(chunkID - 1, (short) hashTable[i + 2], hashTable[i + 3]);
-                    }
-                }
-            }
-
-            // Put all versions from versions buffer to VersionsHashTable
-            m_accessLock.lock();
-            if (m_count > 0) {
-                // "Copy" all data to release lock as soon as possible
-                newTable = new int[m_intCapacity];
-                oldTable = m_table;
-                m_table = newTable;
-                m_count = 0;
-
-                incrementEpoch();
-                m_accessLock.unlock();
-
-                for (int i = 0; i < oldTable.length; i += 3) {
-                    chunkID = (long) oldTable[i] << 32 | oldTable[i + 1] & 0xFFFFFFFFL;
-                    if (chunkID != 0) {
-                        // ChunkID: -1 because 1 is added before putting to avoid LID 0; epoch was incremented before
-                        versions.put(chunkID - 1, (short) (m_epoch - 1 + (m_eon << 15)), oldTable[i + 2]);
-                    }
-                }
-                update = true;
-                m_logCount = versions.size();
-            } else {
-                m_logCount = versions.size();
-                m_accessLock.unlock();
-            }
-
-            if (p_writeBack & update) {
-                // Write back current hashtable compactified
-                data = new byte[versions.size() * SSD_ENTRY_SIZE];
-                buffer = ByteBuffer.wrap(data);
-
-                hashTable = versions.getTable();
+                // Gather all entries from hashtable
+                int[] hashTable = versionsHashTable.getTable();
                 for (int i = 0; i < hashTable.length; i += 4) {
                     chunkID = (long) hashTable[i] << 32 | hashTable[i + 1] & 0xFFFFFFFFL;
                     if (chunkID != 0) {
@@ -804,14 +665,14 @@ class VersionsBuffer {
                     m_versionsFile.setLength(data.length);
                 } else if (m_mode == HarddriveAccessMode.ODIRECT) {
                     if (JNIFileDirect.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
-                        throw new IOException("JNI Error: Could not write to file");
+                        throw new IOException("JNI error: Could not write to file");
                     }
                 } else {
                     if (JNIFileRaw.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
-                        throw new IOException("JNI Error: Could not write to file");
+                        throw new IOException("JNI error: Could not write to file");
                     }
                     if (JNIFileRaw.setDFileLength(m_fileID, data.length) < 0) {
-                        throw new IOException("JNI error: could not set file length");
+                        throw new IOException("JNI error: Could not set file length");
                     }
                 }
             }
@@ -821,7 +682,7 @@ class VersionsBuffer {
             // #endif /* LOGGER >= ERROR */
         }
 
-        return ret;
+        return lowestLID;
     }
 
     /**

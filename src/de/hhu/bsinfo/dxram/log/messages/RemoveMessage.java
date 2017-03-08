@@ -15,6 +15,7 @@ package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
@@ -40,7 +41,7 @@ public class RemoveMessage extends AbstractMessage {
         super();
 
         m_chunkIDs = null;
-        m_rangeID = -1;
+        m_rangeID = RangeID.INVALID_ID;
         m_buffer = null;
     }
 
@@ -56,7 +57,7 @@ public class RemoveMessage extends AbstractMessage {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
 
         m_chunkIDs = p_chunkIDs;
-        m_rangeID = -1;
+        m_rangeID = RangeID.INVALID_ID;
     }
 
     /**
@@ -71,7 +72,7 @@ public class RemoveMessage extends AbstractMessage {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
 
         m_chunkIDs = ArrayListLong.wrap(p_chunkIDs);
-        m_rangeID = -1;
+        m_rangeID = RangeID.INVALID_ID;
     }
 
     /**

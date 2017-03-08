@@ -4,7 +4,7 @@ import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
 /**
- * Helper class for generating CRC32 checksums.
+ * Helper class for generating 32-bit checksums.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 25.01.2017
  */
@@ -19,6 +19,21 @@ public final class ChecksumHandler {
      * Hidden constructor
      */
     private ChecksumHandler() {
+    }
+
+    /**
+     * Calculates the CRC32 checksum of a log entry's payload
+     *
+     * @param p_payload
+     *     the payload
+     * @param p_offset
+     *     the offset within b
+     * @return the checksum
+     */
+    public static int calculateChecksumOfPayload(final byte[] p_payload, final int p_offset, final int p_length) {
+        CRC.reset();
+        CRC.update(p_payload, p_offset, p_length);
+        return (int) CRC.getValue();
     }
 
     /**
@@ -42,21 +57,6 @@ public final class ChecksumHandler {
             ms_logEntryCRCSize = (byte) 0;
         }
         ms_useChecksum = p_useChecksum;
-    }
-
-    /**
-     * Calculates the CRC32 checksum of a log entry's payload
-     *
-     * @param p_payload
-     *     the payload
-     * @return the checksum
-     */
-    public static int calculateChecksumOfPayload(final byte[] p_payload, final int p_offset, final int p_length) {
-
-        CRC.reset();
-        CRC.update(p_payload, p_offset, p_length);
-
-        return (int) CRC.getValue();
     }
 
     /**
@@ -131,7 +131,6 @@ public final class ChecksumHandler {
                 }
             }
         }
-
     }
 
 }

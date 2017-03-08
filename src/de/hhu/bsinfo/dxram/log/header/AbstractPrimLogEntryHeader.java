@@ -26,17 +26,9 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
 public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPrimLogEntryHeader.class.getSimpleName());
-    private static final AbstractPrimLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
-    private static final AbstractPrimLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
+    private static final AbstractPrimLogEntryHeader PRIM_LOG_ENTRY_HEADER = new PrimLogEntryHeader();
 
     // Methods
-
-    /**
-     * Returns the offset for conversion
-     *
-     * @return the offset
-     */
-    public abstract short getConversionOffset();
 
     @Override
     abstract short getNIDOffset();
@@ -55,11 +47,11 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      *     the version
      * @param p_rangeID
      *     the RangeID
-     * @param p_source
-     *     the source NodeID
+     * @param p_owner
+     *     the owner NodeID
      * @return the log entry
      */
-    public abstract byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final byte p_rangeID, final short p_source);
+    public abstract byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner);
 
     /**
      * Returns RangeID of a log entry
@@ -73,7 +65,7 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
     public abstract byte getRangeID(final byte[] p_buffer, final int p_offset);
 
     /**
-     * Returns source of a log entry
+     * Returns owner of a log entry
      *
      * @param p_buffer
      *     buffer with log entries
@@ -81,14 +73,7 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      *     offset in buffer
      * @return the NodeID
      */
-    public abstract short getSource(final byte[] p_buffer, final int p_offset);
-
-    /**
-     * Checks whether this log entry was migrated or not
-     *
-     * @return whether this log entry was migrated or not
-     */
-    public abstract boolean wasMigrated();
+    public abstract short getOwner(final byte[] p_buffer, final int p_offset);
 
     /**
      * Prints the log header
@@ -103,28 +88,10 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
     /**
      * Returns the corresponding AbstractPrimLogEntryHeader
      *
-     * @param p_buffer
-     *     buffer with log entries
-     * @param p_offset
-     *     offset in buffer
      * @return the AbstractPrimLogEntryHeader
      */
-    public static AbstractPrimLogEntryHeader getHeader(final byte[] p_buffer, final int p_offset) {
-        AbstractPrimLogEntryHeader ret = null;
-        byte type;
-
-        type = (byte) (p_buffer[p_offset] & TYPE_MASK);
-        if (type == 0) {
-            ret = DEFAULT_PRIM_LOG_ENTRY_HEADER;
-        } else if (type == 1) {
-            ret = MIGRATION_PRIM_LOG_ENTRY_HEADER;
-        } else {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Type of log entry header unknown!");
-            // #endif /* LOGGER >= ERROR */
-        }
-
-        return ret;
+    public static AbstractPrimLogEntryHeader getHeader() {
+        return PRIM_LOG_ENTRY_HEADER;
     }
 
     /**
@@ -215,6 +182,27 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
             }
         }
         ret = p_logEntrySize - (p_conversionOffset - 1);
+
+        return ret;
+    }
+
+    /**
+     * Returns the offset for conversion
+     *
+     * @return the offset
+     */
+    public static short getConversionOffset(final byte[] p_buffer, final int p_offset) {
+        short ret;
+        byte type;
+
+        type = (byte) (p_buffer[p_offset] & TYPE_MASK);
+        if (type == 0) {
+            // Convert into DefaultSecLogEntryHeader by skipping NodeID
+            ret = PRIM_LOG_ENTRY_HEADER.getLIDOffset();
+        } else {
+            // Convert into MigrationSecLogEntryHeader
+            ret = PRIM_LOG_ENTRY_HEADER.getNIDOffset();
+        }
 
         return ret;
     }

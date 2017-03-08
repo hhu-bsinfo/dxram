@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.log.messages;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
@@ -29,7 +30,7 @@ import de.hhu.bsinfo.ethnet.AbstractMessage;
 public class LogMessage extends AbstractMessage {
 
     // Attributes
-    private byte m_rangeID;
+    private short m_rangeID;
     private DataStructure[] m_dataStructures;
     private ByteBuffer m_buffer;
 
@@ -41,24 +42,9 @@ public class LogMessage extends AbstractMessage {
     public LogMessage() {
         super();
 
-        m_rangeID = -1;
+        m_rangeID = RangeID.INVALID_ID;
         m_dataStructures = null;
         m_buffer = null;
-    }
-
-    /**
-     * Creates an instance of LogMessage
-     *
-     * @param p_destination
-     *     the destination
-     * @param p_dataStructures
-     *     the data structures to store
-     */
-    public LogMessage(final short p_destination, final DataStructure... p_dataStructures) {
-        super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
-
-        m_rangeID = -1;
-        m_dataStructures = p_dataStructures;
     }
 
     /**
@@ -71,7 +57,7 @@ public class LogMessage extends AbstractMessage {
      * @param p_rangeID
      *     the RangeID
      */
-    public LogMessage(final short p_destination, final byte p_rangeID, final DataStructure... p_dataStructures) {
+    public LogMessage(final short p_destination, final short p_rangeID, final DataStructure... p_dataStructures) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
 
         m_rangeID = p_rangeID;
@@ -92,7 +78,7 @@ public class LogMessage extends AbstractMessage {
     @Override
     protected final int getPayloadLength() {
         if (m_dataStructures != null) {
-            int ret = Byte.BYTES + Integer.BYTES;
+            int ret = Short.BYTES + Integer.BYTES;
 
             for (DataStructure dataStructure : m_dataStructures) {
                 ret += Long.BYTES + Integer.BYTES + dataStructure.sizeofObject();
@@ -107,7 +93,7 @@ public class LogMessage extends AbstractMessage {
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.put(m_rangeID);
+        p_buffer.putShort(m_rangeID);
 
         p_buffer.putInt(m_dataStructures.length);
         final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);

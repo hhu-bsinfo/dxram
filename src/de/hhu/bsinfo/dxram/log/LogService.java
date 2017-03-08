@@ -151,7 +151,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      *     the LogMessage
      */
     private void incomingLogMessage(final LogMessage p_message) {
-        m_log.logIncomingChunks(p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingLogChunks(p_message.getMessageBuffer(), p_message.getSource());
     }
 
     /**
@@ -161,7 +161,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      *     the RemoveMessage
      */
     private void incomingRemoveMessage(final RemoveMessage p_message) {
-        m_log.removeIncomingChunks(p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingRemoveChunks(p_message.getMessageBuffer(), p_message.getSource());
     }
 
     /**
@@ -173,7 +173,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
     private void incomingInitRequest(final InitRequest p_request) {
         boolean res;
 
-        res = m_log.initIncomingBackupRange(p_request.getFirstCIDOrRangeID(), p_request.getSource());
+        res = m_log.incomingInitBackupRange(p_request.getRangeID(), p_request.getSource());
 
         try {
             m_network.sendMessage(new InitResponse(p_request, res));

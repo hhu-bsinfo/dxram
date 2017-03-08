@@ -63,26 +63,6 @@ public final class SecondaryLogBuffer {
     }
 
     /**
-     * Returns the number of bytes
-     *
-     * @return the number of bytes
-     */
-    public int getOccupiedSpace() {
-        return m_bytesInBuffer;
-    }
-
-    // Methods
-
-    /**
-     * Returns whether the secondary log buffer is empty or not
-     *
-     * @return whether buffer is empty or not
-     */
-    public boolean isBufferEmpty() {
-        return m_bytesInBuffer == 0;
-    }
-
-    /**
      * Changes log entries for storing in secondary log
      *
      * @param p_buffer
@@ -103,18 +83,38 @@ public final class SecondaryLogBuffer {
         buffer = new byte[p_entryOrRangeSize];
         while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
             // Determine header of next log entry
-            logEntryHeader = AbstractPrimLogEntryHeader.getHeader(p_buffer, oldBufferOffset);
+            logEntryHeader = AbstractPrimLogEntryHeader.getHeader();
             logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) + logEntryHeader.getLength(p_buffer, oldBufferOffset);
 
             // Copy primary log header, but skip NodeID and RangeID
             newBufferOffset += AbstractPrimLogEntryHeader
                 .convertAndPut(p_buffer, oldBufferOffset, buffer, newBufferOffset, logEntrySize, p_buffer.length - oldBufferOffset,
-                    logEntryHeader.getConversionOffset());
+                    AbstractPrimLogEntryHeader.getConversionOffset(p_buffer, oldBufferOffset));
             oldBufferOffset += logEntrySize;
         }
         buffer = Arrays.copyOf(buffer, newBufferOffset);
 
         return buffer;
+    }
+
+    // Methods
+
+    /**
+     * Returns the number of bytes
+     *
+     * @return the number of bytes
+     */
+    public int getOccupiedSpace() {
+        return m_bytesInBuffer;
+    }
+
+    /**
+     * Returns whether the secondary log buffer is empty or not
+     *
+     * @return whether buffer is empty or not
+     */
+    public boolean isBufferEmpty() {
+        return m_bytesInBuffer == 0;
     }
 
     /**

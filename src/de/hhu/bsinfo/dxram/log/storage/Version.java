@@ -20,6 +20,8 @@ package de.hhu.bsinfo.dxram.log.storage;
  */
 public class Version {
 
+    public static final int INVALID_VERSION = -1;
+
     private short m_epoch;
     private int m_version;
 
@@ -46,21 +48,23 @@ public class Version {
     }
 
     /**
-     * Returns the eon
-     *
-     * @return the eon
-     */
-    public byte getEon() {
-        return (byte) (m_epoch >> 15);
-    }
-
-    /**
      * Returns the version
      *
      * @return the version
      */
     public int getVersion() {
         return m_version;
+    }
+
+    /**
+     * Compares two Versions; Is faster than equals as class type is known
+     *
+     * @param p_cmp
+     *     the EpochVersion to compare with
+     * @return true if version, epoch and eon is equal
+     */
+    public boolean isEqual(final Version p_cmp) {
+        return m_epoch == p_cmp.m_epoch && m_version == p_cmp.m_version;
     }
 
     /**
@@ -120,5 +124,14 @@ public class Version {
         }
 
         return ret;
+    }
+
+    /**
+     * Returns the eon
+     *
+     * @return the eon
+     */
+    byte getEon() {
+        return (byte) (m_epoch >> 15);
     }
 }

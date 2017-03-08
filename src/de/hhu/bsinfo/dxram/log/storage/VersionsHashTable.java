@@ -54,6 +54,16 @@ class VersionsHashTable {
     // Getter / Setter
 
     /**
+     * Clears VersionsHashTable
+     */
+    public final void clear() {
+        if (m_count != 0) {
+            Arrays.fill(m_table, 0);
+            m_count = 0;
+        }
+    }
+
+    /**
      * Returns all entries
      *
      * @return the array
@@ -63,16 +73,6 @@ class VersionsHashTable {
     }
 
     /**
-     * Clears VersionsHashTable
-     */
-    public final void clear() {
-        Arrays.fill(m_table, 0);
-        m_count = 0;
-    }
-
-    // Methods
-
-    /**
      * Returns the number of keys in VersionsHashTable
      *
      * @return the number of keys in VersionsHashTable
@@ -80,6 +80,8 @@ class VersionsHashTable {
     protected final int size() {
         return m_count;
     }
+
+    // Methods
 
     /**
      * Returns the number of keys fitting in VersionsHashTable
@@ -132,11 +134,9 @@ class VersionsHashTable {
         long iter;
         final long key = p_key + 1;
 
-        // #if LOGGER >= ERROR
-        if (m_count == m_elementCapacity) {
-            LOGGER.error("HashTable is too small. Rehashing prohibited!");
+        if (m_count > m_elementCapacity * 0.9) {
+            rehash();
         }
-        // #endif /* LOGGER >= ERROR */
 
         index = (VersionsBuffer.hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
@@ -211,5 +211,41 @@ class VersionsHashTable {
         m_table[index + 1] = (int) p_key;
         m_table[index + 2] = p_epoch;
         m_table[index + 3] = p_version;
+    }
+
+    /**
+     * Increases the capacity of and internally reorganizes hashtable
+     */
+    private void rehash() {
+        int index = 0;
+        int oldCount;
+        int oldElementCapacity;
+        int[] oldTable;
+        int[] newTable;
+
+        oldCount = m_count;
+        oldElementCapacity = m_elementCapacity;
+        oldTable = m_table;
+
+        m_elementCapacity = m_elementCapacity * 2 + 1;
+        newTable = new int[m_elementCapacity * 4];
+        m_table = newTable;
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("Reached threshold -> Rehashing. New size: %d... ", m_elementCapacity);
+        // #endif /* LOGGER == TRACE */
+
+        m_count = 0;
+        while (index < oldElementCapacity) {
+            if (oldTable[index * 4] != 0) {
+                put(((long) oldTable[index] << 32 | oldTable[index + 1] & 0xFFFFFFFFL) - 1, oldTable[index + 2], oldTable[index + 3]);
+            }
+            index = (index + 1) % m_elementCapacity;
+        }
+        m_count = oldCount;
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("done");
+        // #endif /* LOGGER == TRACE */
     }
 }

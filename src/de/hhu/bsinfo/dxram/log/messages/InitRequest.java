@@ -15,6 +15,7 @@ package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
 
@@ -26,8 +27,7 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
 public class InitRequest extends AbstractRequest {
 
     // Attributes
-    private long m_firstChunkIDOrRangeID;
-    private short m_owner;
+    private short m_rangeID = RangeID.INVALID_ID;
 
     // Constructors
 
@@ -36,9 +36,6 @@ public class InitRequest extends AbstractRequest {
      */
     public InitRequest() {
         super();
-
-        m_firstChunkIDOrRangeID = 0;
-        m_owner = -1;
     }
 
     /**
@@ -46,53 +43,39 @@ public class InitRequest extends AbstractRequest {
      *
      * @param p_destination
      *     the destination
-     * @param p_firstChunkIDOrRangeID
-     *     the beginning of the range
-     * @param p_owner
-     *     the current owner
+     * @param p_rangeID
+     *     the RangeID
      */
-    public InitRequest(final short p_destination, final long p_firstChunkIDOrRangeID, final short p_owner) {
+    public InitRequest(final short p_destination, final short p_rangeID) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_REQUEST, true);
 
-        m_firstChunkIDOrRangeID = p_firstChunkIDOrRangeID;
-        m_owner = p_owner;
+        m_rangeID = p_rangeID;
     }
 
     // Getters
 
     /**
-     * Get the beginning of the range
+     * Get the RangeID
      *
-     * @return the ChunkID
+     * @return the RangeID
      */
-    public final long getFirstCIDOrRangeID() {
-        return m_firstChunkIDOrRangeID;
-    }
-
-    /**
-     * Get the current owner
-     *
-     * @return the current owner
-     */
-    public final short getOwner() {
-        return m_owner;
+    public final short getRangeID() {
+        return m_rangeID;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Long.BYTES + Short.BYTES;
+        return Short.BYTES;
     }
 
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putLong(m_firstChunkIDOrRangeID);
-        p_buffer.putShort(m_owner);
+        p_buffer.putShort(m_rangeID);
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        m_firstChunkIDOrRangeID = p_buffer.getLong();
-        m_owner = p_buffer.getShort();
+        m_rangeID = p_buffer.getShort();
     }
 }

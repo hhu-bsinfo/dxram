@@ -37,6 +37,8 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
     @Override
     public abstract long getCID(final byte[] p_buffer, final int p_offset);
 
+    public abstract boolean isMigrated();
+
     /**
      * Prints the log header
      *
@@ -54,24 +56,39 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
      *     buffer with log entries
      * @param p_offset
      *     offset in buffer
-     * @param p_storesMigrations
-     *     whether the secondary log this entry is in stores migrations or not
      * @return the AbstractSecLogEntryHeader
      */
-    public static AbstractSecLogEntryHeader getHeader(final byte[] p_buffer, final int p_offset, final boolean p_storesMigrations) {
-        AbstractSecLogEntryHeader ret = null;
+    public static AbstractSecLogEntryHeader getHeader(final byte[] p_buffer, final int p_offset) {
+        AbstractSecLogEntryHeader ret;
         byte type;
 
         type = (byte) (p_buffer[p_offset] & TYPE_MASK);
         if (type == 0) {
-            if (!p_storesMigrations) {
-                ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
-            } else {
-                ret = MIGRATION_SEC_LOG_ENTRY_HEADER;
-            }
+            ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
+        } else {
+            ret = MIGRATION_SEC_LOG_ENTRY_HEADER;
         }
 
         return ret;
+    }
+
+    /**
+     * Determines the maximum number of versions per backup range for a given default chunk size
+     *
+     * @param p_maxBackupRangeSize
+     *     the maximum backup range size
+     * @param p_defaultChunkSize
+     *     the default chunk size
+     * @param p_logStoresMigrations
+     *     whether the calculation should consider migrations or not
+     * @return the maximum number of versions
+     */
+    public static int getMaximumNumberOfVersions(final long p_maxBackupRangeSize, final int p_defaultChunkSize, final boolean p_logStoresMigrations) {
+        if (!p_logStoresMigrations) {
+            return (int) (p_maxBackupRangeSize / (p_defaultChunkSize + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, 0, p_defaultChunkSize)));
+        } else {
+            return (int) (p_maxBackupRangeSize / (p_defaultChunkSize + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(true, p_defaultChunkSize)));
+        }
     }
 
     /**
