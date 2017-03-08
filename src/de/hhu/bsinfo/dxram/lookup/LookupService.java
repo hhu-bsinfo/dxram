@@ -136,8 +136,8 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
         try {
             m_network.sendSync(lookupTreeRequest);
-        } catch (final NetworkException e) {
-            /* TODO err handling */
+        } catch (final NetworkException ignored) {
+            return null;
         }
 
         lookupTreeResponse = lookupTreeRequest.getResponse(GetLookupTreeResponse.class);

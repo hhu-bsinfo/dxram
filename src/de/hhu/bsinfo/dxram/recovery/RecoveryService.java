@@ -246,13 +246,6 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
         m_recoveryLock.lock();
         ret = m_log.recoverBackupRange(p_owner, rangeID);
         m_log.removeBackupRange(p_owner, rangeID);
-
-        if (ret == null) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Cannot recover Chunks locally");
-            // #endif /* LOGGER >= ERROR */
-        }
-
         m_recoveryLock.unlock();
 
         return ret;
@@ -326,18 +319,27 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
             // Recover all chunks of given backup range, store them in chunk module and remove log
             RecoveryMetadata recoveryMetadata = recoverBackupRange(p_request.getOwner(), backupRange);
 
-            // Initialize backup ranges in backup, lookup and log modules by joining recovered chunks with migrated chunks
-            replacementBackupPeer = m_backup.registerRecoveredChunks(recoveryMetadata, backupRange, p_request.getOwner());
+            if (recoveryMetadata == null) {
+                try {
+                    m_network.sendMessage(new RecoverBackupRangeResponse(p_request, 0, null));
+                } catch (final NetworkException ignored) {
 
-            // Send replicas to backup peers
-            if (replacementBackupPeer != NodeID.INVALID_ID) {
-                m_chunkBackup.replicateBackupRange(replacementBackupPeer, recoveryMetadata.getCIDRanges(), backupRange.getRangeID());
-            }
+                }
+            } else {
 
-            try {
-                m_network.sendMessage(new RecoverBackupRangeResponse(p_request, recoveryMetadata.getNumberOfChunks(), recoveryMetadata.getCIDRanges()));
-            } catch (final NetworkException ignored) {
+                // Initialize backup ranges in backup, lookup and log modules by joining recovered chunks with migrated chunks
+                replacementBackupPeer = m_backup.registerRecoveredChunks(recoveryMetadata, backupRange, p_request.getOwner());
 
+                // Send replicas to backup peers
+                if (replacementBackupPeer != NodeID.INVALID_ID) {
+                    m_chunkBackup.replicateBackupRange(replacementBackupPeer, recoveryMetadata.getCIDRanges(), backupRange.getRangeID());
+                }
+
+                try {
+                    m_network.sendMessage(new RecoverBackupRangeResponse(p_request, recoveryMetadata.getNumberOfChunks(), recoveryMetadata.getCIDRanges()));
+                } catch (final NetworkException ignored) {
+
+                }
             }
         };
         new Thread(task).start();

@@ -881,7 +881,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                             if (currentRequest.waitForResponses(10000)) { // TODO: time-out
                                 response = currentRequest.getResponse(RecoverBackupRangeResponse.class);
                                 long[] chunkIDRanges = response.getChunkIDRanges();
-                                if (chunkIDRanges.length > 0) {
+                                if (chunkIDRanges != null) {
                                     // #if LOGGER >= INFO
                                     LOGGER.info("Recovered %d chunks of range %s", response.getNumberOfChunks(), backupRanges[i]);
                                     // #endif /* LOGGER >= INFO */
@@ -901,7 +901,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
                                         request = new RecoverBackupRangeRequest(backupPeer, p_failedNode, backupRanges[i]);
                                         try {
-                                            m_network.sendSync(request, false);
+                                            m_network.sendSync(request, true);
 
                                             response = request.getResponse(RecoverBackupRangeResponse.class);
                                             long[] chunkIDRanges = response.getChunkIDRanges();

@@ -14,7 +14,6 @@
 package de.hhu.bsinfo.dxram.log.storage;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,7 +50,8 @@ public final class LogCatalog {
      *
      * @return the secondary log array
      */
-    public SecondaryLog[] getAllLogs() { return m_logs;
+    public SecondaryLog[] getAllLogs() {
+        return m_logs;
     }
 
     /**
@@ -132,11 +132,13 @@ public final class LogCatalog {
         SecondaryLogBuffer buffer;
 
         if (p_rangeID >= m_logs.length) {
-            SecondaryLog[] temp1 = new SecondaryLog[m_logs.length + CHUNK_SIZE];
+            int newSize = p_rangeID / CHUNK_SIZE * CHUNK_SIZE + CHUNK_SIZE;
+
+            SecondaryLog[] temp1 = new SecondaryLog[newSize];
             System.arraycopy(m_logs, 0, temp1, 0, m_logs.length);
             m_logs = temp1;
 
-            SecondaryLogBuffer[] temp2 = new SecondaryLogBuffer[m_buffers.length + CHUNK_SIZE];
+            SecondaryLogBuffer[] temp2 = new SecondaryLogBuffer[newSize];
             System.arraycopy(m_buffers, 0, temp2, 0, m_buffers.length);
             m_buffers = temp2;
         }

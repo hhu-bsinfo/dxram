@@ -79,7 +79,11 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        return 2 * Integer.BYTES + m_chunkIDRanges.length * Long.BYTES;
+        if (m_numberOfChunks > 0) {
+            return 2 * Integer.BYTES + m_chunkIDRanges.length * Long.BYTES;
+        } else {
+            return Integer.BYTES;
+        }
     }
 
     // Methods
@@ -87,9 +91,11 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
     protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putInt(m_numberOfChunks);
 
-        p_buffer.putInt(m_chunkIDRanges.length);
-        for (int i = 0; i < m_chunkIDRanges.length; i++) {
-            p_buffer.putLong(m_chunkIDRanges[i]);
+        if (m_numberOfChunks > 0) {
+            p_buffer.putInt(m_chunkIDRanges.length);
+            for (int i = 0; i < m_chunkIDRanges.length; i++) {
+                p_buffer.putLong(m_chunkIDRanges[i]);
+            }
         }
 
     }
@@ -98,10 +104,12 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
     protected final void readPayload(final ByteBuffer p_buffer) {
         m_numberOfChunks = p_buffer.getInt();
 
-        int size = p_buffer.getInt();
-        m_chunkIDRanges = new long[size];
-        for (int i = 0; i < size; i++) {
-            m_chunkIDRanges[i] = p_buffer.getLong();
+        if (m_numberOfChunks > 0) {
+            int size = p_buffer.getInt();
+            m_chunkIDRanges = new long[size];
+            for (int i = 0; i < size; i++) {
+                m_chunkIDRanges[i] = p_buffer.getLong();
+            }
         }
     }
 

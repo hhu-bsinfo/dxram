@@ -200,11 +200,20 @@ public final class PeerHandler {
     BackupRange[] getAllBackupRanges() {
         BackupRange[] ret;
         long[] backupRanges;
+        int counter = 0;
 
         backupRanges = m_backupRanges.getArray();
         ret = new BackupRange[backupRanges.length];
         for (int i = 0; i < backupRanges.length; i++) {
-            ret[i] = new BackupRange((short) i, BackupRange.convert(backupRanges[i]));
+            if (backupRanges[i] != -1) {
+                ret[counter++] = new BackupRange((short) i, BackupRange.convert(backupRanges[i]));
+            }
+        }
+
+        if (counter != ret.length) {
+            BackupRange[] tmp = new BackupRange[counter];
+            System.arraycopy(ret, 0, tmp, 0, counter);
+            ret = tmp;
         }
 
         return ret;
