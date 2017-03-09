@@ -143,6 +143,13 @@ public abstract class AbstractRequest extends AbstractMessage {
         return m_aborted;
     }
 
+    /**
+     * Aborts waiting on response. Is called on failure detection
+     */
+    public final void abort() {
+        m_aborted = true;
+    }
+
     // Setters
 
     /**

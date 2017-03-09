@@ -29,6 +29,8 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
+import de.hhu.bsinfo.dxram.event.EventListener;
+import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
@@ -50,7 +52,7 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NetworkComponent extends AbstractDXRAMComponent {
+public class NetworkComponent extends AbstractDXRAMComponent implements EventListener<NodeFailureEvent> {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkComponent.class.getSimpleName());
 
@@ -244,6 +246,15 @@ public class NetworkComponent extends AbstractDXRAMComponent {
     // --------------------------------------------------------------------------------------
 
     @Override
+    public void eventTriggered(final NodeFailureEvent p_event) {
+        // #if LOGGER >= DEBUG
+        LOGGER.debug("Connection to peer 0x%X lost, aborting and removing all pending requests", p_event.getNodeID());
+        // #endif /* LOGGER >= DEBUG */
+
+        RequestMap.removeAll(p_event.getNodeID());
+    }
+
+    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
@@ -253,6 +264,8 @@ public class NetworkComponent extends AbstractDXRAMComponent {
     protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         m_networkHandler = new NetworkHandler(m_threadCountMsgHandler, m_requestMapEntryCount);
         NetworkHandler.setEventHandler(m_event);
+
+        m_event.registerListener(this, NodeFailureEvent.class);
 
         // Check if given ip address is bound to one of this node's network interfaces
         boolean found = false;
