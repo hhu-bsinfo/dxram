@@ -1436,6 +1436,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         } else {
             GetLocalChunkIDRangesRequest request = new GetLocalChunkIDRangesRequest(p_nodeID);
 
+            // important: the remote operation involves traversing the whole CIDTable which takes a while...
+            // If the node fails during that process, the superpeer notifies all peers about that
+            // and the NetworkService takes care of handling running requests that can't succeed anymore
+            request.setIgnoreTimeout(true);
+
             try {
                 m_network.sendSync(request);
             } catch (final NetworkException e) {
