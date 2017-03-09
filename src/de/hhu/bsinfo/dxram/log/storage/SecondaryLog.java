@@ -918,8 +918,8 @@ public class SecondaryLog extends AbstractLog {
                         currentVersion = m_versionsBuffer.get(chunkID);
                     }
 
-                    // Compare current version with element
                     if (currentVersion.isEqual(entryVersion)) {
+                        // Compare current version with element
                         // Create chunk only if log entry complete
                         if (p_doCRCCheck) {
                             if (ChecksumHandler.calculateChecksumOfPayload(segmentData, readBytes + headerSize, payloadSize) !=
@@ -1347,8 +1347,12 @@ public class SecondaryLog extends AbstractLog {
                                 currentVersion = m_versionsBuffer.get(chunkID);
                             }
 
-                            // Compare current version with element
-                            if (currentVersion.isEqual(entryVersion)) {
+                            if (currentVersion == null || currentVersion.getVersion() == 0) {
+                                // #if LOGGER >= ERROR
+                                LOGGER.error("Version unknown for chunk 0x%X!", ChunkID.toHexString(chunkID));
+                                // #endif /* LOGGER >= ERROR */
+                            } else if (currentVersion.isEqual(entryVersion)) {
+                                // Compare current version with element
                                 if (readBytes != writtenBytes) {
                                     System.arraycopy(p_segmentData, readBytes, p_segmentData, writtenBytes, length);
                                 }
@@ -1389,8 +1393,9 @@ public class SecondaryLog extends AbstractLog {
 
             if (readBytes - writtenBytes > 0) {
                 // #if LOGGER >= INFO
-                LOGGER.info("Freed %d bytes during reorganization of: %d  0x%X, %d\t %d", readBytes - writtenBytes, p_segmentIndex, m_owner, m_rangeID,
-                    determineLogSize() / 1024 / 1024);
+                LOGGER
+                    .info("Freed %d bytes during reorganization of segment %d in range 0x%X,%d\t total log size: %d", readBytes - writtenBytes, p_segmentIndex,
+                        m_owner, m_rangeID, determineLogSize() / 1024 / 1024);
                 // #endif /* LOGGER >= INFO */
             }
         }

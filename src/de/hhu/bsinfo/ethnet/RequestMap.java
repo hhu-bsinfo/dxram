@@ -66,6 +66,27 @@ public final class RequestMap {
     }
 
     /**
+     * Removes all requests send to given NodeID
+     *
+     * @param p_nodeID
+     *     the NodeID
+     */
+    public static void removeAll(final short p_nodeID) {
+        AbstractRequest request;
+
+        ms_lock.lock();
+
+        for (int i = 0; i < ms_pendingRequests.length; i++) {
+            request = ms_pendingRequests[i];
+            if (request != null && request.getDestination() == p_nodeID) {
+                request.abort();
+            }
+        }
+
+        ms_lock.unlock();
+    }
+
+    /**
      * Returns the corresponding request
      *
      * @param p_resonse

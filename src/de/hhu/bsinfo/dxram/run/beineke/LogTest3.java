@@ -183,7 +183,7 @@ public final class LogTest3 {
             start = System.currentTimeMillis();
             for (int i = 0; i < numberOfRequests; i++) {
                 for (int j = 0; j < CHUNKS_PER_PUT; j++) {
-                    chunks[j].setID(((long) m_nodeID << 48) + (i * CHUNKS_PER_PUT + j));
+                    chunks[j].setID(((long) m_nodeID << 48) + (i * CHUNKS_PER_PUT + j + 1));
                 }
 
                 // Store them in-memory and replicate them on backups' SSD

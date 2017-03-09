@@ -112,8 +112,9 @@ class VersionsArray {
      *     the lowest ChunkID in range
      */
     final void put(final long p_key, final int p_epoch, final int p_version, final long p_idOffset) {
-        set((int) ((p_key - p_idOffset) * 2), p_epoch, p_version);
-        m_count++;
+        if (set((int) ((p_key - p_idOffset) * 2), p_epoch, p_version)) {
+            m_count++;
+        }
     }
 
     /**
@@ -175,9 +176,16 @@ class VersionsArray {
      *     the epoch
      * @param p_version
      *     the version
+     * @return whether this is a new entry or not
      */
-    private void set(final int p_index, final int p_epoch, final int p_version) {
+    private boolean set(final int p_index, final int p_epoch, final int p_version) {
+        boolean ret;
+
+        ret = m_table[p_index] == -1;
+
         m_table[p_index] = p_epoch;
         m_table[p_index + 1] = p_version;
+
+        return ret;
     }
 }
