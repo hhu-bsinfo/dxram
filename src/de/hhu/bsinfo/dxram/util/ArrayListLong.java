@@ -131,6 +131,7 @@ public class ArrayListLong implements Importable, Exportable {
 
     /**
      * Add an element to the array at given index. The array is automatically resized if necessary
+     * Do not mix with add(long)!
      *
      * @param p_index
      *     index at which the specified element is to be inserted
@@ -140,7 +141,8 @@ public class ArrayListLong implements Importable, Exportable {
     public void add(final int p_index, final long p_val) {
         if (m_array.length <= p_index) {
             int oldSize = m_array.length;
-            m_array = Arrays.copyOf(m_array, p_index + 1);
+            int newSize = p_index / m_capacityChunk * m_capacityChunk + m_capacityChunk;
+            m_array = Arrays.copyOf(m_array, newSize);
             Arrays.fill(m_array, oldSize, m_array.length, ChunkID.INVALID_ID);
         }
 
@@ -150,49 +152,6 @@ public class ArrayListLong implements Importable, Exportable {
         if (p_index > m_endOfList) {
             m_endOfList = p_index + 1;
         }
-    }
-
-    public void addSorted(final long p_val) {
-        if (m_array.length - m_endOfList == 0) {
-            m_array = Arrays.copyOf(m_array, m_array.length + m_capacityChunk);
-            Arrays.fill(m_array, m_endOfList, m_array.length, ChunkID.INVALID_ID);
-        }
-
-        if (m_endOfList == 0 || m_array[m_endOfList - 1] < p_val) {
-            m_array[m_endOfList++] = p_val;
-        } else {
-            for (int i = 0; i < m_array.length; i++) {
-                if (p_val < m_array[i]) {
-                    System.arraycopy(m_array, i, m_array, i + 1, m_endOfList - i);
-                    m_endOfList++;
-
-                    m_array[i] = p_val;
-                    break;
-                }
-            }
-        }
-        m_size++;
-    }
-
-    public long[] getRanges() {
-        ArrayListLong ranges = new ArrayListLong();
-
-        long currentCID;
-        int currentIndex;
-        int index = 0;
-        while (index < m_endOfList) {
-            currentCID = m_array[index];
-            ranges.add(currentCID);
-            currentIndex = 1;
-
-            while (index + currentIndex < m_array.length && m_array[index + currentIndex] == currentCID + currentIndex) {
-                currentIndex++;
-            }
-            ranges.add(currentCID + currentIndex - 1);
-            index += currentIndex;
-        }
-
-        return ranges.getArray();
     }
 
     /**

@@ -15,10 +15,8 @@ package de.hhu.bsinfo.dxram.lookup.overlay.storage;
 
 import java.io.Serializable;
 
-import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -44,7 +42,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     private int m_size;
 
     private short m_creator;
-    private ArrayListLong m_backupRanges;
 
     private Entry m_changedEntry;
 
@@ -56,8 +53,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     public LookupTree() {
         m_root = null;
         m_size = 0;
-
-        m_backupRanges = new ArrayListLong();
 
         m_changedEntry = null;
     }
@@ -81,14 +76,266 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         m_size = 0;
 
         m_creator = p_creator;
-        m_backupRanges = new ArrayListLong();
 
         m_changedEntry = null;
     }
 
     /**
-     * @author michael.birkhoff@hhu.de
+     * Prints one node of the btree and walks down the btree recursively
+     *
+     * @param p_node
+     *     the current node
+     * @param p_prefix
+     *     the prefix to use
+     * @param p_isTail
+     *     defines wheter the node is the tail
+     * @return String interpretation of the tree
      */
+    private static String getString(final Node p_node, final String p_prefix, final boolean p_isTail) {
+        StringBuilder ret;
+        Node obj;
+
+        ret = new StringBuilder();
+
+        ret.append(p_prefix);
+        if (p_isTail) {
+            ret.append("└── ");
+        } else {
+            ret.append("├── ");
+        }
+        ret.append('[');
+        ret.append(p_node.getNumberOfEntries());
+        ret.append(", ");
+        ret.append(p_node.getNumberOfChildren());
+        ret.append("] ");
+        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
+            ret.append("(LocalID: ");
+            ret.append(ChunkID.toHexString(p_node.getLocalID(i)));
+            ret.append(" NodeID: ");
+            ret.append(NodeID.toHexString(p_node.getNodeID(i)));
+            ret.append(')');
+            if (i < p_node.getNumberOfEntries() - 1) {
+                ret.append(", ");
+            }
+        }
+        ret.append('\n');
+
+        if (p_node.getChild(0) != null) {
+            for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
+                obj = p_node.getChild(i);
+                if (p_isTail) {
+                    ret.append(getString(obj, p_prefix + "    ", false));
+                } else {
+                    ret.append(getString(obj, p_prefix + "│   ", false));
+                }
+            }
+            if (p_node.getNumberOfChildren() >= 1) {
+                obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
+                if (p_isTail) {
+                    ret.append(getString(obj, p_prefix + "    ", true));
+                } else {
+                    ret.append(getString(obj, p_prefix + "│   ", true));
+                }
+            }
+        }
+        return ret.toString();
+    }
+
+    /**
+     * Adds one node as pair of long and short from the btree to the byte buffer and walks down the btree recursively
+     *
+     * @param p_node
+     *     the current node
+     * @param p_exporter
+     *     bytebuffer to write into
+     */
+    private static void serialize(final Node p_node, final Exporter p_exporter) {
+        Node obj;
+
+        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
+
+            p_exporter.writeLong(p_node.getLocalID(i));
+            p_exporter.writeShort(p_node.getNodeID(i));
+
+        }
+
+        for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
+            obj = p_node.getChild(i);
+
+            if (obj != null) {
+                serialize(obj, p_exporter);
+            }
+
+        }
+        if (p_node.getNumberOfChildren() >= 1) {
+            obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
+
+            serialize(obj, p_exporter);
+        }
+    }
+
+    /**
+     * Returns the node in which the predecessor is
+     *
+     * @param p_localID
+     *     LocalID whose predecessor's node is searched
+     * @param p_node
+     *     anchor node
+     * @return the node in which the predecessor of p_localID is or null if there is no predecessor
+     */
+    private static Node getPredecessorsNode(final long p_localID, final Node p_node) {
+        int index;
+        Node ret = null;
+        Node node;
+        Node parent;
+
+        assert p_node != null;
+
+        node = p_node;
+
+        if (p_localID == node.getLocalID(0)) {
+            if (node.getNumberOfChildren() > 0) {
+                // Get maximum in child tree
+                node = node.getChild(0);
+                while (node.getNumberOfEntries() < node.getNumberOfChildren()) {
+                    node = node.getChild(node.getNumberOfChildren() - 1);
+                }
+                ret = node;
+            } else {
+                parent = node.getParent();
+                if (parent != null) {
+                    while (parent != null && p_localID < parent.getLocalID(0)) {
+                        parent = parent.getParent();
+                    }
+                    ret = parent;
+                }
+            }
+        } else {
+            index = node.indexOf(p_localID);
+            if (index >= 0) {
+                if (index <= node.getNumberOfChildren()) {
+                    // Get maximum in child tree
+                    node = node.getChild(index);
+                    while (node.getNumberOfEntries() < node.getNumberOfChildren()) {
+                        node = node.getChild(node.getNumberOfChildren() - 1);
+                    }
+                }
+                ret = node;
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the entry of the predecessor
+     *
+     * @param p_localID
+     *     the LocalID whose predecessor is searched
+     * @param p_node
+     *     anchor node
+     * @return the entry of p_localID's predecessor or null if there is no predecessor
+     */
+    private static Entry getPredecessorsEntry(final long p_localID, final Node p_node) {
+        Entry ret = null;
+        Node predecessorsNode;
+        long predecessorsLID;
+
+        predecessorsNode = getPredecessorsNode(p_localID, p_node);
+        if (predecessorsNode != null) {
+            for (int i = predecessorsNode.getNumberOfEntries() - 1; i >= 0; i--) {
+                predecessorsLID = predecessorsNode.getLocalID(i);
+                if (p_localID > predecessorsLID) {
+                    ret = new Entry(predecessorsLID, predecessorsNode.getNodeID(i));
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the node in which the successor is
+     *
+     * @param p_localID
+     *     LocalID whose successor's node is searched
+     * @param p_node
+     *     anchor node
+     * @return the node in which the successor of p_localID is or null if there is no successor
+     */
+    private static Node getSuccessorsNode(final long p_localID, final Node p_node) {
+        int index;
+        Node ret = null;
+        Node node;
+        Node parent;
+
+        assert p_node != null;
+
+        node = p_node;
+
+        if (p_localID == node.getLocalID(node.getNumberOfEntries() - 1)) {
+            if (node.getNumberOfEntries() < node.getNumberOfChildren()) {
+                // Get minimum in child tree
+                node = node.getChild(node.getNumberOfEntries());
+                while (node.getNumberOfChildren() > 0) {
+                    node = node.getChild(0);
+                }
+                ret = node;
+            } else {
+                parent = node.getParent();
+                if (parent != null) {
+                    while (parent != null && p_localID > parent.getLocalID(parent.getNumberOfEntries() - 1)) {
+                        parent = parent.getParent();
+                    }
+                    ret = parent;
+                }
+            }
+        } else {
+            index = node.indexOf(p_localID);
+            if (index >= 0) {
+                if (index < node.getNumberOfChildren()) {
+                    // Get minimum in child tree
+                    node = node.getChild(index + 1);
+                    while (node.getNumberOfChildren() > 0) {
+                        node = node.getChild(0);
+                    }
+                }
+                ret = node;
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the entry of the successor
+     *
+     * @param p_localID
+     *     the LocalID whose successor is searched
+     * @param p_node
+     *     anchor node
+     * @return the entry of p_localID's successor or null if there is no successor
+     */
+    private static Entry getSuccessorsEntry(final long p_localID, final Node p_node) {
+        Entry ret = null;
+        Node successorsNode;
+        long successorsLID;
+
+        successorsNode = getSuccessorsNode(p_localID, p_node);
+        if (successorsNode != null) {
+            for (int i = 0; i < successorsNode.getNumberOfEntries(); i++) {
+                successorsLID = successorsNode.getLocalID(i);
+                if (p_localID < successorsLID) {
+                    ret = new Entry(successorsLID, successorsNode.getNodeID(i));
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
     @Override
     public void importObject(final Importer p_importer) {
 
@@ -109,9 +356,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         }
     }
 
-    /**
-     * @author michael.birkhoff@hhu.de
-     */
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeShort(m_creator);
@@ -123,15 +367,12 @@ public final class LookupTree implements Serializable, Importable, Exportable {
             p_exporter.writeInt(numberOfTreeElements);
 
             // Push elements
-            putTreeInByteBuffer(m_root, p_exporter);
+            serialize(m_root, p_exporter);
         } else {
             p_exporter.writeInt(-1);
         }
     }
 
-    /**
-     * @author michael.birkhoff@hhu.de
-     */
     @Override
     public int sizeofObject() {
         int numberOfBytesWritten = 2 * Short.BYTES;
@@ -153,6 +394,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      *
      * @return whether the tree is valid or not
      */
+    @SuppressWarnings("unused")
     public boolean validate() {
         boolean ret = true;
 
@@ -179,15 +421,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         }
 
         return ret;
-    }
-
-    /**
-     * Returns the backup peers for all backup ranges
-     *
-     * @return an ArrayList with all backup peers for migrated
-     */
-    ArrayListLong getAllBackupRanges() {
-        return m_backupRanges;
     }
 
     /**
@@ -250,22 +483,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
             mergeWithSuccessor(endLID, p_nodeID);
         }
-        return true;
-    }
-
-    /**
-     * Initializes a new backup range
-     *
-     * @param p_backupRange
-     *     the backup range to initialize
-     * @return true if insertion was successful
-     */
-    boolean initRange(final BackupRange p_backupRange) {
-        byte rangeID;
-        long backupPeers;
-
-        m_backupRanges.add(p_backupRange.getRangeID(), BackupRange.convert(p_backupRange.getBackupPeers()));
-
         return true;
     }
 
@@ -438,59 +655,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                 }
             }
         }
-    }
-
-    /**
-     * Replaces given peer from specific backup range
-     *
-     * @param p_rangeID
-     *     the RangeID
-     * @param p_failedPeer
-     *     NodeID of failed peer
-     * @param p_replacement
-     *     NodeID of new backup peer
-     */
-    void replaceBackupPeer(final short p_rangeID, final short p_failedPeer, final short p_replacement) {
-        long backupPeers;
-
-        // This is a migration backup range
-        backupPeers = BackupRange.replaceBackupPeer(m_backupRanges.get(p_rangeID), p_failedPeer, p_replacement);
-        m_backupRanges.set(p_rangeID, backupPeers);
-    }
-
-    /**
-     * Adds one node as pair of long and short from the btree to the byte buffer and walks down the btree recursively
-     *
-     * @param p_node
-     *     the current node
-     * @param p_exporter
-     *     bytebuffer to write into
-     * @author michael.birkhoff@hhu.de
-     */
-    private void putTreeInByteBuffer(final Node p_node, final Exporter p_exporter) {
-        Node obj;
-
-        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
-
-            p_exporter.writeLong(p_node.getLocalID(i));
-            p_exporter.writeShort(p_node.getNodeID(i));
-
-        }
-
-        for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
-            obj = p_node.getChild(i);
-
-            if (obj != null) {
-                putTreeInByteBuffer(obj, p_exporter);
-            }
-
-        }
-        if (p_node.getNumberOfChildren() >= 1) {
-            obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
-
-            putTreeInByteBuffer(obj, p_exporter);
-        }
-
     }
 
     /**
@@ -738,168 +902,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                 ret = node.getNodeID(index);
             } else {
                 ret = node.getNodeID(index * -1 - 1);
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the node in which the predecessor is
-     *
-     * @param p_localID
-     *     LocalID whose predecessor's node is searched
-     * @param p_node
-     *     anchor node
-     * @return the node in which the predecessor of p_localID is or null if there is no predecessor
-     */
-    private Node getPredecessorsNode(final long p_localID, final Node p_node) {
-        int index;
-        Node ret = null;
-        Node node;
-        Node parent;
-
-        assert p_node != null;
-
-        node = p_node;
-
-        if (p_localID == node.getLocalID(0)) {
-            if (node.getNumberOfChildren() > 0) {
-                // Get maximum in child tree
-                node = node.getChild(0);
-                while (node.getNumberOfEntries() < node.getNumberOfChildren()) {
-                    node = node.getChild(node.getNumberOfChildren() - 1);
-                }
-                ret = node;
-            } else {
-                parent = node.getParent();
-                if (parent != null) {
-                    while (parent != null && p_localID < parent.getLocalID(0)) {
-                        parent = parent.getParent();
-                    }
-                    ret = parent;
-                }
-            }
-        } else {
-            index = node.indexOf(p_localID);
-            if (index >= 0) {
-                if (index <= node.getNumberOfChildren()) {
-                    // Get maximum in child tree
-                    node = node.getChild(index);
-                    while (node.getNumberOfEntries() < node.getNumberOfChildren()) {
-                        node = node.getChild(node.getNumberOfChildren() - 1);
-                    }
-                }
-                ret = node;
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the entry of the predecessor
-     *
-     * @param p_localID
-     *     the LocalID whose predecessor is searched
-     * @param p_node
-     *     anchor node
-     * @return the entry of p_localID's predecessor or null if there is no predecessor
-     */
-    private Entry getPredecessorsEntry(final long p_localID, final Node p_node) {
-        Entry ret = null;
-        Node predecessorsNode;
-        long predecessorsLID;
-
-        predecessorsNode = getPredecessorsNode(p_localID, p_node);
-        if (predecessorsNode != null) {
-            for (int i = predecessorsNode.getNumberOfEntries() - 1; i >= 0; i--) {
-                predecessorsLID = predecessorsNode.getLocalID(i);
-                if (p_localID > predecessorsLID) {
-                    ret = new Entry(predecessorsLID, predecessorsNode.getNodeID(i));
-                    break;
-                }
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the node in which the successor is
-     *
-     * @param p_localID
-     *     LocalID whose successor's node is searched
-     * @param p_node
-     *     anchor node
-     * @return the node in which the successor of p_localID is or null if there is no successor
-     */
-    private Node getSuccessorsNode(final long p_localID, final Node p_node) {
-        int index;
-        Node ret = null;
-        Node node;
-        Node parent;
-
-        assert p_node != null;
-
-        node = p_node;
-
-        if (p_localID == node.getLocalID(node.getNumberOfEntries() - 1)) {
-            if (node.getNumberOfEntries() < node.getNumberOfChildren()) {
-                // Get minimum in child tree
-                node = node.getChild(node.getNumberOfEntries());
-                while (node.getNumberOfChildren() > 0) {
-                    node = node.getChild(0);
-                }
-                ret = node;
-            } else {
-                parent = node.getParent();
-                if (parent != null) {
-                    while (parent != null && p_localID > parent.getLocalID(parent.getNumberOfEntries() - 1)) {
-                        parent = parent.getParent();
-                    }
-                    ret = parent;
-                }
-            }
-        } else {
-            index = node.indexOf(p_localID);
-            if (index >= 0) {
-                if (index < node.getNumberOfChildren()) {
-                    // Get minimum in child tree
-                    node = node.getChild(index + 1);
-                    while (node.getNumberOfChildren() > 0) {
-                        node = node.getChild(0);
-                    }
-                }
-                ret = node;
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * Returns the entry of the successor
-     *
-     * @param p_localID
-     *     the LocalID whose successor is searched
-     * @param p_node
-     *     anchor node
-     * @return the entry of p_localID's successor or null if there is no successor
-     */
-    private Entry getSuccessorsEntry(final long p_localID, final Node p_node) {
-        Entry ret = null;
-        Node successorsNode;
-        long successorsLID;
-
-        successorsNode = getSuccessorsNode(p_localID, p_node);
-        if (successorsNode != null) {
-            for (int i = 0; i < successorsNode.getNumberOfEntries(); i++) {
-                successorsLID = successorsNode.getLocalID(i);
-                if (p_localID < successorsLID) {
-                    ret = new Entry(successorsLID, successorsNode.getNodeID(i));
-                    break;
-                }
             }
         }
 
@@ -1274,67 +1276,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Prints one node of the btree and walks down the btree recursively
-     *
-     * @param p_node
-     *     the current node
-     * @param p_prefix
-     *     the prefix to use
-     * @param p_isTail
-     *     defines wheter the node is the tail
-     * @return String interpretation of the tree
-     */
-    private String getString(final Node p_node, final String p_prefix, final boolean p_isTail) {
-        StringBuilder ret;
-        Node obj;
-
-        ret = new StringBuilder();
-
-        ret.append(p_prefix);
-        if (p_isTail) {
-            ret.append("└── ");
-        } else {
-            ret.append("├── ");
-        }
-        ret.append('[');
-        ret.append(p_node.getNumberOfEntries());
-        ret.append(", ");
-        ret.append(p_node.getNumberOfChildren());
-        ret.append("] ");
-        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
-            ret.append("(LocalID: ");
-            ret.append(ChunkID.toHexString(p_node.getLocalID(i)));
-            ret.append(" NodeID: ");
-            ret.append(NodeID.toHexString(p_node.getNodeID(i)));
-            ret.append(')');
-            if (i < p_node.getNumberOfEntries() - 1) {
-                ret.append(", ");
-            }
-        }
-        ret.append('\n');
-
-        if (p_node.getChild(0) != null) {
-            for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
-                obj = p_node.getChild(i);
-                if (p_isTail) {
-                    ret.append(getString(obj, p_prefix + "    ", false));
-                } else {
-                    ret.append(getString(obj, p_prefix + "│   ", false));
-                }
-            }
-            if (p_node.getNumberOfChildren() >= 1) {
-                obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
-                if (p_isTail) {
-                    ret.append(getString(obj, p_prefix + "    ", true));
-                } else {
-                    ret.append(getString(obj, p_prefix + "│   ", true));
-                }
-            }
-        }
-        return ret.toString();
-    }
-
-    /**
      * Auxiliary object to return LocalID and NodeID at once
      *
      * @author Kevin Beineke
@@ -1398,7 +1339,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * @author Kevin Beineke
      *         13.06.2013
      */
-    private final class Node implements Comparable<Node>, Serializable {
+    private static final class Node implements Comparable<Node>, Serializable {
 
         private static final long serialVersionUID = 7768073624509268941L;
 
