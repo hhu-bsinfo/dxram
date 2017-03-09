@@ -8,8 +8,7 @@ Various compute scripts to run with the MasterSlaveComputeService. You can start
 
 # Running compute task scripts
 
-A sample configuration on how to deploy DXRAM with DXCompute, the required MasterSlaveComputeService can be found in the *script/deploy/conf/example/SimpleComputeGroupTest.conf*. That config deploys a superpeer, two peers (one master and one slave) and starts a terminal. If further slaves are required make sure to extend this
-configuration script with further DXRAM instances that run as compute slaves.
+A sample configuration on how to deploy DXRAM with DXCompute, the required MasterSlaveComputeService can be found in the *script/deploy/conf/example/SimpleComputeGroupTest.conf*. That config deploys a superpeer, two peers (one master and one slave) and starts a terminal. If further slaves are required make sure to extend this configuration script with further DXRAM instances that run as compute slaves.
 
 A compute task script can deployed to a compute group from the DXRAM terminal using the *comptaskscript* command (see also command usage with *help comptaskscript*).
 

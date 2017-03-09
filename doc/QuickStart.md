@@ -30,3 +30,8 @@ To run a minimal DXRAM setup, compile DXRAM using the *build.sh* script. Adjust 
 ./script/deploy/deploy.sh ./script/deploy/conf/example/SimpleTest.conf
 ```
 The example starts zookeeper, one superpeer, one peer and the terminal, locally. Any log output of the instances is written to log files in a directory called *xxx_deploy_tmp/logs*. If you encounter any errors, check out the log files of each instance first.
+
+You can also run the *env.sh* script from the DXRAM root to setup environment variables. This allows you to deploy scripts without typing the path for *deploy.sh*:
+```
+dxram-deploy SimpleTest.conf
+```
