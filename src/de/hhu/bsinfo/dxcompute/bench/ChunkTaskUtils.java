@@ -20,16 +20,32 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
+/**
+ * Collection of chunk related utility functions used by tasks
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2017
+ */
 final class ChunkTaskUtils {
     public static final int PATTERN_LOCAL_ONLY = 0;
     public static final int PATTERN_REMOTE_ONLY_SUCCESSOR = 1;
     public static final int PATTERN_REMOTE_ONLY_RANDOM = 2;
     public static final int PATTERN_REMOTE_LOCAL_MIXED_RANDOM = 3;
 
+    /**
+     * Static class
+     */
     private ChunkTaskUtils() {
 
     }
 
+    /**
+     * Get a chunk range for the specified test pattern
+     *
+     * @param p_pattern Pattern id (refer to static ints)
+     * @param p_ctx Context of the task this is called from
+     * @param p_chunkService Chunk service instance
+     * @return Chunk ranges for the specified test pattern
+     */
     static ArrayList<Long> getChunkRangesForTestPattern(final int p_pattern, final TaskContext p_ctx, final ChunkService p_chunkService) {
         ArrayList<Long> allChunkRanges;
 
@@ -82,6 +98,13 @@ final class ChunkTaskUtils {
         return allChunkRanges;
     }
 
+    /**
+     * Get a random node id except the current node's own one
+     *
+     * @param p_slaveNodeIds List of node IDs to select a random id from
+     * @param p_ownNodeId Own node id
+     * @return Random node id
+     */
     static short getRandomNodeIdExceptOwn(final short[] p_slaveNodeIds, final short p_ownNodeId) {
         short nodeId = p_ownNodeId;
 
@@ -92,10 +115,25 @@ final class ChunkTaskUtils {
         return nodeId;
     }
 
+    /**
+     * Get a random node id from an array of node ids
+     *
+     * @param p_slaveNodeIds Array of node ids to pick from
+     * @return Random node id
+     */
     static short getRandomNodeId(final short[] p_slaveNodeIds) {
         return p_slaveNodeIds[getRandomRangeExclEnd(0, p_slaveNodeIds.length)];
     }
 
+    /**
+     * Get the successor of a node from an array of node ids
+     *
+     * The successor is simply the node id in the array following the specified id
+     *
+     * @param p_slaveNodeIds Array of node ids
+     * @param p_ownSlaveId Own node id
+     * @return Successor to own node id from array
+     */
     static short getSuccessorSlaveNodeId(final short[] p_slaveNodeIds, final short p_ownSlaveId) {
         if (p_ownSlaveId + 1 < p_slaveNodeIds.length) {
             return p_slaveNodeIds[p_ownSlaveId + 1];
@@ -104,18 +142,46 @@ final class ChunkTaskUtils {
         }
     }
 
+    /**
+     * Get a random size from a size range
+     *
+     * @param p_start Start of size range (including)
+     * @param p_end End of size range (including)
+     * @return Random size in bytes
+     */
     static int getRandomSize(final StorageUnit p_start, final StorageUnit p_end) {
         return (int) getRandomRange(p_start.getBytes(), p_end.getBytes());
     }
 
+    /**
+     * Get a random number from a specified range
+     *
+     * @param p_start Start (including)
+     * @param p_end End (including)
+     * @return Random int
+     */
     private static int getRandomRange(final int p_start, final int p_end) {
         return (int) (Math.random() * (p_end - p_start + 1) + p_start);
     }
 
+    /**
+     * Get a random number from a specified range
+     *
+     * @param p_start Start (including)
+     * @param p_end End (excluding)
+     * @return Random int
+     */
     private static int getRandomRangeExclEnd(final int p_start, final int p_end) {
         return (int) (Math.random() * (p_end - p_start) + p_start);
     }
 
+    /**
+     * Get a random number from a specified range
+     *
+     * @param p_start Start (including)
+     * @param p_end End (including)
+     * @return Random int
+     */
     private static long getRandomRange(final long p_start, final long p_end) {
         return (long) (Math.random() * (p_end - p_start + 1) + p_start);
     }

@@ -24,6 +24,11 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
+/**
+ * Task to check the available amount of memory of the key-value store
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2017
+ */
 public class CheckChunkMemRequiredSizeTask implements Task {
     @Expose
     private StorageUnit m_minRequiredSize = new StorageUnit(1, StorageUnit.TB);

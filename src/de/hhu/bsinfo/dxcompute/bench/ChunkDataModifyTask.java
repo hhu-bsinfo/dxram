@@ -32,6 +32,11 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
+/**
+ * Task to modify (get/put) chunks on a node using different patterns
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2017
+ */
 public class ChunkDataModifyTask implements Task {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkDataModifyTask.class.getSimpleName());
 

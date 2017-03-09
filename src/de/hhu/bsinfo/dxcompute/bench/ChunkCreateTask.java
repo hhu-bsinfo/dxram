@@ -30,6 +30,11 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
+/**
+ * Task to create chunks on a node using different patterns
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2017
+ */
 public class ChunkCreateTask implements Task {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkCreateTask.class.getSimpleName());
 

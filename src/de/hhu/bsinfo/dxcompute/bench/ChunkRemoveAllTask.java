@@ -30,6 +30,11 @@ import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+/**
+ * Task to remove chunks from a node using different patterns
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2017
+ */
 public class ChunkRemoveAllTask implements Task {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkRemoveAllTask.class.getSimpleName());
 
