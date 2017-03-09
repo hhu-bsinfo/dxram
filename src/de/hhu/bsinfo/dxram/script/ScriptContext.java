@@ -191,7 +191,7 @@ public class ScriptContext {
             // #endif /* LOGGER >= ERROR */
         } catch (final NoSuchMethodException e) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Calling '%s' failed, function not available", p_name);
+            LOGGER.error("Calling '%s' failed, function not available: %s", p_name, e.getMessage());
             // #endif /* LOGGER >= ERROR */
         }
 
