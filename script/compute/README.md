@@ -1,4 +1,4 @@
-# Folder layout
+# Directories
 
 Various compute scripts to run with the MasterSlaveComputeService. You can start these scripts from the DXRAM terminal using the *comptaskscript* command. Pay attention to the requirements of each script (number of superpeers/peers, amount of storage per peer etc).
 

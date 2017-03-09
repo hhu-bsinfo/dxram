@@ -4,6 +4,10 @@ Developed by the [operating systems group](http://www.cs.hhu.de/en/research-grou
 
 Facebook for example runs approx. 1,000 memcached servers keeping around 75% of its data always in RAM because back-end database accesses are too slow. We argue that it is possible go one step further by keeping all data always in RAM, thus relieving developers from cache management and synchronization of caches with secondary storage.
 
+# Important
+
+DXRAM is a research project that's under heavy development. We do not recommend using the system in a production environment or with production data without having an external backup. Expect to encounter bugs. However, we are looking forward to bug reports and code contributions.
+
 # Features
 
 * Distributed object lookup and sclable meta-data management with super-peer overlay
