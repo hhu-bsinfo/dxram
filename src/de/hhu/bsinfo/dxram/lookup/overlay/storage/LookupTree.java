@@ -27,6 +27,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * Btree to store ranges. Backup nodes are stored in an ArrayList to improve access times.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 13.06.2013
+ * @author Michael Birkhoff, michael.birkhoff@hhu.de
  */
 public final class LookupTree implements Serializable, Importable, Exportable {
 
@@ -338,7 +339,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
     @Override
     public void importObject(final Importer p_importer) {
-
         m_creator = p_importer.readShort();
         m_minEntries = p_importer.readShort();
         m_minChildren = (short) (m_minEntries + 1);
