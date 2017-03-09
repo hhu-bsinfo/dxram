@@ -183,6 +183,8 @@ public class NetworkComponent extends AbstractDXRAMComponent {
      *
      * @param p_request
      *     The request to send.
+     * @param p_waitForResponses
+     *     Set to false to not wait/block until the response arrived
      * @throws NetworkException
      *     If sending the message failed
      */
