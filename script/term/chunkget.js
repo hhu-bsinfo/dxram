@@ -85,10 +85,20 @@ function exec_cid(cid) {
 
 	cid = dxram.longStrToLong(cid);
 
-    if (typeof arguments[1] === "string" && arguments.length == 2) {
-        exec_class(cid, arguments[1]);
-    } else if (typeof arguments[1] === "string") {
-        exec_raw.apply(this, arguments);
+    if (typeof arguments[1] === "string") {
+        switch (arguments[1].toLowerCase()) {
+            case "str":
+            case "byte":
+            case "short":
+            case "int":
+            case "long":
+                exec_raw.apply(this, [cid].concat(Array.prototype.slice.call(arguments, 1)));
+                break;
+
+            default:
+                exec_class(cid, arguments[1]);
+                break;
+        }
     } else {
         exec_raw2.apply(this, arguments);
     }
@@ -173,7 +183,7 @@ function exec_raw(cid, type, hex, offset, length) {
     var str = "";
     switch (type) {
         case "str":
-            str = new java.lang.String(buffer.array(), offset, length, java.lang.StandardCharsets.US_ASCII);
+            str = new java.lang.String(buffer.array(), offset, length, "US-ASCII");
             break;
 
         case "byte":

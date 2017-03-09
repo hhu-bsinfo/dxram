@@ -34,18 +34,18 @@ function exec(id1, id2, name) {
     }
 
     if (name == null) {
-        dxterm.printlnErr("No name specified");
-        return;
-    }
-
-    if (id2 == null) {
-        execCid(dxram.longStrToLong(id1), name);
+        execCid(dxram.longStrToLong(id1), id2);
     } else {
         execCid(dxram.cid(id1, id2), name);
     }
 }
 
 function execCid(cid, name) {
+
+   if (name == null) {
+        dxterm.printlnErr("No name specified");
+        return;
+    }
 
     dxram.service("name").register(cid, name);
 }
