@@ -261,10 +261,7 @@ write_configuration() {
 
       role="TERMINAL"
     else
-	  echo "$hostname"
-		echo $NODE_ARRAY
       current_port=${NODE_ARRAY["$hostname"]}
-	echo "$current_port"
       if [ "$current_port" = "" ] ; then
 		current_port=22222
       else
