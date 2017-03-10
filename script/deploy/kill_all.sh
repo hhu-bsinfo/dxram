@@ -25,41 +25,49 @@ check_shell()
 # Arguments:
 #   node_file - The configuration file
 ######################################################
-check_programs() {
-  local node_file=$1
+check_programs() 
+{
+	local node_file=$1
 
-  if ! hash cat 2>/dev/null ; then
-    echo "Please install coreutils. Used for cat, cut and readlink. Exiting..."
-    exit
-  fi
-  if ! hash grep 2>/dev/null ; then
-    echo "Please install grep. Exiting..."
-    exit
-  fi
-  if ! hash sed 2>/dev/null ; then
-    echo "Please install sed. Exiting..."
-    exit
-  fi
-  if ! hash hostname 2>/dev/null ; then
-    echo "Please install hostname. Exiting..."
-    exit
-  fi
-  if ! hash pkill 2>/dev/null ; then
-    echo "Please install procps. Used for pkill. Exiting..."
-    exit
-  fi
-  if ! hash host 2>/dev/null ; then
-    echo "Please install bind9-host. Used for host. Exiting..."
-    exit
-  fi
-  if ! hash getent 2>/dev/null ; then
-    echo "Please install libc-bin. Used for getent. Exiting..."
-    exit
-  fi
-  if ! hash ssh 2>/dev/null ; then
-    echo "Please install openssh-client. Used for scp and ssh. Exiting..."
-    exit
-  fi
+	if [ ! hash cat 2>/dev/null ]; then
+		echo "Please install coreutils. Used for cat, cut and readlink. Exiting..."
+		exit
+	fi
+
+	if [ ! hash grep 2>/dev/null ]; then
+		echo "Please install grep. Exiting..."
+		exit
+	fi
+
+	if [ ! hash sed 2>/dev/null ]; then
+		echo "Please install sed. Exiting..."
+		exit
+	fi
+
+	if [ ! hash hostname 2>/dev/null ]; then
+		echo "Please install hostname. Exiting..."
+		exit
+	fi
+
+	if [ ! hash pkill 2>/dev/null ]; then
+		echo "Please install procps. Used for pkill. Exiting..."
+		exit
+	fi
+
+	if [ ! hash host 2>/dev/null ]; then
+		echo "Please install bind9-host. Used for host. Exiting..."
+		exit
+	fi
+
+	if [ ! hash getent 2>/dev/null ]; then
+		echo "Please install libc-bin. Used for getent. Exiting..."
+		exit
+	fi
+
+	if [ ! hash ssh 2>/dev/null ]; then
+		echo "Please install openssh-client. Used for scp and ssh. Exiting..."
+		exit
+	fi
 }
 
 ######################################################
@@ -70,18 +78,19 @@ check_programs() {
 # Return:
 #   ip - The IP address
 ######################################################
-resolve() {
-  local hostname=$1
-  local ip=""
+resolve() 
+{
+	local hostname=$1
+	local ip=""
 
-  ip=`host $hostname | cut -d ' ' -f 4 | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"`
-  if [ "$ip" = "" ] ; then
-    ip=`getent hosts $hostname | cut -d ' ' -f 1 | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"`
-    if [ "$ip" = "" ] ; then
-      echo "ERROR: $hostname could not be identified. Seting default 127.0.0.1"
-    fi
-  fi
-  echo "$ip"
+	ip=`host $hostname | cut -d ' ' -f 4 | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"`
+	if [ "$ip" = "" ]; then
+		ip=`getent hosts $hostname | cut -d ' ' -f 1 | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"`
+		if [ "$ip" = "" ]; then
+			ip="127.0.01"
+		fi
+	fi
+	echo "$ip"
 }
 
 ######################################################
@@ -93,35 +102,36 @@ resolve() {
 # Arguments:
 #   None
 ######################################################
-close() {
-  echo "Closing all dxram instances..."
-  local node=""
-  while read node || [[ -n "$node" ]]; do
-	# Skip empty lines	
-	if [ "$node" = "" ]; then
-		continue
-	fi
+close() 
+{
+	echo "Closing all dxram instances..."
+	local node=""
 
-    local hostname=`echo $node | cut -d ',' -f 1`
-    local role=`echo $node | cut -d ',' -f 2`
-	local ip=`resolve $hostname`
+	while read node || [[ -n "$node" ]]; do
+		# Skip empty lines	
+		if [ "$node" = "" ]; then
+			continue
+		fi
 
-    if [ "$role" = "Z" ] ; then
-      # Stop ZooKeeper?
-      echo "ZooKeeper might stay alive"
-    else
-      if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ] ; then
-        pkill -9 -f DXRAM.jar
-      else
-        ssh $hostname -n "pkill -9 -f DXRAM.jar"
-      fi
-    fi
-  done <<< "$NODES"
+		local hostname=`echo $node | cut -d ',' -f 1`
+		local role=`echo $node | cut -d ',' -f 2`
+		local ip=`resolve $hostname`
 
-  echo "Exiting..."
-  exit
+		if [ "$role" = "Z" ]; then
+			# Stop ZooKeeper?
+			echo "ZooKeeper might stay alive"
+		else
+			if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ]; then
+				pkill -9 -f DXRAM.jar
+			else
+				ssh $hostname -n "pkill -9 -f DXRAM.jar"
+			fi
+		fi
+	done <<< "$NODES"
+
+	echo "Exiting..."
+	exit
 }
-
 
 ###############
 # Entry point #
@@ -129,15 +139,15 @@ close() {
 
 check_shell
 
-if [ "$1" = "" ] ; then
-  echo "Missing parameter: Configuration file"
-  echo "  Example: $0 SimpleTest.conf"
-  exit
+if [ "$1" = "" ]; then
+	echo "Missing parameter: Configuration file"
+	echo "  Example: $0 SimpleTest.conf"
+	exit
 fi
 
 node_file="./$1"
-if [ "${node_file: -5}" != ".conf" ] ; then
-  node_file="${node_file}.conf"
+if [ "${node_file: -5}" != ".conf" ]; then
+	node_file="${node_file}.conf"
 fi
 
 check_programs "$node_file"
@@ -149,7 +159,7 @@ NODES=`echo "$NODES" | grep -v 'ZOOKEEPER_PATH'`
 
 # Set default values
 readonly LOCALHOST=`resolve "localhost"`
-if [ `echo $LOCALHOST | cut -d "." -f 1` != "127" ] ; then
+if [ `echo $LOCALHOST | cut -d "." -f 1` != "127" ]; then
 	echo "Illegal loopback device (ip: $LOCALHOST). Exiting..."
 	exit
 fi
