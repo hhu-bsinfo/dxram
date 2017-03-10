@@ -669,7 +669,7 @@ readonly EXECUTION_DIR="`pwd`"
 readonly DEPLOY_SCRIPT_DIR=$(dirname "$0")
 determine_configurable_paths
 readonly DEPLOY_TMP_DIR="${EXECUTION_DIR}/deploy_tmp_"$(date +%s)
-readonly LOG_DIR="${DEPLOY_TMP_DIR}logs"
+readonly LOG_DIR="${DEPLOY_TMP_DIR}/logs"
 readonly CONFIG_FILE="${DXRAM_PATH}/config/dxram.json"
 echo -e "\n\n"
 
