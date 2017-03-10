@@ -1,14 +1,23 @@
 #!/bin/bash
-SHELL_TYPE=`readlink /proc/$$/exe | tr '/' '\n' | tail -1`
-if [ "$SHELL_TYPE" != "bash" ] ; then
-  echo "Script must be executed in bash. Exiting..."
-  exit
-fi
 
+######################################################
+# Check which shell is running and bash version
+# Globals:
+# Arguments:
+######################################################
+check_shell() 
+{
+	if [ "$(echo $SHELL | grep "bash")" = "" ]; then
+		echo "ERROR: Current shell not supported by deploy script, bash only"
+		exit -1
+	fi
 
-#############
-# Functions #
-#############
+	# Some features like "declare -A" require version 4
+	if [ $(echo ${BASH_VERSION%%[^0-9]*}) -lt 4 ]; then
+		echo "ERROR: Bash version >= 4 required"
+		exit -1
+	fi
+}
 
 ######################################################
 # Check if all neccessary programs are installed
@@ -117,6 +126,8 @@ close() {
 ###############
 # Entry point #
 ###############
+
+check_shell
 
 if [ "$1" = "" ] ; then
   echo "Missing parameter: Configuration file"
