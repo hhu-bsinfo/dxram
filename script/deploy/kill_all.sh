@@ -88,6 +88,11 @@ close() {
   echo "Closing all dxram instances..."
   local node=""
   while read node || [[ -n "$node" ]]; do
+	# Skip empty lines	
+	if [ "$node" = "" ]; then
+		continue
+	fi
+
     local hostname=`echo $node | cut -d ',' -f 1`
     local role=`echo $node | cut -d ',' -f 2`
 	local ip=`resolve $hostname`
