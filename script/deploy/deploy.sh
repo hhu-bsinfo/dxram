@@ -93,14 +93,15 @@ determine_configurable_paths()
 		local dxram_path=`echo "$tmp" | cut -d '=' -f 2`
 
 		if [[ "$dxram_path" = /* || "${dxram_path:0:1}" = "~" ]]; then
-			readonly DXRAM_PATH=$dxram_path
+			# Remove trailing /
+			readonly DXRAM_PATH=${dxram_path%/}
 		else
-			readonly DXRAM_PATH="$(cd "${NODE_FILE_DIR}$dxram_path"; pwd)/"
+			readonly DXRAM_PATH="$(cd "${NODE_FILE_DIR}$dxram_path"; pwd)"
 		fi
 
 		echo "DXRAM root folder path: $DXRAM_PATH"
 	else
-		readonly DXRAM_PATH="~/dxram/"
+		readonly DXRAM_PATH="~/dxram"
 		echo "DXRAM root folder path undefined. Using default: $DXRAM_PATH"
 	fi
 
@@ -109,14 +110,15 @@ determine_configurable_paths()
 		local zookeeper_path=`echo "$tmp" | cut -d '=' -f 2`
 
 		if [[ "$zookeeper_path" = /* || "${zookeeper_path:0:1}" = "~" ]]; then
-			readonly ZOOKEEPER_PATH=$zookeeper_path
+			# Remove trailing /
+			readonly ZOOKEEPER_PATH=${zookeeper_path%/}
 		else
-			readonly ZOOKEEPER_PATH="$(cd "${NODE_FILE_DIR}$zookeeper_path"; pwd)/"
+			readonly ZOOKEEPER_PATH="$(cd "${NODE_FILE_DIR}$zookeeper_path"; pwd)"
 		fi
 
 		echo "ZooKeeper root folder path: $ZOOKEEPER_PATH"
 	else
-		readonly ZOOKEEPER_PATH="~/zookeeper/"
+		readonly ZOOKEEPER_PATH="~/zookeeper"
 		echo "ZooKeeper root folder path undefined. Using default: $ZOOKEEPER_PATH"
 	fi
 
@@ -333,7 +335,7 @@ copy_remote_configuration()
 	local hostname=$2
 
 	if [ "$NFS_MODE" = false -o "$copied" = false ]; then
-		scp "${DEPLOY_TMP_DIR}dxram.json" "${hostname}:${DXRAM_PATH}config/"
+		scp "${DEPLOY_TMP_DIR}dxram.json" "${hostname}:${DXRAM_PATH}/config"
 		copied=true
 	fi
 
@@ -355,7 +357,7 @@ copy_local_configuration()
 	local copied=$1
 
 	if [ "$copied" = false ]; then
-		cp ${DEPLOY_TMP_DIR}/dxram.json "${DXRAM_PATH}config/"
+		cp ${DEPLOY_TMP_DIR}/dxram.json "${DXRAM_PATH}/config"
 		copied=true
 	fi
 
@@ -437,7 +439,7 @@ check_zookeeper_startup()
 				echo "rmr /dxram" | "bin/zkCli.sh" > "${LOG_DIR}${hostname}_${port}_zookeeper_client" 2>&1
 				cd "$EXECUTION_DIR"
 			else
-				ssh $hostname -n "echo \"rmr /dxram\" | ${ZOOKEEPER_PATH}bin/zkCli.sh" > "${LOG_DIR}${hostname}_${port}_zookeeper_client" 2>&1
+				ssh $hostname -n "echo \"rmr /dxram\" | ${ZOOKEEPER_PATH}/bin/zkCli.sh" > "${LOG_DIR}${hostname}_${port}_zookeeper_client" 2>&1
 			fi
 
 			while true ; do
@@ -657,7 +659,7 @@ readonly DEPLOY_SCRIPT_DIR=$(dirname "$0")
 determine_configurable_paths
 readonly DEPLOY_TMP_DIR="${EXECUTION_DIR}deploy_tmp_"$(date +%s)"/"
 readonly LOG_DIR="${DEPLOY_TMP_DIR}logs/"
-readonly CONFIG_FILE="${DXRAM_PATH}config/dxram.json"
+readonly CONFIG_FILE="${DXRAM_PATH}/config/dxram.json"
 echo -e "\n\n"
 
 # Detect NFS mounted FS

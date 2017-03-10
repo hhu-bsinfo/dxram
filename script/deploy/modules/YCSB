@@ -83,10 +83,10 @@ start_remote_peer()
 	echo "Executing peer on $3 ($ip, $port):"
 
 	if [ "$additional_shell_cmds" != "" ]; then
-		ssh $hostname -n "$additional_shell_cmds && cd ${DXRAM_PATH}../ && ./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSP_PARAMS"
+		ssh $hostname -n "$additional_shell_cmds && cd ${DXRAM_PATH}/../ && ./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSP_PARAMS"
 	else
 		# we assume the dxram folder is within the YCSB root folder
-		ssh $hostname -n "cd ${DXRAM_PATH}../ && ./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSP_PARAMS"
+		ssh $hostname -n "cd ${DXRAM_PATH}/../ && ./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSP_PARAMS"
 	fi
 }
 
@@ -127,7 +127,7 @@ start_local_peer()
 	fi
 
 	# we assume the dxram folder is within the YCSB root folder
-	cd "${DXRAM_PATH}../"
+	cd "${DXRAM_PATH}/../"
 	./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSP_PARAMS
 	cd "$EXECUTION_DIR"
 }
