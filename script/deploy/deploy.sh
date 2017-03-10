@@ -168,7 +168,7 @@ check_configuration() {
 ######################################################
 write_configuration() {
   # Initialize hashtable for port determination
-  declare -a NODE_ARRAY
+  declare -A NODE_ARRAY
   local current_port=0
 
   # Create replacement string for nodes configuration:
@@ -225,9 +225,9 @@ write_configuration() {
     elif [ "$role" = "S" ] ; then
       current_port=${NODE_ARRAY["$hostname"]}
       if [ "$current_port" = "" ] ; then
-	current_port=22221
+		current_port=22221
       else
-	current_port=$(($current_port + 1))
+		current_port=$(($current_port + 1))
       fi
       port=$current_port
       NODE_ARRAY["$hostname"]=$current_port
@@ -238,11 +238,14 @@ write_configuration() {
 
       role="TERMINAL"
     else
+	  echo "$hostname"
+		echo $NODE_ARRAY
       current_port=${NODE_ARRAY["$hostname"]}
+	echo "$current_port"
       if [ "$current_port" = "" ] ; then
-	current_port=22222
+		current_port=22222
       else
-	current_port=$(($current_port + 1))
+		current_port=$(($current_port + 1))
       fi
       port=$current_port
       NODE_ARRAY["$hostname"]=$current_port
@@ -438,7 +441,6 @@ execute() {
   	local number_of_lines=`echo "$NODES" | wc -l`
   	local counter=1
   	while [  $counter -le $number_of_lines ]; do
-
 		node=`echo "$NODES" | sed "${counter}q;d"`
 		counter=$(($counter + 1))
 		local ip=`echo $node | cut -d ',' -f 1`
