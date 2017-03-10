@@ -210,6 +210,11 @@ write_configuration() {
   local new_nodes=""
   local first_iterartion=true
   while read node || [[ -n "$node" ]]; do
+	# Skip empty lines	
+	if [ "$node" = "" ]; then
+		continue
+	fi
+
     local hostname=`echo $node | cut -d ',' -f 1`
     local role=`echo $node | cut -d ',' -f 2`
     local ip=`resolve $hostname`
@@ -461,6 +466,12 @@ execute() {
   	while [  $counter -le $number_of_lines ]; do
 		node=`echo "$NODES" | sed "${counter}q;d"`
 		counter=$(($counter + 1))
+
+		# Skip empty lines	
+		if [ "$node" = "" ]; then
+			continue
+		fi
+
 		local ip=`echo $node | cut -d ',' -f 1`
 		local port=`echo $node | cut -d ',' -f 2`
 		local hostname=`echo $node | cut -d ',' -f 3`
