@@ -90,8 +90,8 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
                 for (int j = 0; j < messagesToSend; j++) {
                     try {
                         networkService.sendMessage(message);
-                    } catch (NetworkException e) {
-                        e.printStackTrace();
+                    } catch (final NetworkException e) {
+                        LOGGER.error("Sending message failed", e);
                     }
                 }
 

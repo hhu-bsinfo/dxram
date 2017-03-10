@@ -100,8 +100,8 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
 
                         try {
                             networkService.sendMessage(messages[k]);
-                        } catch (NetworkException e) {
-                            e.printStackTrace();
+                        } catch (final NetworkException e) {
+                            LOGGER.error("Sending message failed", e);
                         }
                     }
                 }
