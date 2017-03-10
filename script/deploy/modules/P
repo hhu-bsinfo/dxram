@@ -12,35 +12,36 @@
 #   compute_group_ID - The compute group id if taking part on master-slave computations (optional)
 #   vm_options - Further VM options
 ######################################################
-compile_vm_options_string_peer() {
-  local ip=$1
-  local port=$2
-  local ram_size_in_mb=$3
-  local compute_node_role=$4
-  local compute_group_id=$5
-  local vm_options="$6"
+compile_vm_options_string_peer()
+{
+	local ip=$1
+	local port=$2
+	local ram_size_in_mb=$3
+	local compute_node_role=$4
+	local compute_group_id=$5
+	local vm_options="$6"
 
-  VM_OPTS=""
-  VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
-  VM_OPTS="$VM_OPTS -Ddxram.config=config/dxram.json"
-  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_ip=$ip"
-  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_port=$port"
-  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_role=Peer"
+	VM_OPTS=""
+	VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
+	VM_OPTS="$VM_OPTS -Ddxram.config=config/dxram.json"
+	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_ip=$ip"
+	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_port=$port"
+	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_role=Peer"
 
-  if [ "$ram_size_in_mb" ] ; then
-    VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_mb"
-    VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=mb"
-  fi
+	if [ "$ram_size_in_mb" ]; then
+		VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_mb"
+		VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=mb"
+	fi
 
-  if [ "$compute_node_role" ] ; then
-    VM_OPTS="$VM_OPTS -Ddxram.m_services[MasterSlaveComputeService].m_role=$compute_node_role"
-  fi
+	if [ "$compute_node_role" ]; then
+		VM_OPTS="$VM_OPTS -Ddxram.m_services[MasterSlaveComputeService].m_role=$compute_node_role"
+	fi
 
-  if [ "$compute_group_id" ] ; then
-    VM_OPTS="$VM_OPTS -Ddxram.m_services[MasterSlaveComputeService].m_computeGroupId=$compute_group_id"
-  fi
+	if [ "$compute_group_id" ]; then
+		VM_OPTS="$VM_OPTS -Ddxram.m_services[MasterSlaveComputeService].m_computeGroupId=$compute_group_id"
+	fi
 
-  VM_OPTS="$VM_OPTS $vm_options"
+	VM_OPTS="$VM_OPTS $vm_options"
 }
 
 ######################################################
@@ -59,26 +60,28 @@ compile_vm_options_string_peer() {
 #   vm_options - The VM options
 #   additional_shell_cmds - Shell commands to execute before execution dxram
 ######################################################
-start_remote_peer() {
-  local ip=$1
-  local port=$2
-  local hostname=$3
-  local ram_size_in_mb=$4
-  local compute_node_role=$5
-  local compute_group_id=$6
-  local class=$7
-  local arguments="$8"
-  local vm_options="$9"
-  local additional_shell_cmds="${10}"
+start_remote_peer()
+{
+	local ip=$1
+	local port=$2
+	local hostname=$3
+	local ram_size_in_mb=$4
+	local compute_node_role=$5
+	local compute_group_id=$6
+	local class=$7
+	local arguments="$8"
+	local vm_options="$9"
+	local additional_shell_cmds="${10}"
 
-  compile_vm_options_string_peer $ip $port $ram_size_in_mb $compute_node_role $compute_group_id $vm_options
+	compile_vm_options_string_peer $ip $port $ram_size_in_mb $compute_node_role $compute_group_id $vm_options
 
-  echo "Executing peer on $3 ($ip, $port):"
-  if [ "$additional_shell_cmds" != "" ]; then
-    ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $class $arguments"
-  else
-    ssh $hostname -n "cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $class $arguments"
-  fi
+	echo "Executing peer on $3 ($ip, $port):"
+
+	if [ "$additional_shell_cmds" != "" ]; then
+		ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $class $arguments"
+	else
+		ssh $hostname -n "cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $class $arguments"
+	fi
 }
 
 ######################################################
@@ -96,26 +99,27 @@ start_remote_peer() {
 #   vm_options - The VM options
 #   additional_shell_cmds - Shell commands to execute before execution dxram
 ######################################################
-start_local_peer() {
-  local ip=$1
-  local port=$2
-  local ram_size_in_mb=$3
-  local compute_node_role=$4
-  local compute_group_id=$5
-  local class=$6
-  local arguments="$7"
-  local vm_options="$8"
-  local additional_shell_cmds="$9"
+start_local_peer()
+{
+	local ip=$1
+	local port=$2
+	local ram_size_in_mb=$3
+	local compute_node_role=$4
+	local compute_group_id=$5
+	local class=$6
+	local arguments="$7"
+	local vm_options="$8"
+	local additional_shell_cmds="$9"
 
-  compile_vm_options_string_peer $ip $port $ram_size_in_mb $compute_node_role $compute_group_id $vm_options
+	compile_vm_options_string_peer $ip $port $ram_size_in_mb $compute_node_role $compute_group_id $vm_options
 
-  if [ "$additional_shell_cmds" != "" ]; then
-    eval $additional_shell_cmds
-  fi
+	if [ "$additional_shell_cmds" != "" ]; then
+		eval $additional_shell_cmds
+	fi
 
-  cd "$DXRAM_PATH"
-  java $VM_OPTS -cp $LIBRARIES $class $arguments
-  cd "$EXECUTION_DIR"
+	cd "$DXRAM_PATH"
+	java $VM_OPTS -cp $LIBRARIES $class $arguments
+	cd "$EXECUTION_DIR"
 }
 
 ######################################################
@@ -134,37 +138,39 @@ start_local_peer() {
 #   condition - The string to wait for
 #   vm_options - The VM options
 ######################################################
-check_peer_startup() {
-  local ip=$1
-  local port=$2
-  local hostname=$3
-  local ram_size_in_mb=$4
-  local compute_node_role=$5
-  local compute_group_id=$6
-  local class=$7
-  local arguments="$8"
-  local condition="$9"
-  local vm_options="${10}"
+check_peer_startup()
+{
+	local ip=$1
+	local port=$2
+	local hostname=$3
+	local ram_size_in_mb=$4
+	local compute_node_role=$5
+	local compute_group_id=$6
+	local class=$7
+	local arguments="$8"
+	local condition="$9"
+	local vm_options="${10}"
 
-  local logfile="${LOG_DIR}${hostname}_${port}_peer"
+	local logfile="${LOG_DIR}${hostname}_${port}_peer"
 
-  while true ; do
-    local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$condition"`
-    local fail_init=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
-	# Abort execution after an exception was thrown (every exception but NetworkResponseTimeoutException)
-    local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseTimeoutException"`
-    if [ "$success" != "" ] ; then
-      echo "Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options) started"
-      break
-    elif [ "$fail_init" != "" ] ; then
-      echo "ERROR: Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options) could not be started. See log file $logfile"
-      exit -1
-    elif [ "$fail_error" != "" ] ; then
-      echo "ERROR: Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options) failed. See log file $logfile"
-      exit -1
-    fi
-    sleep 1.0
-  done
+	while true; do
+		local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$condition"`
+		local fail_init=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
+		# Abort execution after an exception was thrown (every exception but NetworkResponseTimeoutException)
+		local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseTimeoutException"`
+
+		if [ "$success" != "" ]; then
+			echo "Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options) started"
+			break
+		elif [ "$fail_init" != "" ]; then
+			echo "ERROR: Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options) could not be started. See log file $logfile"
+			exit -1
+		elif [ "$fail_error" != "" ]; then
+			echo "ERROR: Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options) failed. See log file $logfile"
+			exit -1
+		fi
+		sleep 1.0
+	done
 }
 
 
@@ -190,46 +196,48 @@ zookeeper_ip=${13}
 zookeeper_port=${14}
 
 iter=5
-while true ; do
+while true; do
 	tmp=`echo $node_conf_entry | cut -d ',' -f $iter`
-    iter=$((iter + 1))
+	iter=$((iter + 1))
 
-    arg_type=`echo $tmp | cut -d '=' -f 1`
-    if [ "$arg_type" = "" ] ; then
-  		break
-    elif [ "$arg_type" = "vmopts" ] ; then
-      	vm_options=`echo $tmp | cut -d '=' -f 2`
-      	vm_options=`echo "-$vm_options" | sed 's/\^/ -/'`
-    elif [ "$arg_type" = "kvss" ] ; then
-      	ram_size_in_mb=`echo $tmp | cut -d '=' -f 2`
-    elif [ "$arg_type" = "class" ] ; then
-      	class=`echo $tmp | cut -d '=' -f 2`
-    elif [ "$arg_type" = "args" ] ; then
-      	arguments=`echo $tmp | cut -d '=' -f 2`
-    elif [ "$arg_type" = "cond" ] ; then
-      	condition=`echo $tmp | cut -d '=' -f 2`
-     	condition="^$condition$"
-    elif [ "$arg_type" = "tcond" ] ; then
-      	time_condition=`echo $tmp | cut -d '=' -f 2`
-    elif [ "$arg_type" = "cnr" ] ; then
-      	compute_node_role=`echo $tmp | cut -d '=' -f 2`
-    elif [ "$arg_type" = "cgid" ] ; then
-      	compute_group_id=`echo $tmp | cut -d '=' -f 2`
-    elif [ "$arg_type" = "shellcmd" ] ; then
-      	additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
-    else
-	  	echo "ERROR: Unknown parameter type $arg_type"
-    fi
+	arg_type=`echo $tmp | cut -d '=' -f 1`
+
+	if [ "$arg_type" = "" ] ; then
+		break
+	elif [ "$arg_type" = "vmopts" ]; then
+		vm_options=`echo $tmp | cut -d '=' -f 2`
+		vm_options=`echo "-$vm_options" | sed 's/\^/ -/'`
+	elif [ "$arg_type" = "kvss" ]; then
+		ram_size_in_mb=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "class" ]; then
+		class=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "args" ]; then
+		arguments=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "cond" ]; then
+		condition=`echo $tmp | cut -d '=' -f 2`
+		condition="^$condition$"
+	elif [ "$arg_type" = "tcond" ]; then
+		time_condition=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "cnr" ]; then
+		compute_node_role=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "cgid" ]; then
+		compute_group_id=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "shellcmd" ]; then
+		additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
+	else
+		echo "ERROR: Unknown parameter type $arg_type"
+	fi
 done
 
-if [ "$class" = "" ] ; then
+if [ "$class" = "" ]; then
 	class=$DEFAULT_CLASS
 fi
-if [ "$condition" = "" ] ; then
+
+if [ "$condition" = "" ]; then
 	condition=$DEFAULT_CONDITION
 fi
 
-if [ "$is_remote" = false ] ; then
+if [ "$is_remote" = false ]; then
 	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
 else
     start_remote_peer "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
@@ -237,7 +245,7 @@ fi
 
 check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$condition" "$vm_options"
 
-if [ "$time_condition" != "" ] ; then
+if [ "$time_condition" != "" ]; then
     echo "Waiting for $time_condition seconds after initialization..."
     sleep "$time_condition"
 fi

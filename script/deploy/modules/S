@@ -9,18 +9,19 @@
 #   port - The port of superpeer
 #   vm_options - Further VM options
 ######################################################
-compile_vm_options_string_superpeer() {
-  local ip=$1
-  local port=$2
-  local vm_options="$3"
+compile_vm_options_string_superpeer()
+{
+	local ip=$1
+	local port=$2
+	local vm_options="$3"
 
-  VM_OPTS=""
-  VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
-  VM_OPTS="$VM_OPTS -Ddxram.config=config/dxram.json"
-  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_ip=$ip"
-  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_port=$port"
-  VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_role=Superpeer"
-  VM_OPTS="$VM_OPTS $vm_options"
+	VM_OPTS=""
+	VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
+	VM_OPTS="$VM_OPTS -Ddxram.config=config/dxram.json"
+	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_ip=$ip"
+	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_port=$port"
+	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_role=Superpeer"
+	VM_OPTS="$VM_OPTS $vm_options"
 }
 
 ######################################################
@@ -35,21 +36,22 @@ compile_vm_options_string_superpeer() {
 #   vm_options - The VM options
 #   additional_shell_cmds - Shell commands to execute before execution dxram
 ######################################################
-start_remote_superpeer() {
-  local ip=$1
-  local port=$2
-  local hostname=$3
-  local vm_options="$4"
-  local additional_shell_cmds="$5"
+start_remote_superpeer()
+{
+	local ip=$1
+	local port=$2
+	local hostname=$3
+	local vm_options="$4"
+	local additional_shell_cmds="$5"
 
-  compile_vm_options_string_superpeer $ip $port $vm_options
+	compile_vm_options_string_superpeer $ip $port $vm_options
 
-  echo "Executing superpeer on $3 ($ip, $port):"
-  if [ "$additional_shell_cmds" != "" ]; then
-    ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
-  else
-    ssh $hostname -n "cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
-  fi
+	echo "Executing superpeer on $3 ($ip, $port):"
+	if [ "$additional_shell_cmds" != "" ]; then
+		ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
+	else
+		ssh $hostname -n "cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
+	fi
 }
 
 ######################################################
@@ -64,21 +66,22 @@ start_remote_superpeer() {
 #   vm_options - The VM options
 #   additional_shell_cmds - Shell commands to execute before execution dxram
 ######################################################
-start_local_superpeer() {
-  local ip=$1
-  local port=$2
-  local vm_options="$3"
-  local additional_shell_cmds="$4"
+start_local_superpeer()
+{
+	local ip=$1
+	local port=$2
+	local vm_options="$3"
+	local additional_shell_cmds="$4"
 
-  compile_vm_options_string_superpeer $ip $port $vm_options
+	compile_vm_options_string_superpeer $ip $port $vm_options
 
-  if [ "$additional_shell_cmds" != "" ]; then
-    eval $additional_shell_cmds
-  fi
+	if [ "$additional_shell_cmds" != "" ]; then
+		eval $additional_shell_cmds
+	fi
 
-  cd "$DXRAM_PATH"
-  java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS
-  cd "$EXECUTION_DIR"
+	cd "$DXRAM_PATH"
+	java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS
+	cd "$EXECUTION_DIR"
 }
 
 ######################################################
@@ -91,26 +94,27 @@ start_local_superpeer() {
 #   hostname - The hostname
 #   vm_options - The VM options
 ######################################################
-check_superpeer_startup() {
-  local ip=$1
-  local port=$2
-  local hostname=$3
-  local vm_options="$4"
+check_superpeer_startup()
+{
+	local ip=$1
+	local port=$2
+	local hostname=$3
+	local vm_options="$4"
 
-  local logfile="${LOG_DIR}${hostname}_${port}_superpeer"
+	local logfile="${LOG_DIR}${hostname}_${port}_superpeer"
 
-  while true ; do
-    local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$DEFAULT_CONDITION"`
-    local fail=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
-    if [ "$success" != "" ] ; then
-      echo "Superpeer ($ip $port $vm_options) started"
-     break
-    elif [ "$fail" != "" ] ; then
-      echo "ERROR: Superpeer ($ip $port $vm_options) could not be started. See log file $logfile"
-      exit -1
-    fi
-    sleep 1.0
-  done
+	while true; do
+		local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$DEFAULT_CONDITION"`
+		local fail=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
+		if [ "$success" != "" ] ; then
+			echo "Superpeer ($ip $port $vm_options) started"
+		 break
+		elif [ "$fail" != "" ] ; then
+			echo "ERROR: Superpeer ($ip $port $vm_options) could not be started. See log file $logfile"
+			exit -1
+		fi
+		sleep 1.0
+	done
 }
 
 ###############
@@ -134,27 +138,27 @@ zookeeper_ip=${13}
 zookeeper_port=${14}
 
 iter=5
-while true ; do
+while true; do
 	tmp=`echo $node_conf_entry | cut -d ',' -f $iter`
-    iter=$((iter + 1))
+		iter=$((iter + 1))
 
-    arg_type=`echo $tmp | cut -d '=' -f 1`
-    if [ "$arg_type" = "" ] ; then
-  		break
-    elif [ "$arg_type" = "vmopts" ] ; then
-      	vm_options=`echo $tmp | cut -d '=' -f 2`
-      	vm_options=`echo "-$vm_options" | sed 's/\^/ -/'`
-    elif [ "$arg_type" = "shellcmd" ] ; then
-      	additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
-    else
-	  	echo "ERROR: Unknown parameter type $arg_type"
-    fi
+		arg_type=`echo $tmp | cut -d '=' -f 1`
+		if [ "$arg_type" = "" ]; then
+			break
+		elif [ "$arg_type" = "vmopts" ]; then
+				vm_options=`echo $tmp | cut -d '=' -f 2`
+				vm_options=`echo "-$vm_options" | sed 's/\^/ -/'`
+		elif [ "$arg_type" = "shellcmd" ]; then
+				additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
+		else
+			echo "ERROR: Unknown parameter type $arg_type"
+		fi
 done
 
-if [ "$is_remote" = false ] ; then
+if [ "$is_remote" = false ]; then
 	start_local_superpeer "$ip" "$port" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}${hostname}_${port}_superpeer" 2>&1 &
 else
-    start_remote_superpeer "$ip" "$port" "$hostname" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}${hostname}_${port}_superpeer" 2>&1 &
+	start_remote_superpeer "$ip" "$port" "$hostname" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}${hostname}_${port}_superpeer" 2>&1 &
 fi
 
 check_superpeer_startup "$ip" "$port" "$hostname" "$vm_options"
