@@ -82,6 +82,7 @@
         <copy todir="${build_proj_script_dir}">
             <fileset dir="${script_dir}"/>
         </copy>
+		<copy file="${basedir}/env.sh" tofile="${build_proj_dir}/env.sh"/>
     </target>
 
     <target name="create_log" depends="create_base_dirs" description="creates the log directory">
