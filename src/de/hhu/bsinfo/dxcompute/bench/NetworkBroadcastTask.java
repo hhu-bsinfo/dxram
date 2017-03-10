@@ -40,9 +40,9 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkEndToEndTask.class.getSimpleName());
 
-    private AtomicLong m_receivedCnt;
-    private AtomicLong m_receiveTimeStart;
-    private AtomicLong m_receiveTimeEnd;
+    private AtomicLong m_receivedCnt = new AtomicLong(0);
+    private AtomicLong m_receiveTimeStart = new AtomicLong(0);
+    private AtomicLong m_receiveTimeEnd = new AtomicLong(0);
 
     private int m_slaveCnt;
 
@@ -54,14 +54,7 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
     private int m_threadCnt = 10;
 
     @Override
-    public int execute(TaskContext p_ctx) {
-
-        m_receivedCnt = new AtomicLong(0);
-        m_receiveTimeStart = new AtomicLong(0);
-        m_receiveTimeEnd = new AtomicLong(0);
-
-        m_slaveCnt = 0;
-
+    public int execute(final TaskContext p_ctx) {
         short[] slaveNodeIds = p_ctx.getCtxData().getSlaveNodeIds();
         m_slaveCnt = slaveNodeIds.length;
         short ownSlaveID = p_ctx.getCtxData().getSlaveId();
@@ -88,13 +81,14 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
             messages[i] = new NetworkTestMessage(slaveNodeIds[i], m_messageSize);
         }
 
+        System.out.printf("Network broadcast, message count %d, message size %d byte with %d thread(s)...\n", m_messageCnt, m_messageSize, m_threadCnt);
+
         // thread runnables
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
             long messagesToSend = messagesPerThread[threadIdx];
 
             threads[i] = new Thread(() -> {
-
                 timeStart[threadIdx] = System.nanoTime();
 
                 for (int j = 0; j < messagesToSend; j++) {
@@ -156,12 +150,8 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
         System.out.printf("Throughput Tx: %f MB/s\n", throughput);
 
         while (m_receiveTimeEnd.get() == 0) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
+            // wait until all received
+            Thread.yield();
         }
 
         networkService.unregisterReceiver(NetworkTestMessage.class, this);
@@ -174,19 +164,19 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
     }
 
     @Override
-    public void handleSignal(Signal p_signal) {
+    public void handleSignal(final Signal p_signal) {
 
     }
 
     @Override
-    public void exportObject(Exporter p_exporter) {
+    public void exportObject(final Exporter p_exporter) {
         p_exporter.writeInt(m_messageCnt);
         p_exporter.writeInt(m_messageSize);
         p_exporter.writeInt(m_threadCnt);
     }
 
     @Override
-    public void importObject(Importer p_importer) {
+    public void importObject(final Importer p_importer) {
         m_messageCnt = p_importer.readInt();
         m_messageSize = p_importer.readInt();
         m_threadCnt = p_importer.readInt();
@@ -198,11 +188,9 @@ public class NetworkBroadcastTask implements Task, NetworkHandler.MessageReceive
     }
 
     @Override
-    public void onIncomingMessage(AbstractMessage p_message) {
+    public void onIncomingMessage(final AbstractMessage p_message) {
         if (p_message instanceof NetworkTestMessage) {
-            if (m_receiveTimeStart.get() == 0) {
-                m_receiveTimeStart.compareAndSet(0, System.nanoTime());
-            }
+            m_receiveTimeStart.compareAndSet(0, System.nanoTime());
 
             m_receivedCnt.incrementAndGet();
 
