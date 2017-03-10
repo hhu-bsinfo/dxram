@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 #############
 # Functions #
 #############
@@ -510,7 +509,7 @@ resolve() {
   if [ "$ip" = "" ] ; then
     read ip <<< $(dig $hostname | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" | awk '{ if ($3 == "IN" && $4 == "A") print $5 }')
     if [ "$ip" = "" ] ; then
-      echo "ERROR: $hostname could not be identified. Seting default 127.0.0.1"
+	  ip="127.0.0.1"
     fi
   fi
   echo $ip
