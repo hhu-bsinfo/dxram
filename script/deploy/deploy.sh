@@ -571,12 +571,12 @@ check_programs "$node_file"
 NODES=`cat "$node_file" | grep -v '#' | sed 's/, /,/g' | sed 's/,\t/,/g'`
 
 # Set default values
-readonly NFS_MODE=true # Deactivate for copying configuration to every single remote node
 readonly LOCALHOST=`resolve "localhost"`
 if [ `echo $LOCALHOST | cut -d "." -f 1` != "127" ] ; then
 	echo "Illegal loopback device (ip: $LOCALHOST). Exiting..."
 	exit
 fi
+
 readonly THIS_HOST=`resolve $(hostname)`
 readonly DEFAULT_CLASS="de.hhu.bsinfo.dxram.run.DXRAMMain"
 readonly LIBRARIES="lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:lib/jline-1.0.jar:DXRAM.jar"
@@ -597,6 +597,13 @@ readonly DEPLOY_TMP_DIR="${EXECUTION_DIR}deploy_tmp_"$(date +%s)"/"
 readonly LOG_DIR="${DEPLOY_TMP_DIR}logs/"
 readonly CONFIG_FILE="${DXRAM_PATH}config/dxram.json"
 echo -e "\n\n"
+
+# Detect NFS mounted FS
+if [ $(df -P -T $DXRAM_PATH | tail -n +2 | awk '{print $2}' | grep "nfs") != "" ] ; then
+	readonly NFS_MODE=false
+else
+	readonly NFS_MODE=true
+fi
 
 clean_up
 
