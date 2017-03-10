@@ -101,7 +101,7 @@ check_superpeer_startup()
 	local hostname=$3
 	local vm_options="$4"
 
-	local logfile="${LOG_DIR}${hostname}_${port}_superpeer"
+	local logfile="${LOG_DIR}/${hostname}_${port}_superpeer"
 
 	while true; do
 		local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$DEFAULT_CONDITION"`
@@ -156,9 +156,9 @@ while true; do
 done
 
 if [ "$is_remote" = false ]; then
-	start_local_superpeer "$ip" "$port" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}${hostname}_${port}_superpeer" 2>&1 &
+	start_local_superpeer "$ip" "$port" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_superpeer" 2>&1 &
 else
-	start_remote_superpeer "$ip" "$port" "$hostname" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}${hostname}_${port}_superpeer" 2>&1 &
+	start_remote_superpeer "$ip" "$port" "$hostname" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_superpeer" 2>&1 &
 fi
 
 check_superpeer_startup "$ip" "$port" "$hostname" "$vm_options"

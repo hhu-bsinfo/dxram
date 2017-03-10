@@ -163,7 +163,7 @@ check_peer_startup()
 	local ycsb_workload=${10}
 	local condition="${11}"
 
-	local logfile="${LOG_DIR}${hostname}_${port}_peer"
+	local logfile="${LOG_DIR}/${hostname}_${port}_peer"
 
 	while true; do
 		local success=`cat "$logfile" 2> /dev/null | grep "$condition"`
@@ -247,9 +247,9 @@ if [ "$condition" = "" ]; then
 fi
 
 if [ "$is_remote" = false ]; then
-	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$ycsb_nodes" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$ycsb_nodes" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
 else
-	start_remote_peer "$ip" "$port" "$ram_size_in_mb" "$ycsb_nodes" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}${hostname}_${port}_peer" 2>&1 &
+	start_remote_peer "$ip" "$port" "$ram_size_in_mb" "$ycsb_nodes" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
 fi
 
 check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_mb" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$condition"

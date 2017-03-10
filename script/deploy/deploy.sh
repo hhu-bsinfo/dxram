@@ -432,7 +432,7 @@ check_zookeeper_startup()
 	local port=$2
 	local hostname=$3
 
-	local logfile="${LOG_DIR}${hostname}_${port}_zookeeper_server"
+	local logfile="${LOG_DIR}/${hostname}_${port}_zookeeper_server"
 
 	while true ; do
 		local success_started=`cat "$logfile" 2> /dev/null | grep "STARTED"`
@@ -447,15 +447,15 @@ check_zookeeper_startup()
 			if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ]; then
 				# Remove all dxram related entries
 				cd "$ZOOKEEPER_PATH"
-				echo "rmr /dxram" | "bin/zkCli.sh" > "${LOG_DIR}${hostname}_${port}_zookeeper_client" 2>&1
+				echo "rmr /dxram" | "bin/zkCli.sh" > "${LOG_DIR}/${hostname}_${port}_zookeeper_client" 2>&1
 				cd "$EXECUTION_DIR"
 			else
-				ssh $hostname -n "echo \"rmr /dxram\" | ${ZOOKEEPER_PATH}/bin/zkCli.sh" > "${LOG_DIR}${hostname}_${port}_zookeeper_client" 2>&1
+				ssh $hostname -n "echo \"rmr /dxram\" | ${ZOOKEEPER_PATH}/bin/zkCli.sh" > "${LOG_DIR}/${hostname}_${port}_zookeeper_client" 2>&1
 			fi
 
 			while true ; do
-				local success=`cat "${LOG_DIR}${hostname}_${port}_zookeeper_client" | grep "CONNECTED"`
-				local fail=`cat "${LOG_DIR}${hostname}_${port}_zookeeper_client" | grep -i "exception"`
+				local success=`cat "${LOG_DIR}/${hostname}_${port}_zookeeper_client" | grep "CONNECTED"`
+				local fail=`cat "${LOG_DIR}/${hostname}_${port}_zookeeper_client" | grep -i "exception"`
 
 				if [ "$success" != "" ]; then
 					echo "ZooKeeper clean-up successful."
@@ -527,10 +527,10 @@ execute()
 		if [ "$role" = "Z" ]; then
 			if [ "$zookeeper_started" = false ]; then
 				if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ]; then
-					start_local_zookeeper "$port" > "${LOG_DIR}${hostname}_${port}_zookeeper_server" 2>&1
+					start_local_zookeeper "$port" > "${LOG_DIR}/${hostname}_${port}_zookeeper_server" 2>&1
 					check_zookeeper_startup "$ip" "$port" "$hostname"
 				else
-					start_remote_zookeeper "$ip" "$port" "$hostname" > "${LOG_DIR}${hostname}_${port}_zookeeper_server" 2>&1
+					start_remote_zookeeper "$ip" "$port" "$hostname" > "${LOG_DIR}/${hostname}_${port}_zookeeper_server" 2>&1
 					check_zookeeper_startup "$ip" "$port" "$hostname"
 				fi
 				zookeeper_started=true
