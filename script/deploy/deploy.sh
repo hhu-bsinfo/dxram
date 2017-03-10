@@ -80,6 +80,7 @@ check_programs()
 ######################################################
 # Read paths from configuration or set default values
 # Globals:
+#   NODE_FILE_DIR
 #   DXRAM_PATH
 #   ZOOKEEPER_PATH
 #   NODES
@@ -92,11 +93,16 @@ determine_configurable_paths()
 	if [ "$tmp" != "" ] ; then
 		local dxram_path=`echo "$tmp" | cut -d '=' -f 2`
 
-		if [[ "$dxram_path" = /* || "${dxram_path:0:1}" = "~" ]]; then
+		if [[ "$dxram_path" = /* ]]; then
 			# Remove trailing /
 			readonly DXRAM_PATH=${dxram_path%/}
+		elif [[ "${dxram_path:0:1}" = "~" ]]; then
+			# Resolve ~ path to absolute
+			local tmp=$HOME${dxram_path:1}
+			readonly DXRAM_PATH=${tmp%/}
 		else
-			readonly DXRAM_PATH="$(cd "${NODE_FILE_DIR}$dxram_path"; pwd)"
+			# Resolve relative path to absolute
+			readonly DXRAM_PATH="$(cd "${NODE_FILE_DIR}/$dxram_path"; pwd)"
 		fi
 
 		echo "DXRAM root folder path: $DXRAM_PATH"
@@ -109,11 +115,15 @@ determine_configurable_paths()
 	if [ "$tmp" != "" ] ; then
 		local zookeeper_path=`echo "$tmp" | cut -d '=' -f 2`
 
-		if [[ "$zookeeper_path" = /* || "${zookeeper_path:0:1}" = "~" ]]; then
+		if [[ "$zookeeper_path" = /* ]]; then
 			# Remove trailing /
 			readonly ZOOKEEPER_PATH=${zookeeper_path%/}
+		elif [[ "${zookeeper_path:0:1}" = "~" ]]; then
+			# Resolve ~ path to absolute
+			local tmp=$HOME${zookeeper_path:1}
+			readonly ZOOKEEPER_PATH=${tmp%/}
 		else
-			readonly ZOOKEEPER_PATH="$(cd "${NODE_FILE_DIR}$zookeeper_path"; pwd)"
+			readonly ZOOKEEPER_PATH="$(cd "${NODE_FILE_DIR}/$zookeeper_path"; pwd)"
 		fi
 
 		echo "ZooKeeper root folder path: $ZOOKEEPER_PATH"
@@ -130,7 +140,8 @@ determine_configurable_paths()
 ######################################################
 # Remove file/directories from last execution
 # Globals:
-#   EXECUTION_DIR
+#   DEPLOY_TMP_DIR
+#   LOG_DIR
 # Arguments:
 #   None
 ######################################################
@@ -191,7 +202,7 @@ check_configuration()
 # Globals:
 #   CONFIG_FILE
 #   NODES
-#   EXECUTION_DIR
+#   DEPLOY_TMP_DIR
 # Arguments:
 #   None
 ######################################################
@@ -314,7 +325,7 @@ write_configuration()
 	end=`echo "$end" | sed -ne '/],/{s///; :a' -e 'n;p;ba' -e '}'`
 	new_config=`echo -e "$new_config\n$end"`
 
-	echo "$new_config" > "${DEPLOY_TMP_DIR}dxram.json"
+	echo "$new_config" > "${DEPLOY_TMP_DIR}/dxram.json"
 }
 
 ######################################################
@@ -322,7 +333,7 @@ write_configuration()
 # Globals:
 #   NFS_MODE
 #   DXRAM_PATH
-#   EXECUTION_DIR
+#   DEPLOY_TMP_DIR
 # Arguments:
 #   copied - Whether the remote config has to be copied
 #   hostname - The hostname of the remote node
@@ -335,7 +346,7 @@ copy_remote_configuration()
 	local hostname=$2
 
 	if [ "$NFS_MODE" = false -o "$copied" = false ]; then
-		scp "${DEPLOY_TMP_DIR}dxram.json" "${hostname}:${DXRAM_PATH}/config"
+		scp "${DEPLOY_TMP_DIR}/dxram.json" "${hostname}:${DXRAM_PATH}/config"
 		copied=true
 	fi
 
@@ -346,7 +357,7 @@ copy_remote_configuration()
 # Copy DXRAM configuration for local execution
 # Globals:
 #   DXRAM_PATH
-#   EXECUTION_DIR
+#   DEPLOY_TMP_DIR
 # Arguments:
 #   copied - Whether the local config has to be copied
 # Return:
@@ -653,12 +664,12 @@ echo "########################################"
 echo ""
 
 # Set execution paths, all paths absolute
-readonly NODE_FILE_DIR="$(cd "$(dirname "$1")"; pwd)/"
-readonly EXECUTION_DIR="`pwd`/"
+readonly NODE_FILE_DIR="$(cd "$(dirname "$1")"; pwd)"
+readonly EXECUTION_DIR="`pwd`"
 readonly DEPLOY_SCRIPT_DIR=$(dirname "$0")
 determine_configurable_paths
-readonly DEPLOY_TMP_DIR="${EXECUTION_DIR}deploy_tmp_"$(date +%s)"/"
-readonly LOG_DIR="${DEPLOY_TMP_DIR}logs/"
+readonly DEPLOY_TMP_DIR="${EXECUTION_DIR}/deploy_tmp_"$(date +%s)
+readonly LOG_DIR="${DEPLOY_TMP_DIR}logs"
 readonly CONFIG_FILE="${DXRAM_PATH}/config/dxram.json"
 echo -e "\n\n"
 
