@@ -240,7 +240,7 @@ write_configuration()
 	local new_node=""
 	local new_nodes=""
 	local first_iterartion=true
-	
+
 	while read node || [[ -n "$node" ]]; do
 		# Skip empty lines
 		if [ "$node" = "" ]; then
@@ -250,7 +250,7 @@ write_configuration()
 		local hostname=`echo $node | cut -d ',' -f 1`
 		local role=`echo $node | cut -d ',' -f 2`
 		local ip=`resolve $hostname`
-		
+
 		if [ "$ip" = "" ]; then
 			echo "ERROR: Unknown host: \"$hostname\"."
 			close
@@ -287,7 +287,7 @@ write_configuration()
 			else
 				current_port=$(($current_port + 1))
 			fi
-			
+
 			port=$current_port
 			NODE_ARRAY["$hostname"]=$current_port
 
@@ -322,7 +322,7 @@ write_configuration()
 		new_node=`echo "$node" | sed "s/\([a-zA-Z0-9\-\.]*\)/$ip,$port,\1/"`
 		new_nodes=`echo -e "$new_nodes\n$new_node"`
 	done <<< "$NODES"
-	
+
 	readonly NODES="$new_nodes"
 	config_string=`echo -e "$config_string\n      ],"`
 
@@ -398,7 +398,7 @@ start_remote_zookeeper()
 	local port=$2
 	local hostname=$3
 
-	ssh $hostname -n "cd $ZOOKEEPER_PATH && sed -i -e \"s/clientPort=[0-9]*/clientPort=$port/g\" \"conf/zoo.cfg\" && rm conf/zoo.cfg-e && bin/zkServer.sh start"
+	ssh $hostname -n "cd $ZOOKEEPER_PATH && sed -i -e \"s/clientPort=[0-9]*/clientPort=$port/g\" \"conf/zoo.cfg\" && rm -f conf/zoo.cfg-e && bin/zkServer.sh start"
 }
 
 ######################################################
@@ -415,7 +415,7 @@ start_local_zookeeper()
 	cd $ZOOKEEPER_PATH
 	sed -i -e "s/clientPort=[0-9]*/clientPort=$port/g" conf/zoo.cfg
 	# delete backup config file created by sed -e
-	rm conf/zoo.cfg-e
+	rm -f conf/zoo.cfg-e
 
 	"bin/zkServer.sh" start
 	cd "$EXECUTION_DIR"
@@ -473,7 +473,7 @@ check_zookeeper_startup()
 					close
 				fi
 			done
-			
+
 			break
 		elif [ "$fail_file" != "" -o "$fail_pid" != "" -o "$fail_started" != "" ] ; then
 			echo "ERROR: ZooKeeper ($ip $port) could not be started. See log file $logfile"
