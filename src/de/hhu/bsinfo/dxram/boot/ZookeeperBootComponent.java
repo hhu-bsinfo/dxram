@@ -31,7 +31,10 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.event.EventComponent;
+import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
+import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.BloomFilter;
@@ -73,6 +76,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
     };
 
     // dependent components
+    private EventComponent m_event;
     private LookupComponent m_lookup;
 
     // private state
@@ -364,6 +368,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
         List<String> childs;
         short nodeID;
+        NodeRole role;
         String node;
         String[] splits;
 
@@ -391,9 +396,18 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                                 node = new String(m_zookeeper.getData("nodes/new/" + nodeID));
                                 splits = node.split(":");
 
-                                m_nodes.addNode(nodeID,
-                                    new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), (short) 0, (short) 0, NodeRole.toNodeRole(splits[2]),
-                                        false));
+                                role = NodeRole.toNodeRole(splits[2]);
+
+                                if (m_nodes.addNode(nodeID,
+                                    new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), (short) 0, (short) 0, role,
+                                        false))) {
+                                    // TODO: Turn around. Detect peer joining in superpeer overlay and inform ZooKeeperBootComponent
+                                    // -> no watcher necessary
+                                    if (role == NodeRole.PEER) {
+                                        // Notify other components/services (BackupComponent, LookupComponent, PeerLockService)
+                                        m_event.fireEvent(new NodeJoinEvent(getClass().getSimpleName(), nodeID, role));
+                                    }
+                                }
                             }
                         }
                     }
@@ -414,6 +428,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_event = p_componentAccessor.getComponent(EventComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 

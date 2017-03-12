@@ -274,6 +274,27 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
     }
 
     /**
+     * Adds the backup peer
+     *
+     * @param p_newPeer
+     *     the new backup peer
+     * @return whether the peer was added or not
+     */
+    boolean addBackupPeer(final short p_newPeer) {
+        boolean ret = false;
+
+        for (int i = 0; i < m_backupPeers.length; i++) {
+            if (m_backupPeers[i] == NodeID.INVALID_ID) {
+                m_backupPeers[i] = p_newPeer;
+                ret = true;
+                break;
+            }
+        }
+
+        return ret;
+    }
+
+    /**
      * Replaces the backup peer with another one
      *
      * @param p_oldPeer

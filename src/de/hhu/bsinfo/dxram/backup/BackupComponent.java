@@ -31,6 +31,7 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -39,6 +40,7 @@ import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
 import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
+import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
@@ -51,7 +53,7 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-public class BackupComponent extends AbstractDXRAMComponent implements EventListener<NodeFailureEvent> {
+public class BackupComponent extends AbstractDXRAMComponent implements EventListener<AbstractEvent> {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(BackupComponent.class.getSimpleName());
 
@@ -339,15 +341,15 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     @Override
-    public void eventTriggered(final NodeFailureEvent p_event) {
-        short failedPeer;
+    public void eventTriggered(final AbstractEvent p_event) {
         short currentBackupPeer;
         short newBackupPeer;
         short rangeID;
         short[] backupPeers;
 
-        if (m_backupActive && p_event.getRole() == NodeRole.PEER) {
-            failedPeer = p_event.getNodeID();
+        if (p_event instanceof NodeFailureEvent) {
+            NodeFailureEvent event = (NodeFailureEvent) p_event;
+            short failedPeer = event.getNodeID();
 
             BackupRange currentBackupRange;
             // Replace failed peer in all backup ranges
@@ -382,6 +384,23 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
                     }
                 }
             }
+        } else {
+            NodeJoinEvent event = (NodeJoinEvent) p_event;
+            short joinedPeer = event.getNodeID();
+
+            BackupRange currentBackupRange;
+            // Search for backup ranges with insufficient backup peers
+            for (int i = 0; i < m_backupRanges.size(); i++) {
+                m_lock.writeLock().lock();
+                currentBackupRange = m_backupRanges.get(i);
+                rangeID = currentBackupRange.getRangeID();
+
+                if (currentBackupRange.addBackupPeer(joinedPeer)) {
+                    // Backup range was not complete -> send all chunks to joined peer
+                    m_chunkBackup.replicateBackupRange(joinedPeer, rangeID, m_backupRangeTree.getAllChunkIDsOfRange(rangeID));
+                }
+                m_lock.writeLock().unlock();
+            }
         }
     }
 
@@ -413,6 +432,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         if (m_boot.getNodeRole() == NodeRole.PEER) {
             if (m_backupActive) {
                 m_event.registerListener(this, NodeFailureEvent.class);
+                m_event.registerListener(this, NodeJoinEvent.class);
 
                 m_backupRanges = new ArrayList<>();
 

@@ -109,9 +109,13 @@ final class NodesConfiguration {
      *     Id of the node.
      * @param p_entry
      *     the configured node
+     * @return whether this is a new entry or not
      */
-    synchronized void addNode(final short p_nodeID, final NodeEntry p_entry) {
+    synchronized boolean addNode(final short p_nodeID, final NodeEntry p_entry) {
+        NodeEntry prev = m_nodes[p_nodeID & 0xFFFF];
         m_nodes[p_nodeID & 0xFFFF] = p_entry;
+
+        return prev == null || !prev.getAddress().equals(p_entry.getAddress());
     }
 
     /**
