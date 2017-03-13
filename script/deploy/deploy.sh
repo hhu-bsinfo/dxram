@@ -138,7 +138,7 @@ determine_configurable_paths()
 }
 
 ######################################################
-# Remove file/directories from last execution
+# Create new directories for configuration and logs
 # Globals:
 #   DEPLOY_TMP_DIR
 #   LOG_DIR
@@ -147,10 +147,11 @@ determine_configurable_paths()
 ######################################################
 clean_up()
 {
-	rm -rf $DEPLOY_TMP_DIR
-
 	mkdir $DEPLOY_TMP_DIR
 	mkdir $LOG_DIR
+
+	# Set a symlink to the current tmp folder
+	ln -sfn $DEPLOY_TMP_DIR ${EXECUTION_DIR}/deploy_tmp
 }
 
 ######################################################
@@ -674,7 +675,7 @@ readonly CONFIG_FILE="${DXRAM_PATH}/config/dxram.json"
 echo -e "\n\n"
 
 # Detect NFS mounted FS
-if [ $(df -P -T $DXRAM_PATH | tail -n +2 | awk '{print $2}' | grep "nfs") != "" ]; then
+if [ "$(df -P -T $DXRAM_PATH | tail -n +2 | awk '{print $2}' | grep "nfs")" != "" ]; then
 	readonly NFS_MODE=false
 else
 	readonly NFS_MODE=true
