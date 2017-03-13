@@ -78,7 +78,7 @@ start_remote_peer()
 	local ycsb_workload=${10}
 	local additional_shell_cmds="${11}"
 
-	compile_ycsb_application_options_string_peer $ip $port $ram_size_in_mb $total_storage_nodes $zookeeper_string $insertstart $recordcount
+	compile_ycsb_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$zookeeper_string" "$insertstart" "$recordcount"
 
 	echo "Executing peer on $3 ($ip, $port):"
 
@@ -120,7 +120,7 @@ start_local_peer()
 	local ycsb_workload=${10}
 	local additional_shell_cmds="${11}"
 
-	compile_ycsb_application_options_string_peer $ip $port $ram_size_in_mb $total_storage_nodes $zookeeper_string $insertstart $recordcount
+	compile_ycsb_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$zookeeper_string" "$insertstart" "$recordcount"
 
 	if [ "$additional_shell_cmds" != "" ]; then
 		eval $additional_shell_cmds
@@ -168,7 +168,7 @@ check_peer_startup()
 	while true; do
 		local success=`cat "$logfile" 2> /dev/null | grep "$condition"`
 		local fail_init=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
-	# Abort execution after an exception was thrown (every exception but NetworkResponseTimeoutException)
+		# Abort execution after an exception was thrown (every exception but NetworkResponseTimeoutException)
 		local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseTimeoutException"`
 		if [ "$success" != "" ] ; then
 			echo "Peer ($ip $port $ram_size_in_mb $zookeeper_string $insertstart $recordcount $ycsb_type $ycsb_threads $ycsb_workload) started"

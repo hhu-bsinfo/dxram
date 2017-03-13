@@ -46,7 +46,7 @@ start_remote_terminal()
 	local script=$4
 	local additional_shell_cmds="$5"
 
-	compile_vm_options_string_terminal $ip $port $script
+	compile_vm_options_string_terminal "$ip" "$port" "$script"
 
 	echo "Executing terminal on $3 ($ip, $port):"
 	if [ "$additional_shell_cmds" != "" ]; then
@@ -75,7 +75,7 @@ start_local_terminal()
 	local script=$3
 	local additional_shell_cmds="$4"
 
-	compile_vm_options_string_terminal $ip $port $script
+	compile_vm_options_string_terminal "$ip" "$port" "$script"
 
 	if [ "$additional_shell_cmds" != "" ]; then
 		eval $additional_shell_cmds

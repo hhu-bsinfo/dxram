@@ -44,7 +44,7 @@ start_remote_superpeer()
 	local vm_options="$4"
 	local additional_shell_cmds="$5"
 
-	compile_vm_options_string_superpeer $ip $port $vm_options
+	compile_vm_options_string_superpeer "$ip" "$port" "$vm_options"
 
 	echo "Executing superpeer on $3 ($ip, $port):"
 	if [ "$additional_shell_cmds" != "" ]; then
@@ -73,7 +73,7 @@ start_local_superpeer()
 	local vm_options="$3"
 	local additional_shell_cmds="$4"
 
-	compile_vm_options_string_superpeer $ip $port $vm_options
+	compile_vm_options_string_superpeer "$ip" "$port" "$vm_options"
 
 	if [ "$additional_shell_cmds" != "" ]; then
 		eval $additional_shell_cmds

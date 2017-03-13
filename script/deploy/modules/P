@@ -20,6 +20,7 @@ compile_vm_options_string_peer()
 	local compute_node_role=$4
 	local compute_group_id=$5
 	local vm_options="$6"
+	local profile="$7"
 
 	VM_OPTS=""
 	VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
@@ -39,6 +40,17 @@ compile_vm_options_string_peer()
 
 	if [ "$compute_group_id" ]; then
 		VM_OPTS="$VM_OPTS -Ddxram.m_services[MasterSlaveComputeService].m_computeGroupId=$compute_group_id"
+	fi
+
+	if [ "$profile" = "yjp" ]; then
+		if [ ! -f "/home/$USER/yjp/libyjpagent.so" ]; then
+			echo "Missing libyjpagent.so in /home/$USER/yjp folder"
+			exit -1					
+		fi
+
+		VM_OPTS="$VM_OPTS -agentpath:/home/$USER/yjp/libyjpagent.so=port=9000"
+	
+		echo "On your local machine: establish a tunnel using 'ssh <target_hostname> -L 9000:<target_hostname>:9000' and connect with yourkit using 'Connect to remote application' with the arguments 'localhost:9000'"
 	fi
 
 	VM_OPTS="$VM_OPTS $vm_options"
@@ -72,8 +84,9 @@ start_remote_peer()
 	local arguments="$8"
 	local vm_options="$9"
 	local additional_shell_cmds="${10}"
+	local profile="${11}"
 
-	compile_vm_options_string_peer $ip $port $ram_size_in_mb $compute_node_role $compute_group_id $vm_options
+	compile_vm_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$vm_options" "$profile"
 
 	echo "Executing peer on $3 ($ip, $port):"
 
@@ -110,8 +123,9 @@ start_local_peer()
 	local arguments="$7"
 	local vm_options="$8"
 	local additional_shell_cmds="$9"
+	local profile="${10}"
 
-	compile_vm_options_string_peer $ip $port $ram_size_in_mb $compute_node_role $compute_group_id $vm_options
+	compile_vm_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$vm_options" "$profile"
 
 	if [ "$additional_shell_cmds" != "" ]; then
 		eval $additional_shell_cmds
@@ -213,6 +227,8 @@ while true; do
 		class=`echo $tmp | cut -d '=' -f 2`
 	elif [ "$arg_type" = "args" ]; then
 		arguments=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "profile" ]; then
+		profile=`echo $tmp | cut -d '=' -f 2`
 	elif [ "$arg_type" = "cond" ]; then
 		condition=`echo $tmp | cut -d '=' -f 2`
 		condition="^$condition$"
@@ -238,9 +254,9 @@ if [ "$condition" = "" ]; then
 fi
 
 if [ "$is_remote" = false ]; then
-	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
+	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" "$additional_shell_cmds" "$profile" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
 else
-    start_remote_peer "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
+    start_remote_peer "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" "$additional_shell_cmds" "$profile" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
 fi
 
 check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$condition" "$vm_options"
