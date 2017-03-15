@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.utils;
 
+
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
@@ -47,16 +49,18 @@ public final class ManifestHelper {
             while (resources.hasMoreElements()) {
                 Manifest manifest = new Manifest(resources.nextElement().openStream());
                 // check that this is your manifest and do what you need or get the next one
+
                 Attributes attr = manifest.getMainAttributes();
                 value = attr.getValue(p_key);
+                
                 if (value != null) {
                     break;
                 }
             }
         } catch (final IOException e) {
-
+            e.printStackTrace();
         }
-
         return value;
     }
+
 }
