@@ -14,8 +14,11 @@ check_shell()
 
 	# Some features like "declare -A" require version 4
 	if [ $(echo ${BASH_VERSION%%[^0-9]*}) -lt 4 ]; then
-		echo "ERROR: Bash version >= 4 required"
-		exit -1
+	    read versionCheck <<< $(echo ${BASH_VERSION%%[^0-9]* } | awk -F '.' '{split($3, a, "("); print a[1]; print ($1 >= 3 && $2 > 2) ? "YES" : ($2 == 2 && a[1] >= 57) ? "YES" : "NO" }')
+        if [ "$versionCheck" == "NO" ]; then
+		    echo "ERROR: Bash version >= 3.2.57 required (Recommended is version 4)"
+		    exit -1
+		fi
 	fi
 }
 
