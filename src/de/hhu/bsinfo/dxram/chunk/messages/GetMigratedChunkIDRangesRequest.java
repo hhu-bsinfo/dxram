@@ -21,23 +21,23 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class GetMigratedChunkIDRangesRequest extends AbstractRequest {
+public class GetMigratedChunkIDsRequest extends AbstractRequest {
     /**
-     * Creates an instance of GetMigratedChunkIDRangesRequest.
+     * Creates an instance of GetMigratedChunkIDsRequest.
      * This constructor is used when receiving this message.
      */
-    public GetMigratedChunkIDRangesRequest() {
+    public GetMigratedChunkIDsRequest() {
         super();
     }
 
     /**
-     * Creates an instance of GetMigratedChunkIDRangesRequest.
+     * Creates an instance of GetMigratedChunkIDsRequest.
      * This constructor is used when sending this message.
      *
      * @param p_destination
      *     the destination node id.
      */
-    public GetMigratedChunkIDRangesRequest(final short p_destination) {
+    public GetMigratedChunkIDsRequest(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST);
     }
 }

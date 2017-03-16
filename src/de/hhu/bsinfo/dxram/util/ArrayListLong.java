@@ -31,7 +31,6 @@ public class ArrayListLong implements Importable, Exportable {
     private int m_capacityChunk = 10;
     private long[] m_array;
     private int m_size = 0;
-    private int m_endOfList = 0;
 
     /**
      * Default constructor
@@ -144,13 +143,12 @@ public class ArrayListLong implements Importable, Exportable {
      *     Value to add
      */
     public void add(final long p_val) {
-        if (m_array.length - m_endOfList == 0) {
+        if (m_array.length - m_size == 0) {
             m_array = Arrays.copyOf(m_array, m_array.length + m_capacityChunk);
             Arrays.fill(m_array, m_size, m_array.length, ChunkID.INVALID_ID);
         }
 
-        m_array[m_endOfList++] = p_val;
-        m_size++;
+        m_array[m_size++] = p_val;
     }
 
     /**
@@ -172,10 +170,6 @@ public class ArrayListLong implements Importable, Exportable {
 
         m_array[p_index] = p_val;
         m_size++;
-
-        if (p_index > m_endOfList) {
-            m_endOfList = p_index + 1;
-        }
     }
 
     /**
@@ -213,16 +207,34 @@ public class ArrayListLong implements Importable, Exportable {
         return m_array[p_index];
     }
 
+    /**
+     * Remove an element from the array
+     *
+     * @param p_index
+     *     Index of the element to remove
+     * @return Removed value
+     */
+    public long remove(final int p_index) {
+        long oldValue = m_array[p_index];
+
+        int numMoved = m_size - p_index - 1;
+        if (numMoved > 0) {
+            System.arraycopy(m_array, p_index + 1, m_array, p_index, numMoved);
+        }
+
+        return oldValue;
+    }
+
     @Override
     public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeInt(m_endOfList);
-        p_exporter.writeLongs(m_array, 0, m_endOfList);
+        p_exporter.writeInt(m_size);
+        p_exporter.writeLongs(m_array, 0, m_size);
     }
 
     @Override
     public void importObject(final Importer p_importer) {
         m_array = p_importer.readLongArray();
-        m_endOfList = m_array.length;
+        m_size = m_array.length;
         m_size = 0;
         for (long l : m_array) {
             if (l != ChunkID.INVALID_ID) {
@@ -233,6 +245,6 @@ public class ArrayListLong implements Importable, Exportable {
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES + Long.BYTES * m_endOfList;
+        return Integer.BYTES + Long.BYTES * m_size;
     }
 }
