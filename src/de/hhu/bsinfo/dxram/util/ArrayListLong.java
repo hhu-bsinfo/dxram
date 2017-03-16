@@ -76,6 +76,19 @@ public class ArrayListLong implements Importable, Exportable {
     }
 
     /**
+     * Constructor for copying the contents of a provided array
+     *
+     * @param p_array
+     *     Array with contents to copy
+     * @param p_dummy
+     *     Dummy variable
+     */
+    private ArrayListLong(final long[] p_array, boolean p_dummy) {
+        m_array = Arrays.copyOf(p_array, p_array.length);
+        m_size = p_array.length;
+    }
+
+    /**
      * Wrap an existing primitive long aray
      *
      * @param p_array
@@ -84,6 +97,17 @@ public class ArrayListLong implements Importable, Exportable {
      */
     public static ArrayListLong wrap(final long[] p_array) {
         return new ArrayListLong(p_array);
+    }
+
+    /**
+     * Create a array list with the contents of the provided primitive array
+     *
+     * @param p_array
+     *     Array with contents to copy
+     * @return ArrayListLong object with contents of provided array
+     */
+    public static ArrayListLong copy(final long[] p_array) {
+        return new ArrayListLong(p_array, true);
     }
 
     /**
