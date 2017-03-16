@@ -13,6 +13,7 @@ compile_vm_options_string_terminal() {
 	local ip=$1
 	local port=$2
 	local script=$3
+	local debug="$4"
 
 	VM_OPTS=""
 	VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
@@ -23,6 +24,11 @@ compile_vm_options_string_terminal() {
 
 	if [ "$script" ]; then
 		VM_OPTS="$VM_OPTS -Ddxram.m_services[TerminalService].m_autostartScript=script/dxram/$script"
+	fi
+
+	if [ "$debug" != "" ]; then
+		VM_OPTS="$VM_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$debug"
+		echo "Enabled remote debugging on port $debug"
 	fi
 }
 
@@ -45,8 +51,9 @@ start_remote_terminal()
 	local hostname=$3
 	local script=$4
 	local additional_shell_cmds="$5"
+	local debug="$6"
 
-	compile_vm_options_string_terminal "$ip" "$port" "$script"
+	compile_vm_options_string_terminal "$ip" "$port" "$script" "$debug"
 
 	echo "Executing terminal on $3 ($ip, $port):"
 	if [ "$additional_shell_cmds" != "" ]; then
@@ -74,8 +81,9 @@ start_local_terminal()
 	local port=$2
 	local script=$3
 	local additional_shell_cmds="$4"
+	local debug="$5"
 
-	compile_vm_options_string_terminal "$ip" "$port" "$script"
+	compile_vm_options_string_terminal "$ip" "$port" "$script" "$debug"
 
 	if [ "$additional_shell_cmds" != "" ]; then
 		eval $additional_shell_cmds
@@ -116,9 +124,11 @@ while true; do
 		if [ "$arg_type" = "" ] ; then
 			break
 		elif [ "$arg_type" = "script" ] ; then
-				script=`echo $tmp | cut -d '=' -f 2`
+			script=`echo $tmp | cut -d '=' -f 2`
 		elif [ "$arg_type" = "shellcmd" ] ; then
-				additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
+			additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
+		elif [ "$arg_type" = "debug" ]; then
+			debug=`echo $tmp | cut -d '=' -f 2`
 		else
 			echo "ERROR: Unknown parameter type $arg_type"
 		fi
@@ -129,8 +139,8 @@ echo "Quit with ctrl+c or by typing \"quit\""
 echo "Output:"
 
 if [ "$is_remote" = false ]; then
-	start_local_terminal "$ip" "$port" "$script" "$additional_shell_cmds"
+	start_local_terminal "$ip" "$port" "$script" "$additional_shell_cmds" "$debug"
 else
-	start_remote_terminal "$ip" "$port" "$hostname" "$script" "$additional_shell_cmds"
+	start_remote_terminal "$ip" "$port" "$hostname" "$script" "$additional_shell_cmds" "$debug"
 fi
 exit 0
