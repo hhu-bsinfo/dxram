@@ -13,12 +13,10 @@
 
 package de.hhu.bsinfo.dxcompute.bench;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
@@ -50,8 +48,8 @@ final class ChunkTaskUtils {
      *     Chunk service instance
      * @return Chunk ranges for the specified test pattern
      */
-    static ArrayList<Long> getChunkRangesForTestPattern(final int p_pattern, final TaskContext p_ctx, final ChunkService p_chunkService) {
-        ArrayList<Long> allChunkRanges;
+    static ChunkIDRanges getChunkRangesForTestPattern(final int p_pattern, final TaskContext p_ctx, final ChunkService p_chunkService) {
+        ChunkIDRanges allChunkRanges;
 
         switch (p_pattern) {
             case PATTERN_LOCAL_ONLY:
@@ -69,7 +67,7 @@ final class ChunkTaskUtils {
             case PATTERN_REMOTE_ONLY_RANDOM:
                 short ownNodeId = p_ctx.getCtxData().getOwnNodeId();
 
-                allChunkRanges = new ArrayList<>();
+                allChunkRanges = new ChunkIDRanges();
                 for (int i = 0; i < p_ctx.getCtxData().getSlaveNodeIds().length; i++) {
                     if (p_ctx.getCtxData().getSlaveNodeIds()[i] != ownNodeId) {
                         allChunkRanges.addAll(p_chunkService.getAllLocalChunkIDRanges(p_ctx.getCtxData().getSlaveNodeIds()[i]));
@@ -79,7 +77,7 @@ final class ChunkTaskUtils {
                 break;
 
             case PATTERN_REMOTE_LOCAL_MIXED_RANDOM:
-                allChunkRanges = new ArrayList<>();
+                allChunkRanges = new ChunkIDRanges();
                 for (int i = 0; i < p_ctx.getCtxData().getSlaveNodeIds().length; i++) {
                     allChunkRanges.addAll(p_chunkService.getAllLocalChunkIDRanges(p_ctx.getCtxData().getSlaveNodeIds()[i]));
                 }
@@ -92,10 +90,10 @@ final class ChunkTaskUtils {
         }
 
         // modify ranges to avoid deleting an index chunk
-        for (int i = 0; i < allChunkRanges.size(); i += 2) {
-            long rangeStart = allChunkRanges.get(i);
+        for (int i = 0; i < allChunkRanges.size(); i++) {
+            long rangeStart = allChunkRanges.getRangeStart(i);
             if (ChunkID.getLocalID(rangeStart) == 0) {
-                allChunkRanges.set(i, rangeStart + 1);
+                allChunkRanges.setRangeStart(i, rangeStart + 1);
             }
         }
 
@@ -136,15 +134,15 @@ final class ChunkTaskUtils {
      *     Ranges to distribute
      * @return Array of chunk ID ranges distributed to each thread
      */
-    public static ArrayList<Long>[] distributeChunkRangesToThreads(final long[] p_chunkCountsPerThread, final List<Long> p_ranges) {
-        ArrayList<Long>[] distRanges = new ArrayList[p_chunkCountsPerThread.length];
+    public static ChunkIDRanges[] distributeChunkRangesToThreads(final long[] p_chunkCountsPerThread, final ChunkIDRanges p_ranges) {
+        ChunkIDRanges[] distRanges = new ChunkIDRanges[p_chunkCountsPerThread.length];
         for (int i = 0; i < distRanges.length; i++) {
-            distRanges[i] = new ArrayList<>();
+            distRanges[i] = new ChunkIDRanges();
         }
 
         int rangeIdx = 0;
-        long rangeStart = p_ranges.get(rangeIdx * 2);
-        long rangeEnd = p_ranges.get(rangeIdx * 2 + 1);
+        long rangeStart = p_ranges.getRangeStart(rangeIdx);
+        long rangeEnd = p_ranges.getRangeEnd(rangeIdx);
 
         for (int i = 0; i < p_chunkCountsPerThread.length; i++) {
             long chunkCount = p_chunkCountsPerThread[i];
@@ -152,22 +150,20 @@ final class ChunkTaskUtils {
             while (chunkCount > 0) {
                 long chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
                 if (chunksInRange >= chunkCount) {
-                    distRanges[i].add(rangeStart);
-                    distRanges[i].add(rangeStart + chunkCount - 1);
+                    distRanges[i].addRange(rangeStart, rangeStart + chunkCount - 1);
 
                     rangeStart += chunkCount;
                     chunkCount = 0;
                 } else {
                     // chunksInRange < chunkCount
-                    distRanges[i].add(rangeStart);
-                    distRanges[i].add(rangeEnd);
+                    distRanges[i].addRange(rangeStart, rangeEnd);
 
                     chunkCount -= chunksInRange;
 
                     rangeIdx++;
-                    if (rangeIdx * 2 < p_ranges.size()) {
-                        rangeStart = p_ranges.get(rangeIdx * 2);
-                        rangeEnd = p_ranges.get(rangeIdx * 2 + 1);
+                    if (rangeIdx < p_ranges.size()) {
+                        rangeStart = p_ranges.getRangeStart(rangeIdx);
+                        rangeEnd = p_ranges.getRangeEnd(rangeIdx);
                     } else {
                         break;
                     }

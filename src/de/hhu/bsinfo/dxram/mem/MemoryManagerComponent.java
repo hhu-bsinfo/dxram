@@ -13,7 +13,6 @@
 
 package de.hhu.bsinfo.dxram.mem;
 
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.annotations.Expose;
@@ -24,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -124,11 +124,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     }
 
     /**
-     * Returns the ChunkIDs of all migrated Chunks
+     * Returns the ChunkID ranges of all migrated Chunks
      *
-     * @return the ChunkIDs of all migrated Chunks
+     * @return the ChunkID ranges of all migrated Chunks
      */
-    public ArrayList<Long> getCIDOfAllMigratedChunks() {
+    public ChunkIDRanges getCIDRangesOfAllMigratedChunks() {
         // #ifdef ASSERT_NODE_ROLE
         NodeRole role = m_boot.getNodeRole();
         if (role != NodeRole.PEER) {
@@ -136,15 +136,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        return m_cidTable.getCIDOfAllMigratedChunks();
+        return m_cidTable.getCIDRangesOfAllMigratedChunks();
     }
 
     /**
      * Returns the ChunkID ranges of all locally stored Chunks
      *
-     * @return the ChunkID ranges in an ArrayList
+     * @return the ChunkID ranges
      */
-    public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
+    public ChunkIDRanges getCIDRangesOfAllLocalChunks() {
         // #ifdef ASSERT_NODE_ROLE
         NodeRole role = m_boot.getNodeRole();
         if (role != NodeRole.PEER) {

@@ -103,8 +103,17 @@ public class ChunkIDRanges implements Importable, Exportable {
      *
      * @return Num of ranges
      */
-    public int getNumRanges() {
+    public int size() {
         return m_ranges.getSize() / 2;
+    }
+
+    /**
+     * Check if no ranges available
+     *
+     * @return True if no ranges available, false otherwise
+     */
+    public boolean isEmpty() {
+        return m_ranges.isEmpty();
     }
 
     /**
@@ -124,6 +133,62 @@ public class ChunkIDRanges implements Importable, Exportable {
 
         m_ranges.add(p_start);
         m_ranges.add(p_end);
+    }
+
+    /**
+     * Add all the ranges of another ChunkIDRanges instance
+     *
+     * @param p_other
+     *     Other instance to add the ranges of
+     */
+    public void addAll(final ChunkIDRanges p_other) {
+        m_ranges.addAll(p_other.m_ranges);
+    }
+
+    /**
+     * Get the start of a range
+     *
+     * @param p_rangeIndex
+     *     Index of the range
+     * @return Start value
+     */
+    public long getRangeStart(final int p_rangeIndex) {
+        return m_ranges.get(p_rangeIndex * 2);
+    }
+
+    /**
+     * Get the end of a range
+     *
+     * @param p_rangeIndex
+     *     Index of the range
+     * @return End value
+     */
+    public long getRangeEnd(final int p_rangeIndex) {
+        return m_ranges.get(p_rangeIndex * 2 + 1);
+    }
+
+    /**
+     * Set the start of a specific range
+     *
+     * @param p_rangeIndex
+     *     Index of the range to modify
+     * @param p_val
+     *     New value for the start of the range
+     */
+    public void setRangeStart(final int p_rangeIndex, final long p_val) {
+        m_ranges.set(p_rangeIndex * 2, p_val);
+    }
+
+    /**
+     * Set the end of a specific range
+     *
+     * @param p_rangeIndex
+     *     Index of the range to modify
+     * @param p_val
+     *     New value for the end of the range
+     */
+    public void setRangeEnd(final int p_rangeIndex, final long p_val) {
+        m_ranges.set(p_rangeIndex * 2 + 1, p_val);
     }
 
     /**
@@ -185,6 +250,17 @@ public class ChunkIDRanges implements Importable, Exportable {
     @Override
     public int sizeofObject() {
         return m_ranges.sizeofObject();
+    }
+
+    @Override
+    public String toString() {
+        String str = "";
+
+        for (int i = 0; i < m_ranges.getSize(); i += 2) {
+            str += String.format("[0x%X, 0x%X]", m_ranges.get(i), m_ranges.get(i + 1));
+        }
+
+        return str;
     }
 
     /**

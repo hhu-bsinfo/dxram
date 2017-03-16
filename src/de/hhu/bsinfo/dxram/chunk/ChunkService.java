@@ -41,6 +41,7 @@ import de.hhu.bsinfo.dxram.chunk.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -146,14 +147,14 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     /**
      * Get all chunk ID ranges of all migrated chunks stored on this node.
      *
-     * @return List of migrated chunk ID ranges with blocks of start ID and end ID.
+     * @return ChunkIDRanges of all migrated chunks.
      */
-    public ArrayList<Long> getAllMigratedChunkIDRanges() {
-        ArrayList<Long> list;
+    public ChunkIDRanges getAllMigratedChunkIDRanges() {
+        ChunkIDRanges list;
 
         try {
             m_memoryManager.lockAccess();
-            list = m_memoryManager.getCIDOfAllMigratedChunks();
+            list = m_memoryManager.getCIDRangesOfAllMigratedChunks();
         } finally {
             m_memoryManager.unlockAccess();
         }
@@ -164,10 +165,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     /**
      * Get all chunk ID ranges of all locally stored chunks.
      *
-     * @return List of local chunk ID ranges with blocks of start ID and end ID.
+     * @return Local ChunkIDRanges.
      */
-    public ArrayList<Long> getAllLocalChunkIDRanges() {
-        ArrayList<Long> list;
+    public ChunkIDRanges getAllLocalChunkIDRanges() {
+        ChunkIDRanges list;
 
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() != NodeRole.PEER) {
@@ -1411,10 +1412,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      *
      * @param p_nodeID
      *     NodeID of the node to get the ranges from.
-     * @return List of local chunk ID ranges with blocks of start ID and end ID.
+     * @return Local ChunkIDRanges
      */
-    public ArrayList<Long> getAllLocalChunkIDRanges(final short p_nodeID) {
-        ArrayList<Long> list;
+    public ChunkIDRanges getAllLocalChunkIDRanges(final short p_nodeID) {
+        ChunkIDRanges list;
 
         // check if remote node is a peer
         NodeRole role = m_boot.getNodeRole(p_nodeID);
@@ -1458,15 +1459,14 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     }
 
     /**
-     * Get all chunk ID ranges of all stored chunks from a specific node.
-     * This does not include migrated chunks.
+     * Get all migrated chunk IDs of all stored chunks from a specific node.
      *
      * @param p_nodeID
-     *     NodeID of the node to get the ranges from.
-     * @return List of local chunk ID ranges with blocks of start ID and end ID.
+     *     NodeID of the node to get the IDs from.
+     * @return Ranges of migrated chunk IDs
      */
-    public ArrayList<Long> getAllMigratedChunkIDRanges(final short p_nodeID) {
-        ArrayList<Long> list;
+    public ChunkIDRanges getAllMigratedChunkIDRanges(final short p_nodeID) {
+        ChunkIDRanges list;
 
         // check if remote node is a peer
         NodeRole role = m_boot.getNodeRole(p_nodeID);
@@ -1484,7 +1484,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #endif /* ASSERT_NODE_ROLE */
 
         if (p_nodeID == m_boot.getNodeID()) {
-            list = getAllLocalChunkIDRanges();
+            list = getAllMigratedChunkIDRanges();
         } else {
             GetMigratedChunkIDRangesRequest request = new GetMigratedChunkIDRangesRequest(p_nodeID);
 
@@ -1968,7 +1968,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      *     Request to handle
      */
     private void incomingGetLocalChunkIDRangesRequest(final GetLocalChunkIDRangesRequest p_request) {
-        ArrayList<Long> cidRangesLocalChunks;
+        ChunkIDRanges cidRangesLocalChunks;
 
         try {
             m_memoryManager.lockAccess();
@@ -1978,7 +1978,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         }
 
         if (cidRangesLocalChunks == null) {
-            cidRangesLocalChunks = new ArrayList<>(0);
+            cidRangesLocalChunks = new ChunkIDRanges();
             // #if LOGGER >= ERROR
             LOGGER.error("Getting local chunk id ranges failed, sending back empty range");
             // #endif /* LOGGER >= ERROR */
@@ -2001,17 +2001,17 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      *     Request to handle
      */
     private void incomingGetMigratedChunkIDRangesRequest(final GetMigratedChunkIDRangesRequest p_request) {
-        ArrayList<Long> cidRangesMigratedChunks;
+        ChunkIDRanges cidRangesMigratedChunks;
 
         try {
             m_memoryManager.lockAccess();
-            cidRangesMigratedChunks = m_memoryManager.getCIDOfAllMigratedChunks();
+            cidRangesMigratedChunks = m_memoryManager.getCIDRangesOfAllMigratedChunks();
         } finally {
             m_memoryManager.unlockAccess();
         }
 
         if (cidRangesMigratedChunks == null) {
-            cidRangesMigratedChunks = new ArrayList<>(0);
+            cidRangesMigratedChunks = new ChunkIDRanges();
             // #if LOGGER >= ERROR
             LOGGER.error("Getting migrated chunk id ranges failed, sending back empty range");
             // #endif /* LOGGER >= ERROR */

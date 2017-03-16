@@ -24,27 +24,27 @@ import de.hhu.bsinfo.ethnet.AbstractResponse;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class GetMigratedChunkIDsResponse extends AbstractResponse {
-    private ChunkIDRanges m_chunkIDRanges;
+public class GetMigratedChunkIDRangesResponse extends AbstractResponse {
+    private ChunkIDRanges m_chunkIDRanges = new ChunkIDRanges();
 
     /**
-     * Creates an instance of GetMigratedChunkIDsResponse.
+     * Creates an instance of GetMigratedChunkIDRangesResponse.
      * This constructor is used when receiving this message.
      */
-    public GetMigratedChunkIDsResponse() {
+    public GetMigratedChunkIDRangesResponse() {
         super();
     }
 
     /**
-     * Creates an instance of GetMigratedChunkIDsResponse.
+     * Creates an instance of GetMigratedChunkIDRangesResponse.
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *     the corresponding GetMigratedChunkIDsRequest
+     *     the corresponding GetMigratedChunkIDRangesRequest
      * @param p_chunkIDs
      *     Chunk id ranges to send
      */
-    public GetMigratedChunkIDsResponse(final GetMigratedChunkIDsRequest p_request, ChunkIDRanges p_chunkIDs) {
+    public GetMigratedChunkIDRangesResponse(final GetMigratedChunkIDRangesRequest p_request, ChunkIDRanges p_chunkIDs) {
         super(p_request, ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_RESPONSE);
 
         m_chunkIDRanges = p_chunkIDs;

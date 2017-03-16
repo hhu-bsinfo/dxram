@@ -13,8 +13,6 @@
 
 package de.hhu.bsinfo.dxcompute.bench;
 
-import java.util.ArrayList;
-
 import com.google.gson.annotations.Expose;
 
 import org.apache.logging.log4j.LogManager;
@@ -23,9 +21,9 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -69,9 +67,9 @@ public class ChunkRemoveAllTask implements Task {
         // don't remove the index chunk
         activeChunkCount -= 1;
 
-        ArrayList<Long> allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern, p_ctx, chunkService);
+        ChunkIDRanges allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern, p_ctx, chunkService);
         long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(activeChunkCount, m_numThreads);
-        ArrayList<Long>[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
+        ChunkIDRanges[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
 
         Thread[] threads = new Thread[m_numThreads];
         Stopwatch[] time = new Stopwatch[m_numThreads];
@@ -88,7 +86,7 @@ public class ChunkRemoveAllTask implements Task {
                 long[] chunkIds = new long[m_chunkBatch];
                 long batches = chunkCountsPerThread[threadIdx] / m_chunkBatch;
                 long lastBatchRemainder = chunkCountsPerThread[threadIdx] % m_chunkBatch;
-                ArrayList<Long> chunkRanges = chunkRangesPerThread[threadIdx];
+                ChunkIDRanges chunkRanges = chunkRangesPerThread[threadIdx];
 
                 if (lastBatchRemainder > 0) {
                     batches++;
@@ -97,8 +95,8 @@ public class ChunkRemoveAllTask implements Task {
                 // happens if no chunks were created
                 if (!chunkRanges.isEmpty()) {
                     int rangeIdx = 0;
-                    long rangeStart = chunkRanges.get(rangeIdx * 2);
-                    long rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
+                    long rangeStart = chunkRanges.getRangeStart(rangeIdx);
+                    long rangeEnd = chunkRanges.getRangeEnd(rangeIdx);
                     long batchChunkCount = m_chunkBatch;
                     ;
 
@@ -122,8 +120,8 @@ public class ChunkRemoveAllTask implements Task {
 
                             rangeIdx++;
                             if (rangeIdx * 2 < chunkRanges.size()) {
-                                rangeStart = chunkRanges.get(rangeIdx * 2);
-                                rangeEnd = chunkRanges.get(rangeIdx * 2 + 1);
+                                rangeStart = chunkRanges.getRangeStart(rangeIdx);
+                                rangeEnd = chunkRanges.getRangeEnd(rangeIdx);
                                 continue;
                             } else {
                                 // invalidate spare chunk ids
@@ -184,14 +182,10 @@ public class ChunkRemoveAllTask implements Task {
 
         allChunkRanges = chunkService.getAllLocalChunkIDRanges();
 
-        System.out.print("Available chunk ranges after remove:");
-        for (int i = 0; i < allChunkRanges.size(); i += 2) {
-            System.out.printf("\n[0x%X, 0x%X]", allChunkRanges.get(i), allChunkRanges.get(i + 1));
-        }
-        System.out.println();
+        System.out.printf("Available chunk ranges after remove:\n%s\n", allChunkRanges);
 
         // the index chunk will always be there (> 1)
-        if (ChunkIDRangeUtils.countTotalChunksOfRanges(allChunkRanges) > 1) {
+        if (allChunkRanges.size() > 1) {
             System.out.println("Remove all failed, not all chunks are removed");
             return -4;
         }

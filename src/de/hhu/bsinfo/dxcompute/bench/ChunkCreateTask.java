@@ -13,8 +13,6 @@
 
 package de.hhu.bsinfo.dxcompute.bench;
 
-import java.util.ArrayList;
-
 import com.google.gson.annotations.Expose;
 
 import org.apache.logging.log4j.LogManager;
@@ -23,8 +21,8 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -252,13 +250,9 @@ public class ChunkCreateTask implements Task {
         System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
         System.out.printf("Throughput: %f chunks/sec\n", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_chunkCount));
 
-        ArrayList<Long> allChunkRanges = chunkService.getAllLocalChunkIDRanges();
+        ChunkIDRanges allChunkRanges = chunkService.getAllLocalChunkIDRanges();
 
-        System.out.print("Available chunk ranges after create:");
-        for (int i = 0; i < allChunkRanges.size(); i += 2) {
-            System.out.printf("\n[0x%X, 0x%X]", allChunkRanges.get(i), allChunkRanges.get(i + 1));
-        }
-        System.out.println();
+        System.out.printf("Available chunk ranges after create:\n%s\n", allChunkRanges);
 
         return 0;
     }

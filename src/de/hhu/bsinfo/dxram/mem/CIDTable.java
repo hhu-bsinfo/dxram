@@ -13,15 +13,14 @@
 
 package de.hhu.bsinfo.dxram.mem;
 
-import java.util.ArrayList;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.soh.MemoryRuntimeException;
+import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 
 /**
@@ -183,65 +182,43 @@ public final class CIDTable {
     /**
      * Returns the ChunkID ranges of all locally stored Chunks
      *
-     * @return the ChunkID ranges in an ArrayList
+     * @return the ChunkID ranges
      */
-    ArrayList<Long> getCIDRangesOfAllLocalChunks() {
-        ArrayList<Long> ret;
+    ChunkIDRanges getCIDRangesOfAllLocalChunks() {
+        ArrayListLong ret;
         long entry;
-        long intervalStart;
-        long intervalEnd;
 
-        ret = new ArrayList<Long>();
+        ret = new ArrayListLong();
         for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
             entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
             if (entry > 0) {
                 if (i == (m_ownNodeID & 0xFFFF)) {
-                    ret.addAll(getAllRanges((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
+                    getAllRanges(ret, (long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1);
                 }
             }
         }
 
-        // compress intervals
-        if (ret.size() >= 2) {
-            if (ret.size() % 2 != 0) {
-                throw new MemoryRuntimeException("Internal error in getChunkIDRangesOfAllChunks");
-            } else {
-                for (int i = 0; i < ret.size() - 2; i += 2) {
-                    intervalEnd = ChunkID.getLocalID(ret.get(i + 1));
-                    intervalStart = ChunkID.getLocalID(ret.get(i + 2));
-
-                    // can we merge intervals?
-                    if (intervalEnd + 1 == intervalStart) {
-                        // System.out.println(" remove el.");
-                        ret.remove(i + 1);
-                        ret.remove(i + 1);
-                        i -= 2;
-                    }
-                }
-            }
-        }
-
-        return ret;
+        return ChunkIDRanges.wrap(ret.getArray());
     }
 
     /**
-     * Returns the ChunkIDs of all migrated Chunks
+     * Returns the ChunkID ranges of all migrated Chunks
      *
-     * @return the ChunkIDs of all migrated Chunks
+     * @return the ChunkID ranges of all migrated Chunks
      */
-    ArrayList<Long> getCIDOfAllMigratedChunks() {
-        ArrayList<Long> ret;
+    ChunkIDRanges getCIDRangesOfAllMigratedChunks() {
+        ArrayListLong ret;
         long entry;
 
-        ret = new ArrayList<Long>();
+        ret = new ArrayListLong();
         for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
             entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
             if (entry > 0 && i != (m_ownNodeID & 0xFFFF)) {
-                ret.addAll(getAllEntries((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
+                getAllRanges(ret, (long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1);
             }
         }
 
-        return ret;
+        return ChunkIDRanges.wrap(ret.getArray());
     }
 
     /**
@@ -610,42 +587,41 @@ public final class CIDTable {
      *     the current table
      * @param p_level
      *     the current table level
-     * @return the ArrayList
      */
-    private ArrayList<Long> getAllRanges(final long p_unfinishedCID, final long p_table, final int p_level) {
-        ArrayList<Long> ret;
+    private void getAllRanges(final ArrayListLong p_ret, final long p_unfinishedCID, final long p_table, final int p_level) {
         long entry;
-        int range = 0;
 
-        ret = new ArrayList<Long>();
         for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
             entry = readEntry(p_table, i);
             if (entry > 0) {
 
                 if (p_level > 0) {
-                    ret.addAll(getAllRanges(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level), entry & BITMASK_ADDRESS, p_level - 1));
+                    getAllRanges(p_ret, p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level), entry & BITMASK_ADDRESS, p_level - 1);
                 } else {
-
                     if (entry != ZOMBIE_ENTRY) {
-                        if (range == 0) {
-                            range = 1;
-                            ret.add(p_unfinishedCID + i);
+                        long curCID = p_unfinishedCID + i;
+
+                        if (p_ret.getSize() < 2) {
+                            p_ret.add(curCID);
+                            p_ret.add(curCID);
                         } else {
-                            ret.remove(ret.size() - 1);
+                            long prev = p_ret.get(p_ret.getSize() - 1);
+
+                            if (prev + 1 == curCID) {
+                                p_ret.set(p_ret.getSize() - 1, curCID);
+                            } else {
+                                p_ret.add(curCID);
+                                p_ret.add(curCID);
+                            }
                         }
-                        ret.add(p_unfinishedCID + i);
                     }
                 }
-            } else {
-                range = 0;
             }
         }
-
-        return ret;
     }
 
     /**
-     * Adds all ChunkIDs to an ArrayList
+     * Adds all ChunkIDs to an ArrayListLong
      *
      * @param p_unfinishedCID
      *     the unfinished ChunkID
@@ -653,13 +629,13 @@ public final class CIDTable {
      *     the current table
      * @param p_level
      *     the current table level
-     * @return the ArrayList
+     * @return ArrayListLong with all entries
      */
-    private ArrayList<Long> getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level) {
-        ArrayList<Long> ret;
+    private ArrayListLong getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level) {
+        ArrayListLong ret;
         long entry;
 
-        ret = new ArrayList<Long>();
+        ret = new ArrayListLong();
         for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
             entry = readEntry(p_table, i);
             if (entry > 0) {

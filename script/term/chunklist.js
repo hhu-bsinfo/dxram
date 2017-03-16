@@ -45,16 +45,13 @@ function exec(nid, migrated) {
     dxterm.printfln("Locally created chunk id ranges of 0x%X (%d):", nid, java.lang.Integer.divideUnsigned(chunkRanges.size(), 2));
 
     for (var i = 0; i < chunkRanges.size(); i++) {
-        var currRange = chunkRanges.get(i);
-        if (i % 2 == 0) {
-            dxterm.print("[" + dxram.longToHexStr(currRange));
-        } else {
-            dxterm.println(", " + dxram.longToHexStr(currRange) + "]");
-        }
+        var start = chunkRanges.getRangeStart(i);
+        var end = chunkRanges.getRangeEnd(i);
+
+        dxterm.println("[" + dxram.longToHexStr(start) + ", " + dxram.longToHexStr(end) + "]");
     }
 
     if (migrated) {
-
         chunkRanges = chunk.getAllMigratedChunkIDRanges(nid);
 
         if (chunkRanges == null) {
@@ -63,14 +60,11 @@ function exec(nid, migrated) {
         }
 
         dxterm.printfln("Migrated chunk id ranges of 0x%X (%d):", nid, java.lang.Integer.divideUnsigned(chunkRanges.size(), 2));
-
         for (var i = 0; i < chunkRanges.size(); i++) {
-            var currRange = chunkRanges.get(i);
-            if (i % 2 == 0) {
-                dxterm.printf("[0x%X", currRange);
-            } else {
-                dxterm.printfln(", 0x%X]", currRange);
-            }
+            var start = chunkRanges.getRangeStart(i);
+            var end = chunkRanges.getRangeEnd(i);
+
+            dxterm.println("[" + dxram.longToHexStr(start) + ", " + dxram.longToHexStr(end) + "]");
         }
     }
 }

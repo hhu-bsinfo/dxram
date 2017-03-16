@@ -13,9 +13,7 @@
 
 package de.hhu.bsinfo.dxram.migration;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,6 +25,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -310,7 +309,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
     }
 
     /**
-     * Migrates all chunks to another node. Is called for promotion.
+     * Migrates all chunks to another node.
      *
      * @param p_target
      *     the peer that should take over all chunks
@@ -320,15 +319,14 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
         long chunkID;
         long firstID;
         long lastID;
-        ArrayList<Long> allMigratedChunks;
-        Iterator<Long> iter;
+        ChunkIDRanges allMigratedChunks;
 
         // Migrate all chunks created on this node
-        final ArrayList<Long> ownChunkRanges = m_memoryManager.getCIDRangesOfAllLocalChunks();
+        ChunkIDRanges ownChunkRanges = m_memoryManager.getCIDRangesOfAllLocalChunks();
         assert ownChunkRanges != null;
-        for (int i = 0; i < ownChunkRanges.size(); i += 2) {
-            firstID = ownChunkRanges.get(i);
-            lastID = ownChunkRanges.get(i + 1);
+        for (int i = 0; i < ownChunkRanges.size(); i++) {
+            firstID = ownChunkRanges.getRangeStart(i);
+            lastID = ownChunkRanges.getRangeEnd(i);
             for (localID = firstID; localID < lastID; i++) {
                 chunkID = ((long) m_boot.getNodeID() << 48) + localID;
                 if (m_memoryManager.exists(chunkID)) {
@@ -338,12 +336,13 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
         }
 
         // Migrate all chunks migrated to this node
-        allMigratedChunks = m_memoryManager.getCIDOfAllMigratedChunks();
-        if (allMigratedChunks != null) {
-            iter = allMigratedChunks.iterator();
-            while (iter.hasNext()) {
-                chunkID = iter.next();
-                migrate(chunkID, p_target);
+        allMigratedChunks = m_memoryManager.getCIDRangesOfAllLocalChunks();
+        for (int i = 0; i < allMigratedChunks.size(); i++) {
+            long rangeStart = allMigratedChunks.getRangeStart(i);
+            long rangeEnd = allMigratedChunks.getRangeEnd(i);
+
+            for (long chunkId = rangeStart; chunkId <= rangeEnd; chunkId++) {
+                migrate(chunkId, p_target);
             }
         }
     }

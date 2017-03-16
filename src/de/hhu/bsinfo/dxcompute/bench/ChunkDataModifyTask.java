@@ -14,7 +14,6 @@
 package de.hhu.bsinfo.dxcompute.bench;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
 
@@ -24,9 +23,9 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -74,10 +73,10 @@ public class ChunkDataModifyTask implements Task {
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 
-        ArrayList<Long> allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern / 2, p_ctx, chunkService);
-        long totalChunkCount = ChunkIDRangeUtils.countTotalChunksOfRanges(allChunkRanges);
+        ChunkIDRanges allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern / 2, p_ctx, chunkService);
+        long totalChunkCount = allChunkRanges.getTotalChunkIDsOfRanges();
         long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(totalChunkCount, m_numThreads);
-        ArrayList<Long>[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
+        ChunkIDRanges[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
         long[] operationsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_opCount, m_numThreads);
 
         Thread[] threads = new Thread[m_numThreads];
@@ -94,7 +93,7 @@ public class ChunkDataModifyTask implements Task {
             threads[i] = new Thread(() -> {
                 long[] chunkIds = new long[m_chunkBatch];
                 long operations = operationsPerThread[threadIdx] / m_chunkBatch;
-                ArrayList<Long> chunkRanges = chunkRangesPerThread[threadIdx];
+                ChunkIDRanges chunkRanges = chunkRangesPerThread[threadIdx];
 
                 if (operationsPerThread[threadIdx] % m_chunkBatch > 0) {
                     operations++;
@@ -108,7 +107,7 @@ public class ChunkDataModifyTask implements Task {
                         if (!m_continousChunksPerBatch) {
                             // all random chunk IDs for batch
                             while (operations > 0 && batchCnt < chunkIds.length) {
-                                chunkIds[batchCnt] = ChunkIDRangeUtils.getRandomChunkIdOfRanges(chunkRanges);
+                                chunkIds[batchCnt] = chunkRanges.getRandomChunkIdOfRanges();
 
                                 operations--;
                                 batchCnt++;
@@ -121,8 +120,8 @@ public class ChunkDataModifyTask implements Task {
 
                             // ensure continuous chunk IDs
                             while (true) {
-                                chunkIds[0] = ChunkIDRangeUtils.getRandomChunkIdOfRanges(chunkRanges);
-                                if (ChunkIDRangeUtils.isInRanges(chunkIds[0] + batchCnt, chunkRanges)) {
+                                chunkIds[0] = chunkRanges.getRandomChunkIdOfRanges();
+                                if (chunkRanges.isInRanges(chunkIds[0] + batchCnt)) {
                                     for (int j = 0; j < batchCnt; j++) {
                                         chunkIds[j] = chunkIds[0] + j;
                                     }
