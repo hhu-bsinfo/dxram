@@ -70,8 +70,8 @@ public class ChunkRemoveAllTask implements Task {
         activeChunkCount -= 1;
 
         ArrayList<Long> allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern, p_ctx, chunkService);
-        long[] chunkCountsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(activeChunkCount, m_numThreads);
-        ArrayList<Long>[] chunkRangesPerThread = ChunkIDRangeUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
+        long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(activeChunkCount, m_numThreads);
+        ArrayList<Long>[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
 
         Thread[] threads = new Thread[m_numThreads];
         Stopwatch[] time = new Stopwatch[m_numThreads];

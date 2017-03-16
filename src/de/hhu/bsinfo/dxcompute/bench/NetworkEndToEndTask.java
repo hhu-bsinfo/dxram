@@ -24,7 +24,6 @@ import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -65,7 +64,7 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
         networkService.registerMessageType(DXComputeMessageTypes.BENCH_MESSAGE_TYPE, BenchMessages.NETWORK_TEST_MESSAGE, NetworkTestMessage.class);
 
         // get Messages per Thread and destination node id
-        long[] messagesPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(m_messageCnt, m_threadCnt);
+        long[] messagesPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_messageCnt, m_threadCnt);
         short sendNodeId;
         if (ownSlaveID % 2 == 0) {
             sendNodeId = slaveNodeIds[ownSlaveID + 1];

@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.dxcompute.bench;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
@@ -41,9 +42,12 @@ final class ChunkTaskUtils {
     /**
      * Get a chunk range for the specified test pattern
      *
-     * @param p_pattern Pattern id (refer to static ints)
-     * @param p_ctx Context of the task this is called from
-     * @param p_chunkService Chunk service instance
+     * @param p_pattern
+     *     Pattern id (refer to static ints)
+     * @param p_ctx
+     *     Context of the task this is called from
+     * @param p_chunkService
+     *     Chunk service instance
      * @return Chunk ranges for the specified test pattern
      */
     static ArrayList<Long> getChunkRangesForTestPattern(final int p_pattern, final TaskContext p_ctx, final ChunkService p_chunkService) {
@@ -99,10 +103,88 @@ final class ChunkTaskUtils {
     }
 
     /**
+     * Distribute a total number of chunks (if possible) equally to multiple threads
+     *
+     * @param p_chunkCount
+     *     Total number of chunks to distribute
+     * @param p_threadCount
+     *     Number of threads to distribute to
+     * @return Array if chunk counts for each thread
+     */
+    public static long[] distributeChunkCountsToThreads(final long p_chunkCount, final int p_threadCount) {
+        long count = p_chunkCount;
+        long[] chunkCounts = new long[p_threadCount];
+
+        for (int i = 0; i < chunkCounts.length; i++) {
+            chunkCounts[i] = p_chunkCount / p_threadCount;
+            count -= chunkCounts[i];
+        }
+
+        for (int i = 0; i < count; i++) {
+            chunkCounts[i]++;
+        }
+
+        return chunkCounts;
+    }
+
+    /**
+     * Distribute chunk ranges to multiple threads
+     *
+     * @param p_chunkCountsPerThread
+     *     Array with total number of chunk IDs for each thread
+     * @param p_ranges
+     *     Ranges to distribute
+     * @return Array of chunk ID ranges distributed to each thread
+     */
+    public static ArrayList<Long>[] distributeChunkRangesToThreads(final long[] p_chunkCountsPerThread, final List<Long> p_ranges) {
+        ArrayList<Long>[] distRanges = new ArrayList[p_chunkCountsPerThread.length];
+        for (int i = 0; i < distRanges.length; i++) {
+            distRanges[i] = new ArrayList<>();
+        }
+
+        int rangeIdx = 0;
+        long rangeStart = p_ranges.get(rangeIdx * 2);
+        long rangeEnd = p_ranges.get(rangeIdx * 2 + 1);
+
+        for (int i = 0; i < p_chunkCountsPerThread.length; i++) {
+            long chunkCount = p_chunkCountsPerThread[i];
+
+            while (chunkCount > 0) {
+                long chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
+                if (chunksInRange >= chunkCount) {
+                    distRanges[i].add(rangeStart);
+                    distRanges[i].add(rangeStart + chunkCount - 1);
+
+                    rangeStart += chunkCount;
+                    chunkCount = 0;
+                } else {
+                    // chunksInRange < chunkCount
+                    distRanges[i].add(rangeStart);
+                    distRanges[i].add(rangeEnd);
+
+                    chunkCount -= chunksInRange;
+
+                    rangeIdx++;
+                    if (rangeIdx * 2 < p_ranges.size()) {
+                        rangeStart = p_ranges.get(rangeIdx * 2);
+                        rangeEnd = p_ranges.get(rangeIdx * 2 + 1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return distRanges;
+    }
+
+    /**
      * Get a random node id except the current node's own one
      *
-     * @param p_slaveNodeIds List of node IDs to select a random id from
-     * @param p_ownNodeId Own node id
+     * @param p_slaveNodeIds
+     *     List of node IDs to select a random id from
+     * @param p_ownNodeId
+     *     Own node id
      * @return Random node id
      */
     static short getRandomNodeIdExceptOwn(final short[] p_slaveNodeIds, final short p_ownNodeId) {
@@ -118,7 +200,8 @@ final class ChunkTaskUtils {
     /**
      * Get a random node id from an array of node ids
      *
-     * @param p_slaveNodeIds Array of node ids to pick from
+     * @param p_slaveNodeIds
+     *     Array of node ids to pick from
      * @return Random node id
      */
     static short getRandomNodeId(final short[] p_slaveNodeIds) {
@@ -127,11 +210,12 @@ final class ChunkTaskUtils {
 
     /**
      * Get the successor of a node from an array of node ids
-     *
      * The successor is simply the node id in the array following the specified id
      *
-     * @param p_slaveNodeIds Array of node ids
-     * @param p_ownSlaveId Own node id
+     * @param p_slaveNodeIds
+     *     Array of node ids
+     * @param p_ownSlaveId
+     *     Own node id
      * @return Successor to own node id from array
      */
     static short getSuccessorSlaveNodeId(final short[] p_slaveNodeIds, final short p_ownSlaveId) {
@@ -145,8 +229,10 @@ final class ChunkTaskUtils {
     /**
      * Get a random size from a size range
      *
-     * @param p_start Start of size range (including)
-     * @param p_end End of size range (including)
+     * @param p_start
+     *     Start of size range (including)
+     * @param p_end
+     *     End of size range (including)
      * @return Random size in bytes
      */
     static int getRandomSize(final StorageUnit p_start, final StorageUnit p_end) {
@@ -156,8 +242,10 @@ final class ChunkTaskUtils {
     /**
      * Get a random number from a specified range
      *
-     * @param p_start Start (including)
-     * @param p_end End (including)
+     * @param p_start
+     *     Start (including)
+     * @param p_end
+     *     End (including)
      * @return Random int
      */
     private static int getRandomRange(final int p_start, final int p_end) {
@@ -167,8 +255,10 @@ final class ChunkTaskUtils {
     /**
      * Get a random number from a specified range
      *
-     * @param p_start Start (including)
-     * @param p_end End (excluding)
+     * @param p_start
+     *     Start (including)
+     * @param p_end
+     *     End (excluding)
      * @return Random int
      */
     private static int getRandomRangeExclEnd(final int p_start, final int p_end) {
@@ -178,8 +268,10 @@ final class ChunkTaskUtils {
     /**
      * Get a random number from a specified range
      *
-     * @param p_start Start (including)
-     * @param p_end End (including)
+     * @param p_start
+     *     Start (including)
+     * @param p_end
+     *     End (including)
      * @return Random int
      */
     private static long getRandomRange(final long p_start, final long p_end) {

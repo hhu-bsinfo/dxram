@@ -13,7 +13,6 @@
 
 package de.hhu.bsinfo.dxram.chunk;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -54,64 +53,6 @@ public class ChunkIDRangeUtils {
         }
 
         return count;
-    }
-
-    public static long[] distributeChunkCountsToThreads(final long p_chunkCount, final int p_threadCount) {
-        long count = p_chunkCount;
-        long[] chunkCounts = new long[p_threadCount];
-
-        for (int i = 0; i < chunkCounts.length; i++) {
-            chunkCounts[i] = p_chunkCount / p_threadCount;
-            count -= chunkCounts[i];
-        }
-
-        for (int i = 0; i < count; i++) {
-            chunkCounts[i]++;
-        }
-
-        return chunkCounts;
-    }
-
-    public static ArrayList<Long>[] distributeChunkRangesToThreads(final long[] p_chunkCountsPerThread, final List<Long> p_ranges) {
-        ArrayList<Long>[] distRanges = new ArrayList[p_chunkCountsPerThread.length];
-        for (int i = 0; i < distRanges.length; i++) {
-            distRanges[i] = new ArrayList<>();
-        }
-
-        int rangeIdx = 0;
-        long rangeStart = p_ranges.get(rangeIdx * 2);
-        long rangeEnd = p_ranges.get(rangeIdx * 2 + 1);
-
-        for (int i = 0; i < p_chunkCountsPerThread.length; i++) {
-            long chunkCount = p_chunkCountsPerThread[i];
-
-            while (chunkCount > 0) {
-                long chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
-                if (chunksInRange >= chunkCount) {
-                    distRanges[i].add(rangeStart);
-                    distRanges[i].add(rangeStart + chunkCount - 1);
-
-                    rangeStart += chunkCount;
-                    chunkCount = 0;
-                } else {
-                    // chunksInRange < chunkCount
-                    distRanges[i].add(rangeStart);
-                    distRanges[i].add(rangeEnd);
-
-                    chunkCount -= chunksInRange;
-
-                    rangeIdx++;
-                    if (rangeIdx * 2 < p_ranges.size()) {
-                        rangeStart = p_ranges.get(rangeIdx * 2);
-                        rangeEnd = p_ranges.get(rangeIdx * 2 + 1);
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-
-        return distRanges;
     }
 
     public static long getRandomChunkId(final long p_start, final long p_end) {

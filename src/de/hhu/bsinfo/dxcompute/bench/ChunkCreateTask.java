@@ -71,7 +71,7 @@ public class ChunkCreateTask implements Task {
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 
-        long[] chunkCountsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(m_chunkCount, m_numThreads);
+        long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_chunkCount, m_numThreads);
         Thread[] threads = new Thread[m_numThreads];
         Stopwatch[] time = new Stopwatch[m_numThreads];
         for (int i = 0; i < time.length; i++) {

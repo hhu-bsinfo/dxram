@@ -76,9 +76,9 @@ public class ChunkDataModifyTask implements Task {
 
         ArrayList<Long> allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern / 2, p_ctx, chunkService);
         long totalChunkCount = ChunkIDRangeUtils.countTotalChunksOfRanges(allChunkRanges);
-        long[] chunkCountsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(totalChunkCount, m_numThreads);
-        ArrayList<Long>[] chunkRangesPerThread = ChunkIDRangeUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
-        long[] operationsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(m_opCount, m_numThreads);
+        long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(totalChunkCount, m_numThreads);
+        ArrayList<Long>[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
+        long[] operationsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_opCount, m_numThreads);
 
         Thread[] threads = new Thread[m_numThreads];
         Stopwatch[] time = new Stopwatch[m_numThreads];

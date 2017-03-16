@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxram.chunk.ChunkIDRangeUtils;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -47,7 +46,7 @@ public class NameserviceGetChunkIDTask implements Task {
 
         ArrayList<Pair<String, Long>> entries = nameserviceService.getAllEntries();
         int entryCnt = entries.size();
-        long[] chunkCountsPerThread = ChunkIDRangeUtils.distributeChunkCountsToThreads(entryCnt, m_numThreads);
+        long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(entryCnt, m_numThreads);
 
         Thread[] threads = new Thread[m_numThreads];
         long[] timeStart = new long[m_numThreads];
