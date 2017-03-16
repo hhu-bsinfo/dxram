@@ -53,7 +53,6 @@ start_remote_superpeer()
 
 	compile_vm_options_string_superpeer "$ip" "$port" "$vm_options" "$debug"
 
-	echo "Executing superpeer on $3 ($ip, $port):"
 	if [ "$additional_shell_cmds" != "" ]; then
 		ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
 	else
@@ -97,17 +96,13 @@ start_local_superpeer()
 # Globals:
 #   LOG_DIR
 # Arguments:
-#   ip - The IP of the Superpeer
 #   port - The port of Superpeer
 #   hostname - The hostname
-#   vm_options - The VM options
 ######################################################
 check_superpeer_startup()
 {
-	local ip=$1
-	local port=$2
-	local hostname=$3
-	local vm_options="$4"
+	local port=$1
+	local hostname=$2
 
 	local logfile="${LOG_DIR}/${hostname}_${port}_superpeer"
 
@@ -115,10 +110,10 @@ check_superpeer_startup()
 		local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$DEFAULT_CONDITION"`
 		local fail=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
 		if [ "$success" != "" ] ; then
-			echo "Superpeer ($ip $port $vm_options) started"
+			echo "Superpeer started"
 		 break
 		elif [ "$fail" != "" ] ; then
-			echo "ERROR: Superpeer ($ip $port $vm_options) could not be started. See log file $logfile"
+			echo "ERROR: Superpeer could not be started. See log file $logfile"
 			exit -1
 		fi
 		sleep 1.0
@@ -165,11 +160,13 @@ while true; do
 		fi
 done
 
+echo "Superpeer ($ip $port $vm_options $additional_shell_cmds $debug) starting..."
+
 if [ "$is_remote" = false ]; then
 	start_local_superpeer "$ip" "$port" "$vm_options" "$additional_shell_cmds" "$debug" > "${LOG_DIR}/${hostname}_${port}_superpeer" 2>&1 &
 else
 	start_remote_superpeer "$ip" "$port" "$hostname" "$vm_options" "$additional_shell_cmds" "$debug" > "${LOG_DIR}/${hostname}_${port}_superpeer" 2>&1 &
 fi
 
-check_superpeer_startup "$ip" "$port" "$hostname" "$vm_options"
+check_superpeer_startup "$port" "$hostname"
 exit 0

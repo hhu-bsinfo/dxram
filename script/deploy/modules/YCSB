@@ -137,31 +137,15 @@ start_local_peer()
 # Globals:
 #   LOG_DIR
 # Arguments:
-#   ip - The IP of the Peer
 #   port - The port of Peer
 #   hostname - The hostname
-#   ram_size_in_mb - The key-value store size
-#   zookeeper_string - String for zookeeper connection (format: <ip>:<port>)
-#   insertstart - Start record offset for node
-#   recordcount - Total number of records for node
-#   ycsb_type - Type of YCSB instance (load or run)
-#   ycsb_threads - Number of threads for YCSB instance
-#   ycsb_workload - Workload to execute
 #   condition - The string to wait for
 ######################################################
 check_peer_startup()
 {
-	local ip=$1
-	local port=$2
-	local hostname=$3
-	local ram_size_in_mb=$4
-	local zookeeper_string=$5
-	local insertstart=$6
-	local recordcount=$7
-	local ycsb_type=$8
-	local ycsb_threads=$9
-	local ycsb_workload=${10}
-	local condition="${11}"
+	local port=$1
+	local hostname=$2
+	local condition="$3"
 
 	local logfile="${LOG_DIR}/${hostname}_${port}_peer"
 
@@ -171,13 +155,13 @@ check_peer_startup()
 		# Abort execution after an exception was thrown (every exception but NetworkResponseTimeoutException)
 		local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseTimeoutException"`
 		if [ "$success" != "" ] ; then
-			echo "Peer ($ip $port $ram_size_in_mb $zookeeper_string $insertstart $recordcount $ycsb_type $ycsb_threads $ycsb_workload) started"
+			echo "YCSB Peer started"
 			break
 		elif [ "$fail_init" != "" ] ; then
-			echo "ERROR: Peer ($ip $port $ram_size_in_mb $zookeeper_string $insertstart $recordcount $ycsb_type $ycsb_threads $ycsb_workload) could not be started. See log file $logfile"
+			echo "ERROR: YCSB Peer could not be started. See log file $logfile"
 			exit -1
 		elif [ "$fail_error" != "" ] ; then
-			echo "ERROR: Peer ($ip $port $ram_size_in_mb $zookeeper_string $insertstart $recordcount $ycsb_type $ycsb_threads $ycsb_workload) failed. See log file $logfile"
+			echo "ERROR: YCSB Peer failed. See log file $logfile"
 			exit -1
 		fi
 		sleep 1.0
@@ -248,11 +232,13 @@ if [ "$condition" = "" ]; then
 	condition=$DEFAULT_CONDITION
 fi
 
+echo "YCSB Peer ($ip $port $ram_size_in_mb  $ycsb_nodes ${zookeeper_ip}:${zookeeper_port} $ycsb_insertstart $ycsb_recordcount $ycsb_type $ycsb_threads $ycsb_workload $additional_shell_cmds) starting..."
+
 if [ "$is_remote" = false ]; then
 	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$ycsb_nodes" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
 else
 	start_remote_peer "$ip" "$port" "$ram_size_in_mb" "$ycsb_nodes" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
 fi
 
-check_peer_startup "$ip" "$port" "$hostname" "$ram_size_in_mb" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$condition"
+check_peer_startup "$port" "$hostname" "$condition"
 exit 0
