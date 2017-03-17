@@ -64,6 +64,17 @@ public class ArrayListLong implements Importable, Exportable {
     }
 
     /**
+     * Copy constructor
+     *
+     * @param p_list
+     *     Contents of list to copy
+     */
+    public ArrayListLong(final ArrayListLong p_list) {
+        m_array = new long[p_list.getSize()];
+        System.arraycopy(p_list.m_array, 0, m_array, 0, m_array.length);
+    }
+
+    /**
      * Constructor for wrapper method
      *
      * @param p_array
@@ -222,6 +233,8 @@ public class ArrayListLong implements Importable, Exportable {
             System.arraycopy(m_array, p_index + 1, m_array, p_index, numMoved);
         }
 
+        m_size--;
+
         return oldValue;
     }
 
@@ -235,12 +248,6 @@ public class ArrayListLong implements Importable, Exportable {
     public void importObject(final Importer p_importer) {
         m_array = p_importer.readLongArray();
         m_size = m_array.length;
-        m_size = 0;
-        for (long l : m_array) {
-            if (l != ChunkID.INVALID_ID) {
-                m_size++;
-            }
-        }
     }
 
     @Override
