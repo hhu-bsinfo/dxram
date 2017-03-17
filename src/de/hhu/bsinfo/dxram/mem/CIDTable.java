@@ -198,7 +198,7 @@ public final class CIDTable {
             }
         }
 
-        return ChunkIDRanges.wrap(ret.getArray());
+        return ChunkIDRanges.wrap(ret);
     }
 
     /**
@@ -218,7 +218,7 @@ public final class CIDTable {
             }
         }
 
-        return ChunkIDRanges.wrap(ret.getArray());
+        return ChunkIDRanges.wrap(ret);
     }
 
     /**
