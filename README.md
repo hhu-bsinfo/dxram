@@ -2,7 +2,7 @@
 
 Developed by the [operating systems group](http://www.cs.hhu.de/en/research-groups/operating-systems.html) of the department of computer science of the Heinrich-Heine-University Düsseldorf, DXRAM is a distributed in-memory key-value store for low-latency cloud applications, e.g. social networks, search engines and I/O-bound long running scientific computations running in a data center.
 
-Facebook for example runs approx. 1,000 memcached servers keeping around 75% of its data always in RAM because back-end database accesses are too slow. We argue that it is possible go one step further by keeping all data always in RAM, thus relieving developers from cache management and synchronization of caches with secondary storage.
+Facebook for example runs approx. 1,000 memcached servers keeping around 75% of its data always in RAM because back-end database accesses are too slow. We argue that it is possible to go one step further by keeping all data always in RAM relieving developers from cache management and synchronization of caches with secondary storage.
 
 # Important
 
@@ -32,6 +32,7 @@ DXRAM is a research project that's under heavy development. We do not recommend 
 * [Development environement setup](doc/DevelopmentSetup.md)
 * [Develop applications using DXRAM](doc/Development.md)
 * [Manual setup and configuration of DXRAM instances](doc/ManualSetup.md)
+* [Style guide bash](doc/StyleGuideBash.md)
 
 # License
 
