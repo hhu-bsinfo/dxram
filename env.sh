@@ -1,7 +1,7 @@
 #!/bin/bash
 
-DIR="$(dirname "${BASH_SOURCE[0]}")"
-
+DIR="$(cd "$(dirname "$0")"; pwd)"
+echo $DIR
 BIN=$DIR/script/deploy/bin
 SCRIPTS=$DIR/script/deploy
 SCRIPTS_MODS=$DIR/script/deploy/modules
