@@ -1,1 +1,1 @@
-This folder contains configuration files for running different benchmarks. The configs contain personalized settings of the creator, thus you have to adjust them to your personal setup/cluster.
+This folder contains configuration files for running different benchmarks. Depending on your setup (local/cluster) and where DXRAM/ZooKeeper is located, you have to adjust them.
