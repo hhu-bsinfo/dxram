@@ -77,6 +77,28 @@ public class ChunkIDRanges implements Importable, Exportable {
     }
 
     /**
+     * Constructor
+     *
+     * @param p_arrayList
+     *     ArrayListLong to use (either copy or wrap)
+     * @param p_copy
+     *     True to copy the contents of the list, false to wrap the list
+     * @throws IllegalArgumentException
+     *     If Range size % 2 != 0
+     */
+    private ChunkIDRanges(final ArrayListLong p_arrayList, final boolean p_copy) {
+        if (p_arrayList.getSize() % 2 != 0) {
+            throw new IllegalArgumentException("Ranges size % 2 != 0");
+        }
+
+        if (p_copy) {
+            m_ranges = new ArrayListLong(p_arrayList);
+        } else {
+            m_ranges = p_arrayList;
+        }
+    }
+
+    /**
      * Create a new ChunkIDRanges object based on a copy of a provided range array
      *
      * @param p_ranges
@@ -96,6 +118,28 @@ public class ChunkIDRanges implements Importable, Exportable {
      */
     public static ChunkIDRanges wrap(final long[] p_ranges) {
         return new ChunkIDRanges(p_ranges, false);
+    }
+
+    /**
+     * Create a new ChunkIDRanges object based on a copy of a provided range list
+     *
+     * @param p_arrayList
+     *     ArrayListLong with ranges to copy
+     * @return ChunkIDRanges object with copied contents of the list
+     */
+    public static ChunkIDRanges copy(final ArrayListLong p_arrayList) {
+        return new ChunkIDRanges(p_arrayList, true);
+    }
+
+    /**
+     * Create a new ChunkIDRanges object wrapping an existing ArrayListLong with ranges
+     *
+     * @param p_arrayList
+     *     ArrayListLong with ranges to wrap
+     * @return ChunkIDRanges Object with wrapped array
+     */
+    public static ChunkIDRanges wrap(final ArrayListLong p_arrayList) {
+        return new ChunkIDRanges(p_arrayList, false);
     }
 
     /**
