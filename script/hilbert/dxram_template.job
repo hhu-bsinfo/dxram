@@ -45,7 +45,7 @@ generate_hilbert_deploy_config()
 	i=0
 	while [ $i -lt $NODES_COUNT ]; do
 		echo "h${i} -> ${NODES_HOSTNAME[i]} "
-		sed -i "s/h${i}/${NODES_HOSTNAME[i]}/g" $DEPLOY_CONFIG_PATH
+		sed -i "s/h${i},/${NODES_HOSTNAME[i]},/g" $DEPLOY_CONFIG_PATH
 		ssh ${NODES_HOSTNAME[i]} "module load Java/1.8.0"
 		i=$[i + 1]
 	done 
