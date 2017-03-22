@@ -1,6 +1,6 @@
 # Directories
 
-Various compute scripts to run with the MasterSlaveComputeService. You can start these scripts from the DXRAM terminal using the *comptaskscript* command. Pay attention to the requirements of each script (number of superpeers/peers, amount of storage per peer etc).
+Various compute scripts to run with the MasterSlaveComputeService. You can start these scripts from the DXRAM terminal using the *comptaskscript* command. Pay attention to the requirements of each script (number of superpeers/peers, memory per peer etc).
 
 * [bench](bench/README.md): Scripts to run built in benchmarks on DXRAM
 * example: Example scripts/templates for creating your own compute task scripts
@@ -16,7 +16,7 @@ Make sure to meet the requirements of each task script you run (number of nodes,
 
 ## Enabling DXCompute
 
-Add the following item to the *m_services* list in your dxram configuration, e.g. *config/dxram.json* to enable the MasterSlaveComputeService which is required to run the task scripts:
+Add the following item to the *m_services* list in your DXRAM configuration, e.g. *config/dxram.json* to enable the MasterSlaveComputeService which is required to run the task scripts:
 ```
 "MasterSlaveComputeService": {
   "m_class": "de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService",
