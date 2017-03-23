@@ -30,7 +30,7 @@ import org.apache.logging.log4j.Logger;
  */
 class NIOInterface {
 
-    private static final int BUFFER_POOL_SIZE = 100; // TODO: might be way too many
+    private static final int BUFFER_POOL_SIZE = 25;
     private static final Logger LOGGER = LogManager.getFormatterLogger(NIOInterface.class.getSimpleName());
 
     // Attributes
