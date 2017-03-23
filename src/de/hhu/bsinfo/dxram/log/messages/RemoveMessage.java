@@ -29,8 +29,10 @@ public class RemoveMessage extends AbstractMessage {
 
     // Attributes
     private ArrayListLong m_chunkIDs;
-    private byte m_rangeID;
+    private short m_rangeID;
     private ByteBuffer m_buffer;
+
+    private int m_copiedBytes;
 
     // Constructors
 
@@ -85,7 +87,7 @@ public class RemoveMessage extends AbstractMessage {
      * @param p_rangeID
      *     the RangeID
      */
-    public RemoveMessage(final short p_destination, final ArrayListLong p_chunkIDs, final byte p_rangeID) {
+    public RemoveMessage(final short p_destination, final ArrayListLong p_chunkIDs, final short p_rangeID) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
 
         m_chunkIDs = p_chunkIDs;
@@ -106,24 +108,36 @@ public class RemoveMessage extends AbstractMessage {
     @Override
     protected final int getPayloadLength() {
         if (m_chunkIDs != null) {
-            return Byte.BYTES + Integer.BYTES + Long.BYTES * m_chunkIDs.getSize();
+            return Short.BYTES + Integer.BYTES + Long.BYTES * m_chunkIDs.getSize();
         } else {
-            return 0;
+            return m_copiedBytes;
         }
     }
 
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.put(m_rangeID);
+        p_buffer.putShort(m_rangeID);
         p_buffer.putInt(m_chunkIDs.getSize());
         p_buffer.asLongBuffer().put(m_chunkIDs.getArray(), 0, m_chunkIDs.getSize());
         p_buffer.position(p_buffer.position() + m_chunkIDs.getSize() * Long.BYTES);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_buffer = p_buffer;
+    protected final void readPayload(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
+        if (p_wasCopied) {
+            // De-serialize later
+            m_buffer = p_buffer;
+            m_copiedBytes = 0;
+        } else {
+            // Message buffer will be re-used -> copy data for later de-serialization
+            m_buffer = ByteBuffer.allocate(p_payloadSize);
+            m_buffer.put(p_buffer.array(), p_buffer.position(), p_payloadSize);
+            p_buffer.position(p_buffer.position() + p_payloadSize);
+            m_buffer.rewind();
+
+            m_copiedBytes = p_payloadSize;
+        }
     }
 
 }

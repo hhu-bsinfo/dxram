@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.ethnet;
 
 import java.io.IOException;
+import java.nio.channels.SocketChannel;
 
 /**
  * Creates new network connections
@@ -46,23 +47,7 @@ abstract class AbstractConnectionCreator {
     // Methods
 
     /**
-     * Sets the ConnectionCreatorListener
-     *
-     * @param p_listener
-     *     the ConnectionCreatorListener
-     */
-    final void setListener(final ConnectionCreatorListener p_listener) {
-        m_listener = p_listener;
-    }
-
-    /**
-     * Closes the creator and frees unused resources
-     */
-    public void close() {
-    }
-
-    /**
-     * Creates a new connection to the given destination
+     * Creates a new connection to the given destination and opens the outgoing socket channel
      *
      * @param p_destination
      *     the destination
@@ -73,6 +58,43 @@ abstract class AbstractConnectionCreator {
     public abstract AbstractConnection createConnection(short p_destination) throws IOException;
 
     /**
+     * Creates a new connection to the given destination and connects the incoming socket channel
+     *
+     * @param p_destination
+     *     the destination
+     * @param p_channel
+     *     the already opened inconing socket channel
+     * @return a new connection
+     * @throws IOException
+     *     if the connection could not be created
+     */
+    public abstract AbstractConnection createConnection(final short p_destination, final SocketChannel p_channel) throws IOException;
+
+    /**
+     * Opens the outgoing socket channel and connects it to the already existing connection
+     *
+     * @param p_destination
+     *     the destination
+     * @param p_connection
+     *     the already existing connection
+     * @throws IOException
+     *     if the connection could not be created
+     */
+    public abstract void createOutgoingChannel(final short p_destination, final AbstractConnection p_connection) throws IOException;
+
+    /**
+     * Connects the opened incoming socket channel with the already existing connection
+     *
+     * @param p_channel
+     *     the open incoming socket channel
+     * @param p_connection
+     *     the already existing connection
+     * @throws IOException
+     *     if the connection could not be created
+     */
+    public abstract void bindIncomingChannel(final SocketChannel p_channel, final AbstractConnection p_connection) throws IOException;
+
+    /**
      * Closes the given connection
      *
      * @param p_connection
@@ -81,6 +103,12 @@ abstract class AbstractConnectionCreator {
      *     whether to inform the connection manager or not
      */
     public abstract void closeConnection(final AbstractConnection p_connection, final boolean p_informConnectionManager);
+
+    /**
+     * Closes the creator and frees unused resources
+     */
+    public void close() {
+    }
 
     /**
      * Check if there a remote node tries to open a connection currently
@@ -94,25 +122,26 @@ abstract class AbstractConnectionCreator {
     /**
      * Initializes the creator
      *
-     * @param p_nodeID
-     *     the NodeID
      * @param p_listenPort
      *     the listen port
      */
-    protected void initialize(final short p_nodeID, final int p_listenPort) {
+    protected void initialize(final int p_listenPort) {
     }
 
     /**
-     * Informs the ConnectionCreatorListener about a new connection
-     *
-     * @param p_connection
-     *     the new connection
+     * Prepares closure of the creator
      */
-    final void fireConnectionCreated(final AbstractConnection p_connection) {
-        if (m_listener != null) {
-            m_listener.connectionCreated(p_connection);
-            p_connection.setConnected(true);
-        }
+    void prepareClosure() {
+    }
+
+    /**
+     * Sets the ConnectionCreatorListener
+     *
+     * @param p_listener
+     *     the ConnectionCreatorListener
+     */
+    final void setListener(final ConnectionCreatorListener p_listener) {
+        m_listener = p_listener;
     }
 
     /**
@@ -121,9 +150,9 @@ abstract class AbstractConnectionCreator {
      * @param p_destination
      *     the remote NodeID
      */
-    final void fireCreateConnection(final short p_destination) {
+    final void fireCreateConnection(final short p_destination, final SocketChannel p_channel) {
         if (m_listener != null) {
-            m_listener.createConnection(p_destination);
+            m_listener.createConnection(p_destination, p_channel);
         }
     }
 
@@ -152,20 +181,12 @@ abstract class AbstractConnectionCreator {
         // Methods
 
         /**
-         * A new connection was created
-         *
-         * @param p_connection
-         *     the new connection
-         */
-        void connectionCreated(AbstractConnection p_connection);
-
-        /**
          * A new connection must be created
          *
          * @param p_destination
          *     the remote NodeID
          */
-        void createConnection(short p_destination);
+        void createConnection(short p_destination, SocketChannel p_channel);
 
         /**
          * A connection was closed

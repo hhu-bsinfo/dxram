@@ -62,11 +62,11 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
     @Expose
     private int m_requestMapEntryCount = (int) Math.pow(2, 20);
     @Expose
-    private StorageUnit m_incomingBufferSize = new StorageUnit(1, StorageUnit.MB);
+    private StorageUnit m_incomingBufferSize = new StorageUnit(512, StorageUnit.KB);
     @Expose
     private StorageUnit m_outgoingBufferSize = new StorageUnit(1, StorageUnit.MB);
     @Expose
-    private int m_numberOfPendingBuffersPerConnection = 100;
+    private StorageUnit m_maxIncomingBufferSize = new StorageUnit(32, StorageUnit.KB);
     @Expose
     private StorageUnit m_flowControlWindowSize = new StorageUnit(1, StorageUnit.MB);
     @Expose
@@ -303,7 +303,7 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
         }
 
         m_networkHandler.initialize(m_boot.getNodeID(), new NodeMappings(m_boot), (int) m_incomingBufferSize.getBytes(), (int) m_outgoingBufferSize.getBytes(),
-            m_numberOfPendingBuffersPerConnection, (int) m_flowControlWindowSize.getBytes(), (int) m_requestTimeout.getMs());
+            (int) m_maxIncomingBufferSize.getBytes(), (int) m_flowControlWindowSize.getBytes(), (int) m_requestTimeout.getMs());
 
         m_networkHandler.registerMessageType(DXRAMMessageTypes.DEFAULT_MESSAGES_TYPE, DefaultMessages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
 

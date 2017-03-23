@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayDeque;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,13 +30,18 @@ import org.apache.logging.log4j.Logger;
  */
 class NIOInterface {
 
+    private static final int BUFFER_POOL_SIZE = 100; // TODO: might be way too many
     private static final Logger LOGGER = LogManager.getFormatterLogger(NIOInterface.class.getSimpleName());
 
     // Attributes
     private int m_outgoingBufferSize;
+    private int m_maxIncomingBufferSize;
 
-    private ByteBuffer m_readBuffer;
+    private ArrayDeque<ByteBuffer> m_buffers;
+    private ReentrantLock m_lock;
+
     private ByteBuffer m_writeBuffer;
+    private ByteBuffer m_flowControlBytes;
 
     /**
      * Creates an instance of NIOInterface
@@ -43,12 +50,56 @@ class NIOInterface {
      *     the size of incoming buffer
      * @param p_outgoingBufferSize
      *     the size of outgoing buffer
+     * @param p_maxIncomingBufferSize
+     *     the maximum number of bytes read at once from channel
      */
-    NIOInterface(final int p_incomingBufferSize, final int p_outgoingBufferSize) {
+    NIOInterface(final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_maxIncomingBufferSize) {
         m_outgoingBufferSize = p_outgoingBufferSize;
+        m_maxIncomingBufferSize = p_maxIncomingBufferSize;
 
-        m_readBuffer = ByteBuffer.allocateDirect(p_incomingBufferSize);
+        m_buffers = new ArrayDeque<ByteBuffer>();
+        for (int i = 0; i < BUFFER_POOL_SIZE; i++) {
+            m_buffers.add(ByteBuffer.allocate(m_maxIncomingBufferSize));
+        }
+        m_lock = new ReentrantLock(false);
+
         m_writeBuffer = ByteBuffer.allocateDirect(m_outgoingBufferSize);
+        m_flowControlBytes = ByteBuffer.allocateDirect(Integer.BYTES);
+    }
+
+    /**
+     * Reads the NodeID of the remote node that creates this new connection
+     *
+     * @param p_channel
+     *     the channel of the connection
+     * @param p_nioSelector
+     *     the NIOSelector
+     * @return the NodeID
+     * @throws IOException
+     *     if the connection could not be created
+     */
+    static short readRemoteNodeID(final SocketChannel p_channel, final NIOSelector p_nioSelector) throws IOException {
+        short ret;
+        int bytes;
+        int counter = 0;
+        ByteBuffer buffer = ByteBuffer.allocate(2);
+
+        while (counter < buffer.capacity()) {
+            bytes = p_channel.read(buffer);
+            if (bytes == -1) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could not read remote NodeID from new incoming connection %s!", p_channel);
+                // #endif /* LOGGER >= ERROR */
+                p_channel.keyFor(p_nioSelector.getSelector()).cancel();
+                p_channel.close();
+                return -1;
+            }
+            counter += bytes;
+        }
+        buffer.flip();
+        ret = buffer.getShort();
+
+        return ret;
     }
 
     /**
@@ -59,9 +110,10 @@ class NIOInterface {
      */
     protected static void connect(final NIOConnection p_connection) {
         try {
-            if (p_connection.getChannel().isConnectionPending()) {
-                p_connection.getChannel().finishConnect();
-                p_connection.connected();
+            if (p_connection.getOutgoingChannel().isConnectionPending()) {
+                if (p_connection.getOutgoingChannel().finishConnect()) {
+                    p_connection.connected();
+                }
             }
         } catch (final IOException e) { /* ignore */ }
     }
@@ -80,11 +132,18 @@ class NIOInterface {
         boolean ret = true;
         long readBytes;
         ByteBuffer buffer;
+        SocketChannel channel;
 
-        m_readBuffer.clear();
+        m_lock.lock();
+        if (!m_buffers.isEmpty()) {
+            buffer = m_buffers.poll();
+        } else {
+            buffer = ByteBuffer.allocate(m_maxIncomingBufferSize);
+        }
+        m_lock.unlock();
         while (true) {
             try {
-                readBytes = p_connection.getChannel().read(m_readBuffer);
+                readBytes = p_connection.getIncomingChannel().read(buffer);
             } catch (final ClosedChannelException e) {
                 // Channel is closed -> ignore
                 break;
@@ -93,11 +152,9 @@ class NIOInterface {
                 // Connection closed
                 ret = false;
                 break;
-            } else if (readBytes == 0 && m_readBuffer.position() != 0) {
+            } else if (readBytes == 0 && buffer.position() != 0 || readBytes == m_maxIncomingBufferSize) {
                 // There is nothing more to read at the moment
-                m_readBuffer.flip();
-                buffer = ByteBuffer.allocate(m_readBuffer.limit());
-                buffer.put(m_readBuffer);
+                buffer.limit(buffer.position());
                 buffer.rewind();
 
                 p_connection.addIncoming(buffer);
@@ -127,79 +184,36 @@ class NIOInterface {
         ByteBuffer slice;
         ByteBuffer buf;
 
-        buffer = p_connection.getOutgoingBytes(m_writeBuffer, m_outgoingBufferSize);
+        buffer = p_connection.getOutgoingBytes(m_writeBuffer);
         if (buffer != null) {
-            if (buffer.remaining() > m_outgoingBufferSize) {
-                // The write-Method for NIO SocketChannels is very slow for large buffers to write regardless of
-                // the length of the actual written data -> simulate a smaller buffer by slicing it
-                outerloop:
-                while (buffer.remaining() > 0) {
-                    size = Math.min(buffer.remaining(), m_outgoingBufferSize);
-                    view = buffer.slice();
-                    view.limit(size);
+            int tries = 0;
+            while (buffer.remaining() > 0) {
+                try {
+                    bytes = p_connection.getOutgoingChannel().write(buffer);
+                    if (bytes == 0) {
+                        if (++tries == 10) {
+                            // Read-buffer on the other side is full. Abort writing and schedule buffer for next write
+                            if (buffer == m_writeBuffer) {
+                                // Copy buffer to avoid manipulation of scheduled data
+                                buf = ByteBuffer.allocateDirect(buffer.remaining() + 1);
+                                // Add one additional byte at beginning and set position to 1 to recognize it as a re-write later
+                                buf.put((byte) 0);
+                                buf.put(buffer);
+                                buf.position(1);
 
-                    int tries = 0;
-                    while (view.remaining() > 0) {
-                        try {
-                            bytes = p_connection.getChannel().write(view);
-                            if (bytes == 0) {
-                                if (++tries == 1000) {
-                                    // Read-buffer on the other side is full. Abort writing and schedule buffer for next write
-                                    buffer.position(buffer.position() + size - view.remaining());
-
-                                    if (buffer.equals(m_writeBuffer)) {
-                                        // Copy buffer to avoid manipulation of scheduled data
-                                        slice = buffer.slice();
-                                        buf = ByteBuffer.allocateDirect(slice.remaining());
-                                        buf.put(slice);
-                                        buf.rewind();
-
-                                        p_connection.addBuffer(buf);
-                                    } else {
-                                        p_connection.addBuffer(buffer);
-                                    }
-                                    ret = false;
-                                    break outerloop;
-                                }
+                                p_connection.addBuffer(buf);
                             } else {
-                                tries = 0;
+                                p_connection.addBuffer(buffer);
                             }
-                        } catch (final ClosedChannelException e) {
-                            // Channel is closed -> ignore
+                            ret = false;
                             break;
                         }
+                    } else {
+                        tries = 0;
                     }
-                    buffer.position(buffer.position() + size);
-                }
-            } else {
-                int tries = 0;
-                while (buffer.remaining() > 0) {
-                    try {
-                        bytes = p_connection.getChannel().write(buffer);
-                        if (bytes == 0) {
-                            if (++tries == 1000) {
-                                // Read-buffer on the other side is full. Abort writing and schedule buffer for next write
-                                if (buffer.equals(m_writeBuffer)) {
-                                    // Copy buffer to avoid manipulation of scheduled data
-                                    slice = buffer.slice();
-                                    buf = ByteBuffer.allocateDirect(slice.remaining());
-                                    buf.put(slice);
-                                    buf.rewind();
-
-                                    p_connection.addBuffer(buf);
-                                } else {
-                                    p_connection.addBuffer(buffer);
-                                }
-                                ret = false;
-                                break;
-                            }
-                        } else {
-                            tries = 0;
-                        }
-                    } catch (final ClosedChannelException e) {
-                        // Channel is closed -> ignore
-                        break;
-                    }
+                } catch (final ClosedChannelException e) {
+                    // Channel is closed -> ignore
+                    break;
                 }
             }
             // ThroughputStatistic.getInstance().outgoingExtern(writtenBytes - length);
@@ -212,39 +226,70 @@ class NIOInterface {
     }
 
     /**
-     * Reads the NodeID of the remote node that creates this new connection
+     * Read flow control data
      *
-     * @param p_channel
-     *     the channel of the connection
-     * @param p_nioSelector
-     *     the NIOSelector
-     * @return the NodeID
-     * @throws IOException
-     *     if the connection could not be created
+     * @param p_connection
+     *     the NIOConnection
      */
-    short readRemoteNodeID(final SocketChannel p_channel, final NIOSelector p_nioSelector) throws IOException {
-        short ret;
-        int bytes;
-        int counter = 0;
-        ByteBuffer buffer = ByteBuffer.allocate(2);
+    void readFlowControlBytes(final NIOConnection p_connection) throws IOException {
+        int readBytes;
+        int readAllBytes;
 
-        m_readBuffer.clear();
-        while (counter < buffer.capacity()) {
-            bytes = p_channel.read(buffer);
-            if (bytes == -1) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Could not read remote NodeID from new incoming connection!");
-                // #endif /* LOGGER >= ERROR */
-                p_channel.keyFor(p_nioSelector.getSelector()).cancel();
-                p_channel.close();
-                return -1;
+        // This is a flow control byte
+        m_flowControlBytes.rewind();
+        readAllBytes = 0;
+        while (readAllBytes < Integer.BYTES) {
+            readBytes = p_connection.getOutgoingChannel().read(m_flowControlBytes);
+
+            if (readBytes == -1) {
+                // Channel was closed
+                return;
             }
-            counter += bytes;
-        }
-        buffer.flip();
-        ret = buffer.getShort();
 
-        return ret;
+            readAllBytes += readBytes;
+        }
+        p_connection.handleFlowControlMessage(m_flowControlBytes.getInt(0));
+    }
+
+    /**
+     * Write flow control data
+     *
+     * @param p_connection
+     *     the NIOConnection
+     */
+    void writeFlowControlBytes(final NIOConnection p_connection) throws IOException {
+        int bytes = 0;
+        int tries = 0;
+
+        m_flowControlBytes.rewind();
+        m_flowControlBytes.putInt(p_connection.getAndResetConfirmedBytes());
+        m_flowControlBytes.rewind();
+
+        while (bytes < Integer.BYTES && ++tries < 1000) {
+            // Send flow control bytes over incoming channel as this is unused
+            bytes += p_connection.getIncomingChannel().write(m_flowControlBytes);
+        }
+
+        if (tries == 1000) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Could not send flow control data!");
+            // #endif /* LOGGER >= ERROR */
+        }
+    }
+
+    /**
+     * Returns the pooled buffer
+     *
+     * @param p_byteBuffer
+     *     the pooled buffer
+     */
+    void returnBuffer(final ByteBuffer p_byteBuffer) {
+        m_lock.lock();
+        if (m_buffers.size() < BUFFER_POOL_SIZE) {
+            p_byteBuffer.clear();
+            m_buffers.push(p_byteBuffer);
+        }
+        m_lock.unlock();
     }
 
 }

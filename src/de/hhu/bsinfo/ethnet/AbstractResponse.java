@@ -57,15 +57,6 @@ public abstract class AbstractResponse extends AbstractMessage {
     }
 
     /**
-     * Get the requestID
-     *
-     * @return the requestID
-     */
-    final int getRequestID() {
-        return getMessageID();
-    }
-
-    /**
      * Returns the corresponding request
      *
      * @return the corresponding request
@@ -82,5 +73,14 @@ public abstract class AbstractResponse extends AbstractMessage {
      */
     void setCorrespondingRequest(final AbstractRequest p_correspondingRequest) {
         m_correspondingRequest = p_correspondingRequest;
+    }
+
+    /**
+     * Get the requestID
+     *
+     * @return the requestID
+     */
+    final int getRequestID() {
+        return getMessageID();
     }
 }

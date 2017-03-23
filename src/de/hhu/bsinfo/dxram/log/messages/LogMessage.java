@@ -34,6 +34,8 @@ public class LogMessage extends AbstractMessage {
     private DataStructure[] m_dataStructures;
     private ByteBuffer m_buffer;
 
+    private int m_copiedBytes;
+
     // Constructors
 
     /**
@@ -86,7 +88,7 @@ public class LogMessage extends AbstractMessage {
 
             return ret;
         } else {
-            return 0;
+            return m_copiedBytes;
         }
     }
 
@@ -110,7 +112,21 @@ public class LogMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_buffer = p_buffer;
+    protected final void readPayload(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
+        if (p_wasCopied) {
+            System.out.println("Buffer was copied");
+            // De-serialize later
+            m_buffer = p_buffer;
+            m_copiedBytes = 0;
+        } else {
+            // Message buffer will be re-used -> copy data for later de-serialization
+            m_buffer = ByteBuffer.allocate(p_payloadSize);
+            m_buffer.put(p_buffer.array(), p_buffer.position(), p_payloadSize);
+            p_buffer.position(p_buffer.position() + p_payloadSize);
+            m_buffer.rewind();
+
+            m_copiedBytes = p_payloadSize;
+        }
     }
+
 }

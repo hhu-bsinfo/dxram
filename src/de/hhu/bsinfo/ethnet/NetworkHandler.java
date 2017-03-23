@@ -81,12 +81,6 @@ public final class NetworkHandler implements DataReceiver {
         m_exclusiveMessageHandler.start();
 
         m_messageDirectory = new MessageDirectory();
-
-        // Network Messages
-        networkType = FlowControlMessage.TYPE;
-        if (!m_messageDirectory.register(networkType, FlowControlMessage.SUBTYPE, FlowControlMessage.class)) {
-            throw new IllegalArgumentException("Type and subtype for FlowControlMessage already in use.");
-        }
     }
 
     /**
@@ -122,19 +116,6 @@ public final class NetworkHandler implements DataReceiver {
 
         return str;
     }
-
-    // class PrintThread extends Thread {
-    // public void run() {
-    // while (true) {
-    // System.out.println(getStatus());
-    // try {
-    // Thread.sleep(4000);
-    // } catch (InterruptedException e) {
-    // e.printStackTrace();
-    // }
-    // }
-    // }
-    // }
 
     /**
      * Registers a message type
@@ -172,15 +153,15 @@ public final class NetworkHandler implements DataReceiver {
      *     the size of incoming buffer
      * @param p_outgoingBufferSize
      *     the size of outgoing buffer
-     * @param p_numberOfBuffersPerConnection
-     *     the number of bytes until a flow control message must be received to continue sending
+     * @param p_maxIncomingBufferSize
+     *     the maximum number of bytes read at once from channel
      * @param p_flowControlWindowSize
      *     the maximal number of ByteBuffer to schedule for sending/receiving
      * @param p_connectionTimeout
      *     the connection timeout
      */
     public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize, final int p_outgoingBufferSize,
-        final int p_numberOfBuffersPerConnection, final int p_flowControlWindowSize, final int p_connectionTimeout) {
+        final int p_maxIncomingBufferSize, final int p_flowControlWindowSize, final int p_connectionTimeout) {
 
         // #if LOGGER == TRACE
         LOGGER.trace("Entering initialize");
@@ -188,17 +169,14 @@ public final class NetworkHandler implements DataReceiver {
 
         m_nodeMap = p_nodeMap;
 
-        m_connectionCreator =
-            new NIOConnectionCreator(m_messageDirectory, m_nodeMap, p_ownNodeID, p_incomingBufferSize, p_outgoingBufferSize, p_numberOfBuffersPerConnection,
-                p_flowControlWindowSize, p_connectionTimeout);
-        m_connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
+        m_connectionCreator = new NIOConnectionCreator(m_messageDirectory, m_nodeMap, p_incomingBufferSize, p_outgoingBufferSize, p_maxIncomingBufferSize,
+            p_flowControlWindowSize, p_connectionTimeout);
+        m_connectionCreator.initialize(p_nodeMap.getAddress(p_ownNodeID).getPort());
         m_manager = new ConnectionManager(m_connectionCreator, this);
 
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting initialize");
         // #endif /* LOGGER == TRACE */
-
-        // (new PrintThread()).start();
     }
 
     /**
@@ -397,33 +375,34 @@ public final class NetworkHandler implements DataReceiver {
         LOGGER.trace("Received new message: %s", p_message);
         // #endif /* LOGGER == TRACE */
 
-        if (p_message instanceof AbstractResponse) {
-            RequestMap.fulfill((AbstractResponse) p_message);
+        if (!p_message.isExclusive()) {
+            int maxMessages = m_numMessageHandlerThreads * 2;
+            while (!m_defaultMessageHandlerPool.newMessage(p_message, maxMessages)) {
+                Thread.yield();
+            }
         } else {
-            if (!p_message.isExclusive()) {
-                int maxMessages = m_numMessageHandlerThreads * 2;
-                while (!m_defaultMessageHandlerPool.newMessage(p_message, maxMessages)) {
-                    // Too many pending messages -> wait
-                    if (m_manager.atLeastOneConnectionIsCongested()) {
-                        // All message handler could be blocked if a connection is congested (deadlock) -> add all (more
-                        // than limit) messages to task queue until flow control message arrives
-                        maxMessages = Integer.MAX_VALUE;
-                        continue;
-                    }
-                    Thread.yield();
-                }
-            } else {
-                int maxMessages = 4;
-                while (!m_exclusiveMessageHandler.newMessage(p_message, maxMessages)) {
-                    // Too many pending messages -> wait
-                    if (m_manager.atLeastOneConnectionIsCongested()) {
-                        // All message handler could be blocked if a connection is congested (deadlock) -> add all (more
-                        // than limit) messages to task queue until flow control message arrives
-                        maxMessages = Integer.MAX_VALUE;
-                        continue;
-                    }
-                    Thread.yield();
-                }
+            int maxMessages = 4;
+            while (!m_exclusiveMessageHandler.newMessage(p_message, maxMessages)) {
+                Thread.yield();
+            }
+        }
+    }
+
+    @Override
+    public void newMessages(final AbstractMessage[] p_messages) {
+        // #if LOGGER == TRACE
+        LOGGER.trace("Received new messages");
+        // #endif /* LOGGER == TRACE */
+
+        if (!p_messages[0].isExclusive()) {
+            int maxMessages = m_numMessageHandlerThreads * 2;
+            while (!m_defaultMessageHandlerPool.newMessages(p_messages, maxMessages)) {
+                Thread.yield();
+            }
+        } else {
+            int maxMessages = 4;
+            while (!m_exclusiveMessageHandler.newMessages(p_messages, maxMessages)) {
+                Thread.yield();
             }
         }
     }
@@ -568,6 +547,29 @@ public final class NetworkHandler implements DataReceiver {
                 m_defaultMessagesLock.unlock();
             } else {
                 m_defaultMessages.offer(p_message);
+
+                m_messageAvailable.signalAll();
+                m_defaultMessagesLock.unlock();
+            }
+
+            return ret;
+        }
+
+        private boolean newMessages(final AbstractMessage[] p_messages, final int p_maxMessages) {
+            boolean ret = true;
+
+            m_defaultMessagesLock.lock();
+            if (m_defaultMessages.size() > p_maxMessages) {
+                ret = false;
+                m_defaultMessagesLock.unlock();
+            } else {
+                for (AbstractMessage message : p_messages) {
+                    if (message != null) {
+                        m_defaultMessages.offer(message);
+                    } else {
+                        break;
+                    }
+                }
 
                 m_messageAvailable.signalAll();
                 m_defaultMessagesLock.unlock();
@@ -743,6 +745,34 @@ public final class NetworkHandler implements DataReceiver {
             } else {
                 m_exclusiveMessages.offer(p_message);
                 if (m_exclusiveMessages.size() == 1) {
+                    m_messageAvailable.signalAll();
+                }
+                m_exclusiveMessagesLock.unlock();
+            }
+
+            return ret;
+        }
+
+        boolean newMessages(final AbstractMessage[] p_messages, final int p_maxMessages) {
+            boolean ret = true;
+            boolean signal = false;
+
+            m_exclusiveMessagesLock.lock();
+            if (m_exclusiveMessages.size() > p_maxMessages) {
+                ret = false;
+                m_exclusiveMessagesLock.unlock();
+            } else {
+                if (m_exclusiveMessages.isEmpty()) {
+                    signal = true;
+                }
+                for (AbstractMessage message : p_messages) {
+                    if (message != null) {
+                        m_exclusiveMessages.offer(message);
+                    } else {
+                        break;
+                    }
+                }
+                if (signal) {
                     m_messageAvailable.signalAll();
                 }
                 m_exclusiveMessagesLock.unlock();

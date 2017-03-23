@@ -25,14 +25,12 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 class MessageCreator extends Thread {
 
-    // Constants
-    private static final long MAX_PENDING_BYTES = Integer.MAX_VALUE;
-
     // Attributes
     private volatile boolean m_shutdown;
 
     private Object[] m_buffer;
     private int m_size;
+    private int m_maxBytes;
     private long m_currentBytes;
 
     private int m_posFront;
@@ -41,14 +39,15 @@ class MessageCreator extends Thread {
     private Condition m_cond;
 
     /**
-     * Creates an instance of IncomingBufferStorageAndMessageCreator
+     * Creates an instance of MessageCreator
      *
-     * @param p_incomingBufferLimitPerConnection
-     *     the maximal number of pending incoming buffers
+     * @param p_incomingBufferSize
+     *     the incoming buffer size
      */
-    MessageCreator(final int p_incomingBufferLimitPerConnection) {
-        m_size = p_incomingBufferLimitPerConnection * ConnectionManager.MAX_CONNECTIONS;
+    MessageCreator(final int p_incomingBufferSize, final int p_maxIncomingBufferSize) {
+        m_size = Math.min(p_incomingBufferSize / p_maxIncomingBufferSize * ConnectionManager.MAX_CONNECTIONS, 4 * 1024 * 1024);
         m_buffer = new Object[m_size * 2];
+        m_maxBytes = p_incomingBufferSize;
         m_currentBytes = 0;
 
         m_posFront = 0;
@@ -88,16 +87,6 @@ class MessageCreator extends Thread {
     }
 
     /**
-     * Returns whether the ring-buffer is full or not.
-     * Result might be out-dated as there is no lock acquired.
-     *
-     * @return whether the ring-buffer is full or not
-     */
-    boolean isFullLazy() {
-        return (m_posBack + 1) % m_size == m_posFront % m_size;
-    }
-
-    /**
      * When an object implementing interface {@code Runnable} is used
      * to create a thread, starting the thread causes the object's {@code run} method to be called in that
      * separately executing
@@ -120,6 +109,7 @@ class MessageCreator extends Thread {
                 connection = (NIOConnection) job[0];
                 buffer = (ByteBuffer) job[1];
                 connection.processBuffer(buffer);
+                connection.returnBuffer(buffer);
             } else {
                 try {
                     m_cond.await();
@@ -172,6 +162,16 @@ class MessageCreator extends Thread {
     }
 
     /**
+     * Returns whether the ring-buffer is full or not.
+     * Result might be out-dated as there is no lock acquired.
+     *
+     * @return whether the ring-buffer is full or not
+     */
+    boolean isFullLazy() {
+        return (m_posBack + 1) % m_size == m_posFront % m_size;
+    }
+
+    /**
      * Adds a job (connection and incoming buffer) at the end of the buffer.
      *
      * @param p_connection
@@ -184,7 +184,7 @@ class MessageCreator extends Thread {
         m_lock.lock();
         int posBack = m_posBack;
 
-        if ((posBack + 1) % m_size == m_posFront % m_size || m_currentBytes >= MAX_PENDING_BYTES) {
+        if ((posBack + 1) % m_size == m_posFront % m_size || m_currentBytes >= m_maxBytes) {
             // Return without adding the job if queue is full or too many bytes are pending
             m_lock.unlock();
             return false;

@@ -14,11 +14,9 @@
 package de.hhu.bsinfo.ethnet;
 
 import java.io.IOException;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -38,7 +36,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
     // Attributes
     private AbstractConnection[] m_connections;
-    private ArrayList<AbstractConnection> m_connectionList;
+    private int m_openConnections;
 
     private AbstractConnectionCreator m_creator;
     private ConnectionCreatorHelperThread m_connectionCreatorHelperThread;
@@ -50,9 +48,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
     private boolean m_waiting;
     private short m_waitingFor;
 
-    private Condition m_connectionCreatedCondition;
     private ReentrantLock m_connectionCreationLock;
-    private ReentrantLock m_getConnectionLock;
 
     // Constructors
 
@@ -66,7 +62,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
      */
     ConnectionManager(final AbstractConnectionCreator p_creator, final DataReceiver p_listener) {
         m_connections = new AbstractConnection[65536];
-        m_connectionList = new ArrayList<AbstractConnection>(MAX_CONNECTIONS);
+        m_openConnections = 0;
 
         m_creator = p_creator;
         m_creator.setListener(this);
@@ -78,8 +74,6 @@ final class ConnectionManager implements ConnectionCreatorListener {
         m_waitingFor = -1;
 
         m_connectionCreationLock = new ReentrantLock(false);
-        m_connectionCreatedCondition = m_connectionCreationLock.newCondition();
-        m_getConnectionLock = new ReentrantLock(false);
 
         // Start connection creator helper thread
         m_connectionCreatorHelperThread = new ConnectionCreatorHelperThread();
@@ -91,6 +85,8 @@ final class ConnectionManager implements ConnectionCreatorListener {
      * Closes the ConnectionManager
      */
     public void close() {
+        m_creator.prepareClosure();
+
         // cleanup all opened connections
         closeAllConnections();
 
@@ -117,21 +113,8 @@ final class ConnectionManager implements ConnectionCreatorListener {
      * @note is called by selector thread only
      */
     @Override
-    public void createConnection(final short p_destination) {
-        m_connectionCreatorHelperThread.pushJob(new Job((byte) 0, p_destination));
-    }
-
-    /**
-     * A new connection was created
-     *
-     * @param p_connection
-     *     the new connection
-     * @note is called by selector thread only
-     */
-    @Override
-    public void connectionCreated(final AbstractConnection p_connection) {
-        p_connection.setListener(m_connectionListener);
-        m_connectionCreatorHelperThread.pushJob(new Job((byte) 1, p_connection));
+    public void createConnection(final short p_destination, final SocketChannel p_channel) {
+        m_connectionCreatorHelperThread.pushJob(new CreationJob(p_destination, p_channel));
     }
 
     /**
@@ -143,7 +126,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
      */
     @Override
     public void connectionClosed(final AbstractConnection p_connection) {
-        m_connectionCreatorHelperThread.pushJob(new Job((byte) 2, p_connection));
+        m_connectionCreatorHelperThread.pushJob(new ClosureJob(p_connection));
     }
 
     /**
@@ -155,9 +138,10 @@ final class ConnectionManager implements ConnectionCreatorListener {
         String ret = "";
 
         m_connectionCreationLock.lock();
-        Iterator<AbstractConnection> iter = m_connectionList.iterator();
-        while (iter.hasNext()) {
-            ret += iter.next().toString();
+        for (int i = 0; i < 65536; i++) {
+            if (m_connections[i] != null) {
+                ret += m_connections[i].toString();
+            }
         }
         m_connectionCreationLock.unlock();
 
@@ -165,27 +149,6 @@ final class ConnectionManager implements ConnectionCreatorListener {
     }
 
     // Methods
-
-    /**
-     * Checks if there is a congested connection
-     *
-     * @return whether there is congested connection or not
-     */
-    boolean atLeastOneConnectionIsCongested() {
-        boolean ret = false;
-
-        m_connectionCreationLock.lock();
-        Iterator<AbstractConnection> iter = m_connectionList.iterator();
-        while (iter.hasNext()) {
-            if (iter.next().isCongested()) {
-                ret = true;
-                break;
-            }
-        }
-        m_connectionCreationLock.unlock();
-
-        return ret;
-    }
 
     /**
      * Activates the connection manager
@@ -218,62 +181,31 @@ final class ConnectionManager implements ConnectionCreatorListener {
         assert p_destination != NodeID.INVALID_ID;
 
         ret = m_connections[p_destination & 0xFFFF];
-        if (ret == null && !m_deactivated) {
-            m_getConnectionLock.lock();
+        if ((ret == null || !ret.isOutgoingOpen()) && !m_deactivated) {
             m_connectionCreationLock.lock();
 
             ret = m_connections[p_destination & 0xFFFF];
-            if (ret == null && !m_deactivated) {
-
-                while (m_creator.keyIsPending() || m_waiting) {
-                    m_waiting = true;
-                    m_waitingFor = -1;
-                    try {
-                        // Wait for a connection to be finished or one ms if the pending key was closed
-                        m_connectionCreatedCondition.await(1, TimeUnit.MILLISECONDS);
-                    } catch (final InterruptedException ignored) {
-                    }
+            if ((ret == null || !ret.isOutgoingOpen()) && !m_deactivated) {
+                if (m_openConnections == MAX_CONNECTIONS) {
+                    dismissRandomConnection();
                 }
 
-                ret = m_connections[p_destination & 0xFFFF];
-                if (ret == null && !m_deactivated) {
-                    /*-if (m_connectionList.size() == MAX_CONNECTIONS) {
-                        dismissRandomConnection();
-                    }*/
-
-                    try {
-                        ret = m_creator.createConnection(p_destination);
-                    } catch (final IOException e) {
-                        m_connectionCreationLock.unlock();
-                        m_getConnectionLock.unlock();
-
-                        throw e;
-                    }
-
+                try {
                     if (ret == null) {
-                        // This node's NodeID is smaller -> Remote node was triggered to create connection
-                        // Only one application thread can be in this section!
-                        m_waiting = true;
-                        m_waitingFor = p_destination;
-                        while (m_waiting) {
-                            try {
-                                m_connectionCreatedCondition.await();
-                            } catch (final InterruptedException ignored) {
-                            }
-                        }
-                        m_connectionCreationLock.unlock();
-                        m_getConnectionLock.unlock();
-
-                        return getConnection(p_destination);
+                        ret = m_creator.createConnection(p_destination);
                     } else {
-                        // This node's NodeID is greater -> Keep established connection
-                        ret.setListener(m_connectionListener);
-                        addConnection(ret);
+                        m_creator.createOutgoingChannel(p_destination, ret);
                     }
+                } catch (final IOException e) {
+                    m_connectionCreationLock.unlock();
+
+                    throw e;
                 }
+                ret.setListener(m_connectionListener);
+                m_connections[p_destination & 0xFFFF] = ret;
+                m_openConnections++;
             }
             m_connectionCreationLock.unlock();
-            m_getConnectionLock.unlock();
         }
 
         return ret;
@@ -286,19 +218,18 @@ final class ConnectionManager implements ConnectionCreatorListener {
         AbstractConnection connection = null;
 
         m_connectionCreationLock.lock();
-        Iterator<AbstractConnection> iter = m_connectionList.iterator();
-        while (iter.hasNext()) {
-            connection = iter.next();
-            if (connection != null && connection.isConnected()) {
-                connection = m_connections[connection.getDestination() & 0xFFFF];
+        for (int i = 0; i < 65536; i++) {
+            if (m_connections[i] != null) {
+                connection = m_connections[i & 0xFFFF];
                 m_connections[connection.getDestination() & 0xFFFF] = null;
 
                 connection.close();
                 connection.cleanup();
             }
         }
+
         // Wait for last connection being closed by selector (for NIO)
-        while (connection != null && connection.isConnected()) {
+        while (connection != null && (connection.isOutgoingConnected() || connection.isIncomingConnected())) {
             connection.wakeup();
             try {
                 Thread.sleep(100);
@@ -306,30 +237,8 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
             }
         }
+        m_openConnections = 0;
         m_connectionCreationLock.unlock();
-    }
-
-    /**
-     * Add a new connection. Use duplicate consensus if there is already a connection for the specific NodeID.
-     *
-     * @param p_connection
-     *     the new connection
-     */
-    private void addConnection(final AbstractConnection p_connection) {
-        short remoteNodeID;
-
-        // TODO: If maximum number of connections is reached, locally deleting connection does not impact remote node
-        // TODO: Double connections problems
-
-        remoteNodeID = p_connection.getDestination();
-
-        if (m_connectionList.size() == MAX_CONNECTIONS) {
-            dismissRandomConnection();
-        }
-
-        // No entry for this NodeID -> insert connection
-        m_connections[remoteNodeID & 0xFFFF] = p_connection;
-        m_connectionList.add(p_connection);
     }
 
     /**
@@ -347,7 +256,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
         }
         System.out.println("Removing " + NodeID.toHexString((short) random));
         m_connections[random & 0xFFFF] = null;
-        m_connectionList.remove(dismiss);
+        m_openConnections--;
 
         dismiss.close();
     }
@@ -357,21 +266,17 @@ final class ConnectionManager implements ConnectionCreatorListener {
      *
      * @author Kevin Beineke 22.06.2016
      */
-    private static final class Job {
+    private static class Job {
         private byte m_id;
-        private Object m_data;
 
         /**
          * Creates an instance of Job
          *
          * @param p_id
          *     the static job identification
-         * @param p_data
-         *     the data (NodeID of destination or AbstractConnection depending on job)
          */
-        private Job(final byte p_id, final Object p_data) {
+        private Job(final byte p_id) {
             m_id = p_id;
-            m_data = p_data;
         }
 
         /**
@@ -382,14 +287,76 @@ final class ConnectionManager implements ConnectionCreatorListener {
         public byte getID() {
             return m_id;
         }
+    }
+
+    /**
+     * Helper class to encapsulate a job
+     *
+     * @author Kevin Beineke 22.06.2016
+     */
+    private static final class CreationJob extends Job {
+        private short m_destination;
+        private SocketChannel m_channel;
 
         /**
-         * Returns the data
+         * Creates an instance of Job
          *
-         * @return the NodeID or AbstractConnection
+         * @param p_destination
+         *     the NodeID of destination
+         * @param p_channel
+         *     the already established SocketChannel
          */
-        public Object getData() {
-            return m_data;
+        private CreationJob(final short p_destination, final SocketChannel p_channel) {
+            super((byte) 0);
+            m_destination = p_destination;
+            m_channel = p_channel;
+        }
+
+        /**
+         * Returns the destination
+         *
+         * @return the NodeID
+         */
+        public short getDestination() {
+            return m_destination;
+        }
+
+        /**
+         * Returns the SocketChannel
+         *
+         * @return the SocketChannel
+         */
+        SocketChannel getSocketChannel() {
+            return m_channel;
+        }
+    }
+
+    /**
+     * Helper class to encapsulate a job
+     *
+     * @author Kevin Beineke 22.06.2016
+     */
+    private static final class ClosureJob extends Job {
+        private AbstractConnection m_connection;
+
+        /**
+         * Creates an instance of Job
+         *
+         * @param p_connection
+         *     the AbstractConnection
+         */
+        private ClosureJob(final AbstractConnection p_connection) {
+            super((byte) 1);
+            m_connection = p_connection;
+        }
+
+        /**
+         * Returns the connection
+         *
+         * @return the AbstractConnection
+         */
+        public AbstractConnection getConnection() {
+            return m_connection;
         }
     }
 
@@ -430,42 +397,39 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
                 if (job.getID() == 0) {
                     // 0: Create and add connection
-                    destination = (short) job.getData();
+                    CreationJob creationJob = (CreationJob) job;
+                    destination = creationJob.getDestination();
+                    SocketChannel channel = creationJob.getSocketChannel();
 
                     m_connectionCreationLock.lock();
-                    if (m_connections[destination & 0xFFFF] == null) {
-                        try {
-                            connection = m_creator.createConnection(destination);
-                            connection.setListener(m_connectionListener);
-
-                            addConnection(connection);
-                            if (m_waiting && (m_waitingFor == connection.getDestination() || m_waitingFor == -1)) {
-                                m_waiting = false;
-                                m_connectionCreatedCondition.signalAll();
-                            }
-                        } catch (final IOException e) { /* Ignore as this node does not know the failed node */ }
+                    if (m_openConnections == MAX_CONNECTIONS) {
+                        dismissRandomConnection();
                     }
-                    m_connectionCreationLock.unlock();
-                } else if (job.getID() == 1) {
-                    // 1: Connection was created -> Add it
-                    connection = (AbstractConnection) job.getData();
 
-                    m_connectionCreationLock.lock();
-                    addConnection(connection);
-                    if (m_waiting && (m_waitingFor == connection.getDestination() || m_waitingFor == -1)) {
-                        m_waiting = false;
-                        m_connectionCreatedCondition.signalAll();
+                    connection = m_connections[destination & 0xFFFF];
+                    try {
+                        if (connection == null) {
+                            connection = m_creator.createConnection(destination, channel);
+                            m_connections[destination & 0xFFFF] = connection;
+                            m_openConnections++;
+                        } else {
+                            m_creator.bindIncomingChannel(channel, connection);
+                        }
+                        connection.setListener(m_connectionListener);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                     m_connectionCreationLock.unlock();
                 } else {
-                    // 2: Connection was closed by NIOSelectorThread (connection was faulty) -> Remove it
-                    connection = (AbstractConnection) job.getData();
+                    // 1: Connection was closed by NIOSelectorThread (connection was faulty) -> Remove it
+                    ClosureJob closeJob = (ClosureJob) job;
+                    connection = closeJob.getConnection();
 
                     m_connectionCreationLock.lock();
                     AbstractConnection tmp = m_connections[connection.getDestination() & 0xFFFF];
                     if (connection.equals(tmp)) {
                         m_connections[connection.getDestination() & 0xFFFF] = null;
-                        m_connectionList.remove(tmp);
+                        m_openConnections--;
 
                         connection.cleanup();
                     }

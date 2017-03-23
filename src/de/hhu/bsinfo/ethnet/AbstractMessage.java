@@ -27,13 +27,14 @@ public abstract class AbstractMessage {
 
     static final boolean DEFAULT_EXCLUSIVITY_VALUE = false;
     /*- Header size:
-     *  messageID + type + subtype + exclusivity + statusCode + payloadSize
-     *  3b        + 1b   + 1b      + 1b          + 1b         + 4b           = 11 bytes
+     *  messageID + type + subtype + messageType and exclusivity + statusCode + payloadSize
+     *  3b        + 1b   + 1b      + 1b                          + 1b         + 4b           = 11 bytes
      */
     static final byte HEADER_SIZE = 11;
     static final byte PAYLOAD_SIZE_LENGTH = 4;
     // Constants
     private static final int INVALID_MESSAGE_ID = -1;
+    private static final byte DEFAULT_MESSAGE_TYPE = 0;
     private static final byte DEFAULT_TYPE = 0;
     private static final byte DEFAULT_SUBTYPE = 0;
     private static final byte DEFAULT_STATUS_CODE = 0;
@@ -44,6 +45,8 @@ public abstract class AbstractMessage {
     private int m_messageID;
     private short m_source;
     private short m_destination;
+    // Message type: message and requests -> 0, responses -> 1; used to avoid instanceof in message processing
+    private byte m_messageType;
     private byte m_type;
     private byte m_subtype;
     // (!) Exclusivity is written as a byte (0 -> false, 1 -> true)
@@ -90,6 +93,7 @@ public abstract class AbstractMessage {
         m_messageID = INVALID_MESSAGE_ID;
         m_source = NodeID.INVALID_ID;
         m_destination = NodeID.INVALID_ID;
+        m_messageType = 0;
         m_type = DEFAULT_TYPE;
         m_subtype = DEFAULT_SUBTYPE;
 
@@ -112,6 +116,9 @@ public abstract class AbstractMessage {
      */
     protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype) {
         this(p_messageID, p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE, DEFAULT_STATUS_CODE);
+
+        // Set message type to 1 for responses only
+        m_messageType = (byte) 1;
     }
 
     /**
@@ -137,6 +144,7 @@ public abstract class AbstractMessage {
         m_messageID = p_messageID;
         m_source = -1;
         m_destination = p_destination;
+        m_messageType = 0;
         m_type = p_type;
         m_subtype = p_subtype;
 
@@ -147,12 +155,70 @@ public abstract class AbstractMessage {
     // Getters
 
     /**
-     * Get the messageID
+     * Creates a Message from the given incoming byte buffer
      *
-     * @return the messageID
+     * @param p_buffer
+     *     the byte buffer
+     * @param p_messageDirectory
+     *     the message directory
+     * @return the created Message
+     * @throws NetworkException
+     *     if the message header could not be created
      */
-    final int getMessageID() {
-        return m_messageID;
+    static AbstractMessage createMessageHeader(final ByteBuffer p_buffer, final MessageDirectory p_messageDirectory) throws NetworkException {
+        AbstractMessage ret;
+        int messageID;
+        byte tmp;
+        byte messageType;
+        byte type;
+        byte subtype;
+        boolean exclusivity;
+        byte statusCode;
+
+        assert p_buffer != null;
+
+        // The message header does not contain the payload size
+        if (p_buffer.remaining() < HEADER_SIZE - PAYLOAD_SIZE_LENGTH) {
+            throw new NetworkException("Incomplete header");
+        }
+
+        messageID = ((p_buffer.get() & 0xFF) << 16) + ((p_buffer.get() & 0xFF) << 8) + (p_buffer.get() & 0xFF);
+        type = p_buffer.get();
+        subtype = p_buffer.get();
+        tmp = p_buffer.get();
+        messageType = (byte) (tmp >> 4);
+        exclusivity = (tmp & 0xFF) == 1;
+        statusCode = p_buffer.get();
+
+        try {
+            ret = p_messageDirectory.getInstance(type, subtype);
+        } catch (final Exception e) {
+            throw new NetworkException("Unable to create message of type " + type + ", subtype " + subtype + ". Type is missing in message directory", e);
+        }
+
+        ret.m_messageID = messageID;
+        ret.m_messageType = messageType;
+        ret.m_type = type;
+        ret.m_subtype = subtype;
+        ret.m_exclusivity = exclusivity;
+        ret.m_statusCode = statusCode;
+
+        return ret;
+    }
+
+    /**
+     * Get next free messageID
+     *
+     * @return next free messageID
+     */
+    private static int getNextMessageID() {
+        int ret;
+
+        ms_lock.lock();
+        ret = ms_nextMessageID++;
+        ms_lock.unlock();
+
+        return ret;
     }
 
     /**
@@ -194,6 +260,15 @@ public abstract class AbstractMessage {
     }
 
     /**
+     * Return if this message is a response
+     *
+     * @return true if message is a response, false otherwise (message or request)
+     */
+    public final boolean isResponse() {
+        return m_messageType == 1;
+    }
+
+    /**
      * Get the message type
      *
      * @return the message type
@@ -232,13 +307,13 @@ public abstract class AbstractMessage {
         m_statusCode = p_statusCode;
     }
 
-    /**
-     * Returns whether this message type allows parallel execution
-     *
-     * @return the exclusivity
-     */
-    final boolean isExclusive() {
-        return m_exclusivity;
+    @Override
+    public final String toString() {
+        if (m_source != -1) {
+            return getClass().getSimpleName() + '[' + m_messageID + ", " + NodeID.toHexString(m_source) + ", " + NodeID.toHexString(m_destination) + ']';
+        } else {
+            return getClass().getSimpleName() + '[' + m_messageID + ", " + NodeID.toHexString(m_destination) + ']';
+        }
     }
 
     // Methods
@@ -272,83 +347,26 @@ public abstract class AbstractMessage {
     }
 
     /**
-     * Get next free messageID
-     *
-     * @return next free messageID
-     */
-    private static int getNextMessageID() {
-        int ret;
-
-        ms_lock.lock();
-        ret = ms_nextMessageID++;
-        ms_lock.unlock();
-
-        return ret;
-    }
-
-    /**
-     * Creates a Message from the given incoming byte buffer
-     *
-     * @param p_buffer
-     *     the byte buffer
-     * @param p_messageDirectory
-     *     the message directory
-     * @return the created Message
-     * @throws NetworkException
-     *     if the message header could not be created
-     */
-    static AbstractMessage createMessageHeader(final ByteBuffer p_buffer, final MessageDirectory p_messageDirectory) throws NetworkException {
-        AbstractMessage ret;
-        int messageID;
-        byte type;
-        byte subtype;
-        boolean exclusivity;
-        byte statusCode;
-
-        assert p_buffer != null;
-
-        // The message header does not contain the payload size
-        if (p_buffer.remaining() < HEADER_SIZE - PAYLOAD_SIZE_LENGTH) {
-            throw new NetworkException("Incomplete header");
-        }
-
-        messageID = ((p_buffer.get() & 0xFF) << 16) + ((p_buffer.get() & 0xFF) << 8) + (p_buffer.get() & 0xFF);
-        type = p_buffer.get();
-        subtype = p_buffer.get();
-        exclusivity = p_buffer.get() == 1;
-        statusCode = p_buffer.get();
-
-        try {
-            ret = p_messageDirectory.getInstance(type, subtype);
-        } catch (final Exception e) {
-            throw new NetworkException("Unable to create message of type " + type + ", subtype " + subtype + ". Type is missing in message directory", e);
-        }
-
-        ret.m_messageID = messageID;
-        ret.m_type = type;
-        ret.m_subtype = subtype;
-        ret.m_exclusivity = exclusivity;
-        ret.m_statusCode = statusCode;
-
-        return ret;
-    }
-
-    @Override
-    public final String toString() {
-        if (m_source != -1) {
-            return getClass().getSimpleName() + '[' + m_messageID + ", " + NodeID.toHexString(m_source) + ", " + NodeID.toHexString(m_destination) + ']';
-        } else {
-            return getClass().getSimpleName() + '[' + m_messageID + ", " + NodeID.toHexString(m_destination) + ']';
-        }
-    }
-
-    /**
      * Reads the message payload from the byte buffer
      *
      * @param p_buffer
      *     the byte buffer
      */
     protected void readPayload(final ByteBuffer p_buffer) {
+    }
+
+    /**
+     * Reads the message payload from the byte buffer; used for logging to copy directly into primary write buffer if possible
+     *
+     * @param p_buffer
+     *     the byte buffer
+     * @param p_payloadSize
+     *     the payload size
+     * @param p_wasCopied
+     *     true, if message was copied in a new byte buffer
+     */
+    protected void readPayload(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
+        readPayload(p_buffer);
     }
 
     /**
@@ -373,6 +391,24 @@ public abstract class AbstractMessage {
     }
 
     /**
+     * Get the messageID
+     *
+     * @return the messageID
+     */
+    final int getMessageID() {
+        return m_messageID;
+    }
+
+    /**
+     * Returns whether this message type allows parallel execution
+     *
+     * @return the exclusivity
+     */
+    final boolean isExclusive() {
+        return m_exclusivity;
+    }
+
+    /**
      * Fills a given ByteBuffer with the message
      *
      * @param p_buffer
@@ -392,11 +428,7 @@ public abstract class AbstractMessage {
 
             p_buffer.put(m_type);
             p_buffer.put(m_subtype);
-            if (m_exclusivity) {
-                p_buffer.put((byte) 1);
-            } else {
-                p_buffer.put((byte) 0);
-            }
+            p_buffer.put((byte) ((m_messageType << 4) + (m_exclusivity ? 1 : 0)));
             p_buffer.put(m_statusCode);
             p_buffer.putInt(p_payloadSize);
 
