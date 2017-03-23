@@ -60,6 +60,8 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
     private byte[] m_nodeStatus;
     private ReentrantLock m_failureLock;
 
+    private volatile boolean m_isActive;
+
     /**
      * Creates the failure component
      */
@@ -68,20 +70,23 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
         m_nodeStatus = new byte[Short.MAX_VALUE * 2];
         m_failureLock = new ReentrantLock(false);
+
+        m_isActive = true;
     }
 
     @Override
     public void eventTriggered(final AbstractEvent p_event) {
 
-        if (p_event instanceof ConnectionLostEvent) {
-            ConnectionLostEvent event = (ConnectionLostEvent) p_event;
-            short nodeID = event.getNodeID();
+        if (m_isActive) {
+            if (p_event instanceof ConnectionLostEvent) {
+                ConnectionLostEvent event = (ConnectionLostEvent) p_event;
+                short nodeID = event.getNodeID();
 
-            if (nodeID != NodeID.INVALID_ID) {
-                m_failureLock.lock();
-                if (m_nodeStatus[nodeID & 0xFFFF] < 5) {
-                    m_nodeStatus[nodeID & 0xFFFF] = 5;
-                    m_failureLock.unlock();
+                if (nodeID != NodeID.INVALID_ID) {
+                    m_failureLock.lock();
+                    if (m_nodeStatus[nodeID & 0xFFFF] < 5) {
+                        m_nodeStatus[nodeID & 0xFFFF] = 5;
+                        m_failureLock.unlock();
 
                     /*
                      * Section A - High priority
@@ -94,40 +99,40 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
                      * reachable.
                      */
 
-                    // #if LOGGER == DEBUG
-                    LOGGER.debug("ConnectionLostEvent triggered: 0x%X", nodeID);
-                    // #endif /* LOGGER == DEBUG */
-
-                    try {
-                        m_network.connectNode(nodeID);
-
                         // #if LOGGER == DEBUG
-                        LOGGER.debug("Re-connect successful, continuing");
-                        // #endif /* LOGGER == DEBUG */
-                    } catch (final NetworkException e) {
-                        // #if LOGGER == DEBUG
-                        LOGGER.debug("Node is unreachable. Initiating failure handling");
+                        LOGGER.debug("ConnectionLostEvent triggered: 0x%X", nodeID);
                         // #endif /* LOGGER == DEBUG */
 
-                        failureHandling(nodeID);
+                        try {
+                            m_network.connectNode(nodeID);
+
+                            // #if LOGGER == DEBUG
+                            LOGGER.debug("Re-connect successful, continuing");
+                            // #endif /* LOGGER == DEBUG */
+                        } catch (final NetworkException e) {
+                            // #if LOGGER == DEBUG
+                            LOGGER.debug("Node is unreachable. Initiating failure handling");
+                            // #endif /* LOGGER == DEBUG */
+
+                            failureHandling(nodeID);
+                        }
+
+                        m_failureLock.lock();
+                        m_nodeStatus[nodeID & 0xFFFF] = 0;
+                        m_failureLock.unlock();
+                    } else {
+                        m_failureLock.unlock();
                     }
-
-                    m_failureLock.lock();
-                    m_nodeStatus[nodeID & 0xFFFF] = 0;
-                    m_failureLock.unlock();
-                } else {
-                    m_failureLock.unlock();
                 }
-            }
-        } else {
-            ResponseDelayedEvent event = (ResponseDelayedEvent) p_event;
-            short nodeID = event.getNodeID();
+            } else {
+                ResponseDelayedEvent event = (ResponseDelayedEvent) p_event;
+                short nodeID = event.getNodeID();
 
-            if (nodeID != NodeID.INVALID_ID) {
-                m_failureLock.lock();
-                if (m_nodeStatus[nodeID & 0xFFFF] == 0) {
-                    m_nodeStatus[nodeID & 0xFFFF]++;
-                    m_failureLock.unlock();
+                if (nodeID != NodeID.INVALID_ID) {
+                    m_failureLock.lock();
+                    if (m_nodeStatus[nodeID & 0xFFFF] == 0) {
+                        m_nodeStatus[nodeID & 0xFFFF]++;
+                        m_failureLock.unlock();
 
                     /*
                      * Section B - Low priority
@@ -138,22 +143,23 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
                      * a thread in section A for given NodeID, this section is unreachable.
                      */
 
-                    // #if LOGGER == DEBUG
-                    LOGGER.debug("ResponseDelayedEvent triggered: 0x%X. Sending default message and return.", nodeID);
-                    // #endif /* LOGGER == DEBUG */
+                        // #if LOGGER == DEBUG
+                        LOGGER.debug("ResponseDelayedEvent triggered: 0x%X. Sending default message and return.", nodeID);
+                        // #endif /* LOGGER == DEBUG */
 
-                    try {
-                        // Sending default message to detect connection failure. If the connection is broken,
-                        // a ConnectionLostEvent will be triggered
-                        m_network.sendMessage(new DefaultMessage(nodeID));
-                    } catch (final NetworkException ignored) {
+                        try {
+                            // Sending default message to detect connection failure. If the connection is broken,
+                            // a ConnectionLostEvent will be triggered
+                            m_network.sendMessage(new DefaultMessage(nodeID));
+                        } catch (final NetworkException ignored) {
+                        }
+
+                        m_failureLock.lock();
+                        m_nodeStatus[nodeID & 0xFFFF]--;
+                        m_failureLock.unlock();
+                    } else {
+                        m_failureLock.unlock();
                     }
-
-                    m_failureLock.lock();
-                    m_nodeStatus[nodeID & 0xFFFF]--;
-                    m_failureLock.unlock();
-                } else {
-                    m_failureLock.unlock();
                 }
             }
         }
@@ -200,6 +206,8 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
     @Override
     protected boolean shutdownComponent() {
+        m_isActive = false;
+
         return true;
     }
 
