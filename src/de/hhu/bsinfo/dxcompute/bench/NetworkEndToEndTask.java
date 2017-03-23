@@ -63,6 +63,12 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
         networkService.registerReceiver(NetworkTestMessage.class, this);
         networkService.registerMessageType(DXComputeMessageTypes.BENCH_MESSAGE_TYPE, BenchMessages.NETWORK_TEST_MESSAGE, NetworkTestMessage.class);
 
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         // get Messages per Thread and destination node id
         long[] messagesPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_messageCnt, m_threadCnt);
         short sendNodeId;
@@ -132,7 +138,7 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
         }
 
         System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
-        double throughput = m_messageCnt * m_messageSize / (totalTime / 1000.0 / 1000.0 / 1000.0);
+        double throughput = (double) m_messageCnt * m_messageSize / (totalTime / 1000.0 / 1000.0 / 1000.0);
         if (throughput > 1000000) {
             System.out.printf("Throughput Tx: %f MB/s", throughput / 1000.0 / 1000.0);
         } else if (throughput > 1000) {
@@ -148,8 +154,8 @@ public class NetworkEndToEndTask implements Task, MessageReceiver {
             Thread.yield();
         }
 
-        double sizeInMB = (m_messageCnt * m_messageSize) / 1000.0 / 1000.0;
-        double timeInS = (m_receiveTimeEnd.get() - m_receiveTimeStart.get()) / 1000.0 / 1000.0 / 1000.0;
+        double sizeInMB = (double) m_messageCnt * m_messageSize / 1000.0 / 1000.0;
+        double timeInS = ((double) m_receiveTimeEnd.get() - m_receiveTimeStart.get()) / 1000.0 / 1000.0 / 1000.0;
         System.out.printf("Throughput Rx: %f MB/s\n", sizeInMB / timeInS);
 
         return 0;
