@@ -141,23 +141,6 @@ determine_configurable_paths()
 }
 
 ######################################################
-# Create new directories for configuration and logs
-# Globals:
-#   DEPLOY_TMP_DIR
-#   LOG_DIR
-# Arguments:
-#   None
-######################################################
-clean_up()
-{
-	mkdir $DEPLOY_TMP_DIR
-	mkdir $LOG_DIR
-
-	# Set a symlink to the current tmp folder
-	ln -sfn $DEPLOY_TMP_DIR ${EXECUTION_DIR}/deploy_tmp
-}
-
-######################################################
 # Check DXRAM configuration file, generate it if it is missing or obviously corrupted
 # Globals:
 #   CONFIG_FILE
