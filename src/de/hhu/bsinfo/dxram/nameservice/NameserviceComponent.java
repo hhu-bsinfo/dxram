@@ -164,6 +164,32 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
     }
 
     /**
+     * Remove the name of a registered DataStructure from lookup.
+     *
+     * @return the number of entries in name service
+     */
+    int getEntryCount() {
+        return m_lookup.getNameserviceEntryCount();
+    }
+
+    /**
+     * Get all available name mappings
+     *
+     * @return List of available name mappings
+     */
+    ArrayList<Pair<String, Long>> getAllEntries() {
+        ArrayList<Pair<String, Long>> list = new ArrayList<>();
+
+        ArrayList<Pair<Integer, Long>> entries = m_lookup.getNameserviceEntries();
+        // convert index representation
+        for (Pair<Integer, Long> entry : entries) {
+            list.add(new Pair<>(m_converter.convert(entry.first()), entry.second()));
+        }
+
+        return list;
+    }
+
+    /**
      * Initialize the nameservice
      *
      * @return True on success, false on error
@@ -199,32 +225,6 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
     }
 
     /**
-     * Remove the name of a registered DataStructure from lookup.
-     *
-     * @return the number of entries in name service
-     */
-    int getEntryCount() {
-        return m_lookup.getNameserviceEntryCount();
-    }
-
-    /**
-     * Get all available name mappings
-     *
-     * @return List of available name mappings
-     */
-    ArrayList<Pair<String, Long>> getAllEntries() {
-        ArrayList<Pair<String, Long>> list = new ArrayList<>();
-
-        ArrayList<Pair<Integer, Long>> entries = m_lookup.getNameserviceEntries();
-        // convert index representation
-        for (Pair<Integer, Long> entry : entries) {
-            list.add(new Pair<>(m_converter.convert(entry.first()), entry.second()));
-        }
-
-        return list;
-    }
-
-    /**
      * Inserts the nameservice entry to chunk with LocalID 0 for backup
      *
      * @param p_key
@@ -243,6 +243,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Creating next index chunk failed");
                 // #endif /* LOGGER >= ERROR */
+                m_indexDataLock.unlock();
                 return false;
             }
 
