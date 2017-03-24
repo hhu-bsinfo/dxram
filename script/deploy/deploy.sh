@@ -583,7 +583,7 @@ resolve()
 	local ip=""
 
 	# Already ip, do not resolve
-	if [ $(echo $hostname | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}") != "" ]; then
+	if [ "$(echo $hostname | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}")" != "" ]; then
 		echo $hostname
 	else
 		ip=`host $hostname | cut -d ' ' -f 4 | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"`
