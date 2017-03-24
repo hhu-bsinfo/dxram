@@ -17,3 +17,4 @@ dxram.iml
 out/*
 tmp/
 deploy_tmp*/
+deploy_tmp
