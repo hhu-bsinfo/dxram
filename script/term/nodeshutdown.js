@@ -39,5 +39,6 @@ function exec(nid, kill) {
 		dxterm.printfln("Shutting down node 0x%X failed", nid);
 	} else {
 		dxterm.printfln("Shutting down node 0x%X...", nid);
+		dxterm.printfln("Ignore ERROR messages and continue by pressing <Enter>");
 	}
 }

@@ -469,7 +469,7 @@ check_zookeeper_startup()
 					echo "ZooKeeper clean-up successful."
 					break
 				elif [ "$fail" != "" ]; then
-					echo "ZooKeeper server not available."
+					echo "ZooKeeper server not available. You might try again."
 					close
 				fi
 			done
