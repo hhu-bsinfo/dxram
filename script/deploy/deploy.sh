@@ -582,17 +582,22 @@ resolve()
 	local hostname=$1
 	local ip=""
 
-	ip=`host $hostname | cut -d ' ' -f 4 | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"`
-
-	if [ "$ip" = "" ]; then
-		read ip <<< $(dig $hostname | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" | awk '{ if ($3 == "IN" && $4 == "A") print $5 }')
+	# Already ip, do not resolve
+	if [ $(echo $hostname | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}") != "" ]; then
+		echo $hostname
+	else
+		ip=`host $hostname | cut -d ' ' -f 4 | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"`
 
 		if [ "$ip" = "" ]; then
-			ip="127.0.0.1"
-		fi
-	fi
+			read ip <<< $(dig $hostname | grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" | awk '{ if ($3 == "IN" && $4 == "A") print $5 }')
 
-	echo $ip
+			if [ "$ip" = "" ]; then
+				ip="127.0.0.1"
+			fi
+		fi
+
+		echo $ip
+	fi
 }
 
 ######################################################
