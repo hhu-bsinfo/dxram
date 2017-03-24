@@ -687,7 +687,7 @@ readonly CONFIG_FILE="${DXRAM_PATH}/config/dxram.json"
 echo -e "\n\n"
 
 # Detect NFS mounted FS
-if [ "$(df -P -T $DXRAM_PATH | tail -n +2 | awk '{print $2}' | grep "nfs")" != "" ]; then
+if [ "$(df -P -T $DXRAM_PATH | tail -n +2 | awk '{print $2}' | grep "nfs")" = "" ]; then
 	readonly NFS_MODE=false
 else
 	readonly NFS_MODE=true
