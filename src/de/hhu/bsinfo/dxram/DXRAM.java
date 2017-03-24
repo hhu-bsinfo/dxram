@@ -19,6 +19,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkAsyncService;
+import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMemoryService;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
@@ -69,15 +70,6 @@ public class DXRAM {
         m_engine = new DXRAMEngine();
         registerComponents(m_engine);
         registerServices(m_engine);
-    }
-
-    /**
-     * Returns the DXRAM engine
-     *
-     * @return the DXRAMEngine
-     */
-    protected DXRAMEngine getDXRAMEngine() {
-        return m_engine;
     }
 
     /**
@@ -184,6 +176,15 @@ public class DXRAM {
     }
 
     /**
+     * Returns the DXRAM engine
+     *
+     * @return the DXRAMEngine
+     */
+    protected DXRAMEngine getDXRAMEngine() {
+        return m_engine;
+    }
+
+    /**
      * Register all default DXRAM components. If you want to register further components,
      * override this method but make sure to call it using super
      *
@@ -195,6 +196,7 @@ public class DXRAM {
         p_engine.registerComponent(ZookeeperBootComponent.class);
         p_engine.registerComponent(ChunkComponent.class);
         p_engine.registerComponent(ChunkMigrationComponent.class);
+        p_engine.registerComponent(ChunkBackupComponent.class);
         p_engine.registerComponent(EventComponent.class);
         p_engine.registerComponent(FailureComponent.class);
         p_engine.registerComponent(PeerLockComponent.class);

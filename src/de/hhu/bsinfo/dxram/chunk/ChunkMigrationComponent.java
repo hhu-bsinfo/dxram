@@ -117,11 +117,13 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
 
     @Override
     protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        // Add DXRAMComponentOrder.Init value if something is put here
         return true;
     }
 
     @Override
     protected boolean shutdownComponent() {
+        // Add DXRAMComponentOrder.Shutdown value if something is put here
         return true;
     }
 

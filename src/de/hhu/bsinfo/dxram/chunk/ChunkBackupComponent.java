@@ -230,11 +230,13 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
 
     @Override
     protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        // Add DXRAMComponentOrder.Init value if something is put here
         return true;
     }
 
     @Override
     protected boolean shutdownComponent() {
+        // Add DXRAMComponentOrder.Shutdown value if something is put here
         return true;
     }
 
@@ -285,12 +287,16 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
             long time;
             Entry entry;
 
-            while (!Thread.currentThread().isInterrupted()) {
+            while (true) {
                 entry = null;
                 while (entry == null) {
                     entry = m_recoveryChunkQueue.poll();
 
                     if (entry == null) {
+                        if (Thread.currentThread().isInterrupted()) {
+                            return;
+                        }
+
                         Thread.yield();
                     }
                 }
