@@ -114,7 +114,6 @@ public class LogMessage extends AbstractMessage {
     @Override
     protected final void readPayload(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
         if (p_wasCopied) {
-            System.out.println("Buffer was copied");
             // De-serialize later
             m_buffer = p_buffer;
             m_copiedBytes = 0;

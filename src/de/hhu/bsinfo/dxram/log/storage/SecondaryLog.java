@@ -661,7 +661,6 @@ public class SecondaryLog extends AbstractLog {
 
         try {
             helperThread.join();
-
             while (!writerThread.finished()) {
                 Thread.yield();
             }

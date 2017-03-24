@@ -87,9 +87,6 @@ class NIOInterface {
         while (counter < buffer.capacity()) {
             bytes = p_channel.read(buffer);
             if (bytes == -1) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Could not read remote NodeID from new incoming connection %s!", p_channel);
-                // #endif /* LOGGER >= ERROR */
                 p_channel.keyFor(p_nioSelector.getSelector()).cancel();
                 p_channel.close();
                 return -1;
