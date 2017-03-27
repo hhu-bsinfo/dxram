@@ -59,10 +59,12 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      *     the new backup peer
      * @param p_chunkIDRanges
      *     the ChunkIDs of the Chunks to replicate arranged in ranges
+     * @param p_numberOfChunks
+     *     the number of Chunks
      * @param p_rangeID
      *     the RangeID
      */
-    public void replicateBackupRange(final short p_backupPeer, final long[] p_chunkIDRanges, final short p_rangeID) {
+    public void replicateBackupRange(final short p_backupPeer, final long[] p_chunkIDRanges, final int p_numberOfChunks, final short p_rangeID) {
         int counter = 0;
         Chunk currentChunk;
         Chunk[] chunks;
@@ -80,11 +82,12 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
         }
 
         // Gather all chunks of backup range
-        chunks = new Chunk[p_chunkIDRanges.length];
+        chunks = new Chunk[p_numberOfChunks];
+        currentChunk = new Chunk();
         m_memoryManager.lockAccess();
         for (int i = 0; i < p_chunkIDRanges.length; i += 2) {
             for (long currentChunkID = p_chunkIDRanges[i]; currentChunkID <= p_chunkIDRanges[i + 1]; currentChunkID++) {
-                currentChunk = new Chunk(currentChunkID);
+                currentChunk.setID(currentChunkID);
 
                 m_memoryManager.get(currentChunk);
 
@@ -130,9 +133,10 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
 
         // Gather all chunks of backup range
         chunks = new Chunk[p_chunkIDs.length];
+        currentChunk = new Chunk();
         m_memoryManager.lockAccess();
         for (int i = 0; i < p_chunkIDs.length; i++) {
-            currentChunk = new Chunk(p_chunkIDs[i]);
+            currentChunk.setID(p_chunkIDs[i]);
 
             // The ChunkID list might contain migrated and deleted chunks -> only replicate locally existing chunks
             if (m_memoryManager.get(currentChunk)) {
