@@ -129,7 +129,6 @@ public class PutRequest extends AbstractRequest {
             int size = dataStructure.sizeofObject();
 
             p_buffer.putLong(dataStructure.getID());
-            exporter.setPayloadSize(size);
             p_buffer.putInt(size);
             p_buffer.order(ByteOrder.nativeOrder());
             exporter.exportObject(dataStructure);
@@ -148,7 +147,6 @@ public class PutRequest extends AbstractRequest {
             long id = p_buffer.getLong();
             int size = p_buffer.getInt();
 
-            importer.setPayloadSize(size);
             m_dataStructures[i] = new Chunk(id, size);
             p_buffer.order(ByteOrder.nativeOrder());
             importer.importObject(m_dataStructures[i]);

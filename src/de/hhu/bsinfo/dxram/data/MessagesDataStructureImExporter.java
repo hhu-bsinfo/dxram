@@ -42,28 +42,6 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
         m_messageBuffer = p_messageBuffer;
     }
 
-    /**
-     * Get the payload size that was set previously indicating the total size of the data structure.
-     *
-     * @return Payload size.
-     */
-    public int getPayloadSize() {
-        return m_payloadSize;
-    }
-
-    /**
-     * Set the size of the payload to analyze when importing an object
-     * (for dynamic sized objects) or the amount of bytes in the buffer available
-     * when exporting an object.
-     * Use case: Generic chunk data with dynamic size (see Chunk object).
-     *
-     * @param p_size
-     *     Payload size to set.
-     */
-    public void setPayloadSize(final int p_size) {
-        m_payloadSize = p_size;
-    }
-
     @Override
     public void exportObject(final Exportable p_object) {
         p_object.exportObject(this);

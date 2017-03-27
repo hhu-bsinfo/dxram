@@ -332,7 +332,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
                 // Send replicas to backup peers
                 if (replacementBackupPeer != NodeID.INVALID_ID) {
-                    m_chunkBackup.replicateBackupRange(replacementBackupPeer, recoveryMetadata.getCIDRanges(), backupRange.getRangeID());
+                    m_chunkBackup.replicateBackupRange(replacementBackupPeer, recoveryMetadata.getCIDRanges(), recoveryMetadata.getNumberOfChunks(),
+                        backupRange.getRangeID());
                 }
 
                 try {

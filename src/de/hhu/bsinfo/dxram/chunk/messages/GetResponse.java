@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
@@ -98,7 +99,6 @@ public class GetResponse extends AbstractResponse {
             int size = dataStructure.sizeofObject();
             // we keep the order of the chunks, so we don't have to send the ID again
             // p_buffer.putLong(dataStructure.getID());
-            exporter.setPayloadSize(size);
             p_buffer.putInt(size);
             p_buffer.order(ByteOrder.nativeOrder());
             exporter.exportObject(dataStructure);
@@ -115,7 +115,10 @@ public class GetResponse extends AbstractResponse {
         MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
         GetRequest request = (GetRequest) getCorrespondingRequest();
         for (DataStructure dataStructure : request.getDataStructures()) {
-            importer.setPayloadSize(p_buffer.getInt());
+            if (dataStructure instanceof Chunk) {
+                // For Chunks only as size might be unknown/not relevant here
+                ((Chunk) dataStructure).reallocate(p_buffer.getInt());
+            }
             p_buffer.order(ByteOrder.nativeOrder());
             importer.importObject(dataStructure);
             p_buffer.order(ByteOrder.BIG_ENDIAN);

@@ -101,7 +101,6 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
         int size = m_dataStructure.sizeofObject();
 
         p_buffer.putLong(m_dataStructure.getID());
-        exporter.setPayloadSize(size);
         p_buffer.putInt(size);
         p_buffer.order(ByteOrder.nativeOrder());
         exporter.exportObject(m_dataStructure);
@@ -118,7 +117,6 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
         long id = p_buffer.getLong();
         int size = p_buffer.getInt();
 
-        importer.setPayloadSize(size);
         m_chunk = new Chunk(id, size);
         p_buffer.order(ByteOrder.nativeOrder());
         importer.importObject(m_chunk);

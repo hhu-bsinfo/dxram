@@ -103,7 +103,6 @@ public class LogMessage extends AbstractMessage {
             final int size = dataStructure.sizeofObject();
 
             p_buffer.putLong(dataStructure.getID());
-            exporter.setPayloadSize(size);
             p_buffer.putInt(size);
             p_buffer.order(ByteOrder.nativeOrder());
             exporter.exportObject(dataStructure);

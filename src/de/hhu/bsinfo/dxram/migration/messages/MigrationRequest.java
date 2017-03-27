@@ -101,7 +101,6 @@ public class MigrationRequest extends AbstractRequest {
             size = dataStructure.sizeofObject();
 
             p_buffer.putLong(dataStructure.getID());
-            exporter.setPayloadSize(size);
             p_buffer.putInt(size);
             exporter.exportObject(dataStructure);
         }
@@ -119,7 +118,6 @@ public class MigrationRequest extends AbstractRequest {
             id = p_buffer.getLong();
             size = p_buffer.getInt();
 
-            importer.setPayloadSize(size);
             m_dataStructures[i] = new Chunk(id, size);
             importer.importObject(m_dataStructures[i]);
         }

@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -644,6 +645,62 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         }
 
         return size;
+    }
+
+    /**
+     * Get the payload of a chunk. This is called if chunk size is unknown, only.
+     * This is an access call and has to be locked using lockAccess().
+     *
+     * @param p_chunk
+     *     thc Chunk to write the data of its specified ID to.
+     * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data structure exists.
+     */
+    public boolean get(final Chunk p_chunk) {
+        int size;
+        long address;
+        boolean ret = true;
+
+        // TODO: Avoid duplicate code (see get(DataStructure))
+
+        try {
+            NodeRole role = m_boot.getNodeRole();
+            if (role == NodeRole.TERMINAL) {
+                return false;
+            }
+
+            // #ifdef ASSERT_NODE_ROLE
+            if (role != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            }
+            // #endif /* ASSERT_NODE_ROLE */
+
+            // #ifdef STATISTICS
+            SOP_GET.enter();
+            // #endif /* STATISTICS */
+
+            address = m_cidTable.get(p_chunk.getID());
+            if (address > 0) {
+                // pool the im/exporters
+                SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
+
+                p_chunk.reallocate(m_rawMemory.getSizeBlock(address));
+
+                // SmallObjectHeapDataStructureImExporter importer =
+                // new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+                importer.importObject(p_chunk);
+            } else {
+                ret = false;
+            }
+
+            // #ifdef STATISTICS
+            SOP_GET.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e, true);
+            throw e;
+        }
+
+        return ret;
     }
 
     /**

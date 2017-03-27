@@ -97,8 +97,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
             int size;
 
             m_memoryManager.lockAccess();
-            size = m_memoryManager.getSize(p_chunkID);
-            chunk = new Chunk(p_chunkID, size);
+            chunk = new Chunk(p_chunkID);
             m_memoryManager.get(chunk);
             m_memoryManager.unlockAccess();
 
@@ -133,7 +132,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
             // Update local memory management
             m_memoryManager.remove(p_chunkID, true);
-            m_backup.deregisterChunk(p_chunkID, size);
+            m_backup.deregisterChunk(p_chunkID, chunk.getDataSize());
             if (m_backup.isActive()) {
                 // Update logging
                 backupPeers = m_backup.getArrayOfBackupPeersForLocalChunks(p_chunkID);
@@ -222,10 +221,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
                     m_memoryManager.lockAccess();
                     while (iter <= p_endChunkID) {
                         if (m_memoryManager.exists(iter)) {
-                            int sizeChunk;
-
-                            sizeChunk = m_memoryManager.getSize(iter);
-                            chunk = new Chunk(iter, sizeChunk);
+                            chunk = new Chunk(iter);
                             m_memoryManager.get(chunk);
 
                             chunks[counter] = chunk;

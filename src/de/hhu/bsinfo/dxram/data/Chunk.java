@@ -113,6 +113,16 @@ public class Chunk implements DataStructure {
     }
 
     /**
+     * Resize the internal byte array. All prevously stored data will be lost.
+     *
+     * @param p_size
+     *     the new size
+     */
+    public void reallocate(final int p_size) {
+        m_data = ByteBuffer.allocate(p_size);
+    }
+
+    /**
      * Gets the underlying byte buffer with the stored payload.
      *
      * @return ByteBuffer with position reseted.
@@ -164,22 +174,12 @@ public class Chunk implements DataStructure {
 
     @Override
     public void importObject(final Importer p_importer) {
-
-        // ugly workaround but this is the only place that needs this
-        if (m_data == null ||
-            p_importer instanceof MessagesDataStructureImExporter && m_data.capacity() != ((MessagesDataStructureImExporter) p_importer).getPayloadSize()) {
-            m_data = ByteBuffer.allocate(((MessagesDataStructureImExporter) p_importer).getPayloadSize());
-        }
-
         p_importer.readBytes(m_data.array());
     }
 
     @Override
     public void exportObject(final Exporter p_exporter) {
-
-        if (m_data != null) {
-            p_exporter.writeBytes(m_data.array());
-        }
+        p_exporter.writeBytes(m_data.array());
     }
 
     @Override
