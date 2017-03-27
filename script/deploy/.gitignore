@@ -1,1 +1,3 @@
 deploy_tmp/
+deploy_tmp*
+*.conf
