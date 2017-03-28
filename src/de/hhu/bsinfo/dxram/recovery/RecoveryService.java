@@ -23,8 +23,8 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -132,7 +132,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
             String fileName;
             File folderToScan;
             File[] listOfFiles;
-            Chunk[] chunks;
+            DataStructure[] chunks;
 
             if (!m_backup.isActive()) {
                 // #if LOGGER >= WARN
@@ -164,7 +164,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
                             if (fileName.contains("M")) {
                                 // Inform superpeers about new location of migrated Chunks (non-migrated Chunks are
                                 // processed later)
-                                for (Chunk chunk : chunks) {
+                                for (DataStructure chunk : chunks) {
                                     if (ChunkID.getCreatorID(chunk.getID()) != p_owner) {
                                         // TODO: This might crash because there is no tree for creator of this chunk
                                         m_lookup.migrate(chunk.getID(), m_boot.getNodeID());
@@ -181,7 +181,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
             String fileName;
             String files;
             String[] listOfFiles;
-            Chunk[] chunks;
+            DataStructure[] chunks;
 
             if (!m_backup.isActive()) {
                 // #if LOGGER >= WARN
@@ -213,7 +213,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
                         if (fileName.contains("M")) {
                             // Inform superpeers about new location of migrated Chunks (non-migrated Chunks are
                             // processed later)
-                            for (Chunk chunk : chunks) {
+                            for (DataStructure chunk : chunks) {
                                 if (ChunkID.getCreatorID(chunk.getID()) != p_owner) {
                                     // TODO: This might crash because there is no tree for creator of this chunk
                                     m_lookup.migrate(chunk.getID(), m_boot.getNodeID());

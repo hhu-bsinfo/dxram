@@ -22,9 +22,9 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
+import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -612,104 +612,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     }
 
     /**
-     * Get the size of a chunk (payload only, i.e. minus size for version).
-     * This is an access call and has to be locked using lockAccess().
-     *
-     * @param p_chunkID
-     *     ChunkID of the chunk, the local id gets extracted, the node ID ignored.
-     * @return Size of the chunk or -1 if the chunkID was invalid.
-     */
-    public int getSize(final long p_chunkID) {
-        long address;
-        int size = -1;
-
-        try {
-            NodeRole role = m_boot.getNodeRole();
-            if (role == NodeRole.TERMINAL) {
-                return size;
-            }
-
-            // #ifdef ASSERT_NODE_ROLE
-            if (role != NodeRole.PEER) {
-                throw new InvalidNodeRoleException(m_boot.getNodeRole());
-            }
-            // #endif /* ASSERT_NODE_ROLE */
-
-            address = m_cidTable.get(p_chunkID);
-            if (address > 0) {
-                size = m_rawMemory.getSizeBlock(address);
-            }
-        } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e, true);
-            throw e;
-        }
-
-        return size;
-    }
-
-    /**
-     * Get the payload of a chunk. This is called if chunk size is unknown, only.
-     * This is an access call and has to be locked using lockAccess().
-     *
-     * @param p_chunk
-     *     thc Chunk to write the data of its specified ID to.
-     * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data structure exists.
-     */
-    public boolean get(final Chunk p_chunk) {
-        int size;
-        long address;
-        boolean ret = true;
-
-        // TODO: Avoid duplicate code (see get(DataStructure))
-
-        try {
-            NodeRole role = m_boot.getNodeRole();
-            if (role == NodeRole.TERMINAL) {
-                return false;
-            }
-
-            // #ifdef ASSERT_NODE_ROLE
-            if (role != NodeRole.PEER) {
-                throw new InvalidNodeRoleException(m_boot.getNodeRole());
-            }
-            // #endif /* ASSERT_NODE_ROLE */
-
-            // #ifdef STATISTICS
-            SOP_GET.enter();
-            // #endif /* STATISTICS */
-
-            address = m_cidTable.get(p_chunk.getID());
-            if (address > 0) {
-                // pool the im/exporters
-                SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
-
-                p_chunk.reallocate(m_rawMemory.getSizeBlock(address));
-
-                // SmallObjectHeapDataStructureImExporter importer =
-                // new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
-                importer.importObject(p_chunk);
-            } else {
-                ret = false;
-            }
-
-            // #ifdef STATISTICS
-            SOP_GET.leave();
-            // #endif /* STATISTICS */
-        } catch (final MemoryRuntimeException e) {
-            handleMemDumpOnError(e, true);
-            throw e;
-        }
-
-        return ret;
-    }
-
-    /**
-     * Get the payload of a chunk.
+     * Get the payload of a chunk/data structure.
      * This is an access call and has to be locked using lockAccess().
      *
      * @param p_dataStructure
-     *     Data structure to write the data of its specified ID to.
-     * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data structure exists.
+     *     Data structure to read specified by its ID.
+     * @return True if getting the chunk payload was successful, false if no chunk with the ID specified exists.
      */
     public boolean get(final DataStructure p_dataStructure) {
         long address;
@@ -718,6 +626,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         try {
             NodeRole role = m_boot.getNodeRole();
             if (role == NodeRole.TERMINAL) {
+                return false;
+            }
+
+            if (p_dataStructure.getID() == ChunkID.INVALID_ID) {
+                p_dataStructure.setState(ChunkState.INVALID_ID);
                 return false;
             }
 
@@ -735,12 +648,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
             if (address > 0) {
                 // pool the im/exporters
                 SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
-
-                // SmallObjectHeapDataStructureImExporter importer =
-                // new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
                 importer.importObject(p_dataStructure);
+
+                p_dataStructure.setState(ChunkState.OK);
             } else {
                 ret = false;
+                p_dataStructure.setState(ChunkState.DOES_NOT_EXIST);
             }
 
             // #ifdef STATISTICS
@@ -755,11 +668,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     }
 
     /**
-     * Get a chunk when size is unknown.
+     * Get the binary data of a chunk when the chunk size is unknown.
      * This is an access call and has to be locked using lockAccess().
      *
      * @param p_chunkID
-     *     Data structure to write the data of its specified ID to.
+     *     Read the chunk data of the specified ID
      * @return A byte array with payload if getting the chunk payload was successful, null if no chunk with the ID exists.
      */
     public byte[] get(final long p_chunkID) {
@@ -769,6 +682,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         try {
             NodeRole role = m_boot.getNodeRole();
             if (role == NodeRole.TERMINAL) {
+                return null;
+            }
+
+            if (p_chunkID == ChunkID.INVALID_ID) {
                 return null;
             }
 
@@ -809,7 +726,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     }
 
     /**
-     * Put some data into a chunk.
+     * Put data of the a data structure/chunk to the memory
      * This is an access call and has to be locked using lockAccess().
      * Note: lockAccess() does NOT take care of data races of the data to write.
      * The caller has to take care of proper locking to avoid consistency issue with his data.
@@ -828,6 +745,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
                 return false;
             }
 
+            if (p_dataStructure.getID() == ChunkID.INVALID_ID) {
+                p_dataStructure.setState(ChunkState.INVALID_ID);
+                return false;
+            }
+
             // #ifdef ASSERT_NODE_ROLE
             if (role != NodeRole.PEER) {
                 throw new InvalidNodeRoleException(m_boot.getNodeRole());
@@ -843,6 +765,83 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
                 // pool the im/exporters
                 SmallObjectHeapDataStructureImExporter exporter = getImExporter(address);
                 exporter.exportObject(p_dataStructure);
+
+                p_dataStructure.setState(ChunkState.OK);
+            } else {
+                ret = false;
+                p_dataStructure.setState(ChunkState.DOES_NOT_EXIST);
+            }
+
+            // #ifdef STATISTICS
+            SOP_PUT.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e, true);
+            throw e;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Put some data into a chunk.
+     * This is an access call and has to be locked using lockAccess().
+     * Note: lockAccess() does NOT take care of data races of the data to write.
+     * The caller has to take care of proper locking to avoid consistency issue with his data.
+     *
+     * @param p_chunkID
+     *     Chunk ID for the data to put
+     * @param p_data
+     *     Chunk data to put
+     * @return True if putting the data was successful, false if no chunk with the specified id exists
+     */
+    public boolean put(final long p_chunkID, final byte[] p_data) {
+        return put(p_chunkID, p_data, 0, p_data.length);
+    }
+
+    /**
+     * Put some data into a chunk.
+     * This is an access call and has to be locked using lockAccess().
+     * Note: lockAccess() does NOT take care of data races of the data to write.
+     * The caller has to take care of proper locking to avoid consistency issue with his data.
+     *
+     * @param p_chunkID
+     *     Chunk ID for the data to put
+     * @param p_data
+     *     Chunk data to put
+     * @param p_offset
+     *     Offset for p_data array
+     * @param p_length
+     *     Number of bytes to put
+     * @return True if putting the data was successful, false if no chunk with the specified id exists
+     */
+    public boolean put(final long p_chunkID, final byte[] p_data, final int p_offset, final int p_length) {
+        long address;
+        boolean ret = true;
+
+        try {
+            NodeRole role = m_boot.getNodeRole();
+            if (role == NodeRole.TERMINAL) {
+                return false;
+            }
+
+            if (p_chunkID == ChunkID.INVALID_ID) {
+                return false;
+            }
+
+            // #ifdef ASSERT_NODE_ROLE
+            if (role != NodeRole.PEER) {
+                throw new InvalidNodeRoleException(m_boot.getNodeRole());
+            }
+            // #endif /* ASSERT_NODE_ROLE */
+
+            // #ifdef STATISTICS
+            SOP_PUT.enter();
+            // #endif /* STATISTICS */
+
+            address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                m_rawMemory.writeBytes(address, 0, p_data, p_offset, p_length);
             } else {
                 ret = false;
             }
@@ -877,6 +876,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
             NodeRole role = m_boot.getNodeRole();
             if (role == NodeRole.TERMINAL) {
                 return ret;
+            }
+
+            if (p_chunkID == ChunkID.INVALID_ID) {
+                return -1;
             }
 
             // #ifdef ASSERT_NODE_ROLE

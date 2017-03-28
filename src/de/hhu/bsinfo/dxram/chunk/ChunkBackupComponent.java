@@ -19,7 +19,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.DSByteArray;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -66,8 +67,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      */
     public void replicateBackupRange(final short p_backupPeer, final long[] p_chunkIDRanges, final int p_numberOfChunks, final short p_rangeID) {
         int counter = 0;
-        Chunk currentChunk;
-        Chunk[] chunks;
+        DataStructure[] chunks;
 
         // Initialize backup range on backup peer
         InitRequest request = new InitRequest(p_backupPeer, p_rangeID);
@@ -82,14 +82,11 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
         }
 
         // Gather all chunks of backup range
-        chunks = new Chunk[p_numberOfChunks];
-        currentChunk = new Chunk();
+        chunks = new DataStructure[p_numberOfChunks];
         m_memoryManager.lockAccess();
         for (int i = 0; i < p_chunkIDRanges.length; i += 2) {
             for (long currentChunkID = p_chunkIDRanges[i]; currentChunkID <= p_chunkIDRanges[i + 1]; currentChunkID++) {
-                currentChunk.setID(currentChunkID);
-
-                m_memoryManager.get(currentChunk);
+                DataStructure currentChunk = new DSByteArray(currentChunkID, m_memoryManager.get(currentChunkID));
 
                 chunks[counter++] = currentChunk;
             }
@@ -116,8 +113,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      */
     public void replicateBackupRange(final short p_backupPeer, final short p_rangeID, final long[] p_chunkIDs) {
         int counter = 0;
-        Chunk currentChunk;
-        Chunk[] chunks;
+        DataStructure[] chunks;
 
         // Initialize backup range on backup peer
         InitRequest request = new InitRequest(p_backupPeer, p_rangeID);
@@ -132,15 +128,14 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
         }
 
         // Gather all chunks of backup range
-        chunks = new Chunk[p_chunkIDs.length];
-        currentChunk = new Chunk();
+        chunks = new DataStructure[p_chunkIDs.length];
         m_memoryManager.lockAccess();
         for (int i = 0; i < p_chunkIDs.length; i++) {
-            currentChunk.setID(p_chunkIDs[i]);
+            byte[] data = m_memoryManager.get(p_chunkIDs[i]);
 
             // The ChunkID list might contain migrated and deleted chunks -> only replicate locally existing chunks
-            if (m_memoryManager.get(currentChunk)) {
-                chunks[counter++] = currentChunk;
+            if (data != null) {
+                chunks[counter++] = new DSByteArray(p_chunkIDs[i], data);
             }
         }
         m_memoryManager.unlockAccess();
@@ -203,12 +198,12 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      * @param p_chunks
      *     Chunks to put.
      */
-    public void putRecoveredChunks(final Chunk[] p_chunks) {
+    public void putRecoveredChunks(final DataStructure[] p_chunks) {
 
         m_memoryManager.lockManage();
-        for (Chunk chunk : p_chunks) {
+        for (DataStructure chunk : p_chunks) {
 
-            m_memoryManager.create(chunk.getID(), chunk.getDataSize());
+            m_memoryManager.create(chunk.getID(), chunk.sizeofObject());
             m_memoryManager.put(chunk);
 
             // #if LOGGER == TRACE

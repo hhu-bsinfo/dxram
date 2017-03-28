@@ -58,18 +58,14 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + m_dataStructure.sizeofObject();
+        return m_dataStructure.sizeofObject();
     }
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
         // read the data to be sent to the remote from the chunk set for this message
         MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
-        int size = m_dataStructure.sizeofObject();
-        p_buffer.putInt(size);
-        p_buffer.order(ByteOrder.nativeOrder());
         exporter.exportObject(m_dataStructure);
-        p_buffer.order(ByteOrder.BIG_ENDIAN);
     }
 
     @Override
@@ -81,8 +77,6 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
 
         m_dataStructure = request.getDataStructure();
 
-        p_buffer.order(ByteOrder.nativeOrder());
         importer.importObject(m_dataStructure);
-        p_buffer.order(ByteOrder.BIG_ENDIAN);
     }
 }

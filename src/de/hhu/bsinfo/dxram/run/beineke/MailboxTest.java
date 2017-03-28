@@ -17,9 +17,11 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.chunk.ChunkAnonService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.DSByteBuffer;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 
 /*
@@ -91,8 +93,8 @@ public final class MailboxTest {
          * Starts the server
          */
         public void start() {
-            Chunk anchor;
-            Chunk[] chunks;
+            DSByteBuffer anchor;
+            DSByteBuffer[] chunks;
 
             // Wait a moment
             try {
@@ -107,22 +109,24 @@ public final class MailboxTest {
             final NameserviceService nameService = dxram.getService(NameserviceService.class);
 
             // Create anchor
-            anchor = new Chunk(Long.BYTES * m_amount);
+            anchor = new DSByteBuffer(Long.BYTES * m_amount);
             chunkService.create(anchor);
             nameService.register(anchor, "anc");
 
             // Create Mails
-            chunks = new Chunk[m_amount];
+            chunks = new DSByteBuffer[m_amount];
             for (int i = 0; i < m_amount; i++) {
-                chunks[i] = new Chunk(1024);
-                chunks[i].getData().put(("Mail " + i).getBytes());
+                chunks[i] = new DSByteBuffer(1024);
+                byte[] tmp = ("Mail " + i).getBytes();
+                System.arraycopy(tmp, 0, chunks[i].getData(), 0, tmp.length);
             }
             chunkService.create(chunks);
             chunkService.put(chunks);
 
             // Set the Mailbox-Content
+            ByteBuffer wrapped = anchor.getData();
             for (int i = 0; i < chunks.length; i++) {
-                anchor.getData().putLong(i * Long.BYTES, chunks[i].getID());
+                wrapped.putLong(i * Long.BYTES, chunks[i].getID());
             }
             chunkService.put(anchor);
 
@@ -189,8 +193,8 @@ public final class MailboxTest {
             long chunkID;
             long[] chunkIDs;
             ByteBuffer data;
-            Chunk anchor;
-            Chunk chunk;
+            ChunkAnon anchor;
+            DSByteBuffer chunk;
 
             // Wait a moment
             try {
@@ -202,24 +206,23 @@ public final class MailboxTest {
             final DXRAM dxram = new DXRAM();
             dxram.initialize("config/dxram.json");
             final ChunkService chunkService = dxram.getService(ChunkService.class);
+            final ChunkAnonService chunkAnonService = dxram.getService(ChunkAnonService.class);
             final NameserviceService nameService = dxram.getService(NameserviceService.class);
 
             System.out.println("Client started");
 
             chunkID = nameService.getChunkID("anc", -1);
             System.out.println(ChunkID.toHexString(chunkID));
-            anchor = new Chunk(chunkID);
-            chunkService.get(anchor);
+            anchor = chunkAnonService.get(chunkID)[0];
             System.out.println(anchor);
 
-            data = anchor.getData();
-            assert data != null;
-            chunkIDs = new long[data.capacity() / Long.BYTES];
-            while (data.remaining() >= Long.BYTES) {
-                chunkIDs[i++] = data.getLong();
+            chunkIDs = new long[anchor.getData().length / Long.BYTES];
+            ByteBuffer wrapped = ByteBuffer.wrap(anchor.getData());
+            while (wrapped.remaining() >= Long.BYTES) {
+                chunkIDs[i++] = wrapped.getLong();
             }
 
-            chunk = new Chunk(1024);
+            chunk = new DSByteBuffer(1024);
             // Get the Mailbox-Content
             while (true) {
                 System.out.println("----------");

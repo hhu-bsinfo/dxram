@@ -23,6 +23,7 @@ import de.hhu.bsinfo.dxram.log.messages.GetUtilizationRequest;
 import de.hhu.bsinfo.dxram.log.messages.GetUtilizationResponse;
 import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
+import de.hhu.bsinfo.dxram.log.messages.LogAnonMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
@@ -88,6 +89,9 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
                 switch (p_message.getSubtype()) {
                     case LogMessages.SUBTYPE_LOG_MESSAGE:
                         incomingLogMessage((LogMessage) p_message);
+                        break;
+                    case LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE:
+                        incomingLogBufferMessage((LogAnonMessage) p_message);
                         break;
                     case LogMessages.SUBTYPE_REMOVE_MESSAGE:
                         incomingRemoveMessage((RemoveMessage) p_message);
@@ -155,6 +159,16 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
     }
 
     /**
+     * Handles an incoming LogAnonMessage
+     *
+     * @param p_message
+     *     the LogAnonMessage
+     */
+    private void incomingLogBufferMessage(final LogAnonMessage p_message) {
+        m_log.incomingLogChunks(p_message.getMessageBuffer(), p_message.getSource());
+    }
+
+    /**
      * Handles an incoming RemoveMessage
      *
      * @param p_message
@@ -192,6 +206,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      */
     private void registerNetworkMessages() {
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, LogMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE, LogMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST, GetUtilizationRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE, GetUtilizationResponse.class);
@@ -202,6 +217,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      */
     private void registerNetworkMessageListener() {
         m_network.register(LogMessage.class, this);
+        m_network.register(LogAnonMessage.class, this);
         m_network.register(RemoveMessage.class, this);
         m_network.register(InitRequest.class, this);
         m_network.register(GetUtilizationRequest.class, this);

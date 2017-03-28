@@ -23,9 +23,10 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
+import de.hhu.bsinfo.dxram.data.DSByteArray;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -83,7 +84,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
      */
     public boolean migrate(final long p_chunkID, final short p_target) {
         short[] backupPeers;
-        Chunk chunk;
+        DataStructure chunk;
         boolean ret;
 
         // #ifdef ASSERT_NODE_ROLE
@@ -97,15 +98,16 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
             int size;
 
             m_memoryManager.lockAccess();
-            chunk = new Chunk(p_chunkID);
-            m_memoryManager.get(chunk);
+            byte[] data = m_memoryManager.get(p_chunkID);
             m_memoryManager.unlockAccess();
+
+            chunk = new DSByteArray(p_chunkID, data);
 
             // #if LOGGER == TRACE
             LOGGER.trace("Sending migration request to %s", p_target);
             // #endif /* LOGGER == TRACE */
 
-            MigrationRequest request = new MigrationRequest(p_target, new Chunk[] {chunk});
+            MigrationRequest request = new MigrationRequest(p_target, chunk);
             try {
                 m_network.sendSync(request);
             } catch (final NetworkException e) {
@@ -132,7 +134,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
             // Update local memory management
             m_memoryManager.remove(p_chunkID, true);
-            m_backup.deregisterChunk(p_chunkID, chunk.getDataSize());
+            m_backup.deregisterChunk(p_chunkID, chunk.sizeofObject());
             if (m_backup.isActive()) {
                 // Update logging
                 backupPeers = m_backup.getArrayOfBackupPeersForLocalChunks(p_chunkID);
@@ -196,8 +198,8 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
         int chunkSize;
         long iter;
         long size;
-        Chunk chunk;
-        Chunk[] chunks;
+        DataStructure chunk;
+        DataStructure[] chunks;
         boolean ret;
 
         // TODO: Handle range properly
@@ -215,18 +217,17 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
                 iter = p_startChunkID;
                 while (true) {
                     // Send chunks to p_target
-                    chunks = new Chunk[(int) (p_endChunkID - iter + 1)];
+                    chunks = new DataStructure[(int) (p_endChunkID - iter + 1)];
                     counter = 0;
                     size = 0;
                     m_memoryManager.lockAccess();
                     while (iter <= p_endChunkID) {
                         if (m_memoryManager.exists(iter)) {
-                            chunk = new Chunk(iter);
-                            m_memoryManager.get(chunk);
+                            chunk = new DSByteArray(iter, m_memoryManager.get(iter));
 
                             chunks[counter] = chunk;
                             chunkIDs[counter++] = chunk.getID();
-                            size += chunk.getDataSize();
+                            size += chunk.sizeofObject();
                         } else {
                             // #if LOGGER >= ERROR
                             LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", iter);
@@ -398,7 +399,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
         MigrationResponse response = new MigrationResponse(p_request);
 
-        if (!m_chunk.putMigratedChunks(p_request.getDataStructures())) {
+        if (!m_chunk.putMigratedChunks(p_request.getChunkIDs(), p_request.getChunkData())) {
             response.setStatusCode((byte) -1);
         }
 

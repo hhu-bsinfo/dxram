@@ -15,7 +15,6 @@ package de.hhu.bsinfo.dxgraph.data;
 
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
@@ -24,10 +23,10 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Data structure holding BFS results of multiple nodes.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 20.05.2016
  */
-public class BFSResults implements DataStructure {
-    private long m_id = ChunkID.INVALID_ID;
+public class BFSResults extends DataStructure {
     private BFSResult m_aggregatedResult = new BFSResult();
     private ArrayList<Pair<Integer, BFSResult>> m_bfsResults = new ArrayList<>();
 
@@ -37,6 +36,7 @@ public class BFSResults implements DataStructure {
 
     /**
      * Get aggregated results of all nodes.
+     *
      * @return Aggregated results.
      */
     public BFSResult getAggregatedResult() {
@@ -45,12 +45,13 @@ public class BFSResults implements DataStructure {
 
     /**
      * Add a result of a node running BFS.
+     *
      * @param p_computeSlaveId
-     *            Compute slave id of the node.
+     *     Compute slave id of the node.
      * @param p_nodeId
-     *            Node id of the node.
+     *     Node id of the node.
      * @param p_bfsResult
-     *            BFS result of the node.
+     *     BFS result of the node.
      */
     public void addResult(final short p_computeSlaveId, final short p_nodeId, final BFSResult p_bfsResult) {
         int id = (p_nodeId << 16) | p_computeSlaveId;
@@ -59,20 +60,11 @@ public class BFSResults implements DataStructure {
 
     /**
      * Get all single results of every BFS node.
+     *
      * @return List of single results identified by compute slave id and node id.
      */
     public ArrayList<Pair<Integer, BFSResult>> getResults() {
         return m_bfsResults;
-    }
-
-    @Override
-    public long getID() {
-        return m_id;
-    }
-
-    @Override
-    public void setID(final long p_id) {
-        m_id = p_id;
     }
 
     @Override

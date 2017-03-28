@@ -13,8 +13,6 @@
 
 package de.hhu.bsinfo.dxcompute.bench;
 
-import java.nio.ByteBuffer;
-
 import com.google.gson.annotations.Expose;
 
 import org.apache.logging.log4j.LogManager;
@@ -23,8 +21,9 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
+import de.hhu.bsinfo.dxram.chunk.ChunkAnonService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -72,6 +71,7 @@ public class ChunkDataModifyTask implements Task {
         }
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
+        ChunkAnonService chunkAnonService = p_ctx.getDXRAMServiceAccessor().getService(ChunkAnonService.class);
 
         ChunkIDRanges allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern / 2, p_ctx, chunkService);
         long totalChunkCount = allChunkRanges.getTotalChunkIDsOfRanges();
@@ -132,7 +132,7 @@ public class ChunkDataModifyTask implements Task {
                         }
 
                         time[threadIdx].start();
-                        Chunk[] chunks = chunkService.get(chunkIds);
+                        ChunkAnon[] chunks = chunkAnonService.get(chunkIds);
                         time[threadIdx].stopAndAccumulate();
                         if (chunks == null) {
                             System.out.println("Error getting chunks");
@@ -146,26 +146,25 @@ public class ChunkDataModifyTask implements Task {
                                     continue;
                                 }
 
-                                ByteBuffer buffer = chunks[j].getData();
+                                byte[] buffer = chunks[j].getData();
 
                                 if (buffer == null) {
                                     throw new IllegalStateException("Buffer of valid chunk null");
                                 }
 
-                                buffer.position(0);
-                                for (int k = 0; k < buffer.capacity(); k++) {
-                                    buffer.put((byte) k);
+                                for (int k = 0; k < buffer.length; k++) {
+                                    buffer[k] = (byte) k;
                                 }
                             }
                         }
 
                         if (doPut) {
                             time[threadIdx].start();
-                            chunkService.put(chunks);
+                            chunkAnonService.put(chunks);
                             time[threadIdx].stopAndAccumulate();
 
                             if (m_writeContentsAndVerify) {
-                                Chunk[] chunksToVerify = chunkService.get(chunkIds);
+                                ChunkAnon[] chunksToVerify = chunkAnonService.get(chunkIds);
                                 if (chunksToVerify == null) {
                                     System.out.println("Error getting chunks (verify)");
                                     return;
@@ -177,19 +176,16 @@ public class ChunkDataModifyTask implements Task {
                                         continue;
                                     }
 
-                                    ByteBuffer buffer = chunksToVerify[j].getData();
+                                    byte[] buffer = chunksToVerify[j].getData();
 
                                     if (buffer == null) {
                                         throw new IllegalStateException("Buffer of valid chunk null");
                                     }
 
-                                    buffer.position(0);
-                                    for (int k = 0; k < buffer.capacity(); k++) {
-                                        byte b = buffer.get();
-                                        if (b != (byte) k) {
-                                            LOGGER
-                                                .error("Contents of chunk 0x%16X are not matching written contents: 0x%X != 0x%X", chunksToVerify[j].getID(), b,
-                                                    k);
+                                    for (int k = 0; k < buffer.length; k++) {
+                                        if (buffer[k] != (byte) k) {
+                                            LOGGER.error("Contents of chunk 0x%16X are not matching written contents: 0x%X != 0x%X", chunksToVerify[j].getID(),
+                                                buffer[k], k);
                                         }
                                     }
                                 }

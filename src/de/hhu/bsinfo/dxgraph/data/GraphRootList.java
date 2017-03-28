@@ -15,17 +15,16 @@ package de.hhu.bsinfo.dxgraph.data;
 
 import java.util.Arrays;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * List of root vertex ids used as entry points for various graph algorithms.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class GraphRootList implements DataStructure {
-    private long m_id = ChunkID.INVALID_ID;
+public class GraphRootList extends DataStructure {
     private long[] m_roots = new long[0];
 
     /**
@@ -36,39 +35,45 @@ public class GraphRootList implements DataStructure {
 
     /**
      * Constructor
+     *
      * @param p_id
-     *            Chunk id to assign.
+     *     Chunk id to assign.
      */
     public GraphRootList(final long p_id) {
-        m_id = p_id;
+        super(p_id);
     }
 
     /**
      * Constructor
+     *
      * @param p_id
-     *            Chunk id to assign.
+     *     Chunk id to assign.
      * @param p_roots
-     *            Initial root list to assign,
+     *     Initial root list to assign,
      */
     public GraphRootList(final long p_id, final long[] p_roots) {
-        m_id = p_id;
+        super(p_id);
+
         m_roots = p_roots;
     }
 
     /**
      * Constructor
+     *
      * @param p_id
-     *            Chunk id to assign.
+     *     Chunk id to assign.
      * @param p_numRoots
-     *            Pre-allocate space for a number of roots.
+     *     Pre-allocate space for a number of roots.
      */
     public GraphRootList(final long p_id, final int p_numRoots) {
-        m_id = p_id;
+        super(p_id);
+
         m_roots = new long[p_numRoots];
     }
 
     /**
      * Get the list of roots.
+     *
      * @return List of roots.
      */
     public long[] getRoots() {
@@ -77,8 +82,9 @@ public class GraphRootList implements DataStructure {
 
     /**
      * Resize the static allocated root list.
+     *
      * @param p_count
-     *            Number of roots to resize the list to.
+     *     Number of roots to resize the list to.
      */
     public void setRootCount(final int p_count) {
         if (p_count != m_roots.length) {
@@ -88,16 +94,6 @@ public class GraphRootList implements DataStructure {
     }
 
     // -----------------------------------------------------------------------------
-
-    @Override
-    public long getID() {
-        return m_id;
-    }
-
-    @Override
-    public void setID(final long p_id) {
-        m_id = p_id;
-    }
 
     @Override
     public void importObject(final Importer p_importer) {
@@ -122,7 +118,7 @@ public class GraphRootList implements DataStructure {
 
     @Override
     public String toString() {
-        String str = "GraphRootList[m_id " + Long.toHexString(m_id) + ", numRoots " + m_roots.length + "]: ";
+        String str = "GraphRootList[m_id " + Long.toHexString(getID()) + ", numRoots " + m_roots.length + "]: ";
         int counter = 0;
         for (Long v : m_roots) {
             str += Long.toHexString(v) + ", ";

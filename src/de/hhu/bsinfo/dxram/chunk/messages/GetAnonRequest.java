@@ -15,36 +15,35 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
- * Request for getting a chunk from a remote node. The size of a chunk is known prior fetching the data
+ * Request for getting an anonymous chunk from a remote node. The size of a chunk is _NOT_ known prior fetching the data
  *
- * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 30.03.2017
  */
-public class GetRequest extends AbstractRequest {
+public class GetAnonRequest extends AbstractRequest {
 
     // the chunk is stored for the sender of the request
     // to write the incoming data of the response to it
     // the requesting IDs are taken from the chunk
-    private DataStructure[] m_chunks;
+    private ChunkAnon[] m_chunks;
     // this is only used when receiving the request
     private long[] m_chunkIDs;
 
     /**
-     * Creates an instance of GetRequest.
+     * Creates an instance of GetAnonRequest.
      * This constructor is used when receiving this message.
      */
-    public GetRequest() {
+    public GetAnonRequest() {
         super();
     }
 
     /**
-     * Creates an instance of GetRequest.
+     * Creates an instance of GetAnonRequest.
      * This constructor is used when sending this message.
      *
      * @param p_destination
@@ -52,8 +51,8 @@ public class GetRequest extends AbstractRequest {
      * @param p_chunks
      *     Chunks with the ID of the chunk data to get.
      */
-    public GetRequest(final short p_destination, final DataStructure... p_chunks) {
-        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
+    public GetAnonRequest(final short p_destination, final ChunkAnon... p_chunks) {
+        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_ANON_REQUEST);
 
         m_chunks = p_chunks;
 
@@ -77,7 +76,7 @@ public class GetRequest extends AbstractRequest {
      *
      * @return Chunks to store data to when the response arrived.
      */
-    public DataStructure[] getChunks() {
+    public ChunkAnon[] getChunks() {
         return m_chunks;
     }
 
@@ -94,7 +93,7 @@ public class GetRequest extends AbstractRequest {
     protected final void writePayload(final ByteBuffer p_buffer) {
         ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunks.length);
 
-        for (DataStructure chunk : m_chunks) {
+        for (ChunkAnon chunk : m_chunks) {
             p_buffer.putLong(chunk.getID());
         }
     }

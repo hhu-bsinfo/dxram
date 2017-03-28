@@ -23,11 +23,9 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class NameServiceIndexData implements DataStructure {
-
+public class NameServiceIndexData extends DataStructure {
     private static final int MS_NUM_INDICES = 10000;
 
-    private long m_id = ChunkID.INVALID_ID;
     private short m_numEntries;
     private int[] m_keys = new int[MS_NUM_INDICES];
     private long[] m_chunkIDs = new long[MS_NUM_INDICES];
@@ -38,16 +36,6 @@ public class NameServiceIndexData implements DataStructure {
      */
     public NameServiceIndexData() {
 
-    }
-
-    @Override
-    public long getID() {
-        return m_id;
-    }
-
-    @Override
-    public void setID(final long p_id) {
-        m_id = p_id;
     }
 
     /**

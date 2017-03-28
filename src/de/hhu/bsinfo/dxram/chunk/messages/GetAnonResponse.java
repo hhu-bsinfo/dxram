@@ -16,49 +16,48 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.ChunkState;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
- * Response to a GetRequest
+ * Response to a GetAnonRequest
  *
- * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 30.03.2017
  */
-public class GetResponse extends AbstractResponse {
+public class GetAnonResponse extends AbstractResponse {
 
-    // The data of the chunk objects here is used when sending the response only
+    // The data of the chunk buffer objects here is used when sending the response only
     // when the response is received, the chunk objects from the request are
     // used to directly write the data to them and avoiding further copying
     private byte[][] m_dataChunks;
     private int m_totalSuccessful;
 
     /**
-     * Creates an instance of GetResponse.
+     * Creates an instance of GetAnonResponse.
      * This constructor is used when receiving this message.
      */
-    public GetResponse() {
+    public GetAnonResponse() {
         super();
     }
 
     /**
-     * Creates an instance of GetResponse.
+     * Creates an instance of GetAnonResponse.
      * This constructor is used when sending this message.
      * Make sure to include all data of the chunks from the request in the correct order. If a chunk does
      * not exist, set the byte[] at that index to null
      *
      * @param p_request
-     *     the corresponding GetRequest
+     *     the corresponding GetAnonRequest
      * @param p_dataChunks
      *     Array of byte arrays with chunk data read from the memory. If a chunk does not exist, the byte[] is null
      * @param p_totalSuccessful
      *     Number of total successful get operations
      */
-    public GetResponse(final GetRequest p_request, final byte[][] p_dataChunks, final int p_totalSuccessful) {
-        super(p_request, ChunkMessages.SUBTYPE_GET_RESPONSE);
+    public GetAnonResponse(final GetAnonRequest p_request, final byte[][] p_dataChunks, final int p_totalSuccessful) {
+        super(p_request, ChunkMessages.SUBTYPE_GET_ANON_RESPONSE);
 
         m_dataChunks = p_dataChunks;
         setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_totalSuccessful));
@@ -83,12 +82,12 @@ public class GetResponse extends AbstractResponse {
 
             for (int i = 0; i < m_dataChunks.length; i++) {
                 if (m_dataChunks[i] != null) {
-                    size += m_dataChunks[i].length;
+                    size += Integer.BYTES + m_dataChunks[i].length;
                 }
             }
         } else {
             // after reading message payload to request data structures
-            GetRequest request = (GetRequest) getCorrespondingRequest();
+            GetAnonRequest request = (GetAnonRequest) getCorrespondingRequest();
 
             size += request.getChunks().length * Byte.BYTES;
 
@@ -112,6 +111,7 @@ public class GetResponse extends AbstractResponse {
                 p_buffer.put((byte) 0);
             } else {
                 p_buffer.put((byte) 1);
+                p_buffer.putInt(m_dataChunks[i].length);
                 p_buffer.put(m_dataChunks[i]);
             }
         }
@@ -122,11 +122,11 @@ public class GetResponse extends AbstractResponse {
         m_totalSuccessful = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
 
         // read the payload from the buffer and write it directly into
-        // the chunk objects provided by the request to avoid further copying of data
+        // the chunk buffer objects provided by the request to avoid further copying of data
         MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
-        GetRequest request = (GetRequest) getCorrespondingRequest();
+        GetAnonRequest request = (GetAnonRequest) getCorrespondingRequest();
 
-        for (DataStructure chunk : request.getChunks()) {
+        for (ChunkAnon chunk : request.getChunks()) {
             if (p_buffer.get() == 1) {
                 importer.importObject(chunk);
                 chunk.setState(ChunkState.OK);

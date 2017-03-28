@@ -98,7 +98,6 @@ public class ChunkRemoveAllTask implements Task {
                     long rangeStart = chunkRanges.getRangeStart(rangeIdx);
                     long rangeEnd = chunkRanges.getRangeEnd(rangeIdx);
                     long batchChunkCount = m_chunkBatch;
-                    ;
 
                     while (batches > 0) {
                         int fillCount = 0;
@@ -108,8 +107,6 @@ public class ChunkRemoveAllTask implements Task {
                             for (int j = fillCount; j < batchChunkCount; j++) {
                                 chunkIds[j] = rangeStart + j;
                             }
-
-                            fillCount = 0;
                         } else {
                             // chunksInRange < m_chunkBatch
 

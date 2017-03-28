@@ -17,21 +17,22 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import de.hhu.bsinfo.dxram.backup.RangeID;
-import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
- * Message for logging a Chunk on a remote node
+ * Message for logging an anonymous chunk on a remote node
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 20.04.2016
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.03.2017
  */
-public class LogMessage extends AbstractMessage {
+public class LogAnonMessage extends AbstractMessage {
 
     // Attributes
     private short m_rangeID;
-    private DataStructure[] m_dataStructures;
+    private ChunkAnon[] m_chunks;
     private ByteBuffer m_buffer;
 
     private int m_copiedBytes;
@@ -41,11 +42,11 @@ public class LogMessage extends AbstractMessage {
     /**
      * Creates an instance of LogMessage
      */
-    public LogMessage() {
+    public LogAnonMessage() {
         super();
 
         m_rangeID = RangeID.INVALID_ID;
-        m_dataStructures = null;
+        m_chunks = null;
         m_buffer = null;
     }
 
@@ -54,16 +55,16 @@ public class LogMessage extends AbstractMessage {
      *
      * @param p_destination
      *     the destination
-     * @param p_dataStructures
-     *     the data structures to store
+     * @param p_chunks
+     *     the chunks to store
      * @param p_rangeID
      *     the RangeID
      */
-    public LogMessage(final short p_destination, final short p_rangeID, final DataStructure... p_dataStructures) {
+    public LogAnonMessage(final short p_destination, final short p_rangeID, final ChunkAnon... p_chunks) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
 
         m_rangeID = p_rangeID;
-        m_dataStructures = p_dataStructures;
+        m_chunks = p_chunks;
     }
 
     // Getters
@@ -79,11 +80,11 @@ public class LogMessage extends AbstractMessage {
 
     @Override
     protected final int getPayloadLength() {
-        if (m_dataStructures != null) {
+        if (m_chunks != null) {
             int ret = Short.BYTES + Integer.BYTES;
 
-            for (DataStructure dataStructure : m_dataStructures) {
-                ret += Long.BYTES + Integer.BYTES + dataStructure.sizeofObject();
+            for (ChunkAnon chunk : m_chunks) {
+                ret += Long.BYTES + chunk.sizeofObject();
             }
 
             return ret;
@@ -97,14 +98,11 @@ public class LogMessage extends AbstractMessage {
     protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putShort(m_rangeID);
 
-        p_buffer.putInt(m_dataStructures.length);
+        p_buffer.putInt(m_chunks.length);
         final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
-        for (DataStructure dataStructure : m_dataStructures) {
-            final int size = dataStructure.sizeofObject();
-
-            p_buffer.putLong(dataStructure.getID());
-            p_buffer.putInt(size);
-            exporter.exportObject(dataStructure);
+        for (ChunkAnon chunk : m_chunks) {
+            p_buffer.putLong(chunk.getID());
+            exporter.exportObject(chunk);
         }
     }
 

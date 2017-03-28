@@ -16,7 +16,6 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -33,10 +32,11 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
 public class PutRequest extends AbstractRequest {
 
     // DataStructures used when sending the put request.
-    // These are also used by the response to directly write the
-    // receiving data to the structures
-    // Chunks are created and used when receiving a put request
     private DataStructure[] m_dataStructures;
+
+    // Variables used when receiving the request
+    private long[] m_chunkIDs;
+    private byte[][] m_data;
 
     /**
      * Creates an instance of PutRequest.
@@ -72,7 +72,7 @@ public class PutRequest extends AbstractRequest {
                 ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
                 break;
             default:
-                assert 1 == 2;
+                assert false;
                 break;
         }
 
@@ -80,12 +80,21 @@ public class PutRequest extends AbstractRequest {
     }
 
     /**
-     * Get the DataStructures to put when this message is received.
+     * Get the chunk IDs of the data to put when this request is received.
      *
-     * @return the Chunk to put
+     * @return the IDs of the chunks to put
      */
-    public final DataStructure[] getDataStructures() {
-        return m_dataStructures;
+    public long[] getChunkIDs() {
+        return m_chunkIDs;
+    }
+
+    /**
+     * Get the data of the chunks to put when this request is received
+     *
+     * @return Array of byte[] of chunk data to put
+     */
+    public byte[][] getChunkData() {
+        return m_data;
     }
 
     /**
@@ -130,28 +139,22 @@ public class PutRequest extends AbstractRequest {
 
             p_buffer.putLong(dataStructure.getID());
             p_buffer.putInt(size);
-            p_buffer.order(ByteOrder.nativeOrder());
             exporter.exportObject(dataStructure);
-            p_buffer.order(ByteOrder.BIG_ENDIAN);
         }
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
         int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
 
-        m_dataStructures = new Chunk[numChunks];
+        m_chunkIDs = new long[numChunks];
+        m_data = new byte[numChunks][];
 
         for (int i = 0; i < m_dataStructures.length; i++) {
-            long id = p_buffer.getLong();
-            int size = p_buffer.getInt();
+            m_chunkIDs[i] = p_buffer.getLong();
+            m_data[i] = new byte[p_buffer.getInt()];
 
-            m_dataStructures[i] = new Chunk(id, size);
-            p_buffer.order(ByteOrder.nativeOrder());
-            importer.importObject(m_dataStructures[i]);
-            p_buffer.order(ByteOrder.BIG_ENDIAN);
+            p_buffer.get(m_data[i]);
         }
     }
-
 }

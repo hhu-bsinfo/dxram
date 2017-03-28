@@ -24,7 +24,6 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -604,23 +603,6 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         return m_peer.superpeerStoragePut(p_dataStructure);
-    }
-
-    /**
-     * Get data from the superpeer storage.
-     *
-     * @param p_id
-     *     Id of an allocated block to get the data from.
-     * @return Chunk with the data other null on error.
-     */
-    public Chunk superpeerStorageGet(final int p_id) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
-        return m_peer.superpeerStorageGet(p_id);
     }
 
     /**

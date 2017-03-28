@@ -16,8 +16,8 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
+import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
@@ -34,7 +34,9 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
     // receiving data to the structures
     // Chunks are created and used when receiving a put request
     private DataStructure m_dataStructure;
-    private Chunk m_chunk;
+
+    // used when receiving message
+    private DSByteArray m_chunk;
 
     private boolean m_isReplicate;
 
@@ -68,7 +70,7 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
      *
      * @return the Chunks to put
      */
-    public final Chunk getChunk() {
+    public final DSByteArray getChunk() {
         return m_chunk;
     }
 
@@ -102,9 +104,7 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 
         p_buffer.putLong(m_dataStructure.getID());
         p_buffer.putInt(size);
-        p_buffer.order(ByteOrder.nativeOrder());
         exporter.exportObject(m_dataStructure);
-        p_buffer.order(ByteOrder.BIG_ENDIAN);
         p_buffer.put((byte) (m_isReplicate ? 1 : 0));
     }
 
@@ -112,15 +112,8 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
     protected final void readPayload(final ByteBuffer p_buffer) {
         MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
-        m_chunk = new Chunk();
-
-        long id = p_buffer.getLong();
-        int size = p_buffer.getInt();
-
-        m_chunk = new Chunk(id, size);
-        p_buffer.order(ByteOrder.nativeOrder());
+        m_chunk = new DSByteArray(p_buffer.getLong(), p_buffer.getInt());
         importer.importObject(m_chunk);
-        p_buffer.order(ByteOrder.BIG_ENDIAN);
         m_isReplicate = p_buffer.get() != 0;
     }
 }

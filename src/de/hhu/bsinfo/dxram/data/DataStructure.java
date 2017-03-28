@@ -17,18 +17,40 @@ import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Importable;
 
 /**
- * Interface for any kind of data structure that can be stored and read from
- * memory. Implement this with any object you want to put/get from the memory system.
+ * Base class for any kind of data structure that can be stored to and read from
+ * the key value store. Implement this with any object you want to put to/get from the system.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
-public interface DataStructure extends Importable, Exportable {
+public abstract class DataStructure implements Importable, Exportable {
+    private long m_id = ChunkID.INVALID_ID;
+    private ChunkState m_state = ChunkState.OK;
+
+    /**
+     * Default constructor
+     */
+    public DataStructure() {
+
+    }
+
+    /**
+     * Constructor
+     *
+     * @param p_chunkID
+     *     Chunk ID to assign
+     */
+    public DataStructure(final long p_chunkID) {
+        m_id = p_chunkID;
+    }
+
     /**
      * Get the unique identifier of this data structure.
      *
      * @return Unique identifier.
      */
-    long getID();
+    public long getID() {
+        return m_id;
+    }
 
     /**
      * Set the unique identifier of this data structure.
@@ -36,5 +58,33 @@ public interface DataStructure extends Importable, Exportable {
      * @param p_id
      *     ID to set.
      */
-    void setID(long p_id);
+    public void setID(final long p_id) {
+        m_id = p_id;
+    }
+
+    /**
+     * Get the current state of the data structure. The state is set by DXRAM when execution DXRAM operations
+     * on the data structure
+     *
+     * @return State set by the last DXRAM operation involving this data structure
+     */
+    public ChunkState getState() {
+        return m_state;
+    }
+
+    /**
+     * Set the state of the data structure. This is used by DXRAM on operations to indicate errors on operations.
+     * Applications built on top of DXRAM do not need this call.
+     *
+     * @param p_state
+     *     State to set.
+     */
+    public void setState(final ChunkState p_state) {
+        m_state = p_state;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '[' + ChunkID.toHexString(m_id) + ", " + m_state + ']';
+    }
 }

@@ -13,7 +13,6 @@
 
 package de.hhu.bsinfo.dxram.tmp;
 
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -100,17 +99,6 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      */
     public boolean put(final DataStructure p_dataStructure) {
         return m_lookup.superpeerStoragePut(p_dataStructure);
-    }
-
-    /**
-     * Get data from the superpeer storage.
-     *
-     * @param p_id
-     *     Id of an allocated block to get the data from.
-     * @return Chunk with the data other null on error.
-     */
-    public Chunk get(final int p_id) {
-        return m_lookup.superpeerStorageGet(p_id);
     }
 
     /**

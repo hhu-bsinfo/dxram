@@ -13,14 +13,13 @@
 
 package de.hhu.bsinfo.dxram.run.beineke;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.DSByteBuffer;
 import de.hhu.bsinfo.utils.Tools;
 
 /**
@@ -134,12 +133,11 @@ public final class LogTest implements Runnable {
     @Override
     public void run() {
         long[] removes;
-        Chunk[] chunks;
-        Chunk[] updates;
-        Chunk[] fillChunks;
+        DSByteBuffer[] chunks;
+        DSByteBuffer[] updates;
+        DSByteBuffer[] fillChunks;
         ArrayList<Long> chunkIDList;
-        ArrayList<Chunk> chunkList;
-        ByteBuffer data;
+        ArrayList<DSByteBuffer> chunkList;
 
         System.out
             .println("I am " + m_id + ", writing " + ms_chunksPerThread + " chunks between " + ms_minChunkSize + " Bytes and " + ms_maxChunkSize + " Bytes");
@@ -148,21 +146,18 @@ public final class LogTest implements Runnable {
          * Preparation
          */
         // Create array of Chunks
-        chunks = new Chunk[(int) ms_chunksPerThread];
+        chunks = new DSByteBuffer[(int) ms_chunksPerThread];
         for (int i = 0; i < ms_chunksPerThread; i++) {
-            chunks[i] = new Chunk(Tools.getRandomValue(ms_minChunkSize, ms_maxChunkSize));
-            data = chunks[i].getData();
-            if (data != null) {
-                data.put(("This is a test! (" + m_nodeID + ')').getBytes());
-            }
+            chunks[i] = new DSByteBuffer(Tools.getRandomValue(ms_minChunkSize, ms_maxChunkSize));
+            chunks[i].getData().put(("This is a test! (" + m_nodeID + ')').getBytes());
         }
         ms_chunkService.create(chunks);
 
         // Create list for updates (chunks)
-        chunkList = new ArrayList<Chunk>();
+        chunkList = new ArrayList<DSByteBuffer>();
         chunkList.addAll(Arrays.asList(chunks).subList(0, (int) ms_chunksPerThread));
         Collections.shuffle(chunkList);
-        updates = chunkList.subList(0, ms_updatesPerThread).toArray(new Chunk[ms_updatesPerThread]);
+        updates = chunkList.subList(0, ms_updatesPerThread).toArray(new DSByteBuffer[ms_updatesPerThread]);
 
         // Create list for deletes (chunkIDs)
         chunkIDList = new ArrayList<Long>();
@@ -173,9 +168,9 @@ public final class LogTest implements Runnable {
         removes = chunkIDList.subList(0, ms_deletesPerThread).stream().mapToLong(l -> l).toArray();
 
         // Create fill chunks (to clear secondary log buffer)
-        fillChunks = new Chunk[10];
+        fillChunks = new DSByteBuffer[10];
         for (int i = 0; i < 10; i++) {
-            fillChunks[i] = new Chunk(1048576);
+            fillChunks[i] = new DSByteBuffer(1048576);
         }
 
         /*

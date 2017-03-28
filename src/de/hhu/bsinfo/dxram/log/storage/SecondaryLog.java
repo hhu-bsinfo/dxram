@@ -30,8 +30,9 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent.RecoveryWriterThread;
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.DSByteArray;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.ChecksumHandler;
@@ -169,7 +170,7 @@ public class SecondaryLog extends AbstractLog {
      * @throws IOException
      *     if the secondary log could not be read
      */
-    public static Chunk[] recoverFromFile(final String p_fileName, final String p_path, final boolean p_useChecksum, final long p_secondaryLogSize,
+    public static DataStructure[] recoverFromFile(final String p_fileName, final String p_path, final boolean p_useChecksum, final long p_secondaryLogSize,
         final int p_logSegmentSize, final HarddriveAccessMode p_mode) throws IOException {
         short nodeID;
         int i = 0;
@@ -181,7 +182,7 @@ public class SecondaryLog extends AbstractLog {
         boolean storesMigrations;
         byte[][] segments;
         byte[] payload;
-        HashMap<Long, Chunk> chunkMap;
+        HashMap<Long, DataStructure> chunkMap;
         AbstractSecLogEntryHeader logEntryHeader;
 
         // TODO: See recoverFromLog(...)
@@ -189,7 +190,7 @@ public class SecondaryLog extends AbstractLog {
         nodeID = Short.parseShort(p_fileName.split("_")[0].substring(1));
         storesMigrations = p_fileName.contains("M");
 
-        chunkMap = new HashMap<Long, Chunk>();
+        chunkMap = new HashMap<Long, DataStructure>();
 
         segments = readAllSegmentsFromFile(p_path + p_fileName, p_secondaryLogSize, p_logSegmentSize, p_mode);
 
@@ -220,7 +221,7 @@ public class SecondaryLog extends AbstractLog {
                             offset += logEntrySize;
                             continue;
                         }
-                        chunkMap.put(chunkID, new Chunk(chunkID, ByteBuffer.wrap(payload)));
+                        chunkMap.put(chunkID, new DSByteArray(chunkID, payload));
                     }
                     offset += logEntrySize;
                 }
@@ -229,7 +230,7 @@ public class SecondaryLog extends AbstractLog {
             i++;
         }
 
-        return chunkMap.values().toArray(new Chunk[chunkMap.size()]);
+        return chunkMap.values().toArray(new DataStructure[chunkMap.size()]);
     }
 
     /**
@@ -247,7 +248,7 @@ public class SecondaryLog extends AbstractLog {
         // Put all large chunks
         int counter = 0;
         int length = 0;
-        Chunk[] chunks = new Chunk[p_largeChunks.size()];
+        DataStructure[] chunks = new DataStructure[p_largeChunks.size()];
         for (Map.Entry<Long, ArrayList<byte[]>> longEntry : p_largeChunks.entrySet()) {
             long chunkID = longEntry.getKey();
             ArrayList<byte[]> chunkSegments = longEntry.getValue();
@@ -273,7 +274,7 @@ public class SecondaryLog extends AbstractLog {
             }
 
             // Create chunk
-            chunks[counter++] = new Chunk(chunkID, buffer);
+            chunks[counter++] = new DSByteArray(chunkID, buffer.array());
             p_recoveryMetadata.add(length);
         }
         p_chunkComponent.putRecoveredChunks(chunks);

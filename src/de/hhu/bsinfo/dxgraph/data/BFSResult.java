@@ -20,11 +20,11 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Data structure holding results of a single BFS run.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 20.05.2016
  */
-public class BFSResult implements DataStructure {
+public class BFSResult extends DataStructure {
 
-    private long m_id = ChunkID.INVALID_ID;
     public long m_rootVertexId = ChunkID.INVALID_ID;
     public long m_graphFullSizeVertices = 0;
     public long m_graphFullSizeEdges = 0;
@@ -43,16 +43,6 @@ public class BFSResult implements DataStructure {
 
     public BFSResult() {
 
-    }
-
-    @Override
-    public long getID() {
-        return m_id;
-    }
-
-    @Override
-    public void setID(final long p_id) {
-        m_id = p_id;
     }
 
     @Override
@@ -100,13 +90,13 @@ public class BFSResult implements DataStructure {
 
     @Override
     public String toString() {
-        return "BFSResult " + ChunkID.toHexString(m_id) + ":\n" + "m_rootVertexId " + ChunkID.toHexString(m_rootVertexId) + "\n" + "m_graphFullSizeVertices " +
-                m_graphFullSizeVertices + "\n" + "m_graphFullSizeEdges " + m_graphFullSizeEdges + "\n" + "m_graphPartitionSizeVertices " +
-                m_graphPartitionSizeVertices + "\n" + "m_graphPartitionSizeEdges " + m_graphPartitionSizeEdges + "\n" + "m_totalVisitedVertices " +
-                m_totalVisitedVertices + "\n" + "m_totalVisitedEdges " + m_totalVisitedEdges + "\n" + "m_totalVerticesTraversed " + m_totalVerticesTraversed +
-                "\n" + "m_totalEdgesTraversed " + m_totalEdgesTraversed + "\n" + "m_maxTraversedVertsPerSecond " + m_maxTraversedVertsPerSecond + "\n" +
-                "m_maxTraversedEdgesPerSecond " + m_maxTraversedEdgesPerSecond + "\n" + "m_avgTraversedVertsPerSecond " + m_avgTraversedVertsPerSecond + "\n" +
-                "m_avgTraversedEdgesPerSecond " + m_avgTraversedEdgesPerSecond + "\n" + "m_totalTimeMs " + m_totalTimeMs + "\n" + "m_totalBFSDepth " +
-                m_totalBFSDepth;
+        return "BFSResult " + ChunkID.toHexString(getID()) + ":\n" + "m_rootVertexId " + ChunkID.toHexString(m_rootVertexId) + '\n' +
+            "m_graphFullSizeVertices " + m_graphFullSizeVertices + '\n' + "m_graphFullSizeEdges " + m_graphFullSizeEdges + '\n' +
+            "m_graphPartitionSizeVertices " + m_graphPartitionSizeVertices + '\n' + "m_graphPartitionSizeEdges " + m_graphPartitionSizeEdges + '\n' +
+            "m_totalVisitedVertices " + m_totalVisitedVertices + '\n' + "m_totalVisitedEdges " + m_totalVisitedEdges + '\n' + "m_totalVerticesTraversed " +
+            m_totalVerticesTraversed + '\n' + "m_totalEdgesTraversed " + m_totalEdgesTraversed + '\n' + "m_maxTraversedVertsPerSecond " +
+            m_maxTraversedVertsPerSecond + '\n' + "m_maxTraversedEdgesPerSecond " + m_maxTraversedEdgesPerSecond + '\n' + "m_avgTraversedVertsPerSecond " +
+            m_avgTraversedVertsPerSecond + '\n' + "m_avgTraversedEdgesPerSecond " + m_avgTraversedEdgesPerSecond + '\n' + "m_totalTimeMs " + m_totalTimeMs +
+            '\n' + "m_totalBFSDepth " + m_totalBFSDepth;
     }
 }

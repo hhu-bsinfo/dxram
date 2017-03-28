@@ -30,7 +30,6 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -330,8 +329,8 @@ public class LogComponent extends AbstractDXRAMComponent {
      *     the path of the folder the file is in
      * @return the recovered Chunks
      */
-    public Chunk[] recoverBackupRangeFromFile(final String p_fileName, final String p_path) {
-        Chunk[] ret = null;
+    public DataStructure[] recoverBackupRangeFromFile(final String p_fileName, final String p_path) {
+        DataStructure[] ret = null;
 
         try {
             ret = SecondaryLog.recoverFromFile(p_fileName, p_path, m_useChecksum, m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_mode);

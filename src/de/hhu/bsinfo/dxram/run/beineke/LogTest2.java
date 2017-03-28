@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.DSByteBuffer;
 
 /**
  * Second test case for logging
@@ -98,17 +98,14 @@ public final class LogTest2 {
         public void run() {
             long counter = 0;
             long start;
-            Chunk[] chunks;
+            DSByteBuffer[] chunks;
             ByteBuffer data;
 
             // Create array of Chunks
-            chunks = new Chunk[CHUNKS_PER_PUT];
+            chunks = new DSByteBuffer[CHUNKS_PER_PUT];
             for (int i = 0; i < CHUNKS_PER_PUT; i++) {
-                chunks[i] = new Chunk(CHUNK_SIZE);
-                data = chunks[i].getData();
-                if (data != null) {
-                    data.put("Test!".getBytes());
-                }
+                chunks[i] = new DSByteBuffer(CHUNK_SIZE);
+                chunks[i].getData().put("Test!".getBytes());
             }
 
             start = System.currentTimeMillis();

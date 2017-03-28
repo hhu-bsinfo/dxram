@@ -135,9 +135,11 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      *     the size
      * @lock MemoryManager must be write locked
      */
-    public void registerChunk(final long p_chunkID, final int p_size) {
+    public BackupRange registerChunk(final long p_chunkID, final int p_size) {
         if (m_backupActive && p_chunkID != ChunkID.INVALID_ID) {
-            registerValidChunk(p_chunkID, p_size);
+            return registerValidChunk(p_chunkID, p_size);
+        } else {
+            return null;
         }
     }
 

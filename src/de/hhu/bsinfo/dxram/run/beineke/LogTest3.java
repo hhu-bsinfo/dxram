@@ -21,7 +21,7 @@ import java.util.TreeMap;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.DSByteBuffer;
 
 /**
  * Third test case for logging. Imitates a test found in http://dx.doi.org/10.1145/2806887.
@@ -145,7 +145,7 @@ public final class LogTest3 {
             int numberOfRequests;
             long counter = 0;
             long start;
-            Chunk[] chunks;
+            DSByteBuffer[] chunks;
             // Chunk[][] allChunks;
             ByteBuffer data;
 
@@ -153,13 +153,10 @@ public final class LogTest3 {
              * Phase 1: Creating chunks
              */
             // Create all chunks
-            chunks = new Chunk[CHUNKS_PER_PUT];
+            chunks = new DSByteBuffer[CHUNKS_PER_PUT];
             for (int i = 0; i < CHUNKS_PER_PUT; i++) {
-                chunks[i] = new Chunk(CHUNK_SIZE);
-                data = chunks[i].getData();
-                if (data != null) {
-                    data.put("Test!".getBytes());
-                }
+                chunks[i] = new DSByteBuffer(CHUNK_SIZE);
+                chunks[i].getData().put("Test!".getBytes());
             }
 
             numberOfRequests = (int) (BYTES_TO_LOAD / CHUNK_SIZE / CHUNKS_PER_PUT / MASTER_THREADS);
@@ -319,19 +316,16 @@ public final class LogTest3 {
 
             long start;
             long counter = 0;
-            Chunk[] chunks;
+            DSByteBuffer[] chunks;
 
             Random rand;
             FastZipfGenerator zipf;
 
             // Create array of Chunks
-            chunks = new Chunk[CHUNKS_PER_UPDATE];
+            chunks = new DSByteBuffer[CHUNKS_PER_UPDATE];
             for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
-                chunks[i] = new Chunk(CHUNK_SIZE);
-                data = chunks[i].getData();
-                if (data != null) {
-                    data.put("Update".getBytes());
-                }
+                chunks[i] = new DSByteBuffer(CHUNK_SIZE);
+                chunks[i].getData().put("Update".getBytes());
             }
 
             start = System.currentTimeMillis();

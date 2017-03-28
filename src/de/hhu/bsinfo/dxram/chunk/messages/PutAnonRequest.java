@@ -14,51 +14,49 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
- * (Async) Message for updating a Chunk on a remote node
+ * Request for updating a Chunk using an anonymous Chunk on a remote node
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 30.03.2017
  */
-public class PutMessage extends AbstractMessage {
+public class PutAnonRequest extends AbstractRequest {
+    // chunk used when sending the put request.
+    private ChunkAnon[] m_chunks;
 
-    // DataStructures used when sending the put message
-    private DataStructure[] m_dataStructures;
-
-    // Variables used when receiving the message
+    // Variables used when receiving the request
     private long[] m_chunkIDs;
     private byte[][] m_data;
 
     /**
-     * Creates an instance of PutMessage.
+     * Creates an instance of PutAnonRequest.
      * This constructor is used when receiving this message.
      */
-    public PutMessage() {
+    public PutAnonRequest() {
         super();
     }
 
     /**
-     * Creates an instance of PutMessage
+     * Creates an instance of PutAnonRequest
      *
      * @param p_destination
      *     the destination
      * @param p_unlockOperation
      *     if true a potential lock will be released
-     * @param p_dataStructures
-     *     Data structure with the data to put.
+     * @param p_chunks
+     *     Chunk buffers with the data to put.
      */
-    public PutMessage(final short p_destination, final ChunkLockOperation p_unlockOperation, final DataStructure... p_dataStructures) {
-        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_MESSAGE);
+    public PutAnonRequest(final short p_destination, final ChunkLockOperation p_unlockOperation, final ChunkAnon... p_chunks) {
+        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_BUFFER_REQUEST);
 
-        m_dataStructures = p_dataStructures;
+        m_chunks = p_chunks;
 
         byte tmpCode = getStatusCode();
         switch (p_unlockOperation) {
@@ -71,14 +69,15 @@ public class PutMessage extends AbstractMessage {
                 ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
                 break;
             default:
+                assert false;
                 break;
         }
 
-        setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));
+        setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_chunks.length));
     }
 
     /**
-     * Get the chunk IDs of the data to put when this message is received.
+     * Get the chunk IDs of the data to put when this request is received.
      *
      * @return the IDs of the chunks to put
      */
@@ -87,7 +86,7 @@ public class PutMessage extends AbstractMessage {
     }
 
     /**
-     * Get the data of the chunks to put when this message is received
+     * Get the data of the chunks to put when this request is received
      *
      * @return Array of byte[] of chunk data to put
      */
@@ -116,28 +115,32 @@ public class PutMessage extends AbstractMessage {
     protected final int getPayloadLength() {
         int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
 
-        size += m_dataStructures.length * Long.BYTES;
-        size += m_dataStructures.length * Integer.BYTES;
+        if (m_chunks != null) {
+            size += m_chunks.length * Long.BYTES;
 
-        for (DataStructure dataStructure : m_dataStructures) {
-            size += dataStructure.sizeofObject();
+            for (ChunkAnon chunk : m_chunks) {
+                size += chunk.sizeofObject();
+            }
+        } else {
+            size += m_chunkIDs.length * Long.BYTES;
+
+            for (int i = 0; i < m_data.length; i++) {
+                size += Integer.BYTES + m_data[i].length;
+            }
         }
 
         return size;
     }
 
-    // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
+        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunks.length);
 
         MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
-        for (DataStructure dataStructure : m_dataStructures) {
-            int size = dataStructure.sizeofObject();
-
-            p_buffer.putLong(dataStructure.getID());
-            p_buffer.putInt(size);
-            exporter.exportObject(dataStructure);
+        for (ChunkAnon chunk : m_chunks) {
+            p_buffer.putLong(chunk.getID());
+            // the Chunk will write the size of its buffer as well
+            exporter.exportObject(chunk);
         }
     }
 
@@ -148,7 +151,7 @@ public class PutMessage extends AbstractMessage {
         m_chunkIDs = new long[numChunks];
         m_data = new byte[numChunks][];
 
-        for (int i = 0; i < m_dataStructures.length; i++) {
+        for (int i = 0; i < m_chunkIDs.length; i++) {
             m_chunkIDs[i] = p_buffer.getLong();
             m_data[i] = new byte[p_buffer.getInt()];
 

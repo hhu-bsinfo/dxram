@@ -13,7 +13,6 @@
 
 package de.hhu.bsinfo.dxram.lookup.overlay;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,8 +26,9 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkState;
+import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.failure.messages.FailureRequest;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
@@ -2091,12 +2091,14 @@ public class OverlaySuperpeer implements MessageReceiver {
     private void incomingSuperpeerStorageGetRequest(final SuperpeerStorageGetRequest p_request) {
         byte[] data = m_metadata.getStorage(p_request.getStorageID());
 
-        Chunk chunk;
+        DSByteArray chunk;
         if (data == null) {
             // create invalid entry
-            chunk = new Chunk();
+            chunk = new DSByteArray(p_request.getStorageID(), new byte[0]);
+            chunk.setState(ChunkState.DOES_NOT_EXIST);
         } else {
-            chunk = new Chunk(p_request.getStorageID(), ByteBuffer.wrap(data));
+            chunk = new DSByteArray(p_request.getStorageID(), data);
+            chunk.setState(ChunkState.OK);
         }
 
         SuperpeerStorageGetResponse response = new SuperpeerStorageGetResponse(p_request, chunk);
@@ -2120,13 +2122,12 @@ public class OverlaySuperpeer implements MessageReceiver {
      *     the SuperpeerStoragePutRequest
      */
     private void incomingSuperpeerStoragePutRequest(final SuperpeerStoragePutRequest p_request) {
-        Chunk chunk = p_request.getChunk();
+        DSByteArray chunk = p_request.getChunk();
 
-        assert chunk.getData() != null;
-        int res = m_metadata.putStorage((int) chunk.getID(), chunk.getData().array());
+        int res = m_metadata.putStorage((int) chunk.getID(), chunk.getData());
         if (!p_request.isReplicate()) {
             SuperpeerStoragePutResponse response = new SuperpeerStoragePutResponse(p_request);
-            if (res != chunk.getDataSize()) {
+            if (res != chunk.sizeofObject()) {
                 response.setStatusCode((byte) -1);
             }
 

@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -1013,59 +1012,6 @@ public class OverlayPeer implements MessageReceiver {
     /**
      * Get data from an allocated block in the superpeer storage.
      *
-     * @param p_id
-     *     Id of the allocated block.
-     * @return Chunk with data from the block or null on error.
-     */
-    public Chunk superpeerStorageGet(final int p_id) {
-        boolean check = false;
-        short responsibleSuperpeer;
-
-        m_overlayLock.readLock().lock();
-        if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
-            check = true;
-        }
-        responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
-        m_overlayLock.readLock().unlock();
-
-        while (true) {
-            if (responsibleSuperpeer != NodeID.INVALID_ID) {
-                Chunk chunk = new Chunk((long) p_id);
-                SuperpeerStorageGetRequest request = new SuperpeerStorageGetRequest(responsibleSuperpeer, chunk);
-                try {
-                    m_network.sendSync(request);
-                } catch (final NetworkException e) {
-                    // Responsible superpeer is not available, try again (superpeers will be updated
-                    // automatically by network thread)
-                    try {
-                        Thread.sleep(MSG_TIMEOUT_MS);
-                    } catch (final InterruptedException ignored) {
-                    }
-
-                    m_overlayLock.readLock().lock();
-                    responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
-                    m_overlayLock.readLock().unlock();
-
-                    continue;
-                }
-
-                SuperpeerStorageGetResponse response = request.getResponse(SuperpeerStorageGetResponse.class);
-                if (response.getStatusCode() == 0) {
-                    return chunk;
-                } else {
-                    return null;
-                }
-            }
-
-            m_overlayLock.readLock().lock();
-            responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
-            m_overlayLock.readLock().unlock();
-        }
-    }
-
-    /**
-     * Get data from an allocated block in the superpeer storage.
-     *
      * @param p_dataStructure
      *     Data structure with set storage id to read the data from the storage into.
      * @return True if successful, false otherwise.
@@ -1202,7 +1148,7 @@ public class OverlayPeer implements MessageReceiver {
         }
 
         // and finally...sort
-        Collections.sort(aggregatedStatus, (p_o1, p_o2) -> {
+        aggregatedStatus.sort((p_o1, p_o2) -> {
             Integer i1 = (int) (p_o1 >> 32);
             Integer i2 = (int) (p_o2 >> 32);
 

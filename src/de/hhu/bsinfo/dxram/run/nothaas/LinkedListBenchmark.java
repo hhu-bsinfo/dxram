@@ -161,8 +161,7 @@ public final class LinkedListBenchmark extends AbstractMain {
      *
      * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
      */
-    private static class LinkedListElement implements DataStructure {
-        private long m_ownID = -1;
+    private static class LinkedListElement extends DataStructure {
         private long m_nextID = -1;
 
         /**
@@ -172,7 +171,7 @@ public final class LinkedListBenchmark extends AbstractMain {
          *     ChunkID of the element.
          */
         LinkedListElement(final long p_ownID) {
-            m_ownID = p_ownID;
+            super(p_ownID);
         }
 
         /**
@@ -194,16 +193,6 @@ public final class LinkedListBenchmark extends AbstractMain {
             m_nextID = p_nextID;
         }
 
-        @Override
-        public long getID() {
-            return m_ownID;
-        }
-
-        @Override
-        public void setID(final long p_id) {
-            m_ownID = p_id;
-        }
-
         /**
          * Set the chunkID of the element.
          *
@@ -211,7 +200,7 @@ public final class LinkedListBenchmark extends AbstractMain {
          *     ChunkID.
          */
         void setOwnID(final long p_ownID) {
-            m_ownID = p_ownID;
+            setID(p_ownID);
         }
 
         @Override

@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.run.beineke;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.migration.MigrationService;
 
 /**
@@ -76,7 +76,7 @@ public final class MigrationTest {
         public static void start() {
             long counter = 0;
             long start;
-            Chunk[] chunks;
+            DSByteArray[] chunks;
 
             // Initialize DXRAM
             final DXRAM dxram = new DXRAM();
@@ -85,10 +85,11 @@ public final class MigrationTest {
             final MigrationService migrationService = dxram.getService(MigrationService.class);
 
             // Create array of Chunks
-            chunks = new Chunk[CHUNKS_PER_PUT];
+            chunks = new DSByteArray[CHUNKS_PER_PUT];
             for (int i = 0; i < CHUNKS_PER_PUT; i++) {
-                chunks[i] = new Chunk(CHUNK_SIZE);
-                chunks[i].getData().put("Test!".getBytes());
+                chunks[i] = new DSByteArray(CHUNK_SIZE);
+                byte[] tmp = "Test!".getBytes();
+                System.arraycopy(tmp, 0, chunks[i].getData(), 0, tmp.length);
             }
 
             start = System.currentTimeMillis();
@@ -113,7 +114,7 @@ public final class MigrationTest {
             // Chunk chunk = new Chunk(chunks[0].getID(), chunks[0].getDataSize());
             chunkService.get(chunks);
             for (int i = 0; i < CHUNKS_PER_PUT; i++) {
-                System.out.println(new String(chunks[i].getData().array()));
+                System.out.println(new String(chunks[i].getData()));
             }
         }
     }

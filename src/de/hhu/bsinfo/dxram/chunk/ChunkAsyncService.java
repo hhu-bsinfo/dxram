@@ -146,11 +146,7 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
 
                 short peer = lookupRange.getPrimaryPeer();
 
-                ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
-                if (remoteChunksOfPeer == null) {
-                    remoteChunksOfPeer = new ArrayList<>();
-                    remoteChunksByPeers.put(peer, remoteChunksOfPeer);
-                }
+                ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
                 remoteChunksOfPeer.add(dataStructure);
             }
         }
@@ -279,21 +275,25 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
      *     the PutRequest
      */
     private void incomingPutMessage(final PutMessage p_request) {
-        DataStructure[] chunks = p_request.getDataStructures();
+        long[] chunkIDs = p_request.getChunkIDs();
+        byte[][] data = p_request.getChunkData();
 
         // #ifdef STATISTICS
-        SOP_INCOMING_PUT_ASYNC.enter(chunks.length);
+        SOP_INCOMING_PUT_ASYNC.enter(chunkIDs.length);
         // #endif /* STATISTICS */
 
         m_memoryManager.lockAccess();
-        for (DataStructure chunk : chunks) {
-            // #if LOGGER >= WARN
-            if (!m_memoryManager.put(chunk)) {
-                LOGGER.error("Putting chunk 0x%X failed, does not exist", chunk.getID());
+        try {
+            for (int i = 0; i < chunkIDs.length; i++) {
+                // #if LOGGER >= WARN
+                if (!m_memoryManager.put(chunkIDs[i], data[i])) {
+                    LOGGER.error("Putting chunk 0x%X failed, does not exist", chunkIDs[i]);
+                }
+                // #endif /* LOGGER >= WARN */
             }
-            // #endif /* LOGGER >= WARN */
+        } finally {
+            m_memoryManager.unlockAccess();
         }
-        m_memoryManager.unlockAccess();
 
         // unlock chunks
         if (p_request.getUnlockOperation() != ChunkLockOperation.NO_LOCK_OPERATION) {
@@ -302,8 +302,8 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
                 writeLock = true;
             }
 
-            for (DataStructure dataStructure : chunks) {
-                m_lock.unlock(dataStructure.getID(), m_boot.getNodeID(), writeLock);
+            for (int i = 0; i < chunkIDs.length; i++) {
+                m_lock.unlock(chunkIDs[i], m_boot.getNodeID(), writeLock);
             }
         }
 

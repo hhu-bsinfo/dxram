@@ -23,7 +23,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -60,11 +60,13 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
     /**
      * Puts migrated Chunks
      *
-     * @param p_dataStructures
-     *     the DataStructures
+     * @param p_chunkIDs
+     *     The chunk IDs of the migrated chunks
+     * @param p_data
+     *     The data of the migrated chunks
      * @return whether storing foreign chunks was successful or not
      */
-    public boolean putMigratedChunks(final DataStructure[] p_dataStructures) {
+    public boolean putMigratedChunks(final long[] p_chunkIDs, final byte[][] p_data) {
         short rangeID = 0;
         int logEntrySize;
         long size = 0;
@@ -77,21 +79,21 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
         backupRanges = new ArrayList<>();
         cutChunkIDs = new ArrayList<>();
         m_memoryManager.lockManage();
-        for (DataStructure dataStructure : p_dataStructures) {
+        for (int i = 0; i < p_chunkIDs.length; i++) {
 
-            m_memoryManager.create(dataStructure.getID(), dataStructure.sizeofObject());
-            m_memoryManager.put(dataStructure);
+            m_memoryManager.create(p_chunkIDs[i], p_data[i].length);
+            m_memoryManager.put(p_chunkIDs[i], p_data[i]);
 
             // #if LOGGER == TRACE
-            LOGGER.trace("Stored migrated chunk %s locally", ChunkID.toHexString(dataStructure.getID()));
+            LOGGER.trace("Stored migrated chunk 0x%X locally", p_chunkIDs[i]);
             // #endif /* LOGGER == TRACE */
 
             if (m_backup.isActive()) {
-                backupRange = m_backup.registerChunk(dataStructure);
+                backupRange = m_backup.registerChunk(p_chunkIDs[i], p_data[i].length);
 
                 if (rangeID != backupRange.getRangeID()) {
                     backupRanges.add(backupRange);
-                    cutChunkIDs.add(dataStructure.getID());
+                    cutChunkIDs.add(p_chunkIDs[i]);
                     rangeID = backupRange.getRangeID();
                 }
             }
@@ -100,7 +102,7 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
 
         // Send backups after unlocking memory manager lock
         if (m_backup.isActive()) {
-            replicateMigratedChunks(p_dataStructures, backupRanges, cutChunkIDs);
+            replicateMigratedChunks(p_chunkIDs, p_data, backupRanges, cutChunkIDs);
         }
 
         return true;
@@ -130,14 +132,16 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
     /**
      * Replicate migrated chunks to corresponding backup ranges
      *
-     * @param p_dataStructures
-     *     the chunks to replicate
+     * @param p_chunkIDs
+     *     The chunk IDs of the chunks to replicate
+     * @param p_data
+     *     The data of the chunks to replicate
      * @param p_backupRanges
      *     a list of all relevant backup ranges
      * @param p_cutChunkIDs
      *     a list of ChunkIDs. For every listed ChunkID the backup range must be replaced by next element in p_backupRanges
      */
-    private void replicateMigratedChunks(final DataStructure[] p_dataStructures, final ArrayList<BackupRange> p_backupRanges,
+    private void replicateMigratedChunks(final long[] p_chunkIDs, final byte[][] p_data, final ArrayList<BackupRange> p_backupRanges,
         final ArrayList<Long> p_cutChunkIDs) {
         int counter = 1;
         short rangeID;
@@ -150,9 +154,9 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
         backupPeers = backupRange.getBackupPeers();
         rangeID = backupRange.getRangeID();
 
-        for (DataStructure dataStructure : p_dataStructures) {
+        for (int i = 0; i < p_chunkIDs.length; i++) {
 
-            if (dataStructure.getID() == cutChunkID) {
+            if (p_chunkIDs[i] == cutChunkID) {
                 backupRange = p_backupRanges.get(counter);
                 cutChunkID = p_cutChunkIDs.get(counter);
                 counter++;
@@ -164,7 +168,7 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
             for (short backupPeer : backupPeers) {
                 if (backupPeer != NodeID.INVALID_ID) {
                     try {
-                        m_network.sendMessage(new LogMessage(backupPeer, rangeID, dataStructure));
+                        m_network.sendMessage(new LogMessage(backupPeer, rangeID, new DSByteArray(p_chunkIDs[i], p_data[i])));
                     } catch (final NetworkException ignore) {
 
                     }

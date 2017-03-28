@@ -21,21 +21,26 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 public final class ChunkMessages {
     public static final byte SUBTYPE_GET_REQUEST = 1;
     public static final byte SUBTYPE_GET_RESPONSE = 2;
-    public static final byte SUBTYPE_PUT_REQUEST = 3;
-    public static final byte SUBTYPE_PUT_RESPONSE = 4;
-    public static final byte SUBTYPE_REMOVE_REQUEST = 5;
-    public static final byte SUBTYPE_REMOVE_RESPONSE = 6;
-    public static final byte SUBTYPE_CREATE_REQUEST = 7;
-    public static final byte SUBTYPE_CREATE_RESPONSE = 8;
-    public static final byte SUBTYPE_STATUS_REQUEST = 9;
-    public static final byte SUBTYPE_STATUS_RESPONSE = 10;
-    public static final byte SUBTYPE_PUT_MESSAGE = 11;
-    public static final byte SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST = 12;
-    public static final byte SUBTYPE_GET_LOCAL_CHUNKID_RANGES_RESPONSE = 13;
-    public static final byte SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST = 14;
-    public static final byte SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_RESPONSE = 15;
-    public static final byte SUBTYPE_DUMP_MEMORY_MESSAGE = 16;
-    public static final byte SUBTYPE_RESET_MEMORY_MESSAGE = 17;
+    public static final byte SUBTYPE_GET_ANON_REQUEST = 3;
+    public static final byte SUBTYPE_GET_ANON_RESPONSE = 4;
+    public static final byte SUBTYPE_PUT_REQUEST = 5;
+    public static final byte SUBTYPE_PUT_RESPONSE = 6;
+    public static final byte SUBTYPE_PUT_BUFFER_REQUEST = 7;
+    public static final byte SUBTYPE_PUT_BUFFER_RESPONSE = 8;
+    public static final byte SUBTYPE_PUT_MESSAGE = 9;
+    public static final byte SUBTYPE_PUT_ANON_MESSAGE = 10;
+    public static final byte SUBTYPE_REMOVE_REQUEST = 11;
+    public static final byte SUBTYPE_REMOVE_RESPONSE = 12;
+    public static final byte SUBTYPE_CREATE_REQUEST = 13;
+    public static final byte SUBTYPE_CREATE_RESPONSE = 14;
+    public static final byte SUBTYPE_STATUS_REQUEST = 15;
+    public static final byte SUBTYPE_STATUS_RESPONSE = 16;
+    public static final byte SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST = 17;
+    public static final byte SUBTYPE_GET_LOCAL_CHUNKID_RANGES_RESPONSE = 18;
+    public static final byte SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST = 19;
+    public static final byte SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_RESPONSE = 20;
+    public static final byte SUBTYPE_DUMP_MEMORY_MESSAGE = 21;
+    public static final byte SUBTYPE_RESET_MEMORY_MESSAGE = 22;
 
     /**
      * Static class
