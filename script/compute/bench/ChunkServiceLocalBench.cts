@@ -1,5 +1,5 @@
 {
-	"m_numRequiredSlaves": 0,
+	"m_numRequiredSlaves": 1,
 	"m_name": "ChunkServiceLocalBench",
 	"m_tasks": [
 		{
