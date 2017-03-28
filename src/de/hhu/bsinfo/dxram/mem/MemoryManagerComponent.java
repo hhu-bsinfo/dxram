@@ -1613,14 +1613,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         @Override
         public String toString() {
             String str = "";
-            str += "Free memory (gb): " + m_freeMemory.getGBDouble() + '\n';
-            str += "Total memory (gb): " + m_totalMemory.getGBDouble() + '\n';
-            str += "Total payload memory (gb): " + m_totalPayloadMemory.getGBDouble() + '\n';
+
+            str += "Free memory: " + m_freeMemory.getHumanReadable() + '\n';
+            str += "Total memory: " + m_totalMemory.getHumanReadable() + '\n';
+            str += "Total payload memory: " + m_totalPayloadMemory.getHumanReadable() + '\n';
             str += "Num active memory blocks: " + m_numberOfActiveMemoryBlocks + '\n';
             str += "Num active chunks: " + m_numberOfActiveChunks + '\n';
-            str += "Total chunk payload memory (gb): " + m_totalChunkPayloadMemory.getGBDouble() + '\n';
+            str += "Total chunk payload memory: " + m_totalChunkPayloadMemory.getHumanReadable() + '\n';
             str += "Num CID tables: " + m_cidTableCount + '\n';
-            str += "Total CID tables memory (gb): " + m_totalMemoryCIDTables.getGBDouble() + '\n';
+            str += "Total CID tables memory: " + m_totalMemoryCIDTables.getHumanReadable() + '\n';
             str += "Num of free LIDs cached in LIDStore: " + m_cachedFreeLIDs + '\n';
             str += "Num of total available free LIDs in LIDStore: " + m_availableFreeLIDs + '\n';
             str += "New LID counter state: " + m_newLIDCounter;

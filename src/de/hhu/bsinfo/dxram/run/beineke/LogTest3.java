@@ -166,7 +166,10 @@ public final class LogTest3 {
             for (int i = 0; i < numberOfRequests; i++) {
                 // Create new chunks in MemoryManagement
                 //System.out.println("Created " + m_chunkService.create(chunks) + " chunks á " + CHUNK_SIZE + " bytes");
-                m_chunkService.create(chunks);
+                if (m_chunkService.create(chunks) != CHUNKS_PER_PUT) {
+                    System.out.println("Allocation failure! Aborting!");
+                    break;
+                }
 
                 counter += CHUNK_SIZE * CHUNKS_PER_PUT;
                 if (counter % (100 * 1000 * 1000) == 0) {

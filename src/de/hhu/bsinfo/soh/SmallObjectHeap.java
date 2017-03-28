@@ -33,25 +33,24 @@ import de.hhu.bsinfo.utils.serialization.RandomAccessFileImExporter;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
 public final class SmallObjectHeap implements Importable, Exportable {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(SmallObjectHeap.class.getSimpleName());
-
     // Constants
     static final byte POINTER_SIZE = 5;
     static final int SIZE_MARKER_BYTE = 1;
     static final byte ALLOC_BLOCK_FLAGS_OFFSET = 0x5;
+    private static final Logger LOGGER = LogManager.getFormatterLogger(SmallObjectHeap.class.getSimpleName());
     private static final long MAX_SET_SIZE = (long) Math.pow(2, 30);
     private static final byte SMALL_BLOCK_SIZE = 64;
     private static final byte SINGLE_BYTE_MARKER = 0xF;
-
-    // Attributes, have them accessible by the package to enable walking and analyzing the heap
-    // don't modify or access them otherwise
-    private int m_maxBlockSize;
+    private static final int INVALID_BLOCK_ADDRESS = 0;
     long m_baseFreeBlockList;
     int m_freeBlocksListSize = -1;
     long[] m_freeBlockListSizes;
+    Storage m_memory;
+    // Attributes, have them accessible by the package to enable walking and analyzing the heap
+    // don't modify or access them otherwise
+    private int m_maxBlockSize;
     private int m_freeBlocksListCount = -1;
     private Status m_status;
-    Storage m_memory;
 
     // Constructors
 
@@ -140,15 +139,6 @@ public final class SmallObjectHeap implements Importable, Exportable {
     }
 
     /**
-     * Gets the status
-     *
-     * @return the status
-     */
-    public Status getStatus() {
-        return m_status;
-    }
-
-    /**
      * Extract the size of the length field of the allocated or free area
      * from the marker byte.
      *
@@ -168,6 +158,60 @@ public final class SmallObjectHeap implements Importable, Exportable {
         }
 
         return ret;
+    }
+
+    /**
+     * Calculate the size of the length field for a given memory block size
+     *
+     * @param p_size
+     *     Memory block size
+     * @return Size of the length field to fit the size of the memory block
+     */
+    private static int calculateLengthFieldSizeAllocBlock(final int p_size) {
+        if (p_size >= 1 << 24) {
+            return 4;
+        } else if (p_size >= 1 << 16) {
+            return 3;
+        } else if (p_size >= 1 << 8) {
+            return 2;
+        } else {
+            return 1;
+        }
+    }
+
+    /**
+     * Check the memory bounds of an allocated memory region on access
+     *
+     * @param p_address
+     *     Start address of the allocated memory block
+     * @param p_lengthFieldSize
+     *     Size of the length field
+     * @param p_size
+     *     Size of the memory block
+     * @param p_offset
+     *     Offset to access the black at
+     * @param p_length
+     *     Range of the access starting at offset
+     * @return Dummy return for assert
+     */
+    private static boolean assertMemoryBlockBounds(final long p_address, final long p_lengthFieldSize, final long p_size, final long p_offset,
+        final long p_length) {
+        if (!(p_offset < p_size) || !(p_size >= p_length && p_offset + p_length <= p_size)) {
+            throw new MemoryRuntimeException(
+                "Access at invalid offset " + p_offset + ", on address " + p_address + ", with length " + p_length + " for memory block size " + p_size +
+                    ", size length field " + p_lengthFieldSize);
+        }
+
+        return true;
+    }
+
+    /**
+     * Gets the status
+     *
+     * @return the status
+     */
+    public Status getStatus() {
+        return m_status;
     }
 
     /**
@@ -271,7 +315,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
             for (int i = 0; i < p_usedEntries; i++) {
                 long addr = malloc(p_sizes[i]);
 
-                if (addr == -1) {
+                if (addr == INVALID_BLOCK_ADDRESS) {
                     // roll back
                     for (int j = 0; j < i; j++) {
                         free(ret[j]);
@@ -325,7 +369,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
             for (int i = 0; i < p_count; i++) {
                 long addr = malloc(p_size);
 
-                if (addr == -1) {
+                if (addr == INVALID_BLOCK_ADDRESS) {
                     // roll back
                     for (int j = 0; j < i; j++) {
                         free(ret[j]);
@@ -726,6 +770,8 @@ public final class SmallObjectHeap implements Importable, Exportable {
         return m_memory.writeShorts(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
     }
 
+    // -------------------------------------------------------------------------------------------
+
     /**
      * Write an array of ints to the heap.
      *
@@ -780,11 +826,80 @@ public final class SmallObjectHeap implements Importable, Exportable {
         return m_memory.writeLongs(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
     }
 
-    // -------------------------------------------------------------------------------------------
-
     @Override
     public String toString() {
         return "Memory: " + "m_baseFreeBlockList " + m_baseFreeBlockList + ", status: " + m_status;
+    }
+
+    @Override
+    public void exportObject(final Exporter p_exporter) {
+        p_exporter.writeInt(m_maxBlockSize);
+        p_exporter.writeLong(m_baseFreeBlockList);
+        p_exporter.writeInt(m_freeBlocksListSize);
+        p_exporter.writeLongArray(m_freeBlockListSizes);
+        p_exporter.writeInt(m_freeBlocksListCount);
+        p_exporter.exportObject(m_status);
+        // separate metadata from VMB with padding
+        p_exporter.writeLong(0xFFFFEEDDDDEEFFFFL);
+
+        // write "chunks" of the raw memory to speed up the process
+        byte[] buffer = new byte[1024 * 32];
+
+        int chunkSize = buffer.length;
+        long ptr = 0;
+
+        while (ptr < m_status.getSize()) {
+            if (m_status.getSize() - ptr < chunkSize) {
+                chunkSize = (int) (m_status.getSize() - ptr);
+            }
+
+            m_memory.readBytes(ptr, buffer, 0, chunkSize);
+            p_exporter.writeBytes(buffer, 0, chunkSize);
+
+            ptr += chunkSize;
+        }
+    }
+
+    @Override
+    public void importObject(final Importer p_importer) {
+        m_maxBlockSize = p_importer.readInt();
+        m_baseFreeBlockList = p_importer.readLong();
+        m_freeBlocksListSize = p_importer.readInt();
+        m_freeBlockListSizes = p_importer.readLongArray();
+        m_freeBlocksListCount = p_importer.readInt();
+        m_status = new Status();
+        p_importer.importObject(m_status);
+        // get rid of padding separating metadata from VMB
+        p_importer.readLong();
+
+        // free previously allocated VMB
+        m_memory.free();
+
+        // allocate VMB
+        m_memory.allocate(m_status.getSize());
+
+        // read "chunks" from file and write to raw memory to speed up the process
+        byte[] buffer = new byte[1024 * 32];
+
+        int chunkSize = buffer.length;
+        long ptr = 0;
+
+        while (ptr < m_status.getSize()) {
+            if (m_status.getSize() - ptr < chunkSize) {
+                chunkSize = (int) (m_status.getSize() - ptr);
+            }
+
+            p_importer.readBytes(buffer, 0, chunkSize);
+            m_memory.writeBytes(ptr, buffer, 0, chunkSize);
+            ptr += chunkSize;
+        }
+    }
+
+    @Override
+    public int sizeofObject() {
+        throw new UnsupportedOperationException("Heap can be > 2 GB not fitting int type");
+        // return (int) (Integer.BYTES + Long.BYTES + Integer.BYTES + ObjectSizeUtil.sizeofLongArray(m_freeBlockListSizes) + Integer.BYTES +
+        //     m_status.sizeofObject() + Long.BYTES + m_status.getSize());
     }
 
     /**
@@ -1246,25 +1361,6 @@ public final class SmallObjectHeap implements Importable, Exportable {
     }
 
     /**
-     * Calculate the size of the length field for a given memory block size
-     *
-     * @param p_size
-     *     Memory block size
-     * @return Size of the length field to fit the size of the memory block
-     */
-    private static int calculateLengthFieldSizeAllocBlock(final int p_size) {
-        if (p_size >= 1 << 24) {
-            return 4;
-        } else if (p_size >= 1 << 16) {
-            return 3;
-        } else if (p_size >= 1 << 8) {
-            return 2;
-        } else {
-            return 1;
-        }
-    }
-
-    /**
      * Check the memory bounds with the specified address.
      *
      * @param p_address
@@ -1291,32 +1387,6 @@ public final class SmallObjectHeap implements Importable, Exportable {
     private boolean assertMemoryBounds(final long p_address, final long p_length) {
         if (p_address < 0 || p_address > m_status.m_size || p_address + p_length < 0 || p_address + p_length > m_status.m_size) {
             throw new MemoryRuntimeException("Address " + p_address + " with length " + p_length + "is not within memory: " + this);
-        }
-
-        return true;
-    }
-
-    /**
-     * Check the memory bounds of an allocated memory region on access
-     *
-     * @param p_address
-     *     Start address of the allocated memory block
-     * @param p_lengthFieldSize
-     *     Size of the length field
-     * @param p_size
-     *     Size of the memory block
-     * @param p_offset
-     *     Offset to access the black at
-     * @param p_length
-     *     Range of the access starting at offset
-     * @return Dummy return for assert
-     */
-    private static boolean assertMemoryBlockBounds(final long p_address, final long p_lengthFieldSize, final long p_size, final long p_offset,
-        final long p_length) {
-        if (!(p_offset < p_size) || !(p_size >= p_length && p_offset + p_length <= p_size)) {
-            throw new MemoryRuntimeException(
-                "Access at invalid offset " + p_offset + ", on address " + p_address + ", with length " + p_length + " for memory block size " + p_size +
-                    ", size length field " + p_lengthFieldSize);
         }
 
         return true;
@@ -1484,77 +1554,6 @@ public final class SmallObjectHeap implements Importable, Exportable {
      */
     private void write(final long p_address, final long p_bytes, final int p_count) {
         m_memory.writeVal(p_address, p_bytes, p_count);
-    }
-
-    @Override
-    public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeInt(m_maxBlockSize);
-        p_exporter.writeLong(m_baseFreeBlockList);
-        p_exporter.writeInt(m_freeBlocksListSize);
-        p_exporter.writeLongArray(m_freeBlockListSizes);
-        p_exporter.writeInt(m_freeBlocksListCount);
-        p_exporter.exportObject(m_status);
-        // separate metadata from VMB with padding
-        p_exporter.writeLong(0xFFFFEEDDDDEEFFFFL);
-
-        // write "chunks" of the raw memory to speed up the process
-        byte[] buffer = new byte[1024 * 32];
-
-        int chunkSize = buffer.length;
-        long ptr = 0;
-
-        while (ptr < m_status.getSize()) {
-            if (m_status.getSize() - ptr < chunkSize) {
-                chunkSize = (int) (m_status.getSize() - ptr);
-            }
-
-            m_memory.readBytes(ptr, buffer, 0, chunkSize);
-            p_exporter.writeBytes(buffer, 0, chunkSize);
-
-            ptr += chunkSize;
-        }
-    }
-
-    @Override
-    public void importObject(final Importer p_importer) {
-        m_maxBlockSize = p_importer.readInt();
-        m_baseFreeBlockList = p_importer.readLong();
-        m_freeBlocksListSize = p_importer.readInt();
-        m_freeBlockListSizes = p_importer.readLongArray();
-        m_freeBlocksListCount = p_importer.readInt();
-        m_status = new Status();
-        p_importer.importObject(m_status);
-        // get rid of padding separating metadata from VMB
-        p_importer.readLong();
-
-        // free previously allocated VMB
-        m_memory.free();
-
-        // allocate VMB
-        m_memory.allocate(m_status.getSize());
-
-        // read "chunks" from file and write to raw memory to speed up the process
-        byte[] buffer = new byte[1024 * 32];
-
-        int chunkSize = buffer.length;
-        long ptr = 0;
-
-        while (ptr < m_status.getSize()) {
-            if (m_status.getSize() - ptr < chunkSize) {
-                chunkSize = (int) (m_status.getSize() - ptr);
-            }
-
-            p_importer.readBytes(buffer, 0, chunkSize);
-            m_memory.writeBytes(ptr, buffer, 0, chunkSize);
-            ptr += chunkSize;
-        }
-    }
-
-    @Override
-    public int sizeofObject() {
-        throw new UnsupportedOperationException("Heap can be > 2 GB not fitting int type");
-        // return (int) (Integer.BYTES + Long.BYTES + Integer.BYTES + ObjectSizeUtil.sizeofLongArray(m_freeBlockListSizes) + Integer.BYTES +
-        //     m_status.sizeofObject() + Long.BYTES + m_status.getSize());
     }
 
     // --------------------------------------------------------------------------------------

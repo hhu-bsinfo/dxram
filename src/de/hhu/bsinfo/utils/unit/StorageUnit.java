@@ -139,6 +139,50 @@ public class StorageUnit implements Importable, Exportable {
     }
 
     /**
+     * Get value in easy readable representation
+     *
+     * @return String with value in bytes, kb, mb, gb or tb
+     */
+    public String getHumanReadable() {
+        String ret;
+
+        if (m_bytes > 1024) {
+            if (getKB() > 1024) {
+                if (getMB() > 1024) {
+                    if (getGB() > 1024) {
+                        ret = getTB() + " tb";
+                    } else {
+                        ret = getGB() + " gb";
+                    }
+                } else {
+                    ret = getMB() + " mb";
+                }
+            } else {
+                ret = getKB() + " kb";
+            }
+        } else {
+            ret = m_bytes + " bytes";
+        }
+
+        return ret;
+    }
+
+    @Override
+    public void exportObject(final Exporter p_exporter) {
+        p_exporter.writeLong(m_bytes);
+    }
+
+    @Override
+    public void importObject(final Importer p_importer) {
+        m_bytes = p_importer.readLong();
+    }
+
+    @Override
+    public int sizeofObject() {
+        return Long.BYTES;
+    }
+
+    /**
      * Parse the value with the specified unit
      *
      * @param p_value
@@ -165,20 +209,5 @@ public class StorageUnit implements Importable, Exportable {
                 m_bytes = p_value;
                 break;
         }
-    }
-
-    @Override
-    public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeLong(m_bytes);
-    }
-
-    @Override
-    public void importObject(final Importer p_importer) {
-        m_bytes = p_importer.readLong();
-    }
-
-    @Override
-    public int sizeofObject() {
-        return Long.BYTES;
     }
 }
