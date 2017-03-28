@@ -24,6 +24,8 @@ Copy the *build/dxram* directory to your cluster.
 # Starting DXRAM
 A bash script to easily deploy instances to either local host or nodes of a cluster is included (*script/deploy/deploy.sh*). The script parses a configuration file and starts the specified DXRAM instances. For examples, refer to the configurations in the sub-folders *script/deploy/conf*, especially the *examples* category with *SimpleTest.conf*. For further details on deployment refer to [this readme](../script/deploy/README.md).
 
+Ensure that all scripts used (subfolder *script/deploy* and *script/deploy/modules*) have the executable bit set. You can also use the *env.sh* script to start an environment that sets these bits automatically.
+
 To run a minimal DXRAM setup, compile DXRAM using the *build.sh* script. Adjust the paths at the top of the *SimpleTest.conf* and run the deploy script with the *SimpleTest.conf* from the root of the DXRAM folder:
 ```
 ./build.sh

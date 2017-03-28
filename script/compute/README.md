@@ -24,6 +24,8 @@ Add the following item to the *m_services* list in your DXRAM configuration, e.g
 }
 ```
 
+If the *dxram.json* file is not available, start the deploy script once to auto generate a default config file.
+
 ## Deployment and running an example script
 
 Deploy DXRAM using the deploy script with the *SimpleComputeGroupTest.conf* config (execution directory is the dxram root dir):
