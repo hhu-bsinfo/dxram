@@ -22,9 +22,9 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
 /**
  * Extends AbstractLogEntryHeader for a migration log entry header (primary log)
  * Fields: | Type | RangeID | Owner | NodeID | LocalID | Length  | Epoch | Version | Chaining | Checksum |
- * Length: |  1   |    1    |   2   |   2    | 1,2,4,6 | 0,1,2,3 |   2   | 0,1,2,4 |   0,1    |    0,4   |
+ * Length: |  1   |    1    |   2   |   2    | 1,2,4,6 | 0,1,2,3 |   2   | 0,1,2,4 |   0,2    |    0,4   |
  * Type field contains type, length of LocalID field, length of length field and length of version field
- * Chaining field has length 0 for chunks smaller than 1/2 of segment size (4 MB default) and 1 for larger chunks
+ * Chaining field has length 0 for chunks smaller than 1/2 of segment size (4 MB max.) and 2 for larger chunks (chaining ID + chain size)
  * Checksum field has length 0 if checksums are deactivated in DXRAM configuration, 4 otherwise
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 25.06.2015
@@ -34,7 +34,6 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
     private static final Logger LOGGER = LogManager.getFormatterLogger(PrimLogEntryHeader.class.getSimpleName());
 
     // Attributes
-    private static short ms_maximumSize;
     private static byte ms_ridOffset;
     private static byte ms_ownOffset;
     private static byte ms_nidOffset;
@@ -46,9 +45,6 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
      * Creates an instance of MigrationPrimLogEntryHeader
      */
     public PrimLogEntryHeader() {
-        ms_maximumSize =
-            (short) (LOG_ENTRY_TYP_SIZE + LOG_ENTRY_RID_SIZE + LOG_ENTRY_OWN_SIZE + MAX_LOG_ENTRY_CID_SIZE + LOG_ENTRY_EPO_SIZE + MAX_LOG_ENTRY_LEN_SIZE +
-                MAX_LOG_ENTRY_VER_SIZE + ChecksumHandler.getCRCSize());
         ms_ridOffset = LOG_ENTRY_TYP_SIZE;
         ms_ownOffset = (byte) (ms_ridOffset + LOG_ENTRY_RID_SIZE);
         ms_nidOffset = (byte) (ms_ownOffset + LOG_ENTRY_OWN_SIZE);
@@ -72,6 +68,7 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
     @Override
     public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner) {
         byte[] result;
+        byte headerSize;
         byte lengthSize;
         byte localIDSize;
         byte versionSize;
@@ -85,15 +82,22 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
         if (ChecksumHandler.checksumsEnabled()) {
             checksumSize = ChecksumHandler.getCRCSize();
         }
+        headerSize = (byte) (ms_lidOffset + localIDSize + lengthSize + LOG_ENTRY_EPO_SIZE + versionSize + checksumSize);
 
         if (ChunkID.getCreatorID(p_chunkID) == p_owner) {
             type = 0;
         } else {
             type = 1;
         }
-        type = generateTypeField(type, localIDSize, lengthSize, versionSize, getMaxLogEntrySize() < p_size);
 
-        result = new byte[ms_lidOffset + localIDSize + lengthSize + LOG_ENTRY_EPO_SIZE + versionSize + checksumSize];
+        if (p_size + headerSize <= getMaxLogEntrySize()) {
+            type = generateTypeField(type, localIDSize, lengthSize, versionSize, false);
+            result = new byte[headerSize];
+        } else {
+            // This log entry is too large to store it at once -> adjust type field and add chaining field
+            type = generateTypeField(type, localIDSize, lengthSize, versionSize, true);
+            result = new byte[headerSize + LOG_ENTRY_CHA_SIZE];
+        }
 
         putType(result, type, (byte) 0);
         putRangeID(result, p_rangeID, ms_ridOffset);

@@ -37,6 +37,7 @@ public abstract class AbstractLogEntryHeader {
     static final byte LOG_ENTRY_RID_SIZE = 2;
     static final byte LOG_ENTRY_OWN_SIZE = 2;
     static final byte LOG_ENTRY_EPO_SIZE = 2;
+    static final byte LOG_ENTRY_CHA_SIZE = 2;
     static final byte TYPE_MASK = (byte) 0x01;
     private static final byte CHAIN_MASK = (byte) 0x02;
     private static final byte LID_LENGTH_MASK = (byte) 0x0C;
@@ -91,7 +92,7 @@ public abstract class AbstractLogEntryHeader {
      * @return the maximum log entry size
      */
     public static int getMaxLogEntrySize() {
-        if (ms_segmentSize >= 4) {
+        if (ms_segmentSize > 4 * 1024 * 1024) {
             return 2 * 1024 * 1024;
         } else {
             return ms_segmentSize / 2;
@@ -203,7 +204,7 @@ public abstract class AbstractLogEntryHeader {
         byte type;
 
         type = (byte) (p_buffer[p_offset] & CHAIN_MASK);
-        return type == 1;
+        return type != 0;
     }
 
     /**
@@ -222,8 +223,12 @@ public abstract class AbstractLogEntryHeader {
         if (ChecksumHandler.checksumsEnabled()) {
             ret = (short) (getCRCOffset(p_buffer, p_offset) + ChecksumHandler.getCRCSize());
         } else {
-            versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
-            ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);
+            if (isChained(p_buffer, p_offset)) {
+                ret = (short) (getCHAOffset(p_buffer, p_offset) + LOG_ENTRY_CHA_SIZE);
+            } else {
+                versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
+                ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);
+            }
         }
 
         return ret;
@@ -312,6 +317,32 @@ public abstract class AbstractLogEntryHeader {
 
         if (isChained(p_buffer, p_offset)) {
             offset = p_offset + getCHAOffset(p_buffer, p_offset);
+            ret = p_buffer[offset];
+        } else {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Log entry is not chained!");
+            // #endif /* LOGGER >= ERROR */
+            ret = -1;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the chain size of a log entry
+     *
+     * @param p_buffer
+     *     buffer with log entries
+     * @param p_offset
+     *     offset in buffer
+     * @return the chain size
+     */
+    public byte getChainSize(final byte[] p_buffer, final int p_offset) {
+        byte ret;
+        int offset;
+
+        if (isChained(p_buffer, p_offset)) {
+            offset = p_offset + getCHAOffset(p_buffer, p_offset) + 1;
             ret = p_buffer[offset];
         } else {
             // #if LOGGER >= ERROR
@@ -458,7 +489,7 @@ public abstract class AbstractLogEntryHeader {
      */
     short getCRCOffset(final byte[] p_buffer, final int p_offset) {
         short ret = getCHAOffset(p_buffer, p_offset);
-        final byte chainSize = (byte) (isChained(p_buffer, p_offset) ? 1 : 0);
+        final byte chainSize = isChained(p_buffer, p_offset) ? LOG_ENTRY_CHA_SIZE : 0;
 
         if (ChecksumHandler.checksumsEnabled()) {
             ret += chainSize;

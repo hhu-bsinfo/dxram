@@ -85,7 +85,7 @@ public final class ChecksumHandler {
      * @param p_offset
      *     the offset within buffer
      * @param p_size
-     *     the size of the complete log entry
+     *     the size of payload
      * @param p_logEntryHeader
      *     the LogEntryHeader
      * @param p_bytesUntilEnd
@@ -97,15 +97,15 @@ public final class ChecksumHandler {
         final short crcOffset = p_logEntryHeader.getCRCOffset(p_buffer, p_offset);
         int checksum = 0;
 
-        if (p_size <= p_bytesUntilEnd) {
-            checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, p_offset + headerSize, p_size - headerSize);
+        if (p_size + headerSize <= p_bytesUntilEnd) {
+            checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, p_offset + headerSize, p_size);
 
             for (int i = 0; i < ms_logEntryCRCSize; i++) {
                 p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
             }
         } else {
             if (p_bytesUntilEnd < headerSize) {
-                checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, headerSize - p_bytesUntilEnd, p_size - headerSize);
+                checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, headerSize - p_bytesUntilEnd, p_size);
 
                 if (p_bytesUntilEnd <= crcOffset) {
                     for (int i = 0; i < ms_logEntryCRCSize; i++) {
@@ -122,13 +122,13 @@ public final class ChecksumHandler {
                 }
             } else if (p_bytesUntilEnd > headerSize) {
                 checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, p_offset + headerSize, p_bytesUntilEnd - headerSize);
-                checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, 0, p_size - headerSize - (p_bytesUntilEnd - headerSize));
+                checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, 0, p_size - (p_bytesUntilEnd - headerSize));
 
                 for (int i = 0; i < ms_logEntryCRCSize; i++) {
                     p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
                 }
             } else {
-                checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, 0, p_size - headerSize);
+                checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, 0, p_size);
 
                 for (int i = 0; i < ms_logEntryCRCSize; i++) {
                     p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);

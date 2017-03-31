@@ -114,11 +114,11 @@ public final class DSByteBuffer extends DataStructure {
 
     @Override
     public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeBytes(m_data.array());
+        p_exporter.writeBytes(m_data.array(), 0, m_data.limit());
     }
 
     @Override
     public int sizeofObject() {
-        return m_data.capacity();
+        return m_data.limit();
     }
 }

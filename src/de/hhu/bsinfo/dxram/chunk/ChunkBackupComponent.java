@@ -197,20 +197,25 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      *
      * @param p_chunks
      *     Chunks to put.
+     * @return the number of created and put Chunks
      */
-    public void putRecoveredChunks(final DataStructure[] p_chunks) {
+    public int putRecoveredChunks(final DataStructure[] p_chunks) {
+        int ret = 0;
 
         m_memoryManager.lockManage();
+        m_memoryManager.createMulti(p_chunks);
         for (DataStructure chunk : p_chunks) {
-
-            m_memoryManager.create(chunk.getID(), chunk.sizeofObject());
-            m_memoryManager.put(chunk);
+            if (m_memoryManager.put(chunk)) {
+                ret++;
+            }
 
             // #if LOGGER == TRACE
             LOGGER.trace("Stored recovered chunk 0x%X locally", chunk.getID());
             // #endif /* LOGGER == TRACE */
         }
         m_memoryManager.unlockManage();
+
+        return ret;
     }
 
     public void startBlockRecovery() {

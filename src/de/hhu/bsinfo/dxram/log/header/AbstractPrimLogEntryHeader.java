@@ -102,23 +102,39 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      * @param p_offset
      *     the offset within buffer
      * @param p_chainingID
-     *     the version
+     *     the chaining ID
+     * @param p_chainSize
+     *     the number of segments in chain
      * @param p_logEntryHeader
      *     the LogEntryHeader
-     * @param p_bytesUntilEnd
-     *     number of bytes until wrap around
      */
-    public static void addChainingID(final byte[] p_buffer, final int p_offset, final byte p_chainingID, final AbstractPrimLogEntryHeader p_logEntryHeader,
-        final int p_bytesUntilEnd) {
+    public static void addChainingIDAndChainSize(final byte[] p_buffer, final int p_offset, final byte p_chainingID, final byte p_chainSize,
+        final AbstractPrimLogEntryHeader p_logEntryHeader) {
         int offset = p_logEntryHeader.getCHAOffset(p_buffer, p_offset);
 
-        if (offset < p_bytesUntilEnd) {
-            offset += p_offset;
-        } else {
-            offset -= p_bytesUntilEnd;
-        }
-
         p_buffer[offset] = (byte) (p_chainingID & 0xff);
+        p_buffer[offset + 1] = (byte) (p_chainSize & 0xff);
+    }
+
+    /**
+     * Adjusts the length in log entry header. Is used for chained log entries, only.
+     *
+     * @param p_buffer
+     *     the byte array
+     * @param p_offset
+     *     the offset within buffer
+     * @param p_newLength
+     *     the new length
+     * @param p_logEntryHeader
+     *     the LogEntryHeader
+     */
+    public static void adjustLength(final byte[] p_buffer, final int p_offset, final int p_newLength, final AbstractPrimLogEntryHeader p_logEntryHeader) {
+        int offset = p_logEntryHeader.getLENOffset(p_buffer, p_offset);
+        int lengthSize = p_logEntryHeader.getVEROffset(p_buffer, p_offset) - offset;
+
+        for (int i = 0; i < lengthSize; i++) {
+            p_buffer[offset + i] = (byte) (p_newLength >> i * 8 & 0xff);
+        }
     }
 
     /**
@@ -129,7 +145,7 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      * @param p_offset
      *     the offset within buffer
      * @param p_size
-     *     the size of the complete log entry
+     *     the size of payload
      * @param p_logEntryHeader
      *     the LogEntryHeader
      * @param p_bytesUntilEnd

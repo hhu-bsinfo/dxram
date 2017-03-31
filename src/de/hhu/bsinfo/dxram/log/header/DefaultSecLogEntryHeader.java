@@ -21,9 +21,9 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
 /**
  * Extends AbstractLogEntryHeader for a normal log entry header (secondary log)
  * Fields: | Type | LocalID | Length  | Epoch | Version | Chaining | Checksum |
- * Length: |  1   | 1,2,4,6 | 0,1,2,3 |   2   | 0,1,2,4 |   0,1    |    0,4   |
+ * Length: |  1   | 1,2,4,6 | 0,1,2,3 |   2   | 0,1,2,4 |   0,2    |    0,4   |
  * Type field contains type, length of LocalID field, length of length field and length of version field
- * Chaining field has length 0 for chunks smaller than 1/2 of segment size (4 MB default) and 1 for larger chunks
+ * Chaining field has length 0 for chunks smaller than 1/2 of segment size (4 MB default) and 2 for larger chunks (chaining ID + chain size)
  * Checksum field has length 0 if checksums are deactivated in DXRAM configuration, 4 otherwise
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 25.06.2015
@@ -33,7 +33,6 @@ class DefaultSecLogEntryHeader extends AbstractSecLogEntryHeader {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DefaultSecLogEntryHeader.class.getSimpleName());
 
     // Attributes
-    private static short ms_maximumSize;
     private static byte ms_lidOffset;
 
     // Constructors
@@ -42,23 +41,7 @@ class DefaultSecLogEntryHeader extends AbstractSecLogEntryHeader {
      * Creates an instance of DefaultSecLogEntryHeader
      */
     DefaultSecLogEntryHeader() {
-        ms_maximumSize = (short) (LOG_ENTRY_TYP_SIZE + MAX_LOG_ENTRY_LID_SIZE + MAX_LOG_ENTRY_LEN_SIZE + LOG_ENTRY_EPO_SIZE + MAX_LOG_ENTRY_VER_SIZE +
-            ChecksumHandler.getCRCSize());
         ms_lidOffset = LOG_ENTRY_TYP_SIZE;
-    }
-
-    // Getter
-    @Override
-    protected short getNIDOffset() {
-        // #if LOGGER >= ERROR
-        LOGGER.error("No NodeID available!");
-        // #endif /* LOGGER >= ERROR */
-        return -1;
-    }
-
-    @Override
-    protected short getLIDOffset() {
-        return ms_lidOffset;
     }
 
     @Override
@@ -92,6 +75,20 @@ class DefaultSecLogEntryHeader extends AbstractSecLogEntryHeader {
             System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));
         }
         System.out.println("***************************************************************************");
+    }
+
+    // Getter
+    @Override
+    protected short getNIDOffset() {
+        // #if LOGGER >= ERROR
+        LOGGER.error("No NodeID available!");
+        // #endif /* LOGGER >= ERROR */
+        return -1;
+    }
+
+    @Override
+    protected short getLIDOffset() {
+        return ms_lidOffset;
     }
 
 }

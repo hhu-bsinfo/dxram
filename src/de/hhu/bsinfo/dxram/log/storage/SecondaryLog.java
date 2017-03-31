@@ -18,10 +18,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -32,8 +30,10 @@ import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent.RecoveryWriterThread;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DSByteArray;
+import de.hhu.bsinfo.dxram.data.DSByteBuffer;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.log.LogComponent;
+import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.ChecksumHandler;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
@@ -231,53 +231,6 @@ public class SecondaryLog extends AbstractLog {
         }
 
         return chunkMap.values().toArray(new DataStructure[chunkMap.size()]);
-    }
-
-    /**
-     * Combine recovered parts of large Chunks and store them in RAM
-     *
-     * @param p_largeChunks
-     *     all parts
-     * @param p_recoveryMetadata
-     *     the recovery metadata
-     * @param p_chunkComponent
-     *     the ChunkBackupComponent
-     */
-    private static void putLargeChunksAfterRecovery(final HashMap<Long, ArrayList<byte[]>> p_largeChunks, final RecoveryMetadata p_recoveryMetadata,
-        final ChunkBackupComponent p_chunkComponent) {
-        // Put all large chunks
-        int counter = 0;
-        int length = 0;
-        DataStructure[] chunks = new DataStructure[p_largeChunks.size()];
-        for (Map.Entry<Long, ArrayList<byte[]>> longEntry : p_largeChunks.entrySet()) {
-            long chunkID = longEntry.getKey();
-            ArrayList<byte[]> chunkSegments = longEntry.getValue();
-            ArrayList<byte[]> sortedChunkSegments = new ArrayList<>(chunkSegments.size());
-
-            // Determine header type and length for all segments
-            AbstractSecLogEntryHeader logEntryHeader = AbstractSecLogEntryHeader.getHeader(chunkSegments.get(0), 0);
-            short logEntryHeaderSize = logEntryHeader.getHeaderSize(chunkSegments.get(0), 0);
-
-            // Sort segments by ChainID and determine chunk size
-            for (byte[] segment : chunkSegments) {
-                byte chainID = logEntryHeader.getChainID(segment, 0);
-                sortedChunkSegments.add(chainID, segment);
-
-                length += segment.length - logEntryHeaderSize;
-            }
-
-            // Put all segments' payload in one ByteBuffer
-            ByteBuffer buffer = ByteBuffer.allocate(length);
-            for (int i = 0; i < sortedChunkSegments.size(); i++) {
-                byte[] segment = sortedChunkSegments.get(i);
-                buffer.put(segment, logEntryHeaderSize, segment.length - logEntryHeaderSize);
-            }
-
-            // Create chunk
-            chunks[counter++] = new DSByteArray(chunkID, buffer.array());
-            p_recoveryMetadata.add(length);
-        }
-        p_chunkComponent.putRecoveredChunks(chunks);
     }
 
     /**
@@ -593,13 +546,15 @@ public class SecondaryLog extends AbstractLog {
      * @return ChunkIDs of all recovered chunks, number of recovered chunks and bytes
      */
     public final RecoveryMetadata recoverFromLog(final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck) {
+        int numberOfRecoveredLargeChunks = 0;
         long lowestLID;
         long timeToPut = 0;
         boolean doCRCCheck = p_doCRCCheck;
         AtomicInteger currentIndexCaller = new AtomicInteger(0);
         AtomicInteger currentIndexHelper = new AtomicInteger(m_segmentHeaders.length - 1);
+        ReentrantLock largeChunkLock = new ReentrantLock(false);
         final RecoveryMetadata recoveryMetadata = new RecoveryMetadata();
-        HashMap<Long, ArrayList<byte[]>> largeChunks;
+        HashMap<Long, DSByteBuffer> largeChunks;
 
         // TODO: Guarantee that there is no more data to come
 
@@ -644,20 +599,17 @@ public class SecondaryLog extends AbstractLog {
 
         // Determine ChunkID ranges in parallel
         RecoveryHelperThread helperThread =
-            new RecoveryHelperThread(recoveryMetadata, lowestLID, currentIndexCaller, currentIndexHelper, p_doCRCCheck, statsHelper, p_chunkComponent);
+            new RecoveryHelperThread(recoveryMetadata, largeChunks, largeChunkLock, lowestLID, currentIndexCaller, currentIndexHelper, p_doCRCCheck,
+                statsHelper, p_chunkComponent);
         helperThread.setName("Recovery: Helper-Thread");
         helperThread.start();
 
         int cur = 0;
         while (cur < currentIndexHelper.get()) {
             if (m_segmentHeaders[cur] != null && !m_segmentHeaders[cur].isEmpty()) {
-                recoverSegment(cur, m_versionsForRecovery, lowestLID, recoveryMetadata, largeChunks, p_chunkComponent, doCRCCheck, statsCaller);
+                recoverSegment(cur, m_versionsForRecovery, lowestLID, recoveryMetadata, largeChunks, largeChunkLock, p_chunkComponent, doCRCCheck, statsCaller);
             }
             cur = currentIndexCaller.incrementAndGet();
-        }
-
-        if (!largeChunks.isEmpty()) {
-            putLargeChunksAfterRecovery(largeChunks, recoveryMetadata, p_chunkComponent);
         }
 
         try {
@@ -673,11 +625,15 @@ public class SecondaryLog extends AbstractLog {
             LOGGER.error("Interrupt: Could not wait for RecoveryHelperThread/RecoveryWriterThread to finish!");
             // #endif /* LOGGER >= ERROR */
         }
+
+        if (!largeChunks.isEmpty()) {
+            numberOfRecoveredLargeChunks = p_chunkComponent.putRecoveredChunks(largeChunks.values().toArray(new DSByteBuffer[largeChunks.size()]));
+        }
         m_reorganizationThread.unblock();
 
         // #if LOGGER >= INFO
         LOGGER.info("Recovery of backup range finished: ");
-        LOGGER.info("\t Recovered %d chunks in %d ms", recoveryMetadata.getNumberOfChunks(), System.currentTimeMillis() - time);
+        LOGGER.info("\t Recovered %d chunks in %d ms", recoveryMetadata.getNumberOfChunks() + numberOfRecoveredLargeChunks, System.currentTimeMillis() - time);
         String ranges = "\t ChunkID ranges: ";
         for (long chunkID : recoveryMetadata.getCIDRanges()) {
             ranges += ChunkID.toHexString(chunkID) + ' ';
@@ -867,8 +823,8 @@ public class SecondaryLog extends AbstractLog {
      *     timing statistics
      */
     private void recoverSegment(final int p_segmentIndex, final TemporaryVersionsStorage p_allVersions, final long p_lowestLID,
-        final RecoveryMetadata p_recoveryMetadata, final HashMap<Long, ArrayList<byte[]>> p_largeChunks, final ChunkBackupComponent p_chunkComponent,
-        final boolean p_doCRCCheck, final Statistics p_stat) {
+        final RecoveryMetadata p_recoveryMetadata, final HashMap<Long, DSByteBuffer> p_largeChunks, final ReentrantLock p_largeChunkLock,
+        final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck, final Statistics p_stat) {
         int headerSize;
         int readBytes = 0;
         int segmentLength;
@@ -909,8 +865,6 @@ public class SecondaryLog extends AbstractLog {
                         p_stat.m_readVersionsFromHashTable++;
                     } else {
                         currentVersion = p_allVersions.get(chunkID, p_lowestLID, p_stat);
-                        // Add creator
-                        chunkID += (long) m_owner << 48;
                     }
                     if (currentVersion == null || m_versionsBuffer.getEpoch() == entryVersion.getEpoch()) {
                         // There is no entry in hashtable or element is more current -> get latest version from cache
@@ -918,7 +872,16 @@ public class SecondaryLog extends AbstractLog {
                         currentVersion = m_versionsBuffer.get(chunkID);
                     }
 
-                    if (currentVersion.isEqual(entryVersion)) {
+                    if (!logEntryHeader.isMigrated()) {
+                        // Add creator
+                        chunkID += (long) m_owner << 48;
+                    }
+
+                    if (currentVersion == null || currentVersion.getVersion() == 0) {
+                        // #if LOGGER >= ERROR
+                        LOGGER.error("Version unknown for chunk 0x%X!", chunkID);
+                        // #endif /* LOGGER >= ERROR */
+                    } else if (currentVersion.isEqual(entryVersion)) {
                         // Compare current version with element
                         // Create chunk only if log entry complete
                         if (p_doCRCCheck) {
@@ -935,17 +898,35 @@ public class SecondaryLog extends AbstractLog {
                         p_stat.m_timeToCheck += System.currentTimeMillis() - time;
 
                         if (logEntryHeader.isChained(segmentData, readBytes)) {
-                            // This is a chained/large entry -> insert copied log entry (necessary as segment is not available anymore when chunk is assembled)
-                            byte[] chunk = new byte[headerSize + payloadSize];
-                            System.arraycopy(segmentData, readBytes, chunk, 0, chunk.length);
+                            byte chainID = logEntryHeader.getChainID(segmentData, readBytes);
+                            byte chainSize = logEntryHeader.getChainSize(segmentData, readBytes);
+                            int maxLogEntrySize = AbstractLogEntryHeader.getMaxLogEntrySize();
+                            //System.out.println("Found segment " + chainID + " of chained chunk " + chunkID);
 
-                            ArrayList<byte[]> chunkSegments = p_largeChunks.get(chunkID);
-                            if (chunkSegments == null) {
-                                // This is the first segment for this ChunkID -> create array list
-                                chunkSegments = new ArrayList<>();
-                                p_largeChunks.put(chunkID, chunkSegments);
+                            p_largeChunkLock.lock();
+                            DSByteBuffer chunk = p_largeChunks.get(chunkID);
+                            if (chunk == null) {
+                                // This is the first segment for this ChunkID -> create an array large enough for holding all data for this chunk
+                                if (chainID == chainSize - 1) {
+                                    // This is the last chain link -> complete size is known
+                                    chunk = new DSByteBuffer(chunkID, (chainSize - 1) * maxLogEntrySize + payloadSize);
+                                    p_largeChunks.put(chunkID, chunk);
+                                } else {
+                                    // This is another chain link -> maximum size is known, only -> must be truncated later
+                                    chunk = new DSByteBuffer(chunkID, chainSize * maxLogEntrySize);
+                                    p_largeChunks.put(chunkID, chunk);
+                                }
                             }
-                            chunkSegments.add(chunk);
+
+                            ByteBuffer buffer = chunk.getData();
+                            if (chainID == chainSize - 1 && payloadSize != maxLogEntrySize) {
+                                buffer.limit((chainSize - 1) * maxLogEntrySize + payloadSize);
+                            }
+
+                            buffer.position(chainID * maxLogEntrySize);
+                            buffer.put(segmentData, readBytes + headerSize, payloadSize);
+                            p_largeChunkLock.unlock();
+
                         } else {
                             // Put chunks in memory
                             if (index < length) {
@@ -1349,7 +1330,7 @@ public class SecondaryLog extends AbstractLog {
 
                             if (currentVersion == null || currentVersion.getVersion() == 0) {
                                 // #if LOGGER >= ERROR
-                                LOGGER.error("Version unknown for chunk 0x%X!", ChunkID.toHexString(chunkID));
+                                LOGGER.error("Version unknown for chunk 0x%X!", chunkID);
                                 // #endif /* LOGGER >= ERROR */
                             } else if (currentVersion.isEqual(entryVersion)) {
                                 // Compare current version with element
@@ -1467,6 +1448,7 @@ public class SecondaryLog extends AbstractLog {
         long m_timeToCheck;
         int m_readVersionsFromArray;
         int m_readVersionsFromHashTable;
+        int m_recoveredLargeChunks;
 
         /**
          * Constructor
@@ -1478,6 +1460,7 @@ public class SecondaryLog extends AbstractLog {
             m_timeToCheck = 0;
             m_readVersionsFromArray = 0;
             m_readVersionsFromHashTable = 0;
+            m_recoveredLargeChunks = 0;
         }
     }
 
@@ -1618,19 +1601,24 @@ public class SecondaryLog extends AbstractLog {
     private class RecoveryHelperThread extends Thread {
 
         private RecoveryMetadata m_recoveryMetadata;
+        private HashMap<Long, DSByteBuffer> m_largeChunks;
         private long m_lowestLID;
         private AtomicInteger m_currentIndexCaller;
         private AtomicInteger m_currentIndexHelper;
+        private ReentrantLock m_largeChunkLock;
         private boolean m_doCRCCheck;
         private Statistics m_stats;
         private ChunkBackupComponent m_chunkComponent;
 
-        RecoveryHelperThread(final RecoveryMetadata p_metadata, final long p_lowestLID, final AtomicInteger p_currentIndexCaller,
-            final AtomicInteger p_currentIndexHelper, final boolean p_doCRCCheck, final Statistics p_stat, final ChunkBackupComponent p_chunkComponent) {
+        RecoveryHelperThread(final RecoveryMetadata p_metadata, final HashMap<Long, DSByteBuffer> p_largeChunks, final ReentrantLock p_largeChunkLock,
+            final long p_lowestLID, final AtomicInteger p_currentIndexCaller, final AtomicInteger p_currentIndexHelper, final boolean p_doCRCCheck,
+            final Statistics p_stat, final ChunkBackupComponent p_chunkComponent) {
             m_recoveryMetadata = p_metadata;
+            m_largeChunks = p_largeChunks;
             m_lowestLID = p_lowestLID;
             m_currentIndexCaller = p_currentIndexCaller;
             m_currentIndexHelper = p_currentIndexHelper;
+            m_largeChunkLock = p_largeChunkLock;
             m_doCRCCheck = p_doCRCCheck;
             m_stats = p_stat;
             m_chunkComponent = p_chunkComponent;
@@ -1642,19 +1630,13 @@ public class SecondaryLog extends AbstractLog {
             m_recoveryMetadata.setChunkIDRanges(determineRanges(m_versionsForRecovery, m_owner, m_lowestLID));
             m_stats.m_timeToDetermineRanges = System.currentTimeMillis() - t;
 
-            // HashMap to store large Chunks in
-            HashMap<Long, ArrayList<byte[]>> largeChunks = new HashMap<>();
-
             int cur = m_segmentHeaders.length - 1;
             while (cur > m_currentIndexCaller.get()) {
                 if (m_segmentHeaders[cur] != null && !m_segmentHeaders[cur].isEmpty()) {
-                    recoverSegment(cur, m_versionsForRecovery, m_lowestLID, m_recoveryMetadata, largeChunks, m_chunkComponent, m_doCRCCheck, m_stats);
+                    recoverSegment(cur, m_versionsForRecovery, m_lowestLID, m_recoveryMetadata, m_largeChunks, m_largeChunkLock, m_chunkComponent, m_doCRCCheck,
+                        m_stats);
                 }
                 cur = m_currentIndexHelper.decrementAndGet();
-            }
-
-            if (!largeChunks.isEmpty()) {
-                putLargeChunksAfterRecovery(largeChunks, m_recoveryMetadata, m_chunkComponent);
             }
         }
 
