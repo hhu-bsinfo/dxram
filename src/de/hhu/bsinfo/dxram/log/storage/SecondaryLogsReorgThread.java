@@ -24,7 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.log.LogComponent;
-import de.hhu.bsinfo.utils.Tools;
+import de.hhu.bsinfo.utils.RandomUtils;
 
 /**
  * Reorganization thread
@@ -367,12 +367,12 @@ public final class SecondaryLogsReorgThread extends Thread {
         if (ret == null && !cats.isEmpty() && numberOfLogs > 1) {
             m_isRandomChoice = true;
             // Choose one secondary log randomly
-            cat = cats.get(Tools.getRandomValue(cats.size() - 1));
+            cat = cats.get(RandomUtils.getRandomValue(cats.size() - 1));
             secLogs = cat.getAllLogs();
             if (secLogs.length > 0) {
                 while (ret == null) {
                     // Skip last log to speed up loading phase
-                    ret = secLogs[Tools.getRandomValue(secLogs.length - 2)];
+                    ret = secLogs[RandomUtils.getRandomValue(secLogs.length - 2)];
                 }
             }
         }

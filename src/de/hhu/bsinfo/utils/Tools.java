@@ -14,7 +14,6 @@
 package de.hhu.bsinfo.utils;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -22,7 +21,6 @@ import java.net.ServerSocket;
 import java.net.SocketException;
 import java.text.DecimalFormat;
 import java.util.Collections;
-import java.util.regex.Pattern;
 
 /**
  * Various functions
@@ -229,31 +227,5 @@ public final class Tools {
         }
 
         return ret;
-    }
-
-
-
-    /**
-     * Creates a random value between 0 and the given upper bound
-     *
-     * @param p_upperBound
-     *     the upper bound of the value
-     * @return the created value
-     */
-    public static int getRandomValue(final int p_upperBound) {
-        return getRandomValue(0, p_upperBound);
-    }
-
-    /**
-     * Creates a random value between the given lower and upper bound
-     *
-     * @param p_lowerBound
-     *     the lower bound of the value
-     * @param p_upperBound
-     *     the upper bound of the value
-     * @return the created value
-     */
-    public static int getRandomValue(final int p_lowerBound, final int p_upperBound) {
-        return (int) (Math.random() * (p_upperBound - p_lowerBound + 1)) + p_lowerBound;
     }
 }

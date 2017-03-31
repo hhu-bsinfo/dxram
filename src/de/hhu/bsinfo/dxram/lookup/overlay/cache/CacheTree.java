@@ -20,7 +20,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.ethnet.NodeID;
-import de.hhu.bsinfo.utils.Tools;
+import de.hhu.bsinfo.utils.RandomUtils;
 
 /**
  * Btree to cache ranges
@@ -1984,7 +1984,7 @@ public final class CacheTree {
                             invalidateRange(node.getCID(0), node.getCID(node.getNumberOfEntries() - 1));
                             break;
                         }
-                        node = node.getChild(Tools.getRandomValue(0, node.getNumberOfChildren()));
+                        node = node.getChild(RandomUtils.getRandomValue(0, node.getNumberOfChildren()));
                     }
                     m_lock.writeLock().unlock();
                 }

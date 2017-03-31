@@ -20,7 +20,7 @@ import java.util.Collections;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.DSByteBuffer;
-import de.hhu.bsinfo.utils.Tools;
+import de.hhu.bsinfo.utils.RandomUtils;
 
 /**
  * Test case for the logging interface
@@ -148,7 +148,7 @@ public final class LogTest implements Runnable {
         // Create array of Chunks
         chunks = new DSByteBuffer[(int) ms_chunksPerThread];
         for (int i = 0; i < ms_chunksPerThread; i++) {
-            chunks[i] = new DSByteBuffer(Tools.getRandomValue(ms_minChunkSize, ms_maxChunkSize));
+            chunks[i] = new DSByteBuffer(RandomUtils.getRandomValue(ms_minChunkSize, ms_maxChunkSize));
             chunks[i].getData().put(("This is a test! (" + m_nodeID + ')').getBytes());
         }
         ms_chunkService.create(chunks);

@@ -41,6 +41,7 @@ import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.utils.JNIFileDirect;
 import de.hhu.bsinfo.utils.JNIFileRaw;
+import de.hhu.bsinfo.utils.RandomUtils;
 import de.hhu.bsinfo.utils.Tools;
 
 /**
@@ -1404,7 +1405,7 @@ public class SecondaryLog extends AbstractLog {
         if (m_segmentReorgCounter++ == 10) {
             tries = (int) (m_secondaryLogSize / m_logSegmentSize * 2);
             while (true) {
-                ret = Tools.getRandomValue((int) (m_secondaryLogSize / m_logSegmentSize) - 1);
+                ret = RandomUtils.getRandomValue((int) (m_secondaryLogSize / m_logSegmentSize) - 1);
                 if (m_segmentHeaders[ret] != null && !m_segmentHeaders[ret].wasReorganized() && m_reorgVector[ret] == 0 || --tries == 0) {
                     break;
                 }
