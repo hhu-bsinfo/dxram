@@ -36,4 +36,4 @@ DXRAM is a research project that's under heavy development. We do not recommend 
 
 # License
 
-Copyright (C) 2016 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems. Licensed under the [GNU General Public License](LICENSE.md).
+Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems. Licensed under the [GNU General Public License](LICENSE.md).
