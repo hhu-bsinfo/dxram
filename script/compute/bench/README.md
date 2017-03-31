@@ -1,11 +1,11 @@
 # ChunkServiceLocalBench
 
-Single storage node benchmark to test the maximum local throughput of a storage node (DXRAM peer). The script requires at least one slave node as part of a compute group with at least 10 GB memory for the key value store.
+Single storage node benchmark to test the maximum local throughput of a storage node (DXRAM peer). The script requires at least one slave node as part of a compute group with at least 10 GB memory for the key value store. You can also use the small version (*ChunkServiceLocalBenchSmall.cts*) which requires 1 GB memory for the key value store.
 
 Use the *script/deploy/conf/bench/ChunkServiceBench.conf* config as a template and adjust the parameters (e.g. kvss, target nodes if different to localhost).
 
 # ChunkServiceRemoteBench
-Benchmark requiring at least two peers to test the remote throughput of storage nodes. The script requires at least two slave nodes as part of a compute group with at least 10 GB memory for the key value store.
+Benchmark requiring at least two peers to test the remote throughput of storage nodes. The script requires at least two slave nodes as part of a compute group with at least 10 GB memory for the key value store. Again, using the small version (*ChunkServiceRemoteBenchSmall.cts*) you only need 1 GB of memory for the key value store.
 
 Use the *script/deploy/conf/bench/ChunkServiceBench.conf* config as a template and adjust the parameters (e.g. kvss, target nodes if different to localhost). You can add more (storage) peers as well if you want to run the benchmark with more instances involved.
 
