@@ -23,6 +23,7 @@ import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
+import de.hhu.bsinfo.utils.RandomUtils;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -90,7 +91,7 @@ public class ChunkCreateTask implements Task {
                     case PATTERN_LOCAL_ONLY: {
                         for (int j = 0; j < batches; j++) {
                             for (int k = 0; k < m_chunkBatch; k++) {
-                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                                sizes[k] = RandomUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             time[threadIdx].start();
@@ -101,7 +102,7 @@ public class ChunkCreateTask implements Task {
                         if (lastBatchRemainder > 0) {
                             sizes = new int[(int) lastBatchRemainder];
                             for (int k = 0; k < sizes.length; k++) {
-                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                                sizes[k] = RandomUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             time[threadIdx].start();
@@ -117,7 +118,7 @@ public class ChunkCreateTask implements Task {
 
                         for (int j = 0; j < batches; j++) {
                             for (int k = 0; k < m_chunkBatch; k++) {
-                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                                sizes[k] = RandomUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             time[threadIdx].start();
@@ -128,7 +129,7 @@ public class ChunkCreateTask implements Task {
                         if (lastBatchRemainder > 0) {
                             sizes = new int[(int) lastBatchRemainder];
                             for (int k = 0; k < sizes.length; k++) {
-                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                                sizes[k] = RandomUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             time[threadIdx].start();
@@ -146,7 +147,7 @@ public class ChunkCreateTask implements Task {
                             short destNodeId = ChunkTaskUtils.getRandomNodeIdExceptOwn(p_ctx.getCtxData().getSlaveNodeIds(), ownNodeId);
 
                             for (int k = 0; k < m_chunkBatch; k++) {
-                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                                sizes[k] = RandomUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             time[threadIdx].start();
@@ -159,7 +160,7 @@ public class ChunkCreateTask implements Task {
                             sizes = new int[(int) lastBatchRemainder];
 
                             for (int k = 0; k < sizes.length; k++) {
-                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                                sizes[k] = RandomUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             time[threadIdx].start();
@@ -177,7 +178,7 @@ public class ChunkCreateTask implements Task {
                             short destNodeId = ChunkTaskUtils.getRandomNodeId(p_ctx.getCtxData().getSlaveNodeIds());
 
                             for (int k = 0; k < m_chunkBatch; k++) {
-                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                                sizes[k] = RandomUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             if (destNodeId == ownNodeId) {
@@ -196,7 +197,7 @@ public class ChunkCreateTask implements Task {
                             sizes = new int[(int) lastBatchRemainder];
 
                             for (int k = 0; k < sizes.length; k++) {
-                                sizes[k] = ChunkTaskUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
+                                sizes[k] = RandomUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
                             }
 
                             time[threadIdx].start();

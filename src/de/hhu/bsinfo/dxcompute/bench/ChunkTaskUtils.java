@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
+import de.hhu.bsinfo.utils.RandomUtils;
 
 /**
  * Collection of chunk related utility functions used by tasks
@@ -201,7 +201,7 @@ final class ChunkTaskUtils {
      * @return Random node id
      */
     static short getRandomNodeId(final short[] p_slaveNodeIds) {
-        return p_slaveNodeIds[getRandomRangeExclEnd(0, p_slaveNodeIds.length)];
+        return p_slaveNodeIds[RandomUtils.getRandomValueExclEnd(0, p_slaveNodeIds.length)];
     }
 
     /**
@@ -220,57 +220,5 @@ final class ChunkTaskUtils {
         } else {
             return p_slaveNodeIds[0];
         }
-    }
-
-    /**
-     * Get a random size from a size range
-     *
-     * @param p_start
-     *     Start of size range (including)
-     * @param p_end
-     *     End of size range (including)
-     * @return Random size in bytes
-     */
-    static int getRandomSize(final StorageUnit p_start, final StorageUnit p_end) {
-        return (int) getRandomRange(p_start.getBytes(), p_end.getBytes());
-    }
-
-    /**
-     * Get a random number from a specified range
-     *
-     * @param p_start
-     *     Start (including)
-     * @param p_end
-     *     End (including)
-     * @return Random int
-     */
-    private static int getRandomRange(final int p_start, final int p_end) {
-        return (int) (Math.random() * (p_end - p_start + 1) + p_start);
-    }
-
-    /**
-     * Get a random number from a specified range
-     *
-     * @param p_start
-     *     Start (including)
-     * @param p_end
-     *     End (excluding)
-     * @return Random int
-     */
-    private static int getRandomRangeExclEnd(final int p_start, final int p_end) {
-        return (int) (Math.random() * (p_end - p_start) + p_start);
-    }
-
-    /**
-     * Get a random number from a specified range
-     *
-     * @param p_start
-     *     Start (including)
-     * @param p_end
-     *     End (including)
-     * @return Random int
-     */
-    private static long getRandomRange(final long p_start, final long p_end) {
-        return (long) (Math.random() * (p_end - p_start + 1) + p_start);
     }
 }
