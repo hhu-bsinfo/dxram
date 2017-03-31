@@ -40,7 +40,7 @@ import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;

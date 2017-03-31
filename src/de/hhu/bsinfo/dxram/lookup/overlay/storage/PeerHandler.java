@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.utils.ArrayListLong;
 
 /**
  * Wrapper class for all data belonging to one peer: One Btree to store ranges, one to store backup range affiliation and an ArrayList for the backup ranges

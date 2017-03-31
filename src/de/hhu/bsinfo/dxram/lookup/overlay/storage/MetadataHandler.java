@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage.Status;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
