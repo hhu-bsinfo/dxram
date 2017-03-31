@@ -11,10 +11,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.run.nothaas;
+package de.hhu.bsinfo.dxram.run;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.run.DXRAMMain;
 import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
