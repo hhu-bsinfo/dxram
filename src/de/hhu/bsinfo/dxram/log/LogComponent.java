@@ -57,7 +57,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.JNIFileRaw;
-import de.hhu.bsinfo.utils.Tools;
+import de.hhu.bsinfo.utils.StringUtils;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
@@ -153,7 +153,7 @@ public class LogComponent extends AbstractDXRAMComponent {
                 array = new String(Arrays.copyOfRange(p_payload, p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset),
                     p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH)).trim().getBytes();
 
-                if (Tools.looksLikeUTF8(array)) {
+                if (StringUtils.looksLikeUTF8(array)) {
                     System.out.println(
                         "Log Entry " + p_index + ": \t ChunkID - " + ChunkID.toHexString(p_chunkID) + ") \t Length - " + p_length + "\t Version - " +
                             p_version.getEpoch() + ',' + p_version.getVersion() + " \t Payload - " + new String(array, "UTF-8"));
