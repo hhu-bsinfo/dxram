@@ -58,4 +58,25 @@ public final class NodeID {
 
         return (short) Integer.parseUnsignedInt(str, 16);
     }
+
+    /**
+     * Method to convert a list of node IDs to a list of hex strings
+     *
+     * @param p_nodeIDs
+     *     Node IDs
+     * @return String with list of node IDs in hex
+     */
+    public static String nodeIDArrayToString(final short[] p_nodeIDs) {
+        StringBuilder builder = new StringBuilder();
+
+        for (int i = 0; i < p_nodeIDs.length; i++) {
+            builder.append(toHexString(p_nodeIDs[i]));
+
+            if (i + 1 < p_nodeIDs.length) {
+                builder.append(", ");
+            }
+        }
+
+        return builder.toString();
+    }
 }

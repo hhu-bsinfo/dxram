@@ -13,6 +13,11 @@
 
 package de.hhu.bsinfo.dxram.term;
 
+import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrieralloc;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrierfree;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdBarriersignon;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdBarriersize;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrierstatus;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdLookuptree;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdMetadata;
 import jline.ArgumentCompletor;
@@ -275,6 +280,11 @@ public class TerminalService extends AbstractDXRAMService {
      * Register terminal commands
      */
     private void registerTerminalCommands() {
+        registerTerminalCommand(new TcmdBarrieralloc());
+        registerTerminalCommand(new TcmdBarrierfree());
+        registerTerminalCommand(new TcmdBarriersignon());
+        registerTerminalCommand(new TcmdBarriersize());
+        registerTerminalCommand(new TcmdBarrierstatus());
         registerTerminalCommand(new TcmdLoggerlevel());
         registerTerminalCommand(new TcmdLoginfo());
         registerTerminalCommand(new TcmdLookuptree());

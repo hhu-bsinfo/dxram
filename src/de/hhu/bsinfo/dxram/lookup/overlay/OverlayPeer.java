@@ -85,11 +85,11 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
-import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.Pair;
 
@@ -782,7 +782,7 @@ public class OverlayPeer implements MessageReceiver {
         BarrierChangeSizeResponse response = (BarrierChangeSizeResponse) request.getResponse();
         // #if LOGGER >= ERROR
         if (response.getStatusCode() != 0) {
-            LOGGER.error("Changing size of barrier 0x%X failed.");
+            LOGGER.error("Changing size of barrier 0x%X failed", p_barrierId);
         }
         // #endif /* LOGGER >= ERROR */
 

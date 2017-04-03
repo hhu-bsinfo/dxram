@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.term;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -174,6 +175,14 @@ public class TerminalCommandContext {
         }
 
         return NodeID.parse(p_args[p_pos]);
+    }
+
+    public int getArgBarrierId(final String[] p_args, final int p_pos, final int p_default) {
+        if (p_args.length <= p_pos) {
+            return p_default;
+        }
+
+        return BarrierID.parse(p_args[p_pos]);
     }
 
     public long getArgLocalId(final String[] p_args, final int p_pos, final long p_default) {

@@ -53,6 +53,23 @@ public final class BarrierID {
     }
 
     /**
+     * Parse a hex string containing a barrier id.
+     *
+     * @param p_str
+     *     Hex string with barrier id, e.g. either 0x12345678 or 12345678
+     * @return Parsed barrier id
+     */
+    public static int parse(final String p_str) {
+        String str = p_str;
+
+        if (str.startsWith("0x")) {
+            str = str.substring(2);
+        }
+
+        return Integer.parseUnsignedInt(str, 16);
+    }
+
+    /**
      * Get the (local) barrier id of the barrier id.
      *
      * @param p_barrierId

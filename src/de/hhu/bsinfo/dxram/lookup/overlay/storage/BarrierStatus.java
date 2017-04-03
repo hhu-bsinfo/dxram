@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.overlay.storage;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -108,6 +110,13 @@ public class BarrierStatus implements Importable, Exportable {
         for (int i = 0; i < m_numSignedOnPeers; i++) {
             p_consumer.forEach(m_signedOnNodeIDs[i], m_customData[i]);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "m_numSignedOnPeers " + m_numSignedOnPeers + ", m_signedOnNodeIDs " +
+                NodeID.nodeIDArrayToString(m_signedOnNodeIDs) + ", m_customData " +
+                ChunkID.chunkIDArrayToString(m_customData);
     }
 
     @Override
