@@ -29,11 +29,12 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
 public final class TaskScript implements Importable, Exportable {
-
-    public static final short NUM_REQUIRED_SLAVES_ARBITRARY = 0;
+    static final int NUM_SLAVES_ARBITRARY = 0;
 
     @Expose
-    private short m_numRequiredSlaves = NUM_REQUIRED_SLAVES_ARBITRARY;
+    private int m_minSlaves = NUM_SLAVES_ARBITRARY;
+    @Expose
+    private int m_maxSlaves = NUM_SLAVES_ARBITRARY;
     @Expose
     private String m_name = "";
     @Expose
@@ -60,39 +61,54 @@ public final class TaskScript implements Importable, Exportable {
     /**
      * Constructor
      *
-     * @param p_numRequiredSlaves
-     *     Number of slaves required to run this task script
+     * @param p_minSlaves
+     *     Minimum number of slaves required to run this task script
+     * @param p_maxSlaves
+     *     Max number of slaves for this task script
      * @param p_tasks
      *     List of tasks forming the script
      */
-    public TaskScript(final short p_numRequiredSlaves, final TaskScriptNode... p_tasks) {
-        m_numRequiredSlaves = p_numRequiredSlaves;
+    public TaskScript(final short p_minSlaves, final short p_maxSlaves, final TaskScriptNode... p_tasks) {
+        m_minSlaves = p_minSlaves;
+        m_maxSlaves = p_maxSlaves;
         m_tasks = p_tasks;
     }
 
     /**
      * Constructor
      *
-     * @param p_numRequiredSlaves
-     *     Number of slaves required to run this task script
+     * @param p_minSlaves
+     *     Minimum number of slaves required to run this task script
+     * @param p_maxSlaves
+     *     Max number of slaves for this task script
      * @param p_name
      *     Name for the task script (for debugging only)
      * @param p_tasks
      *     List of tasks forming the script
      */
-    public TaskScript(final short p_numRequiredSlaves, final String p_name, final TaskScriptNode... p_tasks) {
-        m_numRequiredSlaves = p_numRequiredSlaves;
+    public TaskScript(final short p_minSlaves, final short p_maxSlaves, final String p_name, final TaskScriptNode... p_tasks) {
+        m_minSlaves = p_minSlaves;
+        m_maxSlaves = p_maxSlaves;
         m_name = p_name;
         m_tasks = p_tasks;
     }
 
     /**
-     * Get the number of slaves required to run this task.
+     * Get the minimum number of slaves required to run this task script.
      *
-     * @return Number of slaves this task requires.
+     * @return Minimum number of slaves this task script requires.
      */
-    public short getNumRequiredSlaves() {
-        return m_numRequiredSlaves;
+    public int getMinSlaves() {
+        return m_minSlaves;
+    }
+
+    /**
+     * Get the maximum number of slaves for this task script.
+     *
+     * @return Maximum number of slaves for this task script.
+     */
+    public int getMaxSlaves() {
+        return m_maxSlaves;
     }
 
     /**
@@ -106,12 +122,13 @@ public final class TaskScript implements Importable, Exportable {
 
     @Override
     public String toString() {
-        return "TaskScript[" + m_name + ", " + m_numRequiredSlaves + ", " + m_tasks.length + ']';
+        return "TaskScript[" + m_name + ", " + m_minSlaves + ", " + m_maxSlaves + ", " + m_tasks.length + ']';
     }
 
     @Override
     public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeShort(m_numRequiredSlaves);
+        p_exporter.writeInt(m_minSlaves);
+        p_exporter.writeInt(m_maxSlaves);
         p_exporter.writeString(m_name);
         p_exporter.writeInt(m_tasks.length);
 
@@ -123,7 +140,8 @@ public final class TaskScript implements Importable, Exportable {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_numRequiredSlaves = p_importer.readShort();
+        m_minSlaves = p_importer.readInt();
+        m_maxSlaves = p_importer.readInt();
         m_name = p_importer.readString();
         m_tasks = new TaskScriptNode[p_importer.readInt()];
 
@@ -151,7 +169,7 @@ public final class TaskScript implements Importable, Exportable {
     public int sizeofObject() {
         int size = 0;
 
-        size += Short.BYTES + ObjectSizeUtil.sizeofString(m_name) + Integer.BYTES;
+        size += 2 * Integer.BYTES + ObjectSizeUtil.sizeofString(m_name) + Integer.BYTES;
 
         for (int i = 0; i < m_tasks.length; i++) {
             size += ObjectSizeUtil.sizeofString(m_tasks[i].getClass().getName()) + m_tasks[i].sizeofObject();

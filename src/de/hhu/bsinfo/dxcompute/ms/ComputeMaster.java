@@ -43,6 +43,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Implementation of a master. The master accepts tasks, pushes them to a queue and distributes them
@@ -279,26 +280,26 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
             return;
         }
 
-        // check if enough slaves are available for the tasks cript to run
-        if (taskScript.getNumRequiredSlaves() != TaskScript.NUM_REQUIRED_SLAVES_ARBITRARY && taskScript.getNumRequiredSlaves() > m_signedOnSlaves.size()) {
-            // #if LOGGER >= INFO
-            LOGGER.info("Not enough slaves available for task script %s waiting...", taskScript);
-            // #endif /* LOGGER >= INFO */
+        int minSlaves = taskScript.getMinSlaves();
+        int maxSlaves = taskScript.getMaxSlaves();
 
-            while (taskScript.getNumRequiredSlaves() > m_signedOnSlaves.size()) {
-                // #if LOGGER >= DEBUG
-                LOGGER.debug("Not enough slaves available for task script %s waiting (%d/%d)...", taskScript, m_signedOnSlaves.size(),
-                    taskScript.getNumRequiredSlaves());
-                // #endif /* LOGGER >= DEBUG */
+        if (maxSlaves == TaskScript.NUM_SLAVES_ARBITRARY) {
+            maxSlaves = NodeID.MAX_ID;
+        }
 
-                try {
-                    Thread.sleep(2000);
-                } catch (final InterruptedException ignored) {
-                }
+        while (m_signedOnSlaves.size() < minSlaves || m_signedOnSlaves.size() > maxSlaves) {
+            // #if LOGGER >= DEBUG
+            LOGGER.debug("Waiting for num slaves in interval [%d, %d] for task script %s (current slave count: %d)...", minSlaves, maxSlaves, taskScript,
+                m_signedOnSlaves.size());
+            // #endif /* LOGGER >= DEBUG */
 
-                // bad but might happen that a slave goes offline
-                checkAllSlavesOnline();
+            try {
+                Thread.sleep(2000);
+            } catch (final InterruptedException ignored) {
             }
+
+            // bad but might happen that a slave goes offline
+            checkAllSlavesOnline();
         }
 
         // lock joining of further slaves
