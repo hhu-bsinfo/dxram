@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxram.term;
 
+import de.hhu.bsinfo.dxram.term.cmd.TcmdLookuptree;
 import jline.ArgumentCompletor;
 import jline.ConsoleReader;
 import jline.History;
@@ -275,6 +276,7 @@ public class TerminalService extends AbstractDXRAMService {
     private void registerTerminalCommands() {
         registerTerminalCommand(new TcmdLoggerlevel());
         registerTerminalCommand(new TcmdLoginfo());
+        registerTerminalCommand(new TcmdLookuptree());
         registerTerminalCommand(new TcmdNameget());
         registerTerminalCommand(new TcmdNamelist());
         registerTerminalCommand(new TcmdNamereg());
