@@ -1,5 +1,6 @@
 {
-	"m_numRequiredSlaves": 2,
+	"m_minSlaves": 2,
+	"m_maxSlaves": 0,
 	"m_name": "ChunkCreateRemoteTest",
 	"m_tasks": [
 		{

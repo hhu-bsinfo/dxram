@@ -1,5 +1,6 @@
 {
-	"m_numRequiredSlaves": 0,
+	"m_minSlaves": 0,
+	"m_maxSlaves": 0,
 	"m_name": "ChunkLocalShortIntegrityTest",
 	"m_tasks": [
 		{

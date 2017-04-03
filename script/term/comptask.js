@@ -22,21 +22,27 @@ function help() {
 	return "Submit a task to a compute group\n" +
 	        "Usage: comptask(taskName, numRequiredSlaves, cgid, wait, ...)\n" +
 	        "  taskName: String of the fully qualified class name of the task\n" +
-	        "  numRequiredSlaves: Number of slaves required to start the task (0 = arbitrary)\n" +
+	        "  minSlaves: Minimum number of slaves required to start the task (0 = arbitrary)\n" +
+	        "  maxSlaves: Maximum number of slaves for this task (0 = arbitrary)\n" +
             "  cgid: Id of the compute group to submit the task to\n" +
             "  wait: Wait/block until the task is completed\n" +
             "  ...: Task arguments as further parameters depending on the task";
 }
 
-function exec(taskName, numRequiredSalves, cgid, wait) {
+function exec(taskName, minSlaves, maxSlaves, cgid, wait) {
 
     if (taskName == null) {
         dxterm.printlnErr("No task name specified");
         return;
     }
 
-    if (numRequiredSalves == null) {
-        dxterm.printlnErr("No number of required slaves specified");
+    if (minSlaves == null) {
+        dxterm.printlnErr("No minimum number of slaves specified");
+        return;
+    }
+
+    if (maxSlaves == null) {
+        dxterm.printlnErr("No maximum number of slaves specified");
         return;
     }
 
@@ -51,14 +57,14 @@ function exec(taskName, numRequiredSalves, cgid, wait) {
     }
 
     var mscomp = dxram.service("mscomp");
-    var task = mscomp.createTaskInstance(taskName, Array.prototype.slice.call(arguments, 4));
+    var task = mscomp.createTaskInstance(taskName, Array.prototype.slice.call(arguments, 5));
 
     if (task == null) {
         dxterm.printlnErr("Creating task failed");
         return;
     }
 
-    var taskScript = new TaskScript(numRequiredSalves, "Terminal", task);
+    var taskScript = new TaskScript(minSlaves, maxSlaves, "Terminal", task);
 
     var sem = new Semaphore(0, false);
     var listener = new TaskListener({
