@@ -46,28 +46,6 @@ public class Statistics {
     }
 
     /**
-     * Print the statistics of a specific recorder to the console.
-     *
-     * @param p_className
-     *     Fully qualified name of the class including package location (or relative to de.hhu.bsinfo)
-     */
-    public static void printStatistics(final String p_className) {
-        Class<?> clss;
-        try {
-            clss = Class.forName(p_className);
-        } catch (final ClassNotFoundException e) {
-            // check again with longest common prefix of package names
-            try {
-                clss = Class.forName("de.hhu.bsinfo." + p_className);
-            } catch (final ClassNotFoundException ignored) {
-                return;
-            }
-        }
-
-        printStatistics(clss);
-    }
-
-    /**
      * Reset all statistics
      */
     public static void resetStatistics() {
@@ -79,11 +57,11 @@ public class Statistics {
     /**
      * Print the statistics of a specific recorder to the console.
      *
-     * @param p_class
-     *     Class this recorder was created for.
+     * @param p_recorderName
+     *     Name of the recorder.
      */
-    private static void printStatistics(final Class<?> p_class) {
-        StatisticsRecorder recorder = StatisticsRecorderManager.getRecorder(p_class);
+    public static void printStatistics(final String p_recorderName) {
+        StatisticsRecorder recorder = StatisticsRecorderManager.getRecorder(p_recorderName);
         if (recorder != null) {
             System.out.println(recorder);
         }

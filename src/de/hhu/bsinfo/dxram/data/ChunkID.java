@@ -104,4 +104,21 @@ public final class ChunkID {
 
         return builder.toString();
     }
+
+    /**
+     * Parse a hex string containing a chunk id.
+     *
+     * @param p_str
+     *     Hex string with chunk id, e.g. either 0x1234567890ABCDEF or 1234567890ABCDEF
+     * @return Parsed chunk id
+     */
+    public static long parse(final String p_str) {
+        String str = p_str;
+
+        if (str.startsWith("0x")) {
+            str = str.substring(2);
+        }
+
+        return Long.parseUnsignedLong(str, 16);
+    }
 }

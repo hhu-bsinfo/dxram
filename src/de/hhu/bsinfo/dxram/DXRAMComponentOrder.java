@@ -44,8 +44,7 @@ public final class DXRAMComponentOrder {
         public static final short BACKUP = 11;
         public static final short CHUNK = 12;
         public static final short NAMESERVICE = 13;
-        public static final short SCRIPT = 14;
-        public static final short TERMINAL = 15;
+        public static final short TERMINAL = 14;
 
         /**
          * Static class
@@ -60,8 +59,7 @@ public final class DXRAMComponentOrder {
      */
     public static final class Shutdown {
         public static final short BOOT = Short.MIN_VALUE;
-        public static final short TERMINAL = -14;
-        public static final short SCRIPT = -13;
+        public static final short TERMINAL = -13;
         public static final short NAMESERVICE = -12;
         public static final short CHUNK = -11;
         public static final short BACKUP = -10;

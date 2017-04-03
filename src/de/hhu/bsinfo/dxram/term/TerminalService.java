@@ -21,6 +21,14 @@ import jline.SimpleCompletor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.gson.annotations.Expose;
@@ -32,29 +40,36 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdNodeinfo;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdNodelist;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdNodeshutdown;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdNodewait;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdStatsprint;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdStatsrecorders;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Service providing an interactive terminal running on a DXRAM instance.
  * Allows access to implemented services, triggering commands, getting information
- * about current or remote DXRAM instances. The command line interface is basically a java script interpreter with
- * a few built in special commands
+ * about current or remote DXRAM instances.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.03.2016
  */
 public class TerminalService extends AbstractDXRAMService {
-
     private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalService.class.getSimpleName());
 
     // configuration values
     @Expose
     private String m_autostartScript = "";
+    @Expose
+    private String m_historyFilePath = ".dxram_term_history";
 
     // dependent components
     private AbstractBootComponent m_boot;
-    private TerminalComponent m_terminal;
 
+    private Map<String, TerminalCommand> m_commands = new HashMap<String, TerminalCommand>();
+    private TerminalCommandContext m_commandCtx;
     private ConsoleReader m_consoleReader;
     private ArgumentCompletor m_argCompletor;
 
@@ -72,16 +87,13 @@ public class TerminalService extends AbstractDXRAMService {
      * Only returns if terminal was exited.
      */
     public void loop() {
-        byte[] arr;
-
         if (m_boot.getNodeRole() != NodeRole.TERMINAL) {
             System.out.println("A Terminal node must have the NodeRole \"terminal\". Aborting");
             return;
         }
 
         // register commands for auto completion
-        m_argCompletor = new ArgumentCompletor(
-            new SimpleCompletor(m_terminal.getRegisteredCommands().keySet().toArray(new String[m_terminal.getRegisteredCommands().size()])));
+        m_argCompletor = new ArgumentCompletor(new SimpleCompletor(m_commands.keySet().toArray(new String[m_commands.size()])));
 
         m_consoleReader.addCompletor(m_argCompletor);
 
@@ -94,12 +106,9 @@ public class TerminalService extends AbstractDXRAMService {
 
         // auto start script file
         if (!m_autostartScript.isEmpty()) {
+            String[] cmds = readAutostartScript(m_autostartScript);
             System.out.println("Running auto start script " + m_autostartScript);
-            if (!m_terminal.getScriptContext().load(m_autostartScript)) {
-                System.out.println("Running auto start script failed");
-            } else {
-                System.out.println("Running auto start script complete");
-            }
+            runAutostartScript(cmds);
         }
 
         while (m_loop) {
@@ -119,22 +128,9 @@ public class TerminalService extends AbstractDXRAMService {
         // #endif /* LOGGER >= INFO */
     }
 
-    /**
-     * Load a script file into the terminal context
-     *
-     * @param p_path
-     *     Path to the java script file to load
-     * @return True if successful, false otherwise.
-     */
-    public boolean load(final String p_path) {
-
-        return m_terminal.getScriptContext().load(p_path);
-    }
-
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
@@ -148,14 +144,23 @@ public class TerminalService extends AbstractDXRAMService {
                 return false;
             }
 
-            loadHistoryFromFile(".dxram_term_history");
+            loadHistoryFromFile(m_historyFilePath);
         }
+
+        m_commandCtx = new TerminalCommandContext(getServiceAccessor());
+        registerTerminalCommands();
 
         return true;
     }
 
     @Override
     protected boolean shutdownService() {
+        return true;
+    }
+
+    @Override
+    protected boolean isServiceAccessor() {
+        // access the services to provide a context for the terminal commands
         return true;
     }
 
@@ -173,7 +178,7 @@ public class TerminalService extends AbstractDXRAMService {
         }
 
         if (p_text.startsWith("?")) {
-            m_terminal.getScriptTerminalContext().help();
+            printHelp();
         } else if ("exit".equals(p_text)) {
             m_loop = false;
         } else if ("clear".equals(p_text)) {
@@ -181,7 +186,7 @@ public class TerminalService extends AbstractDXRAMService {
             System.out.print("\033[H\033[2J");
             System.out.flush();
         } else {
-            eveluateCommand(p_text);
+            evaluateCommand(p_text);
         }
     }
 
@@ -191,30 +196,26 @@ public class TerminalService extends AbstractDXRAMService {
      * @param p_text
      *     Text to evaluate as terminal command
      */
-    private void eveluateCommand(final String p_text) {
+    private void evaluateCommand(final String p_text) {
         // Remove leading and trailing white spaces and replace multiple space with one space
         String text = p_text.trim().replaceAll(" +", " ");
 
         if ("list".equals(text)) {
-            m_terminal.getScriptContext().eval("dxterm.list()");
+            listCommands();
             return;
         }
-        if ("reload".equals(text)) {
-            m_terminal.getScriptContext().eval("dxterm.reload()");
-            return;
-        }
+
         if (text.startsWith("help")) {
             if ("help".equals(text)) {
-                m_terminal.getScriptTerminalContext().help();
+                printHelp();
             } else {
                 String[] tokens = text.split(" ");
                 if (tokens.length > 1) {
-                    String cmd = tokens[1].replaceAll("\\(\\)", "");
-                    de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(cmd);
-                    if (scriptCtx != null) {
-                        m_terminal.getScriptContext().eval("dxterm.cmd(\"" + cmd + "\").help()");
+                    TerminalCommand cmd = m_commands.get(tokens[1]);
+                    if (cmd != null) {
+                        System.out.println(cmd.getHelp());
                     } else {
-                        System.out.println("Could not find help for terminal command '" + cmd + '\'');
+                        System.out.println("Could not find help for terminal command '" + tokens[1] + '\'');
                     }
 
                     return;
@@ -222,49 +223,23 @@ public class TerminalService extends AbstractDXRAMService {
             }
         }
 
-        if (Pattern.matches("[a-z]++ [a-zA-Z0-9\"]++", text)) {
-            // Type1: command arg1 arg2
-
-            // Replace first space after command with (
-            text = text.replaceAll("([a-z]++) ", "$1(");
-            // Replace all spaces outside of double quotes with ,
-            text = text.replaceAll("\\s+(?=((\\\\[\\\\\"]|[^\\\\\"])*\"(\\\\[\\\\\"]|[^\\\\\"])*\")*(\\\\[\\\\\"]|[^\\\\\"])*$)", ",");
-            // Add an closing bracket
-            text += ")";
-        } else {
-            // Type2: command(arg1,arg2)
-
-            // Remove all spaces outside of double quotes
-            text = text.replaceAll("\\s+(?=((\\\\[\\\\\"]|[^\\\\\"])*\"(\\\\[\\\\\"]|[^\\\\\"])*\")*(\\\\[\\\\\"]|[^\\\\\"])*$)", "");
-            if (!text.contains("(")) {
-                // Add brackets
-                text += "()";
-            } else if (text.contains("(") && !text.contains(")")) {
-                // Add closing bracket
-                text += ")";
-            }
+        // separate by space but keep strings, e.g. "this is a test" as a single string and remove the quotes
+        List<String> list = new ArrayList<String>();
+        Matcher m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(p_text);
+        while (m.find()) {
+            list.add(m.group(1).replace("\"", ""));
         }
 
-        // resolve terminal cmd "macros"
-        String[] tokensFunc = text.split("\\(");
-        if (tokensFunc.length > 1) {
-            // resolve cmd call
-            de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(tokensFunc[0]);
-            if (scriptCtx != null) {
-                // assemble long call
-                String call = "dxterm.cmd(\"" + tokensFunc[0] + "\").exec(";
-
-                // prepare parameters
-                if (tokensFunc[1].length() > 1) {
-                    call += tokensFunc[1];
-                } else {
-                    call += ")";
+        if (!list.isEmpty()) {
+            TerminalCommand cmd = m_commands.get(list.get(0));
+            if (cmd != null) {
+                try {
+                    cmd.exec(Arrays.copyOfRange(list.toArray(new String[list.size()]), 1, list.size()), m_commandCtx);
+                } catch (final Exception e) {
+                    m_commandCtx.printflnErr("Exception executing command: %s", e);
                 }
-
-                m_terminal.getScriptContext().eval(call);
             } else {
-                // Command is not a registered command -> execute unchanged javascript code
-                m_terminal.getScriptContext().eval(p_text);
+                System.out.println("Invalid terminal command '" + list.get(0) + '\'');
             }
         }
     }
@@ -277,7 +252,6 @@ public class TerminalService extends AbstractDXRAMService {
      */
     private void loadHistoryFromFile(final String p_file) {
         try {
-            // TODO fix
             m_consoleReader.setHistory(new History(new File(p_file)));
         } catch (final FileNotFoundException e) {
             // #if LOGGER >= DEBUG
@@ -287,6 +261,77 @@ public class TerminalService extends AbstractDXRAMService {
             // #if LOGGER >= ERROR
             LOGGER.error("Reading history %s failed: %s", p_file, e);
             // #endif /* LOGGER >= ERROR */
+        }
+    }
+
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        registerTerminalCommand(new TcmdNodelist());
+        registerTerminalCommand(new TcmdNodeinfo());
+        registerTerminalCommand(new TcmdNodewait());
+        registerTerminalCommand(new TcmdNodeshutdown());
+        registerTerminalCommand(new TcmdStatsprint());
+        registerTerminalCommand(new TcmdStatsrecorders());
+    }
+
+    /**
+     * Register a terminal command to make it callable from the terminal
+     *
+     * @param p_cmd
+     *     Terminal command to register
+     */
+    private void registerTerminalCommand(final TerminalCommand p_cmd) {
+        // #if LOGGER >= DEBUG
+        LOGGER.debug("Registering terminal command: %s", p_cmd.getName());
+        // #endif /* LOGGER >= DEBUG */
+
+        m_commands.put(p_cmd.getName(), p_cmd);
+    }
+
+    /**
+     * Print the terminal help message
+     */
+    private void printHelp() {
+        System.out.println(
+            "Type '?' or 'help' to print this message\n" + "> To list all built in terminal commands: 'list'\n" + "> 'clear' to clear the screen\n" +
+                "> 'exit' to close and shut down the current terminal\n" + "> Get help about a terminal command, example: 'help nodelist'\n" +
+                "> Execute built in terminal commands, e.g. 'nodelist' or with arguments separated by spaces 'nodelist \"peer\"'");
+    }
+
+    /**
+     * Print a list of available terminal commands
+     */
+    private void listCommands() {
+        String str = "";
+
+        for (String item : m_commands.keySet()) {
+            str += item + ", ";
+        }
+
+        System.out.println(str.substring(0, str.length() - 2));
+    }
+
+    private String[] readAutostartScript(final String p_path) {
+        List<String> stringList;
+
+        try {
+            stringList = Files.readAllLines(new File(p_path).toPath(), Charset.defaultCharset());
+        } catch (final IOException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Reading autostart script file %s failed: %s", p_path, e);
+            // #endif /* LOGGER >= ERROR */
+
+            return new String[0];
+        }
+
+        return stringList.toArray(new String[stringList.size()]);
+    }
+
+    private void runAutostartScript(final String[] p_lines) {
+        for (String line : p_lines) {
+            evaluate(line);
         }
     }
 }

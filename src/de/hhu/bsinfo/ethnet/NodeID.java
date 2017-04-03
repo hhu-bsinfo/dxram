@@ -41,4 +41,21 @@ public final class NodeID {
         // return "0x" + Integer.toHexString(tmp).toUpperCase();
         return "0x" + String.format("%04x", tmp).toUpperCase();
     }
+
+    /**
+     * Parse a hex string containing a node id.
+     *
+     * @param p_str
+     *     Hex string with node id, e.g. either 0x1234 or 1234
+     * @return Parsed node id
+     */
+    public static short parse(final String p_str) {
+        String str = p_str;
+
+        if (str.startsWith("0x")) {
+            str = str.substring(2);
+        }
+
+        return (short) Integer.parseUnsignedInt(str, 16);
+    }
 }

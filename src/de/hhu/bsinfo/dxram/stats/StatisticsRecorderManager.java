@@ -66,14 +66,24 @@ public final class StatisticsRecorderManager {
      * @return the recorder
      */
     static StatisticsRecorder getRecorder(final Class<?> p_class) {
+        return getRecorder(p_class.getSimpleName());
+    }
 
-        StatisticsRecorder recorder = ms_recorders.get(p_class.getSimpleName());
+    /**
+     * Returns the recorder
+     *
+     * @param p_name
+     *     Get the recorder by its name
+     * @return the recorder
+     */
+    static StatisticsRecorder getRecorder(final String p_name) {
+        StatisticsRecorder recorder = ms_recorders.get(p_name);
         if (recorder == null) {
             ms_mapLock.lock();
-            recorder = ms_recorders.get(p_class.getSimpleName());
+            recorder = ms_recorders.get(p_name);
             if (recorder == null) {
-                recorder = new StatisticsRecorder(p_class.getSimpleName());
-                ms_recorders.put(p_class.getSimpleName(), recorder);
+                recorder = new StatisticsRecorder(p_name);
+                ms_recorders.put(p_name, recorder);
             }
             ms_mapLock.unlock();
         }
