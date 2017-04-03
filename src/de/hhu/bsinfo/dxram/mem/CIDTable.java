@@ -20,8 +20,8 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
+import de.hhu.bsinfo.utils.ArrayListLong;
 
 /**
  * Paging-like Tables for the ChunkID-VA mapping
@@ -118,7 +118,7 @@ public final class CIDTable {
     /**
      * Get a free LID from the CIDTable
      *
-     * @return a free LID and version, or -1 if there is none
+     * @return a free LID and version
      */
     long getFreeLID() {
         long ret;
@@ -128,6 +128,7 @@ public final class CIDTable {
         // If no free ID exist, get next local ID
         if (ret == -1) {
             ret = m_nextLocalID++;
+            // as 63-bit counter is enough for now and a while, so we don't check for overflows
         }
 
         return ret;
@@ -136,7 +137,7 @@ public final class CIDTable {
     /**
      * Get a free LID from the CIDTable
      *
-     * @return a free LID and version, or -1 if there is none
+     * @return a free LID and version
      */
     long[] getFreeLIDs(final int p_size, final boolean p_consecutive) {
         long[] ret;
@@ -151,12 +152,7 @@ public final class CIDTable {
                     ret[i] = m_nextLocalID++;
                 }
 
-                if (ret[i] == -1) {
-                    // #if LOGGER >= ERROR
-                    LOGGER.fatal("Allocating new LIDs failed, out of LIDs");
-                    // #endif /* LOGGER >= ERROR */
-                    break;
-                }
+                // as 63-bit counter is enough for now and a while, so we don't check for overflows
             }
         } else {
             ret = m_store.getConsecutiveLIDs(p_size);
@@ -166,12 +162,7 @@ public final class CIDTable {
                 for (int i = 0; i < p_size; i++) {
                     ret[i] = m_nextLocalID++;
 
-                    if (ret[i] == -1) {
-                        // #if LOGGER >= ERROR
-                        LOGGER.fatal("Allocating new LIDs failed, out of LIDs");
-                        // #endif /* LOGGER >= ERROR */
-                        break;
-                    }
+                    // as 63-bit counter is enough for now and a while, so we don't check for overflows
                 }
             }
         }

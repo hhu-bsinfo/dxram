@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxcompute.bench;
 
+import java.util.Arrays;
+
 import com.google.gson.annotations.Expose;
 
 import org.apache.logging.log4j.LogManager;
@@ -95,8 +97,12 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            chunkService.createSizes(sizes);
+                            long[] chunkIDs = chunkService.createSizes(sizes);
                             time[threadIdx].stopAndAccumulate();
+
+                            if (chunkIDs == null) {
+                                LOGGER.error("Creating chunks for sizes %s failed", Arrays.toString(sizes));
+                            }
                         }
 
                         if (lastBatchRemainder > 0) {
@@ -106,8 +112,12 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            chunkService.createSizes(sizes);
+                            long[] chunkIDs = chunkService.createSizes(sizes);
                             time[threadIdx].stopAndAccumulate();
+
+                            if (chunkIDs == null) {
+                                LOGGER.error("Creating chunks for sizes %s failed", Arrays.toString(sizes));
+                            }
                         }
 
                         break;
@@ -122,8 +132,12 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            chunkService.createRemote(destNodeId, sizes);
+                            long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
                             time[threadIdx].stopAndAccumulate();
+
+                            if (chunkIDs == null) {
+                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                            }
                         }
 
                         if (lastBatchRemainder > 0) {
@@ -133,8 +147,12 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            chunkService.createRemote(destNodeId, sizes);
+                            long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
                             time[threadIdx].stopAndAccumulate();
+
+                            if (chunkIDs == null) {
+                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                            }
                         }
 
                         break;
@@ -151,8 +169,12 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            chunkService.createRemote(destNodeId, sizes);
+                            long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
                             time[threadIdx].stopAndAccumulate();
+
+                            if (chunkIDs == null) {
+                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                            }
                         }
 
                         if (lastBatchRemainder > 0) {
@@ -164,8 +186,12 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            chunkService.createRemote(destNodeId, sizes);
+                            long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
                             time[threadIdx].stopAndAccumulate();
+
+                            if (chunkIDs == null) {
+                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                            }
                         }
 
                         break;
@@ -183,12 +209,20 @@ public class ChunkCreateTask implements Task {
 
                             if (destNodeId == ownNodeId) {
                                 time[threadIdx].start();
-                                chunkService.createSizes(sizes);
+                                long[] chunkIDs = chunkService.createSizes(sizes);
                                 time[threadIdx].stopAndAccumulate();
+
+                                if (chunkIDs == null) {
+                                    LOGGER.error("Creating chunks for sizes %s failed", Arrays.toString(sizes));
+                                }
                             } else {
                                 time[threadIdx].start();
-                                chunkService.createRemote(destNodeId, sizes);
+                                long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
                                 time[threadIdx].stopAndAccumulate();
+
+                                if (chunkIDs == null) {
+                                    LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                                }
                             }
                         }
 
@@ -201,8 +235,12 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            chunkService.createRemote(destNodeId, sizes);
+                            long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
                             time[threadIdx].stopAndAccumulate();
+
+                            if (chunkIDs == null) {
+                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                            }
                         }
 
                         break;

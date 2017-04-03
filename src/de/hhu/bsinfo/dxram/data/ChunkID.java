@@ -31,6 +31,7 @@ public final class ChunkID {
      * Static class.
      */
     private ChunkID() {
+
     }
 
     /**
@@ -81,5 +82,26 @@ public final class ChunkID {
      */
     public static String toHexString(final long p_chunkId) {
         return "0x" + Long.toHexString(p_chunkId).toUpperCase();
+    }
+
+    /**
+     * Method to convert a list of chunk IDs to a list of hex strings
+     *
+     * @param p_chunkIDs
+     *     Chunk IDs
+     * @return String with list of chunk IDs in hex
+     */
+    public static String chunkIDArrayToString(final long[] p_chunkIDs) {
+        StringBuilder builder = new StringBuilder();
+
+        for (int i = 0; i < p_chunkIDs.length; i++) {
+            builder.append(toHexString(p_chunkIDs[i]));
+
+            if (i + 1 < p_chunkIDs.length) {
+                builder.append(", ");
+            }
+        }
+
+        return builder.toString();
     }
 }

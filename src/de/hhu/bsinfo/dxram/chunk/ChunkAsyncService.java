@@ -91,7 +91,9 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
      * @param p_dataStructures
      *     Data structures to put/update.
      */
-    public void put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
+    public int put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
+        int chunksPut = 0;
+
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
@@ -99,7 +101,7 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
         // #endif /* ASSERT_NODE_ROLE */
 
         if (p_dataStructures.length == 0) {
-            return;
+            return chunksPut;
         }
 
         if (p_dataStructures[0] == null) {
@@ -128,6 +130,8 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
             }
 
             if (m_memoryManager.put(dataStructure)) {
+                chunksPut++;
+
                 // unlock chunks
                 if (p_chunkUnlockOperation != ChunkLockOperation.NO_LOCK_OPERATION) {
                     boolean writeLock = false;
@@ -181,7 +185,11 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
 
                     // TODO
                     // m_lookup.invalidate(dataStructure.getID());
+
+                    continue;
                 }
+
+                chunksPut += chunksToPut.size();
             }
         }
 
@@ -199,6 +207,8 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
                 ChunkID.toHexString(p_dataStructures[0].getID()));
             // #endif /* LOGGER == TRACE */
         }
+
+        return chunksPut;
     }
 
     @Override

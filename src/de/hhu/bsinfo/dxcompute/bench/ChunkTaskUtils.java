@@ -85,8 +85,7 @@ final class ChunkTaskUtils {
                 break;
 
             default:
-                System.out.println("Unknown pattern " + p_pattern);
-                return null;
+                throw new RuntimeException("Unknown pattern " + p_pattern);
         }
 
         // modify ranges to avoid deleting an index chunk

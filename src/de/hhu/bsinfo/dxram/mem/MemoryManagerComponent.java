@@ -362,9 +362,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
             // get new LIDs
             lids = m_cidTable.getFreeLIDs(p_sizes.length, p_consecutive);
-            if (lids == null) {
-                throw new OutOfConsecutiveChunkIdsException();
-            }
 
             // #ifdef STATISTICS
             SOP_MULTI_MALLOC.enter(p_sizes.length);
@@ -487,9 +484,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
             // get new LIDs
             lids = m_cidTable.getFreeLIDs(p_count, p_consecutive);
-            if (lids == null) {
-                throw new OutOfConsecutiveChunkIdsException();
-            }
 
             // first, try to allocate. maybe early return
             // #ifdef STATISTICS
@@ -546,7 +540,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      *
      * @param p_size
      *     Size in bytes of the payload the chunk contains.
-     * @return Address of the allocated chunk
+     * @return Chunk ID for the allocated chunk
      */
     public long create(final int p_size) {
         assert p_size > 0;
@@ -568,36 +562,33 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
             // get new LID from CIDTable
             lid = m_cidTable.getFreeLID();
-            if (lid == -1) {
-                chunkID = -1;
-            } else {
-                // first, try to allocate. maybe early return
-                // #ifdef STATISTICS
-                SOP_MALLOC.enter(p_size);
-                // #endif /* STATISTICS */
-                address = m_rawMemory.malloc(p_size);
-                // #ifdef STATISTICS
-                SOP_MALLOC.leave();
-                // #endif /* STATISTICS */
-                if (address >= 0) {
-                    chunkID = ((long) m_boot.getNodeID() << 48) + lid;
-                    // register new chunk in cid table
-                    if (!m_cidTable.set(chunkID, address)) {
-                        // on demand allocation of new table failed
-                        // free previously created chunk for data to avoid memory leak
-                        m_rawMemory.free(address);
 
-                        throw new OutOfKeyValueStoreMemoryException(getStatus());
-                    } else {
-                        m_numActiveChunks++;
-                        m_totalActiveChunkMemory += p_size;
-                    }
-                } else {
-                    // put lid back
-                    m_cidTable.putChunkIDForReuse(lid);
+            // first, try to allocate. maybe early return
+            // #ifdef STATISTICS
+            SOP_MALLOC.enter(p_size);
+            // #endif /* STATISTICS */
+            address = m_rawMemory.malloc(p_size);
+            // #ifdef STATISTICS
+            SOP_MALLOC.leave();
+            // #endif /* STATISTICS */
+            if (address >= 0) {
+                chunkID = ((long) m_boot.getNodeID() << 48) + lid;
+                // register new chunk in cid table
+                if (!m_cidTable.set(chunkID, address)) {
+                    // on demand allocation of new table failed
+                    // free previously created chunk for data to avoid memory leak
+                    m_rawMemory.free(address);
 
                     throw new OutOfKeyValueStoreMemoryException(getStatus());
+                } else {
+                    m_numActiveChunks++;
+                    m_totalActiveChunkMemory += p_size;
                 }
+            } else {
+                // put lid back
+                m_cidTable.putChunkIDForReuse(lid);
+
+                throw new OutOfKeyValueStoreMemoryException(getStatus());
             }
 
             // #ifdef STATISTICS

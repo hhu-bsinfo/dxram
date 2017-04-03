@@ -25,7 +25,6 @@ import de.hhu.bsinfo.dxgraph.data.Edge;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -68,10 +67,9 @@ public class DXGraph extends DXCompute {
      *
      * @param p_vertices
      *     Vertices to create storage space for.
-     * @return Number of successfully created storage locations.
      */
-    public int createVertices(final Vertex... p_vertices) {
-        return m_chunkService.create((DataStructure[]) p_vertices);
+    public void createVertices(final Vertex... p_vertices) {
+        m_chunkService.create((DataStructure[]) p_vertices);
     }
 
     /**
@@ -98,8 +96,8 @@ public class DXGraph extends DXCompute {
      *     Edges to create storage space for.
      * @return Number of successfully created storage locations.
      */
-    public int createEdges(final Edge... p_edges) {
-        return m_chunkService.create((DataStructure[]) p_edges);
+    public void createEdges(final Edge... p_edges) {
+        m_chunkService.create((DataStructure[]) p_edges);
     }
 
     /**

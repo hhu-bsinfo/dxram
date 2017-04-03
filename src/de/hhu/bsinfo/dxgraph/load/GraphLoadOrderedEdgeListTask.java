@@ -352,15 +352,9 @@ public class GraphLoadOrderedEdgeListTask implements Task {
                 vertexBuffer = Arrays.copyOf(vertexBuffer, readCount);
             }
 
-            int count = m_chunkService.create((DataStructure[]) vertexBuffer);
-            if (count != readCount) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Creating chunks for vertices failed: %d != %d", count, readCount);
-                // #endif /* LOGGER >= ERROR */
-                // return false;
-            }
+            m_chunkService.create((DataStructure[]) vertexBuffer);
 
-            count = m_chunkService.put((DataStructure[]) vertexBuffer);
+            int count = m_chunkService.put((DataStructure[]) vertexBuffer);
             if (count != readCount) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Putting vertex data for chunks failed: %d != %d", count, readCount);

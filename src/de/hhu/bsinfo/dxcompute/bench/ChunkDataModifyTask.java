@@ -25,6 +25,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkAnonService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
+import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -131,61 +132,67 @@ public class ChunkDataModifyTask implements Task {
                             }
                         }
 
+                        ChunkAnon[] chunks = new ChunkAnon[chunkIds.length];
                         time[threadIdx].start();
-                        ChunkAnon[] chunks = chunkAnonService.get(chunkIds);
+                        int ret = chunkAnonService.get(chunks, chunkIds);
                         time[threadIdx].stopAndAccumulate();
-                        if (chunks == null) {
-                            System.out.println("Error getting chunks");
-                            return;
+
+                        if (ret != chunks.length) {
+                            for (int j = 0; j < chunks.length; j++) {
+                                if (chunks[j].getState() != ChunkState.OK) {
+                                    LOGGER.error("Error getting chunk %s\n", chunks[j]);
+                                }
+                            }
                         }
 
                         if (m_writeContentsAndVerify) {
                             for (int j = 0; j < chunks.length; j++) {
-                                if (chunks[j] == null) {
-                                    System.out.printf("Error getting chunk 0x%X\n", chunkIds[j]);
-                                    continue;
-                                }
+                                if (chunks[j].getState() == ChunkState.OK) {
+                                    byte[] buffer = chunks[j].getData();
 
-                                byte[] buffer = chunks[j].getData();
-
-                                if (buffer == null) {
-                                    throw new IllegalStateException("Buffer of valid chunk null");
-                                }
-
-                                for (int k = 0; k < buffer.length; k++) {
-                                    buffer[k] = (byte) k;
+                                    for (int k = 0; k < buffer.length; k++) {
+                                        buffer[k] = (byte) k;
+                                    }
                                 }
                             }
                         }
 
                         if (doPut) {
                             time[threadIdx].start();
-                            chunkAnonService.put(chunks);
+                            ret = chunkAnonService.put(chunks);
                             time[threadIdx].stopAndAccumulate();
 
+                            if (ret != chunks.length) {
+                                for (int j = 0; j < chunks.length; j++) {
+                                    if (chunks[j].getState() != ChunkState.OK) {
+                                        LOGGER.error("Error putting chunk %s\n", chunks[j]);
+                                    }
+                                }
+                            }
+
                             if (m_writeContentsAndVerify) {
-                                ChunkAnon[] chunksToVerify = chunkAnonService.get(chunkIds);
-                                if (chunksToVerify == null) {
-                                    System.out.println("Error getting chunks (verify)");
-                                    return;
+                                ChunkAnon[] chunksToVerify = new ChunkAnon[chunkIds.length];
+                                ret = chunkAnonService.get(chunksToVerify, chunkIds);
+
+                                if (ret != chunkIds.length) {
+                                    for (int j = 0; j < chunksToVerify.length; j++) {
+                                        if (chunksToVerify[j].getState() != ChunkState.OK) {
+                                            LOGGER.error("Error getting chunk to verify %s\n", chunksToVerify[j]);
+                                        }
+                                    }
                                 }
 
                                 for (int j = 0; j < chunksToVerify.length; j++) {
-                                    if (chunksToVerify[j] == null) {
-                                        System.out.printf("Error getting chunk 0x%X (verify)\n", chunkIds[j]);
+                                    if (chunksToVerify[j].getState() != ChunkState.OK) {
                                         continue;
                                     }
 
                                     byte[] buffer = chunksToVerify[j].getData();
 
-                                    if (buffer == null) {
-                                        throw new IllegalStateException("Buffer of valid chunk null");
-                                    }
-
                                     for (int k = 0; k < buffer.length; k++) {
                                         if (buffer[k] != (byte) k) {
-                                            LOGGER.error("Contents of chunk 0x%16X are not matching written contents: 0x%X != 0x%X", chunksToVerify[j].getID(),
-                                                buffer[k], k);
+                                            LOGGER
+                                                .error("Contents of chunk %s are not matching written contents: 0x%X != 0x%X", chunksToVerify[j], buffer[k], k);
                                         }
                                     }
                                 }

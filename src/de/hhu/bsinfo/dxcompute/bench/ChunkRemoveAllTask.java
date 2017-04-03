@@ -131,8 +131,13 @@ public class ChunkRemoveAllTask implements Task {
                         }
 
                         time[threadIdx].start();
-                        chunkService.remove(chunkIds);
+                        int ret = chunkService.remove(chunkIds);
                         time[threadIdx].stopAndAccumulate();
+
+                        if (ret != chunkIds.length) {
+                            LOGGER.error("Removing one or multiple chunks of %s failed", ChunkID.chunkIDArrayToString(chunkIds));
+                        }
+
                         rangeStart += batchChunkCount;
 
                         batches--;

@@ -213,7 +213,9 @@ public final class MailboxTest {
 
             chunkID = nameService.getChunkID("anc", -1);
             System.out.println(ChunkID.toHexString(chunkID));
-            anchor = chunkAnonService.get(chunkID)[0];
+            ChunkAnon[] tmp = new ChunkAnon[1];
+            chunkAnonService.get(tmp, chunkID);
+            anchor = tmp[0];
             System.out.println(anchor);
 
             chunkIDs = new long[anchor.getData().length / Long.BYTES];

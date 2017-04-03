@@ -84,12 +84,14 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
      * Get/Read the data stored in the backend storage for chunks of unknown size. Use this if the payload size is
      * unknown, only!
      *
+     * @param p_ret
+     *     Pre-allocated array to put the new anonymous chunks to, matching the order of the provided chunk ID array.
      * @param p_chunkIDs
      *     Array with ChunkIDs.
-     * @return Array of anonymous chunks matching the order of the provided chunk ID array.
+     * @return Number of successfully read chunks
      */
-    public ChunkAnon[] get(final long... p_chunkIDs) {
-        ChunkAnon[] ret;
+    public int get(final ChunkAnon[] p_ret, final long... p_chunkIDs) {
+        int numChunks = 0;
 
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -108,7 +110,6 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
         // sort by local and remote data first
         Map<Short, ArrayList<Integer>> remoteChunkIDsByPeers = new TreeMap<>();
 
-        ret = new ChunkAnon[p_chunkIDs.length];
         try {
             m_memoryManager.lockAccess();
             for (int i = 0; i < p_chunkIDs.length; i++) {
@@ -116,8 +117,9 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
                 // returns false if it doesn't exist
                 byte[] data = m_memoryManager.get(p_chunkIDs[i]);
                 if (data != null) {
-                    ret[i] = new ChunkAnon(p_chunkIDs[i], data);
-                    ret[i].setState(ChunkState.OK);
+                    p_ret[i] = new ChunkAnon(p_chunkIDs[i], data);
+                    p_ret[i].setState(ChunkState.OK);
+                    numChunks++;
                 } else {
                     // remote or migrated, figure out location and sort by peers
                     LookupRange lookupRange;
@@ -146,8 +148,9 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
                 try {
                     m_memoryManager.lockAccess();
                     for (final int index : remoteChunkIDIndexes) {
-                        ret[index] = new ChunkAnon(p_chunkIDs[index], m_memoryManager.get(p_chunkIDs[index]));
-                        ret[index].setState(ChunkState.OK);
+                        p_ret[index] = new ChunkAnon(p_chunkIDs[index], m_memoryManager.get(p_chunkIDs[index]));
+                        p_ret[index].setState(ChunkState.OK);
+                        numChunks++;
                     }
                 } finally {
                     m_memoryManager.unlockAccess();
@@ -157,8 +160,8 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
                 int i = 0;
                 ChunkAnon[] chunks = new ChunkAnon[remoteChunkIDIndexes.size()];
                 for (int index : remoteChunkIDIndexes) {
-                    ret[index] = new ChunkAnon(p_chunkIDs[index]);
-                    chunks[i++] = ret[index];
+                    p_ret[index] = new ChunkAnon(p_chunkIDs[index]);
+                    chunks[i++] = p_ret[index];
                 }
                 GetAnonRequest request = new GetAnonRequest(peer, chunks);
 
@@ -178,7 +181,11 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
                     // #if LOGGER >= ERROR
                     LOGGER.error("Sending chunk get request to peer 0x%X failed: %s", peer, e);
                     // #endif /* LOGGER >= ERROR */
+
+                    continue;
                 }
+
+                numChunks += chunks.length;
 
                 // no need to get the response
                 // request.getResponse(GetResponse.class);
@@ -190,10 +197,10 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
-        LOGGER.trace("get[chunkIDs(%d) ...] -> %d", p_chunkIDs.length, p_chunkIDs.length);
+        LOGGER.trace("get[chunkIDs(%d) ...] -> %d", p_chunkIDs.length, numChunks);
         // #endif /* LOGGER == TRACE */
 
-        return ret;
+        return numChunks;
     }
 
     /**
@@ -202,12 +209,14 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
      * Get/Read the data stored in the backend storage for chunks of unknown size. Use this if the payload size is
      * unknown, only!
      *
+     * @param p_ret
+     *     Pre-allocated array to put the new anonymous chunks to, matching the order of the provided chunk ID array.
      * @param p_chunkIDs
      *     Array with ChunkIDs.
-     * @return Array of ChunkAnons matching the chunk ID array with the IDs assigned. Data for chunks that do not exist have the specific state set.
+     * @return Number of successfully read chunks
      */
-    public ChunkAnon[] getLocal(final long... p_chunkIDs) {
-        ChunkAnon[] ret;
+    public int getLocal(final ChunkAnon[] p_ret, final long... p_chunkIDs) {
+        int numChunks = 0;
 
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
@@ -223,19 +232,18 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
         SOP_GET_ANON.enter(p_chunkIDs.length);
         // #endif /* STATISTICS */
 
-        ret = new ChunkAnon[p_chunkIDs.length];
-
         try {
             m_memoryManager.lockAccess();
             for (int i = 0; i < p_chunkIDs.length; i++) {
                 byte[] data = m_memoryManager.get(p_chunkIDs[i]);
 
                 if (data == null) {
-                    ret[i] = new ChunkAnon(p_chunkIDs[i]);
-                    ret[i].setState(ChunkState.DOES_NOT_EXIST);
+                    p_ret[i] = new ChunkAnon(p_chunkIDs[i]);
+                    p_ret[i].setState(ChunkState.DOES_NOT_EXIST);
                 } else {
-                    ret[i] = new ChunkAnon(p_chunkIDs[i], data);
-                    ret[i].setState(ChunkState.OK);
+                    p_ret[i] = new ChunkAnon(p_chunkIDs[i], data);
+                    p_ret[i].setState(ChunkState.OK);
+                    numChunks++;
                 }
             }
         } finally {
@@ -247,36 +255,10 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
-        LOGGER.trace("getLocal[chunkIDs(%d) ...] -> %d", p_chunkIDs.length, p_chunkIDs.length);
+        LOGGER.trace("getLocal[chunkIDs(%d) ...] -> %d", p_chunkIDs.length, numChunks);
         // #endif /* LOGGER == TRACE */
 
-        return ret;
-    }
-
-    @Override
-    public void onIncomingMessage(final AbstractMessage p_message) {
-        // #if LOGGER == TRACE
-        LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
-        // #endif /* LOGGER == TRACE */
-
-        if (p_message != null) {
-            if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
-                switch (p_message.getSubtype()) {
-                    case ChunkMessages.SUBTYPE_GET_ANON_REQUEST:
-                        incomingGetBufferRequest((GetAnonRequest) p_message);
-                        break;
-                    case ChunkMessages.SUBTYPE_PUT_BUFFER_REQUEST:
-                        incomingPutBufferRequest((PutAnonRequest) p_message);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-
-        // #if LOGGER == TRACE
-        LOGGER.trace("Exiting incomingMessage");
-        // #endif /* LOGGER == TRACE */
+        return numChunks;
     }
 
     /**
@@ -481,6 +463,32 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
         // #endif /* LOGGER == TRACE */
 
         return chunksPut;
+    }
+
+    @Override
+    public void onIncomingMessage(final AbstractMessage p_message) {
+        // #if LOGGER == TRACE
+        LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
+        // #endif /* LOGGER == TRACE */
+
+        if (p_message != null) {
+            if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
+                switch (p_message.getSubtype()) {
+                    case ChunkMessages.SUBTYPE_GET_ANON_REQUEST:
+                        incomingGetBufferRequest((GetAnonRequest) p_message);
+                        break;
+                    case ChunkMessages.SUBTYPE_PUT_BUFFER_REQUEST:
+                        incomingPutBufferRequest((PutAnonRequest) p_message);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("Exiting incomingMessage");
+        // #endif /* LOGGER == TRACE */
     }
 
     // -----------------------------------------------------------------------------------

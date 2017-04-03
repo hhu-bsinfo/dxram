@@ -58,12 +58,12 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.ArrayListLong;
 
 /**
  * This service provides access to the backend storage system.
@@ -98,49 +98,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      */
     public ChunkService() {
         super("chunk");
-    }
-
-    /**
-     * Get the memory status
-     *
-     * @return Status object with current status of the key value store memory
-     */
-    public MemoryManagerComponent.Status getStatus() {
-        return m_memoryManager.getStatus();
-    }
-
-    /**
-     * Get the total amount of memory.
-     *
-     * @return Total amount of memory in bytes.
-     */
-    public long getTotalMemory() {
-        MemoryManagerComponent.Status memManStatus;
-
-        memManStatus = m_memoryManager.getStatus();
-
-        if (memManStatus != null) {
-            return memManStatus.getTotalMemory().getBytes();
-        } else {
-            return -1;
-        }
-    }
-
-    /**
-     * Get the amount of free memory.
-     *
-     * @return Amount of free memory in bytes.
-     */
-    public long getFreeMemory() {
-        MemoryManagerComponent.Status memManStatus;
-
-        memManStatus = m_memoryManager.getStatus();
-
-        if (memManStatus != null) {
-            return memManStatus.getFreeMemory().getBytes();
-        } else {
-            return -1;
-        }
     }
 
     /**
@@ -183,6 +140,15 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         }
 
         return list;
+    }
+
+    /**
+     * Get the local memory status
+     *
+     * @return Status object with current status of the key value store memory
+     */
+    public MemoryManagerComponent.Status getStatus() {
+        return m_memoryManager.getStatus();
     }
 
     /**
@@ -265,7 +231,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #endif /* ASSERT_NODE_ROLE */
 
         // #if LOGGER == TRACE
-        LOGGER.trace("create[size %d, count %d]", p_size, p_count);
+        LOGGER.trace("create[size %d, count %d, consecutive %d]", p_size, p_count, p_consecutive);
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
@@ -301,19 +267,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             }
         }
 
-        if (chunkIDs == null) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Multi create for size %d, count %d failed", p_size, p_count);
-            // #endif /* LOGGER >= ERROR */
-            return null;
-        }
-
         // #ifdef STATISTICS
         SOP_CREATE.leave();
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
-        LOGGER.trace("create[size %d, count %d] -> %s, ...", p_size, p_count, ChunkID.toHexString(chunkIDs[0]));
+        LOGGER.trace("create[size %d, count %d, consecutive %d] -> %s, ...", p_size, p_count, p_consecutive, ChunkID.toHexString(chunkIDs[0]));
         // #endif /* LOGGER == TRACE */
 
         return chunkIDs;
@@ -328,8 +287,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      *     Data structures to create chunks for.
      * @return Number of successfully created chunks.
      */
-    public int create(final DataStructure... p_dataStructures) {
-        return create(false, p_dataStructures);
+    public void create(final DataStructure... p_dataStructures) {
+        create(false, p_dataStructures);
     }
 
     /**
@@ -341,11 +300,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      *     Whether the ChunkIDs must be consecutive or not.
      * @param p_dataStructures
      *     Data structures to create chunks for.
-     * @return Number of successfully created chunks.
      */
-    public int create(final boolean p_consecutive, final DataStructure... p_dataStructures) {
-        int count = 0;
-
+    public void create(final boolean p_consecutive, final DataStructure... p_dataStructures) {
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() != NodeRole.PEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
@@ -353,11 +309,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #endif /* ASSERT_NODE_ROLE */
 
         if (p_dataStructures.length == 0) {
-            return count;
+            return;
         }
 
         // #if LOGGER == TRACE
-        LOGGER.trace("create[numDataStructures %d...]", p_dataStructures.length);
+        LOGGER.trace("create[p_consecutive %d, numDataStructures %d...]", p_consecutive, p_dataStructures.length);
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
@@ -377,15 +333,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
                 m_memoryManager.unlockManage();
             }
 
-            if (chunkID != ChunkID.INVALID_ID) {
-                p_dataStructures[0].setID(chunkID);
-                count++;
-            } else {
-                p_dataStructures[0].setID(ChunkID.INVALID_ID);
-                // #if LOGGER == ERROR
-                LOGGER.error("Creating chunk for size %d failed", p_dataStructures[0].sizeofObject());
-                // #endif /* LOGGER == ERROR */
-            }
+            p_dataStructures[0].setID(chunkID);
         } else {
             try {
                 m_memoryManager.lockManage();
@@ -397,8 +345,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             } finally {
                 m_memoryManager.unlockManage();
             }
-
-            count += p_dataStructures.length;
         }
 
         // #ifdef STATISTICS
@@ -406,10 +352,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
-        LOGGER.trace("create[numDataStructures(%d)] -> %d", p_dataStructures.length, count);
+        LOGGER.trace("create[numDataStructures(%d)]", p_dataStructures.length);
         // #endif /* LOGGER == TRACE */
-
-        return count;
     }
 
     /**
@@ -446,7 +390,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         }
 
         // #if LOGGER == TRACE
-        LOGGER.trace("create[sizes(%d) %d, ...]", p_sizes.length, p_sizes[0]);
+        LOGGER.trace("create[consecutive(%d), sizes(%d) %d, ...]", p_consecutive, p_sizes.length, p_sizes[0]);
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
@@ -477,13 +421,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
             } finally {
                 m_memoryManager.unlockManage();
             }
-
-            if (chunkIDs == null) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Multi create chunks failed");
-                // #endif /* LOGGER >= ERROR */
-                return null;
-            }
         }
 
         // #ifdef STATISTICS
@@ -491,7 +428,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
-        LOGGER.trace("create[sizes(%d) %d, ...] -> %s, ...", p_sizes.length, p_sizes[0], ChunkID.toHexString(chunkIDs[0]));
+        LOGGER.trace("create[consecutive(%d), sizes(%d) %d, ...] -> %s, ...", p_consecutive, p_sizes.length, p_sizes[0], ChunkID.toHexString(chunkIDs[0]));
         // #endif /* LOGGER == TRACE */
 
         return chunkIDs;
@@ -518,6 +455,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         if (ids != null) {
             for (int i = 0; i < ids.length; i++) {
                 p_dataStructures[i].setID(ids[i]);
+                p_dataStructures[i].setState(ChunkState.OK);
             }
         }
 
@@ -531,7 +469,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      *     NodeID of the peer to create the chunks on.
      * @param p_sizes
      *     Sizes to create chunks of.
-     * @return ChunkIDs/Handles identifying the created chunks.
+     * @return ChunkIDs/Handles identifying the created chunks. Null if remote is unreachable
      */
     public long[] createRemote(final short p_peer, final int... p_sizes) {
         long[] chunkIDs = null;
