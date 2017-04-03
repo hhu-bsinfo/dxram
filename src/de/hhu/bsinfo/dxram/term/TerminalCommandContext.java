@@ -120,68 +120,72 @@ public class TerminalCommandContext {
         System.out.print('\n');
     }
 
-    public boolean getArgBoolean(final String[] p_args, final int pos, final boolean p_default) {
-        if (p_args.length <= pos) {
+    public boolean getArgBoolean(final String[] p_args, final int p_pos, final boolean p_default) {
+        if (p_args.length <= p_pos) {
             return p_default;
         }
 
-        return Boolean.parseBoolean(p_args[pos]);
+        return Boolean.parseBoolean(p_args[p_pos]);
     }
 
-    public short getArgShort(final String[] p_args, final int pos, final short p_default) {
-        if (p_args.length <= pos) {
+    public short getArgShort(final String[] p_args, final int p_pos, final short p_default) {
+        if (p_args.length <= p_pos) {
             return p_default;
         }
 
-        return Short.parseShort(p_args[pos]);
+        return Short.parseShort(p_args[p_pos]);
     }
 
-    public int getArgInt(final String[] p_args, final int pos, final int p_default) {
-        if (p_args.length <= pos) {
+    public int getArgInt(final String[] p_args, final int p_pos, final int p_default) {
+        if (p_args.length <= p_pos) {
             return p_default;
         }
 
-        return Integer.parseInt(p_args[pos]);
+        return Integer.parseInt(p_args[p_pos]);
     }
 
-    public long getArgLong(final String[] p_args, final int pos, final long p_default) {
-        if (p_args.length <= pos) {
+    public long getArgLong(final String[] p_args, final int p_pos, final long p_default) {
+        if (p_args.length <= p_pos) {
             return p_default;
         }
 
-        return Long.parseLong(p_args[pos]);
+        return Long.parseLong(p_args[p_pos]);
     }
 
-    public String getArgString(final String[] p_args, final int pos, final String p_default) {
-        if (p_args.length <= pos) {
+    public String getArgString(final String[] p_args, final int p_pos, final String p_default) {
+        if (p_args.length <= p_pos) {
             return p_default;
         }
 
-        return p_args[pos];
+        return p_args[p_pos];
     }
 
-    public NodeRole getArgNodeRole(final String[] p_args, final int pos, final NodeRole p_default) {
-        if (p_args.length <= pos) {
+    public NodeRole getArgNodeRole(final String[] p_args, final int p_pos, final NodeRole p_default) {
+        if (p_args.length <= p_pos) {
             return p_default;
         }
 
-        return NodeRole.toNodeRole(p_args[pos]);
+        return NodeRole.toNodeRole(p_args[p_pos]);
     }
 
-    public short getArgNodeId(final String[] p_args, final int pos, final short p_default) {
-        if (p_args.length <= pos) {
+    public short getArgNodeId(final String[] p_args, final int p_pos, final short p_default) {
+        if (p_args.length <= p_pos) {
             return p_default;
         }
 
-        return NodeID.parse(p_args[pos]);
+        return NodeID.parse(p_args[p_pos]);
     }
 
-    public long getArgChunkId(final String[] p_args, final int pos, final long p_default) {
-        if (p_args.length <= pos) {
+    public long getArgLocalId(final String[] p_args, final int p_pos, final long p_default) {
+        return getArgChunkId(p_args, p_pos, p_default);
+    }
+
+    public long getArgChunkId(final String[] p_args, final int p_pos, final long p_default) {
+        if (p_args.length <= p_pos) {
             return p_default;
         }
 
-        return ChunkID.parse(p_args[pos]);
+        return ChunkID.parse(p_args[p_pos]);
     }
 
     /**

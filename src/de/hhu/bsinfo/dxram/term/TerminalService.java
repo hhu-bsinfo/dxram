@@ -40,6 +40,9 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdNameget;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdNamelist;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdNamereg;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNodeinfo;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNodelist;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNodeshutdown;
@@ -215,7 +218,7 @@ public class TerminalService extends AbstractDXRAMService {
                     if (cmd != null) {
                         System.out.println(cmd.getHelp());
                     } else {
-                        System.out.println("Could not find help for terminal command '" + tokens[1] + '\'');
+                        m_commandCtx.printlnErr("Could not find help for terminal command '" + tokens[1] + '\'');
                     }
 
                     return;
@@ -239,7 +242,7 @@ public class TerminalService extends AbstractDXRAMService {
                     m_commandCtx.printflnErr("Exception executing command: %s", e);
                 }
             } else {
-                System.out.println("Invalid terminal command '" + list.get(0) + '\'');
+                m_commandCtx.printlnErr("Invalid terminal command '" + list.get(0) + '\'');
             }
         }
     }
@@ -268,10 +271,13 @@ public class TerminalService extends AbstractDXRAMService {
      * Register terminal commands
      */
     private void registerTerminalCommands() {
-        registerTerminalCommand(new TcmdNodelist());
+        registerTerminalCommand(new TcmdNameget());
+        registerTerminalCommand(new TcmdNamelist());
+        registerTerminalCommand(new TcmdNamereg());
         registerTerminalCommand(new TcmdNodeinfo());
-        registerTerminalCommand(new TcmdNodewait());
+        registerTerminalCommand(new TcmdNodelist());
         registerTerminalCommand(new TcmdNodeshutdown());
+        registerTerminalCommand(new TcmdNodewait());
         registerTerminalCommand(new TcmdStatsprint());
         registerTerminalCommand(new TcmdStatsrecorders());
     }
