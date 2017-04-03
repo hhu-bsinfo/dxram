@@ -363,7 +363,7 @@ public final class SmallObjectHeapIntegrityTest {
                         long ptr = m_memory.malloc(size);
                         LOCK.unlock();
 
-                        if (ptr == 0) {
+                        if (ptr == SmallObjectHeap.INVALID_ADDRESS) {
                             System.out.println("!!! Allocation of size " + size + " failed, check for out of memory, otherwise error");
                             System.out.println(m_memory.getStatus());
                             System.exit(-1);

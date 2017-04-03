@@ -33,7 +33,7 @@ import de.hhu.bsinfo.utils.serialization.RandomAccessFileImExporter;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
 public final class SmallObjectHeap implements Importable, Exportable {
-    // Constants
+    public static final int INVALID_ADDRESS = 0;
     static final byte POINTER_SIZE = 5;
     static final int SIZE_MARKER_BYTE = 1;
     static final byte ALLOC_BLOCK_FLAGS_OFFSET = 0x5;
@@ -41,18 +41,15 @@ public final class SmallObjectHeap implements Importable, Exportable {
     private static final long MAX_SET_SIZE = (long) Math.pow(2, 30);
     private static final byte SMALL_BLOCK_SIZE = 64;
     private static final byte SINGLE_BYTE_MARKER = 0xF;
-    private static final int INVALID_BLOCK_ADDRESS = 0;
+    // Attributes, have them accessible by the package to enable walking and analyzing the heap
+    // don't modify or access them otherwise
     long m_baseFreeBlockList;
     int m_freeBlocksListSize = -1;
     long[] m_freeBlockListSizes;
     Storage m_memory;
-    // Attributes, have them accessible by the package to enable walking and analyzing the heap
-    // don't modify or access them otherwise
     private int m_maxBlockSize;
     private int m_freeBlocksListCount = -1;
     private Status m_status;
-
-    // Constructors
 
     /**
      * Creates an instance of the object heap
@@ -315,7 +312,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
             for (int i = 0; i < p_usedEntries; i++) {
                 long addr = malloc(p_sizes[i]);
 
-                if (addr == INVALID_BLOCK_ADDRESS) {
+                if (addr == INVALID_ADDRESS) {
                     // roll back
                     for (int j = 0; j < i; j++) {
                         free(ret[j]);
@@ -369,7 +366,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
             for (int i = 0; i < p_count; i++) {
                 long addr = malloc(p_size);
 
-                if (addr == INVALID_BLOCK_ADDRESS) {
+                if (addr == INVALID_ADDRESS) {
                     // roll back
                     for (int j = 0; j < i; j++) {
                         free(ret[j]);
@@ -990,7 +987,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
         blockSize = p_size + lengthFieldSize;
         address = findFreeBlock(blockSize);
 
-        if (address != 0) {
+        if (address != INVALID_ADDRESS) {
             unhookFreeBlock(address);
             trimFreeBlockToSize(address, blockSize);
 
@@ -1033,12 +1030,12 @@ public final class SmallObjectHeap implements Importable, Exportable {
             // Traverse through the lower list
             list = getList(p_size);
             address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
-            if (address != 0) {
+            if (address != INVALID_ADDRESS) {
                 freeLengthFieldSize = readRightPartOfMarker(address - 1);
                 freeSize = read(address, freeLengthFieldSize);
-                while (freeSize < p_size && address != 0) {
+                while (freeSize < p_size && address != INVALID_ADDRESS) {
                     address = readPointer(address + freeLengthFieldSize + POINTER_SIZE);
-                    if (address != 0) {
+                    if (address != INVALID_ADDRESS) {
                         freeLengthFieldSize = readRightPartOfMarker(address - 1);
                         freeSize = read(address, freeLengthFieldSize);
                     }
@@ -1113,7 +1110,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
         address = findFreeBlock(p_bigBlockSize);
 
         // no free block found
-        if (address == 0) {
+        if (address == INVALID_ADDRESS) {
             return null;
         }
 
@@ -1171,7 +1168,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
         address = findFreeBlock(p_bigBlockSize);
 
         // no free block found
-        if (address == 0) {
+        if (address == INVALID_ADDRESS) {
             return null;
         }
 
@@ -1432,7 +1429,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
             // Write pointer to list and successor
             writePointer(p_address + lengthFieldSize, listOffset);
             writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
-            if (anchor != 0) {
+            if (anchor != INVALID_ADDRESS) {
                 // Write pointer of successor
                 int marker;
                 marker = readRightPartOfMarker(anchor - SIZE_MARKER_BYTE);
@@ -1477,7 +1474,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
             writePointer(prevPointer + lengthFieldSize + POINTER_SIZE, nextPointer);
         }
 
-        if (nextPointer != 0) {
+        if (nextPointer != INVALID_ADDRESS) {
             // Write pointer of successor
             writePointer(nextPointer + lengthFieldSize, prevPointer);
         }

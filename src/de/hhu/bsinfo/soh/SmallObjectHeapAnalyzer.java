@@ -337,7 +337,7 @@ public final class SmallObjectHeapAnalyzer {
             if (baseAddress <= freeBlockListEnd) {
                 long ptr = m_memory.readPointer(baseAddress);
 
-                if (ptr != 0) {
+                if (ptr != SmallObjectHeap.INVALID_ADDRESS) {
 
                     do {
                         FreeBlockListElement block = new FreeBlockListElement();
@@ -384,12 +384,12 @@ public final class SmallObjectHeapAnalyzer {
 
                                 // have block position before the marker byte for the walker
                                 block.m_blockAddress = ptr - 1;
-                                if (ptrPrev == 0) {
+                                if (ptrPrev == SmallObjectHeap.INVALID_ADDRESS) {
                                     block.m_prevBlockAddress = -1;
                                 } else {
                                     block.m_prevBlockAddress = ptrPrev;
                                 }
-                                if (ptrNext == 0) {
+                                if (ptrNext == SmallObjectHeap.INVALID_ADDRESS) {
                                     block.m_nextBlockAddress = -1;
                                 } else {
                                     block.m_nextBlockAddress = ptrNext;
@@ -419,7 +419,7 @@ public final class SmallObjectHeapAnalyzer {
                             System.out.println(block);
                         }
 
-                    } while (ptr != 0);
+                    } while (ptr != SmallObjectHeap.INVALID_ADDRESS);
                 }
 
                 baseAddress += SmallObjectHeap.POINTER_SIZE;
