@@ -40,6 +40,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdLoggerlevel;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdLoginfo;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNameget;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNamelist;
@@ -272,6 +273,7 @@ public class TerminalService extends AbstractDXRAMService {
      * Register terminal commands
      */
     private void registerTerminalCommands() {
+        registerTerminalCommand(new TcmdLoggerlevel());
         registerTerminalCommand(new TcmdLoginfo());
         registerTerminalCommand(new TcmdNameget());
         registerTerminalCommand(new TcmdNamelist());
