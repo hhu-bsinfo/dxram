@@ -113,7 +113,7 @@ public class TcmdChunkget extends TerminalCommand {
             ChunkService chunk = p_ctx.getService(ChunkService.class);
 
             if (chunk.get(dataStructure) != 1) {
-                p_ctx.printflnErr("Getting data structure 0x%X failed", cid);
+                p_ctx.printflnErr("Getting data structure 0x%X failed: %s", cid, chunk.getStatus());
                 return;
             }
 
@@ -123,7 +123,7 @@ public class TcmdChunkget extends TerminalCommand {
 
             ChunkAnon[] chunks = new ChunkAnon[1];
             if (chunkAnon.get(chunks, cid) != 1) {
-                p_ctx.printflnErr("Getting chunk 0x%X failed", cid);
+                p_ctx.printflnErr("Getting chunk 0x%X failed: %s", cid, chunks[0].getState());
                 return;
             }
 

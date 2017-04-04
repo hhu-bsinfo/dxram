@@ -69,6 +69,7 @@ import de.hhu.bsinfo.dxram.term.cmd.TcmdNodeinfo;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNodelist;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNodeshutdown;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNodewait;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdScriptrun;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdStatsprint;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdStatsrecorders;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdTmpcreate;
@@ -158,6 +159,32 @@ public class TerminalService extends AbstractDXRAMService {
         // #endif /* LOGGER >= INFO */
     }
 
+    /**
+     * Evaluate the text entered in the terminal.
+     *
+     * @param p_text
+     *     Text to evaluate
+     */
+    public void evaluate(final String p_text) {
+
+        // skip empty
+        if (p_text.isEmpty()) {
+            return;
+        }
+
+        if (p_text.startsWith("?")) {
+            printHelp();
+        } else if ("exit".equals(p_text)) {
+            m_loop = false;
+        } else if ("clear".equals(p_text)) {
+            // ANSI escape codes (clear screen, move cursor to first row and first column)
+            System.out.print("\033[H\033[2J");
+            System.out.flush();
+        } else {
+            evaluateCommand(p_text);
+        }
+    }
+
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
@@ -192,32 +219,6 @@ public class TerminalService extends AbstractDXRAMService {
     protected boolean isServiceAccessor() {
         // access the services to provide a context for the terminal commands
         return true;
-    }
-
-    /**
-     * Evaluate the text entered in the terminal.
-     *
-     * @param p_text
-     *     Text to evaluate
-     */
-    private void evaluate(final String p_text) {
-
-        // skip empty
-        if (p_text.isEmpty()) {
-            return;
-        }
-
-        if (p_text.startsWith("?")) {
-            printHelp();
-        } else if ("exit".equals(p_text)) {
-            m_loop = false;
-        } else if ("clear".equals(p_text)) {
-            // ANSI escape codes (clear screen, move cursor to first row and first column)
-            System.out.print("\033[H\033[2J");
-            System.out.flush();
-        } else {
-            evaluateCommand(p_text);
-        }
     }
 
     /**
@@ -298,6 +299,7 @@ public class TerminalService extends AbstractDXRAMService {
      * Register terminal commands
      */
     private void registerTerminalCommands() {
+        registerTerminalCommand(new TcmdScriptrun());
         registerTerminalCommand(new TcmdTmpcreate());
         registerTerminalCommand(new TcmdTmpget());
         registerTerminalCommand(new TcmdTmpput());

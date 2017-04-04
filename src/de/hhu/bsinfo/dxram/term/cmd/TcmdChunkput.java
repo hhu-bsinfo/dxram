@@ -96,7 +96,7 @@ public class TcmdChunkput extends TerminalCommand {
         ChunkAnon[] chunks = new ChunkAnon[1];
 
         if (chunkService.get(chunks, cid) != 1) {
-            p_ctx.printflnErr("Getting chunk 0x%X failed", cid);
+            p_ctx.printflnErr("Getting chunk 0x%X failed: %s", cid, chunks[0].getState());
             return;
         }
 
@@ -188,7 +188,7 @@ public class TcmdChunkput extends TerminalCommand {
 
         // put chunk back
         if (chunkService.put(chunk) != 1) {
-            p_ctx.printflnErr("Putting chunk 0x%X failed", cid);
+            p_ctx.printflnErr("Putting chunk 0x%X failed: %s", cid, chunk.getState());
         } else {
             p_ctx.printfln("Put to chunk 0x%X successful", cid);
         }
