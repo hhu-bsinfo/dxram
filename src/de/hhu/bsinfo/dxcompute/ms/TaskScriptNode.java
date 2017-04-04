@@ -21,6 +21,6 @@ import de.hhu.bsinfo.utils.serialization.Importable;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 15.01.2017
  */
-interface TaskScriptNode extends Importable, Exportable {
+public interface TaskScriptNode extends Importable, Exportable {
 
 }
