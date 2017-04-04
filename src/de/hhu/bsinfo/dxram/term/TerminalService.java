@@ -144,12 +144,14 @@ public class TerminalService extends AbstractDXRAMService {
 
         if (p_text.startsWith("?")) {
             printHelp();
-        } else if ("exit".equals(p_text)) {
+        } else if ("exit".equals(p_text) || "quit".equals(p_text)) {
             m_loop = false;
         } else if ("clear".equals(p_text)) {
             // ANSI escape codes (clear screen, move cursor to first row and first column)
             System.out.print("\033[H\033[2J");
             System.out.flush();
+        } else if (p_text.startsWith("#")) {
+            // comment, do nothing
         } else {
             evaluateCommand(p_text);
         }
