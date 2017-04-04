@@ -197,6 +197,16 @@ public class TerminalCommandContext {
         return ChunkID.parse(p_args[p_pos]);
     }
 
+    public boolean isArgChunkID(final String[] p_args, final int p_pos) {
+        String str = p_args[p_pos];
+
+        if (str.startsWith("0x")) {
+            str = str.substring(2);
+        }
+
+        return str.length() >= 16;
+    }
+
     /**
      * Change the color of stdout.
      *

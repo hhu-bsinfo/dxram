@@ -48,7 +48,7 @@ public class TcmdMetadata extends TerminalCommand {
             return;
         }
 
-        if (nidStr.equals("all")) {
+        if ("all".equals(nidStr)) {
             LookupService lookup = p_ctx.getService(LookupService.class);
             BootService boot = p_ctx.getService(BootService.class);
             List<Short> nodeIds = boot.getOnlineNodeIDs();

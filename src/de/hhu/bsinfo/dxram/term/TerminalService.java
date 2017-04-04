@@ -13,13 +13,6 @@
 
 package de.hhu.bsinfo.dxram.term;
 
-import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrieralloc;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrierfree;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdBarriersignon;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdBarriersize;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrierstatus;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdLookuptree;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdMetadata;
 import jline.ArgumentCompletor;
 import jline.ConsoleReader;
 import jline.History;
@@ -47,8 +40,21 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrieralloc;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrierfree;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdBarriersignon;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdBarriersize;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrierstatus;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkcreate;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkget;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdChunklist;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkput;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkstatus;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdLoggerlevel;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdLoginfo;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdLookuptree;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdMemdump;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdMetadata;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNameget;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNamelist;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNamereg;
@@ -280,6 +286,12 @@ public class TerminalService extends AbstractDXRAMService {
      * Register terminal commands
      */
     private void registerTerminalCommands() {
+        registerTerminalCommand(new TcmdChunkget());
+        registerTerminalCommand(new TcmdChunkput());
+        registerTerminalCommand(new TcmdChunkcreate());
+        registerTerminalCommand(new TcmdChunklist());
+        registerTerminalCommand(new TcmdChunkstatus());
+        registerTerminalCommand(new TcmdMemdump());
         registerTerminalCommand(new TcmdBarrieralloc());
         registerTerminalCommand(new TcmdBarrierfree());
         registerTerminalCommand(new TcmdBarriersignon());
