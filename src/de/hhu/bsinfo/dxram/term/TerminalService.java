@@ -13,10 +13,11 @@
 
 package de.hhu.bsinfo.dxram.term;
 
-import jline.ArgumentCompletor;
-import jline.ConsoleReader;
-import jline.History;
-import jline.SimpleCompletor;
+import jline.console.ConsoleReader;
+import jline.console.UserInterruptException;
+import jline.console.completer.ArgumentCompleter;
+import jline.console.completer.StringsCompleter;
+import jline.console.history.FileHistory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -65,7 +66,7 @@ public class TerminalService extends AbstractDXRAMService {
 
     private TerminalCommandContext m_commandCtx;
     private ConsoleReader m_consoleReader;
-    private ArgumentCompletor m_argCompletor;
+    private ArgumentCompleter m_argCompletor;
 
     private volatile boolean m_loop = true;
 
@@ -88,9 +89,11 @@ public class TerminalService extends AbstractDXRAMService {
 
         // register commands for auto completion
         Collection<String> cmds = m_terminal.getListOfCommands();
-        m_argCompletor = new ArgumentCompletor(new SimpleCompletor(cmds.toArray(new String[cmds.size()])));
+        m_argCompletor = new ArgumentCompleter(new StringsCompleter(cmds.toArray(new String[cmds.size()])));
 
-        m_consoleReader.addCompletor(m_argCompletor);
+        m_consoleReader.addCompleter(m_argCompletor);
+        // handle ctrl + c
+        m_consoleReader.setHandleUserInterrupt(true);
 
         // #if LOGGER >= INFO
         LOGGER.info("Running terminal...");
@@ -110,9 +113,12 @@ public class TerminalService extends AbstractDXRAMService {
             String command;
             try {
                 command = m_consoleReader.readLine('$' + NodeID.toHexString(m_boot.getNodeID()) + "> ");
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 LOGGER.error("Readline failed", e);
                 continue;
+            } catch (final UserInterruptException e) {
+                // ctrl + c
+                command = "";
             }
 
             evaluate(command);
@@ -281,7 +287,7 @@ public class TerminalService extends AbstractDXRAMService {
      */
     private void loadHistoryFromFile(final String p_file) {
         try {
-            m_consoleReader.setHistory(new History(new File(p_file)));
+            m_consoleReader.setHistory(new FileHistory(new File(p_file)));
         } catch (final FileNotFoundException e) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("No history found: %s", p_file);
