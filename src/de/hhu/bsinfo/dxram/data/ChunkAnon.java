@@ -108,7 +108,11 @@ public final class ChunkAnon implements Importable, Exportable {
      * @return Payload size in bytes.
      */
     public final int getDataSize() {
-        return m_data.length;
+        if (m_data != null) {
+            return m_data.length;
+        } else {
+            return -1;
+        }
     }
 
     @Override
@@ -130,6 +134,10 @@ public final class ChunkAnon implements Importable, Exportable {
 
     @Override
     public int sizeofObject() {
-        return ObjectSizeUtil.sizeofByteArray(m_data);
+        if (m_data != null) {
+            return ObjectSizeUtil.sizeofByteArray(m_data);
+        } else {
+            return 0;
+        }
     }
 }

@@ -60,6 +60,11 @@ public class TcmdChunkget extends TerminalCommand {
         int offset = 0;
         int length = 0;
 
+        if (p_args.length < 1) {
+            p_ctx.printlnErr("No cid specified");
+            return;
+        }
+
         if (p_ctx.isArgChunkID(p_args, 0)) {
             cid = p_ctx.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
 

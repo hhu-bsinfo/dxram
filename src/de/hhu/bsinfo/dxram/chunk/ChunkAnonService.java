@@ -185,10 +185,7 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
                     continue;
                 }
 
-                numChunks += chunks.length;
-
-                // no need to get the response
-                // request.getResponse(GetResponse.class);
+                numChunks += request.getResponse(GetAnonResponse.class).getTotalSuccessful();
             }
         }
 
