@@ -18,6 +18,12 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
+import de.hhu.bsinfo.dxram.sync.tcmd.TcmdBarrieralloc;
+import de.hhu.bsinfo.dxram.sync.tcmd.TcmdBarrierfree;
+import de.hhu.bsinfo.dxram.sync.tcmd.TcmdBarriersignon;
+import de.hhu.bsinfo.dxram.sync.tcmd.TcmdBarriersize;
+import de.hhu.bsinfo.dxram.sync.tcmd.TcmdBarrierstatus;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 
 /**
  * Service providing mechanisms for synchronizing.
@@ -28,6 +34,7 @@ public class SynchronizationService extends AbstractDXRAMService {
 
     // dependent components
     private LookupComponent m_lookup;
+    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -98,15 +105,28 @@ public class SynchronizationService extends AbstractDXRAMService {
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        registerTerminalCommands();
         return true;
     }
 
     @Override
     protected boolean shutdownService() {
         return true;
+    }
+
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdBarrieralloc());
+        m_terminal.registerTerminalCommand(new TcmdBarrierfree());
+        m_terminal.registerTerminalCommand(new TcmdBarriersignon());
+        m_terminal.registerTerminalCommand(new TcmdBarriersize());
+        m_terminal.registerTerminalCommand(new TcmdBarrierstatus());
     }
 }

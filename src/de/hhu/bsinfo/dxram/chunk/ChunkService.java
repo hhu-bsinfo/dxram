@@ -38,6 +38,10 @@ import de.hhu.bsinfo.dxram.chunk.messages.PutResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusResponse;
+import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkcreate;
+import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunklist;
+import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkremove;
+import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkstatus;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
@@ -58,6 +62,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -92,6 +97,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
     private AbstractLockComponent m_lock;
+    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -1290,12 +1296,14 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         registerNetworkMessages();
         registerNetworkMessageListener();
+        registerTerminalCommands();
 
         if (p_engineEngineSettings.getRole() == NodeRole.PEER && m_backup.isActive()) {
             if (m_memoryManager.getStatus().getMaxChunkSize().getBytes() > m_backup.getLogSegmentSizeBytes()) {
@@ -1348,6 +1356,16 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         m_network.register(StatusRequest.class, this);
         m_network.register(GetLocalChunkIDRangesRequest.class, this);
         m_network.register(GetMigratedChunkIDRangesRequest.class, this);
+    }
+
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdChunkcreate());
+        m_terminal.registerTerminalCommand(new TcmdChunklist());
+        m_terminal.registerTerminalCommand(new TcmdChunkremove());
+        m_terminal.registerTerminalCommand(new TcmdChunkstatus());
     }
 
     // -----------------------------------------------------------------------------------

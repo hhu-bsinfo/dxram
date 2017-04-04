@@ -90,7 +90,7 @@ public class DXRAMMain {
      * DXRAM's entry point to be called from Java's main entry point.
      *
      * @param p_args
-     *     Java cmd arguments
+     *     Java tcmd arguments
      */
     public void run(final String[] p_args) {
         System.out.println("Main entry point: " + m_nodeTypeName);
@@ -107,7 +107,7 @@ public class DXRAMMain {
      * Override this to implement your application built on top of DXRAM.
      *
      * @param p_args
-     *     Java cmd arguments
+     *     Java tcmd arguments
      * @return Exit code of the application.
      */
     protected int mainApplication(final String[] p_args) {

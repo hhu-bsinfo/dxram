@@ -24,12 +24,17 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.boot.messages.BootMessages;
 import de.hhu.bsinfo.dxram.boot.messages.RebootMessage;
 import de.hhu.bsinfo.dxram.boot.messages.ShutdownMessage;
+import de.hhu.bsinfo.dxram.boot.tcmd.TcmdNodeinfo;
+import de.hhu.bsinfo.dxram.boot.tcmd.TcmdNodelist;
+import de.hhu.bsinfo.dxram.boot.tcmd.TcmdNodeshutdown;
+import de.hhu.bsinfo.dxram.boot.tcmd.TcmdNodewait;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -49,6 +54,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
     // dependent components
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;
+    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -323,6 +329,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
@@ -332,6 +339,8 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
         m_network.register(RebootMessage.class, this);
         m_network.register(ShutdownMessage.class, this);
+
+        registerTerminalCommands();
 
         return true;
     }
@@ -354,10 +363,21 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
         rebootNode();
     }
 
+    /**
+     * Trigger a node reboot
+     */
     private void rebootNode() {
         DXRAMEngine parentEngine = getParentEngine();
-        new Thread(() -> {
-            parentEngine.triggerSoftReboot();
-        }).start();
+        new Thread(parentEngine::triggerSoftReboot).start();
+    }
+
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdNodeinfo());
+        m_terminal.registerTerminalCommand(new TcmdNodelist());
+        m_terminal.registerTerminalCommand(new TcmdNodeshutdown());
+        m_terminal.registerTerminalCommand(new TcmdNodewait());
     }
 }

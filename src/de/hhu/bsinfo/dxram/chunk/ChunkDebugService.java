@@ -20,6 +20,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.DumpMemoryMessage;
 import de.hhu.bsinfo.dxram.chunk.messages.ResetMemoryMessage;
+import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdMemdump;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -28,6 +29,7 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -45,6 +47,7 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
     private MemoryManagerComponent m_memoryManager;
     private NetworkComponent m_network;
     private NameserviceComponent m_nameservice;
+    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -218,12 +221,14 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
         m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
     protected boolean startService(DXRAMContext.EngineSettings p_engineEngineSettings) {
         registerNetworkMessages();
         registerNetworkMessageListener();
+        registerTerminalCommands();
 
         return true;
     }
@@ -249,6 +254,13 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
     private void registerNetworkMessageListener() {
         m_network.register(DumpMemoryMessage.class, this);
         m_network.register(ResetMemoryMessage.class, this);
+    }
+
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdMemdump());
     }
 
     // -----------------------------------------------------------------------------------

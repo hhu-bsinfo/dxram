@@ -27,8 +27,10 @@ import de.hhu.bsinfo.dxram.log.messages.LogAnonMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
+import de.hhu.bsinfo.dxram.log.tcmd.TcmdLoginfo;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -45,6 +47,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
     // dependent components
     private NetworkComponent m_network;
     private LogComponent m_log;
+    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -132,13 +135,14 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_log = p_componentAccessor.getComponent(LogComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-
         registerNetworkMessages();
         registerNetworkMessageListener();
+        registerTerminalCommands();
 
         return true;
     }
@@ -223,4 +227,10 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
         m_network.register(GetUtilizationRequest.class, this);
     }
 
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdLoginfo());
+    }
 }

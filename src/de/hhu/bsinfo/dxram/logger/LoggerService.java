@@ -26,8 +26,10 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.messages.LoggerMessages;
 import de.hhu.bsinfo.dxram.logger.messages.SetLogLevelMessage;
+import de.hhu.bsinfo.dxram.logger.tcmd.TcmdLoggerlevel;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -44,6 +46,7 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
     // dependent components
     private NetworkComponent m_network;
     private AbstractBootComponent m_boot;
+    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -124,6 +127,7 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
@@ -131,6 +135,8 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
         m_network.registerMessageType(DXRAMMessageTypes.LOGGER_MESSAGES_TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE, SetLogLevelMessage.class);
 
         m_network.register(SetLogLevelMessage.class, this);
+
+        registerTerminalCommands();
 
         return true;
     }
@@ -161,5 +167,12 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
                 // #endif /* LOGGER >= ERROR */
             }
         }
+    }
+
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdLoggerlevel());
     }
 }

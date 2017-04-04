@@ -28,6 +28,8 @@ import de.hhu.bsinfo.dxram.chunk.messages.GetAnonRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetAnonResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.PutAnonRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.PutAnonResponse;
+import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkget;
+import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkput;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.ChunkState;
@@ -45,6 +47,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -72,6 +75,7 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
     private AbstractLockComponent m_lock;
+    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -498,12 +502,14 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         registerNetworkMessages();
         registerNetworkMessageListener();
+        registerTerminalCommands();
 
         if (p_engineEngineSettings.getRole() == NodeRole.PEER && m_backup.isActive()) {
             if (m_memoryManager.getStatus().getMaxChunkSize().getBytes() > m_backup.getLogSegmentSizeBytes()) {
@@ -538,6 +544,14 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
     private void registerNetworkMessageListener() {
         m_network.register(GetAnonRequest.class, this);
         m_network.register(PutAnonRequest.class, this);
+    }
+
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdChunkget());
+        m_terminal.registerTerminalCommand(new TcmdChunkput());
     }
 
     // -----------------------------------------------------------------------------------

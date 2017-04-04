@@ -36,6 +36,10 @@ import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.TaskExecutionFinishedMessage;
 import de.hhu.bsinfo.dxcompute.ms.messages.TaskExecutionStartedMessage;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdCompgrpls;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdCompgrpstatus;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdComptask;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdComptaskscript;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -44,6 +48,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -77,6 +82,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     private NameserviceComponent m_nameservice;
     private AbstractBootComponent m_boot;
     private LookupComponent m_lookup;
+    private TerminalComponent m_terminal;
 
     private AbstractComputeMSBase m_computeMSInstance;
 
@@ -384,6 +390,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
@@ -419,9 +426,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
                 m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_nameservice, m_boot, m_lookup);
                 break;
             default:
-                assert 1 == 2;
+                assert false;
                 break;
         }
+
+        registerTerminalCommands();
 
         // #if LOGGER >= INFO
         LOGGER.info("Started compute node type '%s' with compute group id %d", m_role, m_computeGroupId);
@@ -436,6 +445,16 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         m_computeMSInstance = null;
 
         return true;
+    }
+
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdCompgrpls());
+        m_terminal.registerTerminalCommand(new TcmdCompgrpstatus());
+        m_terminal.registerTerminalCommand(new TcmdComptask());
+        m_terminal.registerTerminalCommand(new TcmdComptaskscript());
     }
 
     /**

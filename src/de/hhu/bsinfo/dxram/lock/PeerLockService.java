@@ -34,6 +34,9 @@ import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
 import de.hhu.bsinfo.dxram.lock.messages.LockRequest;
 import de.hhu.bsinfo.dxram.lock.messages.LockResponse;
 import de.hhu.bsinfo.dxram.lock.messages.UnlockMessage;
+import de.hhu.bsinfo.dxram.lock.tcmd.TcmdChunklock;
+import de.hhu.bsinfo.dxram.lock.tcmd.TcmdChunklocklist;
+import de.hhu.bsinfo.dxram.lock.tcmd.TcmdChunkunlock;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
@@ -41,6 +44,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
@@ -78,6 +82,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     private AbstractLockComponent m_lock;
     private LookupComponent m_lookup;
     private EventComponent m_event;
+    private TerminalComponent m_terminal;
 
     @Override
     public ArrayList<Pair<Long, Short>> getLockedList() {
@@ -324,11 +329,11 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-
         m_event.registerListener(this, NodeFailureEvent.class);
 
         m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, LockRequest.class);
@@ -340,6 +345,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         m_network.register(LockRequest.class, this);
         m_network.register(UnlockMessage.class, this);
         m_network.register(GetLockedListRequest.class, this);
+
+        registerTerminalCommands();
 
         return true;
     }
@@ -418,5 +425,14 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
             LOGGER.error("Sending locked list response for request %s failed: %s", p_request, e);
             // #endif /* LOGGER >= ERROR */
         }
+    }
+
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdChunklock());
+        m_terminal.registerTerminalCommand(new TcmdChunklocklist());
+        m_terminal.registerTerminalCommand(new TcmdChunkunlock());
     }
 }

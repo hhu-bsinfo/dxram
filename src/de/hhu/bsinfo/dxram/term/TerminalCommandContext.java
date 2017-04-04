@@ -8,17 +8,33 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
- * Created by nothaas on 4/3/17.
+ * Context for a terminal command to access services and utility functions
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 04.04.2017
  */
-// TODO doc
 public class TerminalCommandContext {
-
     private DXRAMServiceAccessor m_serviceAccessor;
 
+    /**
+     * Constructor
+     *
+     * @param p_serviceAccessor
+     *     Service accessor for the terminal commands
+     */
     public TerminalCommandContext(final DXRAMServiceAccessor p_serviceAccessor) {
         m_serviceAccessor = p_serviceAccessor;
     }
 
+    /**
+     * Get a service from DXRAM.
+     *
+     * @param p_class
+     *     Class of the service to get. If the service has different implementations, use the common interface
+     *     or abstract class to get the registered instance.
+     * @param <T>
+     *     Class extending DXRAMService
+     * @return Reference to the service if available and enabled, null otherwise.
+     */
     public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
         return m_serviceAccessor.getService(p_class);
     }
@@ -121,6 +137,17 @@ public class TerminalCommandContext {
         System.out.print('\n');
     }
 
+    /**
+     * Get a boolean argument from an argument list
+     *
+     * @param p_args
+     *     Argument list
+     * @param p_pos
+     *     Position of the argument to get
+     * @param p_default
+     *     Default value if argument not available
+     * @return Value
+     */
     public boolean getArgBoolean(final String[] p_args, final int p_pos, final boolean p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
@@ -129,6 +156,17 @@ public class TerminalCommandContext {
         return Boolean.parseBoolean(p_args[p_pos]);
     }
 
+    /**
+     * Get a short argument from an argument list
+     *
+     * @param p_args
+     *     Argument list
+     * @param p_pos
+     *     Position of the argument to get
+     * @param p_default
+     *     Default value if argument not available
+     * @return Value
+     */
     public short getArgShort(final String[] p_args, final int p_pos, final short p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
@@ -137,6 +175,17 @@ public class TerminalCommandContext {
         return Short.parseShort(p_args[p_pos]);
     }
 
+    /**
+     * Get an int argument from an argument list
+     *
+     * @param p_args
+     *     Argument list
+     * @param p_pos
+     *     Position of the argument to get
+     * @param p_default
+     *     Default value if argument not available
+     * @return Value
+     */
     public int getArgInt(final String[] p_args, final int p_pos, final int p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
@@ -145,6 +194,17 @@ public class TerminalCommandContext {
         return Integer.parseInt(p_args[p_pos]);
     }
 
+    /**
+     * Get a long argument from an argument list
+     *
+     * @param p_args
+     *     Argument list
+     * @param p_pos
+     *     Position of the argument to get
+     * @param p_default
+     *     Default value if argument not available
+     * @return Value
+     */
     public long getArgLong(final String[] p_args, final int p_pos, final long p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
@@ -153,6 +213,17 @@ public class TerminalCommandContext {
         return Long.parseLong(p_args[p_pos]);
     }
 
+    /**
+     * Get a string argument from an argument list
+     *
+     * @param p_args
+     *     Argument list
+     * @param p_pos
+     *     Position of the argument to get
+     * @param p_default
+     *     Default value if argument not available
+     * @return Value
+     */
     public String getArgString(final String[] p_args, final int p_pos, final String p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
@@ -161,6 +232,17 @@ public class TerminalCommandContext {
         return p_args[p_pos];
     }
 
+    /**
+     * Get a node role argument from an argument list. The argument must match one of the string representations of a NodeRole
+     *
+     * @param p_args
+     *     Argument list
+     * @param p_pos
+     *     Position of the argument to get
+     * @param p_default
+     *     Default value if argument not available
+     * @return Value
+     */
     public NodeRole getArgNodeRole(final String[] p_args, final int p_pos, final NodeRole p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
@@ -169,6 +251,17 @@ public class TerminalCommandContext {
         return NodeRole.toNodeRole(p_args[p_pos]);
     }
 
+    /**
+     * Get a node id argument from an argument list. The argument must be hex string, e.g. ABCD or 0xABCD
+     *
+     * @param p_args
+     *     Argument list
+     * @param p_pos
+     *     Position of the argument to get
+     * @param p_default
+     *     Default value if argument not available
+     * @return Value
+     */
     public short getArgNodeId(final String[] p_args, final int p_pos, final short p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
@@ -177,6 +270,17 @@ public class TerminalCommandContext {
         return NodeID.parse(p_args[p_pos]);
     }
 
+    /**
+     * Get a barrier id argument from an argument list. The argument must be hex string, e.g. ABCD or 0xABCD
+     *
+     * @param p_args
+     *     Argument list
+     * @param p_pos
+     *     Position of the argument to get
+     * @param p_default
+     *     Default value if argument not available
+     * @return Value
+     */
     public int getArgBarrierId(final String[] p_args, final int p_pos, final int p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
@@ -185,10 +289,32 @@ public class TerminalCommandContext {
         return BarrierID.parse(p_args[p_pos]);
     }
 
+    /**
+     * Get a local id argument from an argument list. The argument must be hex string, e.g. ABCD or 0xABCD
+     *
+     * @param p_args
+     *     Argument list
+     * @param p_pos
+     *     Position of the argument to get
+     * @param p_default
+     *     Default value if argument not available
+     * @return Value
+     */
     public long getArgLocalId(final String[] p_args, final int p_pos, final long p_default) {
         return getArgChunkId(p_args, p_pos, p_default);
     }
 
+    /**
+     * Get a chunk id argument from an argument list. The argument must be hex string, e.g. ABCD or 0xABCD
+     *
+     * @param p_args
+     *     Argument list
+     * @param p_pos
+     *     Position of the argument to get
+     * @param p_default
+     *     Default value if argument not available
+     * @return Value
+     */
     public long getArgChunkId(final String[] p_args, final int p_pos, final long p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
@@ -197,6 +323,15 @@ public class TerminalCommandContext {
         return ChunkID.parse(p_args[p_pos]);
     }
 
+    /**
+     * Check if an argument represents a chunk id (e.g. 0x1234567890ABCDEF or 1234567890ABCDEF)
+     *
+     * @param p_args
+     *     Argument list
+     * @param p_pos
+     *     Position of the argument to check
+     * @return True of argument matches a chunk id representation, false otherwise.
+     */
     public boolean isArgChunkID(final String[] p_args, final int p_pos) {
         String str = p_args[p_pos];
 

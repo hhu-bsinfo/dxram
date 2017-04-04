@@ -45,7 +45,9 @@ import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.dxram.recovery.RecoveryService;
+import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.term.TerminalService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.ethnet.NodeID;
@@ -204,6 +206,7 @@ public class DXRAM {
         p_engine.registerComponent(NameserviceComponent.class);
         p_engine.registerComponent(NetworkComponent.class);
         p_engine.registerComponent(NullComponent.class);
+        p_engine.registerComponent(TerminalComponent.class);
     }
 
     /**
@@ -228,6 +231,7 @@ public class DXRAM {
         p_engine.registerService(NullService.class);
         p_engine.registerService(PeerLockService.class);
         p_engine.registerService(RecoveryService.class);
+        p_engine.registerService(StatisticsService.class);
         p_engine.registerService(SynchronizationService.class);
         p_engine.registerService(TerminalService.class);
         p_engine.registerService(TemporaryStorageService.class);

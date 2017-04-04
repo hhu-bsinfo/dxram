@@ -29,8 +29,11 @@ import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.LookupMessages;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
+import de.hhu.bsinfo.dxram.lookup.tcmd.TcmdLookuptree;
+import de.hhu.bsinfo.dxram.lookup.tcmd.TcmdMetadata;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -49,6 +52,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
     private BackupComponent m_backup;
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
+    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -178,19 +182,20 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         registerNetworkMessages();
         registerNetworkMessageListener();
+        registerTerminalCommands();
 
         return true;
     }
 
     @Override
     protected boolean shutdownService() {
-
         m_network = null;
         m_lookup = null;
 
@@ -233,9 +238,15 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-
         m_network.register(GetLookupTreeResponse.class, this);
         m_network.register(GetLookupTreeRequest.class, this);
     }
 
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdLookuptree());
+        m_terminal.registerTerminalCommand(new TcmdMetadata());
+    }
 }

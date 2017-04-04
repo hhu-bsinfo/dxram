@@ -26,8 +26,12 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.nameservice.messages.ForwardRegisterMessage;
 import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
+import de.hhu.bsinfo.dxram.nameservice.tcmd.TcmdNameget;
+import de.hhu.bsinfo.dxram.nameservice.tcmd.TcmdNamelist;
+import de.hhu.bsinfo.dxram.nameservice.tcmd.TcmdNamereg;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -50,6 +54,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
     private NameserviceComponent m_nameservice;
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;
+    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -168,6 +173,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
@@ -175,6 +181,8 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
         m_network.registerMessageType(DXRAMMessageTypes.NAMESERVICE_MESSAGES_TYPE, NameserviceMessages.SUBTYPE_REGISTER_MESSAGE, ForwardRegisterMessage.class);
 
         m_network.register(ForwardRegisterMessage.class, this);
+
+        registerTerminalCommands();
 
         return true;
     }
@@ -194,5 +202,14 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
         // Outsource registering to another thread to avoid blocking a message handler
         Runnable task = () -> m_nameservice.register(p_message.getChunkId(), p_message.getName());
         new Thread(task).start();
+    }
+
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdNameget());
+        m_terminal.registerTerminalCommand(new TcmdNamelist());
+        m_terminal.registerTerminalCommand(new TcmdNamereg());
     }
 }

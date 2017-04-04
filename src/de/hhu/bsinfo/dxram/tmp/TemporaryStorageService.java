@@ -21,6 +21,12 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.nameservice.NameServiceStringConverter;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
+import de.hhu.bsinfo.dxram.tmp.tcmd.TcmdTmpcreate;
+import de.hhu.bsinfo.dxram.tmp.tcmd.TcmdTmpget;
+import de.hhu.bsinfo.dxram.tmp.tcmd.TcmdTmpput;
+import de.hhu.bsinfo.dxram.tmp.tcmd.TcmdTmpremove;
+import de.hhu.bsinfo.dxram.tmp.tcmd.TcmdTmpstatus;
 
 /**
  * This service provides access to a temporary "chunk" storage residing on the
@@ -36,6 +42,7 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 
     // dependent components
     private LookupComponent m_lookup;
+    private TerminalComponent m_terminal;
 
     private NameServiceStringConverter m_idConverter = new NameServiceStringConverter("NAME");
 
@@ -160,15 +167,28 @@ public class TemporaryStorageService extends AbstractDXRAMService {
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+        registerTerminalCommands();
         return true;
     }
 
     @Override
     protected boolean shutdownService() {
         return true;
+    }
+
+    /**
+     * Register terminal commands
+     */
+    private void registerTerminalCommands() {
+        m_terminal.registerTerminalCommand(new TcmdTmpcreate());
+        m_terminal.registerTerminalCommand(new TcmdTmpget());
+        m_terminal.registerTerminalCommand(new TcmdTmpput());
+        m_terminal.registerTerminalCommand(new TcmdTmpremove());
+        m_terminal.registerTerminalCommand(new TcmdTmpstatus());
     }
 }

@@ -25,9 +25,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,43 +39,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrieralloc;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrierfree;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdBarriersignon;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdBarriersize;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrierstatus;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkcreate;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkget;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdChunklist;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdChunklock;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdChunklocklist;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkput;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkstatus;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkunlock;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdCompgrpls;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdCompgrpstatus;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdComptask;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdComptaskscript;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdLoggerlevel;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdLoginfo;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdLookuptree;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdMemdump;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdMetadata;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdNameget;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdNamelist;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdNamereg;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdNodeinfo;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdNodelist;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdNodeshutdown;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdNodewait;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdScriptrun;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdStatsprint;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdStatsrecorders;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdTmpcreate;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdTmpget;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdTmpput;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdTmpremove;
-import de.hhu.bsinfo.dxram.term.cmd.TcmdTmpstatus;
+import de.hhu.bsinfo.dxram.term.tcmd.TcmdScriptrun;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -98,8 +61,8 @@ public class TerminalService extends AbstractDXRAMService {
 
     // dependent components
     private AbstractBootComponent m_boot;
+    private TerminalComponent m_terminal;
 
-    private Map<String, TerminalCommand> m_commands = new HashMap<String, TerminalCommand>();
     private TerminalCommandContext m_commandCtx;
     private ConsoleReader m_consoleReader;
     private ArgumentCompletor m_argCompletor;
@@ -124,7 +87,8 @@ public class TerminalService extends AbstractDXRAMService {
         }
 
         // register commands for auto completion
-        m_argCompletor = new ArgumentCompletor(new SimpleCompletor(m_commands.keySet().toArray(new String[m_commands.size()])));
+        Collection<String> cmds = m_terminal.getListOfCommands();
+        m_argCompletor = new ArgumentCompletor(new SimpleCompletor(cmds.toArray(new String[cmds.size()])));
 
         m_consoleReader.addCompletor(m_argCompletor);
 
@@ -137,9 +101,9 @@ public class TerminalService extends AbstractDXRAMService {
 
         // auto start script file
         if (!m_autostartScript.isEmpty()) {
-            String[] cmds = readAutostartScript(m_autostartScript);
+            String[] lines = readAutostartScript(m_autostartScript);
             System.out.println("Running auto start script " + m_autostartScript);
-            runAutostartScript(cmds);
+            runAutostartScript(lines);
         }
 
         while (m_loop) {
@@ -188,6 +152,7 @@ public class TerminalService extends AbstractDXRAMService {
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
@@ -222,6 +187,39 @@ public class TerminalService extends AbstractDXRAMService {
     }
 
     /**
+     * Read an autostart script from a afile
+     *
+     * @param p_path
+     *     File to read
+     * @return Lines read from file
+     */
+    private static String[] readAutostartScript(final String p_path) {
+        List<String> stringList;
+
+        try {
+            stringList = Files.readAllLines(new File(p_path).toPath(), Charset.defaultCharset());
+        } catch (final IOException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Reading autostart script file %s failed: %s", p_path, e);
+            // #endif /* LOGGER >= ERROR */
+
+            return new String[0];
+        }
+
+        return stringList.toArray(new String[stringList.size()]);
+    }
+
+    /**
+     * Print the terminal help message
+     */
+    private static void printHelp() {
+        System.out.println(
+            "Type '?' or 'help' to print this message\n" + "> To list all built in terminal commands: 'list'\n" + "> 'clear' to clear the screen\n" +
+                "> 'exit' to close and shut down the current terminal\n" + "> Get help about a terminal command, example: 'help nodelist'\n" +
+                "> Execute built in terminal commands, e.g. 'nodelist' or with arguments separated by spaces 'nodelist \"peer\"'");
+    }
+
+    /**
      * Evaluate the terminal command
      *
      * @param p_text
@@ -242,7 +240,7 @@ public class TerminalService extends AbstractDXRAMService {
             } else {
                 String[] tokens = text.split(" ");
                 if (tokens.length > 1) {
-                    TerminalCommand cmd = m_commands.get(tokens[1]);
+                    TerminalCommand cmd = m_terminal.getCommand(tokens[1]);
                     if (cmd != null) {
                         System.out.println(cmd.getHelp());
                     } else {
@@ -262,7 +260,7 @@ public class TerminalService extends AbstractDXRAMService {
         }
 
         if (!list.isEmpty()) {
-            TerminalCommand cmd = m_commands.get(list.get(0));
+            TerminalCommand cmd = m_terminal.getCommand(list.get(0));
             if (cmd != null) {
                 try {
                     cmd.exec(Arrays.copyOfRange(list.toArray(new String[list.size()]), 1, list.size()), m_commandCtx);
@@ -299,102 +297,29 @@ public class TerminalService extends AbstractDXRAMService {
      * Register terminal commands
      */
     private void registerTerminalCommands() {
-        registerTerminalCommand(new TcmdScriptrun());
-        registerTerminalCommand(new TcmdTmpcreate());
-        registerTerminalCommand(new TcmdTmpget());
-        registerTerminalCommand(new TcmdTmpput());
-        registerTerminalCommand(new TcmdTmpremove());
-        registerTerminalCommand(new TcmdTmpstatus());
-        registerTerminalCommand(new TcmdCompgrpls());
-        registerTerminalCommand(new TcmdCompgrpstatus());
-        registerTerminalCommand(new TcmdComptask());
-        registerTerminalCommand(new TcmdComptaskscript());
-        registerTerminalCommand(new TcmdChunklock());
-        registerTerminalCommand(new TcmdChunklocklist());
-        registerTerminalCommand(new TcmdChunkunlock());
-        registerTerminalCommand(new TcmdChunkget());
-        registerTerminalCommand(new TcmdChunkput());
-        registerTerminalCommand(new TcmdChunkcreate());
-        registerTerminalCommand(new TcmdChunklist());
-        registerTerminalCommand(new TcmdChunkstatus());
-        registerTerminalCommand(new TcmdMemdump());
-        registerTerminalCommand(new TcmdBarrieralloc());
-        registerTerminalCommand(new TcmdBarrierfree());
-        registerTerminalCommand(new TcmdBarriersignon());
-        registerTerminalCommand(new TcmdBarriersize());
-        registerTerminalCommand(new TcmdBarrierstatus());
-        registerTerminalCommand(new TcmdLoggerlevel());
-        registerTerminalCommand(new TcmdLoginfo());
-        registerTerminalCommand(new TcmdLookuptree());
-        registerTerminalCommand(new TcmdMetadata());
-        registerTerminalCommand(new TcmdNameget());
-        registerTerminalCommand(new TcmdNamelist());
-        registerTerminalCommand(new TcmdNamereg());
-        registerTerminalCommand(new TcmdNodeinfo());
-        registerTerminalCommand(new TcmdNodelist());
-        registerTerminalCommand(new TcmdNodeshutdown());
-        registerTerminalCommand(new TcmdNodewait());
-        registerTerminalCommand(new TcmdStatsprint());
-        registerTerminalCommand(new TcmdStatsrecorders());
+        m_terminal.registerTerminalCommand(new TcmdScriptrun());
     }
 
     /**
-     * Register a terminal command to make it callable from the terminal
-     *
-     * @param p_cmd
-     *     Terminal command to register
-     */
-    private void registerTerminalCommand(final TerminalCommand p_cmd) {
-        // #if LOGGER >= DEBUG
-        LOGGER.debug("Registering terminal command: %s", p_cmd.getName());
-        // #endif /* LOGGER >= DEBUG */
-
-        if (m_commands.putIfAbsent(p_cmd.getName(), p_cmd) != null) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Registering command %s failed, name already used", p_cmd.getName());
-            // #endif /* LOGGER >= ERROR */
-        }
-    }
-
-    /**
-     * Print the terminal help message
-     */
-    private void printHelp() {
-        System.out.println(
-            "Type '?' or 'help' to print this message\n" + "> To list all built in terminal commands: 'list'\n" + "> 'clear' to clear the screen\n" +
-                "> 'exit' to close and shut down the current terminal\n" + "> Get help about a terminal command, example: 'help nodelist'\n" +
-                "> Execute built in terminal commands, e.g. 'nodelist' or with arguments separated by spaces 'nodelist \"peer\"'");
-    }
-
-    /**
-     * Print a list of available terminal commands
+     * Print a list of terminal commands available
      */
     private void listCommands() {
         String str = "";
+        Collection<String> cmds = m_terminal.getListOfCommands();
 
-        for (String item : m_commands.keySet()) {
+        for (String item : cmds) {
             str += item + ", ";
         }
 
         System.out.println(str.substring(0, str.length() - 2));
     }
 
-    private String[] readAutostartScript(final String p_path) {
-        List<String> stringList;
-
-        try {
-            stringList = Files.readAllLines(new File(p_path).toPath(), Charset.defaultCharset());
-        } catch (final IOException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Reading autostart script file %s failed: %s", p_path, e);
-            // #endif /* LOGGER >= ERROR */
-
-            return new String[0];
-        }
-
-        return stringList.toArray(new String[stringList.size()]);
-    }
-
+    /**
+     * Run the commands provided by an autostart script
+     *
+     * @param p_lines
+     *     Array of lines with one command each read from script
+     */
     private void runAutostartScript(final String[] p_lines) {
         for (String line : p_lines) {
             evaluate(line);
