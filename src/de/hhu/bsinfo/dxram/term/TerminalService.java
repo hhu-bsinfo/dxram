@@ -48,8 +48,11 @@ import de.hhu.bsinfo.dxram.term.cmd.TcmdBarrierstatus;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkcreate;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkget;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdChunklist;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdChunklock;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdChunklocklist;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkput;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkstatus;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdChunkunlock;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdLoggerlevel;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdLoginfo;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdLookuptree;
@@ -286,6 +289,9 @@ public class TerminalService extends AbstractDXRAMService {
      * Register terminal commands
      */
     private void registerTerminalCommands() {
+        registerTerminalCommand(new TcmdChunklock());
+        registerTerminalCommand(new TcmdChunklocklist());
+        registerTerminalCommand(new TcmdChunkunlock());
         registerTerminalCommand(new TcmdChunkget());
         registerTerminalCommand(new TcmdChunkput());
         registerTerminalCommand(new TcmdChunkcreate());
