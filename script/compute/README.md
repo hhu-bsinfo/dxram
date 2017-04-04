@@ -35,7 +35,7 @@ Deploy DXRAM using the deploy script with the *SimpleComputeGroupTest.conf* conf
 
 In the terminal, run the following command:
 ```
-comptaskscript("script/compute/example/SimpleTaskScriptExample.cts", 0, true)
+comptaskscript script/compute/example/SimpleTaskScriptExample.cts 0
 ```
 
 If everything's good, you should get some output about task submission and a return code of each slave that finished the task.
