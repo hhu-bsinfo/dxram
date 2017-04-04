@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxram.data.DSByteArray;
@@ -82,8 +83,12 @@ import de.hhu.bsinfo.dxram.lookup.messages.SendBackupsMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageGetAnonRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageGetAnonResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageGetRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageGetResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStoragePutAnonRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStoragePutAnonResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStoragePutRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStoragePutResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageRemoveMessage;
@@ -102,12 +107,12 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
-import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.CRC16;
 
 /**
@@ -349,8 +354,14 @@ public class OverlaySuperpeer implements MessageReceiver {
                     case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST:
                         incomingSuperpeerStorageGetRequest((SuperpeerStorageGetRequest) p_message);
                         break;
+                    case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_REQUEST:
+                        incomingSuperpeerStorageGetAnonRequest((SuperpeerStorageGetAnonRequest) p_message);
+                        break;
                     case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST:
                         incomingSuperpeerStoragePutRequest((SuperpeerStoragePutRequest) p_message);
+                        break;
+                    case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_ANON_REQUEST:
+                        incomingSuperpeerStoragePutAnonRequest((SuperpeerStoragePutAnonRequest) p_message);
                         break;
                     case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE:
                         incomingSuperpeerStorageRemoveMessage((SuperpeerStorageRemoveMessage) p_message);
@@ -2116,6 +2127,29 @@ public class OverlaySuperpeer implements MessageReceiver {
     }
 
     /**
+     * Handles an incoming SuperpeerStorageGetAnonRequest
+     *
+     * @param p_request
+     *     the SuperpeerStorageGetAnonRequest
+     */
+    private void incomingSuperpeerStorageGetAnonRequest(final SuperpeerStorageGetAnonRequest p_request) {
+        byte[] data = m_metadata.getStorage(p_request.getStorageID());
+
+        SuperpeerStorageGetAnonResponse response = new SuperpeerStorageGetAnonResponse(p_request, data);
+        if (data == null) {
+            response.setStatusCode((byte) -1);
+        }
+
+        try {
+            m_network.sendMessage(response);
+        } catch (final NetworkException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Sending response to storage get failed: %s", e);
+            // #endif /* LOGGER >= ERROR */
+        }
+    }
+
+    /**
      * Handles an incoming SuperpeerStoragePutRequest
      *
      * @param p_request
@@ -2154,6 +2188,59 @@ public class OverlaySuperpeer implements MessageReceiver {
                     }
 
                     SuperpeerStoragePutRequest request = new SuperpeerStoragePutRequest(backupSuperpeer, p_request.getChunk(), true);
+                    // send as message, only
+                    try {
+                        m_network.sendMessage(request);
+                    } catch (final NetworkException e) {
+                        // ignore result
+                    }
+                }
+            };
+            new Thread(task).start();
+        }
+    }
+
+    /**
+     * Handles an incoming SuperpeerStoragePutAnonRequest
+     *
+     * @param p_request
+     *     the SuperpeerStoragePutAnonRequest
+     */
+    private void incomingSuperpeerStoragePutAnonRequest(final SuperpeerStoragePutAnonRequest p_request) {
+        DSByteArray chunk = p_request.getChunk();
+
+        int res = m_metadata.putStorage((int) chunk.getID(), chunk.getData());
+        if (!p_request.isReplicate()) {
+            SuperpeerStoragePutAnonResponse response = new SuperpeerStoragePutAnonResponse(p_request);
+            if (res != chunk.sizeofObject()) {
+                response.setStatusCode((byte) -1);
+            }
+
+            try {
+                m_network.sendMessage(response);
+            } catch (final NetworkException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Sending response to put request to superpeer storage failed: %s", e);
+                // #endif /* LOGGER >= ERROR */
+            }
+        }
+
+        // replicate to next 3 superpeers
+        if (res != 0 && !p_request.isReplicate()) {
+            // Outsource informing backups to another thread to avoid blocking a message handler
+            Runnable task = () -> {
+                m_overlayLock.readLock().lock();
+                short[] backupSuperpeers = OverlayHelper.getBackupSuperpeers(m_nodeID, m_superpeers);
+                m_overlayLock.readLock().unlock();
+
+                for (short backupSuperpeer : backupSuperpeers) {
+                    if (backupSuperpeer == NodeID.INVALID_ID) {
+                        continue;
+                    }
+
+                    SuperpeerStoragePutAnonRequest request =
+                        new SuperpeerStoragePutAnonRequest(backupSuperpeer, new ChunkAnon(p_request.getChunk().getID(), p_request.getChunk().getData()), true);
+
                     // send as message, only
                     try {
                         m_network.sendMessage(request);
@@ -2382,10 +2469,18 @@ public class OverlaySuperpeer implements MessageReceiver {
             SuperpeerStorageGetRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE,
             SuperpeerStorageGetResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_REQUEST,
+            SuperpeerStorageGetAnonRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_RESPONSE,
+            SuperpeerStorageGetAnonResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST,
             SuperpeerStoragePutRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE,
             SuperpeerStoragePutResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_ANON_REQUEST,
+            SuperpeerStoragePutAnonRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_ANON_RESPONSE,
+            SuperpeerStoragePutAnonResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE,
             SuperpeerStorageRemoveMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST,
@@ -2422,7 +2517,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         m_network.register(SuperpeerStorageCreateRequest.class, this);
         m_network.register(SuperpeerStorageGetRequest.class, this);
+        m_network.register(SuperpeerStorageGetAnonRequest.class, this);
         m_network.register(SuperpeerStoragePutRequest.class, this);
+        m_network.register(SuperpeerStoragePutAnonRequest.class, this);
         m_network.register(SuperpeerStorageRemoveMessage.class, this);
         m_network.register(SuperpeerStorageStatusRequest.class, this);
 

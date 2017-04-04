@@ -76,16 +76,20 @@ public final class LookupMessages {
     public static final byte SUBTYPE_SUPERPEER_STORAGE_CREATE_RESPONSE = 49;
     public static final byte SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST = 50;
     public static final byte SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE = 51;
-    public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST = 52;
-    public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE = 53;
-    public static final byte SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE = 54;
-    public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST = 55;
-    public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE = 56;
+    public static final byte SUBTYPE_SUPERPEER_STORAGE_GET_ANON_REQUEST = 52;
+    public static final byte SUBTYPE_SUPERPEER_STORAGE_GET_ANON_RESPONSE = 53;
+    public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST = 54;
+    public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE = 55;
+    public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_ANON_REQUEST = 56;
+    public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_ANON_RESPONSE = 57;
+    public static final byte SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE = 58;
+    public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST = 59;
+    public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE = 60;
 
-    public static final byte SUBTYPE_GET_LOOKUP_TREE_REQUEST = 57;
-    public static final byte SUBTYPE_GET_LOOKUP_TREE_RESPONSE = 58;
-    public static final byte SUBTYPE_GET_METADATA_SUMMARY_REQUEST = 59;
-    public static final byte SUBTYPE_GET_METADATA_SUMMARY_RESPONSE = 60;
+    public static final byte SUBTYPE_GET_LOOKUP_TREE_REQUEST = 61;
+    public static final byte SUBTYPE_GET_LOOKUP_TREE_RESPONSE = 62;
+    public static final byte SUBTYPE_GET_METADATA_SUMMARY_REQUEST = 63;
+    public static final byte SUBTYPE_GET_METADATA_SUMMARY_RESPONSE = 64;
 
     /**
      * Hidden constructor

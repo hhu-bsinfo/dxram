@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxram.tmp;
 
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -102,6 +103,17 @@ public class TemporaryStorageService extends AbstractDXRAMService {
     }
 
     /**
+     * Put data into an allocated block of memory in the superpeer storage (anonymous chunk)
+     *
+     * @param p_chunk
+     *     Chunk to put with the storage id assigned.
+     * @return True if successful, false otherwise.
+     */
+    public boolean putAnon(final ChunkAnon p_chunk) {
+        return m_lookup.superpeerStoragePutAnon(p_chunk);
+    }
+
+    /**
      * Get data from the superpeer storage.
      *
      * @param p_dataStructure
@@ -110,6 +122,17 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      */
     public boolean get(final DataStructure p_dataStructure) {
         return m_lookup.superpeerStorageGet(p_dataStructure);
+    }
+
+    /**
+     * Get data from the superpeer storage (anonymous chunk)
+     *
+     * @param p_chunk
+     *     Chunk with the storage id assigned to read the data into.
+     * @return True on success, false on failure.
+     */
+    public boolean getAnon(final ChunkAnon p_chunk) {
+        return m_lookup.superpeerStorageGetAnon(p_chunk);
     }
 
     /**

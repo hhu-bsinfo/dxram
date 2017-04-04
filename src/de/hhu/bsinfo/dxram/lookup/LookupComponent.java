@@ -24,6 +24,7 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -42,9 +43,9 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.Cache;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
@@ -606,6 +607,30 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     /**
+     * Put data into an allocated block of memory in the superpeer storage (anonymous chunk)
+     *
+     * @param p_chunk
+     *     Chunk to put with the storage id assigned.
+     * @return True if successful, false otherwise.
+     */
+    public boolean superpeerStoragePutAnon(final ChunkAnon p_chunk) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
+        if (p_chunk.getID() > 0x7FFFFFFF || p_chunk.getID() < 0) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Invalid id 0x%X for anonymous chunk to put data into superpeer storage", p_chunk.getID());
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        return m_peer.superpeerStoragePutAnon(p_chunk);
+    }
+
+    /**
      * Get data from the superpeer storage.
      *
      * @param p_dataStructure
@@ -627,6 +652,30 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         }
 
         return m_peer.superpeerStorageGet(p_dataStructure);
+    }
+
+    /**
+     * Get data from the superpeer storage (anonymous chunk)
+     *
+     * @param p_chunk
+     *     Reference to anonymous chunk with the storage id assigned to read the data into.
+     * @return True on success, false on failure.
+     */
+    public boolean superpeerStorageGetAnon(final ChunkAnon p_chunk) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
+        if (p_chunk.getID() > 0x7FFFFFFF || p_chunk.getID() < 0) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Invalid id 0x%X for anonymous chunk to get data from superpeer storage", p_chunk.getID());
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        return m_peer.superpeerStorageGetAnon(p_chunk);
     }
 
     /**

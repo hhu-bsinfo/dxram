@@ -71,6 +71,11 @@ import de.hhu.bsinfo.dxram.term.cmd.TcmdNodeshutdown;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdNodewait;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdStatsprint;
 import de.hhu.bsinfo.dxram.term.cmd.TcmdStatsrecorders;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdTmpcreate;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdTmpget;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdTmpput;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdTmpremove;
+import de.hhu.bsinfo.dxram.term.cmd.TcmdTmpstatus;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -293,6 +298,11 @@ public class TerminalService extends AbstractDXRAMService {
      * Register terminal commands
      */
     private void registerTerminalCommands() {
+        registerTerminalCommand(new TcmdTmpcreate());
+        registerTerminalCommand(new TcmdTmpget());
+        registerTerminalCommand(new TcmdTmpput());
+        registerTerminalCommand(new TcmdTmpremove());
+        registerTerminalCommand(new TcmdTmpstatus());
         registerTerminalCommand(new TcmdCompgrpls());
         registerTerminalCommand(new TcmdCompgrpstatus());
         registerTerminalCommand(new TcmdComptask());
@@ -337,7 +347,11 @@ public class TerminalService extends AbstractDXRAMService {
         LOGGER.debug("Registering terminal command: %s", p_cmd.getName());
         // #endif /* LOGGER >= DEBUG */
 
-        m_commands.put(p_cmd.getName(), p_cmd);
+        if (m_commands.putIfAbsent(p_cmd.getName(), p_cmd) != null) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Registering command %s failed, name already used", p_cmd.getName());
+            // #endif /* LOGGER >= ERROR */
+        }
     }
 
     /**
