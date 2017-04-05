@@ -264,7 +264,7 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
 
     @Override
     protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        m_networkHandler = new NetworkHandler(m_threadCountMsgHandler, m_requestMapEntryCount);
+        m_networkHandler = new NetworkHandler(m_threadCountMsgHandler, m_requestMapEntryCount, (int) m_requestTimeout.getMs());
         NetworkHandler.setEventHandler(m_event);
 
         m_event.registerListener(this, NodeFailureEvent.class);
