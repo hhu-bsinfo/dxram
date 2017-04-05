@@ -511,7 +511,7 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
         registerNetworkMessageListener();
         registerTerminalCommands();
 
-        if (p_engineEngineSettings.getRole() == NodeRole.PEER && m_backup.isActive()) {
+        if (p_engineEngineSettings.getRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup()) {
             if (m_memoryManager.getStatus().getMaxChunkSize().getBytes() > m_backup.getLogSegmentSizeBytes()) {
                 LOGGER.fatal("Backup is active and segment size (%d bytes) of log is smaller than max chunk size (%d bytes). Fix your configuration");
                 throw new DXRAMRuntimeException("Backup is active and segment size of log is smaller than max chunk size. Fix your configuration");

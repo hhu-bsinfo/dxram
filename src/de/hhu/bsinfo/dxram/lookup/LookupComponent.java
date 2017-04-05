@@ -777,6 +777,16 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     @Override
+    public boolean finishInitComponent() {
+
+        if (m_boot.getNodeRole() == NodeRole.PEER) {
+            m_peer.finishStartup();
+        }
+
+        return true;
+    }
+
+    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);

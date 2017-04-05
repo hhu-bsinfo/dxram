@@ -476,7 +476,12 @@ public class PrimaryWriteBuffer {
                 if (System.currentTimeMillis() > timeStart + WRITERTHREAD_TIMEOUTTIME) {
                     break;
                 }
-                Thread.yield();
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
             m_metadataLock.lock();

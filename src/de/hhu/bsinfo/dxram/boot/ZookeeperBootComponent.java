@@ -28,13 +28,12 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.data.Stat;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
+import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
-import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
-import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.BloomFilter;
@@ -76,6 +75,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
     };
 
     // dependent components
+    private BackupComponent m_backup;
     private EventComponent m_event;
     private LookupComponent m_lookup;
 
@@ -149,6 +149,32 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                     childID = Short.parseShort(child);
                     if (childID != getNodeID()) {
                         ids.add(Short.parseShort(child));
+                    }
+                }
+            } catch (final ZooKeeperException ignored) {
+            }
+        }
+
+        return ids;
+    }
+
+    @Override
+    public List<Short> getIDsOfAvailableBackupPeers() {
+        // TODO: Don't use ZooKeeper for this
+
+        short childID;
+        List<Short> ids = new ArrayList<>();
+
+        if (zookeeperPathExists("nodes/peers")) {
+            try {
+                List<String> children = m_zookeeper.getChildren("nodes/peers");
+                for (String child : children) {
+                    childID = Short.parseShort(child);
+                    if (childID != getNodeID()) {
+                        // Add peer if it is available for backup (1), only
+                        if (zookeeperGetData("nodes/peers/" + childID)[0] == (byte) 1) {
+                            ids.add(Short.parseShort(child));
+                        }
                     }
                 }
             } catch (final ZooKeeperException ignored) {
@@ -393,21 +419,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                             childs = m_zookeeper.getChildren("nodes/new", this);
                             for (String child : childs) {
                                 nodeID = Short.parseShort(child);
-                                node = new String(m_zookeeper.getData("nodes/new/" + nodeID));
+                                node = new String(zookeeperGetData("nodes/new/" + nodeID));
                                 splits = node.split(":");
 
                                 role = NodeRole.toNodeRole(splits[2]);
 
-                                if (m_nodes.addNode(nodeID,
-                                    new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), (short) 0, (short) 0, role,
-                                        false))) {
-                                    // TODO: Turn around. Detect peer joining in superpeer overlay and inform ZooKeeperBootComponent
-                                    // -> no watcher necessary
-                                    if (role == NodeRole.PEER) {
-                                        // Notify other components/services (BackupComponent, LookupComponent, PeerLockService)
-                                        m_event.fireEvent(new NodeJoinEvent(getClass().getSimpleName(), nodeID, role));
-                                    }
-                                }
+                                m_nodes.addNode(nodeID, new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), (short) 0, (short) 0, role, false));
                             }
                         }
                     }
@@ -427,7 +444,32 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
     //}
 
     @Override
+    public boolean finishInitComponent() {
+        // Register peer/superpeer (a terminal node is not registered to exclude it from backup)
+        try {
+            if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.SUPERPEER) {
+                m_zookeeper.create("nodes/superpeers/" + m_nodes.getOwnNodeID());
+            } else if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.PEER) {
+                if (m_backup.isActiveAndAvailableForBackup()) {
+                    m_zookeeper.create("nodes/peers/" + m_nodes.getOwnNodeID(), new byte[] {1});
+                } else {
+                    m_zookeeper.create("nodes/peers/" + m_nodes.getOwnNodeID(), new byte[] {0});
+                }
+            } else if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.TERMINAL) {
+                m_zookeeper.create("nodes/terminals/" + m_nodes.getOwnNodeID());
+            }
+        } catch (ZooKeeperException | KeeperException | InterruptedException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Node could not be registered in ZooKeeper. Restart recommendable as other nodes might not find it.");
+            // #endif /* LOGGER >= ERROR */
+        }
+
+        return true;
+    }
+
+    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
@@ -679,10 +721,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
             }
 
             // Register superpeer
-            // register only if we are the superpeer. don't add peer as superpeer
+            // register only if we are the superpeer. don't add node as superpeer
             if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.SUPERPEER) {
                 m_zookeeper.create("nodes/bootstrap", String.valueOf(m_bootstrap).getBytes());
-                m_zookeeper.create("nodes/superpeers/" + m_nodes.getOwnNodeID());
             }
         } catch (final ZooKeeperException | KeeperException | InterruptedException e) {
             // #if LOGGER >= ERROR
@@ -754,13 +795,13 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
                 // #endif /* LOGGER >= INFO */
             }
 
-            m_bootstrap = Short.parseShort(new String(m_zookeeper.getData("nodes/bootstrap")));
+            m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
 
             // Apply changes
             childs = m_zookeeper.getChildren("nodes/new");
             for (String child : childs) {
                 nodeID = Short.parseShort(child);
-                node = new String(m_zookeeper.getData("nodes/new/" + nodeID));
+                node = new String(zookeeperGetData("nodes/new/" + nodeID));
                 m_bloomFilter.add(nodeID);
 
                 // Set routing information for that node
@@ -814,15 +855,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
             // Set watches
             m_zookeeper.setChildrenWatch("nodes/new", this);
             m_zookeeper.setChildrenWatch("nodes/free", this);
-
-            // Register peer/superpeer (a terminal node is not registered to exclude it from backup)
-            if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.SUPERPEER) {
-                m_zookeeper.create("nodes/superpeers/" + m_nodes.getOwnNodeID());
-            } else if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.PEER) {
-                m_zookeeper.create("nodes/peers/" + m_nodes.getOwnNodeID());
-            } else if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.TERMINAL) {
-                m_zookeeper.create("nodes/terminals/" + m_nodes.getOwnNodeID());
-            }
         } catch (final ZooKeeperException | KeeperException | InterruptedException e) {
             // #if LOGGER >= ERROR
             LOGGER.error("Parsing nodes normal failed", e);

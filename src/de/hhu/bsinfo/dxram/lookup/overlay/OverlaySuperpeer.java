@@ -48,6 +48,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.BarrierGetStatusResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.BarrierReleaseMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.BarrierSignOnRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.BarrierSignOnResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.FinishedStartupMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.GetAllBackupRangesRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetAllBackupRangesResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetChunkIDForNameserviceEntryRequest;
@@ -74,6 +75,8 @@ import de.hhu.bsinfo.dxram.lookup.messages.MigrateResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.NameserviceUpdatePeerCachesMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewPredecessorMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewSuccessorMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.PeerJoinEventRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.PeerJoinEventResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.PingSuperpeerMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsResponse;
@@ -300,6 +303,9 @@ public class OverlaySuperpeer implements MessageReceiver {
                     case LookupMessages.SUBTYPE_JOIN_REQUEST:
                         incomingJoinRequest((JoinRequest) p_message);
                         break;
+                    case LookupMessages.SUBTYPE_FINISHED_STARTUP_MESSAGE:
+                        incomingFinishedStartupMessage((FinishedStartupMessage) p_message);
+                        break;
                     case LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST:
                         incomingGetLookupRangeRequest((GetLookupRangeRequest) p_message);
                         break;
@@ -332,6 +338,9 @@ public class OverlaySuperpeer implements MessageReceiver {
                         break;
                     case LookupMessages.SUBTYPE_UPDATE_METADATA_AFTER_RECOVERY_MESSAGE:
                         incomingUpdateMetadataAfterRecoveryMessage((UpdateMetadataAfterRecoveryMessage) p_message);
+                        break;
+                    case LookupMessages.SUBTYPE_PEER_JOIN_EVENT_REQUEST:
+                        incomingPeerJoinEventRequest((PeerJoinEventRequest) p_message);
                         break;
                     case LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST:
                         incomingBarrierAllocRequest((BarrierAllocRequest) p_message);
@@ -1296,6 +1305,50 @@ public class OverlaySuperpeer implements MessageReceiver {
     }
 
     /**
+     * Handles an incoming FinishedStartupMessage
+     *
+     * @param p_finishedStartupMessage
+     *     the FinishedStartupMessage
+     */
+    private void incomingFinishedStartupMessage(final FinishedStartupMessage p_finishedStartupMessage) {
+        short newPeer;
+
+        newPeer = p_finishedStartupMessage.getSource();
+
+        // Outsource informing other superpeers/peers to another thread to avoid blocking a message handler
+        Runnable task = () -> {
+            // Inform all superpeers
+            for (short superpeer : m_superpeers) {
+                PeerJoinEventRequest request = new PeerJoinEventRequest(superpeer, newPeer);
+                try {
+                    m_network.sendSync(request);
+                } catch (final NetworkException e) {
+                    // Ignore, failure is detected by network module
+                    continue;
+                }
+
+                request.getResponse(PeerJoinEventResponse.class);
+            }
+
+            // Inform own peers
+            for (short peer : m_peers) {
+                if (peer != newPeer) {
+                    PeerJoinEventRequest request = new PeerJoinEventRequest(peer, newPeer);
+                    try {
+                        m_network.sendSync(request);
+                    } catch (final NetworkException e) {
+                        // Ignore, failure is detected by network module
+                        continue;
+                    }
+
+                    request.getResponse(PeerJoinEventResponse.class);
+                }
+            }
+        };
+        new Thread(task).start();
+    }
+
+    /**
      * Handles an incoming GetLookupRangeRequest
      *
      * @param p_getLookupRangeRequest
@@ -1808,6 +1861,42 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         m_metadata.updateMetadataAfterRecovery(p_updateMetadataAfterRecoveryMessage.getRangeID(), p_updateMetadataAfterRecoveryMessage.getCreator(),
             p_updateMetadataAfterRecoveryMessage.getRestorer(), p_updateMetadataAfterRecoveryMessage.getChunkIDRanges());
+    }
+
+    /**
+     * Handles an incoming PeerJoinEventRequest
+     *
+     * @param p_peerJoinEventRequest
+     *     the PeerJoinEventRequest
+     */
+    private void incomingPeerJoinEventRequest(final PeerJoinEventRequest p_peerJoinEventRequest) {
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("Got request: PeerJoinEventRequest 0x%X", p_peerJoinEventRequest.getSource());
+        // #endif /* LOGGER == TRACE */
+
+        // Outsource informing other peers to another thread to avoid blocking a message handler
+        Runnable task = () -> {
+            // Inform own peers
+            for (short p : m_peers) {
+                PeerJoinEventRequest request = new PeerJoinEventRequest(p, p_peerJoinEventRequest.getJoinedPeer());
+                try {
+                    m_network.sendSync(request);
+                } catch (final NetworkException e) {
+                    // Ignore, failure is detected by network module
+                    continue;
+                }
+
+                request.getResponse(PeerJoinEventResponse.class);
+            }
+        };
+        new Thread(task).start();
+
+        try {
+            m_network.sendMessage(new PeerJoinEventResponse(p_peerJoinEventRequest));
+        } catch (NetworkException ignore) {
+            // Superpeer is not available anymore, ignore it as stabilization will fix it
+        }
     }
 
     /**
@@ -2392,6 +2481,7 @@ public class OverlaySuperpeer implements MessageReceiver {
     private void registerNetworkMessages() {
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_JOIN_REQUEST, JoinRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_JOIN_RESPONSE, JoinResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_FINISHED_STARTUP_MESSAGE, FinishedStartupMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST, GetLookupRangeRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_RESPONSE, GetLookupRangeResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST, RemoveChunkIDsRequest.class);
@@ -2446,6 +2536,8 @@ public class OverlaySuperpeer implements MessageReceiver {
             NotifyAboutNewPredecessorMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE,
             NotifyAboutNewSuccessorMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PEER_JOIN_EVENT_REQUEST, PeerJoinEventRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PEER_JOIN_EVENT_RESPONSE, PeerJoinEventResponse.class);
 
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST, BarrierAllocRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_ALLOC_RESPONSE, BarrierAllocResponse.class);
@@ -2494,6 +2586,7 @@ public class OverlaySuperpeer implements MessageReceiver {
      */
     private void registerNetworkMessageListener() {
         m_network.register(JoinRequest.class, this);
+        m_network.register(FinishedStartupMessage.class, this);
         m_network.register(GetLookupRangeRequest.class, this);
         m_network.register(RemoveChunkIDsRequest.class, this);
         m_network.register(InsertNameserviceEntriesRequest.class, this);
@@ -2506,7 +2599,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         m_network.register(GetAllBackupRangesRequest.class, this);
         m_network.register(UpdateMetadataAfterRecoveryMessage.class, this);
         m_network.register(ReplaceBackupPeerRequest.class, this);
-
+        m_network.register(PeerJoinEventRequest.class, this);
         m_network.register(PingSuperpeerMessage.class, this);
 
         m_network.register(BarrierAllocRequest.class, this);

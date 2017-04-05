@@ -17,6 +17,7 @@ import java.io.Serializable;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -76,54 +77,6 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
     }
 
     // Methods
-
-    /**
-     * Iterates the node and returns ChunkIDs of given range
-     *
-     * @param p_node
-     *     the node
-     * @param p_rangeID
-     *     the RangeID
-     * @return all ChunkIDs
-     */
-    private static long[] iterateNode(final Node p_node, final short p_rangeID) {
-        long[] ret;
-        int allEntriesCounter;
-        int fittingEntriesCounter = 0;
-        int childrenCounter;
-        int fittingChildrenEntriesCounter = 0;
-        int offset;
-        long[] myEntries;
-
-        // Store all ChunkIDs of given range in an array
-        allEntriesCounter = p_node.getNumberOfEntries();
-        myEntries = new long[allEntriesCounter];
-        for (int i = 0; i < allEntriesCounter; i++) {
-            if (p_node.getRangeID(i) == p_rangeID) {
-                myEntries[fittingEntriesCounter++] = p_node.getChunkID(i);
-            }
-        }
-
-        // Get all fitting ChunkIDs of all children
-        childrenCounter = p_node.getNumberOfChildren();
-        long[][] res = new long[childrenCounter][];
-        for (int i = 0; i < childrenCounter; i++) {
-            res[i] = iterateNode(p_node.getChild(i), p_rangeID);
-            fittingChildrenEntriesCounter += res[i].length;
-        }
-
-        // Copy this node's entries to result array
-        ret = new long[fittingEntriesCounter + fittingChildrenEntriesCounter];
-        System.arraycopy(myEntries, 0, ret, 0, fittingEntriesCounter);
-        offset = fittingEntriesCounter;
-        // Copy all children's entries to result array
-        for (long[] array : res) {
-            System.arraycopy(array, 0, ret, offset, array.length);
-            offset += array.length;
-        }
-
-        return ret;
-    }
 
     /**
      * Returns the node in which the predecessor is
@@ -317,8 +270,8 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
         ret.append("] ");
         for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
             ret.append("(ChunkID: ");
-            ret.append(p_node.getChunkID(i));
-            ret.append(" NodeID: ");
+            ret.append(ChunkID.toHexString(p_node.getChunkID(i)));
+            ret.append(" RangeID: ");
             ret.append(p_node.getRangeID(i));
             ret.append(')');
             if (i < p_node.getNumberOfEntries() - 1) {
@@ -693,13 +646,82 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      *
      * @param p_rangeID
      *     the RangeID
-     * @return all ChunkIDs
+     * @return all ChunkID ranges
      */
-    long[] getAllChunkIDsOfRange(final short p_rangeID) {
+    long[] getAllChunkIDRangesOfBackupRange(final short p_rangeID) {
         long[] ret = null;
 
         if (m_root != null) {
             ret = iterateNode(m_root, p_rangeID);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Iterates the node and returns ChunkIDs of given range
+     *
+     * @param p_node
+     *     the node
+     * @param p_rangeID
+     *     the RangeID
+     * @return all ChunkIDs
+     */
+    private long[] iterateNode(final Node p_node, final short p_rangeID) {
+        long[] ret;
+        int allEntriesCounter;
+        int fittingEntriesCounter = 0;
+        int childrenCounter;
+        int fittingChildrenEntriesCounter = 0;
+        int offset;
+        Entry predecessor;
+        long predecessorCID;
+        long currentCID;
+        ArrayListLong myEntries;
+
+        // Store all ChunkIDs of given range in an array
+        allEntriesCounter = p_node.getNumberOfEntries();
+        myEntries = new ArrayListLong();
+        for (int i = 0; i < allEntriesCounter; i++) {
+            if (p_node.getRangeID(i) == p_rangeID) {
+                currentCID = p_node.getChunkID(i);
+
+                // Add predecessor (begin of range)
+                predecessor = getPredecessorsEntry(currentCID, p_node);
+                predecessorCID = predecessor.getChunkID();
+                if (predecessorCID == ChunkID.INVALID_ID) {
+                    myEntries.add((long) m_creator << 48);
+                } else if (ChunkID.getCreatorID(predecessorCID) == 0) {
+                    myEntries.add(((long) m_creator << 48) + predecessorCID + 1);
+                } else {
+                    myEntries.add(predecessorCID + 1);
+                }
+
+                // Add current ChunkID (end of range)
+                if (ChunkID.getCreatorID(currentCID) == 0) {
+                    currentCID = ((long) m_creator << 48) + currentCID;
+                }
+                myEntries.add(currentCID);
+                fittingEntriesCounter += 2;
+            }
+        }
+
+        // Get all fitting ChunkIDs of all children
+        childrenCounter = p_node.getNumberOfChildren();
+        long[][] res = new long[childrenCounter][];
+        for (int i = 0; i < childrenCounter; i++) {
+            res[i] = iterateNode(p_node.getChild(i), p_rangeID);
+            fittingChildrenEntriesCounter += res[i].length;
+        }
+
+        // Copy this node's entries to result array
+        ret = new long[fittingEntriesCounter + fittingChildrenEntriesCounter];
+        System.arraycopy(myEntries.getArray(), 0, ret, 0, fittingEntriesCounter);
+        offset = fittingEntriesCounter;
+        // Copy all children's entries to result array
+        for (long[] array : res) {
+            System.arraycopy(array, 0, ret, offset, array.length);
+            offset += array.length;
         }
 
         return ret;
@@ -1407,7 +1429,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
             ret.append("entries=[");
             for (int i = 0; i < getNumberOfEntries(); i++) {
                 ret.append("(ChunkID: ");
-                ret.append(getChunkID(i));
+                ret.append(ChunkID.toHexString(getChunkID(i)));
                 ret.append(" location: ");
                 ret.append(getRangeID(i));
                 ret.append(')');
@@ -1421,7 +1443,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
                 ret.append("parent=[");
                 for (int i = 0; i < m_parent.getNumberOfEntries(); i++) {
                     ret.append("(ChunkID: ");
-                    ret.append(getChunkID(i));
+                    ret.append(ChunkID.toHexString(getChunkID(i)));
                     ret.append(" location: ");
                     ret.append(getRangeID(i));
                     ret.append(')');

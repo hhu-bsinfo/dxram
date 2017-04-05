@@ -100,8 +100,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
         registerNetworkMessageListener();
 
         // #if LOGGER >= WARN
-        if (!m_backup.isActive()) {
-            LOGGER.warn("Backup is not activated. Recovery service will not work!");
+        if (!m_backup.isActiveAndAvailableForBackup()) {
+            LOGGER.warn("Backup is not activated/available. Recovery service will not work!");
         }
         // #endif /* LOGGER >= WARN */
         m_backupDirectory = m_backup.getBackupDirectory();
@@ -134,7 +134,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
             File[] listOfFiles;
             DataStructure[] chunks;
 
-            if (!m_backup.isActive()) {
+            if (!m_backup.isActiveAndAvailableForBackup()) {
                 // #if LOGGER >= WARN
                 LOGGER.warn("Backup is not activated. Cannot recover!");
                 // #endif /* LOGGER >= WARN */
@@ -183,7 +183,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
             String[] listOfFiles;
             DataStructure[] chunks;
 
-            if (!m_backup.isActive()) {
+            if (!m_backup.isActiveAndAvailableForBackup()) {
                 // #if LOGGER >= WARN
                 LOGGER.warn("Backup is not activated. Cannot recover!");
                 // #endif /* LOGGER >= WARN */

@@ -435,7 +435,12 @@ public class LogComponent extends AbstractDXRAMComponent {
     @Override
     protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
-        m_loggingIsActive = m_boot.getNodeRole() == NodeRole.PEER && m_backup.isActive();
+        // Set the segment size. Needed for log entry header to split large chunks (must be called before the first log entry header is created)
+        AbstractLogEntryHeader.setSegmentSize((int) m_logSegmentSize.getBytes());
+        // Set the log entry header crc size (must be called before the first log entry header is created)
+        ChecksumHandler.setCRCSize(m_useChecksum);
+
+        m_loggingIsActive = m_boot.getNodeRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup();
         if (m_loggingIsActive) {
             DXRAMJNIManager.loadJNIModule("JNINativeCRCGenerator");
 
@@ -450,11 +455,6 @@ public class LogComponent extends AbstractDXRAMComponent {
             m_nodeID = m_boot.getNodeID();
 
             m_backupDirectory = m_backup.getBackupDirectory();
-
-            // Set the segment size. Needed for log entry header to split large chunks (must be called before the first log entry header is created)
-            AbstractLogEntryHeader.setSegmentSize((int) m_logSegmentSize.getBytes());
-            // Set the log entry header crc size (must be called before the first log entry header is created)
-            ChecksumHandler.setCRCSize(m_useChecksum);
 
             // Create primary log
             try {
@@ -556,6 +556,7 @@ public class LogComponent extends AbstractDXRAMComponent {
         long allBytesOccupied = 0;
         long counterAllocated;
         long counterOccupied;
+        long occupiedInRange;
         SecondaryLog[] secondaryLogs;
         SecondaryLogBuffer[] secLogBuffers;
         LogCatalog cat;
@@ -571,7 +572,7 @@ public class LogComponent extends AbstractDXRAMComponent {
                 if (cat != null) {
                     counterAllocated = 0;
                     counterOccupied = 0;
-                    ret += "++Node " + (short) i + ":\n";
+                    ret += "++Node " + NodeID.toHexString((short) i) + ":\n";
                     secondaryLogs = cat.getAllLogs();
                     secLogBuffers = cat.getAllBuffers();
                     for (int j = 0; j < secondaryLogs.length; j++) {
@@ -581,9 +582,10 @@ public class LogComponent extends AbstractDXRAMComponent {
                                 ret += "#Active log# ";
                             }
                             counterAllocated += secondaryLogs[j].getLogFileSize() + secondaryLogs[j].getVersionsFileSize();
-                            counterOccupied += secondaryLogs[j].getOccupiedSpace();
+                            occupiedInRange = secondaryLogs[j].getOccupiedSpace();
+                            counterOccupied += occupiedInRange;
 
-                            ret += counterOccupied + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
+                            ret += occupiedInRange + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
                             ret += secondaryLogs[j].getSegmentDistribution() + '\n';
                         }
                     }
@@ -807,7 +809,7 @@ public class LogComponent extends AbstractDXRAMComponent {
         segments = readBackupRange(p_owner, p_rangeID);
         if (segments != null) {
             System.out.println();
-            System.out.println("NodeID: " + p_owner);
+            System.out.println("NodeID: " + NodeID.toHexString(p_owner));
             while (segments[i] != null) {
                 System.out.println("Segment " + i + ": " + segments[i].length);
                 readBytes = offset;

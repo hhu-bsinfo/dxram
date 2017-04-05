@@ -364,7 +364,7 @@ public final class SecondaryLogsReorgThread extends Thread {
         } else {
             m_counter = 0;
         }
-        if (ret == null && !cats.isEmpty() && numberOfLogs > 1) {
+        if (m_counter == 0 && !cats.isEmpty() && numberOfLogs > 1) {
             m_isRandomChoice = true;
             // Choose one secondary log randomly
             cat = cats.get(RandomUtils.getRandomValue(cats.size() - 1));

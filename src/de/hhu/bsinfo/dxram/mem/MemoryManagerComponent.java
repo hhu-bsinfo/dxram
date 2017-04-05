@@ -125,6 +125,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     }
 
     /**
+     * Returns the highest LocalID currently in use
+     *
+     * @return the LocalID
+     */
+    public long getHighestUsedLocalID() {
+        return m_cidTable.getNextLocalIDCounter() - 1;
+    }
+
+    /**
      * Returns the ChunkID ranges of all migrated Chunks
      *
      * @return the ChunkID ranges of all migrated Chunks
@@ -1608,14 +1617,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         public String toString() {
             String str = "";
 
-            str += "Free memory: " + m_freeMemory.getHumanReadable() + '\n';
-            str += "Total memory: " + m_totalMemory.getHumanReadable() + '\n';
-            str += "Total payload memory: " + m_totalPayloadMemory.getHumanReadable() + '\n';
+            str += "Free memory: " + m_freeMemory.getHumanReadable() + " (" + m_freeMemory.getBytes() + ")\n";
+            str += "Total memory: " + m_totalMemory.getHumanReadable() + " (" + m_totalMemory.getBytes() + ")\n";
+            str += "Total payload memory: " + m_totalPayloadMemory.getHumanReadable() + " (" + m_totalPayloadMemory.getBytes() + ")\n";
             str += "Num active memory blocks: " + m_numberOfActiveMemoryBlocks + '\n';
             str += "Num active chunks: " + m_numberOfActiveChunks + '\n';
-            str += "Total chunk payload memory: " + m_totalChunkPayloadMemory.getHumanReadable() + '\n';
+            str += "Total chunk payload memory: " + m_totalChunkPayloadMemory.getHumanReadable() + " (" + m_totalChunkPayloadMemory.getBytes() + ")\n";
             str += "Num CID tables: " + m_cidTableCount + '\n';
-            str += "Total CID tables memory: " + m_totalMemoryCIDTables.getHumanReadable() + '\n';
+            str += "Total CID tables memory: " + m_totalMemoryCIDTables.getHumanReadable() + " (" + m_totalChunkPayloadMemory.getBytes() + ")\n";
             str += "Num of free LIDs cached in LIDStore: " + m_cachedFreeLIDs + '\n';
             str += "Num of total available free LIDs in LIDStore: " + m_availableFreeLIDs + '\n';
             str += "New LID counter state: " + m_newLIDCounter;

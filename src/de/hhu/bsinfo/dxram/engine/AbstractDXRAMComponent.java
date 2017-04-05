@@ -58,59 +58,28 @@ public abstract class AbstractDXRAMComponent {
     }
 
     /**
-     * Get the name of this component.
+     * Called before the component is initialized. Get all the components your own component depends on.
      *
-     * @return Name of this component.
+     * @param p_componentAccessor
+     *     Component accessor that provides access to other components
      */
-    String getComponentName() {
-        return getClass().getSimpleName();
-    }
+    protected abstract void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor);
 
     /**
-     * Get the init priority.
+     * Called when the component is initialized. Setup data structures, get dependent components, read settings etc.
      *
-     * @return Init priority.
+     * @param p_engineEngineSettings
+     *     EngineSettings instance provided by the engine.
+     * @return True if initialing was successful, false otherwise.
      */
-    int getPriorityInit() {
-        return m_priorityInit;
-    }
+    protected abstract boolean initComponent(DXRAMContext.EngineSettings p_engineEngineSettings);
 
     /**
-     * Get the shutdown priority.
+     * Called when the component gets shut down. Cleanup your component in here.
      *
-     * @return Shutdown priority.
+     * @return True if shutdown was successful, false otherwise.
      */
-    int getPriorityShutdown() {
-        return m_priorityShutdown;
-    }
-
-    /**
-     * Check if this class is an engine accessor i.e. breaking the rules of
-     * not knowing the engine. Override this if this feature is used.
-     * Do not override this if you do not know what you are doing.
-     *
-     * @return True if accessor, false otherwise.
-     */
-    protected boolean isEngineAccessor() {
-        return false;
-    }
-
-    /**
-     * Get the engine within the component.
-     * If you don't know what you are doing, do not use this.
-     * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
-     *
-     * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
-     */
-    protected DXRAMEngine getParentEngine() {
-        if (isEngineAccessor()) {
-            return m_parentEngine;
-        } else {
-            return null;
-        }
-    }
-
-    // ------------------------------------------------------------------------------
+    protected abstract boolean shutdownComponent();
 
     /**
      * Initialize this component.
@@ -155,6 +124,17 @@ public abstract class AbstractDXRAMComponent {
     }
 
     /**
+     * Finish initialization of this component when all services are running.
+     *
+     * @return True if finishing initialization was successful, false otherwise.
+     */
+    public boolean finishInitComponent() {
+        return m_isInitialized;
+    }
+
+    // ------------------------------------------------------------------------------
+
+    /**
      * Shut down this component.
      *
      * @return True if shutting down was successful, false otherwise.
@@ -184,26 +164,55 @@ public abstract class AbstractDXRAMComponent {
     }
 
     /**
-     * Called before the component is initialized. Get all the components your own component depends on.
+     * Check if this class is an engine accessor i.e. breaking the rules of
+     * not knowing the engine. Override this if this feature is used.
+     * Do not override this if you do not know what you are doing.
      *
-     * @param p_componentAccessor
-     *     Component accessor that provides access to other components
+     * @return True if accessor, false otherwise.
      */
-    protected abstract void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor);
+    protected boolean isEngineAccessor() {
+        return false;
+    }
 
     /**
-     * Called when the component is initialized. Setup data structures, get dependent components, read settings etc.
+     * Get the engine within the component.
+     * If you don't know what you are doing, do not use this.
+     * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
      *
-     * @param p_engineEngineSettings
-     *     EngineSettings instance provided by the engine.
-     * @return True if initialing was successful, false otherwise.
+     * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
      */
-    protected abstract boolean initComponent(DXRAMContext.EngineSettings p_engineEngineSettings);
+    protected DXRAMEngine getParentEngine() {
+        if (isEngineAccessor()) {
+            return m_parentEngine;
+        } else {
+            return null;
+        }
+    }
 
     /**
-     * Called when the component gets shut down. Cleanup your component in here.
+     * Get the name of this component.
      *
-     * @return True if shutdown was successful, false otherwise.
+     * @return Name of this component.
      */
-    protected abstract boolean shutdownComponent();
+    String getComponentName() {
+        return getClass().getSimpleName();
+    }
+
+    /**
+     * Get the init priority.
+     *
+     * @return Init priority.
+     */
+    int getPriorityInit() {
+        return m_priorityInit;
+    }
+
+    /**
+     * Get the shutdown priority.
+     *
+     * @return Shutdown priority.
+     */
+    int getPriorityShutdown() {
+        return m_priorityShutdown;
+    }
 }

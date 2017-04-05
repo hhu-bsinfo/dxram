@@ -331,6 +331,10 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
         return p_size + m_size <= ms_backupRangeSize;
     }
 
+    int getSize() {
+        return m_size;
+    }
+
     /**
      * Puts chunks to the backup range. Increases size only
      *

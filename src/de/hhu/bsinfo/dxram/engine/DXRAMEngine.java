@@ -56,15 +56,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     }
 
     /**
-     * Get the settings instance of the engine.
-     *
-     * @return EngineSettings instance or null if engine is not initialized.
-     */
-    DXRAMContext.EngineSettings getSettings() {
-        return m_contextHandler.getContext().getEngineSettings();
-    }
-
-    /**
      * Register a DXRAM component
      *
      * @param p_class
@@ -259,6 +250,19 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         // #if LOGGER >= INFO
         LOGGER.info("Starting services done");
         //
+        LOGGER.info("Finishing initialization of components");
+        // #endif /* LOGGER >= INFO */
+
+        for (AbstractDXRAMComponent component : list) {
+            if (!component.finishInitComponent()) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Finishing initialization of component '%s' failed, aborting init", component.getComponentName());
+                // #endif /* LOGGER >= ERROR */
+                return false;
+            }
+        }
+
+        // #if LOGGER >= INFO
         LOGGER.info("Initializing engine done");
         // #endif /* LOGGER >= INFO */
 
@@ -360,6 +364,15 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      */
     public void triggerSoftReboot() {
         m_triggerReboot = true;
+    }
+
+    /**
+     * Get the settings instance of the engine.
+     *
+     * @return EngineSettings instance or null if engine is not initialized.
+     */
+    DXRAMContext.EngineSettings getSettings() {
+        return m_contextHandler.getContext().getEngineSettings();
     }
 
     /**

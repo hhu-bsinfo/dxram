@@ -529,7 +529,7 @@ public class SecondaryLog extends AbstractLog {
         if (determineLogSize() >= m_secondaryLogReorgThreshold && !isSignaled) {
             signalReorganization();
             // #if LOGGER >= INFO
-            LOGGER.info("Threshold breached for secondary log of 0x%X. Initializing reorganization", m_owner);
+            LOGGER.info("Threshold breached (%d) for secondary log %d of 0x%X. Initializing reorganization.", determineLogSize(), m_rangeID, m_owner);
             // #endif /* LOGGER >= INFO */
         }
 

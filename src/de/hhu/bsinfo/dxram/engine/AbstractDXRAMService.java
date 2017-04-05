@@ -53,71 +53,28 @@ public abstract class AbstractDXRAMService {
     }
 
     /**
-     * Get the short name/identifier for this service.
+     * Called before the service is initialized. Get all the components your service depends on.
      *
-     * @return Identifier/name for this service.
+     * @param p_componentAccessor
+     *     Component accessor that provides access to the components
      */
-    String getShortName() {
-        return m_shortName;
-    }
+    protected abstract void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor);
 
     /**
-     * Get the name of this service.
+     * Called when the service is initialized. Setup data structures, get components for operation, read settings etc.
      *
-     * @return Name of this service.
+     * @param p_engineEngineSettings
+     *     EngineSettings instance provided by the engine.
+     * @return True if initialing was successful, false otherwise.
      */
-    String getServiceName() {
-        return getClass().getSimpleName();
-    }
+    protected abstract boolean startService(DXRAMContext.EngineSettings p_engineEngineSettings);
 
     /**
-     * Check if this class is a service accessor i.e. breaking the rules of
-     * not knowing other services. Override this if this feature is used.
+     * Called when the service gets shut down. Cleanup your service in here.
      *
-     * @return True if accessor, false otherwise.
+     * @return True if shutdown was successful, false otherwise.
      */
-    protected boolean isServiceAccessor() {
-        return false;
-    }
-
-    /**
-     * Check if this class is an engine accessor i.e. breaking the rules of
-     * not knowing the engine. Override this if this feature is used.
-     * Do not override this if you do not know what you are doing.
-     *
-     * @return True if accessor, false otherwise.
-     */
-    protected boolean isEngineAccessor() {
-        return false;
-    }
-
-    /**
-     * Get the proxy class to access other services.
-     *
-     * @return This returns a valid accessor only if the class is declared a service accessor.
-     */
-    protected DXRAMServiceAccessor getServiceAccessor() {
-        if (isServiceAccessor()) {
-            return m_parentEngine;
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Get the engine within the service.
-     * If you don't know what you are doing, do not use this.
-     * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
-     *
-     * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
-     */
-    protected DXRAMEngine getParentEngine() {
-        if (isEngineAccessor()) {
-            return m_parentEngine;
-        } else {
-            return null;
-        }
-    }
+    protected abstract boolean shutdownService();
 
     /**
      * Start this service.
@@ -192,26 +149,69 @@ public abstract class AbstractDXRAMService {
     }
 
     /**
-     * Called before the service is initialized. Get all the components your service depends on.
+     * Check if this class is a service accessor i.e. breaking the rules of
+     * not knowing other services. Override this if this feature is used.
      *
-     * @param p_componentAccessor
-     *     Component accessor that provides access to the components
+     * @return True if accessor, false otherwise.
      */
-    protected abstract void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor);
+    protected boolean isServiceAccessor() {
+        return false;
+    }
 
     /**
-     * Called when the service is initialized. Setup data structures, get components for operation, read settings etc.
+     * Check if this class is an engine accessor i.e. breaking the rules of
+     * not knowing the engine. Override this if this feature is used.
+     * Do not override this if you do not know what you are doing.
      *
-     * @param p_engineEngineSettings
-     *     EngineSettings instance provided by the engine.
-     * @return True if initialing was successful, false otherwise.
+     * @return True if accessor, false otherwise.
      */
-    protected abstract boolean startService(DXRAMContext.EngineSettings p_engineEngineSettings);
+    protected boolean isEngineAccessor() {
+        return false;
+    }
 
     /**
-     * Called when the service gets shut down. Cleanup your service in here.
+     * Get the proxy class to access other services.
      *
-     * @return True if shutdown was successful, false otherwise.
+     * @return This returns a valid accessor only if the class is declared a service accessor.
      */
-    protected abstract boolean shutdownService();
+    protected DXRAMServiceAccessor getServiceAccessor() {
+        if (isServiceAccessor()) {
+            return m_parentEngine;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Get the engine within the service.
+     * If you don't know what you are doing, do not use this.
+     * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
+     *
+     * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
+     */
+    protected DXRAMEngine getParentEngine() {
+        if (isEngineAccessor()) {
+            return m_parentEngine;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Get the short name/identifier for this service.
+     *
+     * @return Identifier/name for this service.
+     */
+    String getShortName() {
+        return m_shortName;
+    }
+
+    /**
+     * Get the name of this service.
+     *
+     * @return Name of this service.
+     */
+    String getServiceName() {
+        return getClass().getSimpleName();
+    }
 }
