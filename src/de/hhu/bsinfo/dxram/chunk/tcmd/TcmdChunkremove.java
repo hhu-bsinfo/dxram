@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.dxram.chunk.tcmd;
 
-import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.chunk.ChunkRemoveService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
@@ -60,7 +60,7 @@ public class TcmdChunkremove extends TerminalCommand {
             return;
         }
 
-        ChunkService chunk = p_ctx.getService(ChunkService.class);
+        ChunkRemoveService chunk = p_ctx.getService(ChunkRemoveService.class);
 
         if (chunk.remove(cid) != 1) {
             p_ctx.printflnErr("Removing chunk with ID 0x%X failed", cid);

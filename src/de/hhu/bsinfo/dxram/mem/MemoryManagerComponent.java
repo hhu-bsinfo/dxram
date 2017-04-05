@@ -869,7 +869,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * @return The size of the deleted chunk if removing the data was successful, -1 if the chunk with the specified id does not exist
      */
     public int remove(final long p_chunkID, final boolean p_wasMigrated) {
-        int ret = 0;
+        int ret = -1;
         long addressDeletedChunk;
 
         try {

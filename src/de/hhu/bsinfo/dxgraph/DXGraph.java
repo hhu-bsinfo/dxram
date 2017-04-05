@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxgraph.data.Edge;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.chunk.ChunkRemoveService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.job.AbstractJob;
@@ -42,6 +43,7 @@ public class DXGraph extends DXRAM {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXGraph.class.getSimpleName());
 
     private ChunkService m_chunkService;
+    private ChunkRemoveService m_chunkRemoveService;
 
     /**
      * Constructor
@@ -53,6 +55,7 @@ public class DXGraph extends DXRAM {
     @Override
     protected void postInit() {
         m_chunkService = getDXRAMEngine().getService(ChunkService.class);
+        m_chunkRemoveService = getDXRAMEngine().getService(ChunkRemoveService.class);
     }
 
     @Override
@@ -167,7 +170,7 @@ public class DXGraph extends DXRAM {
      * @return Number of successfully deleted vertices.
      */
     public int deleteVertices(final Vertex... p_vertices) {
-        return m_chunkService.remove((DataStructure[]) p_vertices);
+        return m_chunkRemoveService.remove((DataStructure[]) p_vertices);
     }
 
     /**
@@ -178,7 +181,7 @@ public class DXGraph extends DXRAM {
      * @return Number of successfully deleted edges.
      */
     public int deleteEdges(final Edge... p_edges) {
-        return m_chunkService.remove((DataStructure[]) p_edges);
+        return m_chunkRemoveService.remove((DataStructure[]) p_edges);
     }
 
     /**

@@ -408,6 +408,11 @@ public final class CIDTable {
             } else {
                 ret = readEntry(addressTable, index) & BITMASK_ADDRESS;
 
+                // already deleted
+                if (ret == FREE_ENTRY || ret == ZOMBIE_ENTRY) {
+                    return 0;
+                }
+
                 // Delete the level 0 entry
                 // invalid + active address but deleted
                 // -> zombie entry

@@ -18,12 +18,13 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.ms.Signal;
-import de.hhu.bsinfo.dxram.ms.Task;
-import de.hhu.bsinfo.dxram.ms.TaskContext;
+import de.hhu.bsinfo.dxram.chunk.ChunkRemoveService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
+import de.hhu.bsinfo.dxram.ms.Signal;
+import de.hhu.bsinfo.dxram.ms.Task;
+import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -62,6 +63,7 @@ public class ChunkRemoveAllTask implements Task {
         }
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
+        ChunkRemoveService chunkRemoveService = p_ctx.getDXRAMServiceAccessor().getService(ChunkRemoveService.class);
 
         long activeChunkCount = chunkService.getStatus().getNumberOfActiveChunks();
         // don't remove the index chunk
@@ -131,11 +133,21 @@ public class ChunkRemoveAllTask implements Task {
                         }
 
                         time[threadIdx].start();
-                        int ret = chunkService.remove(chunkIds);
+                        int ret = chunkRemoveService.remove(chunkIds);
                         time[threadIdx].stopAndAccumulate();
 
                         if (ret != chunkIds.length) {
-                            LOGGER.error("Removing one or multiple chunks of %s failed", ChunkID.chunkIDArrayToString(chunkIds));
+                            // count valid chunks, first
+                            int valid = 0;
+                            for (int k = 0; k < chunkIds.length; k++) {
+                                if (chunkIds[k] != ChunkID.INVALID_ID) {
+                                    valid++;
+                                }
+                            }
+
+                            if (ret != valid) {
+                                LOGGER.error("Removing one or multiple chunks of %s failed", ChunkID.chunkIDArrayToString(chunkIds));
+                            }
                         }
 
                         rangeStart += batchChunkCount;
