@@ -20,7 +20,6 @@ import jline.console.completer.StringsCompleter;
 import jline.console.history.FileHistory;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -66,6 +65,7 @@ public class TerminalService extends AbstractDXRAMService {
 
     private TerminalCommandContext m_commandCtx;
     private ConsoleReader m_consoleReader;
+    private FileHistory m_history;
     private ArgumentCompleter m_argCompletor;
 
     private volatile boolean m_loop = true;
@@ -185,6 +185,12 @@ public class TerminalService extends AbstractDXRAMService {
 
     @Override
     protected boolean shutdownService() {
+        // flush history
+        try {
+            m_history.flush();
+        } catch (final IOException ignored) {
+        }
+
         return true;
     }
 
@@ -288,12 +294,18 @@ public class TerminalService extends AbstractDXRAMService {
      *     File to load the history from and append new commands to.
      */
     private void loadHistoryFromFile(final String p_file) {
+        File file = new File(p_file);
+
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (final IOException ignored) {
+            }
+        }
+
         try {
-            m_consoleReader.setHistory(new FileHistory(new File(p_file)));
-        } catch (final FileNotFoundException e) {
-            // #if LOGGER >= DEBUG
-            LOGGER.debug("No history found: %s", p_file);
-            // #endif /* LOGGER >= DEBUG */
+            m_history = new FileHistory(new File(p_file));
+            m_consoleReader.setHistory(m_history);
         } catch (final IOException e) {
             // #if LOGGER >= ERROR
             LOGGER.error("Reading history %s failed: %s", p_file, e);
