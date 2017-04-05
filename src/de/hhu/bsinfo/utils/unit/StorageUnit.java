@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.utils.unit;
 
+import java.util.Locale;
+
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -150,15 +152,15 @@ public class StorageUnit implements Importable, Exportable {
             if (getKB() > 1024) {
                 if (getMB() > 1024) {
                     if (getGB() > 1024) {
-                        ret = getTB() + " tb";
+                        ret = String.format(Locale.ROOT, "%.3f", getTBDouble()) + " tb";
                     } else {
-                        ret = getGB() + " gb";
+                        ret = String.format(Locale.ROOT, "%.3f", getGBDouble()) + " gb";
                     }
                 } else {
-                    ret = getMB() + " mb";
+                    ret = String.format(Locale.ROOT, "%.3f", getMBDouble()) + " mb";
                 }
             } else {
-                ret = getKB() + " kb";
+                ret = String.format(Locale.ROOT, "%.3f", getKBDouble()) + " kb";
             }
         } else {
             ret = m_bytes + " bytes";
