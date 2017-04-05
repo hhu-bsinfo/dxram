@@ -19,7 +19,7 @@ Ensure to meet the requirements of each task script you run (number of nodes, st
 Check if available and otherwise add the following item to the *m_services* list in your DXRAM configuration, e.g. *config/dxram.json* to enable the MasterSlaveComputeService which is required to run the task scripts:
 ```
 "MasterSlaveComputeService": {
-  "m_class": "de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService",
+  "m_class": "de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService",
   "m_enabled": true
 }
 ```
