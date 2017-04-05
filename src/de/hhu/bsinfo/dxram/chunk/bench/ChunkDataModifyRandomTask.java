@@ -18,14 +18,14 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.ms.Signal;
-import de.hhu.bsinfo.dxram.ms.Task;
-import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkAnonService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.data.ChunkState;
+import de.hhu.bsinfo.dxram.ms.Signal;
+import de.hhu.bsinfo.dxram.ms.Task;
+import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -36,8 +36,8 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2017
  */
-public class ChunkDataModifyTask implements Task {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkDataModifyTask.class.getSimpleName());
+public class ChunkDataModifyRandomTask implements Task {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkDataModifyRandomTask.class.getSimpleName());
 
     private static final int PATTERN_GET_LOCAL = 0;
     private static final int PATTERN_GET_PUT_LOCAL = 1;
@@ -92,8 +92,11 @@ public class ChunkDataModifyTask implements Task {
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
             threads[i] = new Thread(() -> {
+
+                int counter = 0;
+
                 long[] chunkIds = new long[m_chunkBatch];
-                long operations = operationsPerThread[threadIdx] / m_chunkBatch;
+                long operations = operationsPerThread[threadIdx];
                 ChunkIDRanges chunkRanges = chunkRangesPerThread[threadIdx];
 
                 if (operationsPerThread[threadIdx] % m_chunkBatch > 0) {
