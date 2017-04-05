@@ -89,7 +89,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;

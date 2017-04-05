@@ -32,9 +32,9 @@ import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
-import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
-import de.hhu.bsinfo.dxram.net.messages.DefaultMessages;
+import de.hhu.bsinfo.dxram.net.messages.NetworkMessages;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
 import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
@@ -305,7 +305,7 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
         m_networkHandler.initialize(m_boot.getNodeID(), new NodeMappings(m_boot), (int) m_incomingBufferSize.getBytes(), (int) m_outgoingBufferSize.getBytes(),
             (int) m_maxIncomingBufferSize.getBytes(), (int) m_flowControlWindowSize.getBytes(), (int) m_requestTimeout.getMs());
 
-        m_networkHandler.registerMessageType(DXRAMMessageTypes.DEFAULT_MESSAGES_TYPE, DefaultMessages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
+        m_networkHandler.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
 
         return true;
     }

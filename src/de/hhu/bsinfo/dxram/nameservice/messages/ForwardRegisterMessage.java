@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.nameservice.messages;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**

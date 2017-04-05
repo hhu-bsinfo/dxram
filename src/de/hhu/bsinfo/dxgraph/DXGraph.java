@@ -19,12 +19,12 @@ import java.util.ArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxcompute.DXCompute;
-import de.hhu.bsinfo.dxcompute.job.AbstractJob;
 import de.hhu.bsinfo.dxgraph.data.Edge;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.job.AbstractJob;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -37,7 +37,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 09.09.2016
  */
-public class DXGraph extends DXCompute {
+public class DXGraph extends DXRAM {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXGraph.class.getSimpleName());
 

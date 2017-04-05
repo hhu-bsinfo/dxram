@@ -26,7 +26,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class TcmdChunkremove extends TerminalCommand {
     public TcmdChunkremove() {
-        super("chunkcreate");
+        super("chunkremove");
     }
 
     @Override

@@ -32,7 +32,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.tcmd.TcmdLookuptree;
 import de.hhu.bsinfo.dxram.lookup.tcmd.TcmdMetadata;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;

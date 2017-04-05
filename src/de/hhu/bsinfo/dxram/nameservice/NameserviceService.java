@@ -30,7 +30,7 @@ import de.hhu.bsinfo.dxram.nameservice.tcmd.TcmdNameget;
 import de.hhu.bsinfo.dxram.nameservice.tcmd.TcmdNamelist;
 import de.hhu.bsinfo.dxram.nameservice.tcmd.TcmdNamereg;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;

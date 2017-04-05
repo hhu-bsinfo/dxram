@@ -4,13 +4,13 @@
 	"m_name": "ChunkRemoveAllLocalTest",
 	"m_tasks": [
 		{
-		  	"m_task": "de.hhu.bsinfo.dxcompute.bench.ChunkRemoveAllTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkRemoveAllTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 10,
 			"m_pattern": 1
 		},
 		{
-			"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask"
+			"m_task": "de.hhu.bsinfo.dxram.ms.tasks.PrintMemoryStatusToConsoleTask"
 		}
 	]
 }

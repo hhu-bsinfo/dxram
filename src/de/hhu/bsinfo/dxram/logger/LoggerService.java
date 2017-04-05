@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.logger.messages.LoggerMessages;
 import de.hhu.bsinfo.dxram.logger.messages.SetLogLevelMessage;
 import de.hhu.bsinfo.dxram.logger.tcmd.TcmdLoggerlevel;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;

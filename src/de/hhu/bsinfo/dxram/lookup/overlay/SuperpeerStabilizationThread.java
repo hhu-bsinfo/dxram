@@ -29,7 +29,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewSuccessorMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SendBackupsMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;

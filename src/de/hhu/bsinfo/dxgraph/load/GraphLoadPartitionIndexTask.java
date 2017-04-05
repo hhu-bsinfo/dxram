@@ -25,9 +25,9 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxcompute.ms.Signal;
-import de.hhu.bsinfo.dxcompute.ms.Task;
-import de.hhu.bsinfo.dxcompute.ms.TaskContext;
+import de.hhu.bsinfo.dxram.ms.Signal;
+import de.hhu.bsinfo.dxram.ms.Task;
+import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;

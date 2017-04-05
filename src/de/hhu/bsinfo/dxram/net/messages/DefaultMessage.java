@@ -15,6 +15,7 @@ package de.hhu.bsinfo.dxram.net.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
@@ -38,7 +39,7 @@ public class DefaultMessage extends AbstractMessage {
      *     the destination nodeID
      */
     public DefaultMessage(final short p_destination) {
-        super(p_destination, DXRAMMessageTypes.DEFAULT_MESSAGES_TYPE, DefaultMessages.SUBTYPE_DEFAULT_MESSAGE);
+        super(p_destination, DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEFAULT_MESSAGE);
     }
 
     @Override

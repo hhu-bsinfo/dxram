@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
 

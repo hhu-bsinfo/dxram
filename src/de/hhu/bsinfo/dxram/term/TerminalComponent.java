@@ -42,7 +42,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 
         if (m_commands.putIfAbsent(p_cmd.getName(), p_cmd) != null) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Registering command %s failed, name already used", p_cmd.getName());
+            LOGGER.error("Registering command %s, class %s failed, name already used", p_cmd.getName(), p_cmd.getClass().getSimpleName());
             // #endif /* LOGGER >= ERROR */
         }
     }

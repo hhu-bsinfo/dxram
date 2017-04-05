@@ -12,11 +12,11 @@ A sample configuration on how to deploy DXRAM with DXCompute, the required Maste
 
 A compute task script can deployed to a compute group from the DXRAM terminal using the *comptaskscript* command (see also command usage with *help comptaskscript*).
 
-Make sure to meet the requirements of each task script you run (number of nodes, storage peer memory size etc).
+Ensure to meet the requirements of each task script you run (number of nodes, storage peer memory size etc).
 
 ## Enabling DXCompute
 
-Add the following item to the *m_services* list in your DXRAM configuration, e.g. *config/dxram.json* to enable the MasterSlaveComputeService which is required to run the task scripts:
+Check if available and otherwise add the following item to the *m_services* list in your DXRAM configuration, e.g. *config/dxram.json* to enable the MasterSlaveComputeService which is required to run the task scripts:
 ```
 "MasterSlaveComputeService": {
   "m_class": "de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService",

@@ -4,7 +4,7 @@
 	"m_name": "NameserviceGetChunkIdTest",
 	"m_tasks": [
 		{
-			"m_task": "de.hhu.bsinfo.dxcompute.bench.NameserviceGetChunkIDTask",
+			"m_task": "de.hhu.bsinfo.dxram.nameservice.bench.NameserviceGetChunkIDTask",
 			"m_numThreads":1000
 		}
 	]

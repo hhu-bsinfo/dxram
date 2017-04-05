@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.logger.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**

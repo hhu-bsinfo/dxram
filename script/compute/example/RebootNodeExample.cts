@@ -4,7 +4,7 @@
 	"m_name": "RebootNodeExample",
 	"m_tasks": [
 		{
-		  	"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.RebootNodeTask"
+		  	"m_task": "de.hhu.bsinfo.dxram.ms.tasks.RebootNodeTask"
 		}
 	]
 }

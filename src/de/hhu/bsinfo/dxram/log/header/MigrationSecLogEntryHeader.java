@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.log.header;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService;
+import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxram.log.storage.Version;
 
 /**

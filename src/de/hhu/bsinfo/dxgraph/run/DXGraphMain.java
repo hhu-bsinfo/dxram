@@ -13,16 +13,17 @@
 
 package de.hhu.bsinfo.dxgraph.run;
 
-import de.hhu.bsinfo.dxcompute.run.DXComputeMain;
 import de.hhu.bsinfo.dxgraph.DXGraph;
+import de.hhu.bsinfo.dxram.run.DXRAMMain;
 
 /**
  * Base class for an entry point of a DXGraph application.
  * If DXGraph is integrated into an existing application,
  * use the DXGraph class instead.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 12.09.2016
  */
-public class DXGraphMain extends DXComputeMain {
+public class DXGraphMain extends DXRAMMain {
 
     /**
      * Default constructor
@@ -35,10 +36,11 @@ public class DXGraphMain extends DXComputeMain {
      * Constructor
      * Use this if you extended the DXGraph class and provide an instance of it to
      * run it within the DXRAMMain context
+     *
      * @param p_applicationName
-     *            New application name for this DXGraph instance
+     *     New application name for this DXGraph instance
      * @param p_dxgraph
-     *            DXCompute instance to run (just create the instance, no init)
+     *     DXCompute instance to run (just create the instance, no init)
      */
     public DXGraphMain(final String p_applicationName, final DXGraph p_dxgraph) {
         super(p_applicationName, p_dxgraph);
@@ -46,8 +48,9 @@ public class DXGraphMain extends DXComputeMain {
 
     /**
      * Main entry point
+     *
      * @param p_args
-     *            Program arguments.
+     *     Program arguments.
      */
     public static void main(final String[] p_args) {
         DXGraphMain dxgraph = new DXGraphMain();

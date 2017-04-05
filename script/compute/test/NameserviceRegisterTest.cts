@@ -4,7 +4,7 @@
 	"m_name": "NameserviceRegisterTest",
 	"m_tasks": [
 		{
-			"m_task": "de.hhu.bsinfo.dxcompute.bench.NameserviceRegisterTask",
+			"m_task": "de.hhu.bsinfo.dxram.nameservice.bench.NameserviceRegisterTask",
 			"m_numThreads":1000,
 			"m_chunkCount": 1000000,
 		}

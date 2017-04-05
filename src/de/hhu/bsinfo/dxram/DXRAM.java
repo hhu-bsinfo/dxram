@@ -15,6 +15,9 @@ package de.hhu.bsinfo.dxram;
 
 import java.net.InetSocketAddress;
 
+import de.hhu.bsinfo.dxram.job.JobService;
+import de.hhu.bsinfo.dxram.job.JobWorkStealingComponent;
+import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
@@ -193,20 +196,21 @@ public class DXRAM {
      */
     protected void registerComponents(final DXRAMEngine p_engine) {
         p_engine.registerComponent(BackupComponent.class);
-        p_engine.registerComponent(ZookeeperBootComponent.class);
         p_engine.registerComponent(ChunkComponent.class);
         p_engine.registerComponent(ChunkMigrationComponent.class);
         p_engine.registerComponent(ChunkBackupComponent.class);
         p_engine.registerComponent(EventComponent.class);
         p_engine.registerComponent(FailureComponent.class);
-        p_engine.registerComponent(PeerLockComponent.class);
+        p_engine.registerComponent(JobWorkStealingComponent.class);
         p_engine.registerComponent(LogComponent.class);
         p_engine.registerComponent(LookupComponent.class);
         p_engine.registerComponent(MemoryManagerComponent.class);
         p_engine.registerComponent(NameserviceComponent.class);
         p_engine.registerComponent(NetworkComponent.class);
         p_engine.registerComponent(NullComponent.class);
+        p_engine.registerComponent(PeerLockComponent.class);
         p_engine.registerComponent(TerminalComponent.class);
+        p_engine.registerComponent(ZookeeperBootComponent.class);
     }
 
     /**
@@ -222,9 +226,11 @@ public class DXRAM {
         p_engine.registerService(ChunkAsyncService.class);
         p_engine.registerService(ChunkMemoryService.class);
         p_engine.registerService(ChunkService.class);
+        p_engine.registerService(JobService.class);
         p_engine.registerService(LogService.class);
         p_engine.registerService(LoggerService.class);
         p_engine.registerService(LookupService.class);
+        p_engine.registerService(MasterSlaveComputeService.class);
         p_engine.registerService(MigrationService.class);
         p_engine.registerService(NameserviceService.class);
         p_engine.registerService(NetworkService.class);
