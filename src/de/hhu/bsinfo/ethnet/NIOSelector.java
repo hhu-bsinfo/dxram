@@ -23,6 +23,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -138,15 +139,21 @@ class NIOSelector extends Thread {
     public String toString() {
         String ret = "Current keys: ";
 
-        if (m_selector != null && m_selector.isOpen()) {
-            Set<SelectionKey> selected = m_selector.keys();
-            Iterator<SelectionKey> iterator = selected.iterator();
-            while (iterator.hasNext()) {
-                SelectionKey key = iterator.next();
-                if (key.attachment() != null) {
-                    ret += '[' + NodeID.toHexString(((NIOConnection) key.attachment()).getDestination()) + ", " + key.interestOps() + "] ";
+        try {
+            if (m_selector != null && m_selector.isOpen()) {
+                Set<SelectionKey> selected = m_selector.keys();
+                Iterator<SelectionKey> iterator = selected.iterator();
+                while (iterator.hasNext()) {
+                    SelectionKey key = iterator.next();
+                    if (key.attachment() != null) {
+                        ret += '[' + NodeID.toHexString(((NIOConnection) key.attachment()).getDestination()) + ", " + key.interestOps() + "] ";
+                    }
                 }
             }
+        } catch (final ConcurrentModificationException e) {
+            // #if LOGGER >= DEBUG
+            LOGGER.debug("Unable to print selector status.");
+            // #endif /* LOGGER >= DEBUG */
         }
 
         return ret;

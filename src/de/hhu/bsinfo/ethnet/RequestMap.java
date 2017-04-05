@@ -135,7 +135,6 @@ public final class RequestMap {
         assert p_request != null;
 
         ms_lock.lock();
-
         index = p_request.getRequestID() % ms_pendingRequests.length;
         if (ms_pendingRequests[index] != null) {
             // #if LOGGER >= ERROR

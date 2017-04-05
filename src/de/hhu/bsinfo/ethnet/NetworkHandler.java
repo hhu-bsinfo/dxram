@@ -40,7 +40,7 @@ public final class NetworkHandler implements DataReceiver {
     // Attributes
     private static EventInterface ms_eventInterface;
 
-    private final HashMap<Class<? extends AbstractMessage>, Entry> m_receivers;
+    private final HashMap<Class<? extends AbstractMessage>, MessageReceivers> m_receivers;
 
     private final DefaultMessageHandlerPool m_defaultMessageHandlerPool;
     private final ExclusiveMessageHandler m_exclusiveMessageHandler;
@@ -52,6 +52,7 @@ public final class NetworkHandler implements DataReceiver {
 
     private NodeMap m_nodeMap;
 
+    private int m_timeOut;
     private int m_numMessageHandlerThreads;
 
     // Constructors
@@ -63,12 +64,15 @@ public final class NetworkHandler implements DataReceiver {
      *     the number of default message handler (+ one exclusive message handler)
      * @param p_requestMapSize
      *     the number of entries in the request map
+     * @param p_requestTimeOut
+     *     the request time out in ms
      */
-    public NetworkHandler(final int p_numMessageHandlerThreads, final int p_requestMapSize) {
+    public NetworkHandler(final int p_numMessageHandlerThreads, final int p_requestMapSize, final int p_requestTimeOut) {
         final byte networkType;
 
         RequestMap.initialize(p_requestMapSize);
 
+        m_timeOut = p_requestTimeOut;
         m_numMessageHandlerThreads = p_numMessageHandlerThreads;
 
         m_receivers = new HashMap<>();
@@ -80,7 +84,7 @@ public final class NetworkHandler implements DataReceiver {
         m_exclusiveMessageHandler.setName("Network: ExclusiveMessageHandler");
         m_exclusiveMessageHandler.start();
 
-        m_messageDirectory = new MessageDirectory();
+        m_messageDirectory = new MessageDirectory(p_requestTimeOut);
     }
 
     /**
@@ -227,16 +231,16 @@ public final class NetworkHandler implements DataReceiver {
      *     the receiver
      */
     public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
-        Entry entry;
+        MessageReceivers messageReceivers;
 
         if (p_receiver != null) {
             m_receiversLock.lock();
-            entry = m_receivers.get(p_message);
-            if (entry == null) {
-                entry = new Entry();
-                m_receivers.put(p_message, entry);
+            messageReceivers = m_receivers.get(p_message);
+            if (messageReceivers == null) {
+                messageReceivers = new MessageReceivers();
+                m_receivers.put(p_message, messageReceivers);
             }
-            entry.add(p_receiver);
+            messageReceivers.add(p_receiver);
 
             // #if LOGGER >= TRACE
             LOGGER.trace("Added new MessageReceiver %s for %s", p_receiver.getClass(), p_message.getSimpleName());
@@ -254,13 +258,13 @@ public final class NetworkHandler implements DataReceiver {
      *     the receiver
      */
     public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
-        Entry entry;
+        MessageReceivers messageReceivers;
 
         if (p_receiver != null) {
             m_receiversLock.lock();
-            entry = m_receivers.get(p_message);
-            if (entry != null) {
-                entry.remove(p_receiver);
+            messageReceivers = m_receivers.get(p_message);
+            if (messageReceivers != null) {
+                messageReceivers.remove(p_receiver);
 
                 // #if LOGGER >= TRACE
                 LOGGER.trace("Removed MessageReceiver %s from listening to %s", p_receiver, p_message.getSimpleName());
@@ -314,22 +318,10 @@ public final class NetworkHandler implements DataReceiver {
         LOGGER.trace("Entering sendMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */
 
-        /*
-         * NOTE:
-         * The following if statement is necessary to support looping back messages.
-         * Next to increasing performance it is not supported by the ConnectionManager
-         * to handle connections to itself. The problem is that in the loop-back-case
-         * there will be 2 connections to the local node ID:
-         * 1. The initial opened connection to the local server port and
-         * 2. The new incoming connection.
-         * So the ConnectionManager thinks he already has a connection to itself and
-         * the incoming connection will be discarded. Further, the incoming Messages
-         * can never be delivered.
-         */
         if (p_message.getDestination() == m_nodeMap.getOwnNodeID()) {
-            // source is never set otherwise for loop back
-            p_message.setSource(p_message.getDestination());
-            newMessage(p_message);
+            // #if LOGGER >= ERROR
+            LOGGER.error("Invalid destination 0x%X. No loopback allowed.", p_message.getDestination());
+            // #endif /* LOGGER >= ERROR */
         } else {
             try {
                 connection = m_manager.getConnection(p_message.getDestination());
@@ -415,7 +407,7 @@ public final class NetworkHandler implements DataReceiver {
      * @author Florian Klein 23.07.2013
      * @author Marc Ewert 14.08.2014
      */
-    private static class Entry {
+    private static class MessageReceivers {
 
         // Attributes
         private final CopyOnWriteArrayList<MessageReceiver> m_receivers;
@@ -425,7 +417,7 @@ public final class NetworkHandler implements DataReceiver {
         /**
          * Creates an instance of Entry
          */
-        Entry() {
+        MessageReceivers() {
             m_receivers = new CopyOnWriteArrayList<>();
         }
 
@@ -614,8 +606,9 @@ public final class NetworkHandler implements DataReceiver {
 
         @Override
         public void run() {
+            long time;
             AbstractMessage message = null;
-            Entry entry;
+            MessageReceivers messageReceivers;
 
             while (!m_shutdown) {
                 while (message == null) {
@@ -633,10 +626,20 @@ public final class NetworkHandler implements DataReceiver {
                     m_defaultMessagesLock.unlock();
                 }
 
-                entry = m_receivers.get(message.getClass());
+                messageReceivers = m_receivers.get(message.getClass());
 
-                if (entry != null) {
-                    entry.newMessage(message);
+                // Try again in a loop, if receivers were not registered. Stop if request timeout is reached as answering later has no effect
+                if (messageReceivers == null) {
+                    time = System.currentTimeMillis();
+                    while (messageReceivers == null && System.currentTimeMillis() < time + m_timeOut) {
+                        m_receiversLock.lock();
+                        messageReceivers = m_receivers.get(message.getClass());
+                        m_receiversLock.unlock();
+                    }
+                }
+
+                if (messageReceivers != null) {
+                    messageReceivers.newMessage(message);
                 } else {
                     if (message.getType() != (byte) 0) {
                         // Type 0 are default messages and can be ignored
@@ -693,8 +696,9 @@ public final class NetworkHandler implements DataReceiver {
 
         @Override
         public void run() {
+            long time;
             AbstractMessage message = null;
-            Entry entry;
+            MessageReceivers messageReceivers;
 
             while (!m_shutdown) {
                 while (message == null) {
@@ -713,10 +717,20 @@ public final class NetworkHandler implements DataReceiver {
                     m_exclusiveMessagesLock.unlock();
                 }
 
-                entry = m_receivers.get(message.getClass());
+                messageReceivers = m_receivers.get(message.getClass());
 
-                if (entry != null) {
-                    entry.newMessage(message);
+                // Try again in a loop, if receivers were not registered. Stop if request timeout is reached as answering later has no effect
+                if (messageReceivers == null) {
+                    time = System.currentTimeMillis();
+                    while (messageReceivers == null && System.currentTimeMillis() < time + m_timeOut) {
+                        m_receiversLock.lock();
+                        messageReceivers = m_receivers.get(message.getClass());
+                        m_receiversLock.unlock();
+                    }
+                }
+
+                if (messageReceivers != null) {
+                    messageReceivers.newMessage(message);
                 } else {
                     // #if LOGGER >= ERROR
                     LOGGER.error("No message receiver was registered for %d, %d", message.getType(), message.getSubtype());

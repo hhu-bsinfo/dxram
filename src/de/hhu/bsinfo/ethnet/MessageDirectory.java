@@ -19,8 +19,6 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Handles mapping from type and subtype to message class. Every message class has to be registered here before it can be used.
  * Message type 0 is dedicated to package intern used message classes.
- * Currently used subtypes:
- * 1 - FlowcontrolMessage @see de.uniduesseldorf.dxram.core.net.AbstractConnection.FlowcontrolMessage
  *
  * @author Marc Ewert, marc.ewert@hhu.de, 21.10.14
  */
@@ -28,13 +26,17 @@ class MessageDirectory {
 
     // Attributes
     private Constructor<?>[][] m_constructors = new Constructor[0][0];
-
     private ReentrantLock m_lock = new ReentrantLock(false);
+    private int m_timeOut;
 
     /**
      * MessageDirectory is not designated to be instantiable
+     *
+     * @param p_requestTimeOut
+     *     the request time out in ms
      */
-    MessageDirectory() {
+    MessageDirectory(final int p_requestTimeOut) {
+        m_timeOut = p_requestTimeOut;
     }
 
     /**
@@ -108,9 +110,20 @@ class MessageDirectory {
      */
     protected AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
         AbstractMessage ret;
+        long time;
         Constructor<?> constructor;
 
         constructor = getConstructor(p_type, p_subtype);
+
+        // Try again in a loop, if constructor was not registered. Stop if request timeout is reached as answering later has no effect
+        if (constructor == null) {
+            time = System.currentTimeMillis();
+            while (constructor == null && System.currentTimeMillis() < time + m_timeOut) {
+                m_lock.lock();
+                constructor = getConstructor(p_type, p_subtype);
+                m_lock.unlock();
+            }
+        }
 
         if (constructor == null) {
             throw new NetworkRuntimeException("Could not create message instance: Message type (" + p_type + ':' + p_subtype + ") not registered");
