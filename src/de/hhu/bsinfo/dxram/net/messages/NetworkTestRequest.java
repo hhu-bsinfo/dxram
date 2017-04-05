@@ -13,20 +13,30 @@
 
 package de.hhu.bsinfo.dxram.net.messages;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.ethnet.AbstractRequest;
+
 /**
- * Type and list of subtypes for all network (module) messages
+ * Network request for running tests/benchmarks.
  *
- * @author Kevin Beineke, kevin.beineke@hhu.de, 18.10.2016
+ * @author Burak Akguel, burak.akguel@hhu.de, 04.04.2017
  */
-public final class NetworkMessages {
-    public static final byte SUBTYPE_DEFAULT_MESSAGE = 0;
-    public static final byte SUBTYPE_TEST_MESSAGE = 1;
-    public static final byte SUBTYPE_TEST_REQUEST = 2;
-    public static final byte SUBTYPE_TEST_RESPONSE = 3;
+public class NetworkTestRequest extends AbstractRequest {
+    /**
+     * Creates an instance of NetworkTestRequest.
+     * This constructor is used when receiving this message.
+     */
+    public NetworkTestRequest() {
+        super();
+    }
 
     /**
-     * Hidden constructor
+     * Creates an instance of NetworkTestRequest.
+     * This constructor is used when sending this message.
+     * @param p_destination
+     *            the destination node id.
      */
-    private NetworkMessages() {
+    public NetworkTestRequest(final short p_destination) {
+        super(p_destination, DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST);
     }
 }
