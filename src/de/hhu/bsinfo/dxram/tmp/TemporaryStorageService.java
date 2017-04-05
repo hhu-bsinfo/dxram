@@ -22,11 +22,6 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.nameservice.NameServiceStringConverter;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
-import de.hhu.bsinfo.dxram.tmp.tcmd.TcmdTmpcreate;
-import de.hhu.bsinfo.dxram.tmp.tcmd.TcmdTmpget;
-import de.hhu.bsinfo.dxram.tmp.tcmd.TcmdTmpput;
-import de.hhu.bsinfo.dxram.tmp.tcmd.TcmdTmpremove;
-import de.hhu.bsinfo.dxram.tmp.tcmd.TcmdTmpstatus;
 
 /**
  * This service provides access to a temporary "chunk" storage residing on the
@@ -185,10 +180,5 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      * Register terminal commands
      */
     private void registerTerminalCommands() {
-        m_terminal.registerTerminalCommand(new TcmdTmpcreate());
-        m_terminal.registerTerminalCommand(new TcmdTmpget());
-        m_terminal.registerTerminalCommand(new TcmdTmpput());
-        m_terminal.registerTerminalCommand(new TcmdTmpremove());
-        m_terminal.registerTerminalCommand(new TcmdTmpstatus());
     }
 }
