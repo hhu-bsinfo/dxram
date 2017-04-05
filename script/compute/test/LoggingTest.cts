@@ -3,7 +3,7 @@
 	"m_name": "LoggingTest",
 	"m_tasks": [
 		{
-			"m_task": "de.hhu.bsinfo.dxcompute.bench.CheckChunkMemRequiredSizeTask",
+			"m_task": "de.hhu.bsinfo.dxram.chunk.bench.CheckChunkMemRequiredSizeTask",
 			"m_minRequiredSize": {
 		        "m_value": 7,
         		"m_unit": "gb"
@@ -46,7 +46,7 @@
 			"m_true": {
 				"m_tasks": [
 					{
-						"m_task": "de.hhu.bsinfo.dxcompute.bench.ChunkCreateTask",
+						"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkCreateTask",
 						"m_numThreads": 4,
 						"m_chunkCount": 100000000,
 						"m_chunkBatch": 10,
@@ -61,17 +61,17 @@
 						"m_pattern": 0
 					},
 					{
-						"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask"
+						"m_task": "de.hhu.bsinfo.dxram.ms.tasks.PrintMemoryStatusToConsoleTask"
 					}
 				]
 			},
 			"m_false": {
 				"m_tasks": [
 					{
-						"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.EmptyTask"
+						"m_task": "de.hhu.bsinfo.dxram.ms.tasks.EmptyTask"
 					},
 					{
-						"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.EmptyTask"
+						"m_task": "de.hhu.bsinfo.dxram.ms.tasks.EmptyTask"
 					}
 				]
 			}
@@ -96,7 +96,7 @@
 			"m_false": {
 				"m_tasks": [
 					{
-						"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.EmptyTask"
+						"m_task": "de.hhu.bsinfo.dxram.ms.tasks.EmptyTask"
 					}
 				]
 			}
@@ -121,7 +121,7 @@
 			"m_false": {
 				"m_tasks": [
 					{
-						"m_task": "de.hhu.bsinfo.dxcompute.ms.tasks.EmptyTask"
+						"m_task": "de.hhu.bsinfo.dxram.ms.tasks.EmptyTask"
 					}
 				]
 			}
