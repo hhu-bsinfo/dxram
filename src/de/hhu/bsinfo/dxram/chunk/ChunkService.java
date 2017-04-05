@@ -21,6 +21,7 @@ import java.util.TreeMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -39,6 +40,7 @@ import de.hhu.bsinfo.dxram.chunk.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkcreate;
+import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkdump;
 import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunklist;
 import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkremove;
 import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkstatus;
@@ -59,7 +61,6 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
@@ -1366,6 +1367,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         m_terminal.registerTerminalCommand(new TcmdChunklist());
         m_terminal.registerTerminalCommand(new TcmdChunkremove());
         m_terminal.registerTerminalCommand(new TcmdChunkstatus());
+        m_terminal.registerTerminalCommand(new TcmdChunkdump());
     }
 
     // -----------------------------------------------------------------------------------
