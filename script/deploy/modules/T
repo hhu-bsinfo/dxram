@@ -118,20 +118,20 @@ additional_shell_cmds=${15}
 iter=5
 while true; do
 	tmp=`echo $node_conf_entry | cut -d ',' -f $iter`
-		iter=$((iter + 1))
+	iter=$((iter + 1))
 
-		arg_type=`echo $tmp | cut -d '=' -f 1`
-		if [ "$arg_type" = "" ] ; then
-			break
-		elif [ "$arg_type" = "script" ] ; then
-			script=`echo $tmp | cut -d '=' -f 2`
-		elif [ "$arg_type" = "shellcmd" ] ; then
-			additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
-		elif [ "$arg_type" = "debug" ]; then
-			debug=`echo $tmp | cut -d '=' -f 2`
-		else
-			echo "ERROR: Unknown parameter type $arg_type"
-		fi
+	arg_type=`echo $tmp | cut -d '=' -f 1`
+	if [ "$arg_type" = "" ] ; then
+		break
+	elif [ "$arg_type" = "script" ] ; then
+		script=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "shellcmd" ] ; then
+		additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "debug" ]; then
+		debug=`echo $tmp | cut -d '=' -f 2`
+	else
+		echo "ERROR: Unknown parameter type $arg_type"
+	fi
 done
 
 echo "Starting terminal ($ip $port $script)"

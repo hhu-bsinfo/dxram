@@ -46,11 +46,11 @@ compile_vm_options_string_peer()
 	if [ "$profile" = "yjp" ]; then
 		if [ ! -f "/home/$USER/yjp/libyjpagent.so" ]; then
 			echo "Missing libyjpagent.so in /home/$USER/yjp folder"
-			exit -1					
+			exit -1
 		fi
 
 		VM_OPTS="$VM_OPTS -agentpath:/home/$USER/yjp/libyjpagent.so=port=9000"
-	
+
 		echo "On your local machine: establish a tunnel using 'ssh <target_hostname> -L 9000:<target_hostname>:9000' and connect with yourkit using 'Connect to remote application' with the arguments 'localhost:9000'"
 	fi
 
@@ -162,19 +162,21 @@ check_peer_startup()
 	local logfile="${LOG_DIR}/${hostname}_${port}_peer"
 
 	while true; do
+		echo -n "."
+
 		local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$condition"`
 		local fail_init=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
 		# Abort execution after an exception was thrown (every exception but NetworkResponseTimeoutException)
 		local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseTimeoutException"`
 
 		if [ "$success" != "" ]; then
-			echo "Peer started"
+			echo " SUCCESS"
 			break
 		elif [ "$fail_init" != "" ]; then
-			echo "ERROR: Peer could not be started. See log file $logfile"
+			echo " ERROR: Peer could not be started. See log file $logfile"
 			exit -1
 		elif [ "$fail_error" != "" ]; then
-			echo "ERROR: Peer failed. See log file $logfile"
+			echo " ERROR: Peer failed. See log file $logfile"
 			exit -1
 		fi
 		sleep 1.0
@@ -249,19 +251,24 @@ if [ "$condition" = "" ]; then
 	condition=$DEFAULT_CONDITION
 fi
 
-echo "Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options $additional_shell_cmds $profile $debug) starting..."
+print=`echo "Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options $additional_shell_cmds $profile $debug): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
+echo -n "$print"
 
 if [ "$is_remote" = false ]; then
+	echo -n "."
 	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" "$additional_shell_cmds" "$profile" "$debug" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
+	echo -n "."
 else
-    start_remote_peer "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" "$additional_shell_cmds" "$profile" "$debug" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
+	echo -n "."
+	start_remote_peer "$ip" "$port" "$hostname" "$ram_size_in_mb" "$compute_node_role" "$compute_group_id" "$class" "$arguments" "$vm_options" "$additional_shell_cmds" "$profile" "$debug" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
+	echo -n "."
 fi
 
 check_peer_startup "$port" "$hostname" "$condition"
 
 if [ "$time_condition" != "" ]; then
-    echo "Waiting for $time_condition seconds after initialization..."
-    sleep "$time_condition"
+	echo "Waiting for $time_condition seconds after initialization..."
+	sleep "$time_condition"
 fi
 
 exit 0
