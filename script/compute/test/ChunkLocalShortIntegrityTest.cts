@@ -172,7 +172,7 @@
 			"m_task": "de.hhu.bsinfo.dxram.ms.tasks.PrintMemoryStatusToConsoleTask"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
@@ -180,7 +180,7 @@
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
@@ -227,117 +227,57 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
-			"m_chunkBatch": 10,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-			"m_task": "de.hhu.bsinfo.dxram.ms.tasks.DummyTask",
-			"m_comment": "-----------------------------------------------"
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 1,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 1,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 2,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 2,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 4,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 4,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 10,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 1
@@ -347,56 +287,116 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 1,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 1,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 2,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 2,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 4,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 4,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 10,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 10,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+			"m_task": "de.hhu.bsinfo.dxram.ms.tasks.DummyTask",
+			"m_comment": "-----------------------------------------------"
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
@@ -407,56 +407,56 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
@@ -503,117 +503,57 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
-			"m_chunkBatch": 10,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-			"m_task": "de.hhu.bsinfo.dxram.ms.tasks.DummyTask",
-			"m_comment": "-----------------------------------------------"
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 1,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 1,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 2,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 2,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 4,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 4,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 10,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 1
@@ -623,56 +563,116 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 1,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 1,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 2,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 2,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 4,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 4,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 10,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 10,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+			"m_task": "de.hhu.bsinfo.dxram.ms.tasks.DummyTask",
+			"m_comment": "-----------------------------------------------"
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
@@ -683,56 +683,56 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
@@ -782,117 +782,57 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
-			"m_chunkBatch": 10,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-			"m_task": "de.hhu.bsinfo.dxram.ms.tasks.DummyTask",
-			"m_comment": "-----------------------------------------------"
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 1,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 1,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 2,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 2,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 4,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 4,
-			"m_opCount": 100000,
-			"m_pattern": 1
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
-			"m_chunkBatch": 10,
-			"m_opCount": 100000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 2,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 1
@@ -902,56 +842,116 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 1,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 1,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 2,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 2,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 4,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 4,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 10,
+			"m_opCount": 100000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 2,
+			"m_chunkBatch": 10,
+			"m_opCount": 100000,
+			"m_pattern": 1
+		},
+		{
+			"m_task": "de.hhu.bsinfo.dxram.ms.tasks.DummyTask",
+			"m_comment": "-----------------------------------------------"
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
@@ -962,56 +962,56 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 1,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 2,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 4,
 			"m_opCount": 100000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 10,
 			"m_opCount": 100000,
@@ -1061,42 +1061,42 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 10000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 10000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 2,
 			"m_opCount": 10000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 2,
 			"m_opCount": 10000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 4,
 			"m_opCount": 10000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 4,
 			"m_opCount": 10000,
@@ -1107,89 +1107,43 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 2,
 			"m_chunkBatch": 1,
 			"m_opCount": 10000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 2,
 			"m_chunkBatch": 1,
 			"m_opCount": 10000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 2,
 			"m_chunkBatch": 2,
 			"m_opCount": 10000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 2,
 			"m_chunkBatch": 2,
 			"m_opCount": 10000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 2,
 			"m_chunkBatch": 4,
 			"m_opCount": 10000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 2,
-			"m_chunkBatch": 4,
-			"m_opCount": 10000,
-			"m_pattern": 1
-		},
-		{
-			"m_task": "de.hhu.bsinfo.dxram.ms.tasks.DummyTask",
-			"m_comment": "-----------------------------------------------"
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 4,
-			"m_chunkBatch": 1,
-			"m_opCount": 10000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 4,
-			"m_chunkBatch": 1,
-			"m_opCount": 10000,
-			"m_pattern": 1
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 4,
-			"m_chunkBatch": 2,
-			"m_opCount": 10000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 4,
-			"m_chunkBatch": 2,
-			"m_opCount": 10000,
-			"m_pattern": 1
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 4,
-			"m_chunkBatch": 4,
-			"m_opCount": 10000,
-			"m_pattern": 0
-		},
-		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
-			"m_numThreads": 4,
 			"m_chunkBatch": 4,
 			"m_opCount": 10000,
 			"m_pattern": 1
@@ -1199,42 +1153,88 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 4,
+			"m_chunkBatch": 1,
+			"m_opCount": 10000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 4,
+			"m_chunkBatch": 1,
+			"m_opCount": 10000,
+			"m_pattern": 1
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 4,
+			"m_chunkBatch": 2,
+			"m_opCount": 10000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 4,
+			"m_chunkBatch": 2,
+			"m_opCount": 10000,
+			"m_pattern": 1
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 4,
+			"m_chunkBatch": 4,
+			"m_opCount": 10000,
+			"m_pattern": 0
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
+			"m_numThreads": 4,
+			"m_chunkBatch": 4,
+			"m_opCount": 10000,
+			"m_pattern": 1
+		},
+		{
+			"m_task": "de.hhu.bsinfo.dxram.ms.tasks.DummyTask",
+			"m_comment": "-----------------------------------------------"
+		},
+		{
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 1,
 			"m_opCount": 10000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 1,
 			"m_opCount": 10000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 2,
 			"m_opCount": 10000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 2,
 			"m_opCount": 10000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 4,
 			"m_opCount": 10000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 4,
 			"m_opCount": 10000,
@@ -1284,28 +1284,28 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 1000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 1000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 2,
 			"m_opCount": 1000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 2,
 			"m_opCount": 1000,
@@ -1316,28 +1316,28 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 2,
 			"m_chunkBatch": 1,
 			"m_opCount": 1000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 2,
 			"m_chunkBatch": 1,
 			"m_opCount": 1000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 2,
 			"m_chunkBatch": 2,
 			"m_opCount": 1000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 2,
 			"m_chunkBatch": 2,
 			"m_opCount": 1000,
@@ -1348,28 +1348,28 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 1,
 			"m_opCount": 1000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 1,
 			"m_opCount": 1000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 2,
 			"m_opCount": 1000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 4,
 			"m_chunkBatch": 2,
 			"m_opCount": 1000,
@@ -1380,28 +1380,28 @@
 			"m_comment": "-----------------------------------------------"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 1,
 			"m_opCount": 1000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 1,
 			"m_opCount": 1000,
 			"m_pattern": 1
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 2,
 			"m_opCount": 1000,
 			"m_pattern": 0
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 8,
 			"m_chunkBatch": 2,
 			"m_opCount": 1000,

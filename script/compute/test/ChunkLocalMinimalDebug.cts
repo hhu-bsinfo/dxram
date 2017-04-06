@@ -64,7 +64,7 @@
 			"m_task": "de.hhu.bsinfo.dxram.ms.tasks.PrintMemoryStatusToConsoleTask"
 		},
 		{
-		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyTask",
+		  	"m_task": "de.hhu.bsinfo.dxram.chunk.bench.ChunkDataModifyRandomTask",
 			"m_numThreads": 1,
 			"m_chunkBatch": 1,
 			"m_opCount": 1,
