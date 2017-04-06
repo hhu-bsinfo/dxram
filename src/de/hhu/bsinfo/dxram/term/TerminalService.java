@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.term;
 import jline.console.ConsoleReader;
 import jline.console.UserInterruptException;
 import jline.console.completer.ArgumentCompleter;
+import jline.console.completer.FileNameCompleter;
 import jline.console.completer.StringsCompleter;
 import jline.console.history.FileHistory;
 
@@ -89,8 +90,10 @@ public class TerminalService extends AbstractDXRAMService {
 
         // register commands for auto completion
         Collection<String> cmds = m_terminal.getListOfCommands();
-        m_argCompletor = new ArgumentCompleter(new StringsCompleter(cmds.toArray(new String[cmds.size()])));
+        m_argCompletor = new ArgumentCompleter(new StringsCompleter(cmds.toArray(new String[cmds.size()])),
+            new FileNameCompleter());
 
+        //m_consoleReader.addCompleter();
         m_consoleReader.addCompleter(m_argCompletor);
         // handle ctrl + c
         m_consoleReader.setHandleUserInterrupt(true);
