@@ -77,7 +77,7 @@ public class TcmdComptask extends TerminalCommand {
 
         TaskScript taskScript = new TaskScript(minSlaves, maxSlaves, "Terminal", task);
 
-        Semaphore sem = new Semaphore(1, false);
+        Semaphore sem = new Semaphore(0, false);
         TaskListener listener = new TaskListener() {
 
             @Override

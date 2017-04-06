@@ -62,7 +62,7 @@ public class TcmdComptaskscript extends TerminalCommand {
             return;
         }
 
-        Semaphore sem = new Semaphore(1, false);
+        Semaphore sem = new Semaphore(0, false);
         TaskListener listener = new TaskListener() {
 
             @Override
