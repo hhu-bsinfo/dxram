@@ -275,7 +275,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
          * @param p_id
          *     the static job identification
          */
-        private Job(final byte p_id) {
+        protected Job(final byte p_id) {
             m_id = p_id;
         }
 

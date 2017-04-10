@@ -235,11 +235,7 @@ public final class NetworkHandler implements DataReceiver {
 
         if (p_receiver != null) {
             m_receiversLock.lock();
-            messageReceivers = m_receivers.get(p_message);
-            if (messageReceivers == null) {
-                messageReceivers = new MessageReceivers();
-                m_receivers.put(p_message, messageReceivers);
-            }
+            messageReceivers = m_receivers.computeIfAbsent(p_message, mapper -> new MessageReceivers());
             messageReceivers.add(p_receiver);
 
             // #if LOGGER >= TRACE
