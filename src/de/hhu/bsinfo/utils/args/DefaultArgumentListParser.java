@@ -32,7 +32,8 @@ public class DefaultArgumentListParser implements ArgumentListParser {
 
     }
 
-    @Override public void parseArguments(final String[] p_args, final ArgumentList p_arguments) {
+    @Override
+    public void parseArguments(final String[] p_args, final ArgumentList p_arguments) {
         for (int i = 0; i < p_args.length; i++) {
             String[] keyVal = splitKeyValue(p_args[i]);
             // ignore invalid format
@@ -84,10 +85,10 @@ public class DefaultArgumentListParser implements ArgumentListParser {
      * Split key value tuple bla{kb2b}:1234594 -> bla{kb2b} and 1234594
      *
      * @param p_argument
-     *         String to split.
+     *     String to split.
      * @return Key value tuple
      */
-    private String[] splitKeyValue(final String p_argument) {
+    private static String[] splitKeyValue(final String p_argument) {
         // don't use split here. the value can contain the separator as well
         int sepIndex = p_argument.indexOf(KEY_VAL_SEPARATOR);
         if (sepIndex == -1) {
@@ -104,10 +105,10 @@ public class DefaultArgumentListParser implements ArgumentListParser {
      * Get the name from the key: bla{kb2b} -> bla
      *
      * @param p_key
-     *         Key provided.
+     *     Key provided.
      * @return Name part of the key.
      */
-    private String getKeyName(final String p_key) {
+    private static String getKeyName(final String p_key) {
         int typeStart = p_key.indexOf(UNIT_PREFIX);
 
         // no type attached, default to string
@@ -122,10 +123,10 @@ public class DefaultArgumentListParser implements ArgumentListParser {
      * Get the unit part of the key: bla{kb2b}:1234594 -> kb2b
      *
      * @param p_key
-     *         Key provided.
+     *     Key provided.
      * @return Unit part of the key or empty string if not available.
      */
-    private String getKeyUnit(final String p_key) {
+    private static String getKeyUnit(final String p_key) {
         int typeStart = p_key.indexOf(UNIT_PREFIX);
         int typeEnd = p_key.indexOf(UNIT_POSTFIX);
 

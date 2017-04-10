@@ -43,7 +43,7 @@ public class ArgumentList {
      * Get an argument specified by the provided key from the list.
      *
      * @param p_key
-     *         Key for the argument to get.
+     *     Key for the argument to get.
      * @return Argument matching the key or null if not available.
      */
     public Argument getArgument(final String p_key) {
@@ -55,11 +55,11 @@ public class ArgumentList {
      * Get a value from the argument list and convert it to the specified data type.
      *
      * @param <T>
-     *         Type of the argument value
+     *     Type of the argument value
      * @param p_key
-     *         Key to get the value of.
+     *     Key to get the value of.
      * @param p_class
-     *         Class to convert the value to.
+     *     Class to convert the value to.
      * @return Converted object of the value the key was associated with or null if missing or converting failed.
      */
     public <T> T getArgumentValue(final String p_key, final Class<T> p_class) {
@@ -85,7 +85,7 @@ public class ArgumentList {
      * argument if not available.
      *
      * @param p_default
-     *         Default argument to return if argument not available.
+     *     Default argument to return if argument not available.
      * @return Argument specified by key of the default argument.
      */
     public Argument getArgument(final Argument p_default) {
@@ -101,11 +101,11 @@ public class ArgumentList {
      * Get a value from the argument list and convert it to the specified data type.
      *
      * @param <T>
-     *         Type of the argument value
+     *     Type of the argument value
      * @param p_default
-     *         Argument taking the key from.
+     *     Argument taking the key from.
      * @param p_class
-     *         Class to convert the value to.
+     *     Class to convert the value to.
      * @return Converted object of the value the key was associated with or null if missing or converting failed.
      */
     public <T> T getArgumentValue(final Argument p_default, final Class<T> p_class) {
@@ -117,11 +117,11 @@ public class ArgumentList {
      * If the argument does not exist, it will be created and added.
      *
      * @param p_key
-     *         Key of the argument.
+     *     Key of the argument.
      * @param p_value
-     *         Value for the argument.
+     *     Value for the argument.
      * @param p_unit
-     *         Unit to this value is stored as. Used for converting.
+     *     Unit to this value is stored as. Used for converting.
      */
     public void setArgument(final String p_key, final String p_value, final String p_unit) {
         Argument arg = m_arguments.get(p_key);
@@ -138,9 +138,9 @@ public class ArgumentList {
      * Add/Override an argument's value.
      *
      * @param p_argument
-     *         Argument to add (takes the key).
+     *     Argument to add (takes the key).
      * @param p_value
-     *         New value.
+     *     New value.
      */
     public void setArgument(final Argument p_argument, final Object p_value) {
         Argument arg = new Argument(p_argument);
@@ -152,7 +152,7 @@ public class ArgumentList {
      * Add/Override an argument.
      *
      * @param p_argument
-     *         Argument to add.
+     *     Argument to add.
      */
     public void setArgument(final Argument p_argument) {
         m_arguments.put(p_argument.getKey(), p_argument);
@@ -193,11 +193,11 @@ public class ArgumentList {
      * Creates a usage description to printed to the console.
      *
      * @param p_applicationName
-     *         Name of the application.
+     *     Name of the application.
      * @return Usage string with arguments and description.
      */
     public String createUsageDescription(final String p_applicationName) {
-        String str = new String();
+        String str = "";
 
         str += "Usage: " + p_applicationName;
         // have non optional arguments first
@@ -237,8 +237,9 @@ public class ArgumentList {
         return str;
     }
 
-    @Override public String toString() {
-        String str = new String();
+    @Override
+    public String toString() {
+        String str = "";
 
         for (Entry<String, Argument> entry : m_arguments.entrySet()) {
             str += entry.getValue() + "\n";
@@ -265,22 +266,22 @@ public class ArgumentList {
     public static class Argument {
         private String m_key;
         private String m_value;
-        private String m_convert = new String();
+        private String m_convert = "";
         private boolean m_isOptional;
-        private String m_description = new String();
+        private String m_description = "";
 
-        private static Map<Class<?>, DataTypeParser> ms_dataTypeParsers = new HashMap<Class<?>, DataTypeParser>();
-        private static Map<String, UnitConverter> ms_unitConverters = new HashMap<String, UnitConverter>();
+        private static final Map<Class<?>, DataTypeParser> DATA_TYPE_PARSERS = new HashMap<Class<?>, DataTypeParser>();
+        private static final Map<String, UnitConverter> UNIT_CONVERTERS = new HashMap<String, UnitConverter>();
 
         static {
-            ms_dataTypeParsers.put(String.class, new DataTypeParserString());
-            ms_dataTypeParsers.put(Byte.class, new DataTypeParserByte());
-            ms_dataTypeParsers.put(Short.class, new DataTypeParserShort());
-            ms_dataTypeParsers.put(Integer.class, new DataTypeParserInt());
-            ms_dataTypeParsers.put(Long.class, new DataTypeParserLong());
-            ms_dataTypeParsers.put(Float.class, new DataTypeParserFloat());
-            ms_dataTypeParsers.put(Double.class, new DataTypeParserDouble());
-            ms_dataTypeParsers.put(Boolean.class, new DataTypeParserBool());
+            DATA_TYPE_PARSERS.put(String.class, new DataTypeParserString());
+            DATA_TYPE_PARSERS.put(Byte.class, new DataTypeParserByte());
+            DATA_TYPE_PARSERS.put(Short.class, new DataTypeParserShort());
+            DATA_TYPE_PARSERS.put(Integer.class, new DataTypeParserInt());
+            DATA_TYPE_PARSERS.put(Long.class, new DataTypeParserLong());
+            DATA_TYPE_PARSERS.put(Float.class, new DataTypeParserFloat());
+            DATA_TYPE_PARSERS.put(Double.class, new DataTypeParserDouble());
+            DATA_TYPE_PARSERS.put(Boolean.class, new DataTypeParserBool());
 
             // add default unit converters
             addUnitConverter(new UnitConverterKBToByte());
@@ -292,9 +293,9 @@ public class ArgumentList {
          * Constructor
          *
          * @param p_key
-         *         Key identifying the argument (must be unique).
+         *     Key identifying the argument (must be unique).
          * @param p_value
-         *         Value of the argument
+         *     Value of the argument
          */
         public Argument(final String p_key, final String p_value) {
             m_key = p_key;
@@ -306,11 +307,11 @@ public class ArgumentList {
          * Constructor
          *
          * @param p_key
-         *         Key identifying the argument (must be unique).
+         *     Key identifying the argument (must be unique).
          * @param p_value
-         *         Value of the argument
+         *     Value of the argument
          * @param p_convert
-         *         String to tell if the value needs conversion.
+         *     String to tell if the value needs conversion.
          */
         public Argument(final String p_key, final String p_value, final String p_convert) {
             m_key = p_key;
@@ -323,13 +324,13 @@ public class ArgumentList {
          * Constructor
          *
          * @param p_key
-         *         Key identifiying the argument (must be unique).
+         *     Key identifiying the argument (must be unique).
          * @param p_value
-         *         Value of the argument.
+         *     Value of the argument.
          * @param p_isOptional
-         *         True if the argument is optional, i.e. is allowed to be null, false otherwise.
+         *     True if the argument is optional, i.e. is allowed to be null, false otherwise.
          * @param p_description
-         *         Description for the argument (used when creating usage string).
+         *     Description for the argument (used when creating usage string).
          */
         public Argument(final String p_key, final String p_value, final boolean p_isOptional, final String p_description) {
             m_key = p_key;
@@ -342,15 +343,15 @@ public class ArgumentList {
          * Constructor
          *
          * @param p_key
-         *         Key identifiying the argument (must be unique).
+         *     Key identifiying the argument (must be unique).
          * @param p_value
-         *         Value of the argument.
+         *     Value of the argument.
          * @param p_convert
-         *         String to tell if the value needs conversion.
+         *     String to tell if the value needs conversion.
          * @param p_isOptional
-         *         True if the argument is optional, i.e. is allowed to be null, false otherwise.
+         *     True if the argument is optional, i.e. is allowed to be null, false otherwise.
          * @param p_description
-         *         Description for the argument (used when creating usage string).
+         *     Description for the argument (used when creating usage string).
          */
         public Argument(final String p_key, final String p_value, final String p_convert, final boolean p_isOptional, final String p_description) {
             m_key = p_key;
@@ -364,7 +365,7 @@ public class ArgumentList {
          * Copy constructor
          *
          * @param p_argument
-         *         Argument to copy
+         *     Argument to copy
          */
         public Argument(final Argument p_argument) {
             m_key = p_argument.m_key;
@@ -378,20 +379,20 @@ public class ArgumentList {
          * Add a data type converter to allow converting of values to different types.
          *
          * @param p_converter
-         *         Data type converter converter to add.
+         *     Data type converter converter to add.
          */
         public static void addDataTypeConverter(final DataTypeParser p_converter) {
-            ms_dataTypeParsers.put(p_converter.getClassToConvertTo(), p_converter);
+            DATA_TYPE_PARSERS.put(p_converter.getClassToConvertTo(), p_converter);
         }
 
         /**
          * Add a unit converter to allow unit conversion of arguments.
          *
          * @param p_converter
-         *         Unit converter to add.
+         *     Unit converter to add.
          */
         public static void addUnitConverter(final UnitConverter p_converter) {
-            ms_unitConverters.put(p_converter.getUnitIdentifier(), p_converter);
+            UNIT_CONVERTERS.put(p_converter.getUnitIdentifier(), p_converter);
         }
 
         /**
@@ -407,9 +408,9 @@ public class ArgumentList {
          * Get the arguments value converter.
          *
          * @param <T>
-         *         Type of the class
+         *     Type of the class
          * @param p_class
-         *         Type of the value to cast to.
+         *     Type of the value to cast to.
          * @return Value.
          */
         public <T> T getValue(final Class<T> p_class) {
@@ -417,16 +418,16 @@ public class ArgumentList {
                 return null;
             }
 
-            DataTypeParser parser = ms_dataTypeParsers.get(p_class);
+            DataTypeParser parser = DATA_TYPE_PARSERS.get(p_class);
             Object val = parser.parse(m_value);
 
             if (!m_convert.isEmpty()) {
-                UnitConverter converter = ms_unitConverters.get(m_convert);
+                UnitConverter converter = UNIT_CONVERTERS.get(m_convert);
                 val = converter.convert(val);
             }
 
             if (!p_class.isInstance(val)) {
-                assert 1 == 2;
+                assert false;
                 return null;
             }
 
@@ -469,7 +470,8 @@ public class ArgumentList {
             return m_value != null;
         }
 
-        @Override public String toString() {
+        @Override
+        public String toString() {
             return m_key + "[m_isOptional " + m_isOptional + ", m_description " + m_description + "]: " + m_value;
         }
     }
