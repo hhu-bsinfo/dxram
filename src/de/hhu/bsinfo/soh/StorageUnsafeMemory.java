@@ -17,9 +17,7 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
 
 /**
  * Implementation of a storage based on an unsafe allocated
- * block of memory.
- * Note: This class is deprecated (replaced by JNINativeMemory),
- * due to inefficiency and endianess bugs/issues.
+ * block of memory
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */

@@ -507,7 +507,7 @@ public final class SmallObjectHeapAnalyzer {
                 output.append(entry.getValue());
             }
 
-            output.append("\n\n----- Free blocks lists (" + m_freeBlockLists.size() + ")-----");
+            output.append("\n\n----- Free blocks lists (").append(m_freeBlockLists.size()).append(")-----");
 
             Iterator<FreeBlockList> it2;
             it2 = m_freeBlockLists.iterator();
@@ -526,7 +526,7 @@ public final class SmallObjectHeapAnalyzer {
     /**
      * Data about a single block of memory with the memory area of a segment.
      */
-    public static class MemoryBlock {
+    public static final class MemoryBlock {
         enum ERROR {
             OK, INVALID_MARKER_BYTE, MARKER_BYTES_NOT_MATCHING, INVALID_LENGTH_FIELD_CONTENTS, INVALID_POINTERS
         }

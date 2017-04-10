@@ -26,9 +26,9 @@ public class MemoryRuntimeException extends RuntimeException {
      * Constructor
      *
      * @param p_message
-     *         Exception message.
+     *     Exception message.
      */
-    public MemoryRuntimeException(final String p_message) {
+    MemoryRuntimeException(final String p_message) {
         super(p_message);
     }
 
@@ -36,11 +36,11 @@ public class MemoryRuntimeException extends RuntimeException {
      * Constructor
      *
      * @param p_message
-     *         Exception message
+     *     Exception message
      * @param p_cause
-     *         Other exception causing this
+     *     Other exception causing this
      */
-    public MemoryRuntimeException(final String p_message, final Throwable p_cause) {
+    MemoryRuntimeException(final String p_message, final Throwable p_cause) {
         super(p_message, p_cause);
     }
 }

@@ -69,10 +69,49 @@ public interface Storage {
      */
     int readBytes(long p_ptr, byte[] p_array, int p_arrayOffset, int p_length);
 
+    /**
+     * Read data from the storage into a short array.
+     *
+     * @param p_ptr
+     *     Start position in storage.
+     * @param p_array
+     *     Array to read the data into.
+     * @param p_arrayOffset
+     *     Start offset in array to start writing the shorts to.
+     * @param p_length
+     *     Number of shorts to read from specified start.
+     * @return Number of read elements.
+     */
     int readShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length);
 
+    /**
+     * Read data from the storage into an int array.
+     *
+     * @param p_ptr
+     *     Start position in storage.
+     * @param p_array
+     *     Array to read the data into.
+     * @param p_arrayOffset
+     *     Start offset in array to start writing the ints to.
+     * @param p_length
+     *     Number of ints to read from specified start.
+     * @return Number of read elements.
+     */
     int readInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length);
 
+    /**
+     * Read data from the storage into a long array.
+     *
+     * @param p_ptr
+     *     Start position in storage.
+     * @param p_array
+     *     Array to read the data into.
+     * @param p_arrayOffset
+     *     Start offset in array to start writing the longs to.
+     * @param p_length
+     *     Number of longs to read from specified start.
+     * @return Number of read elements.
+     */
     int readLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length);
 
     /**
@@ -126,10 +165,49 @@ public interface Storage {
      */
     int writeBytes(long p_ptr, byte[] p_array, int p_arrayOffset, int p_length);
 
+    /**
+     * Write an array of shorts to the storage.
+     *
+     * @param p_ptr
+     *     Start address to write to.
+     * @param p_array
+     *     Array with data to write.
+     * @param p_arrayOffset
+     *     Offset in array to start reading the data from.
+     * @param p_length
+     *     Number of elements to write.
+     * @return Number of written elements
+     */
     int writeShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length);
 
+    /**
+     * Write an array of ints to the storage.
+     *
+     * @param p_ptr
+     *     Start address to write to.
+     * @param p_array
+     *     Array with data to write.
+     * @param p_arrayOffset
+     *     Offset in array to start reading the data from.
+     * @param p_length
+     *     Number of elements to write.
+     * @return Number of written elements
+     */
     int writeInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length);
 
+    /**
+     * Write an array of longs to the storage.
+     *
+     * @param p_ptr
+     *     Start address to write to.
+     * @param p_array
+     *     Array with data to write.
+     * @param p_arrayOffset
+     *     Offset in array to start reading the data from.
+     * @param p_length
+     *     Number of elements to write.
+     * @return Number of written elements
+     */
     int writeLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length);
 
     /**

@@ -229,10 +229,14 @@ public final class SmallObjectHeap implements Importable, Exportable {
         File file = new File(p_file);
 
         if (file.exists()) {
-            file.delete();
+            if (!file.delete()) {
+                throw new MemoryRuntimeException("Deleting existing file for memory dump failed");
+            }
         } else {
             try {
-                file.createNewFile();
+                if (!file.createNewFile()) {
+                    throw new MemoryRuntimeException("Creating file for memory dump failed");
+                }
             } catch (final IOException e) {
                 throw new MemoryRuntimeException("Creating file for memory dump failed", e);
             }
