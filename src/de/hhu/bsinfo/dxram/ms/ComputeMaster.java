@@ -16,7 +16,6 @@ package de.hhu.bsinfo.dxram.ms;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -25,6 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
@@ -39,7 +39,6 @@ import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -57,7 +56,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
     private static final int MAX_TASK_COUNT = 100;
 
-    private Vector<Short> m_signedOnSlaves = new Vector<>();
+    private List<Short> m_signedOnSlaves = new ArrayList<>();
     private Lock m_joinLock = new ReentrantLock(false);
     private ConcurrentLinkedQueue<TaskScriptState> m_taskScripts = new ConcurrentLinkedQueue<>();
     private AtomicInteger m_taskCount = new AtomicInteger(0);
@@ -101,12 +100,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
      * @return List of currently connected slaves (node ids).
      */
     ArrayList<Short> getConnectedSlaves() {
-        @SuppressWarnings("unchecked")
-        Vector<Short> tmp = (Vector<Short>) m_signedOnSlaves.clone();
-        ArrayList<Short> ret = new ArrayList<>(tmp.size());
-        ret.addAll(tmp);
-
-        return ret;
+        return new ArrayList<>(m_signedOnSlaves);
     }
 
     /**
@@ -200,6 +194,19 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
                         break;
                 }
             }
+        }
+    }
+
+    /**
+     * Error state. Entered if an error happened and we can't recover.
+     */
+    private static void stateErrorDie() {
+        // #if LOGGER >= ERROR
+        LOGGER.error("Master error state");
+        // #endif /* LOGGER >= ERROR */
+        try {
+            Thread.sleep(1000);
+        } catch (final InterruptedException ignored) {
         }
     }
 
@@ -423,19 +430,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
         // #if LOGGER >= DEBUG
         LOGGER.debug("Entering idle state");
         // #endif /* LOGGER >= DEBUG */
-    }
-
-    /**
-     * Error state. Entered if an error happened and we can't recover.
-     */
-    private void stateErrorDie() {
-        // #if LOGGER >= ERROR
-        LOGGER.error("Master error state");
-        // #endif /* LOGGER >= ERROR */
-        try {
-            Thread.sleep(1000);
-        } catch (final InterruptedException ignored) {
-        }
     }
 
     /**

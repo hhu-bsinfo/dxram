@@ -65,9 +65,9 @@ public class TcmdComptask extends AbstractTerminalCommand {
         MasterSlaveComputeService mscomp = p_ctx.getService(MasterSlaveComputeService.class);
         TaskScriptNode task;
         if (p_args.length >= 5) {
-            task = mscomp.createTaskInstance(taskName, Arrays.copyOfRange(p_args, 5, p_args.length));
+            task = MasterSlaveComputeService.createTaskInstance(taskName, Arrays.copyOfRange(p_args, 5, p_args.length));
         } else {
-            task = mscomp.createTaskInstance(taskName);
+            task = MasterSlaveComputeService.createTaskInstance(taskName);
         }
 
         if (task == null) {

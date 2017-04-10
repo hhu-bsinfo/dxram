@@ -47,7 +47,7 @@ public class TaskContextData implements Importable, Exportable {
      * @param p_slaveNodeIds
      *     List of node ids of all involved slaves with this task
      */
-    public TaskContextData(final short p_computeGroupId, final short p_slaveId, final short[] p_slaveNodeIds) {
+    TaskContextData(final short p_computeGroupId, final short p_slaveId, final short[] p_slaveNodeIds) {
         m_computeGroupId = p_computeGroupId;
         m_slaveId = p_slaveId;
         m_slaveNodeIds = p_slaveNodeIds;

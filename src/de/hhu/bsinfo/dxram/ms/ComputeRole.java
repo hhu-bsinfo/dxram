@@ -15,6 +15,7 @@ package de.hhu.bsinfo.dxram.ms;
 
 /**
  * Different compute roles of the master slave framework.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
 public enum ComputeRole {
@@ -24,12 +25,13 @@ public enum ComputeRole {
     public static final String SLAVE_STR = "slave";
     public static final String NONE_STR = "none";
 
-    private char m_acronym;
+    private final char m_acronym;
 
     /**
      * Creates an instance of Role
+     *
      * @param p_acronym
-     *            the role's acronym
+     *     the role's acronym
      */
     ComputeRole(final char p_acronym) {
         m_acronym = p_acronym;
@@ -37,8 +39,9 @@ public enum ComputeRole {
 
     /**
      * Get the node role from a full string.
+     *
      * @param p_str
-     *            String to parse.
+     *     String to parse.
      * @return Role node of string.
      */
     public static ComputeRole toComputeRole(final String p_str) {
@@ -57,6 +60,7 @@ public enum ComputeRole {
 
     /**
      * Gets the acronym of the role
+     *
      * @return the acronym
      */
     public char getAcronym() {
@@ -76,8 +80,9 @@ public enum ComputeRole {
 
     /**
      * Gets the role for the given acronym
+     *
      * @param p_acronym
-     *            the acronym
+     *     the acronym
      * @return the corresponding role
      */
     public static ComputeRole getRoleByAcronym(final char p_acronym) {

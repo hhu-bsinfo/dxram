@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.dxram.ms;
 
 import com.google.gson.annotations.Expose;
+
 import de.hhu.bsinfo.dxram.ms.tasks.EmptyTask;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -35,20 +36,21 @@ final class TaskResultSwitch implements TaskScriptNode {
     /**
      * Default constructor
      */
-    public TaskResultSwitch() {
+    TaskResultSwitch() {
 
     }
 
     /**
      * Evaluate the switch state based on the previous task's return code
      *
-     * @param p_prevTaskReturnCode Return code of the previous task
+     * @param p_prevTaskReturnCode
+     *     Return code of the previous task
      * @return TaskScript which is the result of the evaluated switch state for further execution
      */
     TaskScript evaluate(final int p_prevTaskReturnCode) {
-        for (Case c : m_switchCases) {
-            if (c.getCaseValue() == p_prevTaskReturnCode) {
-                return c.getCase();
+        for (Case esac : m_switchCases) {
+            if (esac.getCaseValue() == p_prevTaskReturnCode) {
+                return esac.getCase();
             }
         }
 
@@ -63,8 +65,8 @@ final class TaskResultSwitch implements TaskScriptNode {
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeInt(m_switchCases.length);
-        for (Case m_switchCase : m_switchCases) {
-            p_exporter.exportObject(m_switchCase);
+        for (Case esac : m_switchCases) {
+            p_exporter.exportObject(esac);
         }
         p_exporter.exportObject(m_switchCaseDefault);
     }
@@ -85,8 +87,8 @@ final class TaskResultSwitch implements TaskScriptNode {
         int size = 0;
 
         size += Integer.BYTES;
-        for (Case m_switchCase : m_switchCases) {
-            size += m_switchCase.sizeofObject();
+        for (Case esac : m_switchCases) {
+            size += esac.sizeofObject();
         }
 
         size += m_switchCaseDefault.sizeofObject();

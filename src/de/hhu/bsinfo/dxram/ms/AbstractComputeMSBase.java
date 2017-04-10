@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.ms;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -26,7 +27,6 @@ import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Base class for the master slave compute framework.
@@ -34,7 +34,6 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
 abstract class AbstractComputeMSBase extends Thread {
-
     private final Logger LOGGER;
 
     static final String NAMESERVICE_ENTRY_IDENT = "MAS";
@@ -87,7 +86,7 @@ abstract class AbstractComputeMSBase extends Thread {
      */
     AbstractComputeMSBase(final ComputeRole p_role, final short p_computeGroupId, final long p_pingIntervalMs, final DXRAMServiceAccessor p_serviceAccessor,
         final NetworkComponent p_network, final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
-        super("ComputeMS-" + p_role + "-" + p_computeGroupId);
+        super("ComputeMS-" + p_role + '-' + p_computeGroupId);
 
         LOGGER = LogManager.getFormatterLogger(this.getClass().getSimpleName());
 

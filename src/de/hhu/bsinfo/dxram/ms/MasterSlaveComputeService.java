@@ -96,6 +96,47 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     }
 
     /**
+     * Create an instance of a task denoted by its task (command) name
+     *
+     * @param p_taskName
+     *     Name (command) of the task
+     * @param p_args
+     *     Arguments to provide to the task object
+     * @return A task instance
+     */
+    public static Task createTaskInstance(final String p_taskName, final Object... p_args) {
+        Class<?> clazz;
+        try {
+            clazz = Class.forName(p_taskName);
+        } catch (final ClassNotFoundException e) {
+            throw new RuntimeException("Cannot find task class " + p_taskName);
+        }
+
+        try {
+            return (Task) clazz.getConstructor().newInstance(p_args);
+        } catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            throw new RuntimeException("Cannot create instance of Task " + p_taskName);
+        }
+    }
+
+    /**
+     * Read a task script from a json formatted file
+     *
+     * @param p_taskScriptFileName
+     *     File to read
+     * @return Read task script or null on read failure
+     */
+    public static TaskScript readTaskScriptFromJsonFile(final String p_taskScriptFileName) {
+        Gson gson = TaskScriptGsonContext.createGsonInstance();
+
+        try {
+            return gson.fromJson(new String(Files.readAllBytes(Paths.get(p_taskScriptFileName))), TaskScript.class);
+        } catch (final IOException ignored) {
+            return null;
+        }
+    }
+
+    /**
      * Get the compute of the current node.
      *
      * @return Compute role.
@@ -123,21 +164,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         return masters;
     }
 
-    public Task createTaskInstance(final String p_taskName, final Object... p_args) {
-        Class<?> clazz;
-        try {
-            clazz = Class.forName(p_taskName);
-        } catch (final ClassNotFoundException e) {
-            throw new RuntimeException("Cannot find task class " + p_taskName);
-        }
-
-        try {
-            return (Task) clazz.getConstructor().newInstance(p_args);
-        } catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            throw new RuntimeException("Cannot create instance of Task " + p_taskName);
-        }
-    }
-
     /**
      * Get the status of the current master node.
      *
@@ -157,12 +183,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         int tasksProcessed = ((ComputeMaster) m_computeMSInstance).getTotalTaskScriptsProcessed();
 
         return new StatusMaster(m_boot.getNodeID(), state, slaves, numTasksInQueue, tasksProcessed);
-    }
-
-    @Override
-    protected boolean isServiceAccessor() {
-        // we need this for the tasks
-        return true;
     }
 
     /**
@@ -308,23 +328,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         return state;
     }
 
-    /**
-     * Read a task script from a json formatted file
-     *
-     * @param p_taskScriptFileName
-     *     File to read
-     * @return Read task script or null on read failure
-     */
-    public TaskScript readTaskScriptFromJsonFile(final String p_taskScriptFileName) {
-        Gson gson = TaskScriptGsonContext.createGsonInstance();
-
-        try {
-            return gson.fromJson(new String(Files.readAllBytes(Paths.get(p_taskScriptFileName))), TaskScript.class);
-        } catch (final IOException ignored) {
-            return null;
-        }
-    }
-
     @Override
     public void taskBeforeExecution(final TaskScriptState p_taskScriptState) {
         // only used for remote tasks to callback the node they were submitted on
@@ -381,6 +384,12 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
                 }
             }
         }
+    }
+
+    @Override
+    protected boolean isServiceAccessor() {
+        // we need this for the tasks
+        return true;
     }
 
     @Override

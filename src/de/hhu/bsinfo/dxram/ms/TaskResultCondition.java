@@ -58,14 +58,15 @@ final class TaskResultCondition implements TaskScriptNode {
     /**
      * Default constructor
      */
-    public TaskResultCondition() {
+    TaskResultCondition() {
 
     }
 
     /**
      * Evaluate the condition based on the previous task's return code
      *
-     * @param p_prevTaskReturnCode Return code of the previous task
+     * @param p_prevTaskReturnCode
+     *     Return code of the previous task
      * @return TaskScript which is the result of the evaluated condition for further execution
      */
     TaskScript evaluate(final int p_prevTaskReturnCode) {

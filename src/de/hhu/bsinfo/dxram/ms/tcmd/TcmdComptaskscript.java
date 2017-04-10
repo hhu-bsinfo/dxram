@@ -55,7 +55,7 @@ public class TcmdComptaskscript extends AbstractTerminalCommand {
         }
 
         MasterSlaveComputeService mscomp = p_ctx.getService(MasterSlaveComputeService.class);
-        TaskScript taskScript = mscomp.readTaskScriptFromJsonFile(fileName);
+        TaskScript taskScript = MasterSlaveComputeService.readTaskScriptFromJsonFile(fileName);
 
         if (taskScript == null) {
             TerminalCommandContext.printflnErr("Reading task script from file '%s' failed", fileName);

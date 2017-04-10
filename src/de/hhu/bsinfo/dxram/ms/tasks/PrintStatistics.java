@@ -16,8 +16,8 @@ package de.hhu.bsinfo.dxram.ms.tasks;
 import java.io.PrintStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.stats.Statistics;
@@ -29,7 +29,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-class PrintStatistics {
+final class PrintStatistics {
 
     /**
      * Static class
@@ -48,19 +48,18 @@ class PrintStatistics {
      */
     static void printStatisticsToOutput(final PrintStream p_outputStream, final BootService p_bootService) {
         DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-        Date date = new Date();
         p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");
-        p_outputStream.println(dateFormat.format(date));
+        p_outputStream.println(dateFormat.format(Calendar.getInstance()));
         short nodeId = p_bootService.getNodeID();
-        p_outputStream.println("NodeID: " + NodeID.toHexString(nodeId) + " (" + nodeId + ")");
+        p_outputStream.println("NodeID: " + NodeID.toHexString(nodeId) + " (" + nodeId + ')');
         p_outputStream.println("Role: " + p_bootService.getNodeRole(nodeId));
         p_outputStream.println("---------------------------------------------------------");
 
         Collection<StatisticsRecorder> recorders = Statistics.getRecorders();
         for (StatisticsRecorder recorder : recorders) {
-            p_outputStream.println(recorder.toString());
+            p_outputStream.println(recorder);
             p_outputStream.println("---------------------------------------------------------");
         }
 

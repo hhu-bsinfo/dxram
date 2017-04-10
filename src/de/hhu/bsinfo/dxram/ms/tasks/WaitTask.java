@@ -52,7 +52,7 @@ public class WaitTask implements Task {
     public int execute(final TaskContext p_ctx) {
         try {
             Thread.sleep(m_waitMs);
-        } catch (final InterruptedException e) {
+        } catch (final InterruptedException ignored) {
             return -1;
         }
 

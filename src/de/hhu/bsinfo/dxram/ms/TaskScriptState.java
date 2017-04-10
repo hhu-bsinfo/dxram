@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.dxram.ms;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -93,9 +94,7 @@ public final class TaskScriptState {
      *     Listeners to register.
      */
     public void registerTaskListener(final TaskListener... p_listeners) {
-        for (TaskListener listener : p_listeners) {
-            m_completionListeners.add(listener);
-        }
+        Collections.addAll(m_completionListeners, p_listeners);
     }
 
     @Override
