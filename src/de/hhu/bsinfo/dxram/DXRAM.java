@@ -189,13 +189,31 @@ public class DXRAM {
     }
 
     /**
+     * Stub method for any class extending this class.
+     * Override this to run some tasks like initializing variables after
+     * DXRAM has booted.
+     */
+    protected void postInit() {
+        // used for deploy script
+        System.out.println(STARTUP_DONE_STR);
+    }
+
+    /**
+     * Stub method for any class extending this class.
+     * Override this to run cleanup before DXRAM shuts down.
+     */
+    protected void preShutdown() {
+        // stub
+    }
+
+    /**
      * Register all default DXRAM components. If you want to register further components,
      * override this method but make sure to call it using super
      *
      * @param p_engine
      *     DXRAM engine instance to register components at
      */
-    protected void registerComponents(final DXRAMEngine p_engine) {
+    private static void registerComponents(final DXRAMEngine p_engine) {
         p_engine.registerComponent(BackupComponent.class);
         p_engine.registerComponent(ChunkComponent.class);
         p_engine.registerComponent(ChunkMigrationComponent.class);
@@ -221,7 +239,7 @@ public class DXRAM {
      * @param p_engine
      *     DXRAM engine instance to register services at
      */
-    protected void registerServices(final DXRAMEngine p_engine) {
+    private static void registerServices(final DXRAMEngine p_engine) {
         p_engine.registerService(BootService.class);
         p_engine.registerService(ChunkAnonService.class);
         p_engine.registerService(ChunkAsyncService.class);
@@ -243,24 +261,6 @@ public class DXRAM {
         p_engine.registerService(SynchronizationService.class);
         p_engine.registerService(TerminalService.class);
         p_engine.registerService(TemporaryStorageService.class);
-    }
-
-    /**
-     * Stub method for any class extending this class.
-     * Override this to run some tasks like initializing variables after
-     * DXRAM has booted.
-     */
-    protected void postInit() {
-        // used for deploy script
-        System.out.println(STARTUP_DONE_STR);
-    }
-
-    /**
-     * Stub method for any class extending this class.
-     * Override this to run cleanup before DXRAM shuts down.
-     */
-    protected void preShutdown() {
-        // stub
     }
 
     /**
