@@ -32,7 +32,8 @@ public final class SpinLock implements Lock {
     private static final long OFFSET = getLockOffset();
 
     // Attributes
-    @SuppressWarnings("unused") private volatile int m_lock;
+    @SuppressWarnings("unused")
+    private volatile int m_lock;
 
     // Constructors
 
@@ -58,24 +59,30 @@ public final class SpinLock implements Lock {
         }
     }
 
-    @Override public void lock() {
+    @Override
+    public void lock() {
         while (!UNSAFE.compareAndSwapInt(this, OFFSET, 0, 1)) {
+            // empty
         }
     }
 
-    @Override public void unlock() {
+    @Override
+    public void unlock() {
         UNSAFE.compareAndSwapInt(this, OFFSET, 1, 0);
     }
 
-    @Override public void lockInterruptibly() throws InterruptedException {
+    @Override
+    public void lockInterruptibly() {
         throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
     }
 
-    @Override public boolean tryLock() {
+    @Override
+    public boolean tryLock() {
         return UNSAFE.compareAndSwapInt(this, OFFSET, 0, 1);
     }
 
-    @Override public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
+    @Override
+    public boolean tryLock(final long p_time, final TimeUnit p_unit) {
         boolean ret;
         long time;
         long nanos;
@@ -93,7 +100,8 @@ public final class SpinLock implements Lock {
         return ret;
     }
 
-    @Override public Condition newCondition() {
+    @Override
+    public Condition newCondition() {
         throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
     }
 

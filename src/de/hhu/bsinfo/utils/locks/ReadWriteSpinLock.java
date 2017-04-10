@@ -66,11 +66,13 @@ public final class ReadWriteSpinLock implements ReadWriteLock {
         }
     }
 
-    @Override public Lock readLock() {
+    @Override
+    public Lock readLock() {
         return m_readLock;
     }
 
-    @Override public Lock writeLock() {
+    @Override
+    public Lock writeLock() {
         return m_writeLock;
     }
 
@@ -92,10 +94,12 @@ public final class ReadWriteSpinLock implements ReadWriteLock {
         }
 
         // Methods
-        @Override public void lock() {
+        @Override
+        public void lock() {
             int lock;
 
             while ((m_lock & WRITER_FLAG) != 0) {
+                // empty
             }
 
             do {
@@ -103,7 +107,8 @@ public final class ReadWriteSpinLock implements ReadWriteLock {
             } while (!UNSAFE.compareAndSwapInt(this, OFFSET, lock, lock + 1));
         }
 
-        @Override public void unlock() {
+        @Override
+        public void unlock() {
             int lock;
 
             do {
@@ -111,11 +116,13 @@ public final class ReadWriteSpinLock implements ReadWriteLock {
             } while (!UNSAFE.compareAndSwapInt(this, OFFSET, lock, lock - 1));
         }
 
-        @Override public void lockInterruptibly() throws InterruptedException {
+        @Override
+        public void lockInterruptibly() {
             throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
         }
 
-        @Override public boolean tryLock() {
+        @Override
+        public boolean tryLock() {
             boolean ret = false;
             int lock;
 
@@ -127,7 +134,8 @@ public final class ReadWriteSpinLock implements ReadWriteLock {
             return ret;
         }
 
-        @Override public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
+        @Override
+        public boolean tryLock(final long p_time, final TimeUnit p_unit) {
             boolean ret;
             long time;
             long nanos;
@@ -145,7 +153,8 @@ public final class ReadWriteSpinLock implements ReadWriteLock {
             return ret;
         }
 
-        @Override public Condition newCondition() {
+        @Override
+        public Condition newCondition() {
             throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
         }
 
@@ -167,7 +176,8 @@ public final class ReadWriteSpinLock implements ReadWriteLock {
         }
 
         // Methods
-        @Override public void lock() {
+        @Override
+        public void lock() {
             int lock;
 
             do {
@@ -175,22 +185,27 @@ public final class ReadWriteSpinLock implements ReadWriteLock {
             } while (!UNSAFE.compareAndSwapInt(this, OFFSET, lock, lock | WRITER_FLAG));
 
             while ((m_lock & READER_BITMASK) != 0) {
+                // empty
             }
         }
 
-        @Override public void unlock() {
+        @Override
+        public void unlock() {
             UNSAFE.compareAndSwapInt(this, OFFSET, WRITER_FLAG, 0);
         }
 
-        @Override public void lockInterruptibly() throws InterruptedException {
+        @Override
+        public void lockInterruptibly() {
             throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
         }
 
-        @Override public boolean tryLock() {
+        @Override
+        public boolean tryLock() {
             return UNSAFE.compareAndSwapInt(this, OFFSET, 0, WRITER_FLAG);
         }
 
-        @Override public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
+        @Override
+        public boolean tryLock(final long p_time, final TimeUnit p_unit) {
             boolean ret;
             long time;
             long nanos;
@@ -208,7 +223,8 @@ public final class ReadWriteSpinLock implements ReadWriteLock {
             return ret;
         }
 
-        @Override public Condition newCondition() {
+        @Override
+        public Condition newCondition() {
             throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
         }
 

@@ -33,24 +33,30 @@ public final class NoLock implements Lock {
     }
 
     // Methods
-    @Override public void lock() {
+    @Override
+    public void lock() {
     }
 
-    @Override public void unlock() {
+    @Override
+    public void unlock() {
     }
 
-    @Override public void lockInterruptibly() throws InterruptedException {
+    @Override
+    public void lockInterruptibly() {
     }
 
-    @Override public boolean tryLock() {
+    @Override
+    public boolean tryLock() {
         return true;
     }
 
-    @Override public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
+    @Override
+    public boolean tryLock(final long p_time, final TimeUnit p_unit) {
         return true;
     }
 
-    @Override public Condition newCondition() {
+    @Override
+    public Condition newCondition() {
         return null;
     }
 

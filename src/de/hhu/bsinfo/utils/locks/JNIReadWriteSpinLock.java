@@ -49,15 +49,18 @@ public final class JNIReadWriteSpinLock implements ReadWriteLock {
     }
 
     // Methods
-    @Override public Lock readLock() {
+    @Override
+    public Lock readLock() {
         return m_readLock;
     }
 
-    @Override public Lock writeLock() {
+    @Override
+    public Lock writeLock() {
         return m_writeLock;
     }
 
-    @Override protected void finalize() {
+    @Override
+    protected void finalize() {
         UNSAFE.freeMemory(m_lock);
     }
 
@@ -79,23 +82,28 @@ public final class JNIReadWriteSpinLock implements ReadWriteLock {
         }
 
         // Methods
-        @Override public void lock() {
+        @Override
+        public void lock() {
             JNILock.readLock(m_lock);
         }
 
-        @Override public void unlock() {
+        @Override
+        public void unlock() {
             JNILock.readUnlock(m_lock);
         }
 
-        @Override public void lockInterruptibly() throws InterruptedException {
+        @Override
+        public void lockInterruptibly() {
             throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
         }
 
-        @Override public boolean tryLock() {
+        @Override
+        public boolean tryLock() {
             return JNILock.tryReadLock(m_lock);
         }
 
-        @Override public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
+        @Override
+        public boolean tryLock(final long p_time, final TimeUnit p_unit) {
             boolean ret;
             long time;
             long nanos;
@@ -113,7 +121,8 @@ public final class JNIReadWriteSpinLock implements ReadWriteLock {
             return ret;
         }
 
-        @Override public Condition newCondition() {
+        @Override
+        public Condition newCondition() {
             throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
         }
 
@@ -135,23 +144,28 @@ public final class JNIReadWriteSpinLock implements ReadWriteLock {
         }
 
         // Methods
-        @Override public void lock() {
+        @Override
+        public void lock() {
             JNILock.writeLock(m_lock);
         }
 
-        @Override public void unlock() {
+        @Override
+        public void unlock() {
             JNILock.writeUnlock(m_lock);
         }
 
-        @Override public void lockInterruptibly() throws InterruptedException {
+        @Override
+        public void lockInterruptibly() {
             throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
         }
 
-        @Override public boolean tryLock() {
+        @Override
+        public boolean tryLock() {
             return JNILock.tryWriteLock(m_lock);
         }
 
-        @Override public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
+        @Override
+        public boolean tryLock(final long p_time, final TimeUnit p_unit) {
             boolean ret;
             long time;
             long nanos;
@@ -169,7 +183,8 @@ public final class JNIReadWriteSpinLock implements ReadWriteLock {
             return ret;
         }
 
-        @Override public Condition newCondition() {
+        @Override
+        public Condition newCondition() {
             throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
         }
 

@@ -44,23 +44,28 @@ public final class JNISpinLock implements Lock {
     }
 
     // Methods
-    @Override public void lock() {
+    @Override
+    public void lock() {
         JNILock.lock(m_lock);
     }
 
-    @Override public void unlock() {
+    @Override
+    public void unlock() {
         JNILock.unlock(m_lock);
     }
 
-    @Override public void lockInterruptibly() throws InterruptedException {
+    @Override
+    public void lockInterruptibly() {
         throw new UnsupportedOperationException("The method 'lockInterruptibly' is not supported.");
     }
 
-    @Override public boolean tryLock() {
+    @Override
+    public boolean tryLock() {
         return JNILock.tryLock(m_lock);
     }
 
-    @Override public boolean tryLock(final long p_time, final TimeUnit p_unit) throws InterruptedException {
+    @Override
+    public boolean tryLock(final long p_time, final TimeUnit p_unit) {
         boolean ret;
         long time;
         long nanos;
@@ -78,11 +83,13 @@ public final class JNISpinLock implements Lock {
         return ret;
     }
 
-    @Override public Condition newCondition() {
+    @Override
+    public Condition newCondition() {
         throw new UnsupportedOperationException("The method 'newCondition' is not supported.");
     }
 
-    @Override protected void finalize() {
+    @Override
+    protected void finalize() {
         UNSAFE.freeMemory(m_lock);
     }
 
