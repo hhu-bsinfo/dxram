@@ -18,6 +18,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkremove;
+import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkremoverange;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -295,6 +296,7 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
         m_network.register(RemoveMessage.class, this);
 
         m_terminal.registerTerminalCommand(new TcmdChunkremove());
+        m_terminal.registerTerminalCommand(new TcmdChunkremoverange());
 
         return true;
     }
