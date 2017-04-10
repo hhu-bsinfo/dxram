@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.dxram.tmp.tcmd;
 
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 
@@ -22,7 +22,7 @@ import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdTmpcreate extends TerminalCommand {
+public class TcmdTmpcreate extends AbstractTerminalCommand {
     public TcmdTmpcreate() {
         super("tmpcreate");
     }

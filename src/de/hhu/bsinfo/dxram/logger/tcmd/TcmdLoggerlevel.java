@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.logger.tcmd;
 
 import de.hhu.bsinfo.dxram.logger.LoggerService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdLoggerlevel extends TerminalCommand {
+public class TcmdLoggerlevel extends AbstractTerminalCommand {
     public TcmdLoggerlevel() {
         super("loggerlevel");
     }

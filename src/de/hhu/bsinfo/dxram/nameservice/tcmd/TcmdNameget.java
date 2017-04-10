@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.nameservice.tcmd;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 
 /**
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdNameget extends TerminalCommand {
+public class TcmdNameget extends AbstractTerminalCommand {
     public TcmdNameget() {
         super("nameget");
     }

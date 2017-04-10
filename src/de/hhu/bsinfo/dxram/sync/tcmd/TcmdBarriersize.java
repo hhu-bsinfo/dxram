@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.sync.tcmd;
 
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 
 /**
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdBarriersize extends TerminalCommand {
+public class TcmdBarriersize extends AbstractTerminalCommand {
     public TcmdBarriersize() {
         super("barriersize");
     }

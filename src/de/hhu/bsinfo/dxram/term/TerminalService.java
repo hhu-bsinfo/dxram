@@ -257,7 +257,7 @@ public class TerminalService extends AbstractDXRAMService {
             } else {
                 String[] tokens = text.split(" ");
                 if (tokens.length > 1) {
-                    TerminalCommand cmd = m_terminal.getCommand(tokens[1]);
+                    AbstractTerminalCommand cmd = m_terminal.getCommand(tokens[1]);
                     if (cmd != null) {
                         System.out.println(cmd.getHelp());
                     } else {
@@ -277,7 +277,7 @@ public class TerminalService extends AbstractDXRAMService {
         }
 
         if (!list.isEmpty()) {
-            TerminalCommand cmd = m_terminal.getCommand(list.get(0));
+            AbstractTerminalCommand cmd = m_terminal.getCommand(list.get(0));
             if (cmd != null) {
                 try {
                     cmd.exec(Arrays.copyOfRange(list.toArray(new String[list.size()]), 1, list.size()), m_commandCtx);

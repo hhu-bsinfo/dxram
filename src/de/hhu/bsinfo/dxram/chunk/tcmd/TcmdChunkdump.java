@@ -21,7 +21,7 @@ import java.io.RandomAccessFile;
 import de.hhu.bsinfo.dxram.chunk.ChunkAnonService;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -30,7 +30,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 05.04.2017
  */
-public class TcmdChunkdump extends TerminalCommand {
+public class TcmdChunkdump extends AbstractTerminalCommand {
     public TcmdChunkdump() {
         super("chunkdump");
     }

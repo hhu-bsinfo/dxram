@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 public class TerminalComponent extends AbstractDXRAMComponent {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalComponent.class.getSimpleName());
 
-    private Map<String, TerminalCommand> m_commands = new HashMap<String, TerminalCommand>();
+    private Map<String, AbstractTerminalCommand> m_commands = new HashMap<String, AbstractTerminalCommand>();
 
     /**
      * Constructor
@@ -35,7 +35,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
      * @param p_cmd
      *     Terminal command to register
      */
-    public void registerTerminalCommand(final TerminalCommand p_cmd) {
+    public void registerTerminalCommand(final AbstractTerminalCommand p_cmd) {
         // #if LOGGER >= DEBUG
         LOGGER.debug("Registering terminal command: %s", p_cmd.getName());
         // #endif /* LOGGER >= DEBUG */
@@ -54,7 +54,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
      *     Name of the command
      * @return If found, valid reference otherwise null
      */
-    TerminalCommand getCommand(final String p_name) {
+    AbstractTerminalCommand getCommand(final String p_name) {
         return m_commands.get(p_name);
     }
 

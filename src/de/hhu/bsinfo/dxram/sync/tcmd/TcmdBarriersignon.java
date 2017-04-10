@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -26,7 +26,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdBarriersignon extends TerminalCommand {
+public class TcmdBarriersignon extends AbstractTerminalCommand {
     public TcmdBarriersignon() {
         super("barriersignon");
     }

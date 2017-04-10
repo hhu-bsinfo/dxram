@@ -19,7 +19,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.List;
 
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.dxram.term.TerminalService;
 
@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.term.TerminalService;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdScriptrun extends TerminalCommand {
+public class TcmdScriptrun extends AbstractTerminalCommand {
     public TcmdScriptrun() {
         super("scriptrun");
     }

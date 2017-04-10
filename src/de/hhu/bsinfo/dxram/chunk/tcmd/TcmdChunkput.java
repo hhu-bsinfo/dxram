@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkAnonService;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -29,7 +29,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdChunkput extends TerminalCommand {
+public class TcmdChunkput extends AbstractTerminalCommand {
     public TcmdChunkput() {
         super("chunkput");
     }

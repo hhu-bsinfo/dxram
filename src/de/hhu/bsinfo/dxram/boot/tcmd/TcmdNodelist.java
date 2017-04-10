@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.boot.tcmd;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
@@ -25,7 +25,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdNodelist extends TerminalCommand {
+public class TcmdNodelist extends AbstractTerminalCommand {
     public TcmdNodelist() {
         super("nodelist");
     }

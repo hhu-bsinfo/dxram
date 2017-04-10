@@ -19,7 +19,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 
@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdTmpget extends TerminalCommand {
+public class TcmdTmpget extends AbstractTerminalCommand {
     public TcmdTmpget() {
         super("tmpget");
     }

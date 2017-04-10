@@ -21,7 +21,7 @@ import de.hhu.bsinfo.dxram.ms.TaskListener;
 import de.hhu.bsinfo.dxram.ms.TaskScript;
 import de.hhu.bsinfo.dxram.ms.TaskScriptNode;
 import de.hhu.bsinfo.dxram.ms.TaskScriptState;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 
 /**
@@ -29,7 +29,7 @@ import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdComptask extends TerminalCommand {
+public class TcmdComptask extends AbstractTerminalCommand {
     public TcmdComptask() {
         super("comptask");
     }

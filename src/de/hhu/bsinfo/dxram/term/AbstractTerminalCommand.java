@@ -5,7 +5,7 @@ package de.hhu.bsinfo.dxram.term;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public abstract class TerminalCommand {
+public abstract class AbstractTerminalCommand {
     private String m_name;
 
     /**
@@ -14,7 +14,7 @@ public abstract class TerminalCommand {
      * @param p_name
      *     Name of the command
      */
-    protected TerminalCommand(final String p_name) {
+    protected AbstractTerminalCommand(final String p_name) {
         m_name = p_name;
     }
 

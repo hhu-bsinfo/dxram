@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lookup.tcmd;
 
 import de.hhu.bsinfo.dxram.lookup.LookupService;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdLookuptree extends TerminalCommand {
+public class TcmdLookuptree extends AbstractTerminalCommand {
     public TcmdLookuptree() {
         super("lookuptree");
     }

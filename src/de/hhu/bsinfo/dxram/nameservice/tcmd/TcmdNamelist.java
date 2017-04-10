@@ -17,7 +17,7 @@ import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.nameservice.NameserviceEntryStr;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 
 /**
@@ -25,7 +25,7 @@ import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdNamelist extends TerminalCommand {
+public class TcmdNamelist extends AbstractTerminalCommand {
     public TcmdNamelist() {
         super("namelist");
     }

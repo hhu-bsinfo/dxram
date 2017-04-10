@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.chunk.tcmd;
 
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdChunkcreate extends TerminalCommand {
+public class TcmdChunkcreate extends AbstractTerminalCommand {
     public TcmdChunkcreate() {
         super("chunkcreate");
     }

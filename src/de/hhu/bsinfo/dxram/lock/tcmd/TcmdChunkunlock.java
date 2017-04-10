@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lock.tcmd;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lock.AbstractLockService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdChunkunlock extends TerminalCommand {
+public class TcmdChunkunlock extends AbstractTerminalCommand {
     public TcmdChunkunlock() {
         super("chunkunlock");
     }

@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.stats.tcmd;
 
 import de.hhu.bsinfo.dxram.stats.Statistics;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 
 /**
@@ -22,7 +22,7 @@ import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdStatsprint extends TerminalCommand {
+public class TcmdStatsprint extends AbstractTerminalCommand {
     public TcmdStatsprint() {
         super("statsprint");
     }

@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.boot.tcmd;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdNodeshutdown extends TerminalCommand {
+public class TcmdNodeshutdown extends AbstractTerminalCommand {
     public TcmdNodeshutdown() {
         super("nodeshutdown");
     }

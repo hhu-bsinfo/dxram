@@ -17,7 +17,7 @@ import java.util.Collection;
 
 import de.hhu.bsinfo.dxram.stats.Statistics;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 
 /**
@@ -25,7 +25,7 @@ import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdStatsrecorders extends TerminalCommand {
+public class TcmdStatsrecorders extends AbstractTerminalCommand {
     public TcmdStatsrecorders() {
         super("statsrecorders");
     }

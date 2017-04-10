@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lookup.tcmd;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.lookup.LookupService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
@@ -26,7 +26,7 @@ import java.util.List;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdMetadata extends TerminalCommand {
+public class TcmdMetadata extends AbstractTerminalCommand {
     public TcmdMetadata() {
         super("metadata");
     }

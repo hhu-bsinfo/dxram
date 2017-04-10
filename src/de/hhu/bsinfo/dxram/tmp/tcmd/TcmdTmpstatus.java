@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.tmp.tcmd;
 
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdTmpstatus extends TerminalCommand {
+public class TcmdTmpstatus extends AbstractTerminalCommand {
     public TcmdTmpstatus() {
         super("tmpstatus");
     }

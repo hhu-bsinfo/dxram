@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.chunk.tcmd;
 
 import de.hhu.bsinfo.dxram.chunk.ChunkRemoveService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.ethnet.NodeID;
 
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
-public class TcmdChunkremove extends TerminalCommand {
+public class TcmdChunkremove extends AbstractTerminalCommand {
     public TcmdChunkremove() {
         super("chunkremove");
     }
