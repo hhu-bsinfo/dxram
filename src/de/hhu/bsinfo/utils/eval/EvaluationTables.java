@@ -31,11 +31,11 @@ public class EvaluationTables {
      * Constructor
      *
      * @param p_tables
-     *         Number of tables to create.
+     *     Number of tables to create.
      * @param p_rows
-     *         Number of rows for the data (don't count descriptions).
+     *     Number of rows for the data (don't count descriptions).
      * @param p_columns
-     *         Number of columns for the data (don't count descriptions).
+     *     Number of columns for the data (don't count descriptions).
      */
     public EvaluationTables(final int p_tables, final int p_rows, final int p_columns) {
         m_tables = new EvaluationTable[p_tables];
@@ -45,7 +45,7 @@ public class EvaluationTables {
 
         m_tableNames = new String[p_tables];
         for (int i = 0; i < m_tableNames.length; i++) {
-            m_tableNames[i] = new String("Table " + i);
+            m_tableNames[i] = "Table " + i;
             m_tableNameMappings.put(m_tableNames[i], i);
         }
     }
@@ -54,9 +54,9 @@ public class EvaluationTables {
      * Set the name for a table.
      *
      * @param p_table
-     *         Table index.
+     *     Table index.
      * @param p_name
-     *         Name to set.
+     *     Name to set.
      */
     public void setTableName(final int p_table, final String p_name) {
         m_tableNames[p_table] = p_name;
@@ -68,7 +68,7 @@ public class EvaluationTables {
      * rows and columns. Sets identical names for all tables.
      *
      * @param p_name
-     *         Name to set.
+     *     Name to set.
      */
     public void setIntersectTopCornerNames(final String p_name) {
         for (int i = 0; i < m_tables.length; i++) {
@@ -80,9 +80,9 @@ public class EvaluationTables {
      * Set the description/name of a row for all tables.
      *
      * @param p_row
-     *         Row index.
+     *     Row index.
      * @param p_name
-     *         Row name.
+     *     Row name.
      */
     public void setRowNames(final int p_row, final String p_name) {
         for (int i = 0; i < m_tables.length; i++) {
@@ -94,9 +94,9 @@ public class EvaluationTables {
      * Set the description/name of a column for all tables.
      *
      * @param p_col
-     *         Column index.
+     *     Column index.
      * @param p_name
-     *         Column name.
+     *     Column name.
      */
     public void setColumnNames(final int p_col, final String p_name) {
         for (int i = 0; i < m_tables.length; i++) {
@@ -108,13 +108,13 @@ public class EvaluationTables {
      * Set data/value for a specific cell in a table.
      *
      * @param p_table
-     *         Name of the table.
+     *     Name of the table.
      * @param p_row
-     *         Name of the row.
+     *     Name of the row.
      * @param p_column
-     *         Name of the column.
+     *     Name of the column.
      * @param p_value
-     *         Value/Data to set.
+     *     Value/Data to set.
      */
     public void set(final String p_table, final String p_row, final String p_column, final String p_value) {
         int tableIdx = m_tableNameMappings.get(p_table);
@@ -125,13 +125,13 @@ public class EvaluationTables {
      * Set data/value for a specific cell in a table.
      *
      * @param p_table
-     *         Table index.
+     *     Table index.
      * @param p_row
-     *         Row index.
+     *     Row index.
      * @param p_column
-     *         Column index.
+     *     Column index.
      * @param p_value
-     *         Value/Data to set.
+     *     Value/Data to set.
      */
     public void set(final int p_table, final int p_row, final int p_column, final String p_value) {
         m_tables[p_table].set(p_row, p_column, p_value);
@@ -150,17 +150,17 @@ public class EvaluationTables {
      * Create a string containing the table as formated csv
      *
      * @param p_description
-     *         Description/Header for the table
+     *     Description/Header for the table
      * @param p_delimiter
-     *         Delimiter to use to separate cells
+     *     Delimiter to use to separate cells
      * @return Csv formated table.
      */
     public String toCsv(final boolean p_description, final String p_delimiter) {
-        String str = new String();
+        String str = "";
 
         for (int i = 0; i < m_tables.length; i++) {
             if (p_description) {
-                str += m_tableNames[i] + "\n";
+                str += m_tableNames[i] + '\n';
             }
             str += m_tables[i].toCsv(p_description, p_delimiter);
             str += "\n";
@@ -169,7 +169,8 @@ public class EvaluationTables {
         return str;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return toCsv(false, ",");
     }
 }

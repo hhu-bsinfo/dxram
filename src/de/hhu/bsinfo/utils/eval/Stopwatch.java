@@ -142,27 +142,27 @@ public final class Stopwatch {
         time = m_endTime - m_startTime;
 
         nanoseconds = time % 1000;
-        time = time / 1000;
+        time /= 1000;
 
         microseconds = time % 1000;
-        time = time / 1000;
+        time /= 1000;
 
         milliseconds = time % 1000;
-        time = time / 1000;
+        time /= 1000;
 
         seconds = time % 60;
-        time = time / 60;
+        time /= 60;
 
         minutes = time % 60;
-        time = time / 60;
+        time /= 60;
 
         hours = time;
 
         if (p_printReadable) {
             System.out.println(
-                "[" + p_header + "]: " + hours + "h " + minutes + "m " + seconds + "s " + milliseconds + "ms " + microseconds + "µs " + nanoseconds + "ns");
+                '[' + p_header + "]: " + hours + "h " + minutes + "m " + seconds + "s " + milliseconds + "ms " + microseconds + "µs " + nanoseconds + "ns");
         } else {
-            System.out.println("[" + p_header + "]: " + (m_endTime - m_startTime));
+            System.out.println('[' + p_header + "]: " + (m_endTime - m_startTime));
         }
     }
 }
