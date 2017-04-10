@@ -54,19 +54,7 @@ public final class StatisticsRecorderManager {
      * @return the operation
      */
     public static StatisticsOperation getOperation(final Class<?> p_class, final String p_operationName) {
-
         return getRecorder(p_class).getOperation(p_operationName);
-    }
-
-    /**
-     * Returns the recorder
-     *
-     * @param p_class
-     *     the class
-     * @return the recorder
-     */
-    static StatisticsRecorder getRecorder(final Class<?> p_class) {
-        return getRecorder(p_class.getSimpleName());
     }
 
     /**
@@ -80,14 +68,21 @@ public final class StatisticsRecorderManager {
         StatisticsRecorder recorder = ms_recorders.get(p_name);
         if (recorder == null) {
             ms_mapLock.lock();
-            recorder = ms_recorders.get(p_name);
-            if (recorder == null) {
-                recorder = new StatisticsRecorder(p_name);
-                ms_recorders.put(p_name, recorder);
-            }
+            recorder = ms_recorders.computeIfAbsent(p_name, mapper -> new StatisticsRecorder(p_name));
             ms_mapLock.unlock();
         }
 
         return recorder;
+    }
+
+    /**
+     * Returns the recorder
+     *
+     * @param p_class
+     *     the class
+     * @return the recorder
+     */
+    private static StatisticsRecorder getRecorder(final Class<?> p_class) {
+        return getRecorder(p_class.getSimpleName());
     }
 }

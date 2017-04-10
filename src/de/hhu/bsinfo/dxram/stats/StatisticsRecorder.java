@@ -93,11 +93,7 @@ public class StatisticsRecorder {
         StatisticsOperation operation = m_operations.get(p_name);
         if (operation == null) {
             m_mapLock.lock();
-            operation = m_operations.get(p_name);
-            if (operation == null) {
-                operation = new StatisticsOperation(p_name);
-                m_operations.put(p_name, operation);
-            }
+            operation = m_operations.computeIfAbsent(p_name, mapper -> new StatisticsOperation(p_name));
             m_mapLock.unlock();
         }
 
