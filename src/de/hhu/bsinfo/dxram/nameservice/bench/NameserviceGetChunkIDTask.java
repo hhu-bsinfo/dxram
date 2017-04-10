@@ -41,7 +41,7 @@ public class NameserviceGetChunkIDTask implements Task {
     private int m_numThreads = 1;
 
     @Override
-    public int execute(TaskContext p_ctx) {
+    public int execute(final TaskContext p_ctx) {
 
         NameserviceService nameserviceService = p_ctx.getDXRAMServiceAccessor().getService(NameserviceService.class);
 
@@ -114,17 +114,17 @@ public class NameserviceGetChunkIDTask implements Task {
     }
 
     @Override
-    public void handleSignal(Signal p_signal) {
+    public void handleSignal(final Signal p_signal) {
 
     }
 
     @Override
-    public void exportObject(Exporter p_exporter) {
+    public void exportObject(final Exporter p_exporter) {
         p_exporter.writeInt(m_numThreads);
     }
 
     @Override
-    public void importObject(Importer p_importer) {
+    public void importObject(final Importer p_importer) {
         m_numThreads = p_importer.readInt();
     }
 
