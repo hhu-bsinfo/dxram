@@ -23,11 +23,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * Implements a Cache with an optional eviction policy and an optional timeout
  *
- * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @param <KeyType>
- *         Type of the key
+ *     Type of the key
  * @param <ValueType>
- *         Type of the value
+ *     Type of the value
+ * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  */
 public class Cache<KeyType, ValueType> {
 
@@ -52,7 +52,7 @@ public class Cache<KeyType, ValueType> {
      * Creates an instance of Cache
      *
      * @param p_policy
-     *         the eviction policy
+     *     the eviction policy
      */
     public Cache(final EvictionPolicy<KeyType, ValueType> p_policy) {
         this(Integer.MAX_VALUE, p_policy);
@@ -62,7 +62,7 @@ public class Cache<KeyType, ValueType> {
      * Creates an instance of Cache
      *
      * @param p_maxSize
-     *         the maximum of cached elements
+     *     the maximum of cached elements
      */
     public Cache(final int p_maxSize) {
         this(p_maxSize, new LRUPolicy<KeyType, ValueType>());
@@ -72,9 +72,9 @@ public class Cache<KeyType, ValueType> {
      * Creates an instance of Cache
      *
      * @param p_maxSize
-     *         Max size of the cache
+     *     Max size of the cache
      * @param p_policyEnum
-     *         the POLICY
+     *     the POLICY
      */
     public Cache(final int p_maxSize, final POLICY p_policyEnum) {
 
@@ -106,9 +106,9 @@ public class Cache<KeyType, ValueType> {
      * Creates an instance of Cache
      *
      * @param p_maxSize
-     *         the maximum of cached elements
+     *     the maximum of cached elements
      * @param p_policy
-     *         the eviction policy
+     *     the eviction policy
      */
     public Cache(final int p_maxSize, final EvictionPolicy<KeyType, ValueType> p_policy) {
         assert p_maxSize > 0;
@@ -128,9 +128,9 @@ public class Cache<KeyType, ValueType> {
      * Creates a new cache entry or updates an existing one
      *
      * @param p_key
-     *         the key
+     *     the key
      * @param p_value
-     *         the value
+     *     the value
      */
     public final void put(final KeyType p_key, final ValueType p_value) {
         CacheEntry<KeyType, ValueType> entry;
@@ -162,7 +162,7 @@ public class Cache<KeyType, ValueType> {
      * Gets the value of a cache entry for the given key
      *
      * @param p_key
-     *         the key
+     *     the key
      * @return the value of the cache entry or null if no entry exists
      */
     public final ValueType get(final KeyType p_key) {
@@ -189,7 +189,7 @@ public class Cache<KeyType, ValueType> {
      * Removes the cache entry for the given key
      *
      * @param p_key
-     *         the key
+     *     the key
      */
     public final void remove(final KeyType p_key) {
         assert p_key != null;
@@ -205,7 +205,7 @@ public class Cache<KeyType, ValueType> {
      * Checks if a cache entry exists for the given key
      *
      * @param p_key
-     *         the key
+     *     the key
      * @return true if a cahce entry exists, false otherwise
      */
     public final boolean contains(final KeyType p_key) {
@@ -237,7 +237,7 @@ public class Cache<KeyType, ValueType> {
      * Enables TTL for cache entries
      *
      * @param p_ttl
-     *         ttl for the cache entries
+     *     ttl for the cache entries
      */
     public final synchronized void enableTTL(final long p_ttl) {
         Thread t;
@@ -267,7 +267,7 @@ public class Cache<KeyType, ValueType> {
      * Access an cache entry
      *
      * @param p_entry
-     *         the cache entry
+     *     the cache entry
      */
     private void accessEntry(final CacheEntry<KeyType, ValueType> p_entry) {
         p_entry.access();
@@ -289,11 +289,11 @@ public class Cache<KeyType, ValueType> {
     /**
      * Represents an cache entry
      *
-     * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
      * @param <KeyType>
-     *         the key
+     *     the key
      * @param <ValueType>
-     *         the value
+     *     the value
+     * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
      */
     public static final class CacheEntry<KeyType, ValueType> {
 
@@ -311,9 +311,9 @@ public class Cache<KeyType, ValueType> {
          * Creates an instance of CacheEntry
          *
          * @param p_key
-         *         the key
+         *     the key
          * @param p_value
-         *         the value
+         *     the value
          */
         private CacheEntry(final KeyType p_key, final ValueType p_value) {
             m_key = p_key;
@@ -386,7 +386,7 @@ public class Cache<KeyType, ValueType> {
          * Sets the flags
          *
          * @param p_flags
-         *         the flags
+         *     the flags
          */
         public void setFlags(final long p_flags) {
             m_flags = p_flags;
@@ -428,7 +428,7 @@ public class Cache<KeyType, ValueType> {
         // Attributes
         private long m_ttl;
 
-        private boolean m_running;
+        private volatile boolean m_running;
 
         // Constructors
 
@@ -436,7 +436,7 @@ public class Cache<KeyType, ValueType> {
          * Creates an instance of TTLHandler
          *
          * @param p_ttl
-         *         the TTL value
+         *     the TTL value
          */
         TTLHandler(final long p_ttl) {
             m_ttl = p_ttl;
@@ -458,11 +458,11 @@ public class Cache<KeyType, ValueType> {
         // Methods
 
         /**
-         * When an object implementing interface <code>Runnable</code> is used
-         * to create a thread, starting the thread causes the object's <code>run</code> method to be called in that
+         * When an object implementing interface {@code Runnable} is used
+         * to create a thread, starting the thread causes the object's {@code run} method to be called in that
          * separately executing
          * thread.
-         * The general contract of the method <code>run</code> is that it may take any action whatsoever.
+         * The general contract of the method {@code run} is that it may take any action whatsoever.
          *
          * @see java.lang.Thread#run()
          */
@@ -475,7 +475,7 @@ public class Cache<KeyType, ValueType> {
             while (m_running) {
                 try {
                     Thread.sleep(SLEEP_TIME);
-                } catch (final InterruptedException e) {
+                } catch (final InterruptedException ignored) {
                 }
 
                 if (m_running) {
@@ -507,11 +507,11 @@ public class Cache<KeyType, ValueType> {
     /**
      * Methods for an ecivtion policy
      *
-     * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
      * @param <KeyType>
-     *         Type of the key
+     *     Type of the key
      * @param <ValueType>
-     *         Type of the value
+     *     Type of the value
+     * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
      */
     public interface EvictionPolicy<KeyType, ValueType> {
 
@@ -521,7 +521,7 @@ public class Cache<KeyType, ValueType> {
          * Defines the key of the cache entry which should be removed
          *
          * @param p_entries
-         *         the current cache entries
+         *     the current cache entries
          * @return return the key to remove
          */
         KeyType evict(Collection<CacheEntry<KeyType, ValueType>> p_entries);
@@ -530,7 +530,7 @@ public class Cache<KeyType, ValueType> {
          * A new cache entry was created
          *
          * @param p_entry
-         *         the created cache entry
+         *     the created cache entry
          */
         void newEntry(CacheEntry<KeyType, ValueType> p_entry);
 
@@ -538,7 +538,7 @@ public class Cache<KeyType, ValueType> {
          * A cache entry was accessed
          *
          * @param p_entry
-         *         the accessed cache entry
+         *     the accessed cache entry
          */
         void accessEntry(CacheEntry<KeyType, ValueType> p_entry);
 
@@ -546,9 +546,9 @@ public class Cache<KeyType, ValueType> {
          * A cache entry was removed
          *
          * @param p_entry
-         *         the removed cache entry
+         *     the removed cache entry
          * @param p_entries
-         *         the current cache entries
+         *     the current cache entries
          */
         void removeEntry(CacheEntry<KeyType, ValueType> p_entry, Collection<CacheEntry<KeyType, ValueType>> p_entries);
 
@@ -557,11 +557,11 @@ public class Cache<KeyType, ValueType> {
     /**
      * Eviction policy, which removes always the first entry
      *
-     * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
      * @param <KeyType>
-     *         Type of the key
+     *     Type of the key
      * @param <ValueType>
-     *         Type of the value
+     *     Type of the value
+     * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
      */
     private static class DummyPolicy<KeyType, ValueType> implements EvictionPolicy<KeyType, ValueType> {
 
@@ -579,7 +579,7 @@ public class Cache<KeyType, ValueType> {
          * Defines the key of the cache entry which should be removed
          *
          * @param p_entries
-         *         the current cache entries
+         *     the current cache entries
          * @return return the key to remove
          */
         @Override
@@ -591,7 +591,7 @@ public class Cache<KeyType, ValueType> {
          * A new cache entry was created
          *
          * @param p_entry
-         *         the created cache entry
+         *     the created cache entry
          */
         @Override
         public void newEntry(final CacheEntry<KeyType, ValueType> p_entry) {
@@ -601,7 +601,7 @@ public class Cache<KeyType, ValueType> {
          * A cache entry was accessed
          *
          * @param p_entry
-         *         the accessed cache entry
+         *     the accessed cache entry
          */
         @Override
         public void accessEntry(final CacheEntry<KeyType, ValueType> p_entry) {
@@ -611,9 +611,9 @@ public class Cache<KeyType, ValueType> {
          * A cache entry was removed
          *
          * @param p_entry
-         *         the removed cache entry
+         *     the removed cache entry
          * @param p_entries
-         *         the current cache entries
+         *     the current cache entries
          */
         @Override
         public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry, final Collection<CacheEntry<KeyType, ValueType>> p_entries) {
@@ -624,11 +624,11 @@ public class Cache<KeyType, ValueType> {
     /**
      * Eviction policy, which removes always the least recently used entry
      *
-     * @author Kevin Beineke, kevin.beineke@hhu.de, 08.09.2013
      * @param <KeyType>
-     *         Type of the key
+     *     Type of the key
      * @param <ValueType>
-     *         Type of the value
+     *     Type of the value
+     * @author Kevin Beineke, kevin.beineke@hhu.de, 08.09.2013
      */
     private static class LRUPolicy<KeyType, ValueType> implements EvictionPolicy<KeyType, ValueType> {
 
@@ -646,7 +646,7 @@ public class Cache<KeyType, ValueType> {
          * Defines the key of the cache entry which should be removed
          *
          * @param p_entries
-         *         the current cache entries
+         *     the current cache entries
          * @return return the key to remove
          */
         @Override
@@ -664,6 +664,7 @@ public class Cache<KeyType, ValueType> {
                     lastAccess = currentEntry.m_lastAccess;
                 }
             }
+            assert leastRecentlyUsedEntry != null;
             return leastRecentlyUsedEntry.getKey();
         }
 
@@ -671,7 +672,7 @@ public class Cache<KeyType, ValueType> {
          * A new cache entry was created
          *
          * @param p_entry
-         *         the created cache entry
+         *     the created cache entry
          */
         @Override
         public void newEntry(final CacheEntry<KeyType, ValueType> p_entry) {
@@ -681,7 +682,7 @@ public class Cache<KeyType, ValueType> {
          * A cache entry was accessed
          *
          * @param p_entry
-         *         the accessed cache entry
+         *     the accessed cache entry
          */
         @Override
         public void accessEntry(final CacheEntry<KeyType, ValueType> p_entry) {
@@ -691,9 +692,9 @@ public class Cache<KeyType, ValueType> {
          * A cache entry was removed
          *
          * @param p_entry
-         *         the removed cache entry
+         *     the removed cache entry
          * @param p_entries
-         *         the current cache entries
+         *     the current cache entries
          */
         @Override
         public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry, final Collection<CacheEntry<KeyType, ValueType>> p_entries) {
