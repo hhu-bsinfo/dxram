@@ -25,7 +25,7 @@ public class TimeUnit {
     public static final String MS = "ms";
     public static final String SEC = "sec";
     public static final String MIN = "min";
-    public static final String H = "h";
+    public static final String HOUR = "h";
 
     private long m_timeNs;
 
@@ -101,7 +101,7 @@ public class TimeUnit {
      * @return Time in seconds as double value
      */
     public double getSecDouble() {
-        return ((double) m_timeNs) / 1000.0 / 1000.0 / 1000.0;
+        return (double) m_timeNs / 1000.0 / 1000.0 / 1000.0;
     }
 
     /**
@@ -126,7 +126,7 @@ public class TimeUnit {
             case MIN:
                 m_timeNs = p_value * 1000 * 1000 * 1000 * 60;
                 break;
-            case H:
+            case HOUR:
                 m_timeNs = p_value * 1000 * 1000 * 1000 * 60 * 60;
                 break;
             case NS:

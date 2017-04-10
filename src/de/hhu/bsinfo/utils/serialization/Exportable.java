@@ -25,7 +25,7 @@ public interface Exportable extends ObjectSize {
      * method implicitly.
      *
      * @param p_exporter
-     *         Target to export/serialize the object to.
+     *     Target to export/serialize the object to.
      */
-    void exportObject(Exporter p_exporter);
+    void exportObject(final Exporter p_exporter);
 }

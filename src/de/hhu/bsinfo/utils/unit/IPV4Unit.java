@@ -40,9 +40,9 @@ public class IPV4Unit {
      * Constructor
      *
      * @param p_ip
-     *         IPV4 address, format xxx.xxx.xxx.xxx
+     *     IPV4 address, format xxx.xxx.xxx.xxx
      * @param p_port
-     *         Port
+     *     Port
      */
     public IPV4Unit(final String p_ip, final int p_port) {
         m_ip = p_ip;
@@ -73,7 +73,7 @@ public class IPV4Unit {
      * @return Ip address and port as string
      */
     public String getAddressStr() {
-        return m_ip + ":" + m_port;
+        return m_ip + ':' + m_port;
     }
 
     /**
@@ -102,11 +102,11 @@ public class IPV4Unit {
 
         IPV4Unit obj = (IPV4Unit) p_obj;
 
-        return m_ip.equals(obj.getIP()) && m_port == obj.getPort();
+        return m_ip.equals(obj.m_ip) && m_port == obj.m_port;
     }
 
     @Override
     public int hashCode() {
-        return (m_ip + "/" + m_port).hashCode();
+        return (m_ip + '/' + m_port).hashCode();
     }
 }

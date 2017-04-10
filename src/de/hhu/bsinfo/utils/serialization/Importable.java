@@ -25,7 +25,7 @@ public interface Importable extends ObjectSize {
      * method implicitly.
      *
      * @param p_importer
-     *         Target to import/de-serialize the object from.
+     *     Target to import/de-serialize the object from.
      */
-    void importObject(Importer p_importer);
+    void importObject(final Importer p_importer);
 }
