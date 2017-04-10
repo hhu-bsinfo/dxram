@@ -47,6 +47,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceComponent.class.getSimpleName());
 
     // configuration values
+    /**
+     * Type of name service string converter to use to convert name service keys (available: NAME and INT)
+     */
     @Expose
     private String m_type = "NAME";
 

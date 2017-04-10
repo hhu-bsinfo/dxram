@@ -37,6 +37,9 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
     private static final Logger LOGGER = LogManager.getFormatterLogger(JobWorkStealingComponent.class.getSimpleName());
 
     // configuration values
+    /**
+     * Number of worker threads to dispatch jobs to
+     */
     @Expose
     private int m_numWorkers = 1;
 

@@ -136,14 +136,29 @@ final class NodesConfiguration {
     static final class NodeEntry {
 
         // configuration values
+        /**
+         * Address and port of a DXRAM node
+         */
         @Expose
         private IPV4Unit m_address = new IPV4Unit("127.0.0.1", 22222);
+        /**
+         * Role of the node (superpeer, peer, terminal)
+         */
         @Expose
         private NodeRole m_role = NodeRole.PEER;
+        /**
+         * Rack id
+         */
         @Expose
         private short m_rack = 0;
+        /**
+         * Switch id
+         */
         @Expose
         private short m_switch = 0;
+        /**
+         * If 1, this entry is read from file, 0 if the node joined the system without being part of the initial configuration
+         */
         @Expose
         private byte m_readFromFile = 1;
 

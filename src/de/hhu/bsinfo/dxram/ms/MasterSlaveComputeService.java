@@ -69,10 +69,19 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     private static final Logger LOGGER = LogManager.getFormatterLogger(MasterSlaveComputeService.class.getSimpleName());
 
     // configuration values
+    /**
+     * Compute role to assign to the current instance (master, slave or none)
+     */
     @Expose
     private String m_role = ComputeRole.NONE.toString();
+    /**
+     * Compute group id for the current instance (ignored on none)
+     */
     @Expose
     private short m_computeGroupId = 0;
+    /**
+     * Keep alive ping time for master to contact slaves
+     */
     @Expose
     private TimeUnit m_pingInterval = new TimeUnit(1, TimeUnit.SEC);
 

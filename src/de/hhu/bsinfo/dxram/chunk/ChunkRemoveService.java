@@ -52,6 +52,9 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
     private static final StatisticsOperation SOP_INCOMING_REMOVE = StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingRemove");
 
     // configuration values
+    /**
+     * Size of the queue that stores the remove requests to be processed asynchronously
+     */
     @Expose
     private int m_removerQueueSize = 100000;
 

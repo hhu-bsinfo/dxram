@@ -55,8 +55,15 @@ public class TerminalService extends AbstractDXRAMService {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalService.class.getSimpleName());
 
     // configuration values
+    /**
+     * Path to a text file with terminal commands to run right after the terminal started
+     */
     @Expose
     private String m_autostartScript = "";
+
+    /**
+     * Path to a file to store the history of the terminal to
+     */
     @Expose
     private String m_historyFilePath = ".dxram_term_history";
 

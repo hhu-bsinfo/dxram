@@ -32,8 +32,14 @@ public abstract class AbstractDXRAMComponent {
     private final Logger LOGGER;
 
     // config values
+    /**
+     * Name of the component (full class path)
+     */
     @Expose
     private final String m_class = getClass().getName();
+    /**
+     * True to enable the component, false to disable
+     */
     @Expose
     private final boolean m_enabled = true;
 

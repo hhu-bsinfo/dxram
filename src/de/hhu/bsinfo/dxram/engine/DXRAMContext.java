@@ -28,10 +28,19 @@ import de.hhu.bsinfo.utils.unit.IPV4Unit;
  */
 public class DXRAMContext {
 
+    /**
+     * Engine specific settings
+     */
     @Expose
     private EngineSettings m_engineSettings = new EngineSettings();
+    /**
+     * List of components
+     */
     @Expose
     private Map<String, AbstractDXRAMComponent> m_components = new HashMap<>();
+    /**
+     * List of services
+     */
     @Expose
     private Map<String, AbstractDXRAMService> m_services = new HashMap<>();
 
@@ -100,10 +109,19 @@ public class DXRAMContext {
      */
     public static class EngineSettings {
 
+        /**
+         * Address and port of this instance
+         */
         @Expose
         private IPV4Unit m_address = new IPV4Unit("127.0.0.1", 22222);
+        /**
+         * Role of this instance (superpeer, peer, terminal)
+         */
         @Expose
         private String m_role = "Peer";
+        /**
+         * Path to jni dependencies
+         */
         @Expose
         private String m_jniPath = "jni";
 

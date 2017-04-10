@@ -57,18 +57,33 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkComponent.class.getSimpleName());
 
     // configuration values
+    /**
+     * Number of threads to spawn for handling incoming and assembled network messages
+     */
     @Expose
     private int m_threadCountMsgHandler = 1;
+    /**
+     * Size of the map that stores outstanding requests and maps them to their incoming responses
+     */
     @Expose
     private int m_requestMapEntryCount = (int) Math.pow(2, 20);
+    /**
+     * Size of the buffer for incoming network data
+     */
     @Expose
     private StorageUnit m_incomingBufferSize = new StorageUnit(512, StorageUnit.KB);
+    /**
+     * Size of the buffer for outgoing network data
+     */
     @Expose
     private StorageUnit m_outgoingBufferSize = new StorageUnit(1, StorageUnit.MB);
     @Expose
     private StorageUnit m_maxIncomingBufferSize = new StorageUnit(32, StorageUnit.KB);
     @Expose
     private StorageUnit m_flowControlWindowSize = new StorageUnit(1, StorageUnit.MB);
+    /**
+     * Amount of time to wait until a request that did not receive a response is considered timed out
+     */
     @Expose
     private TimeUnit m_requestTimeout = new TimeUnit(333, TimeUnit.MS);
 

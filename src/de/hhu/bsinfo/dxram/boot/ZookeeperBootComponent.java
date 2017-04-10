@@ -54,17 +54,29 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
     private static final Logger LOGGER = LogManager.getFormatterLogger(ZookeeperBootComponent.class.getSimpleName());
 
     // configuration values
+    /**
+     * Path for zookeeper entry
+     */
     @Expose
     private String m_path = "/dxram";
+    /**
+     * Address and port of zookeeper
+     */
     @Expose
     private IPV4Unit m_connection = new IPV4Unit("127.0.0.1", 2181);
+    /**
+     * Zookeeper timeout
+     */
     @Expose
     private TimeUnit m_timeout = new TimeUnit(10, TimeUnit.SEC);
     @Expose
     private StorageUnit m_zookeeperBitfieldSize = new StorageUnit(256, StorageUnit.KB);
+    /**
+     * Nodes configuration
+     * We can't use the NodesConfiguration class with the configuration because the nodes in that class
+     * are already mapped to their node ids
+     */
     @Expose
-    // we can't use the NodesConfiguration class with the configuration because the nodes in that class
-    // are already mapped to their node ids
     private ArrayList<NodesConfiguration.NodeEntry> m_nodesConfig = new ArrayList<NodesConfiguration.NodeEntry>() {
         {
             // default values for local testing

@@ -69,8 +69,14 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     private static final StatisticsOperation SOP_INCOMING_UNLOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "IncomingUnlock");
 
     // configuration values
+    /**
+     * Message frequency for acquiring a remote lock
+     */
     @Expose
     private TimeUnit m_remoteLockSendInterval = new TimeUnit(10, TimeUnit.MS);
+    /**
+     * Timeout when trying to acquire a remote lock
+     */
     @Expose
     private TimeUnit m_remoteLockTryTimeout = new TimeUnit(100, TimeUnit.MS);
 

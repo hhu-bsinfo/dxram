@@ -75,8 +75,14 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     private int m_pingInterval = 1;
     @Expose
     private int m_maxBarriersPerSuperpeer = 1000;
+    /**
+     * Maximum number of entries allowed on the superpeer/temporary storage
+     */
     @Expose
     private int m_storageMaxNumEntries = 1000;
+    /**
+     * Size of the superpeer/temporary storage
+     */
     @Expose
     private StorageUnit m_storageMaxSize = new StorageUnit(32, StorageUnit.MB);
 

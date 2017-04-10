@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -42,7 +43,6 @@ import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
@@ -58,20 +58,31 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     private static final Logger LOGGER = LogManager.getFormatterLogger(BackupComponent.class.getSimpleName());
 
     // configuration values
-
-    // This parameter should be either active for all nodes or inactive for all nodes
+    /**
+     * Activate/Disable the backup. This parameter should be either active for all nodes or inactive for all nodes
+     */
     @Expose
     private boolean m_backupActive = false;
-    // This parameter can be set to false for single peers to avoid storing backups and the associated overhead.
-    // If this peer is not available for backup, it will not log and recover chunks but all other backup functions, like replicating own chunks, are enabled.
-    // Do not set this parameter globally to deactivate backup. Use backupActive parameter for that purpose.
+    /**
+     * This parameter can be set to false for single peers to avoid storing backups and the associated overhead.
+     * If this peer is not available for backup, it will not log and recover chunks but all other backup functions, like replicating own chunks, are enabled.
+     * Do not set this parameter globally to deactivate backup. Use backupActive parameter for that purpose.
+     */
     @Expose
     private boolean m_availableForBackup = true;
+    /**
+     * Directory where the backup data is stored
+     */
     @Expose
     private String m_backupDirectory = "./log/";
+    /**
+     * Size of a backup range
+     */
     @Expose
     private StorageUnit m_backupRangeSize = new StorageUnit(256, StorageUnit.MB);
-    // The replication factor must must be in [1, 4], for disabling replication set m_backupActive to false
+    /**
+     * The replication factor must must be in [1, 4], for disabling replication set m_backupActive to false
+     */
     @Expose
     private byte m_replicationFactor = 3;
 

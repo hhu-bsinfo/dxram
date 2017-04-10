@@ -69,10 +69,20 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateAndPutRecovered");
 
     // configuration values
+    /**
+     * Amount of main memory to use for the key value store
+     */
     @Expose
     private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
+    /**
+     * Max block size for a chunk in the key value store
+     */
     @Expose
     private StorageUnit m_keyValueStoreMaxBlockSize = new StorageUnit(8, StorageUnit.MB);
+    /**
+     * To enable mem dumps on critical errors (memory corruption), enter a path to a file to dump _ALL_ key value store memory to
+     * (file size approx. key value store size)
+     */
     @Expose
     private String m_memDumpFolderOnError = "";
 
