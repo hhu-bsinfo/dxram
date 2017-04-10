@@ -40,7 +40,9 @@ import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.ArrayListLong;
 
 /**
- * Created by nothaas on 4/5/17.
+ * This service provides access to the backend storage system (removals only)
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 10.04.2017
  */
 public class ChunkRemoveService extends AbstractDXRAMService implements MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkRemoveService.class.getSimpleName());
