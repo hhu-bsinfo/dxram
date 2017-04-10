@@ -34,18 +34,18 @@ public class DataTypeParserByte implements DataTypeParser {
         try {
             if (p_str.length() > 1) {
                 String tmp = p_str.substring(0, 2);
-                if (tmp.equals("0x")) {
+                if ("0x".equals(tmp)) {
                     return (byte) Integer.parseInt(p_str.substring(2), 16);
-                } else if (tmp.equals("0b")) {
+                } else if ("0b".equals(tmp)) {
                     return (byte) Integer.parseInt(p_str.substring(2), 2);
-                } else if (tmp.equals("0o")) {
+                } else if ("0o".equals(tmp)) {
                     return (byte) Integer.parseInt(p_str.substring(2), 8);
                 }
             }
 
             return java.lang.Byte.parseByte(p_str, 10);
-        } catch (final NumberFormatException e) {
-            return new java.lang.Byte((byte) 0);
+        } catch (final NumberFormatException ignored) {
+            return (byte) 0;
         }
     }
 }

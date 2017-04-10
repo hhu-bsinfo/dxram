@@ -33,15 +33,15 @@ public class DataTypeParserBool implements DataTypeParser {
     public Object parse(final java.lang.String p_str) {
         try {
             // allow 0 and 1 as well
-            if (p_str.equals("0")) {
-                return new java.lang.Boolean(false);
-            } else if (p_str.equals("1")) {
-                return new java.lang.Boolean(true);
+            if ("0".equals(p_str)) {
+                return Boolean.FALSE;
+            } else if ("1".equals(p_str)) {
+                return Boolean.TRUE;
             } else {
                 return java.lang.Boolean.parseBoolean(p_str);
             }
-        } catch (final NumberFormatException e) {
-            return new java.lang.Boolean(false);
+        } catch (final NumberFormatException ignored) {
+            return Boolean.FALSE;
         }
     }
 }

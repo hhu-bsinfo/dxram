@@ -40,7 +40,7 @@ public class DataTypeParserIPV4 implements DataTypeParser {
             } else {
                 return null;
             }
-        } catch (final NumberFormatException e) {
+        } catch (final NumberFormatException ignored) {
             return new InetSocketAddress(0);
         }
     }

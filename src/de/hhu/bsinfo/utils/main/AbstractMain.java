@@ -32,7 +32,7 @@ public abstract class AbstractMain {
      * Constructor
      *
      * @param p_description
-     *         Short description for the application
+     *     Short description for the application
      */
     protected AbstractMain(final String p_description) {
         m_description = p_description;
@@ -42,11 +42,11 @@ public abstract class AbstractMain {
      * Constructor
      *
      * @param p_argumentsParser
-     *         Provide a different parser for the program arguments.
+     *     Provide a different parser for the program arguments.
      * @param p_description
-     *         Short description for the application
+     *     Short description for the application
      */
-    public AbstractMain(final ArgumentListParser p_argumentsParser, final String p_description) {
+    protected AbstractMain(final ArgumentListParser p_argumentsParser, final String p_description) {
         m_argumentsParser = p_argumentsParser;
         m_description = p_description;
     }
@@ -88,7 +88,7 @@ public abstract class AbstractMain {
      * Execute this application.
      *
      * @param p_args
-     *         Arguments from Java main entry point.
+     *     Arguments from Java main entry point.
      */
     public void run(final String[] p_args) {
         registerDefaultProgramArguments(m_arguments);
@@ -96,7 +96,7 @@ public abstract class AbstractMain {
 
         if (!m_arguments.checkArguments()) {
             String usage = m_arguments.createUsageDescription(getClass().getName());
-            System.out.println(getClass().getName() + ": " + m_description + "\n");
+            System.out.println(getClass().getName() + ": " + m_description + '\n');
             System.out.println(usage);
             System.exit(-1);
         }
@@ -110,7 +110,7 @@ public abstract class AbstractMain {
      * Implement this and provide default arguments the application expects.
      *
      * @param p_arguments
-     *         Argument list for the application.
+     *     Argument list for the application.
      */
     protected abstract void registerDefaultProgramArguments(ArgumentList p_arguments);
 
@@ -118,7 +118,7 @@ public abstract class AbstractMain {
      * Implement this and treat it as your main function.
      *
      * @param p_arguments
-     *         Arguments for the application.
+     *     Arguments for the application.
      * @return Application exit code.
      */
     protected abstract int main(ArgumentList p_arguments);

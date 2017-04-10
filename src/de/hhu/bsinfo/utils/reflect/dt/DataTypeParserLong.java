@@ -37,18 +37,18 @@ public class DataTypeParserLong implements DataTypeParser {
             if (p_str.length() > 1) {
                 String tmp = p_str.substring(0, 2);
                 // oh java...no unsigned, why?
-                if (tmp.equals("0x")) {
-                    return (new BigInteger(p_str.substring(2), 16)).longValue();
-                } else if (tmp.equals("0b")) {
-                    return (new BigInteger(p_str.substring(2), 2)).longValue();
-                } else if (tmp.equals("0o")) {
-                    return (new BigInteger(p_str.substring(2), 8)).longValue();
+                if ("0x".equals(tmp)) {
+                    return new BigInteger(p_str.substring(2), 16).longValue();
+                } else if ("0b".equals(tmp)) {
+                    return new BigInteger(p_str.substring(2), 2).longValue();
+                } else if ("0o".equals(tmp)) {
+                    return new BigInteger(p_str.substring(2), 8).longValue();
                 }
             }
 
             return java.lang.Long.parseLong(p_str);
-        } catch (final NumberFormatException e) {
-            return new java.lang.Long(0);
+        } catch (final NumberFormatException ignored) {
+            return 0L;
         }
     }
 }

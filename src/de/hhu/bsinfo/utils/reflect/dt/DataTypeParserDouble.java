@@ -33,8 +33,8 @@ public class DataTypeParserDouble implements DataTypeParser {
     public Object parse(final java.lang.String p_str) {
         try {
             return java.lang.Double.parseDouble(p_str);
-        } catch (final NumberFormatException e) {
-            return new java.lang.Double(0.0);
+        } catch (final NumberFormatException ignored) {
+            return 0.0;
         }
     }
 }

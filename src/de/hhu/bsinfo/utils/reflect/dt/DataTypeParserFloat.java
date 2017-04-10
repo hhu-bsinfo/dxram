@@ -33,8 +33,8 @@ public class DataTypeParserFloat implements DataTypeParser {
     public Object parse(final java.lang.String p_str) {
         try {
             return java.lang.Float.parseFloat(p_str);
-        } catch (final NumberFormatException e) {
-            return new java.lang.Float(0.0f);
+        } catch (final NumberFormatException ignored) {
+            return 0.0f;
         }
     }
 }
