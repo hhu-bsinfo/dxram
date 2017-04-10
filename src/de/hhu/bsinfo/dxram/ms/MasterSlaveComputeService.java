@@ -28,6 +28,7 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -47,13 +48,11 @@ import de.hhu.bsinfo.dxram.ms.tcmd.TcmdComptask;
 import de.hhu.bsinfo.dxram.ms.tcmd.TcmdComptaskscript;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -110,14 +109,14 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
      *
      * @return List of available master nodes with their compute group id
      */
-    public ArrayList<Pair<Short, Byte>> getMasters() {
-        ArrayList<Pair<Short, Byte>> masters = new ArrayList<>();
+    public ArrayList<MasterNodeEntry> getMasters() {
+        ArrayList<MasterNodeEntry> masters = new ArrayList<>();
 
         // check the name service entries
         for (int i = 0; i <= AbstractComputeMSBase.MAX_COMPUTE_GROUP_ID; i++) {
             long tmp = m_nameservice.getChunkID(AbstractComputeMSBase.NAMESERVICE_ENTRY_IDENT + i, 0);
             if (tmp != -1) {
-                masters.add(new Pair<>(ChunkID.getCreatorID(tmp), (byte) i));
+                masters.add(new MasterNodeEntry(ChunkID.getCreatorID(tmp), (byte) i));
             }
         }
 

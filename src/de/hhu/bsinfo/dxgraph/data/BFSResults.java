@@ -13,11 +13,11 @@
 
 package de.hhu.bsinfo.dxgraph.data;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.ethnet.NodeID;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -28,8 +28,11 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  */
 public class BFSResults extends DataStructure {
     private BFSResult m_aggregatedResult = new BFSResult();
-    private ArrayList<Pair<Integer, BFSResult>> m_bfsResults = new ArrayList<>();
+    private Map<Integer, BFSResult> m_bfsResults = new HashMap<>();
 
+    /**
+     * Constructor
+     */
     public BFSResults() {
 
     }
@@ -54,8 +57,7 @@ public class BFSResults extends DataStructure {
      *     BFS result of the node.
      */
     public void addResult(final short p_computeSlaveId, final short p_nodeId, final BFSResult p_bfsResult) {
-        int id = (p_nodeId << 16) | p_computeSlaveId;
-        m_bfsResults.add(new Pair<>(id, p_bfsResult));
+        m_bfsResults.put(p_nodeId << 16 | p_computeSlaveId, p_bfsResult);
     }
 
     /**
@@ -63,7 +65,7 @@ public class BFSResults extends DataStructure {
      *
      * @return List of single results identified by compute slave id and node id.
      */
-    public ArrayList<Pair<Integer, BFSResult>> getResults() {
+    public Map<Integer, BFSResult> getResults() {
         return m_bfsResults;
     }
 
@@ -77,7 +79,7 @@ public class BFSResults extends DataStructure {
             int id = p_importer.readInt();
             BFSResult result = new BFSResult();
             result.importObject(p_importer);
-            m_bfsResults.add(new Pair<>(id, result));
+            m_bfsResults.put(id, result);
         }
     }
 
@@ -85,8 +87,8 @@ public class BFSResults extends DataStructure {
     public int sizeofObject() {
         int size = m_aggregatedResult.sizeofObject();
         size += Integer.BYTES;
-        for (Pair<Integer, BFSResult> entry : m_bfsResults) {
-            size += Integer.BYTES + entry.m_second.sizeofObject();
+        for (Map.Entry<Integer, BFSResult> entry : m_bfsResults.entrySet()) {
+            size += Integer.BYTES + entry.getValue().sizeofObject();
         }
         return size;
     }
@@ -96,9 +98,9 @@ public class BFSResults extends DataStructure {
         m_aggregatedResult.exportObject(p_exporter);
 
         p_exporter.writeInt(m_bfsResults.size());
-        for (Pair<Integer, BFSResult> entry : m_bfsResults) {
-            p_exporter.writeInt(entry.m_first);
-            entry.second().exportObject(p_exporter);
+        for (Map.Entry<Integer, BFSResult> entry : m_bfsResults.entrySet()) {
+            p_exporter.writeInt(entry.getKey());
+            entry.getValue().exportObject(p_exporter);
         }
     }
 
@@ -109,9 +111,9 @@ public class BFSResults extends DataStructure {
         str += "Aggregated result:\n" + m_aggregatedResult + "\n--------------------------";
 
         str += "Node count " + m_bfsResults.size();
-        for (Pair<Integer, BFSResult> entry : m_bfsResults) {
-            str += "\n>>>>> " + NodeID.toHexString((short) (entry.first() >> 16)) + " | " + (entry.first() & 0xFFFF) + ": \n";
-            str += entry.m_second;
+        for (Map.Entry<Integer, BFSResult> entry : m_bfsResults.entrySet()) {
+            str += "\n>>>>> " + NodeID.toHexString((short) (entry.getKey() >> 16)) + " | " + (entry.getKey() & 0xFFFF) + ": \n";
+            str += entry.getValue();
         }
 
         return str;

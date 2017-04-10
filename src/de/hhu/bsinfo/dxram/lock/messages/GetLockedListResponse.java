@@ -16,8 +16,9 @@ package de.hhu.bsinfo.dxram.lock.messages;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.dxram.lock.LockedChunkEntry;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
-import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Response to a LockedListRequest
@@ -26,7 +27,7 @@ import de.hhu.bsinfo.utils.Pair;
  */
 public class GetLockedListResponse extends AbstractResponse {
 
-    private ArrayList<Pair<Long, Short>> m_list;
+    private ArrayList<LockedChunkEntry> m_list;
 
     /**
      * Creates an instance of LockResponse as a receiver.
@@ -43,7 +44,7 @@ public class GetLockedListResponse extends AbstractResponse {
      * @param p_lockedList
      *     List of locked chunks to send
      */
-    public GetLockedListResponse(final GetLockedListRequest p_request, final ArrayList<Pair<Long, Short>> p_lockedList) {
+    public GetLockedListResponse(final GetLockedListRequest p_request, final ArrayList<LockedChunkEntry> p_lockedList) {
         super(p_request, LockMessages.SUBTYPE_GET_LOCKED_LIST_RESPONSE);
 
         m_list = p_lockedList;
@@ -54,30 +55,36 @@ public class GetLockedListResponse extends AbstractResponse {
      *
      * @return List of locked chunks.
      */
-    public ArrayList<Pair<Long, Short>> getList() {
+    public ArrayList<LockedChunkEntry> getList() {
         return m_list;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + m_list.size() * (Long.BYTES + Short.BYTES);
+        return Integer.BYTES + m_list.size() * LockedChunkEntry.SIZEOF_OBJECT;
     }
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
+        MessagesDataStructureImExporter imExporter = new MessagesDataStructureImExporter(p_buffer);
+
         p_buffer.putInt(m_list.size());
-        for (Pair<Long, Short> entry : m_list) {
-            p_buffer.putLong(entry.first());
-            p_buffer.putShort(entry.second());
+        for (LockedChunkEntry entry : m_list) {
+            imExporter.exportObject(entry);
         }
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
+        MessagesDataStructureImExporter imExporter = new MessagesDataStructureImExporter(p_buffer);
+
         int size = p_buffer.getInt();
-        m_list = new ArrayList<Pair<Long, Short>>(size);
+        m_list = new ArrayList<LockedChunkEntry>(size);
+
         for (int i = 0; i < size; i++) {
-            m_list.add(new Pair<Long, Short>(p_buffer.getLong(), p_buffer.getShort()));
+            LockedChunkEntry entry = new LockedChunkEntry();
+            imExporter.importObject(entry);
+            m_list.add(entry);
         }
     }
 }

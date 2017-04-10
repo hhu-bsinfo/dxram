@@ -17,6 +17,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.TreeSet;
 
 import org.apache.logging.log4j.LogManager;
@@ -25,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
 import de.hhu.bsinfo.utils.CRC16;
-import de.hhu.bsinfo.utils.Pair;
 
 /**
  * HashTable to store ID-Mappings (Linear probing)
@@ -76,14 +76,14 @@ public class NameserviceHashTable extends AbstractMetadata {
      *     all serialized nameservice entries
      * @return Array list with entries as pairs of index + value
      */
-    public static ArrayList<Pair<Integer, Long>> convert(final byte[] p_array) {
-        ArrayList<Pair<Integer, Long>> ret;
+    public static ArrayList<NameserviceEntry> convert(final byte[] p_array) {
+        ArrayList<NameserviceEntry> ret;
         int count = p_array.length / 12;
         ByteBuffer buffer = ByteBuffer.wrap(p_array);
 
         ret = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            ret.add(new Pair<>(buffer.getInt(i * 12), buffer.getLong(i * 12 + 4)));
+            ret.add(new NameserviceEntry(buffer.getInt(i * 12), buffer.getLong(i * 12 + 4)));
         }
         return ret;
     }
@@ -336,7 +336,7 @@ public class NameserviceHashTable extends AbstractMetadata {
         int iter;
         Collection<Entry> list;
 
-        list = new TreeSet<>((p_entryA, p_entryB) -> p_entryA.m_key - p_entryB.m_key);
+        list = new TreeSet<>(Comparator.comparingInt(p_entryA -> p_entryA.m_key));
 
         for (int i = 0; i < m_elementCapacity; i++) {
             iter = getKey(i);

@@ -24,8 +24,8 @@ import de.hhu.bsinfo.dxram.chunk.bench.ChunkTaskUtils;
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceEntryStr;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -45,7 +45,7 @@ public class NameserviceGetChunkIDTask implements Task {
 
         NameserviceService nameserviceService = p_ctx.getDXRAMServiceAccessor().getService(NameserviceService.class);
 
-        ArrayList<Pair<String, Long>> entries = nameserviceService.getAllEntries();
+        ArrayList<NameserviceEntryStr> entries = nameserviceService.getAllEntries();
         int entryCnt = entries.size();
         long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(entryCnt, m_numThreads);
 
@@ -66,7 +66,7 @@ public class NameserviceGetChunkIDTask implements Task {
                 }
 
                 for (int j = 0; j < chunkCountsPerThread[threadIdx]; j++) {
-                    nameserviceService.getChunkID(entries.get(base + j).m_first, 100);
+                    nameserviceService.getChunkID(entries.get(base + j).getName(), 100);
                 }
 
                 timeEnd[threadIdx] = System.nanoTime();

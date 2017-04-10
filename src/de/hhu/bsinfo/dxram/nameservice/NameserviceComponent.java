@@ -32,8 +32,8 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Nameservice component providing mappings of string identifiers to chunkIDs.
@@ -177,13 +177,13 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
      *
      * @return List of available name mappings
      */
-    ArrayList<Pair<String, Long>> getAllEntries() {
-        ArrayList<Pair<String, Long>> list = new ArrayList<>();
+    ArrayList<NameserviceEntryStr> getAllEntries() {
+        ArrayList<NameserviceEntryStr> list = new ArrayList<>();
 
-        ArrayList<Pair<Integer, Long>> entries = m_lookup.getNameserviceEntries();
+        ArrayList<NameserviceEntry> entries = m_lookup.getNameserviceEntries();
         // convert index representation
-        for (Pair<Integer, Long> entry : entries) {
-            list.add(new Pair<>(m_converter.convert(entry.first()), entry.second()));
+        for (NameserviceEntry entry : entries) {
+            list.add(new NameserviceEntryStr(m_converter.convert(entry.getId()), entry.getValue()));
         }
 
         return list;

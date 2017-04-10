@@ -20,6 +20,7 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -41,7 +42,6 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
@@ -51,7 +51,6 @@ import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
@@ -85,7 +84,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     private TerminalComponent m_terminal;
 
     @Override
-    public ArrayList<Pair<Long, Short>> getLockedList() {
+    public ArrayList<LockedChunkEntry> getLockedList() {
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() != NodeRole.PEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
@@ -96,7 +95,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     }
 
     @Override
-    public ArrayList<Pair<Long, Short>> getLockedList(final short p_nodeId) {
+    public ArrayList<LockedChunkEntry> getLockedList(final short p_nodeId) {
         if (p_nodeId == m_boot.getNodeID()) {
             return getLockedList();
         }
@@ -414,7 +413,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
      *     the GetLockedListRequest
      */
     private void incomingLockedListRequest(final GetLockedListRequest p_request) {
-        ArrayList<Pair<Long, Short>> list = m_lock.getLockedList();
+        ArrayList<LockedChunkEntry> list = m_lock.getLockedList();
 
         GetLockedListResponse response = new GetLockedListResponse(p_request, list);
 

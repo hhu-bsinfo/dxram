@@ -91,6 +91,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.UpdateMetadataAfterRecoveryMessage;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -101,7 +102,6 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.CRC16;
-import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Peer functionality for overlay
@@ -213,8 +213,8 @@ public class OverlayPeer implements MessageReceiver {
      *
      * @return List of nameservice entries or null on error;
      */
-    public ArrayList<Pair<Integer, Long>> getNameserviceEntries() {
-        ArrayList<Pair<Integer, Long>> entries = new ArrayList<>();
+    public ArrayList<NameserviceEntry> getNameserviceEntries() {
+        ArrayList<NameserviceEntry> entries = new ArrayList<>();
         Short[] superpeers;
         GetNameserviceEntriesRequest request;
         GetNameserviceEntriesResponse response;

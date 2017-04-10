@@ -11,56 +11,45 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.utils;
+package de.hhu.bsinfo.dxram.lookup.overlay.storage;
 
 /**
- * Class for bundling two attributes
+ * Nameservice entry
  *
- * @param <K>
- *     second attribute
- * @param <T>
- *     first attribute
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 15.02.2016
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 10.04.2017
  */
-public class Pair<T, K> {
-    public T m_first;
-    public K m_second;
+public class NameserviceEntry {
+    private int m_id;
+    private long m_value;
 
     /**
-     * Default constructor
+     * Constructor
+     *
+     * @param p_id
+     *     Id of the entry
+     * @param p_value
+     *     Value of the entry
      */
-    public Pair() {
-
+    public NameserviceEntry(final int p_id, final long p_value) {
+        m_id = p_id;
+        m_value = p_value;
     }
 
     /**
-     * Creates an instance of Pair
+     * Get the id of the entry
      *
-     * @param p_first
-     *     first attribute
-     * @param p_second
-     *     second attribute
+     * @return Id of the entry
      */
-    public Pair(final T p_first, final K p_second) {
-        m_first = p_first;
-        m_second = p_second;
+    public int getId() {
+        return m_id;
     }
 
     /**
-     * Returns the first attribute
+     * Get the value of the entry
      *
-     * @return the first attribute
+     * @return Value
      */
-    public T first() {
-        return m_first;
-    }
-
-    /**
-     * Returns the second attribute
-     *
-     * @return the second attribute
-     */
-    public K second() {
-        return m_second;
+    public long getValue() {
+        return m_value;
     }
 }

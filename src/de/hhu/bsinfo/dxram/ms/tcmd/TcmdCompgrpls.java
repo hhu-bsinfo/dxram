@@ -15,10 +15,10 @@ package de.hhu.bsinfo.dxram.ms.tcmd;
 
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxram.ms.MasterNodeEntry;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
-import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Get a list of available compute groups
@@ -38,11 +38,11 @@ public class TcmdCompgrpls extends TerminalCommand {
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
         MasterSlaveComputeService mscomp = p_ctx.getService(MasterSlaveComputeService.class);
-        ArrayList<Pair<Short, Byte>> masters = mscomp.getMasters();
+        ArrayList<MasterNodeEntry> masters = mscomp.getMasters();
 
         p_ctx.printfln("List of available compute groups with master nodes (%d):", masters.size());
-        for (Pair<Short, Byte> master : masters) {
-            p_ctx.printfln("%d: 0x%X", master.second(), master.first());
+        for (MasterNodeEntry master : masters) {
+            p_ctx.printfln("%d: 0x%X", master.getComputeGroupId(), master.getNodeId());
         }
     }
 }

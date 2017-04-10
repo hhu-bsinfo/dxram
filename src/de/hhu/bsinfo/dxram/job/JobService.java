@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -34,14 +35,12 @@ import de.hhu.bsinfo.dxram.job.messages.PushJobQueueMessage;
 import de.hhu.bsinfo.dxram.job.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.job.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -69,7 +68,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
     private AtomicLong m_jobIDCounter = new AtomicLong(0);
 
-    private Map<Long, Pair<Byte, AbstractJob>> m_remoteJobCallbackMap = new HashMap<>();
+    private Map<Long, JobEventEntry> m_remoteJobCallbackMap = new HashMap<>();
 
     /**
      * Constructor
@@ -170,7 +169,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
                 mergedCallbackBitMask |= listener.getJobEventBitMask();
             }
 
-            m_remoteJobCallbackMap.put(jobId, new Pair<>(mergedCallbackBitMask, p_job));
+            m_remoteJobCallbackMap.put(jobId, new JobEventEntry(mergedCallbackBitMask, p_job));
         }
 
         PushJobQueueMessage message = new PushJobQueueMessage(p_nodeID, p_job, mergedCallbackBitMask);
@@ -292,14 +291,14 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
     @Override
     public void jobEventTriggered(final byte p_eventId, final long p_jobId, final short p_sourceNodeId) {
-        Pair<Byte, AbstractJob> job = m_remoteJobCallbackMap.get(p_jobId);
+        JobEventEntry job = m_remoteJobCallbackMap.get(p_jobId);
         if (job != null) {
             // check if any remote source is interested in this
-            if ((job.m_first & p_eventId) > 0) {
+            if ((job.getEventId() & p_eventId) > 0) {
                 // we have to redirect this to the remote source
                 // clear the event we are triggering
-                job.m_first = (byte) (job.m_first & (~p_eventId));
-                if (job.m_first == 0) {
+                job = new JobEventEntry((byte) (job.getEventId() & ~p_eventId), job.getJob());
+                if (job.getEventId() == 0) {
                     // no further events to trigger for remote, remove from map
                     m_remoteJobCallbackMap.remove(p_jobId);
                 }
@@ -310,7 +309,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
                     m_network.sendMessage(message);
                 } catch (final NetworkException e) {
                     // #if LOGGER >= ERROR
-                    LOGGER.error("Triggering job event '%s' for job '%s' failed: %s", p_eventId, job.m_second, e);
+                    LOGGER.error("Triggering job event '%s' for job '%s' failed: %s", p_eventId, job.getJob(), e);
                     // #endif /* LOGGER >= ERROR */
                 }
             }
@@ -388,7 +387,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
         // register ourselves as listener to event callbacks
         // and redirect them to the remote source
         job.registerEventListener(this);
-        m_remoteJobCallbackMap.put(job.getID(), new Pair<>(p_request.getCallbackJobEventBitMask(), job));
+        m_remoteJobCallbackMap.put(job.getID(), new JobEventEntry(p_request.getCallbackJobEventBitMask(), job));
 
         if (!m_job.pushJob(job)) {
             // #if LOGGER >= ERROR
@@ -430,16 +429,16 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
      *     The incoming message
      */
     private void incomingJobEventTriggeredMessage(final JobEventTriggeredMessage p_message) {
-        Pair<Byte, AbstractJob> job = m_remoteJobCallbackMap.get(p_message.getJobID());
+        JobEventEntry job = m_remoteJobCallbackMap.get(p_message.getJobID());
         if (job != null) {
             // check if we really registered for what we got from the remote instance
-            if ((job.m_first & p_message.getEventId()) > 0) {
+            if ((job.getEventId() & p_message.getEventId()) > 0) {
                 // redirect the remote event triggering to our locally
                 // registered listeners
 
                 // clear the event we are triggering
-                job.m_first = (byte) (job.m_first & (~p_message.getEventId()));
-                if (job.m_first == 0) {
+                job = new JobEventEntry((byte) (job.getEventId() & ~p_message.getEventId()), job.getJob());
+                if (job.getEventId() == 0) {
                     // no further events to trigger for remote, remove from map
                     m_remoteJobCallbackMap.remove(p_message.getJobID());
                 }
@@ -447,13 +446,13 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
                 // TODO use event system here to avoid blocking the network thread for too long?
                 switch (p_message.getEventId()) {
                     case JobEvents.MS_JOB_SCHEDULED_FOR_EXECUTION_EVENT_ID:
-                        job.m_second.notifyListenersJobScheduledForExecution(p_message.getSource());
+                        job.getJob().notifyListenersJobScheduledForExecution(p_message.getSource());
                         break;
                     case JobEvents.MS_JOB_STARTED_EXECUTION_EVENT_ID:
-                        job.m_second.notifyListenersJobStartsExecution(p_message.getSource());
+                        job.getJob().notifyListenersJobStartsExecution(p_message.getSource());
                         break;
                     case JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID:
-                        job.m_second.notifyListenersJobFinishedExecution(p_message.getSource());
+                        job.getJob().notifyListenersJobFinishedExecution(p_message.getSource());
                         break;
                     default:
                         assert 1 == 2;

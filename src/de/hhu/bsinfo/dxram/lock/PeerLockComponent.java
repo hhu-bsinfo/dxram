@@ -27,7 +27,6 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.ethnet.NodeID;
-import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Implementation of the lock component interface. This provides a peer side locking i.e.
@@ -50,14 +49,14 @@ public class PeerLockComponent extends AbstractLockComponent {
     }
 
     @Override
-    public ArrayList<Pair<Long, Short>> getLockedList() {
-        ArrayList<Pair<Long, Short>> ret = new ArrayList<>();
+    public ArrayList<LockedChunkEntry> getLockedList() {
+        ArrayList<LockedChunkEntry> ret = new ArrayList<>();
         for (Entry<Long, LockEntry> entry : m_lockedChunks.entrySet()) {
 
             LockEntry lockEntry = entry.getValue();
             short node = lockEntry.m_nodeID;
             if (node != NodeID.INVALID_ID) {
-                ret.add(new Pair<>(entry.getKey(), node));
+                ret.add(new LockedChunkEntry(entry.getKey(), node));
             }
         }
 

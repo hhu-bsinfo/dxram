@@ -15,10 +15,10 @@ package de.hhu.bsinfo.dxram.nameservice.tcmd;
 
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxram.nameservice.NameserviceEntryStr;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
-import de.hhu.bsinfo.utils.Pair;
 
 /**
  * List all registered name mappings of the nameservice
@@ -39,12 +39,12 @@ public class TcmdNamelist extends TerminalCommand {
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
         NameserviceService nameservice = p_ctx.getService(NameserviceService.class);
 
-        ArrayList<Pair<String, Long>> entries = nameservice.getAllEntries();
+        ArrayList<NameserviceEntryStr> entries = nameservice.getAllEntries();
 
         p_ctx.printfln("Nameservice entries(%d):", entries.size());
 
-        for (Pair<String, Long> entry : entries) {
-            p_ctx.printfln("%s: 0x%X", entry.first(), entry.second());
+        for (NameserviceEntryStr entry : entries) {
+            p_ctx.printfln("%s: 0x%X", entry.getName(), entry.getValue());
         }
     }
 }

@@ -17,7 +17,6 @@ import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Service to lock chunks.
@@ -49,7 +48,7 @@ public abstract class AbstractLockService extends AbstractDXRAMService {
      *
      * @return List of currently locked chunks, null on error.
      */
-    public abstract ArrayList<Pair<Long, Short>> getLockedList();
+    public abstract ArrayList<LockedChunkEntry> getLockedList();
 
     /**
      * Get a list of of locked chunk from a specific node.
@@ -58,7 +57,7 @@ public abstract class AbstractLockService extends AbstractDXRAMService {
      *     Id of the node to get the list from.
      * @return List of currently locked chunks, null on error.
      */
-    public abstract ArrayList<Pair<Long, Short>> getLockedList(short p_nodeId);
+    public abstract ArrayList<LockedChunkEntry> getLockedList(short p_nodeId);
 
     /**
      * Lock a DataStructure.
