@@ -30,17 +30,16 @@ public class TcmdBarrieralloc extends AbstractTerminalCommand {
 
     @Override
     public String getHelp() {
-        return "Create a new barrier for synchronization of mutliple peers\n" +
-                "Usage: barrieralloc <size>\n" +
-                "  size: Size of the barrier, i.e. the number of peers that have to sign on for release";
+        return "Create a new barrier for synchronization of mutliple peers\n" + "Usage: barrieralloc <size>\n" +
+            "  size: Size of the barrier, i.e. the number of peers that have to sign on for release";
     }
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        int size = p_ctx.getArgInt(p_args, 0, -1);
+        int size = TerminalCommandContext.getArgInt(p_args, 0, -1);
 
         if (size == -1) {
-            p_ctx.printlnErr("No size specified");
+            TerminalCommandContext.printlnErr("No size specified");
             return;
         }
 
@@ -48,9 +47,9 @@ public class TcmdBarrieralloc extends AbstractTerminalCommand {
 
         int barrierId = sync.barrierAllocate(size);
         if (barrierId == BarrierID.INVALID_ID) {
-            p_ctx.printlnErr("Allocating barrier failed");
+            TerminalCommandContext.printlnErr("Allocating barrier failed");
         } else {
-            p_ctx.printfln("Allocating barrier successful, barrier id: 0x%X", barrierId);
+            TerminalCommandContext.printfln("Allocating barrier successful, barrier id: 0x%X", barrierId);
         }
     }
 }

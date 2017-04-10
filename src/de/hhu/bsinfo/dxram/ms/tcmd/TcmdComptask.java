@@ -46,19 +46,19 @@ public class TcmdComptask extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        String taskName = p_ctx.getArgString(p_args, 0, null);
-        short cgid = p_ctx.getArgShort(p_args, 1, (short) -1);
-        short minSlaves = p_ctx.getArgShort(p_args, 2, (short) 0);
-        short maxSlaves = p_ctx.getArgShort(p_args, 3, (short) 0);
-        boolean wait = p_ctx.getArgBoolean(p_args, 4, true);
+        String taskName = TerminalCommandContext.getArgString(p_args, 0, null);
+        short cgid = TerminalCommandContext.getArgShort(p_args, 1, (short) -1);
+        short minSlaves = TerminalCommandContext.getArgShort(p_args, 2, (short) 0);
+        short maxSlaves = TerminalCommandContext.getArgShort(p_args, 3, (short) 0);
+        boolean wait = TerminalCommandContext.getArgBoolean(p_args, 4, true);
 
         if (taskName == null) {
-            p_ctx.printlnErr("No task name specified");
+            TerminalCommandContext.printlnErr("No task name specified");
             return;
         }
 
         if (cgid == -1) {
-            p_ctx.printlnErr("No cgid specified");
+            TerminalCommandContext.printlnErr("No cgid specified");
             return;
         }
 
@@ -71,7 +71,7 @@ public class TcmdComptask extends AbstractTerminalCommand {
         }
 
         if (task == null) {
-            p_ctx.printlnErr("Creating task failed");
+            TerminalCommandContext.printlnErr("Creating task failed");
             return;
         }
 
@@ -82,20 +82,20 @@ public class TcmdComptask extends AbstractTerminalCommand {
 
             @Override
             public void taskBeforeExecution(final TaskScriptState p_taskScriptState) {
-                p_ctx.printfln("ComputeTask: Starting execution %s", p_taskScriptState);
+                TerminalCommandContext.printfln("ComputeTask: Starting execution %s", p_taskScriptState);
             }
 
             @Override
             public void taskCompleted(final TaskScriptState p_taskScriptState) {
-                p_ctx.printfln("ComputeTask: Finished execution %s", p_taskScriptState);
-                p_ctx.println("Return codes of slave nodes: ");
+                TerminalCommandContext.printfln("ComputeTask: Finished execution %s", p_taskScriptState);
+                TerminalCommandContext.println("Return codes of slave nodes: ");
                 int[] results = p_taskScriptState.getExecutionReturnCodes();
 
                 for (int i = 0; i < results.length; i++) {
                     if (results[i] != 0) {
-                        p_ctx.printflnErr("(%d): %d", i, results[i]);
+                        TerminalCommandContext.printflnErr("(%d): %d", i, results[i]);
                     } else {
-                        p_ctx.printfln("(%d): %d", i, results[i]);
+                        TerminalCommandContext.printfln("(%d): %d", i, results[i]);
                     }
                 }
 
@@ -106,14 +106,14 @@ public class TcmdComptask extends AbstractTerminalCommand {
         TaskScriptState taskState = mscomp.submitTaskScript(taskScript, cgid, listener);
 
         if (taskState == null) {
-            p_ctx.printlnErr("Task submission failed");
+            TerminalCommandContext.printlnErr("Task submission failed");
             return;
         }
 
-        p_ctx.printfln("Task %s submitted, payload id: %d", task, taskState.getTaskScriptIdAssigned());
+        TerminalCommandContext.printfln("Task %s submitted, payload id: %d", task, taskState.getTaskScriptIdAssigned());
 
         if (wait) {
-            p_ctx.println("Waiting for task to finish...");
+            TerminalCommandContext.println("Waiting for task to finish...");
 
             try {
                 sem.acquire();

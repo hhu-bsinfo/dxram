@@ -30,26 +30,24 @@ public class TcmdBarrierfree extends AbstractTerminalCommand {
 
     @Override
     public String getHelp() {
-        return "Free an allocated barrier\n" +
-                "Usage: barrierfree <bid>\n" +
-                "  bid: Id of an allocated barrier to free";
+        return "Free an allocated barrier\n" + "Usage: barrierfree <bid>\n" + "  bid: Id of an allocated barrier to free";
     }
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        int bid = p_ctx.getArgBarrierId(p_args, 0, BarrierID.INVALID_ID);
+        int bid = TerminalCommandContext.getArgBarrierId(p_args, 0, BarrierID.INVALID_ID);
 
         if (bid == BarrierID.INVALID_ID) {
-            p_ctx.printlnErr("No bid specified");
+            TerminalCommandContext.printlnErr("No bid specified");
             return;
         }
 
         SynchronizationService sync = p_ctx.getService(SynchronizationService.class);
 
         if (!sync.barrierFree(bid)) {
-            p_ctx.printlnErr("Freeing barrier failed");
+            TerminalCommandContext.printlnErr("Freeing barrier failed");
         } else {
-            p_ctx.printfln("Barrier 0x%X free'd", bid);
+            TerminalCommandContext.printfln("Barrier 0x%X free'd", bid);
         }
     }
 }

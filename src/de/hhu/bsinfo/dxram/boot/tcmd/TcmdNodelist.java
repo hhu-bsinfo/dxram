@@ -37,19 +37,19 @@ public class TcmdNodelist extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        NodeRole nodeRole = p_ctx.getArgNodeRole(p_args, 0, null);
+        NodeRole nodeRole = TerminalCommandContext.getArgNodeRole(p_args, 0, null);
 
         BootService boot = p_ctx.getService(BootService.class);
 
         List<Short> nodeIds = boot.getOnlineNodeIDs();
 
-        p_ctx.printfln("Total available nodes (%d):", nodeIds.size());
+        TerminalCommandContext.printfln("Total available nodes (%d):", nodeIds.size());
 
         for (Short nodeId : nodeIds) {
             NodeRole curRole = boot.getNodeRole(nodeId);
 
             if (nodeRole == null || curRole == nodeRole) {
-                p_ctx.printfln("\t0x%04X   %s", nodeId, curRole);
+                TerminalCommandContext.printfln("\t0x%04X   %s", nodeId, curRole);
             }
         }
     }

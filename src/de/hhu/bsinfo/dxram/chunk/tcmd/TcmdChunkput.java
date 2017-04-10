@@ -13,13 +13,11 @@
 
 package de.hhu.bsinfo.dxram.chunk.tcmd;
 
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.chunk.ChunkAnonService;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.ethnet.NodeID;
@@ -54,40 +52,40 @@ public class TcmdChunkput extends AbstractTerminalCommand {
         String type;
         int offset;
 
-        if (p_ctx.isArgChunkID(p_args, 0)) {
-            cid = p_ctx.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
-            data = p_ctx.getArgString(p_args, 1, null);
-            type = p_ctx.getArgString(p_args, 2, "str").toLowerCase();
-            offset = p_ctx.getArgInt(p_args, 3, -1);
+        if (TerminalCommandContext.isArgChunkID(p_args, 0)) {
+            cid = TerminalCommandContext.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
+            data = TerminalCommandContext.getArgString(p_args, 1, null);
+            type = TerminalCommandContext.getArgString(p_args, 2, "str").toLowerCase();
+            offset = TerminalCommandContext.getArgInt(p_args, 3, -1);
         } else {
-            short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
-            long lid = p_ctx.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
+            short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+            long lid = TerminalCommandContext.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
 
             if (lid == ChunkID.INVALID_ID) {
-                p_ctx.printlnErr("No lid specified");
+                TerminalCommandContext.printlnErr("No lid specified");
                 return;
             }
 
             cid = ChunkID.getChunkID(nid, lid);
 
-            data = p_ctx.getArgString(p_args, 2, null);
-            type = p_ctx.getArgString(p_args, 3, "str").toLowerCase();
-            offset = p_ctx.getArgInt(p_args, 4, -1);
+            data = TerminalCommandContext.getArgString(p_args, 2, null);
+            type = TerminalCommandContext.getArgString(p_args, 3, "str").toLowerCase();
+            offset = TerminalCommandContext.getArgInt(p_args, 4, -1);
         }
 
         if (cid == ChunkID.INVALID_ID) {
-            p_ctx.printlnErr("No cid specified");
+            TerminalCommandContext.printlnErr("No cid specified");
             return;
         }
 
         if (data == null) {
-            p_ctx.printlnErr("No data specified");
+            TerminalCommandContext.printlnErr("No data specified");
             return;
         }
 
         // don't allow put of index chunk
         if (ChunkID.getLocalID(cid) == 0) {
-            p_ctx.printlnErr("Put of index chunk is not allowed");
+            TerminalCommandContext.printlnErr("Put of index chunk is not allowed");
             return;
         }
 
@@ -96,7 +94,7 @@ public class TcmdChunkput extends AbstractTerminalCommand {
         ChunkAnon[] chunks = new ChunkAnon[1];
 
         if (chunkService.get(chunks, cid) != 1) {
-            p_ctx.printflnErr("Getting chunk 0x%X failed: %s", cid, chunks[0].getState());
+            TerminalCommandContext.printflnErr("Getting chunk 0x%X failed: %s", cid, chunks[0].getState());
             return;
         }
 
@@ -182,15 +180,15 @@ public class TcmdChunkput extends AbstractTerminalCommand {
                 break;
 
             default:
-                p_ctx.printflnErr("Unsupported data type %s", type);
+                TerminalCommandContext.printflnErr("Unsupported data type %s", type);
                 return;
         }
 
         // put chunk back
         if (chunkService.put(chunk) != 1) {
-            p_ctx.printflnErr("Putting chunk 0x%X failed: %s", cid, chunk.getState());
+            TerminalCommandContext.printflnErr("Putting chunk 0x%X failed: %s", cid, chunk.getState());
         } else {
-            p_ctx.printfln("Put to chunk 0x%X successful", cid);
+            TerminalCommandContext.printfln("Put to chunk 0x%X successful", cid);
         }
     }
 
@@ -205,30 +203,5 @@ public class TcmdChunkput extends AbstractTerminalCommand {
             default:
                 return false;
         }
-    }
-
-    private static DataStructure newDataStructure(final String p_className, final TerminalCommandContext p_ctx) {
-        Class<?> clazz;
-        try {
-            clazz = Class.forName(p_className);
-        } catch (final ClassNotFoundException ignored) {
-            p_ctx.printflnErr("Cannot find class with name %s", p_className);
-            return null;
-        }
-
-        if (!DataStructure.class.isAssignableFrom(clazz)) {
-            p_ctx.printflnErr("Class %s is not implementing the DataStructure interface", p_className);
-            return null;
-        }
-
-        DataStructure dataStructure;
-        try {
-            dataStructure = (DataStructure) clazz.getConstructor().newInstance();
-        } catch (final InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            p_ctx.printflnErr("Creating instance of %s failed: %s", p_className, e.getMessage());
-            return null;
-        }
-
-        return dataStructure;
     }
 }

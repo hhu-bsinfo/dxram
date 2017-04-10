@@ -40,29 +40,29 @@ public class TcmdChunklock extends AbstractTerminalCommand {
         long cid;
 
         if (p_args.length > 1) {
-            short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
-            long lid = p_ctx.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
+            short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+            long lid = TerminalCommandContext.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
             cid = ChunkID.getChunkID(nid, lid);
         } else {
-            cid = p_ctx.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
+            cid = TerminalCommandContext.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
         }
 
         if (cid == ChunkID.INVALID_ID) {
-            p_ctx.printlnErr("No or invalid cid specified");
+            TerminalCommandContext.printlnErr("No or invalid cid specified");
             return;
         }
 
         // don't allow removal of index chunk
         if (ChunkID.getLocalID(cid) == 0) {
-            p_ctx.printlnErr("Locking of index chunk is not allowed");
+            TerminalCommandContext.printlnErr("Locking of index chunk is not allowed");
             return;
         }
 
         AbstractLockService.ErrorCode err = p_ctx.getService(AbstractLockService.class).lock(true, 1000, cid);
         if (err != AbstractLockService.ErrorCode.SUCCESS) {
-            p_ctx.printflnErr("Error locking chunk 0x%X: %s", cid, err);
+            TerminalCommandContext.printflnErr("Error locking chunk 0x%X: %s", cid, err);
         } else {
-            p_ctx.printfln("Locked chunk 0x%X", cid);
+            TerminalCommandContext.printfln("Locked chunk 0x%X", cid);
         }
     }
 }

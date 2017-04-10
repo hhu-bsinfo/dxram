@@ -26,26 +26,12 @@ public class TerminalCommandContext {
     }
 
     /**
-     * Get a service from DXRAM.
-     *
-     * @param p_class
-     *     Class of the service to get. If the service has different implementations, use the common interface
-     *     or abstract class to get the registered instance.
-     * @param <T>
-     *     Class extending DXRAMService
-     * @return Reference to the service if available and enabled, null otherwise.
-     */
-    public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
-        return m_serviceAccessor.getService(p_class);
-    }
-
-    /**
      * Print to the console
      *
      * @param p_str
      *     String to print
      */
-    public void print(final String p_str) {
+    public static void print(final String p_str) {
         System.out.print(p_str);
     }
 
@@ -55,7 +41,7 @@ public class TerminalCommandContext {
      * @param p_str
      *     String to print
      */
-    public void println(final String p_str) {
+    public static void println(final String p_str) {
         System.out.println(p_str);
     }
 
@@ -67,7 +53,7 @@ public class TerminalCommandContext {
      * @param p_args
      *     Optional arguments
      */
-    public void printf(final String p_format, final Object... p_args) {
+    public static void printf(final String p_format, final Object... p_args) {
         System.out.printf(p_format, p_args);
     }
 
@@ -77,7 +63,7 @@ public class TerminalCommandContext {
      * @param p_str
      *     String to print
      */
-    public void printErr(final String p_str) {
+    public static void printErr(final String p_str) {
         changeConsoleColor(TerminalColor.RED, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
         System.out.print(p_str);
         changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
@@ -89,7 +75,7 @@ public class TerminalCommandContext {
      * @param p_str
      *     String to print
      */
-    public void printlnErr(final String p_str) {
+    public static void printlnErr(final String p_str) {
         changeConsoleColor(TerminalColor.RED, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
         System.out.println(p_str);
         changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
@@ -103,7 +89,7 @@ public class TerminalCommandContext {
      * @param p_args
      *     Optional arguments
      */
-    public void printfErr(final String p_format, final Object... p_args) {
+    public static void printfErr(final String p_format, final Object... p_args) {
         changeConsoleColor(TerminalColor.RED, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
         System.out.printf(p_format, p_args);
         changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
@@ -117,7 +103,7 @@ public class TerminalCommandContext {
      * @param p_args
      *     Optional arguments
      */
-    public void printflnErr(final String p_format, final Object... p_args) {
+    public static void printflnErr(final String p_format, final Object... p_args) {
         changeConsoleColor(TerminalColor.RED, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
         System.out.printf(p_format, p_args);
         System.out.print('\n');
@@ -132,7 +118,7 @@ public class TerminalCommandContext {
      * @param p_args
      *     Optional arguments
      */
-    public void printfln(final String p_format, final Object... p_args) {
+    public static void printfln(final String p_format, final Object... p_args) {
         System.out.printf(p_format, p_args);
         System.out.print('\n');
     }
@@ -148,7 +134,7 @@ public class TerminalCommandContext {
      *     Default value if argument not available
      * @return Value
      */
-    public boolean getArgBoolean(final String[] p_args, final int p_pos, final boolean p_default) {
+    public static boolean getArgBoolean(final String[] p_args, final int p_pos, final boolean p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
         }
@@ -167,7 +153,7 @@ public class TerminalCommandContext {
      *     Default value if argument not available
      * @return Value
      */
-    public short getArgShort(final String[] p_args, final int p_pos, final short p_default) {
+    public static short getArgShort(final String[] p_args, final int p_pos, final short p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
         }
@@ -186,7 +172,7 @@ public class TerminalCommandContext {
      *     Default value if argument not available
      * @return Value
      */
-    public int getArgInt(final String[] p_args, final int p_pos, final int p_default) {
+    public static int getArgInt(final String[] p_args, final int p_pos, final int p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
         }
@@ -205,7 +191,7 @@ public class TerminalCommandContext {
      *     Default value if argument not available
      * @return Value
      */
-    public long getArgLong(final String[] p_args, final int p_pos, final long p_default) {
+    public static long getArgLong(final String[] p_args, final int p_pos, final long p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
         }
@@ -224,7 +210,7 @@ public class TerminalCommandContext {
      *     Default value if argument not available
      * @return Value
      */
-    public String getArgString(final String[] p_args, final int p_pos, final String p_default) {
+    public static String getArgString(final String[] p_args, final int p_pos, final String p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
         }
@@ -243,7 +229,7 @@ public class TerminalCommandContext {
      *     Default value if argument not available
      * @return Value
      */
-    public NodeRole getArgNodeRole(final String[] p_args, final int p_pos, final NodeRole p_default) {
+    public static NodeRole getArgNodeRole(final String[] p_args, final int p_pos, final NodeRole p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
         }
@@ -262,7 +248,7 @@ public class TerminalCommandContext {
      *     Default value if argument not available
      * @return Value
      */
-    public short getArgNodeId(final String[] p_args, final int p_pos, final short p_default) {
+    public static short getArgNodeId(final String[] p_args, final int p_pos, final short p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
         }
@@ -281,7 +267,7 @@ public class TerminalCommandContext {
      *     Default value if argument not available
      * @return Value
      */
-    public int getArgBarrierId(final String[] p_args, final int p_pos, final int p_default) {
+    public static int getArgBarrierId(final String[] p_args, final int p_pos, final int p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
         }
@@ -300,7 +286,7 @@ public class TerminalCommandContext {
      *     Default value if argument not available
      * @return Value
      */
-    public long getArgLocalId(final String[] p_args, final int p_pos, final long p_default) {
+    public static long getArgLocalId(final String[] p_args, final int p_pos, final long p_default) {
         return getArgChunkId(p_args, p_pos, p_default);
     }
 
@@ -315,7 +301,7 @@ public class TerminalCommandContext {
      *     Default value if argument not available
      * @return Value
      */
-    public long getArgChunkId(final String[] p_args, final int p_pos, final long p_default) {
+    public static long getArgChunkId(final String[] p_args, final int p_pos, final long p_default) {
         if (p_args.length <= p_pos) {
             return p_default;
         }
@@ -332,7 +318,7 @@ public class TerminalCommandContext {
      *     Position of the argument to check
      * @return True of argument matches a chunk id representation, false otherwise.
      */
-    public boolean isArgChunkID(final String[] p_args, final int p_pos) {
+    public static boolean isArgChunkID(final String[] p_args, final int p_pos) {
         String str = p_args[p_pos];
 
         if (str.startsWith("0x")) {
@@ -340,6 +326,20 @@ public class TerminalCommandContext {
         }
 
         return str.length() >= 16;
+    }
+
+    /**
+     * Get a service from DXRAM.
+     *
+     * @param p_class
+     *     Class of the service to get. If the service has different implementations, use the common interface
+     *     or abstract class to get the registered instance.
+     * @param <T>
+     *     Class extending DXRAMService
+     * @return Reference to the service if available and enabled, null otherwise.
+     */
+    public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
+        return m_serviceAccessor.getService(p_class);
     }
 
     /**
@@ -352,7 +352,7 @@ public class TerminalCommandContext {
      * @param p_style
      *     Text style.
      */
-    private void changeConsoleColor(final TerminalColor p_color, final TerminalColor p_backgroundColor, final TerminalStyle p_style) {
+    private static void changeConsoleColor(final TerminalColor p_color, final TerminalColor p_backgroundColor, final TerminalStyle p_style) {
         if (p_backgroundColor != TerminalColor.DEFAULT) {
             System.out.printf("\033[%d;%d;%dm", p_style.ordinal(), p_color.ordinal() + 30, p_backgroundColor.ordinal() + 40);
         } else if (p_color != TerminalColor.DEFAULT) {

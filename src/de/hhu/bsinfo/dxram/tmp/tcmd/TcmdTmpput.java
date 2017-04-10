@@ -42,18 +42,18 @@ public class TcmdTmpput extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        int id = p_ctx.getArgInt(p_args, 0, -1);
-        String data = p_ctx.getArgString(p_args, 1, null);
-        String type = p_ctx.getArgString(p_args, 2, "str").toLowerCase();
-        int offset = p_ctx.getArgInt(p_args, 3, -1);
+        int id = TerminalCommandContext.getArgInt(p_args, 0, -1);
+        String data = TerminalCommandContext.getArgString(p_args, 1, null);
+        String type = TerminalCommandContext.getArgString(p_args, 2, "str").toLowerCase();
+        int offset = TerminalCommandContext.getArgInt(p_args, 3, -1);
 
         if (id == -1) {
-            p_ctx.printlnErr("No id specified");
+            TerminalCommandContext.printlnErr("No id specified");
             return;
         }
 
         if (data == null) {
-            p_ctx.printlnErr("No data specified");
+            TerminalCommandContext.printlnErr("No data specified");
             return;
         }
 
@@ -61,7 +61,7 @@ public class TcmdTmpput extends AbstractTerminalCommand {
 
         ChunkAnon chunk = new ChunkAnon(id);
         if (!tmp.getAnon(chunk)) {
-            p_ctx.printflnErr("Getting chunk 0x%X failed: %s", id, chunk.getState());
+            TerminalCommandContext.printflnErr("Getting chunk 0x%X failed: %s", id, chunk.getState());
             return;
         }
 
@@ -146,15 +146,15 @@ public class TcmdTmpput extends AbstractTerminalCommand {
                 break;
 
             default:
-                p_ctx.printflnErr("Unsupported data type %s", type);
+                TerminalCommandContext.printflnErr("Unsupported data type %s", type);
                 return;
         }
 
         // put chunk back
         if (!tmp.putAnon(chunk)) {
-            p_ctx.printflnErr("Putting chunk 0x%X to tmp storage failed: %s", id, chunk.getState());
+            TerminalCommandContext.printflnErr("Putting chunk 0x%X to tmp storage failed: %s", id, chunk.getState());
         } else {
-            p_ctx.printfln("Put to chunk 0x%X to tmp storage successful", id);
+            TerminalCommandContext.printfln("Put to chunk 0x%X to tmp storage successful", id);
         }
     }
 }

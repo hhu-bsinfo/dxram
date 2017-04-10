@@ -38,13 +38,13 @@ public class TcmdNodewait extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        int superpeers = p_ctx.getArgInt(p_args, 0, 0);
-        int peers = p_ctx.getArgInt(p_args, 1, 0);
-        int pollIntervalMs = p_ctx.getArgInt(p_args, 2, 1000);
+        int superpeers = TerminalCommandContext.getArgInt(p_args, 0, 0);
+        int peers = TerminalCommandContext.getArgInt(p_args, 1, 0);
+        int pollIntervalMs = TerminalCommandContext.getArgInt(p_args, 2, 1000);
 
         BootService boot = p_ctx.getService(BootService.class);
 
-        p_ctx.printfln("Waiting for at least %d superpeer(s) and %d peer(s)...", superpeers, peers);
+        TerminalCommandContext.printfln("Waiting for at least %d superpeer(s) and %d peer(s)...", superpeers, peers);
 
         List<Short> listSuperpeers = boot.getOnlineSuperpeerNodeIDs();
         while (listSuperpeers.size() < superpeers) {
@@ -68,6 +68,6 @@ public class TcmdNodewait extends AbstractTerminalCommand {
             listPeers = boot.getOnlinePeerNodeIDs();
         }
 
-        p_ctx.printfln("%d superpeers and %d peers online", listSuperpeers.size(), listPeers.size());
+        TerminalCommandContext.printfln("%d superpeers and %d peers online", listSuperpeers.size(), listPeers.size());
     }
 }

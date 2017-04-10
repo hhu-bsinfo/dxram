@@ -33,19 +33,17 @@ public class TcmdBarriersignon extends AbstractTerminalCommand {
 
     @Override
     public String getHelp() {
-        return "Sign on to an allocated barrier for synchronization (for testing/debugging)\n" +
-                "Usage: barriersignon <bid> [data]\n" +
-                "  bid: Id of the barrier to sign on to\n" +
-                "  data: Custom data to pass along with the sign on call (optional)";
+        return "Sign on to an allocated barrier for synchronization (for testing/debugging)\n" + "Usage: barriersignon <bid> [data]\n" +
+            "  bid: Id of the barrier to sign on to\n" + "  data: Custom data to pass along with the sign on call (optional)";
     }
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        int bid = p_ctx.getArgBarrierId(p_args, 0, BarrierID.INVALID_ID);
-        long data = p_ctx.getArgLong(p_args, 1, 0);
+        int bid = TerminalCommandContext.getArgBarrierId(p_args, 0, BarrierID.INVALID_ID);
+        long data = TerminalCommandContext.getArgLong(p_args, 1, 0);
 
         if (bid == BarrierID.INVALID_ID) {
-            p_ctx.printlnErr("No bid specified");
+            TerminalCommandContext.printlnErr("No bid specified");
             return;
         }
 
@@ -53,15 +51,15 @@ public class TcmdBarriersignon extends AbstractTerminalCommand {
         BarrierStatus result = sync.barrierSignOn(bid, data);
 
         if (result == null) {
-            p_ctx.printflnErr("Signing on to barrier 0x%X failed", bid);
+            TerminalCommandContext.printflnErr("Signing on to barrier 0x%X failed", bid);
             return;
         }
 
         String str = "";
         for (int i = 0; i < result.getSignedOnNodeIDs().length; i++) {
-            str += "\n" + NodeID.toHexString(result.getSignedOnNodeIDs()[i]) + ": " + ChunkID.toHexString(result.getCustomData()[i]);
+            str += '\n' + NodeID.toHexString(result.getSignedOnNodeIDs()[i]) + ": " + ChunkID.toHexString(result.getCustomData()[i]);
         }
 
-        p_ctx.printfln("Synchronized to barrier 0x%X custom data: %s", bid, str);
+        TerminalCommandContext.printfln("Synchronized to barrier 0x%X custom data: %s", bid, str);
     }
 }

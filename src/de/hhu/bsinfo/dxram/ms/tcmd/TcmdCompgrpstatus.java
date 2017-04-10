@@ -34,10 +34,10 @@ public class TcmdCompgrpstatus extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        short cgid = p_ctx.getArgShort(p_args, 0, (short) -1);
+        short cgid = TerminalCommandContext.getArgShort(p_args, 0, (short) -1);
 
         if (cgid == -1) {
-            p_ctx.printlnErr("No cgid specified");
+            TerminalCommandContext.printlnErr("No cgid specified");
             return;
         }
 
@@ -45,10 +45,10 @@ public class TcmdCompgrpstatus extends AbstractTerminalCommand {
         MasterSlaveComputeService.StatusMaster status = mscomp.getStatusMaster(cgid);
 
         if (status == null) {
-            p_ctx.printflnErr("Getting compute group status of group %d failed", cgid);
+            TerminalCommandContext.printflnErr("Getting compute group status of group %d failed", cgid);
             return;
         }
 
-        p_ctx.printfln("Status of group %d:\n%s", cgid, status);
+        TerminalCommandContext.printfln("Status of group %d:\n%s", cgid, status);
     }
 }

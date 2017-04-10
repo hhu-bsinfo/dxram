@@ -35,19 +35,19 @@ public class TcmdTmpremove extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        int id = p_ctx.getArgInt(p_args, 0, -1);
+        int id = TerminalCommandContext.getArgInt(p_args, 0, -1);
 
         if (id == -1) {
-            p_ctx.printlnErr("No id specified");
+            TerminalCommandContext.printlnErr("No id specified");
             return;
         }
 
         TemporaryStorageService tmpstore = p_ctx.getService(TemporaryStorageService.class);
 
         if (tmpstore.remove(id)) {
-            p_ctx.printfln("Removed chunk with id 0x%X from temporary storage", id);
+            TerminalCommandContext.printfln("Removed chunk with id 0x%X from temporary storage", id);
         } else {
-            p_ctx.printlnErr("Creating chunk in temporary storage failed");
+            TerminalCommandContext.printlnErr("Creating chunk in temporary storage failed");
         }
     }
 }

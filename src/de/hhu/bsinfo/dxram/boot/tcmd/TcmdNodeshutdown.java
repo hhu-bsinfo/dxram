@@ -36,21 +36,21 @@ public class TcmdNodeshutdown extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
-        boolean kill = p_ctx.getArgBoolean(p_args, 1, false);
+        short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+        boolean kill = TerminalCommandContext.getArgBoolean(p_args, 1, false);
 
         if (nid == NodeID.INVALID_ID) {
-            p_ctx.printlnErr("No node id specified");
+            TerminalCommandContext.printlnErr("No node id specified");
             return;
         }
 
         BootService boot = p_ctx.getService(BootService.class);
 
         if (!boot.shutdownNode(nid, kill)) {
-            p_ctx.printfln("Shutting down node 0x%X failed", nid);
+            TerminalCommandContext.printfln("Shutting down node 0x%X failed", nid);
         } else {
-            p_ctx.printfln("Shutting down node 0x%X...", nid);
-            p_ctx.printfln("Ignore ERROR messages and continue by pressing <Enter>");
+            TerminalCommandContext.printfln("Shutting down node 0x%X...", nid);
+            TerminalCommandContext.printfln("Ignore ERROR messages and continue by pressing <Enter>");
         }
     }
 }

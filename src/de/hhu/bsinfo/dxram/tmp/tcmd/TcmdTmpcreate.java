@@ -35,25 +35,25 @@ public class TcmdTmpcreate extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        int id = p_ctx.getArgInt(p_args, 0, -1);
-        int size = p_ctx.getArgInt(p_args, 1, -1);
+        int id = TerminalCommandContext.getArgInt(p_args, 0, -1);
+        int size = TerminalCommandContext.getArgInt(p_args, 1, -1);
 
         if (id == -1) {
-            p_ctx.printlnErr("No id specified");
+            TerminalCommandContext.printlnErr("No id specified");
             return;
         }
 
         if (size == -1) {
-            p_ctx.printlnErr("No size specified");
+            TerminalCommandContext.printlnErr("No size specified");
             return;
         }
 
         TemporaryStorageService tmpstore = p_ctx.getService(TemporaryStorageService.class);
 
         if (tmpstore.create(id, size)) {
-            p_ctx.printfln("Created chunk of size %d in temporary storage: 0x%d", size, id);
+            TerminalCommandContext.printfln("Created chunk of size %d in temporary storage: 0x%d", size, id);
         } else {
-            p_ctx.printlnErr("Creating chunk in temporary storage failed");
+            TerminalCommandContext.printlnErr("Creating chunk in temporary storage failed");
         }
     }
 }

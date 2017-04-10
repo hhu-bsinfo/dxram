@@ -13,13 +13,14 @@
 
 package de.hhu.bsinfo.dxram.lookup.tcmd;
 
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.lookup.LookupService;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalCommandContext;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
-import java.util.List;
 
 /**
  * Prints a summary of the specified superpeer's metadata
@@ -33,18 +34,16 @@ public class TcmdMetadata extends AbstractTerminalCommand {
 
     @Override
     public String getHelp() {
-        return "Prints a summary of the specified superpeer's metadata\n" +
-                "Usage: metadatasummary <nid>\n" +
-                "  nid: Node id of the superpeer to print the metadata of\n" +
-                "       \"all\" prints metadata of all superpeers";
+        return "Prints a summary of the specified superpeer's metadata\n" + "Usage: metadatasummary <nid>\n" +
+            "  nid: Node id of the superpeer to print the metadata of\n" + "       \"all\" prints metadata of all superpeers";
     }
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        String nidStr = p_ctx.getArgString(p_args, 0, null);
+        String nidStr = TerminalCommandContext.getArgString(p_args, 0, null);
 
         if (nidStr == null) {
-            p_ctx.printlnErr("No nid specified");
+            TerminalCommandContext.printlnErr("No nid specified");
             return;
         }
 
@@ -57,21 +56,21 @@ public class TcmdMetadata extends AbstractTerminalCommand {
                 NodeRole curRole = boot.getNodeRole(nodeId);
                 if (curRole == NodeRole.SUPERPEER) {
                     String summary = lookup.getMetadataSummary(nodeId);
-                    p_ctx.printfln("Metadata summary of 0x%X:\n%s", nodeId, summary);
+                    TerminalCommandContext.printfln("Metadata summary of 0x%X:\n%s", nodeId, summary);
                 }
             }
         } else {
-            short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+            short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
 
             if (nid == NodeID.INVALID_ID) {
-                p_ctx.printlnErr("No nid specified");
+                TerminalCommandContext.printlnErr("No nid specified");
                 return;
             }
 
             LookupService lookup = p_ctx.getService(LookupService.class);
 
             String summary = lookup.getMetadataSummary(nid);
-            p_ctx.printfln("Metadata summary of 0x%X:\n%s", nid, summary);
+            TerminalCommandContext.printfln("Metadata summary of 0x%X:\n%s", nid, summary);
         }
     }
 }

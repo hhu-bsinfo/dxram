@@ -41,11 +41,11 @@ public class TcmdChunkunlock extends AbstractTerminalCommand {
         long cid;
 
         if (p_args.length > 1) {
-            short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+            short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
             long lid = p_ctx.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
             cid = ChunkID.getChunkID(nid, lid);
         } else {
-            cid = p_ctx.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
+            cid = TerminalCommandContext.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
         }
 
         if (cid == ChunkID.INVALID_ID) {
@@ -63,7 +63,7 @@ public class TcmdChunkunlock extends AbstractTerminalCommand {
         if (err != AbstractLockService.ErrorCode.SUCCESS) {
             p_ctx.printflnErr("Error unlocking chunk 0x%X: %s", cid, err);
         } else {
-            p_ctx.printfln("Unlocked chunk 0x%X", cid);
+            TerminalCommandContext.printfln("Unlocked chunk 0x%X", cid);
         }
     }
 }

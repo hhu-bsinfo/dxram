@@ -40,7 +40,7 @@ public class TcmdStatsrecorders extends AbstractTerminalCommand {
         Collection<StatisticsRecorder> recorders = Statistics.getRecorders();
 
         for (StatisticsRecorder recorder : recorders) {
-            p_ctx.printfln("> %s", recorder.getName());
+            TerminalCommandContext.printfln("> %s", recorder.getName());
         }
     }
 }

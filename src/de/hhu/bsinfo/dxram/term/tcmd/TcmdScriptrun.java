@@ -40,10 +40,10 @@ public class TcmdScriptrun extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        String file = p_ctx.getArgString(p_args, 0, null);
+        String file = TerminalCommandContext.getArgString(p_args, 0, null);
 
         if (file == null) {
-            p_ctx.printlnErr("No scriptfile specified");
+            TerminalCommandContext.printlnErr("No scriptfile specified");
             return;
         }
 
@@ -52,7 +52,7 @@ public class TcmdScriptrun extends AbstractTerminalCommand {
         try {
             stringList = Files.readAllLines(new File(file).toPath(), Charset.defaultCharset());
         } catch (final IOException e) {
-            p_ctx.printflnErr("Reading script file %s failed: %s", file, e);
+            TerminalCommandContext.printflnErr("Reading script file %s failed: %s", file, e);
             return;
         }
 

@@ -34,7 +34,7 @@ public class TcmdStatsprint extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        String className = p_ctx.getArgString(p_args, 0, null);
+        String className = TerminalCommandContext.getArgString(p_args, 0, null);
 
         if (className == null) {
             Statistics.printStatistics();

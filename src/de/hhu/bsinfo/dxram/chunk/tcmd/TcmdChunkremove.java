@@ -42,30 +42,30 @@ public class TcmdChunkremove extends AbstractTerminalCommand {
         long cid;
 
         if (p_args.length > 1) {
-            short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
-            long lid = p_ctx.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
+            short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+            long lid = TerminalCommandContext.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
             cid = ChunkID.getChunkID(nid, lid);
         } else {
-            cid = p_ctx.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
+            cid = TerminalCommandContext.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
         }
 
         if (cid == ChunkID.INVALID_ID) {
-            p_ctx.printlnErr("No or invalid cid specified");
+            TerminalCommandContext.printlnErr("No or invalid cid specified");
             return;
         }
 
         // don't allow removal of index chunk
         if (ChunkID.getLocalID(cid) == 0) {
-            p_ctx.printlnErr("Removal of index chunk is not allowed");
+            TerminalCommandContext.printlnErr("Removal of index chunk is not allowed");
             return;
         }
 
         ChunkRemoveService chunk = p_ctx.getService(ChunkRemoveService.class);
 
         if (chunk.remove(cid) != 1) {
-            p_ctx.printflnErr("Removing chunk with ID 0x%X failed", cid);
+            TerminalCommandContext.printflnErr("Removing chunk with ID 0x%X failed", cid);
         } else {
-            p_ctx.printfln("Chunk 0x%X removed", cid);
+            TerminalCommandContext.printfln("Chunk 0x%X removed", cid);
         }
     }
 }

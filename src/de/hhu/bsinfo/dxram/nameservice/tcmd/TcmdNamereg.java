@@ -42,22 +42,22 @@ public class TcmdNamereg extends AbstractTerminalCommand {
         String name;
 
         if (p_args.length > 2) {
-            short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
-            long lid = p_ctx.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
+            short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+            long lid = TerminalCommandContext.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
             cid = ChunkID.getChunkID(nid, lid);
-            name = p_ctx.getArgString(p_args, 2, null);
+            name = TerminalCommandContext.getArgString(p_args, 2, null);
         } else {
-            cid = p_ctx.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
-            name = p_ctx.getArgString(p_args, 1, null);
+            cid = TerminalCommandContext.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
+            name = TerminalCommandContext.getArgString(p_args, 1, null);
         }
 
         if (name == null) {
-            p_ctx.printlnErr("No name specified");
+            TerminalCommandContext.printlnErr("No name specified");
             return;
         }
 
         if (cid == ChunkID.INVALID_ID) {
-            p_ctx.printlnErr("No chunk id or invalid id specified");
+            TerminalCommandContext.printlnErr("No chunk id or invalid id specified");
             return;
         }
 

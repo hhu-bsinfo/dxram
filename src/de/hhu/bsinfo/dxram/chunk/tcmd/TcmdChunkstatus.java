@@ -37,11 +37,11 @@ public class TcmdChunkstatus extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
-        boolean migrated = p_ctx.getArgBoolean(p_args, 1, false);
+        short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+        boolean migrated = TerminalCommandContext.getArgBoolean(p_args, 1, false);
 
         if (nid == NodeID.INVALID_ID) {
-            p_ctx.printlnErr("No nid specified");
+            TerminalCommandContext.printlnErr("No nid specified");
             return;
         }
 
@@ -50,10 +50,10 @@ public class TcmdChunkstatus extends AbstractTerminalCommand {
         MemoryManagerComponent.Status status = chunk.getStatus(nid);
 
         if (status == null) {
-            p_ctx.printlnErr("Getting status failed");
+            TerminalCommandContext.printlnErr("Getting status failed");
             return;
         }
 
-        p_ctx.println(status.toString());
+        TerminalCommandContext.println(status.toString());
     }
 }

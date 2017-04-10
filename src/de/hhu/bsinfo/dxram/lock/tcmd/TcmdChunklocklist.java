@@ -39,7 +39,7 @@ public class TcmdChunklocklist extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+        short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
 
         if (nid == NodeID.INVALID_ID) {
             p_ctx.printlnErr("No nid specified");
@@ -56,10 +56,10 @@ public class TcmdChunklocklist extends AbstractTerminalCommand {
             return;
         }
 
-        p_ctx.printfln("Locked chunks of 0x%X (%d):", nid, list.size());
-        p_ctx.println("<lid: nid that locked the chunk>");
+        TerminalCommandContext.printfln("Locked chunks of 0x%X (%d):", nid, list.size());
+        TerminalCommandContext.println("<lid: nid that locked the chunk>");
         for (LockedChunkEntry entry : list) {
-            p_ctx.printfln("0x%X: 0x%X", entry.getChunkId(), entry.getNodeId());
+            TerminalCommandContext.printfln("0x%X: 0x%X", entry.getChunkId(), entry.getNodeId());
         }
     }
 }

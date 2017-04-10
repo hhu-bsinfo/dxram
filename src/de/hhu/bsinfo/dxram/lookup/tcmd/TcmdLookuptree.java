@@ -31,17 +31,15 @@ public class TcmdLookuptree extends AbstractTerminalCommand {
 
     @Override
     public String getHelp() {
-        return "Prints the look up tree of a specified node\n" +
-                "Usage: lookuptree <nid>\n" +
-                "  nid: Node id of the peer to print the lookup tree of";
+        return "Prints the look up tree of a specified node\n" + "Usage: lookuptree <nid>\n" + "  nid: Node id of the peer to print the lookup tree of";
     }
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+        short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
 
         if (nid == NodeID.INVALID_ID) {
-            p_ctx.printlnErr("No nid specified");
+            TerminalCommandContext.printlnErr("No nid specified");
             return;
         }
 
@@ -50,11 +48,11 @@ public class TcmdLookuptree extends AbstractTerminalCommand {
         short respSuperpeer = lookup.getResponsibleSuperpeer(nid);
 
         if (respSuperpeer == NodeID.INVALID_ID) {
-            p_ctx.printflnErr("No responsible superpeer for 0x%X found", nid);
+            TerminalCommandContext.printflnErr("No responsible superpeer for 0x%X found", nid);
             return;
         }
 
         LookupTree tree = lookup.getLookupTreeFromSuperpeer(respSuperpeer, nid);
-        p_ctx.printfln("Lookup tree of 0x%X:\n%s", nid, tree);
+        TerminalCommandContext.printfln("Lookup tree of 0x%X:\n%s", nid, tree);
     }
 }

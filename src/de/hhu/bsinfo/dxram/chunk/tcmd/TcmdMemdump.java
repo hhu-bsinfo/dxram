@@ -36,23 +36,23 @@ public class TcmdMemdump extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
-        String fileName = p_ctx.getArgString(p_args, 1, null);
+        short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+        String fileName = TerminalCommandContext.getArgString(p_args, 1, null);
 
         if (nid == NodeID.INVALID_ID) {
-            p_ctx.printlnErr("No nid specified");
+            TerminalCommandContext.printlnErr("No nid specified");
             return;
         }
 
         if (fileName == null) {
-            p_ctx.printlnErr("No file name specified");
+            TerminalCommandContext.printlnErr("No file name specified");
             return;
         }
 
         ChunkDebugService chunkDebug = p_ctx.getService(ChunkDebugService.class);
 
-        p_ctx.printfln("Dumping memory of 0x%X to file %s...", nid, fileName);
+        TerminalCommandContext.printfln("Dumping memory of 0x%X to file %s...", nid, fileName);
         chunkDebug.dumpChunkMemory(fileName, nid);
-        p_ctx.println("(Async) Dumping to memory triggered, depending on the memory size, this might take a few seconds");
+        TerminalCommandContext.println("(Async) Dumping to memory triggered, depending on the memory size, this might take a few seconds");
     }
 }

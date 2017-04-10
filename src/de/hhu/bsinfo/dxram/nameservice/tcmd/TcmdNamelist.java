@@ -41,10 +41,10 @@ public class TcmdNamelist extends AbstractTerminalCommand {
 
         ArrayList<NameserviceEntryStr> entries = nameservice.getAllEntries();
 
-        p_ctx.printfln("Nameservice entries(%d):", entries.size());
+        TerminalCommandContext.printfln("Nameservice entries(%d):", entries.size());
 
         for (NameserviceEntryStr entry : entries) {
-            p_ctx.printfln("%s: 0x%X", entry.getName(), entry.getValue());
+            TerminalCommandContext.printfln("%s: 0x%X", entry.getName(), entry.getValue());
         }
     }
 }

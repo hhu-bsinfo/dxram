@@ -40,9 +40,9 @@ public class TcmdCompgrpls extends AbstractTerminalCommand {
         MasterSlaveComputeService mscomp = p_ctx.getService(MasterSlaveComputeService.class);
         ArrayList<MasterNodeEntry> masters = mscomp.getMasters();
 
-        p_ctx.printfln("List of available compute groups with master nodes (%d):", masters.size());
+        TerminalCommandContext.printfln("List of available compute groups with master nodes (%d):", masters.size());
         for (MasterNodeEntry master : masters) {
-            p_ctx.printfln("%d: 0x%X", master.getComputeGroupId(), master.getNodeId());
+            TerminalCommandContext.printfln("%d: 0x%X", master.getComputeGroupId(), master.getNodeId());
         }
     }
 }

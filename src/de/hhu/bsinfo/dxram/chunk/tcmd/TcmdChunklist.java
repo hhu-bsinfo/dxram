@@ -37,11 +37,11 @@ public class TcmdChunklist extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
-        boolean migrated = p_ctx.getArgBoolean(p_args, 1, false);
+        short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+        boolean migrated = TerminalCommandContext.getArgBoolean(p_args, 1, false);
 
         if (nid == NodeID.INVALID_ID) {
-            p_ctx.printlnErr("No nid specified");
+            TerminalCommandContext.printlnErr("No nid specified");
             return;
         }
 
@@ -50,21 +50,21 @@ public class TcmdChunklist extends AbstractTerminalCommand {
         ChunkIDRanges chunkRanges = chunk.getAllLocalChunkIDRanges(nid);
 
         if (chunkRanges == null) {
-            p_ctx.printlnErr("Getting chunk ranges failed");
+            TerminalCommandContext.printlnErr("Getting chunk ranges failed");
             return;
         }
 
-        p_ctx.printfln("Locally created chunk id ranges of 0x%X:\n%s", nid, chunkRanges);
+        TerminalCommandContext.printfln("Locally created chunk id ranges of 0x%X:\n%s", nid, chunkRanges);
 
         if (migrated) {
             chunkRanges = chunk.getAllMigratedChunkIDRanges(nid);
 
             if (chunkRanges == null) {
-                p_ctx.printlnErr("Getting migrated chunk ranges failed");
+                TerminalCommandContext.printlnErr("Getting migrated chunk ranges failed");
                 return;
             }
 
-            p_ctx.printfln("Migrated chunk id ranges of 0x%X (%d):\n%s", nid, chunkRanges);
+            TerminalCommandContext.printfln("Migrated chunk id ranges of 0x%X (%d):\n%s", nid, chunkRanges);
         }
     }
 }

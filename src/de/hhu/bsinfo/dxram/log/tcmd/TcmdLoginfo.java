@@ -35,15 +35,15 @@ public class TcmdLoginfo extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+        short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
 
         if (nid == NodeID.INVALID_ID) {
-            p_ctx.printlnErr("None or invalid nid specified");
+            TerminalCommandContext.printlnErr("None or invalid nid specified");
             return;
         }
 
         LogService log = p_ctx.getService(LogService.class);
 
-        p_ctx.println(log.getCurrentUtilization(nid));
+        TerminalCommandContext.println(log.getCurrentUtilization(nid));
     }
 }

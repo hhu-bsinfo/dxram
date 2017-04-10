@@ -49,34 +49,34 @@ public class TcmdChunkdump extends AbstractTerminalCommand {
         String fileName;
 
         if (p_args.length < 1) {
-            p_ctx.printlnErr("No cid specified");
+            TerminalCommandContext.printlnErr("No cid specified");
             return;
         }
 
-        if (p_ctx.isArgChunkID(p_args, 0)) {
-            cid = p_ctx.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
-            fileName = p_ctx.getArgString(p_args, 1, null);
+        if (TerminalCommandContext.isArgChunkID(p_args, 0)) {
+            cid = TerminalCommandContext.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
+            fileName = TerminalCommandContext.getArgString(p_args, 1, null);
         } else {
-            short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
-            long lid = p_ctx.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
+            short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+            long lid = TerminalCommandContext.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
 
             if (lid == ChunkID.INVALID_ID) {
-                p_ctx.printlnErr("No lid specified");
+                TerminalCommandContext.printlnErr("No lid specified");
                 return;
             }
 
             cid = ChunkID.getChunkID(nid, lid);
 
-            fileName = p_ctx.getArgString(p_args, 2, null);
+            fileName = TerminalCommandContext.getArgString(p_args, 2, null);
         }
 
         if (cid == ChunkID.INVALID_ID) {
-            p_ctx.printlnErr("No cid specified");
+            TerminalCommandContext.printlnErr("No cid specified");
             return;
         }
 
         if (fileName == null) {
-            p_ctx.printlnErr("No file name specified");
+            TerminalCommandContext.printlnErr("No file name specified");
             return;
         }
 
@@ -84,41 +84,43 @@ public class TcmdChunkdump extends AbstractTerminalCommand {
 
         ChunkAnon[] chunks = new ChunkAnon[1];
         if (chunkAnon.get(chunks, cid) != 1) {
-            p_ctx.printflnErr("Getting chunk 0x%X failed: %s", cid, chunks[0].getState());
+            TerminalCommandContext.printflnErr("Getting chunk 0x%X failed: %s", cid, chunks[0].getState());
             return;
         }
 
         ChunkAnon chunk = chunks[0];
 
+        TerminalCommandContext.printfln("Dumping chunk 0x%X to file %s...", cid, fileName);
+
         File file = new File(fileName);
 
         if (file.exists()) {
-            file.delete();
+            if (!file.delete()) {
+                TerminalCommandContext.printflnErr("Deleting existing file %s failed", fileName);
+            } else {
+                RandomAccessFile raFile;
+                try {
+                    raFile = new RandomAccessFile(file, "rw");
+                } catch (final FileNotFoundException ignored) {
+                    TerminalCommandContext.printlnErr("Dumping chunk failed, file not found");
+                    return;
+                }
+
+                try {
+                    raFile.write(chunk.getData());
+                } catch (final IOException e) {
+                    TerminalCommandContext.printflnErr("Dumping chunk failed: %s", e.getMessage());
+                    return;
+                }
+
+                try {
+                    raFile.close();
+                } catch (final IOException ignore) {
+
+                }
+
+                TerminalCommandContext.printfln("Chunk dumped");
+            }
         }
-
-        p_ctx.printfln("Dumping chunk 0x%X to file %s...", cid, fileName);
-
-        RandomAccessFile raFile;
-        try {
-            raFile = new RandomAccessFile(file, "rw");
-        } catch (final FileNotFoundException ignored) {
-            p_ctx.printlnErr("Dumping chunk failed, file not found");
-            return;
-        }
-
-        try {
-            raFile.write(chunk.getData());
-        } catch (final IOException e) {
-            p_ctx.printflnErr("Dumping chunk failed: %s", e.getMessage());
-            return;
-        }
-
-        try {
-            raFile.close();
-        } catch (final IOException ignore) {
-
-        }
-
-        p_ctx.printfln("Chunk dumped");
     }
 }

@@ -61,29 +61,29 @@ public class TcmdChunkget extends AbstractTerminalCommand {
         int length = 0;
 
         if (p_args.length < 1) {
-            p_ctx.printlnErr("No cid specified");
+            TerminalCommandContext.printlnErr("No cid specified");
             return;
         }
 
-        if (p_ctx.isArgChunkID(p_args, 0)) {
-            cid = p_ctx.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
+        if (TerminalCommandContext.isArgChunkID(p_args, 0)) {
+            cid = TerminalCommandContext.getArgChunkId(p_args, 0, ChunkID.INVALID_ID);
 
             if (p_args.length > 1) {
                 if (isType(p_args[1])) {
-                    type = p_ctx.getArgString(p_args, 1, "byte").toLowerCase();
-                    hex = p_ctx.getArgBoolean(p_args, 2, true);
-                    offset = p_ctx.getArgInt(p_args, 3, 0);
-                    length = p_ctx.getArgInt(p_args, 4, 0);
+                    type = TerminalCommandContext.getArgString(p_args, 1, "byte").toLowerCase();
+                    hex = TerminalCommandContext.getArgBoolean(p_args, 2, true);
+                    offset = TerminalCommandContext.getArgInt(p_args, 3, 0);
+                    length = TerminalCommandContext.getArgInt(p_args, 4, 0);
                 } else {
-                    className = p_ctx.getArgString(p_args, 1, null);
+                    className = TerminalCommandContext.getArgString(p_args, 1, null);
                 }
             }
         } else {
-            short nid = p_ctx.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
-            long lid = p_ctx.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
+            short nid = TerminalCommandContext.getArgNodeId(p_args, 0, NodeID.INVALID_ID);
+            long lid = TerminalCommandContext.getArgLocalId(p_args, 1, ChunkID.INVALID_ID);
 
             if (lid == ChunkID.INVALID_ID) {
-                p_ctx.printlnErr("No lid specified");
+                TerminalCommandContext.printlnErr("No lid specified");
                 return;
             }
 
@@ -91,25 +91,25 @@ public class TcmdChunkget extends AbstractTerminalCommand {
 
             if (p_args.length > 2) {
                 if (isType(p_args[2])) {
-                    type = p_ctx.getArgString(p_args, 2, "byte").toLowerCase();
-                    hex = p_ctx.getArgBoolean(p_args, 3, true);
-                    offset = p_ctx.getArgInt(p_args, 4, 0);
-                    length = p_ctx.getArgInt(p_args, 5, 0);
+                    type = TerminalCommandContext.getArgString(p_args, 2, "byte").toLowerCase();
+                    hex = TerminalCommandContext.getArgBoolean(p_args, 3, true);
+                    offset = TerminalCommandContext.getArgInt(p_args, 4, 0);
+                    length = TerminalCommandContext.getArgInt(p_args, 5, 0);
                 } else {
-                    className = p_ctx.getArgString(p_args, 2, null);
+                    className = TerminalCommandContext.getArgString(p_args, 2, null);
                 }
             }
         }
 
         if (cid == ChunkID.INVALID_ID) {
-            p_ctx.printlnErr("No cid specified");
+            TerminalCommandContext.printlnErr("No cid specified");
             return;
         }
 
         if (className != null) {
             DataStructure dataStructure = newDataStructure(className, p_ctx);
             if (dataStructure == null) {
-                p_ctx.printflnErr("Creating data structure of name '%s' failed", className);
+                TerminalCommandContext.printflnErr("Creating data structure of name '%s' failed", className);
                 return;
             }
 
@@ -118,17 +118,17 @@ public class TcmdChunkget extends AbstractTerminalCommand {
             ChunkService chunk = p_ctx.getService(ChunkService.class);
 
             if (chunk.get(dataStructure) != 1) {
-                p_ctx.printflnErr("Getting data structure 0x%X failed: %s", cid, chunk.getStatus());
+                TerminalCommandContext.printflnErr("Getting data structure 0x%X failed: %s", cid, chunk.getStatus());
                 return;
             }
 
-            p_ctx.printfln("DataStructure %s (size %d):\n%s", className, dataStructure.sizeofObject(), dataStructure);
+            TerminalCommandContext.printfln("DataStructure %s (size %d):\n%s", className, dataStructure.sizeofObject(), dataStructure);
         } else {
             ChunkAnonService chunkAnon = p_ctx.getService(ChunkAnonService.class);
 
             ChunkAnon[] chunks = new ChunkAnon[1];
             if (chunkAnon.get(chunks, cid) != 1) {
-                p_ctx.printflnErr("Getting chunk 0x%X failed: %s", cid, chunks[0].getState());
+                TerminalCommandContext.printflnErr("Getting chunk 0x%X failed: %s", cid, chunks[0].getState());
                 return;
             }
 
@@ -155,7 +155,7 @@ public class TcmdChunkget extends AbstractTerminalCommand {
                     try {
                         str = new String(chunk.getData(), offset, length, "US-ASCII");
                     } catch (final UnsupportedEncodingException e) {
-                        p_ctx.printflnErr("Error encoding string: %s", e.getMessage());
+                        TerminalCommandContext.printflnErr("Error encoding string: %s", e.getMessage());
                         return;
                     }
 
@@ -202,11 +202,11 @@ public class TcmdChunkget extends AbstractTerminalCommand {
                     break;
 
                 default:
-                    p_ctx.printflnErr("Unsuported data type %s", type);
+                    TerminalCommandContext.printflnErr("Unsuported data type %s", type);
                     return;
             }
 
-            p_ctx.printfln("Chunk data of 0x%X (chunksize %d): \n%s", cid, chunk.sizeofObject(), str);
+            TerminalCommandContext.printfln("Chunk data of 0x%X (chunksize %d): \n%s", cid, chunk.sizeofObject(), str);
         }
     }
 
@@ -228,12 +228,12 @@ public class TcmdChunkget extends AbstractTerminalCommand {
         try {
             clazz = Class.forName(p_className);
         } catch (final ClassNotFoundException ignored) {
-            p_ctx.printflnErr("Cannot find class with name %s", p_className);
+            TerminalCommandContext.printflnErr("Cannot find class with name %s", p_className);
             return null;
         }
 
         if (!DataStructure.class.isAssignableFrom(clazz)) {
-            p_ctx.printflnErr("Class %s is not implementing the DataStructure interface", p_className);
+            TerminalCommandContext.printflnErr("Class %s is not implementing the DataStructure interface", p_className);
             return null;
         }
 
@@ -241,7 +241,7 @@ public class TcmdChunkget extends AbstractTerminalCommand {
         try {
             dataStructure = (DataStructure) clazz.getConstructor().newInstance();
         } catch (final InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            p_ctx.printflnErr("Creating instance of %s failed: %s", p_className, e.getMessage());
+            TerminalCommandContext.printflnErr("Creating instance of %s failed: %s", p_className, e.getMessage());
             return null;
         }
 

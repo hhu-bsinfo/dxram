@@ -36,16 +36,16 @@ public class TcmdChunkcreate extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        int size = p_ctx.getArgInt(p_args, 0, -1);
-        short nid = p_ctx.getArgNodeId(p_args, 1, NodeID.INVALID_ID);
+        int size = TerminalCommandContext.getArgInt(p_args, 0, -1);
+        short nid = TerminalCommandContext.getArgNodeId(p_args, 1, NodeID.INVALID_ID);
 
         if (size == -1) {
-            p_ctx.printlnErr("No size specified");
+            TerminalCommandContext.printlnErr("No size specified");
             return;
         }
 
         if (nid == NodeID.INVALID_ID) {
-            p_ctx.printlnErr("No nid specified");
+            TerminalCommandContext.printlnErr("No nid specified");
             return;
         }
 
@@ -53,6 +53,6 @@ public class TcmdChunkcreate extends AbstractTerminalCommand {
 
         long[] chunkIDs = chunk.createRemote(nid, size);
 
-        p_ctx.printfln("Created chunk of size %d: 0x%X", size, chunkIDs[0]);
+        TerminalCommandContext.printfln("Created chunk of size %d: 0x%X", size, chunkIDs[0]);
     }
 }

@@ -47,7 +47,7 @@ public class TcmdTmpget extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        int id = p_ctx.getArgInt(p_args, 0, -1);
+        int id = TerminalCommandContext.getArgInt(p_args, 0, -1);
 
         String className = null;
         String type = "byte";
@@ -57,17 +57,17 @@ public class TcmdTmpget extends AbstractTerminalCommand {
 
         if (p_args.length > 1) {
             if (isType(p_args[1])) {
-                type = p_ctx.getArgString(p_args, 1, "byte").toLowerCase();
-                hex = p_ctx.getArgBoolean(p_args, 2, true);
-                offset = p_ctx.getArgInt(p_args, 3, 0);
-                length = p_ctx.getArgInt(p_args, 4, 0);
+                type = TerminalCommandContext.getArgString(p_args, 1, "byte").toLowerCase();
+                hex = TerminalCommandContext.getArgBoolean(p_args, 2, true);
+                offset = TerminalCommandContext.getArgInt(p_args, 3, 0);
+                length = TerminalCommandContext.getArgInt(p_args, 4, 0);
             } else {
-                className = p_ctx.getArgString(p_args, 1, null);
+                className = TerminalCommandContext.getArgString(p_args, 1, null);
             }
         }
 
         if (id == -1) {
-            p_ctx.printlnErr("No id specified");
+            TerminalCommandContext.printlnErr("No id specified");
             return;
         }
 
@@ -76,22 +76,22 @@ public class TcmdTmpget extends AbstractTerminalCommand {
         if (className != null) {
             DataStructure dataStructure = newDataStructure(className, p_ctx);
             if (dataStructure == null) {
-                p_ctx.printflnErr("Creating data structure of name '%s' failed", className);
+                TerminalCommandContext.printflnErr("Creating data structure of name '%s' failed", className);
                 return;
             }
 
             dataStructure.setID(id);
 
             if (!tmp.get(dataStructure)) {
-                p_ctx.printflnErr("Getting data structure 0x%X failed: %s", id, dataStructure.getState());
+                TerminalCommandContext.printflnErr("Getting data structure 0x%X failed: %s", id, dataStructure.getState());
                 return;
             }
 
-            p_ctx.printfln("DataStructure %s (size %d):\n%s", className, dataStructure.sizeofObject(), dataStructure);
+            TerminalCommandContext.printfln("DataStructure %s (size %d):\n%s", className, dataStructure.sizeofObject(), dataStructure);
         } else {
             ChunkAnon chunk = new ChunkAnon(id);
             if (!tmp.getAnon(chunk)) {
-                p_ctx.printflnErr("Getting chunk 0x%X failed: %s", id, chunk.getState());
+                TerminalCommandContext.printflnErr("Getting chunk 0x%X failed: %s", id, chunk.getState());
                 return;
             }
 
@@ -116,7 +116,7 @@ public class TcmdTmpget extends AbstractTerminalCommand {
                     try {
                         str = new String(chunk.getData(), offset, length, "US-ASCII");
                     } catch (final UnsupportedEncodingException e) {
-                        p_ctx.printflnErr("Error encoding string: %s", e.getMessage());
+                        TerminalCommandContext.printflnErr("Error encoding string: %s", e.getMessage());
                         return;
                     }
 
@@ -163,11 +163,11 @@ public class TcmdTmpget extends AbstractTerminalCommand {
                     break;
 
                 default:
-                    p_ctx.printflnErr("Unsuported data type %s", type);
+                    TerminalCommandContext.printflnErr("Unsuported data type %s", type);
                     return;
             }
 
-            p_ctx.printfln("Chunk data of 0x%X (chunksize %d): \n%s", id, chunk.sizeofObject(), str);
+            TerminalCommandContext.printfln("Chunk data of 0x%X (chunksize %d): \n%s", id, chunk.sizeofObject(), str);
         }
     }
 
@@ -189,12 +189,12 @@ public class TcmdTmpget extends AbstractTerminalCommand {
         try {
             clazz = Class.forName(p_className);
         } catch (final ClassNotFoundException ignored) {
-            p_ctx.printflnErr("Cannot find class with name %s", p_className);
+            TerminalCommandContext.printflnErr("Cannot find class with name %s", p_className);
             return null;
         }
 
         if (!DataStructure.class.isAssignableFrom(clazz)) {
-            p_ctx.printflnErr("Class %s is not implementing the DataStructure interface", p_className);
+            TerminalCommandContext.printflnErr("Class %s is not implementing the DataStructure interface", p_className);
             return null;
         }
 
@@ -202,7 +202,7 @@ public class TcmdTmpget extends AbstractTerminalCommand {
         try {
             dataStructure = (DataStructure) clazz.getConstructor().newInstance();
         } catch (final InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            p_ctx.printflnErr("Creating instance of %s failed: %s", p_className, e.getMessage());
+            TerminalCommandContext.printflnErr("Creating instance of %s failed: %s", p_className, e.getMessage());
             return null;
         }
 

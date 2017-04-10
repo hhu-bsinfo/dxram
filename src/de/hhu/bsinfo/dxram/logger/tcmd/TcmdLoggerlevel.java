@@ -37,11 +37,11 @@ public class TcmdLoggerlevel extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        String level = p_ctx.getArgString(p_args, 0, null);
-        short nid = p_ctx.getArgNodeId(p_args, 1, NodeID.INVALID_ID);
+        String level = TerminalCommandContext.getArgString(p_args, 0, null);
+        short nid = TerminalCommandContext.getArgNodeId(p_args, 1, NodeID.INVALID_ID);
 
         if (level == null) {
-            p_ctx.printlnErr("No level specified");
+            TerminalCommandContext.printlnErr("No level specified");
             return;
         }
 

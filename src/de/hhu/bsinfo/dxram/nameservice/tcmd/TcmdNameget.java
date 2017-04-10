@@ -35,10 +35,10 @@ public class TcmdNameget extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        String name = p_ctx.getArgString(p_args, 0, null);
+        String name = TerminalCommandContext.getArgString(p_args, 0, null);
 
         if (name == null) {
-            p_ctx.printlnErr("No name specified");
+            TerminalCommandContext.printlnErr("No name specified");
             return;
         }
 
@@ -47,9 +47,9 @@ public class TcmdNameget extends AbstractTerminalCommand {
         long cid = nameservice.getChunkID(name, 2000);
 
         if (cid == ChunkID.INVALID_ID) {
-            p_ctx.printflnErr("Could not get name entry for %s, does not exist", name);
+            TerminalCommandContext.printflnErr("Could not get name entry for %s, does not exist", name);
         } else {
-            p_ctx.printfln("%s: 0x%X", name, cid);
+            TerminalCommandContext.printfln("%s: 0x%X", name, cid);
         }
     }
 }

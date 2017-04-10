@@ -30,33 +30,31 @@ public class TcmdBarriersize extends AbstractTerminalCommand {
 
     @Override
     public String getHelp() {
-        return "Change the size of an existing barrier\n" +
-                "Usage: barriersize <bid> <size>\n" +
-                "  bid: Id of the barrier to change its size\n" +
-                "  size: New size for the existing barrier";
+        return "Change the size of an existing barrier\n" + "Usage: barriersize <bid> <size>\n" + "  bid: Id of the barrier to change its size\n" +
+            "  size: New size for the existing barrier";
     }
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        int bid = p_ctx.getArgBarrierId(p_args, 0, BarrierID.INVALID_ID);
-        int size = p_ctx.getArgInt(p_args, 1, -1);
+        int bid = TerminalCommandContext.getArgBarrierId(p_args, 0, BarrierID.INVALID_ID);
+        int size = TerminalCommandContext.getArgInt(p_args, 1, -1);
 
         if (bid == BarrierID.INVALID_ID) {
-            p_ctx.printlnErr("No bid specified");
+            TerminalCommandContext.printlnErr("No bid specified");
             return;
         }
 
         if (size == -1) {
-            p_ctx.printlnErr("No size specified");
+            TerminalCommandContext.printlnErr("No size specified");
             return;
         }
 
         SynchronizationService sync = p_ctx.getService(SynchronizationService.class);
 
         if (!sync.barrierChangeSize(bid, size)) {
-            p_ctx.printflnErr("Changing barrier 0x%X size to %d failed", bid, size);
+            TerminalCommandContext.printflnErr("Changing barrier 0x%X size to %d failed", bid, size);
         } else {
-            p_ctx.printfln("Barrier 0x%X size changed to %d", bid, size);
+            TerminalCommandContext.printfln("Barrier 0x%X size changed to %d", bid, size);
         }
     }
 }

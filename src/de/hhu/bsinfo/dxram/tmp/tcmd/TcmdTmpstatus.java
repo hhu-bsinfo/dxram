@@ -40,9 +40,9 @@ public class TcmdTmpstatus extends AbstractTerminalCommand {
         SuperpeerStorage.Status status = tmpstore.getStatus();
 
         if (status != null) {
-            p_ctx.printfln("Total size occupied (bytes): %d\n%s", status.calculateTotalDataUsageBytes(), status);
+            TerminalCommandContext.printfln("Total size occupied (bytes): %d\n%s", status.calculateTotalDataUsageBytes(), status);
         } else {
-            p_ctx.printlnErr("Getting status of temporary storage failed");
+            TerminalCommandContext.printlnErr("Getting status of temporary storage failed");
         }
     }
 }

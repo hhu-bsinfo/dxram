@@ -38,10 +38,10 @@ public class TcmdBarrierstatus extends AbstractTerminalCommand {
 
     @Override
     public void exec(final String[] p_args, final TerminalCommandContext p_ctx) {
-        int bid = p_ctx.getArgBarrierId(p_args, 0, BarrierID.INVALID_ID);
+        int bid = TerminalCommandContext.getArgBarrierId(p_args, 0, BarrierID.INVALID_ID);
 
         if (bid == BarrierID.INVALID_ID) {
-            p_ctx.printlnErr("No bid specified");
+            TerminalCommandContext.printlnErr("No bid specified");
             return;
         }
 
@@ -50,7 +50,7 @@ public class TcmdBarrierstatus extends AbstractTerminalCommand {
         BarrierStatus status = sync.barrierGetStatus(bid);
 
         if (status == null) {
-            p_ctx.printflnErr("Getting status of barrier 0x%X failed", bid);
+            TerminalCommandContext.printflnErr("Getting status of barrier 0x%X failed", bid);
             return;
         }
 
@@ -59,6 +59,6 @@ public class TcmdBarrierstatus extends AbstractTerminalCommand {
             peers += '\n' + NodeID.toHexString(status.getSignedOnNodeIDs()[i]) + ": " + ChunkID.toHexString(status.getCustomData()[i]);
         }
 
-        p_ctx.printfln("Barrier status 0x%X, %d/%d: %s", bid, status.getNumberOfSignedOnPeers(), status.getSignedOnNodeIDs().length, peers);
+        TerminalCommandContext.printfln("Barrier status 0x%X, %d/%d: %s", bid, status.getNumberOfSignedOnPeers(), status.getSignedOnNodeIDs().length, peers);
     }
 }

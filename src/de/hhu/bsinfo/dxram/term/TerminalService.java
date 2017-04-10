@@ -90,8 +90,7 @@ public class TerminalService extends AbstractDXRAMService {
 
         // register commands for auto completion
         Collection<String> cmds = m_terminal.getListOfCommands();
-        m_argCompletor = new ArgumentCompleter(new StringsCompleter(cmds.toArray(new String[cmds.size()])),
-            new FileNameCompleter());
+        m_argCompletor = new ArgumentCompleter(new StringsCompleter(cmds.toArray(new String[cmds.size()])), new FileNameCompleter());
 
         //m_consoleReader.addCompleter();
         m_consoleReader.addCompleter(m_argCompletor);
@@ -261,7 +260,7 @@ public class TerminalService extends AbstractDXRAMService {
                     if (cmd != null) {
                         System.out.println(cmd.getHelp());
                     } else {
-                        m_commandCtx.printlnErr("Could not find help for terminal command '" + tokens[1] + '\'');
+                        TerminalCommandContext.printlnErr("Could not find help for terminal command '" + tokens[1] + '\'');
                     }
 
                     return;
@@ -271,9 +270,9 @@ public class TerminalService extends AbstractDXRAMService {
 
         // separate by space but keep strings, e.g. "this is a test" as a single string and remove the quotes
         List<String> list = new ArrayList<String>();
-        Matcher m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(p_text);
-        while (m.find()) {
-            list.add(m.group(1).replace("\"", ""));
+        Matcher matcher = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(p_text);
+        while (matcher.find()) {
+            list.add(matcher.group(1).replace("\"", ""));
         }
 
         if (!list.isEmpty()) {
@@ -282,10 +281,10 @@ public class TerminalService extends AbstractDXRAMService {
                 try {
                     cmd.exec(Arrays.copyOfRange(list.toArray(new String[list.size()]), 1, list.size()), m_commandCtx);
                 } catch (final Exception e) {
-                    m_commandCtx.printflnErr("Exception executing command: %s", e);
+                    TerminalCommandContext.printflnErr("Exception executing command: %s", e);
                 }
             } else {
-                m_commandCtx.printlnErr("Invalid terminal command '" + list.get(0) + '\'');
+                TerminalCommandContext.printlnErr("Invalid terminal command '" + list.get(0) + '\'');
             }
         }
     }
@@ -301,7 +300,11 @@ public class TerminalService extends AbstractDXRAMService {
 
         if (!file.exists()) {
             try {
-                file.createNewFile();
+                if (!file.createNewFile()) {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Creating new history file %s failed", p_file);
+                    // #endif /* LOGGER >= ERROR */
+                }
             } catch (final IOException ignored) {
             }
         }
