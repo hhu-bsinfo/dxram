@@ -11,12 +11,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 package de.hhu.bsinfo.dxram.net.bench;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import com.google.gson.annotations.Expose;
-import de.hhu.bsinfo.dxram.net.messages.NetworkTestRequest;
-import de.hhu.bsinfo.dxram.net.messages.NetworkTestResponse;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.chunk.bench.ChunkTaskUtils;
 import de.hhu.bsinfo.dxram.ms.Signal;
@@ -25,6 +28,8 @@ import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.dxram.net.messages.NetworkMessages;
 import de.hhu.bsinfo.dxram.net.messages.NetworkTestMessage;
+import de.hhu.bsinfo.dxram.net.messages.NetworkTestRequest;
+import de.hhu.bsinfo.dxram.net.messages.NetworkTestResponse;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler;
@@ -32,17 +37,13 @@ import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Task to benchmark/test network communication of nodes using the network interface
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 04.04.2017
  */
-public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
+public class NetworkTask implements Task, NetworkHandler.MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkTask.class.getSimpleName());
 
     private static final int PATTERN_END_TO_END = 0;
@@ -67,9 +68,8 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
     @Expose
     private boolean m_isMessage = true;
 
-
     @Override
-    public int execute(TaskContext p_ctx) {
+    public int execute(final TaskContext p_ctx) {
         short[] slaveNodeIds = p_ctx.getCtxData().getSlaveNodeIds();
         m_slaveCnt = slaveNodeIds.length;
         short ownSlaveID = p_ctx.getCtxData().getSlaveId();
@@ -77,7 +77,9 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
         if (m_pattern == 1 && slaveNodeIds.length <= 1) {
             System.out.println("The number of slave have to be at least two!");
             return -1;
-        } else if (m_pattern == 0 && (slaveNodeIds.length % 2 != 0 || slaveNodeIds.length == 0)) {
+        }
+
+        if (m_pattern == 0 && (slaveNodeIds.length % 2 != 0 || slaveNodeIds.length == 0)) {
             System.out.println("Num slaves % 2 != 0");
             return -2;
         }
@@ -107,7 +109,9 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
             time[i] = new Stopwatch();
         }
 
-        System.out.printf("Network benchmark, pattern %d, message count %d, message size %d byte, isMessages %b with %d thread(s)...\n", m_pattern, m_messageCnt, m_messageSize, m_isMessage,  m_threadCnt);
+        System.out
+            .printf("Network benchmark, pattern %d, message count %d, message size %d byte, isMessages %b with %d thread(s)...\n", m_pattern, m_messageCnt,
+                m_messageSize, m_isMessage, m_threadCnt);
 
         // thread runnables
         for (int i = 0; i < threads.length; i++) {
@@ -127,7 +131,7 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
                         }
                         for (int j = 0; j < messagesToSend; j++) {
                             try {
-                                if(m_isMessage) {
+                                if (m_isMessage) {
                                     time[threadIdx].start();
                                     m_networkService.sendMessage(messages[sendNodeIdIdx]);
                                     time[threadIdx].stopAndAccumulate();
@@ -142,6 +146,7 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
                             }
                         }
                         break;
+
                     case PATTERN_BROADCAST:
                         for (int j = 0; j < messagesToSend; j++) {
                             // send message to every slave
@@ -151,7 +156,7 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
                                 }
 
                                 try {
-                                    if(m_isMessage) {
+                                    if (m_isMessage) {
                                         time[threadIdx].start();
                                         m_networkService.sendMessage(messages[k]);
                                         time[threadIdx].stopAndAccumulate();
@@ -167,6 +172,9 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
                             }
                         }
                         break;
+
+                    default:
+                        throw new RuntimeException("Unsupported pattern");
                 }
 
             });
@@ -206,7 +214,7 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
         }
         System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
         double sizeInMB;
-        if(m_pattern == PATTERN_BROADCAST ) {
+        if (m_pattern == PATTERN_BROADCAST) {
             sizeInMB = m_messageCnt * m_messageSize * (m_slaveCnt - 1) / 1000.0 / 1000.0;
         } else {
             sizeInMB = m_messageCnt * m_messageSize / 1000.0 / 1000.0;
@@ -224,21 +232,17 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
         timeInS = (m_receiveTimeEnd.get() - m_receiveTimeStart.get()) / 1000.0 / 1000.0 / 1000.0;
         System.out.printf("Throughput Rx: %f MB/s\n", sizeInMB / timeInS);
 
-
         unregisterReceiver();
 
         return 0;
     }
 
-
-
-
     @Override
-    public void handleSignal(Signal p_signal) {
+    public void handleSignal(final Signal p_signal) {
     }
 
     @Override
-    public void exportObject(Exporter p_exporter) {
+    public void exportObject(final Exporter p_exporter) {
         p_exporter.writeLong(m_messageCnt);
         p_exporter.writeInt(m_messageSize);
         p_exporter.writeInt(m_threadCnt);
@@ -247,7 +251,7 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
     }
 
     @Override
-    public void importObject(Importer p_importer) {
+    public void importObject(final Importer p_importer) {
         m_messageCnt = p_importer.readLong();
         m_messageSize = p_importer.readInt();
         m_threadCnt = p_importer.readInt();
@@ -285,13 +289,12 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
 
     }
 
-
-    private void incomingNetworkTestRequest(NetworkTestRequest p_request) {
+    private void incomingNetworkTestRequest(final NetworkTestRequest p_request) {
         m_receiveTimeStart.compareAndSet(0, System.nanoTime());
 
         m_receivedCnt.incrementAndGet();
 
-        long numOfMessagesToReceive = (m_pattern == 0) ? m_messageCnt : m_messageCnt * (m_slaveCnt - 1);
+        long numOfMessagesToReceive = m_pattern == 0 ? m_messageCnt : m_messageCnt * (m_slaveCnt - 1);
         if (m_receivedCnt.get() == numOfMessagesToReceive) {
             m_receiveTimeEnd.compareAndSet(0, System.nanoTime());
         }
@@ -306,12 +309,12 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver{
         }
     }
 
-    private void incomingNetworkTestMessage(NetworkTestMessage p_message) {
+    private void incomingNetworkTestMessage(final NetworkTestMessage p_message) {
         m_receiveTimeStart.compareAndSet(0, System.nanoTime());
 
         m_receivedCnt.incrementAndGet();
 
-        long numOfMessagesToReceive = (m_pattern == 0) ? m_messageCnt : m_messageCnt * (m_slaveCnt - 1);
+        long numOfMessagesToReceive = m_pattern == 0 ? m_messageCnt : m_messageCnt * (m_slaveCnt - 1);
         if (m_receivedCnt.get() == numOfMessagesToReceive) {
             m_receiveTimeEnd.compareAndSet(0, System.nanoTime());
         }

@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -32,7 +33,6 @@ import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.net.messages.NetworkMessages;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
@@ -154,15 +154,19 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
 
         try {
             m_networkHandler.sendMessage(p_message);
-        } catch (final NetworkException e) {
+        } catch (final NetworkDestinationUnreachableException e) {
             // #if LOGGER >= ERROR
             LOGGER.error("Sending message %s failed: %s", p_message, e);
             // #endif /* LOGGER >= ERROR */
 
-            if (e instanceof NetworkDestinationUnreachableException) {
-                // Connection creation failed -> trigger failure handling
-                m_event.fireEvent(new ConnectionLostEvent(getClass().getSimpleName(), p_message.getDestination()));
-            }
+            // Connection creation failed -> trigger failure handling
+            m_event.fireEvent(new ConnectionLostEvent(getClass().getSimpleName(), p_message.getDestination()));
+
+            throw e;
+        } catch (final NetworkException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Sending message %s failed: %s", p_message, e);
+            // #endif /* LOGGER >= ERROR */
 
             throw e;
         }
