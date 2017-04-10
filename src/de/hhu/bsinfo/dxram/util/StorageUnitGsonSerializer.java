@@ -19,7 +19,6 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
@@ -31,13 +30,6 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.10.2016
  */
 public class StorageUnitGsonSerializer implements JsonDeserializer<StorageUnit>, JsonSerializer<StorageUnit> {
-    /**
-     * @param p_jsonElement
-     * @param p_type
-     * @param p_jsonDeserializationContext
-     * @return
-     * @throws JsonParseException
-     */
     @Override
     public StorageUnit deserialize(final JsonElement p_jsonElement, final Type p_type, final JsonDeserializationContext p_jsonDeserializationContext) {
 

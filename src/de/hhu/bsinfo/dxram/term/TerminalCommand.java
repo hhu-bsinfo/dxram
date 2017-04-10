@@ -14,7 +14,7 @@ public abstract class TerminalCommand {
      * @param p_name
      *     Name of the command
      */
-    public TerminalCommand(final String p_name) {
+    protected TerminalCommand(final String p_name) {
         m_name = p_name;
     }
 
