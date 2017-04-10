@@ -40,7 +40,7 @@ public final class OSValidator {
      * @return True if windows, false otherwise.
      */
     public static boolean isWindows() {
-        return ms_os.indexOf("win") >= 0;
+        return ms_os.contains("win");
     }
 
     /**
@@ -49,7 +49,7 @@ public final class OSValidator {
      * @return True if mac osx, false otherwise.
      */
     public static boolean isMac() {
-        return ms_os.indexOf("mac") >= 0;
+        return ms_os.contains("mac");
     }
 
     /**
@@ -58,7 +58,7 @@ public final class OSValidator {
      * @return True if unix like system, false otherwise.
      */
     public static boolean isUnix() {
-        return ms_os.indexOf("nix") >= 0 || ms_os.indexOf("nux") >= 0 || ms_os.indexOf("aix") > 0;
+        return ms_os.contains("nix") || ms_os.contains("nux") || ms_os.indexOf("aix") > 0;
     }
 
     /**
@@ -67,7 +67,7 @@ public final class OSValidator {
      * @return True if solaris, false otherwise.
      */
     public static boolean isSolaris() {
-        return ms_os.indexOf("sunos") >= 0;
+        return ms_os.contains("sunos");
     }
 
     /**

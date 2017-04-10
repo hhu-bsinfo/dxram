@@ -13,8 +13,6 @@
 
 package de.hhu.bsinfo.utils;
 
-
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
@@ -52,7 +50,7 @@ public final class ManifestHelper {
 
                 Attributes attr = manifest.getMainAttributes();
                 value = attr.getValue(p_key);
-                
+
                 if (value != null) {
                     break;
                 }

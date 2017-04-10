@@ -24,6 +24,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
@@ -107,7 +108,6 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.PeerHandler;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -155,8 +155,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 
     private SuperpeerStabilizationThread m_stabilizationThread;
 
-    private CRC16 m_hashGenerator = new CRC16();
-
     private ReentrantReadWriteLock m_overlayLock;
 
     /**
@@ -198,8 +196,8 @@ public class OverlaySuperpeer implements MessageReceiver {
         m_peers = new ArrayList<>();
         m_assignedPeersIncludingBackups = new ArrayList<>();
 
-        m_metadata = new MetadataHandler(new PeerHandler[NodeID.MAX_ID], new NameserviceHashTable(1000, 0.9f, m_hashGenerator),
-            new SuperpeerStorage(p_storageMaxNumEntries, p_storageMaxSizeBytes, m_hashGenerator), new BarriersTable(p_maxNumOfBarriers, m_nodeID),
+        m_metadata = new MetadataHandler(new PeerHandler[NodeID.MAX_ID], new NameserviceHashTable(1000, 0.9f),
+            new SuperpeerStorage(p_storageMaxNumEntries, p_storageMaxSizeBytes), new BarriersTable(p_maxNumOfBarriers, m_nodeID),
             m_assignedPeersIncludingBackups);
 
         m_overlayLock = new ReentrantReadWriteLock(false);
@@ -1464,7 +1462,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         // #endif /* LOGGER == TRACE */
 
         m_overlayLock.readLock().lock();
-        if (OverlayHelper.isHashInSuperpeerRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID)) {
+        if (OverlayHelper.isHashInSuperpeerRange(CRC16.hash(id), m_predecessor, m_nodeID)) {
             m_metadata.putNameserviceEntry(id, p_insertIDRequest.getChunkID());
 
             backupSuperpeers = OverlayHelper.getBackupSuperpeers(m_nodeID, m_superpeers);
@@ -1518,7 +1516,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         LOGGER.trace("Got request: GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST from 0x%X, id %d", p_getChunkIDForNameserviceEntryRequest.getSource(), id);
         // #endif /* LOGGER == TRACE */
 
-        if (OverlayHelper.isHashInSuperpeerRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID)) {
+        if (OverlayHelper.isHashInSuperpeerRange(CRC16.hash(id), m_predecessor, m_nodeID)) {
             chunkID = m_metadata.getNameserviceEntry(id);
 
             // #if LOGGER == TRACE

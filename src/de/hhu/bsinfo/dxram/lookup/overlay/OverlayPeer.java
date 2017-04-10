@@ -124,8 +124,6 @@ public class OverlayPeer implements MessageReceiver {
     private int m_initialNumberOfSuperpeers;
     private ReentrantReadWriteLock m_overlayLock;
 
-    private CRC16 m_hashGenerator = new CRC16();
-
     /**
      * Creates an instance of OverlayPeer
      *
@@ -383,7 +381,7 @@ public class OverlayPeer implements MessageReceiver {
         if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
             check = true;
         }
-        responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
+        responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_id), check);
         m_overlayLock.readLock().unlock();
 
         while (true) {
@@ -400,7 +398,7 @@ public class OverlayPeer implements MessageReceiver {
                     }
 
                     m_overlayLock.readLock().lock();
-                    responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
+                    responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_id), check);
                     m_overlayLock.readLock().unlock();
 
                     continue;
@@ -426,7 +424,7 @@ public class OverlayPeer implements MessageReceiver {
             }
 
             m_overlayLock.readLock().lock();
-            responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
+            responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_id), check);
             m_overlayLock.readLock().unlock();
         }
     }
@@ -455,7 +453,7 @@ public class OverlayPeer implements MessageReceiver {
         if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
             check = true;
         }
-        responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
+        responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_id), check);
         m_overlayLock.readLock().unlock();
 
         long start = System.currentTimeMillis();
@@ -473,7 +471,7 @@ public class OverlayPeer implements MessageReceiver {
                     }
 
                     m_overlayLock.readLock().lock();
-                    responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
+                    responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_id), check);
                     m_overlayLock.readLock().unlock();
 
                     continue;
@@ -490,7 +488,7 @@ public class OverlayPeer implements MessageReceiver {
             }
 
             m_overlayLock.readLock().lock();
-            responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
+            responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_id), check);
             m_overlayLock.readLock().unlock();
         } while (p_timeoutMs == -1 || System.currentTimeMillis() - start < p_timeoutMs);
 
@@ -921,7 +919,7 @@ public class OverlayPeer implements MessageReceiver {
         if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
             check = true;
         }
-        responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_storageId), check);
+        responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_storageId), check);
         m_overlayLock.readLock().unlock();
 
         while (true) {
@@ -938,7 +936,7 @@ public class OverlayPeer implements MessageReceiver {
                     }
 
                     m_overlayLock.readLock().lock();
-                    responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_storageId), check);
+                    responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_storageId), check);
                     m_overlayLock.readLock().unlock();
 
                     continue;
@@ -957,7 +955,7 @@ public class OverlayPeer implements MessageReceiver {
             }
 
             m_overlayLock.readLock().lock();
-            responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_storageId), check);
+            responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_storageId), check);
             m_overlayLock.readLock().unlock();
         }
     }
@@ -986,7 +984,7 @@ public class OverlayPeer implements MessageReceiver {
         if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
             check = true;
         }
-        responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+        responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
         m_overlayLock.readLock().unlock();
 
         while (true) {
@@ -1003,7 +1001,7 @@ public class OverlayPeer implements MessageReceiver {
                     }
 
                     m_overlayLock.readLock().lock();
-                    responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+                    responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
                     m_overlayLock.readLock().unlock();
 
                     continue;
@@ -1014,7 +1012,7 @@ public class OverlayPeer implements MessageReceiver {
             }
 
             m_overlayLock.readLock().lock();
-            responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+            responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
             m_overlayLock.readLock().unlock();
         }
     }
@@ -1043,7 +1041,7 @@ public class OverlayPeer implements MessageReceiver {
         if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
             check = true;
         }
-        responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+        responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
         m_overlayLock.readLock().unlock();
 
         while (true) {
@@ -1060,7 +1058,7 @@ public class OverlayPeer implements MessageReceiver {
                     }
 
                     m_overlayLock.readLock().lock();
-                    responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+                    responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
                     m_overlayLock.readLock().unlock();
 
                     continue;
@@ -1071,7 +1069,7 @@ public class OverlayPeer implements MessageReceiver {
             }
 
             m_overlayLock.readLock().lock();
-            responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+            responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
             m_overlayLock.readLock().unlock();
         }
     }
@@ -1100,7 +1098,7 @@ public class OverlayPeer implements MessageReceiver {
         if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
             check = true;
         }
-        responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+        responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
         m_overlayLock.readLock().unlock();
 
         while (true) {
@@ -1117,7 +1115,7 @@ public class OverlayPeer implements MessageReceiver {
                     }
 
                     m_overlayLock.readLock().lock();
-                    responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+                    responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
                     m_overlayLock.readLock().unlock();
 
                     continue;
@@ -1128,7 +1126,7 @@ public class OverlayPeer implements MessageReceiver {
             }
 
             m_overlayLock.readLock().lock();
-            responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+            responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
             m_overlayLock.readLock().unlock();
         }
     }
@@ -1157,7 +1155,7 @@ public class OverlayPeer implements MessageReceiver {
         if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
             check = true;
         }
-        responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+        responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
         m_overlayLock.readLock().unlock();
 
         while (true) {
@@ -1174,7 +1172,7 @@ public class OverlayPeer implements MessageReceiver {
                     }
 
                     m_overlayLock.readLock().lock();
-                    responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+                    responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
                     m_overlayLock.readLock().unlock();
 
                     continue;
@@ -1185,7 +1183,7 @@ public class OverlayPeer implements MessageReceiver {
             }
 
             m_overlayLock.readLock().lock();
-            responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+            responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(storageId), check);
             m_overlayLock.readLock().unlock();
         }
     }
@@ -1204,7 +1202,7 @@ public class OverlayPeer implements MessageReceiver {
         if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
             check = true;
         }
-        responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_superpeerStorageId), check);
+        responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_superpeerStorageId), check);
         m_overlayLock.readLock().unlock();
 
         while (true) {
@@ -1221,7 +1219,7 @@ public class OverlayPeer implements MessageReceiver {
                     }
 
                     m_overlayLock.readLock().lock();
-                    responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_superpeerStorageId), check);
+                    responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_superpeerStorageId), check);
                     m_overlayLock.readLock().unlock();
 
                     continue;
@@ -1231,7 +1229,7 @@ public class OverlayPeer implements MessageReceiver {
             }
 
             m_overlayLock.readLock().lock();
-            responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_superpeerStorageId), check);
+            responsibleSuperpeer = getResponsibleSuperpeer(CRC16.hash(p_superpeerStorageId), check);
             m_overlayLock.readLock().unlock();
         }
     }

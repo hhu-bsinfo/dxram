@@ -200,8 +200,8 @@ public final class ZooKeeperHandler {
                 connect();
             }
 
-            if (!p_path.equals("")) {
-                ret = m_zookeeper.exists(m_path + "/" + p_path, p_watcher);
+            if (!p_path.isEmpty()) {
+                ret = m_zookeeper.exists(m_path + '/' + p_path, p_watcher);
             } else {
                 ret = m_zookeeper.exists(m_path, p_watcher);
             }
@@ -275,7 +275,7 @@ public final class ZooKeeperHandler {
             if (m_zookeeper == null) {
                 connect();
             }
-            m_zookeeper.delete(m_path + "/" + p_path, p_version);
+            m_zookeeper.delete(m_path + '/' + p_path, p_version);
         } catch (final KeeperException | InterruptedException e) {
             throw new ZooKeeperException("Could not access ZooKeeper", e);
         }
@@ -323,7 +323,7 @@ public final class ZooKeeperHandler {
         while (exists(p_path, p_watcher)) {
             try {
                 Thread.sleep(1000);
-            } catch (final InterruptedException e) {
+            } catch (final InterruptedException ignored) {
             }
         }
     }
@@ -360,7 +360,7 @@ public final class ZooKeeperHandler {
                 connect();
             }
 
-            ret = m_zookeeper.getChildren(m_path + "/" + p_path, p_watcher);
+            ret = m_zookeeper.getChildren(m_path + '/' + p_path, p_watcher);
         } catch (final KeeperException | InterruptedException e) {
             throw new ZooKeeperException("Could not access ZooKeeper", e);
         }
@@ -432,7 +432,7 @@ public final class ZooKeeperHandler {
                 connect();
             }
 
-            ret = m_zookeeper.getData(m_path + "/" + p_path, p_watcher, p_status);
+            ret = m_zookeeper.getData(m_path + '/' + p_path, p_watcher, p_status);
         } catch (final KeeperException | InterruptedException e) {
             throw new ZooKeeperException("Could not access ZooKeeper", e);
         }
@@ -475,7 +475,7 @@ public final class ZooKeeperHandler {
                 connect();
             }
 
-            m_zookeeper.setData(m_path + "/" + p_path, p_data, p_version);
+            m_zookeeper.setData(m_path + '/' + p_path, p_data, p_version);
         } catch (final KeeperException | InterruptedException e) {
             throw new ZooKeeperException("Could not access ZooKeeper", e);
         }
@@ -541,7 +541,7 @@ public final class ZooKeeperHandler {
                 connect();
             }
 
-            m_zookeeper.getChildren(m_path + "/" + p_path, p_watcher);
+            m_zookeeper.getChildren(m_path + '/' + p_path, p_watcher);
         } catch (final KeeperException | InterruptedException e) {
             throw new ZooKeeperException("Could not access ZooKeeper", e);
         }
@@ -592,7 +592,7 @@ public final class ZooKeeperHandler {
             connect();
         }
 
-        m_zookeeper.create(m_path + "/" + p_path, p_data, Ids.OPEN_ACL_UNSAFE, p_mode);
+        m_zookeeper.create(m_path + '/' + p_path, p_data, Ids.OPEN_ACL_UNSAFE, p_mode);
     }
 
     // Classes
@@ -602,7 +602,7 @@ public final class ZooKeeperHandler {
      *
      * @author Florian Klein 06.12.2013
      */
-    private final class ZooKeeperWatcher implements Watcher {
+    private static final class ZooKeeperWatcher implements Watcher {
 
         // Constructors
 
@@ -629,7 +629,7 @@ public final class ZooKeeperHandler {
      *
      * @author Florian Klein 09.03.2012
      */
-    public class ZooKeeperException extends Exception {
+    public static class ZooKeeperException extends Exception {
 
         // Constants
         private static final long serialVersionUID = 5917319024322071829L;

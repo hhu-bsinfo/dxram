@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
  * @author Florian Klein, florian.klein@hhu.de, 05.02.2014
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.03.2017
  */
-public class StringUtils {
+public final class StringUtils {
 
     /**
      * Utils class

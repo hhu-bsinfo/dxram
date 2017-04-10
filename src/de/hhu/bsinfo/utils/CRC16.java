@@ -43,7 +43,7 @@ public final class CRC16 {
     /**
      * Creates an instance of CRC16
      */
-    public CRC16() {
+    private CRC16() {
     }
 
     // Methods
@@ -55,7 +55,7 @@ public final class CRC16 {
      *     the integer that will be hashed
      * @return the crc16 hash
      */
-    public short hash(final int p_seed) {
+    public static short hash(final int p_seed) {
         int crc;
         byte[] bytes;
 
@@ -79,9 +79,8 @@ public final class CRC16 {
      *     the length
      * @return the crc16 hash
      */
-    public short hash(final byte[] p_seed, final int p_offset, final int p_length) {
+    public static short hash(final byte[] p_seed, final int p_offset, final int p_length) {
         int crc;
-        byte[] bytes;
 
         crc = 0x0000;
         for (int i = p_offset; i < p_offset + p_length; i++) {
@@ -103,9 +102,8 @@ public final class CRC16 {
      *     the length
      * @return the crc16 hash
      */
-    public short hash(final short p_hash, final byte[] p_seed, final int p_offset, final int p_length) {
+    public static short hash(final short p_hash, final byte[] p_seed, final int p_offset, final int p_length) {
         int crc;
-        byte[] bytes;
 
         crc = p_hash;
         for (int i = p_offset; i < p_offset + p_length; i++) {

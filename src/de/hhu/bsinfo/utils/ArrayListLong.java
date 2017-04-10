@@ -70,7 +70,7 @@ public class ArrayListLong implements Importable, Exportable {
      *     Contents of list to copy
      */
     public ArrayListLong(final ArrayListLong p_list) {
-        m_array = new long[p_list.getSize()];
+        m_array = new long[p_list.m_size];
         System.arraycopy(p_list.m_array, 0, m_array, 0, m_array.length);
     }
 

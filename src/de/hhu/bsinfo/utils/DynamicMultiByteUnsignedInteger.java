@@ -145,7 +145,7 @@ public final class DynamicMultiByteUnsignedInteger {
         int numLength = getMultiByteCount(p_val);
 
         for (int i = p_arrayOffset; i < p_arrayOffset + numLength; i++) {
-            p_array[i] = (byte) ((p_val >> (7 * i)) & 0x7F);
+            p_array[i] = (byte) (p_val >> 7 * i & 0x7F);
             // set highest bit to indicate further bytes available
             if (i + 1 < p_arrayOffset + numLength) {
                 p_array[i] |= 0x80;
@@ -169,7 +169,7 @@ public final class DynamicMultiByteUnsignedInteger {
         long ret = 0;
 
         while (pos < 9) {
-            ret |= ((long) (p_array[p_arrayOffset + pos] & 0x7F)) << (7 * pos);
+            ret |= (long) (p_array[p_arrayOffset + pos] & 0x7F) << 7 * pos;
             if ((p_array[p_arrayOffset + pos] & 0x80) != 1) {
                 break;
             }

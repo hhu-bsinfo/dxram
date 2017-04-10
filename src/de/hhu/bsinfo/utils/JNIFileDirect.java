@@ -18,7 +18,14 @@ package de.hhu.bsinfo.utils;
  *
  * @author Christian Gesse <christian.gesse@hhu.de> 17.09.16
  */
-public class JNIFileDirect {
+public final class JNIFileDirect {
+
+    /**
+     * Constructor
+     */
+    private JNIFileDirect() {
+
+    }
 
     /**
      * Opens a new logfile or creates it if it doesnt exist
@@ -29,7 +36,7 @@ public class JNIFileDirect {
      *     0 -> read/write, 1 -> read only
      * @return the filedescriptor or negative value on error
      */
-    public static native int open(String p_path, int p_mode);
+    public static native int open(final String p_path, final int p_mode);
 
     /**
      * creates a new aligned buffer in native memory
@@ -38,7 +45,7 @@ public class JNIFileDirect {
      *     length of buffer in bytes, must be a multiple of BLOCKSIZE
      * @return the address (pointer) of the created buffer or NULL
      */
-    public static native long createBuffer(int p_size);
+    public static native long createBuffer(final int p_size);
 
     /**
      * frees a created buffer
@@ -46,7 +53,7 @@ public class JNIFileDirect {
      * @param p_ptr
      *     address of the buffer, interpreted as a pointer
      */
-    public static native void freeBuffer(long p_ptr);
+    public static native void freeBuffer(final long p_ptr);
 
     /**
      * closes an open logfile
@@ -55,7 +62,7 @@ public class JNIFileDirect {
      *     the file descriptor of the logfile
      * @return 0 on success, -1 on error
      */
-    public static native int close(int p_fileID);
+    public static native int close(final int p_fileID);
 
     /**
      * writes to the file from buffer data current position
@@ -70,13 +77,14 @@ public class JNIFileDirect {
      *     number of bytes to write
      * @param p_position
      *     write-position in file
-     * @param p_w_buf
+     * @param p_wBuf
      *     address of preallocated writebuffer
-     * @param p_w_buf_size
+     * @param p_wBufSize
      *     length of preallocated writebuffer
      * @return 0 on success or -1 on error
      */
-    public static native int write(int p_fileID, byte[] p_data, int p_offset, int p_length, long p_position, long p_w_buf, int p_w_buf_size);
+    public static native int write(final int p_fileID, final byte[] p_data, final int p_offset, final int p_length, final long p_position, final long p_wBuf,
+        final int p_wBufSize);
 
     /**
      * writes to the file from buffer data at current position and sets file length
@@ -113,13 +121,14 @@ public class JNIFileDirect {
      *     number of bytes to read
      * @param p_position
      *     read-position in file
-     * @param p_r_buf
+     * @param p_rBuf
      *     address of preallocated readbuffer
-     * @param p_r_buf_size
+     * @param p_rBufSize
      *     length of preallocated readbuffer
      * @return 0 on success or -1 on error
      */
-    public static native int read(int p_fileID, byte[] p_data, int p_offset, int p_length, long p_position, long p_r_buf, int p_r_buf_size);
+    public static native int read(final int p_fileID, final byte[] p_data, final int p_offset, final int p_length, final long p_position, final long p_rBuf,
+        final int p_rBufSize);
 
     /**
      * sets the filepointer to given value, measured from beginning of the file
@@ -130,7 +139,7 @@ public class JNIFileDirect {
      *     new position in file
      * @return new position in file or -1 on errror
      */
-    public static native long seek(int p_fileID, long p_position);
+    public static native long seek(final int p_fileID, final long p_position);
 
     /**
      * return length of the file
@@ -139,7 +148,7 @@ public class JNIFileDirect {
      *     the descriptor of the fileID
      * @return the length of the file
      */
-    public static native long length(int p_fileID);
+    public static native long length(final int p_fileID);
 
     /**
      * sets the length of the file to a given length - padding with 0
@@ -150,7 +159,7 @@ public class JNIFileDirect {
      *     new length of the file
      * @return 0 on success, -1 on error
      */
-    public static native int setFileLength(int p_fileID, long p_fileLength);
+    public static native int setFileLength(final int p_fileID, final long p_fileLength);
 
     /**
      * a simple testfunction to check if jni-lib is loaded successfully

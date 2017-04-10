@@ -43,8 +43,6 @@ public class NameserviceHashTable extends AbstractMetadata {
     private int m_threshold;
     private float m_loadFactor;
 
-    private CRC16 m_hashGenerator;
-
     // Constructors
 
     /**
@@ -54,10 +52,8 @@ public class NameserviceHashTable extends AbstractMetadata {
      *     the initial capacity of IDHashTable
      * @param p_loadFactor
      *     the load factor of IDHashTable
-     * @param p_hashGenerator
-     *     the CRC16 hash generator
      */
-    public NameserviceHashTable(final int p_initialElementCapacity, final float p_loadFactor, final CRC16 p_hashGenerator) {
+    public NameserviceHashTable(final int p_initialElementCapacity, final float p_loadFactor) {
         super();
 
         m_count = 0;
@@ -71,8 +67,6 @@ public class NameserviceHashTable extends AbstractMetadata {
             m_table = new int[m_elementCapacity * 3];
             m_threshold = (int) (m_elementCapacity * m_loadFactor);
         }
-
-        m_hashGenerator = p_hashGenerator;
     }
 
     /**
@@ -166,7 +160,7 @@ public class NameserviceHashTable extends AbstractMetadata {
         for (int i = 0; i < m_elementCapacity; i++) {
             iter = getKey(i);
             if (iter != 0) {
-                if (OverlayHelper.isHashInSuperpeerRange(m_hashGenerator.hash(iter - 1), p_bound1, p_bound2)) {
+                if (OverlayHelper.isHashInSuperpeerRange(CRC16.hash(iter - 1), p_bound1, p_bound2)) {
                     // #if LOGGER == TRACE
                     LOGGER.trace("Including nameservice entry: %s <-> %s", iter - 1, getValue(i));
                     // #endif /* LOGGER == TRACE */
@@ -188,7 +182,7 @@ public class NameserviceHashTable extends AbstractMetadata {
         for (int i = 0; i < m_elementCapacity; i++) {
             iter = getKey(i);
             if (iter != 0) {
-                if (!OverlayHelper.isHashInSuperpeerRange(m_hashGenerator.hash(iter - 1), p_bound1, p_bound2)) {
+                if (!OverlayHelper.isHashInSuperpeerRange(CRC16.hash(iter - 1), p_bound1, p_bound2)) {
                     // #if LOGGER == TRACE
                     LOGGER.trace("Removing nameservice entry: %s <-> %s", iter - 1, getValue(i));
                     // #endif /* LOGGER == TRACE */
@@ -212,7 +206,7 @@ public class NameserviceHashTable extends AbstractMetadata {
         for (int i = 0; i < m_elementCapacity; i++) {
             iter = getKey(i);
             if (iter != 0) {
-                if (OverlayHelper.isHashInSuperpeerRange(m_hashGenerator.hash(iter - 1), p_bound1, p_bound2)) {
+                if (OverlayHelper.isHashInSuperpeerRange(CRC16.hash(iter - 1), p_bound1, p_bound2)) {
                     count++;
                 }
             }

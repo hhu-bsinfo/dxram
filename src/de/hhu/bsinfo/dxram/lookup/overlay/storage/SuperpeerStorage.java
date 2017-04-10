@@ -52,8 +52,6 @@ public class SuperpeerStorage extends AbstractMetadata {
     private int m_allocatedSizeBytes;
     private int m_entryCount;
 
-    private CRC16 m_hashGenerator;
-
     /**
      * Constructor
      *
@@ -61,14 +59,11 @@ public class SuperpeerStorage extends AbstractMetadata {
      *     Max num of entries allowed in the storage.
      * @param p_maxSizeBytes
      *     Max size of bytes the objects are allowed to consume (all together)
-     * @param p_hashGenerator
-     *     the CRC16 hash generator
      */
-    public SuperpeerStorage(final int p_maxNumEntries, final int p_maxSizeBytes, final CRC16 p_hashGenerator) {
+    public SuperpeerStorage(final int p_maxNumEntries, final int p_maxSizeBytes) {
         m_maxNumEntries = p_maxNumEntries;
         m_maxSizeBytes = p_maxSizeBytes;
         m_entryCount = 0;
-        m_hashGenerator = p_hashGenerator;
     }
 
     /**
@@ -156,7 +151,7 @@ public class SuperpeerStorage extends AbstractMetadata {
             id = pair.getKey();
             currentData = pair.getValue();
 
-            if (OverlayHelper.isHashInSuperpeerRange(m_hashGenerator.hash(id), p_bound1, p_bound2)) {
+            if (OverlayHelper.isHashInSuperpeerRange(CRC16.hash(id), p_bound1, p_bound2)) {
                 // #if LOGGER == TRACE
                 LOGGER.trace("Including superpeer storage: %d <-> %d", id, currentData.length);
                 // #endif /* LOGGER == TRACE */
@@ -181,7 +176,7 @@ public class SuperpeerStorage extends AbstractMetadata {
         while (iter.hasNext()) {
             id = iter.next().getKey();
 
-            if (!OverlayHelper.isHashInSuperpeerRange(m_hashGenerator.hash(id), p_bound1, p_bound2)) {
+            if (!OverlayHelper.isHashInSuperpeerRange(CRC16.hash(id), p_bound1, p_bound2)) {
                 // #if LOGGER == TRACE
                 LOGGER.trace("Removing superpeer storage: %d", id);
                 // #endif /* LOGGER == TRACE */
@@ -203,7 +198,7 @@ public class SuperpeerStorage extends AbstractMetadata {
         iter = m_storage.entrySet().iterator();
         while (iter.hasNext()) {
             id = iter.next().getKey();
-            if (OverlayHelper.isHashInSuperpeerRange(m_hashGenerator.hash(id), p_bound1, p_bound2)) {
+            if (OverlayHelper.isHashInSuperpeerRange(CRC16.hash(id), p_bound1, p_bound2)) {
                 count++;
             }
         }

@@ -8,7 +8,7 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  * @author Florian Klein, florian.klein@hhu.de, 05.02.2014
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.03.2017
  */
-public class RandomUtils {
+public final class RandomUtils {
 
     /**
      * Utils class
