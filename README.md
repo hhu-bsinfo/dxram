@@ -6,11 +6,11 @@ Facebook for example runs approx. 1,000 memcached servers keeping around 75% of 
 
 # Important
 
-DXRAM is a research project that's under heavy development. We do not recommend using the system in a production environment or with production data without having an external backup. Expect to encounter bugs. However, we are looking forward to bug reports and code contributions.
+DXRAM is a research project that's under development. We do not recommend using the system in a production environment or with production data without having an external backup. Expect to encounter bugs. However, we are looking forward to bug reports and code contributions.
 
 # Features
 
-* Distributed object lookup and sclable meta-data management with super-peer overlay
+* Distributed object lookup and scalable meta-data management with super-peer overlay
 * Ethernet network supported (InfiniBand currently under development)
 * All objects always in RAM
 * Custom, highly efficient and performant memory management for billions of small objects (< 64 bytes) per node
