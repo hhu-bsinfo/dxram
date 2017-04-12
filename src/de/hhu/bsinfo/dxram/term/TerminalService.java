@@ -194,10 +194,13 @@ public class TerminalService extends AbstractDXRAMService {
 
     @Override
     protected boolean shutdownService() {
-        // flush history
-        try {
-            m_history.flush();
-        } catch (final IOException ignored) {
+        if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
+            // flush history
+            try {
+                m_history.flush();
+            } catch (final IOException ignored) {
+            }
+
         }
 
         return true;
