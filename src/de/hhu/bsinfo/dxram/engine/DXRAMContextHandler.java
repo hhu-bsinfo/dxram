@@ -20,6 +20,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Properties;
 
 import com.google.gson.Gson;
@@ -223,6 +224,10 @@ class DXRAMContextHandler {
         } catch (final Exception e) {
             LOGGER.error("Loading configuration '%s' failed: %s", p_configFilePath, e.getMessage());
         }
+
+        // filter disabled/null components and services
+        m_context.getComponents().values().removeIf(Objects::isNull);
+        m_context.getServices().values().removeIf(Objects::isNull);
 
         return true;
     }
