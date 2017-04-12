@@ -1,7 +1,7 @@
 {
 	"m_minSlaves": 2,
 	"m_maxSlaves": 0,
-	"m_name": "ChunkServiceLocalBench",
+	"m_name": "ChunkServiceRemoteBench",
 	"m_tasks": [
 		{
 			"m_task": "de.hhu.bsinfo.dxram.chunk.bench.CheckChunkMemRequiredSizeTask",
