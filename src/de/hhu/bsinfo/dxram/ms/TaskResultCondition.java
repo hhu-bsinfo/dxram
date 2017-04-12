@@ -58,7 +58,7 @@ final class TaskResultCondition implements TaskScriptNode {
     /**
      * Default constructor
      */
-    TaskResultCondition() {
+    public TaskResultCondition() {
 
     }
 

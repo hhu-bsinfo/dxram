@@ -36,7 +36,7 @@ final class TaskResultSwitch implements TaskScriptNode {
     /**
      * Default constructor
      */
-    TaskResultSwitch() {
+    public TaskResultSwitch() {
 
     }
 
