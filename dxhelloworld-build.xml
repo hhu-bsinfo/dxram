@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="dxhelloworld" basedir="." default="release">
+    <import file="dxram-build-config.xml"/>
+
+    <property name="name" value="dxhelloworld"/>
+
+    <!-- Load the ant contrib lib -->
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+            <pathelement location="${basedir}/lib/ant-contrib-0.6.jar"/>
+        </classpath>
+    </taskdef>
+
+    <target name="debug" description="builds dxram-debug.jar (contains all logger calls)">
+        <antcall target="compile">
+            <param name="buildtype" value="debug"/>
+        </antcall>
+
+        <move file="${build_proj_dir}/${name}-debug.jar" tofile="${build_proj_app_dir}/${name}.jar"/>
+        <copy file="${build_proj_app_dir}/${name}.jar" tofile="${basedir}/${app_dir}/${name}.jar"/>
+    </target>
+
+    <target name="release" description="builds dxram-release-jar">
+        <antcall target="compile">
+            <param name="buildtype" value="release"/>
+        </antcall>
+
+        <move file="${build_proj_dir}/${name}-release.jar" tofile="${build_proj_app_dir}/${name}.jar"/>
+        <copy file="${build_proj_app_dir}/${name}.jar" tofile="${basedir}/${app_dir}/${name}.jar"/>
+    </target>
+
+    <target name="performance" description="builds dxram-performance.jar (without any logger calls)">
+        <antcall target="compile">
+            <param name="buildtype" value="performance"/>
+        </antcall>
+
+        <move file="${build_proj_dir}/${name}-performance.jar" tofile="${build_proj_app_dir}/${name}.jar"/>
+        <copy file="${build_proj_app_dir}/${name}.jar" tofile="${basedir}/${app_dir}/${name}.jar"/>
+    </target>
+
+    <target name="compile" description="builds class files">
+        <echo message="Compiling with build type ${buildtype}"/>
+
+        <mkdir dir="${build_proj_dir}/classes"/>
+        <mkdir dir="${build_proj_dir}/classes/${buildtype}"/>
+
+        <condition property="debugOn" value="true" else="false">
+            <equals arg1="${buildtype}" arg2="debug"/>
+        </condition>
+        <condition property="optimizeOn" value="on" else="off">
+            <equals arg1="${buildtype}" arg2="release"/>
+        </condition>
+        <condition property="optimizeOn" value="on" else="off">
+            <equals arg1="${buildtype}" arg2="performance"/>
+        </condition>
+
+        <javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false"
+               debug="${debugOn}" optimize="${optimizeOn}" target="1.8" encoding="UTF-8">
+            <include name="de/hhu/bsinfo/dxhelloworld/**/*.java"/>
+            <classpath>
+                <file file="${build_proj_dir}/${name_dxram}.jar"></file>
+                <fileset dir="${lib_dir}">
+                    <include name="**/*.jar"/>
+                </fileset>
+            </classpath>
+        </javac>
+
+        <tstamp>
+            <format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss"/>
+        </tstamp>
+
+        <jar destfile="${build_proj_dir}/${name}-${buildtype}.jar" basedir="${build_proj_dir}/classes/${buildtype}">
+            <manifest>
+                <attribute name="BuildUser" value="${user.name}"/>
+                <attribute name="BuildDate" value="${TODAY}"/>
+                <attribute name="Main-Class" value="de.hhu.bsinfo.dxram.DXRAMMain"/>
+                <attribute name="Class-Path" value="${jar.classpath}"/>
+            </manifest>
+        </jar>
+
+        <delete dir="${build_proj_dir}/classes"/>
+    </target>
+</project>

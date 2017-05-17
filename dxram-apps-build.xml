@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="dxram-apps" basedir="." default="release">
+    <import file="dxram-build-config.xml"/>
+
+    <target name="debug" description="builds all application jars (contains all logger calls)">
+        <mkdir dir="${build_proj_app_dir}"/>
+
+        <ant antfile="dxhelloworld-build.xml" target="debug"/>
+    </target>
+
+    <target name="release" description="builds all application jars">
+        <mkdir dir="${build_proj_app_dir}"/>
+
+        <ant antfile="dxhelloworld-build.xml" target="release"/>
+    </target>
+
+    <target name="performance" description="builds all application jars (without any logger calls)">
+        <mkdir dir="${build_proj_app_dir}"/>
+
+        <ant antfile="dxhelloworld-build.xml" target="performance"/>
+    </target>
+</project>

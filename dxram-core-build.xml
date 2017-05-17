@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="dxram" basedir="." default="release">
+    <import file="dxram-build-config.xml"/>
+
+    <!-- Load the ant contrib lib -->
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+            <pathelement location="${basedir}/lib/ant-contrib-0.6.jar"/>
+        </classpath>
+    </taskdef>
+
+    <target name="debug" description="builds dxram-debug.jar (contains all logger calls)">
+        <antcall target="compile">
+            <param name="buildtype" value="debug"/>
+        </antcall>
+
+        <move file="${build_proj_dir}/${name_dxram}-debug.jar" tofile="${build_proj_dir}/${name_dxram}.jar"/>
+        <copy file="${build_proj_dir}/${name_dxram}.jar" tofile="${basedir}/${name_dxram}.jar"/>
+    </target>
+
+    <target name="release" description="builds dxram-release-jar">
+        <exec dir="util/" executable="/bin/bash">
+            <arg line="preprocessor.sh INFO ENABLED DISABLED"/>
+        </exec>
+
+        <trycatch>
+            <try>
+                <antcall target="compile">
+                    <param name="buildtype" value="release"/>
+                </antcall>
+            </try>
+            <catch>
+                <fail message="Compiler error(s)!"/>
+            </catch>
+            <finally>
+                <exec dir="util/" executable="/bin/bash">
+                    <arg line="postprocessor.sh"/>
+                </exec>
+            </finally>
+        </trycatch>
+
+        <move file="${build_proj_dir}/${name_dxram}-release.jar" tofile="${build_proj_dir}/${name_dxram}.jar"/>
+        <copy file="${build_proj_dir}/${name_dxram}.jar" tofile="${basedir}/${name_dxram}.jar"/>
+    </target>
+
+    <target name="performance" description="builds dxram-performance.jar (without any logger calls)">
+        <exec dir="util/" executable="/bin/bash">
+            <arg line="preprocessor.sh DISABLED DISABLED DISABLED"/>
+        </exec>
+
+        <trycatch>
+            <try>
+                <antcall target="compile">
+                    <param name="buildtype" value="performance"/>
+                </antcall>
+            </try>
+            <catch>
+                <fail message="Compiler error(s)!"/>
+            </catch>
+            <finally>
+                <exec dir="util/" executable="/bin/bash">
+                    <arg line="postprocessor.sh"/>
+                </exec>
+            </finally>
+        </trycatch>
+
+        <move file="${build_proj_dir}/${name_dxram}-performance.jar" tofile="${build_proj_dir}/${name_dxram}.jar"/>
+        <copy file="${build_proj_dir}/${name_dxram}.jar" tofile="${basedir}/${name_dxram}.jar"/>
+    </target>
+
+    <target name="compile" description="builds class files">
+        <echo message="Compiling with build type ${buildtype}"/>
+
+        <mkdir dir="${build_proj_dir}/classes"/>
+        <mkdir dir="${build_proj_dir}/classes/${buildtype}"/>
+
+        <condition property="debugOn" value="true" else="false">
+            <equals arg1="${buildtype}" arg2="debug"/>
+        </condition>
+        <condition property="optimizeOn" value="on" else="off">
+            <equals arg1="${buildtype}" arg2="release"/>
+        </condition>
+        <condition property="optimizeOn" value="on" else="off">
+            <equals arg1="${buildtype}" arg2="performance"/>
+        </condition>
+
+        <javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false"
+               debug="${debugOn}" optimize="${optimizeOn}"
+               target="1.8" encoding="UTF-8">
+            <compilerarg line="-Xlint:sunapi -XDenableSunApiLintControl"/>
+            <include name="de/hhu/bsinfo/dxgraph/**/*.java"/>
+            <include name="de/hhu/bsinfo/dxram/**/*.java"/>
+            <include name="de/hhu/bsinfo/ethnet/**/*.java"/>
+            <include name="de/hhu/bsinfo/soh/**/*.java"/>
+            <include name="de/hhu/bsinfo/utils/**/*.java"/>
+            <classpath>
+                <fileset dir="${lib_dir}">
+                    <include name="**/*.jar"/>
+                </fileset>
+            </classpath>
+        </javac>
+
+        <tstamp>
+            <format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss"/>
+        </tstamp>
+
+        <jar destfile="${build_proj_dir}/${name_dxram}-${buildtype}.jar" basedir="${build_proj_dir}/classes/${buildtype}">
+            <manifest>
+                <attribute name="BuildUser" value="${user.name}"/>
+                <attribute name="BuildDate" value="${TODAY}"/>
+                <attribute name="Main-Class" value="de.hhu.bsinfo.dxram.DXRAMMain"/>
+                <attribute name="Class-Path" value="${jar.classpath}"/>
+            </manifest>
+        </jar>
+
+        <delete dir="${build_proj_dir}/classes"/>
+    </target>
+</project>
