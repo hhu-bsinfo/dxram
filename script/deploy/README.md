@@ -78,15 +78,6 @@ To pass normal program arguments to main (useful for custom applications built o
 localhost,P,args=server 10
 ```
 
-### Class to execute
-
-To execute different DXRAM based applications, e.g. DXCompute, DXGraph or your own custom application built on DXRAM, you can specify the class to run:
-```
-localhost,P,class=de.hhu.bsinfo.dxram.run.beineke.MailboxTest
-```
-
-If not specified, it defaults to *de.hhu.bsinfo.dxram.run.DXRAMMain*.
-
 ### Wait for instance to finish startup
 
 You can specify a string that needs to appear on the log before the instance is considered as started by the deploy script. The deploy script will start the next instance in order only if that string appeared on the log output.
@@ -104,13 +95,3 @@ localhost,P,tcond=5
 ```
 
 Again, this is something you only need if you have developed your own custom application. 
-
-### Auto start a script (terminal only)
-
-You can execute a Java script file written for the DXRAM terminal environment after the terminal has started. This can be very useful to run benchmarks or other automated tasks after all other DXRAM instances have started. The terminal will not execute any scripts if not specified explicitly.
-
-```
-localhost,T,OverlayTest.js
-```
-
-Make sure to have the terminal instance placed as the last instance to deploy in your configuraiton.
