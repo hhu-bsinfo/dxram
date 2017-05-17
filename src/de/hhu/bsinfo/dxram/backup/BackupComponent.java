@@ -86,7 +86,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     @Expose
     private byte m_replicationFactor = 3;
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private ChunkBackupComponent m_chunkBackup;
     private LookupComponent m_lookup;

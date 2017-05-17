@@ -40,7 +40,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkComponent.class.getSimpleName());
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
     private MemoryManagerComponent m_memoryManager;

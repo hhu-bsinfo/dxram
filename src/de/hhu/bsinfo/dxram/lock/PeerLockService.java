@@ -80,7 +80,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     @Expose
     private TimeUnit m_remoteLockTryTimeout = new TimeUnit(100, TimeUnit.MS);
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;
     private MemoryManagerComponent m_memoryManager;

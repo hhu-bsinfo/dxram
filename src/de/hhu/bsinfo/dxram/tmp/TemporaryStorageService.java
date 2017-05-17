@@ -40,7 +40,7 @@ import de.hhu.bsinfo.dxram.tmp.tcmd.TcmdTmpstatus;
  */
 public class TemporaryStorageService extends AbstractDXRAMService {
 
-    // dependent components
+    // component dependencies
     private LookupComponent m_lookup;
     private TerminalComponent m_terminal;
 

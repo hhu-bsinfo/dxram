@@ -32,7 +32,7 @@ import de.hhu.bsinfo.dxram.term.TerminalComponent;
  */
 public class SynchronizationService extends AbstractDXRAMService {
 
-    // dependent components
+    // component dependencies
     private LookupComponent m_lookup;
     private TerminalComponent m_terminal;
 

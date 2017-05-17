@@ -67,7 +67,7 @@ public class TerminalService extends AbstractDXRAMService {
     @Expose
     private String m_historyFilePath = ".dxram_term_history";
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private TerminalComponent m_terminal;
 

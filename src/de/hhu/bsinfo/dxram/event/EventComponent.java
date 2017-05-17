@@ -44,7 +44,7 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
     @Expose
     private int m_threadCount = 1;
 
-    // dependent components
+    // component dependencies
 
     // private state
     private Map<String, ArrayList<EventListener<? extends AbstractEvent>>> m_eventListener = new HashMap<>();

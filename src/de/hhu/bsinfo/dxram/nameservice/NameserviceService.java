@@ -49,7 +49,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceService.class.getSimpleName());
 
-    // dependent components
+    // component dependencies
     private NameserviceComponent m_nameservice;
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;

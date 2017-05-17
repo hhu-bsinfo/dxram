@@ -56,7 +56,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(MigrationService.class.getSimpleName());
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
     private ChunkMigrationComponent m_chunk;

@@ -86,7 +86,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     private static final StatisticsOperation SOP_INCOMING_GET = StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingGet");
     private static final StatisticsOperation SOP_INCOMING_PUT = StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingPut");
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
     private MemoryManagerComponent m_memoryManager;

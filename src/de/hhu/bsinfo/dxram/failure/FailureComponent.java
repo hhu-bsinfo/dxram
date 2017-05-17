@@ -51,7 +51,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(FailureComponent.class.getSimpleName());
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private LookupComponent m_lookup;
     private EventComponent m_event;

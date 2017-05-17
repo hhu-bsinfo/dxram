@@ -85,7 +85,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     @Expose
     private TimeUnit m_pingInterval = new TimeUnit(1, TimeUnit.SEC);
 
-    // dependent components
+    // component dependencies
     private NetworkComponent m_network;
     private NameserviceComponent m_nameservice;
     private AbstractBootComponent m_boot;

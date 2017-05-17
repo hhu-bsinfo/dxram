@@ -51,7 +51,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(BootService.class.getSimpleName());
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;
     private TerminalComponent m_terminal;

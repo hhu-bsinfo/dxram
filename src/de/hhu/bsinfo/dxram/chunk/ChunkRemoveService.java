@@ -58,7 +58,7 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
     @Expose
     private int m_removerQueueSize = 100000;
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
     private MemoryManagerComponent m_memoryManager;

@@ -39,7 +39,7 @@ public class ChunkMemoryService extends AbstractDXRAMService {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkMemoryService.class.getSimpleName());
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private MemoryManagerComponent m_memoryManager;
 

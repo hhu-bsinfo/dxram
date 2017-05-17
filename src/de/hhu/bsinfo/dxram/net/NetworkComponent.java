@@ -87,7 +87,7 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
     @Expose
     private TimeUnit m_requestTimeout = new TimeUnit(333, TimeUnit.MS);
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private EventComponent m_event;
 

@@ -20,6 +20,7 @@ import java.util.TreeMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -44,7 +45,6 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
@@ -68,7 +68,7 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
     private static final StatisticsOperation SOP_PUT_ANON = StatisticsRecorderManager.getOperation(ChunkService.class, "PutAnon");
     private static final StatisticsOperation SOP_INCOMING_PUT_ANON = StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingPutAnon");
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
     private MemoryManagerComponent m_memoryManager;
@@ -89,9 +89,9 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
      * unknown, only!
      *
      * @param p_ret
-     *     Pre-allocated array to put the new anonymous chunks to, matching the order of the provided chunk ID array.
+     *         Pre-allocated array to put the new anonymous chunks to, matching the order of the provided chunk ID array.
      * @param p_chunkIDs
-     *     Array with ChunkIDs.
+     *         Array with ChunkIDs.
      * @return Number of successfully read chunks
      */
     public int get(final ChunkAnon[] p_ret, final long... p_chunkIDs) {
@@ -211,9 +211,9 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
      * unknown, only!
      *
      * @param p_ret
-     *     Pre-allocated array to put the new anonymous chunks to, matching the order of the provided chunk ID array.
+     *         Pre-allocated array to put the new anonymous chunks to, matching the order of the provided chunk ID array.
      * @param p_chunkIDs
-     *     Array with ChunkIDs.
+     *         Array with ChunkIDs.
      * @return Number of successfully read chunks
      */
     public int getLocal(final ChunkAnon[] p_ret, final long... p_chunkIDs) {
@@ -266,7 +266,7 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
      * Put/Update the contents of the provided Chunk in the backend storage.
      *
      * @param p_chunks
-     *     ChunkAnons to put/update. Null values are ignored.
+     *         ChunkAnons to put/update. Null values are ignored.
      * @return Number of successfully updated data structures.
      */
     public int put(final ChunkAnon... p_chunks) {
@@ -277,9 +277,9 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
      * Put/Update the contents of the provided Chunk in the backend storage.
      *
      * @param p_chunkUnlockOperation
-     *     Unlock operation to execute right after the put operation.
+     *         Unlock operation to execute right after the put operation.
      * @param p_chunks
-     *     ChunkAnons to put/update. Null values or chunks with invalid IDs are ignored.
+     *         ChunkAnons to put/update. Null values or chunks with invalid IDs are ignored.
      * @return Number of successfully updated data structures.
      */
     public int put(final ChunkLockOperation p_chunkUnlockOperation, final ChunkAnon... p_chunks) {
@@ -290,13 +290,13 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
      * Put/Update the contents of the provided ChunkBuffers in the backend storage.
      *
      * @param p_chunkUnlockOperation
-     *     Unlock operation to execute right after the put operation.
+     *         Unlock operation to execute right after the put operation.
      * @param p_chunks
-     *     ChunkAnons to put/update. Null values or chunks with invalid IDs are ignored.
+     *         ChunkAnons to put/update. Null values or chunks with invalid IDs are ignored.
      * @param p_offset
-     *     Start offset within the array.
+     *         Start offset within the array.
      * @param p_count
-     *     Number of items to put.
+     *         Number of items to put.
      * @return Number of successfully updated data structures.
      */
     public int put(final ChunkLockOperation p_chunkUnlockOperation, final ChunkAnon[] p_chunks, final int p_offset, final int p_count) {
@@ -560,7 +560,7 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
      * Handles an incoming GetAnonRequest
      *
      * @param p_request
-     *     the GetAnonRequest
+     *         the GetAnonRequest
      */
     private void incomingGetBufferRequest(final GetAnonRequest p_request) {
         long[] chunkIDs = p_request.getChunkIDs();
@@ -604,7 +604,7 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
      * Handles an incoming PutAnonRequest
      *
      * @param p_request
-     *     the PutAnonRequest
+     *         the PutAnonRequest
      */
     private void incomingPutBufferRequest(final PutAnonRequest p_request) {
         long[] chunkIDs = p_request.getChunkIDs();

@@ -51,7 +51,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(RecoveryService.class.getSimpleName());
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
     private ChunkBackupComponent m_chunkBackup;

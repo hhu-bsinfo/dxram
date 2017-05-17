@@ -43,7 +43,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
     @Expose
     private int m_numWorkers = 1;
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
 
     private Worker[] m_workers;

@@ -29,7 +29,7 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
  */
 public class NetworkService extends AbstractDXRAMService {
 
-    // dependent components
+    // component dependencies
     private NetworkComponent m_network;
 
     /**

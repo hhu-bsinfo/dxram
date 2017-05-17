@@ -59,7 +59,7 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
     private static final StatisticsOperation SOP_PUT_ASYNC = StatisticsRecorderManager.getOperation(ChunkAsyncService.class, "PutAsync");
     private static final StatisticsOperation SOP_INCOMING_PUT_ASYNC = StatisticsRecorderManager.getOperation(ChunkAsyncService.class, "IncomingPutAsync");
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private MemoryManagerComponent m_memoryManager;
     private NetworkComponent m_network;

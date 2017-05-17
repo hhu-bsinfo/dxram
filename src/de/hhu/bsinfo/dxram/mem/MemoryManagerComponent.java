@@ -86,7 +86,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     @Expose
     private String m_memDumpFolderOnError = "";
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private SmallObjectHeap m_rawMemory;
     private CIDTable m_cidTable;

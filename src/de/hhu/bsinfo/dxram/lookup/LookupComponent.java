@@ -86,7 +86,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     @Expose
     private StorageUnit m_storageMaxSize = new StorageUnit(32, StorageUnit.MB);
 
-    // dependent components
+    // component dependencies
     private BackupComponent m_backup;
     private AbstractBootComponent m_boot;
     private EventComponent m_event;

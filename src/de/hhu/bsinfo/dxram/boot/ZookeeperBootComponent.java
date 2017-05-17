@@ -86,7 +86,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
         }
     };
 
-    // dependent components
+    // component dependencies
     private BackupComponent m_backup;
     private EventComponent m_event;
     private LookupComponent m_lookup;

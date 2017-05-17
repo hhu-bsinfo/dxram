@@ -43,7 +43,7 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(LoggerService.class.getSimpleName());
 
-    // dependent components
+    // component dependencies
     private NetworkComponent m_network;
     private AbstractBootComponent m_boot;
     private TerminalComponent m_terminal;

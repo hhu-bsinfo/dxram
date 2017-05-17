@@ -53,7 +53,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
     @Expose
     private String m_type = "NAME";
 
-    // dependent components
+    // component dependencies
     private AbstractBootComponent m_boot;
     private LookupComponent m_lookup;
     private ChunkComponent m_chunk;

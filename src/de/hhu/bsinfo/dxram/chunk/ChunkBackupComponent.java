@@ -42,7 +42,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkBackupComponent.class.getSimpleName());
     private static final int MAXIMUM_QUEUE_SIZE = 10;
 
-    // dependent components
+    // component dependencies
     private MemoryManagerComponent m_memoryManager;
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;

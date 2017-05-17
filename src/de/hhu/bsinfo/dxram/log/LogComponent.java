@@ -99,7 +99,7 @@ public class LogComponent extends AbstractDXRAMComponent {
 
     private HarddriveAccessMode m_mode;
 
-    // dependent components
+    // component dependencies
     private NetworkComponent m_network;
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
