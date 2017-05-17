@@ -15,6 +15,8 @@ package de.hhu.bsinfo.dxram;
 
 import java.net.InetSocketAddress;
 
+import de.hhu.bsinfo.dxram.app.ApplicationComponent;
+import de.hhu.bsinfo.dxram.app.ApplicationService;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
@@ -28,6 +30,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkRemoveService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 import de.hhu.bsinfo.dxram.engine.NullComponent;
 import de.hhu.bsinfo.dxram.engine.NullService;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -63,6 +66,7 @@ import de.hhu.bsinfo.utils.ManifestHelper;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class DXRAM {
+    public static final DXRAMVersion VERSION = DXRAMVersion.builder().setMajor(0).setMinor(1).setRevision(0).build();
     private static final String STARTUP_DONE_STR = "!---ooo---!";
 
     private DXRAMEngine m_engine;
@@ -71,17 +75,26 @@ public class DXRAM {
      * Constructor
      */
     public DXRAM() {
-        m_engine = new DXRAMEngine();
+        m_engine = new DXRAMEngine(VERSION);
         registerComponents(m_engine);
         registerServices(m_engine);
+    }
+
+    /**
+     * Get the version of DXRAM
+     *
+     * @return DXRAM version
+     */
+    public DXRAMVersion getVersion() {
+        return m_engine.getVersion();
     }
 
     /**
      * Initialize the instance.
      *
      * @param p_autoShutdown
-     *     True to have DXRAM shut down automatically when the application quits.
-     *     If false, the caller has to take care of shutting down the instance by calling shutdown when done.
+     *         True to have DXRAM shut down automatically when the application quits.
+     *         If false, the caller has to take care of shutting down the instance by calling shutdown when done.
      * @return True if initializing was successful, false otherwise.
      */
     public boolean initialize(final boolean p_autoShutdown) {
@@ -103,7 +116,7 @@ public class DXRAM {
      * Initialize the instance.
      *
      * @param p_configurationFile
-     *     Absolute or relative path to a configuration file
+     *         Absolute or relative path to a configuration file
      * @return True if initializing was successful, false otherwise.
      */
     public boolean initialize(final String p_configurationFile) {
@@ -120,10 +133,10 @@ public class DXRAM {
      * Initialize the instance.
      *
      * @param p_autoShutdown
-     *     True to have DXRAM shut down automatically when the application quits.
-     *     If false, the caller has to take care of shutting down the instance by calling shutdown when done.
+     *         True to have DXRAM shut down automatically when the application quits.
+     *         If false, the caller has to take care of shutting down the instance by calling shutdown when done.
      * @param p_configurationFile
-     *     Absolute or relative path to a configuration file
+     *         Absolute or relative path to a configuration file
      * @return True if initializing was successful, false otherwise.
      */
     public boolean initialize(final boolean p_autoShutdown, final String p_configurationFile) {
@@ -144,10 +157,10 @@ public class DXRAM {
      * Get a service from DXRAM.
      *
      * @param <T>
-     *     Type of service to get
+     *         Type of service to get
      * @param p_class
-     *     Class of the service to get. If one service has multiple implementations, use
-     *     the common super class here.
+     *         Class of the service to get. If one service has multiple implementations, use
+     *         the common super class here.
      * @return Service requested or null if the service is not enabled/available.
      */
     public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
@@ -211,9 +224,10 @@ public class DXRAM {
      * override this method but make sure to call it using super
      *
      * @param p_engine
-     *     DXRAM engine instance to register components at
+     *         DXRAM engine instance to register components at
      */
     private static void registerComponents(final DXRAMEngine p_engine) {
+        p_engine.registerComponent(ApplicationComponent.class);
         p_engine.registerComponent(BackupComponent.class);
         p_engine.registerComponent(ChunkComponent.class);
         p_engine.registerComponent(ChunkMigrationComponent.class);
@@ -237,9 +251,10 @@ public class DXRAM {
      * override this method but make sure to call it using super
      *
      * @param p_engine
-     *     DXRAM engine instance to register services at
+     *         DXRAM engine instance to register services at
      */
     private static void registerServices(final DXRAMEngine p_engine) {
+        p_engine.registerService(ApplicationService.class);
         p_engine.registerService(BootService.class);
         p_engine.registerService(ChunkAnonService.class);
         p_engine.registerService(ChunkAsyncService.class);
@@ -323,7 +338,7 @@ public class DXRAM {
          * Creates an instance of ShutdownThread
          *
          * @param p_dxram
-         *     Reference to DXRAM instance.
+         *         Reference to DXRAM instance.
          */
         private ShutdownThread(final DXRAM p_dxram) {
             super(ShutdownThread.class.getSimpleName());

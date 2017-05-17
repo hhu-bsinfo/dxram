@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,9 +31,9 @@ import org.apache.logging.log4j.Logger;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor {
-
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMEngine.class.getSimpleName());
 
+    private DXRAMVersion m_version;
     private DXRAMComponentManager m_componentManager;
     private DXRAMServiceManager m_serviceManager;
     private DXRAMContextHandler m_contextHandler;
@@ -44,10 +45,23 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
     /**
      * Constructor
+     *
+     * @param p_version
+     *         Object to label the current version
      */
-    public DXRAMEngine() {
+    public DXRAMEngine(final DXRAMVersion p_version) {
+        m_version = Objects.requireNonNull(p_version);
         m_componentManager = new DXRAMComponentManager();
         m_serviceManager = new DXRAMServiceManager();
+    }
+
+    /**
+     * Get the version of the current DXRAM (engine) instance
+     *
+     * @return Version of current DXRAM instance
+     */
+    public DXRAMVersion getVersion() {
+        return m_version;
     }
 
     @Override
@@ -59,7 +73,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      * Register a DXRAM component
      *
      * @param p_class
-     *     Class of the component to register
+     *         Class of the component to register
      */
     public void registerComponent(final Class<? extends AbstractDXRAMComponent> p_class) {
         m_componentManager.register(p_class);
@@ -69,7 +83,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      * Register a DXRAM service
      *
      * @param p_class
-     *     Class of the service to register
+     *         Class of the service to register
      */
     public void registerService(final Class<? extends AbstractDXRAMService> p_class) {
         m_serviceManager.register(p_class);
@@ -178,8 +192,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      * Initialize DXRAM with a configuration file
      *
      * @param p_configurationFile
-     *     Path to configuration file. If the file does not exist, a default configuration is
-     *     created.
+     *         Path to configuration file. If the file does not exist, a default configuration is
+     *         created.
      * @return True if initialization successful, false on error or if a new configuration was generated
      */
     public boolean init(final String p_configurationFile) {
@@ -189,7 +203,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         final Comparator<AbstractDXRAMComponent> comp;
 
         // #if LOGGER >= INFO
-        LOGGER.info("Initializing engine with configuration '%s'", p_configurationFile);
+        LOGGER.info("Initializing engine (version %s) with configuration '%s'", p_configurationFile, m_version);
         // #endif /* LOGGER >= INFO */
 
         if (!bootstrap(p_configurationFile)) {
@@ -268,6 +282,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         m_isInitialized = true;
 
+        for (AbstractDXRAMService service : m_contextHandler.getContext().getServices().values()) {
+            service.engineInitFinished();
+        }
+
         return true;
     }
 
@@ -279,7 +297,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     public boolean update() {
         if (Thread.currentThread().getId() != 1) {
             throw new RuntimeException(
-                "Update called by thread-" + Thread.currentThread().getId() + " (" + Thread.currentThread().getName() + "), not main thread");
+                    "Update called by thread-" + Thread.currentThread().getId() + " (" + Thread.currentThread().getName() + "), not main thread");
         }
 
         if (m_triggerReboot) {
@@ -379,7 +397,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      * Execute bootstrapping tasks for the engine.
      *
      * @param p_configurationFile
-     *     Configuration file to use
+     *         Configuration file to use
      * @return false if a configuration file had to be created, true if not
      */
     private boolean bootstrap(final String p_configurationFile) {

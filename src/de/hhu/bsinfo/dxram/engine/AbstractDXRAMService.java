@@ -51,7 +51,7 @@ public abstract class AbstractDXRAMService {
      * Constructor
      *
      * @param p_shortName
-     *     Short name of the service (used for terminal)
+     *         Short name of the service (used for terminal)
      */
     protected AbstractDXRAMService(final String p_shortName) {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
@@ -62,7 +62,7 @@ public abstract class AbstractDXRAMService {
      * Called before the service is initialized. Get all the components your service depends on.
      *
      * @param p_componentAccessor
-     *     Component accessor that provides access to the components
+     *         Component accessor that provides access to the components
      */
     protected abstract void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor);
 
@@ -70,7 +70,7 @@ public abstract class AbstractDXRAMService {
      * Called when the service is initialized. Setup data structures, get components for operation, read settings etc.
      *
      * @param p_engineEngineSettings
-     *     EngineSettings instance provided by the engine.
+     *         EngineSettings instance provided by the engine.
      * @return True if initialing was successful, false otherwise.
      */
     protected abstract boolean startService(DXRAMContext.EngineSettings p_engineEngineSettings);
@@ -83,10 +83,17 @@ public abstract class AbstractDXRAMService {
     protected abstract boolean shutdownService();
 
     /**
+     * Called when the engine finished initialization and all services and components are started
+     */
+    protected void engineInitFinished() {
+        // empty
+    }
+
+    /**
      * Start this service.
      *
      * @param p_engine
-     *     Engine this service is part of (parent).
+     *         Engine this service is part of (parent).
      * @return True if initializing was successful, false otherwise.
      */
     public boolean start(final DXRAMEngine p_engine) {

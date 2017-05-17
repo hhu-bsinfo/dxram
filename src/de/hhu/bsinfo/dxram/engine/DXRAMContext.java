@@ -124,6 +124,11 @@ public class DXRAMContext {
          */
         @Expose
         private String m_jniPath = "jni";
+        /**
+         * Path to application modules (jar files)
+         */
+        @Expose
+        private String m_applicationModulePath = "app";
 
         /**
          * Constructor
@@ -157,6 +162,15 @@ public class DXRAMContext {
          */
         String getJNIPath() {
             return m_jniPath;
+        }
+
+        /**
+         * Get the path to the folder with the compiled application modules (jar files)
+         *
+         * @return Path to JNI libraries
+         */
+        String getApplicationModulePath() {
+            return m_applicationModulePath;
         }
     }
 }
