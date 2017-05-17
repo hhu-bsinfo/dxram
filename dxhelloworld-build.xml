@@ -12,7 +12,7 @@
         </classpath>
     </taskdef>
 
-    <target name="debug" description="builds dxram-debug.jar (contains all logger calls)">
+    <target name="debug" description="builds dxhelloworld-debug.jar (contains all logger calls)">
         <antcall target="compile">
             <param name="buildtype" value="debug"/>
         </antcall>
@@ -21,7 +21,7 @@
         <copy file="${build_proj_app_dir}/${name}.jar" tofile="${basedir}/${app_dir}/${name}.jar"/>
     </target>
 
-    <target name="release" description="builds dxram-release-jar">
+    <target name="release" description="builds dxhelloworld-release-jar">
         <antcall target="compile">
             <param name="buildtype" value="release"/>
         </antcall>
@@ -30,7 +30,7 @@
         <copy file="${build_proj_app_dir}/${name}.jar" tofile="${basedir}/${app_dir}/${name}.jar"/>
     </target>
 
-    <target name="performance" description="builds dxram-performance.jar (without any logger calls)">
+    <target name="performance" description="builds dxhelloworld-performance.jar (without any logger calls)">
         <antcall target="compile">
             <param name="buildtype" value="performance"/>
         </antcall>
