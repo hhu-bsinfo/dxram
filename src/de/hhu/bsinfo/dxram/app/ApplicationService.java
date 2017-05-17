@@ -1,7 +1,16 @@
 package de.hhu.bsinfo.dxram.app;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,14 +63,44 @@ public class ApplicationService extends AbstractDXRAMService {
             DXRAMVersion curVersion = getParentEngine().getVersion();
 
             for (Class<? extends AbstractApplication> appClass : applicationClasses) {
+                // check if a configuration file for the application exists
                 AbstractApplication app;
+                File configFile = new File(m_application.getApplicationPath() + '/' + appClass.getSimpleName() + ".conf");
 
-                try {
-                    app = appClass.newInstance();
-                } catch (IllegalAccessException | InstantiationException e) {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Creating instance of application class %s failed: %s", appClass.getName(), e.getMessage());
-                    // #endif /* LOGGER >= ERROR */
+                if (configFile.exists()) {
+                    app = loadFromConfiguration(appClass, configFile.getAbsolutePath());
+
+                    // loading failed
+                    if (app == null) {
+                        continue;
+                    }
+                } else {
+                    try {
+                        app = appClass.newInstance();
+                    } catch (IllegalAccessException | InstantiationException e) {
+                        // #if LOGGER >= ERROR
+                        LOGGER.error("Creating instance of application class %s failed: %s", appClass.getName(), e.getMessage());
+                        // #endif /* LOGGER >= ERROR */
+
+                        continue;
+                    }
+
+                    // generate configuration file
+                    if (app.useConfigurationFile()) {
+                        // #if LOGGER >= DEBUG
+                        LOGGER.debug("Missing config for application '%s', creating...", app.getName());
+                        // #endif /* LOGGER >= DEBUG */
+
+                        if (!createDefaultConfiguration(app, configFile.getAbsolutePath())) {
+                            continue;
+                        }
+                    }
+                }
+
+                if (!app.isEnabled()) {
+                    // #if LOGGER >= DEBUG
+                    LOGGER.debug("Application '%s' disabled", app.getApplicationName());
+                    // #endif /* LOGGER >= DEBUG */
 
                     continue;
                 }
@@ -141,6 +180,94 @@ public class ApplicationService extends AbstractDXRAMService {
     @Override
     protected boolean isEngineAccessor() {
         // access the engine to hook it to the applications
+        return true;
+    }
+
+    /**
+     * Load an existing configuration of an application
+     *
+     * @param p_appClass
+     *         Class of the application
+     * @param p_configFilePath
+     *         Path to existing configuration file
+     * @return Application instance with configuration values loaded or null if loading failed
+     */
+    private AbstractApplication loadFromConfiguration(Class<? extends AbstractApplication> p_appClass, final String p_configFilePath) {
+        AbstractApplication app;
+
+        // #if LOGGER >= INFO
+        LOGGER.info("Loading configuration '%s'...", p_configFilePath);
+        // #endif /* LOGGER >= INFO */
+
+        Gson gson = ApplicationGsonContext.createGsonInstance(p_appClass);
+
+        JsonElement element;
+        try {
+            element = gson.fromJson(new String(Files.readAllBytes(Paths.get(p_configFilePath))), JsonElement.class);
+        } catch (final Exception e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Could not load configuration '%s': %s", p_configFilePath, e.getMessage());
+            // #endif /* LOGGER >= ERROR */
+            return null;
+        }
+
+        try {
+            app = gson.fromJson(element, AbstractApplication.class);
+        } catch (final Exception e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Loading configuration '%s' failed: %s", p_configFilePath, e.getMessage());
+            // #endif /* LOGGER >= ERROR */
+            return null;
+        }
+
+        return app;
+    }
+
+    /**
+     * Create a default configuration for an application
+     *
+     * @param p_app
+     *         Application to create a default configuration for
+     * @param p_configFilePath
+     *         Path for configuration file
+     * @return True if successful and config file was created, false on error
+     */
+    boolean createDefaultConfiguration(final AbstractApplication p_app, final String p_configFilePath) {
+        File file = new File(p_configFilePath);
+        if (file.exists()) {
+            if (!file.delete()) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Deleting existing config file %s failed", file);
+                // #endif /* LOGGER >= ERROR */
+                return false;
+            }
+        }
+
+        try {
+            if (!file.createNewFile()) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Creating new config file %s failed", file);
+                // #endif /* LOGGER >= ERROR */
+                return false;
+            }
+        } catch (final IOException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Creating new config file %s failed: %s", file, e.getMessage());
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        Gson gson = ApplicationGsonContext.createGsonInstance(p_app.getClass());
+        String jsonString = gson.toJson(p_app);
+
+        try {
+            PrintWriter writer = new PrintWriter(file);
+            writer.print(jsonString);
+            writer.close();
+        } catch (final FileNotFoundException e) {
+            // we can ignored this here, already checked
+        }
+
         return true;
     }
 }

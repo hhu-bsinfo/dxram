@@ -50,6 +50,15 @@ public class ApplicationComponent extends AbstractDXRAMComponent {
     }
 
     /**
+     * Get the path where all application jars are located
+     *
+     * @return Path with application jars
+     */
+    String getApplicationPath() {
+        return m_applicationPath;
+    }
+
+    /**
      * Get the loaded application classes
      *
      * @return Loaded classes implementing the application interface

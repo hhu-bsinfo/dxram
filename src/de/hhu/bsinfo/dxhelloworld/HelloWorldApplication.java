@@ -23,10 +23,15 @@ public class HelloWorldApplication extends AbstractApplication {
     }
 
     @Override
-    public void main(final String[] p_args) {
+    public boolean useConfigurationFile() {
+        return false;
+    }
+
+    @Override
+    public void main() {
         BootService bootService = getService(BootService.class);
 
-        System.out.println("Hello, I am an application on a peer and my node id is " + NodeID.toHexString(bootService.getNodeID()));
+        System.out.println("Hello, I am application " + getApplicationName() + " on a peer and my node id is " + NodeID.toHexString(bootService.getNodeID()));
 
         // Put your application code running on the DXRAM node/peer here
     }

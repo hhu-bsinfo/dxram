@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.dxram.app;
 
+import com.google.gson.annotations.Expose;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,15 +17,62 @@ import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 public abstract class AbstractApplication extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractApplication.class.getSimpleName());
 
+    // config values
+    /**
+     * Name of the component (full class path)
+     */
+    @Expose
+    private final String m_class = getClass().getName();
+    /**
+     * True to enable the component, false to disable
+     */
+    @Expose
+    private final boolean m_enabled = true;
+
     private DXRAMEngine m_dxram;
 
-    // TODO doc
+    /**
+     * Check if the application is enabled.
+     *
+     * @return True if enabled, false otherwise
+     */
+    public boolean isEnabled() {
+        return m_enabled;
+    }
+
+    /**
+     * Get the version of DXRAM the application is built against.
+     * The application service will check if your application might be incompatible with
+     * the current DXRAM version.
+     *
+     * @return DXRAMVersion this application is built against
+     */
     public abstract DXRAMVersion getBuiltAgainstVersion();
 
+    /**
+     * Get the name of the application
+     *
+     * @return Application name
+     */
     public abstract String getApplicationName();
 
-    public abstract void main(final String[] p_args);
+    /**
+     * Tell the ApplicationService that your application wants to use a dedicated standalone DXRAM style configuration file.
+     *
+     * @return True if your application wants to use a configuration file, false otherwise
+     */
+    public abstract boolean useConfigurationFile();
 
+    /**
+     * The main entry point for your application.
+     * Your application will run in its own thread started by the ApplicationService. If this call returns, your application has terminated.
+     */
+    public abstract void main();
+
+    /**
+     * Signal by DXRAM to shut down your application.
+     * When called, exit any loops, shut down further child threads and initiate clean up of resources.
+     */
     public abstract void signalShutdown();
 
     @Override
@@ -34,8 +83,7 @@ public abstract class AbstractApplication extends Thread {
         LOGGER.info("Starting '%s'...", getName());
         // #endif /* LOGGER >= INFO */
 
-        // TODO pass parameters to application -> config file like dxram?
-        main(new String[0]);
+        main();
 
         // #if LOGGER >= INFO
         LOGGER.info("'%s' finished", getName());

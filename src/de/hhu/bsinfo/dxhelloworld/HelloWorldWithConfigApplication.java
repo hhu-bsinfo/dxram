@@ -1,4 +1,6 @@
-package de.hhu.bsinfo.dxterm;
+package de.hhu.bsinfo.dxhelloworld;
+
+import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.app.AbstractApplication;
@@ -11,7 +13,12 @@ import de.hhu.bsinfo.ethnet.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  */
-public class TerminalApplication extends AbstractApplication {
+public class HelloWorldWithConfigApplication extends AbstractApplication {
+    @Expose
+    private int m_val = 5;
+    @Expose
+    private String m_str = "test";
+
     @Override
     public DXRAMVersion getBuiltAgainstVersion() {
         return DXRAM.VERSION;
@@ -19,7 +26,7 @@ public class TerminalApplication extends AbstractApplication {
 
     @Override
     public String getApplicationName() {
-        return "Terminal";
+        return "HelloWorldWithConfig";
     }
 
     @Override
@@ -31,7 +38,9 @@ public class TerminalApplication extends AbstractApplication {
     public void main() {
         BootService bootService = getService(BootService.class);
 
-        System.out.println("Hello, I am an application on a peer and my node id is " + NodeID.toHexString(bootService.getNodeID()));
+        System.out.println("Hello, I am application " + getApplicationName() + " on a peer and my node id is " + NodeID.toHexString(bootService.getNodeID()));
+        System.out.println("Configuration value m_val: " + m_val);
+        System.out.println("Configuration value m_str: " + m_str);
 
         // Put your application code running on the DXRAM node/peer here
     }
