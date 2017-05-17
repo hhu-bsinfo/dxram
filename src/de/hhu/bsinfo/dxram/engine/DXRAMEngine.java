@@ -179,34 +179,21 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     }
 
     /**
-     * Initialize DXRAM without configuration. This creates a default configuration
-     * and stores it in the default configuration path
-     *
-     * @return This will always return false because it will just generate the configuration and not start DXRAM.
-     */
-    public boolean init() {
-        return init("");
-    }
-
-    /**
      * Initialize DXRAM with a configuration file
      *
-     * @param p_configurationFile
-     *         Path to configuration file. If the file does not exist, a default configuration is
-     *         created.
      * @return True if initialization successful, false on error or if a new configuration was generated
      */
-    public boolean init(final String p_configurationFile) {
+    public boolean init() {
         assert !m_isInitialized;
 
         final List<AbstractDXRAMComponent> list;
         final Comparator<AbstractDXRAMComponent> comp;
 
         // #if LOGGER >= INFO
-        LOGGER.info("Initializing engine (version %s) with configuration '%s'", p_configurationFile, m_version);
+        LOGGER.info("Initializing engine (version %s)...", m_version);
         // #endif /* LOGGER >= INFO */
 
-        if (!bootstrap(p_configurationFile)) {
+        if (!bootstrap()) {
             // false indicates here that a configuration file was created
             return false;
         }
@@ -396,20 +383,19 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     /**
      * Execute bootstrapping tasks for the engine.
      *
-     * @param p_configurationFile
-     *         Configuration file to use
      * @return false if a configuration file had to be created, true if not
      */
-    private boolean bootstrap(final String p_configurationFile) {
-        String config = p_configurationFile;
-
+    private boolean bootstrap() {
         m_contextHandler = new DXRAMContextHandler(m_componentManager, m_serviceManager);
 
         // check vm arguments for configuration override
-        String configurationOverride = System.getProperty("dxram.config");
-        if (configurationOverride != null) {
-            config = configurationOverride;
-            LOGGER.info("Configuration override by vm argument: %s", config);
+        String config = System.getProperty("dxram.config");
+        if (config == null) {
+            config = "";
+        } else {
+            // #if LOGGER >= INFO
+            LOGGER.info("Loading configuration file: %s", config);
+            // #endif /* LOGGER >= INFO */
         }
 
         // check if a config needs to be created

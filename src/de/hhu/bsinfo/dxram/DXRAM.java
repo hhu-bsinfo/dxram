@@ -113,47 +113,6 @@ public class DXRAM {
     }
 
     /**
-     * Initialize the instance.
-     *
-     * @param p_configurationFile
-     *         Absolute or relative path to a configuration file
-     * @return True if initializing was successful, false otherwise.
-     */
-    public boolean initialize(final String p_configurationFile) {
-        preInit();
-        boolean ret = m_engine.init(p_configurationFile);
-        if (ret) {
-            printNodeInfo();
-            postInit();
-        }
-        return ret;
-    }
-
-    /**
-     * Initialize the instance.
-     *
-     * @param p_autoShutdown
-     *         True to have DXRAM shut down automatically when the application quits.
-     *         If false, the caller has to take care of shutting down the instance by calling shutdown when done.
-     * @param p_configurationFile
-     *         Absolute or relative path to a configuration file
-     * @return True if initializing was successful, false otherwise.
-     */
-    public boolean initialize(final boolean p_autoShutdown, final String p_configurationFile) {
-        preInit();
-        boolean ret = initialize(p_configurationFile);
-        if (ret & p_autoShutdown) {
-            Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
-        }
-        if (ret) {
-            printNodeInfo();
-            postInit();
-        }
-
-        return ret;
-    }
-
-    /**
      * Get a service from DXRAM.
      *
      * @param <T>
