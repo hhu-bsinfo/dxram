@@ -42,16 +42,13 @@ public final class DXRAMMain {
      */
     public static void main(final String[] p_args) {
         DXRAMMain dxram = new DXRAMMain();
-        dxram.run(p_args);
+        dxram.run();
     }
 
     /**
      * DXRAM's entry point to be called from Java's main entry point.
-     *
-     * @param p_args
-     *         Java tcmd arguments
      */
-    public void run(final String[] p_args) {
+    public void run() {
         System.out.println("Starting DXRAM, version " + m_dxram.getVersion());
 
         if (!m_dxram.initialize(true)) {
@@ -59,17 +56,15 @@ public final class DXRAMMain {
             System.exit(-1);
         }
 
-        System.exit(mainApplication(p_args));
+        System.exit(mainApplication());
     }
 
     /**
      * Override this to implement your application built on top of DXRAM.
      *
-     * @param p_args
-     *         Java tcmd arguments
      * @return Exit code of the application.
      */
-    protected int mainApplication(final String[] p_args) {
+    protected int mainApplication() {
         BootService boot = m_dxram.getService(BootService.class);
 
         if (boot != null) {
