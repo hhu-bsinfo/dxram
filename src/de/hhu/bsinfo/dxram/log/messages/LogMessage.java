@@ -16,8 +16,8 @@ package de.hhu.bsinfo.dxram.log.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.backup.RangeID;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
@@ -97,7 +97,7 @@ public class LogMessage extends AbstractMessage {
         p_buffer.putShort(m_rangeID);
 
         p_buffer.putInt(m_dataStructures.length);
-        final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        final ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
         for (DataStructure dataStructure : m_dataStructures) {
             final int size = dataStructure.sizeofObject();
 

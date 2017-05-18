@@ -14,12 +14,11 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.ChunkState;
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
@@ -123,7 +122,7 @@ public class GetAnonResponse extends AbstractResponse {
 
         // read the payload from the buffer and write it directly into
         // the chunk buffer objects provided by the request to avoid further copying of data
-        MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
         GetAnonRequest request = (GetAnonRequest) getCorrespondingRequest();
 
         for (ChunkAnon chunk : request.getChunks()) {

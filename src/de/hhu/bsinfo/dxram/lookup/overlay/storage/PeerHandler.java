@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.overlay.storage;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.utils.ArrayListLong;
 
@@ -226,11 +226,11 @@ public final class PeerHandler {
      *     the ByteBuffer
      */
     void receiveMetadata(ByteBuffer p_data) {
-        MessagesDataStructureImExporter exporter;
+        ByteBufferImExporter exporter;
 
         p_data.put((byte) (m_recovered ? 1 : 0));
 
-        exporter = new MessagesDataStructureImExporter(p_data);
+        exporter = new ByteBufferImExporter(p_data);
         exporter.exportObject(m_lookupTree);
         exporter.exportObject(m_backupRanges);
     }
@@ -242,12 +242,12 @@ public final class PeerHandler {
      *     the data
      */
     void storeMetadata(final ByteBuffer p_data) {
-        MessagesDataStructureImExporter importer;
+        ByteBufferImExporter importer;
 
         // Creator was read before
         m_recovered = p_data.get() != 0;
 
-        importer = new MessagesDataStructureImExporter(p_data);
+        importer = new ByteBufferImExporter(p_data);
         importer.importObject(m_lookupTree);
         importer.importObject(m_backupRanges);
     }

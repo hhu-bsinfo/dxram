@@ -15,8 +15,8 @@ package de.hhu.bsinfo.dxram.job.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.job.JobService;
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
@@ -58,13 +58,13 @@ public class StatusResponse extends AbstractResponse {
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
         exporter.exportObject(m_status);
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
         importer.importObject(m_status);
     }
 

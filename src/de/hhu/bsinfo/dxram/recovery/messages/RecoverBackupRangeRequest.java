@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.recovery.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
 import de.hhu.bsinfo.ethnet.NodeID;
@@ -89,7 +89,7 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
         exporter.exportObject(m_backupRange);
 
         p_buffer.putShort(m_owner);
@@ -97,7 +97,7 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
         m_backupRange = new BackupRange();
         importer.importObject(m_backupRange);
 

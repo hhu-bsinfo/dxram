@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
@@ -66,14 +66,14 @@ public class GetMigratedChunkIDRangesResponse extends AbstractResponse {
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter imExporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter imExporter = new ByteBufferImExporter(p_buffer);
 
         imExporter.exportObject(m_chunkIDRanges);
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter imExporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter imExporter = new ByteBufferImExporter(p_buffer);
 
         imExporter.importObject(m_chunkIDRanges);
     }

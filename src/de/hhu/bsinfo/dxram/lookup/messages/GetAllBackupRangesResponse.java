@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
@@ -80,7 +80,7 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        final ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
 
         if (m_backupRanges == null) {
             p_buffer.putInt(0);
@@ -94,7 +94,7 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+        final ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
         int size;
 
         size = p_buffer.getInt();

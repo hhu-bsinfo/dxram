@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
@@ -58,14 +58,14 @@ public class BFSResultMessage extends AbstractMessage {
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
 
         exporter.exportObject(m_bfsResult);
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
 
         m_bfsResult = new BFSResult();
         exporter.importObject(m_bfsResult);

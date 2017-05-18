@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.ms.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.ms.TaskScript;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
@@ -62,14 +62,14 @@ public class SubmitTaskRequest extends AbstractRequest {
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
 
         exporter.exportObject(m_taskScript);
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
 
         m_taskScript = new TaskScript();
         importer.importObject(m_taskScript);

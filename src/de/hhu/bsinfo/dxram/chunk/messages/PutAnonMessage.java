@@ -15,10 +15,10 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
@@ -136,7 +136,7 @@ public class PutAnonMessage extends AbstractMessage {
     protected final void writePayload(final ByteBuffer p_buffer) {
         ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunks.length);
 
-        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
         for (ChunkAnon chunk : m_chunks) {
             p_buffer.putLong(chunk.getID());
             // the Chunk will write the size of its buffer as well

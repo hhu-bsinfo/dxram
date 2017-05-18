@@ -15,10 +15,10 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
 
@@ -98,7 +98,7 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
         int size = m_dataStructure.sizeofObject();
 
         p_buffer.putLong(m_dataStructure.getID());
@@ -109,7 +109,7 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
 
         m_chunk = new DSByteArray(p_buffer.getLong(), p_buffer.getInt());
         importer.importObject(m_chunk);

@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.lock.messages;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.lock.LockedChunkEntry;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
@@ -66,7 +66,7 @@ public class GetLockedListResponse extends AbstractResponse {
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter imExporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter imExporter = new ByteBufferImExporter(p_buffer);
 
         p_buffer.putInt(m_list.size());
         for (LockedChunkEntry entry : m_list) {
@@ -76,7 +76,7 @@ public class GetLockedListResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter imExporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter imExporter = new ByteBufferImExporter(p_buffer);
 
         int size = p_buffer.getInt();
         m_list = new ArrayList<LockedChunkEntry>(size);

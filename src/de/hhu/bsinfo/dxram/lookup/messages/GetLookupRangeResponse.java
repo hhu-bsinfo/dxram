@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
@@ -84,7 +84,7 @@ public class GetLookupRangeResponse extends AbstractResponse {
         if (m_lookupRange == null) {
             p_buffer.put((byte) 0);
         } else {
-            final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+            final ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
 
             p_buffer.put((byte) 1);
             exporter.exportObject(m_lookupRange);
@@ -94,7 +94,7 @@ public class GetLookupRangeResponse extends AbstractResponse {
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
         if (p_buffer.get() != 0) {
-            final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+            final ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
 
             m_lookupRange = new LookupRange();
             importer.importObject(m_lookupRange);

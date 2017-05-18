@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.ms.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.ms.TaskContextData;
 import de.hhu.bsinfo.dxram.ms.TaskScript;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
@@ -87,7 +87,7 @@ public class ExecuteTaskScriptRequest extends AbstractRequest {
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
 
         exporter.writeInt(m_barrierIdentifier);
         exporter.exportObject(m_ctxData);
@@ -96,7 +96,7 @@ public class ExecuteTaskScriptRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
 
         m_barrierIdentifier = importer.readInt();
         m_ctxData = new TaskContextData();

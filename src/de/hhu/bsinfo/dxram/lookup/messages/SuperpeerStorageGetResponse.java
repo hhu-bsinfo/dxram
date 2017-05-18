@@ -14,10 +14,9 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
@@ -64,7 +63,7 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
         // read the data to be sent to the remote from the chunk set for this message
-        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
         exporter.exportObject(m_dataStructure);
     }
 
@@ -72,7 +71,7 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
     protected final void readPayload(final ByteBuffer p_buffer) {
         // read the payload from the buffer and write it directly into
         // the data structure provided by the request to avoid further copying of data
-        MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
         SuperpeerStorageGetRequest request = (SuperpeerStorageGetRequest) getCorrespondingRequest();
 
         m_dataStructure = request.getDataStructure();

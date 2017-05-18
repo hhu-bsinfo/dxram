@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.job.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.job.AbstractJob;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
@@ -76,7 +76,7 @@ public class PushJobQueueMessage extends AbstractMessage {
 
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
 
         p_buffer.put(m_callbackJobEventBitMask);
         p_buffer.putShort(m_job.getTypeID());
@@ -85,7 +85,7 @@ public class PushJobQueueMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
 
         m_callbackJobEventBitMask = p_buffer.get();
         m_job = AbstractJob.createInstance(p_buffer.getShort());
