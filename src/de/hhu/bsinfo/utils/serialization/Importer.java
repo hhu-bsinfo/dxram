@@ -30,7 +30,7 @@ public interface Importer {
      * of data/buffers.
      *
      * @param p_object
-     *     Importable Pre-allocated object to read data from the target into.
+     *         Importable Pre-allocated object to read data from the target into.
      */
     void importObject(final Importable p_object);
 
@@ -114,7 +114,7 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *     Array to read into.
+     *         Array to read into.
      * @return Number of bytes read.
      */
     int readBytes(final byte[] p_array);
@@ -125,7 +125,7 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *     Array to read into.
+     *         Array to read into.
      * @return Number of shorts read;
      */
     int readShorts(final short[] p_array);
@@ -136,7 +136,7 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *     Array to read into.
+     *         Array to read into.
      * @return Number of ints read;
      */
     int readInts(final int[] p_array);
@@ -147,7 +147,7 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *     Array to read into.
+     *         Array to read into.
      * @return Number of longs read;
      */
     int readLongs(final long[] p_array);
@@ -158,11 +158,11 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *     Array to read into.
+     *         Array to read into.
      * @param p_offset
-     *     Offset to start in the array for reading into.
+     *         Offset to start in the array for reading into.
      * @param p_length
-     *     Number of bytes to read.
+     *         Number of bytes to read.
      * @return Number of bytes read.
      */
     int readBytes(final byte[] p_array, final int p_offset, final int p_length);
@@ -173,11 +173,11 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *     Array to read into.
+     *         Array to read into.
      * @param p_offset
-     *     Offset to start in the array for reading into.
+     *         Offset to start in the array for reading into.
      * @param p_length
-     *     Number of shorts to read.
+     *         Number of shorts to read.
      * @return Number of shorts read.
      */
     int readShorts(final short[] p_array, final int p_offset, final int p_length);
@@ -188,11 +188,11 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *     Array to read into.
+     *         Array to read into.
      * @param p_offset
-     *     Offset to start in the array for reading into.
+     *         Offset to start in the array for reading into.
      * @param p_length
-     *     Number of ints to read.
+     *         Number of ints to read.
      * @return Number of ints read.
      */
     int readInts(final int[] p_array, final int p_offset, final int p_length);
@@ -203,11 +203,11 @@ public interface Importer {
      * import call to read data from the target.
      *
      * @param p_array
-     *     Array to read into.
+     *         Array to read into.
      * @param p_offset
-     *     Offset to start in the array for reading into.
+     *         Offset to start in the array for reading into.
      * @param p_length
-     *     Number of longs to read.
+     *         Number of longs to read.
      * @return Number of longs read.
      */
     int readLongs(final long[] p_array, final int p_offset, final int p_length);
@@ -247,4 +247,13 @@ public interface Importer {
      * @return New array with data read.
      */
     long[] readLongArray();
+
+    /**
+     * Read a string array from the target.
+     * The array to be read must be stored as self containing object,
+     * i.e. with length information
+     *
+     * @return New array with data read.
+     */
+    String[] readStringArray();
 }

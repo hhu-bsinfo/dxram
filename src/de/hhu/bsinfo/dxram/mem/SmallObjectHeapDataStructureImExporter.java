@@ -35,11 +35,11 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
      * Constructor
      *
      * @param p_heap
-     *     The heap to access for the importer/exporter.
+     *         The heap to access for the importer/exporter.
      * @param p_allocatedMemoryStartAddress
-     *     The start address of the allocated memory block to access.
+     *         The start address of the allocated memory block to access.
      * @param p_offset
-     *     The start offset within the allocated block.
+     *         The start offset within the allocated block.
      */
     SmallObjectHeapDataStructureImExporter(final SmallObjectHeap p_heap, final long p_allocatedMemoryStartAddress, final int p_offset) {
         m_heap = p_heap;
@@ -51,7 +51,7 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
      * Sets the start address
      *
      * @param p_allocatedMemoryStartAddress
-     *     the start address
+     *         the start address
      */
     void setAllocatedMemoryStartAddress(final long p_allocatedMemoryStartAddress) {
         m_allocatedMemoryStartAddress = p_allocatedMemoryStartAddress;
@@ -61,7 +61,7 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
      * Sets the offset
      *
      * @param p_offset
-     *     the offset
+     *         the offset
      */
     public void setOffset(final int p_offset) {
         m_offset = p_offset;
@@ -229,6 +229,17 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public String[] readStringArray() {
+        String[] str = new String[readInt()];
+
+        for (int i = 0; i < str.length; i++) {
+            str[i] = readString();
+        }
+
+        return str;
+    }
+
+    @Override
     public int writeShorts(final short[] p_array) {
         return writeShorts(p_array, 0, p_array.length);
     }
@@ -271,27 +282,36 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
-    public void writeByteArray(byte[] p_array) {
+    public void writeByteArray(final byte[] p_array) {
         writeInt(p_array.length);
         writeBytes(p_array);
     }
 
     @Override
-    public void writeShortArray(short[] p_array) {
+    public void writeShortArray(final short[] p_array) {
         writeInt(p_array.length);
         writeShorts(p_array);
     }
 
     @Override
-    public void writeIntArray(int[] p_array) {
+    public void writeIntArray(final int[] p_array) {
         writeInt(p_array.length);
         writeInts(p_array);
     }
 
     @Override
-    public void writeLongArray(long[] p_array) {
+    public void writeLongArray(final long[] p_array) {
         writeInt(p_array.length);
         writeLongs(p_array);
+    }
+
+    @Override
+    public void writeStringArray(final String[] p_array) {
+        writeInt(p_array.length);
+
+        for (int i = 0; i < p_array.length; i++) {
+            writeString(p_array[i]);
+        }
     }
 
     @Override

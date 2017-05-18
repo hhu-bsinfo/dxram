@@ -30,9 +30,9 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
      * Constructor
      *
      * @param p_fileName
-     *     Name of the file to open
+     *         Name of the file to open
      * @throws FileNotFoundException
-     *     If file does not exist
+     *         If file does not exist
      */
     public RandomAccessFileImExporter(final String p_fileName) throws FileNotFoundException {
         m_file = new RandomAccessFile(p_fileName, "rw");
@@ -42,9 +42,9 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
      * Constructor
      *
      * @param p_file
-     *     File to open
+     *         File to open
      * @throws FileNotFoundException
-     *     If file does not exist
+     *         If file does not exist
      */
     public RandomAccessFileImExporter(final File p_file) throws FileNotFoundException {
         m_file = new RandomAccessFile(p_file, "rw");
@@ -267,6 +267,19 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
+    public void writeStringArray(final String[] p_array) {
+        try {
+            m_file.writeInt(p_array.length);
+
+            for (int i = 0; i < p_array.length; i++) {
+                writeString(p_array[i]);
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public void importObject(final Importable p_object) {
         p_object.importObject(this);
     }
@@ -467,6 +480,21 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
         try {
             long[] arr = new long[m_file.readInt()];
             readLongs(arr);
+            return arr;
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public String[] readStringArray() {
+        try {
+            String[] arr = new String[m_file.readInt()];
+
+            for (int i = 0; i < arr.length; i++) {
+                arr[i] = readString();
+            }
+
             return arr;
         } catch (final IOException e) {
             throw new RuntimeException(e);

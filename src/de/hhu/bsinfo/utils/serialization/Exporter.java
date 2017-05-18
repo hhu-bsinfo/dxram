@@ -29,7 +29,7 @@ public interface Exporter {
      * of data/buffers.
      *
      * @param p_object
-     *     Exportable object to serialize/write to this target.
+     *         Exportable object to serialize/write to this target.
      */
     void exportObject(final Exportable p_object);
 
@@ -41,7 +41,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_v
-     *     Boolean to write.
+     *         Boolean to write.
      */
     void writeBoolean(final boolean p_v);
 
@@ -51,7 +51,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_v
-     *     Byte to write.
+     *         Byte to write.
      */
     void writeByte(final byte p_v);
 
@@ -61,7 +61,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_v
-     *     Value to write.
+     *         Value to write.
      */
     void writeShort(final short p_v);
 
@@ -71,7 +71,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_v
-     *     Value to write.
+     *         Value to write.
      */
     void writeInt(final int p_v);
 
@@ -81,7 +81,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_v
-     *     Value to write.
+     *         Value to write.
      */
     void writeLong(final long p_v);
 
@@ -91,7 +91,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_v
-     *     Value to write.
+     *         Value to write.
      */
     void writeFloat(final float p_v);
 
@@ -101,7 +101,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_v
-     *     Value to write.
+     *         Value to write.
      */
     void writeDouble(final double p_v);
 
@@ -111,7 +111,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_str
-     *     String to write
+     *         String to write
      */
     void writeString(final String p_str);
 
@@ -121,7 +121,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_array
-     *     Array to write.
+     *         Array to write.
      * @return Number of written elements.
      */
     int writeBytes(final byte[] p_array);
@@ -132,7 +132,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_array
-     *     Array to write.
+     *         Array to write.
      * @return Number of written elements.
      */
     int writeShorts(final short[] p_array);
@@ -143,7 +143,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_array
-     *     Array to write.
+     *         Array to write.
      * @return Number of written elements.
      */
     int writeInts(final int[] p_array);
@@ -154,7 +154,7 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_array
-     *     Array to write.
+     *         Array to write.
      * @return Number of written elements.
      */
     int writeLongs(final long[] p_array);
@@ -165,11 +165,11 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_array
-     *     Array to write.
+     *         Array to write.
      * @param p_offset
-     *     Offset to start writing from.
+     *         Offset to start writing from.
      * @param p_length
-     *     Number of elements to write.
+     *         Number of elements to write.
      * @return Number of written elements.
      */
     int writeBytes(final byte[] p_array, final int p_offset, final int p_length);
@@ -180,11 +180,11 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_array
-     *     Array to write.
+     *         Array to write.
      * @param p_offset
-     *     Offset to start writing from.
+     *         Offset to start writing from.
      * @param p_length
-     *     Number of elements to write.
+     *         Number of elements to write.
      * @return Number of written elements.
      */
     int writeShorts(final short[] p_array, final int p_offset, final int p_length);
@@ -195,11 +195,11 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_array
-     *     Array to write.
+     *         Array to write.
      * @param p_offset
-     *     Offset to start writing from.
+     *         Offset to start writing from.
      * @param p_length
-     *     Number of elements to write.
+     *         Number of elements to write.
      * @return Number of written elements.
      */
     int writeInts(final int[] p_array, final int p_offset, final int p_length);
@@ -210,11 +210,11 @@ public interface Exporter {
      * export call to write data to the target.
      *
      * @param p_array
-     *     Array to write.
+     *         Array to write.
      * @param p_offset
-     *     Offset to start writing from.
+     *         Offset to start writing from.
      * @param p_length
-     *     Number of elements to write.
+     *         Number of elements to write.
      * @return Number of written elements.
      */
     int writeLongs(final long[] p_array, final int p_offset, final int p_length);
@@ -225,7 +225,7 @@ public interface Exporter {
      * i.e. with length information
      *
      * @param p_array
-     *     Array to write
+     *         Array to write
      */
     void writeByteArray(final byte[] p_array);
 
@@ -235,7 +235,7 @@ public interface Exporter {
      * i.e. with length information
      *
      * @param p_array
-     *     Array to write
+     *         Array to write
      */
     void writeShortArray(final short[] p_array);
 
@@ -245,7 +245,7 @@ public interface Exporter {
      * i.e. with length information
      *
      * @param p_array
-     *     Array to write
+     *         Array to write
      */
     void writeIntArray(final int[] p_array);
 
@@ -255,7 +255,17 @@ public interface Exporter {
      * i.e. with length information
      *
      * @param p_array
-     *     Array to write
+     *         Array to write
      */
     void writeLongArray(final long[] p_array);
+
+    /**
+     * Write a string array to the target.
+     * The array must be written as a self containing object,
+     * i.e. with length information
+     *
+     * @param p_array
+     *         Array to write
+     */
+    void writeStringArray(final String[] p_array);
 }

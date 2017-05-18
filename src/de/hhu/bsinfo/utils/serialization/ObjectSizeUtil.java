@@ -40,7 +40,7 @@ public final class ObjectSizeUtil {
      * Get the serialization size for a full byte array (including length field)
      *
      * @param p_arr
-     *     Array to get the full serialization size for
+     *         Array to get the full serialization size for
      * @return Serialization size
      */
     public static int sizeofByteArray(final byte[] p_arr) {
@@ -51,7 +51,7 @@ public final class ObjectSizeUtil {
      * Get the serialization size for a full short array (including length field)
      *
      * @param p_arr
-     *     Array to get the full serialization size for
+     *         Array to get the full serialization size for
      * @return Serialization size
      */
     public static int sizeofShortArray(final short[] p_arr) {
@@ -62,7 +62,7 @@ public final class ObjectSizeUtil {
      * Get the serialization size for a full int array (including length field)
      *
      * @param p_arr
-     *     Array to get the full serialization size for
+     *         Array to get the full serialization size for
      * @return Serialization size
      */
     public static int sizeofIntArray(final int[] p_arr) {
@@ -73,7 +73,7 @@ public final class ObjectSizeUtil {
      * Get the serialization size for a full long array (including length field)
      *
      * @param p_arr
-     *     Array to get the full serialization size for
+     *         Array to get the full serialization size for
      * @return Serialization size
      */
     public static int sizeofLongArray(final long[] p_arr) {
@@ -84,10 +84,29 @@ public final class ObjectSizeUtil {
      * Get the serialization size for a full string (including length field)
      *
      * @param p_str
-     *     String to get the full serialization size for
+     *         String to get the full serialization size for
      * @return Serialization size
      */
     public static int sizeofString(final String p_str) {
         return sizeofByteArray(p_str.getBytes());
+    }
+
+    /**
+     * Get the serialization size for a full string array (including length fields)
+     *
+     * @param p_arr
+     *         Array to get the full serialization size for
+     * @return Serialization size
+     */
+    public static int sizeofStringArray(final String[] p_arr) {
+        int size = 0;
+
+        size += Integer.BYTES;
+
+        for (int i = 0; i < p_arr.length; i++) {
+            size += p_arr[i].getBytes().length;
+        }
+
+        return size;
     }
 }

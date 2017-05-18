@@ -36,7 +36,7 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
      * Constructor
      *
      * @param p_messageBuffer
-     *     Buffer the message has to write to/read from.
+     *         Buffer the message has to write to/read from.
      */
     public MessagesDataStructureImExporter(final ByteBuffer p_messageBuffer) {
         m_messageBuffer = p_messageBuffer;
@@ -221,6 +221,15 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public void writeStringArray(final String[] p_array) {
+        writeInt(p_array.length);
+
+        for (int i = 0; i < p_array.length; i++) {
+            writeString(p_array[i]);
+        }
+    }
+
+    @Override
     public int readShorts(final short[] p_array) {
         return readShorts(p_array, 0, p_array.length);
     }
@@ -288,6 +297,17 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
         long[] arr = new long[readInt()];
         readLongs(arr);
         return arr;
+    }
+
+    @Override
+    public String[] readStringArray() {
+        String[] strings = new String[readInt()];
+
+        for (int i = 0; i < strings.length; i++) {
+            strings[i] = readString();
+        }
+
+        return strings;
     }
 
 }
