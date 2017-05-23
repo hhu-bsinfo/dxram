@@ -40,7 +40,7 @@ public class TerminalClient implements TerminalSession.Listener {
     private FileHistory m_history;
     private ArgumentCompleter m_argCompletor;
 
-    private String[] m_localCommands = new String[] {"?", "help", "quit", "exit", "clear"};
+    private String[] m_localCommands = new String[] {"?", "help", "quit", "exit", "clear", "run"};
 
     private TerminalSession m_session;
 
@@ -231,6 +231,10 @@ public class TerminalClient implements TerminalSession.Listener {
                 System.out.flush();
                 return true;
 
+            case "run":
+                runScript(cmd);
+                return true;
+
             default:
                 break;
         }
@@ -262,6 +266,30 @@ public class TerminalClient implements TerminalSession.Listener {
         } catch (final IOException e) {
             throw new TerminalException("Reading history " + p_file + " failed", e);
         }
+    }
+
+    private void runScript(final TerminalCommandString p_cmd) {
+        if (p_cmd.getArgc() < 1) {
+            System.out.println("Missing path to script file to run");
+            return;
+        }
+
+        List<String> stringList;
+
+        try {
+            stringList = Files.readAllLines(new File(p_cmd.getArgs()[0]).toPath(), Charset.defaultCharset());
+        } catch (final IOException e) {
+            System.out.println("Loading script file " + p_cmd.getArgs()[0] + " failed: " + e.getMessage());
+            return;
+        }
+
+        System.out.println("Running terminal cmd script " + p_cmd.getArgs()[0] + "...");
+
+        for (String line : stringList) {
+            evaluate(line);
+        }
+
+        System.out.println("Finished running script " + p_cmd.getArgs()[0]);
     }
 
     /**
