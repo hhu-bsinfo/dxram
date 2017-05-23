@@ -14,7 +14,7 @@ log.txt
 *.swp
 *.jar
 dxram.iml
-.dxram_term_history
+.dxram_term_hist
 out/*
 /tmp/
 app/
