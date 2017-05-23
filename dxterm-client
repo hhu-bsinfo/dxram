@@ -1,8 +1,15 @@
 #!/bin/bash
 
-if [ "$#" -ne 2 ]; then
-	echo "Usage: $0 <dxram peer hostname/ipv4> <port>"
+if [ "$#" -lt 1 ]; then
+	echo "Usage: $0 <dxram peer hostname/ipv4> [port, default: 22220]"
 	exit 1
 fi
 
-java -Dlog4j.configurationFile=config/log4j.xml -cp bin/:lib/* de.hhu.bsinfo.dxterm.TerminalClient $1 $2
+DIR="$(cd "$(dirname "$0")"; pwd)"
+PORT=$2
+
+if [ "$PORT" = "" ]; then
+	PORT="22220"
+fi
+
+java -Dlog4j.configurationFile=$DIR/config/log4j.xml -cp $DIR/dxterm-client.jar:$DIR/lib/* de.hhu.bsinfo.dxterm.TerminalClient "$1" "$PORT" 
