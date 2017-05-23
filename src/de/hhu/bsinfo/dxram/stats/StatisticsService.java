@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.dxram.stats;
 
+import java.util.Collection;
+
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -15,6 +17,26 @@ public class StatisticsService extends AbstractDXRAMService {
      */
     public StatisticsService() {
         super("stats");
+    }
+
+    /**
+     * Returns the recorders
+     *
+     * @return the recorders
+     */
+    public Collection<StatisticsRecorder> getRecorders() {
+        return StatisticsRecorderManager.getRecorders();
+    }
+
+    /**
+     * Returns the recorder
+     *
+     * @param p_name
+     *         Get the recorder by its name
+     * @return the recorder
+     */
+    public StatisticsRecorder getRecorder(final String p_name) {
+        return StatisticsRecorderManager.getRecorder(p_name);
     }
 
     @Override

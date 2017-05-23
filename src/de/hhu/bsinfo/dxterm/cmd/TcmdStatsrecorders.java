@@ -15,8 +15,8 @@ package de.hhu.bsinfo.dxterm.cmd;
 
 import java.util.Collection;
 
-import de.hhu.bsinfo.dxram.stats.Statistics;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
+import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
 import de.hhu.bsinfo.dxterm.TerminalServerStdout;
@@ -39,7 +39,8 @@ public class TcmdStatsrecorders extends AbstractTerminalCommand {
 
     @Override
     public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services) {
-        Collection<StatisticsRecorder> recorders = Statistics.getRecorders();
+        StatisticsService statistics = p_services.getService(StatisticsService.class);
+        Collection<StatisticsRecorder> recorders = statistics.getRecorders();
 
         for (StatisticsRecorder recorder : recorders) {
             p_stdout.printfln("> %s", recorder.getName());

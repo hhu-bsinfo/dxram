@@ -13,7 +13,8 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
-import de.hhu.bsinfo.dxram.stats.Statistics;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
+import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
 import de.hhu.bsinfo.dxterm.TerminalServerStdout;
@@ -38,10 +39,19 @@ public class TcmdStatsprint extends AbstractTerminalCommand {
     public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services) {
         String className = p_cmd.getArgString(0, null);
 
+        StatisticsService statistics = p_services.getService(StatisticsService.class);
+
         if (className == null) {
-            Statistics.printStatistics();
+            for (StatisticsRecorder rec : statistics.getRecorders()) {
+                p_stdout.println(rec.toString());
+            }
         } else {
-            Statistics.printStatistics(className);
+            StatisticsRecorder rec = statistics.getRecorder(className);
+            if (rec == null) {
+                p_stdout.printlnErr("No such recorder available");
+            } else {
+                p_stdout.println(rec.toString());
+            }
         }
     }
 }

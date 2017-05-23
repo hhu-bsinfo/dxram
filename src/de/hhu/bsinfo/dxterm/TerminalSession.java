@@ -51,7 +51,6 @@ public class TerminalSession {
         try {
             return m_in.readObject();
         } catch (final IOException | ClassNotFoundException ignored) {
-            System.out.println(ignored.getMessage());
             return null;
         }
     }
@@ -61,9 +60,6 @@ public class TerminalSession {
             m_out.writeObject(p_object);
             m_out.flush();
         } catch (final IOException ignored) {
-            return false;
-        } catch (final NoClassDefFoundError e) {
-            // happens if terminal server is killed
             return false;
         }
 

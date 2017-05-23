@@ -20,12 +20,12 @@ import java.util.Collection;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
  */
-public class Statistics {
+public final class Statistics {
 
     /**
      * Constructor
      */
-    public Statistics() {
+    private Statistics() {
 
     }
 
@@ -39,10 +39,14 @@ public class Statistics {
     }
 
     /**
-     * Print the statistics of all created recorders to the console.
+     * Get a statistics recorder by name
+     *
+     * @param p_recorderName
+     *         Name of the recorder.
+     * @return Statistics recorder or null if invalid.
      */
-    public static void printStatistics() {
-        StatisticsRecorderManager.getRecorders().forEach(System.out::println);
+    public static StatisticsRecorder getRecorder(final String p_recorderName) {
+        return StatisticsRecorderManager.getRecorder(p_recorderName);
     }
 
     /**
@@ -51,19 +55,6 @@ public class Statistics {
     public static void resetStatistics() {
         for (StatisticsRecorder recorder : StatisticsRecorderManager.getRecorders()) {
             recorder.reset();
-        }
-    }
-
-    /**
-     * Print the statistics of a specific recorder to the console.
-     *
-     * @param p_recorderName
-     *     Name of the recorder.
-     */
-    public static void printStatistics(final String p_recorderName) {
-        StatisticsRecorder recorder = StatisticsRecorderManager.getRecorder(p_recorderName);
-        if (recorder != null) {
-            System.out.println(recorder);
         }
     }
 }
