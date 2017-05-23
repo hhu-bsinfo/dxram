@@ -12,4 +12,4 @@ if [ "$PORT" = "" ]; then
 	PORT="22220"
 fi
 
-java -Dlog4j.configurationFile=$DIR/config/log4j.xml -cp $DIR/dxterm-client.jar:$DIR/lib/* de.hhu.bsinfo.dxterm.TerminalClient "$1" "$PORT" 
+java -Dlog4j.configurationFile=$DIR/config/log4j.xml -cp $DIR/dxterm-client.jar:$DIR/dxram.jar:$DIR/lib/* de.hhu.bsinfo.dxterm.TerminalClient "$1" "$PORT" 
