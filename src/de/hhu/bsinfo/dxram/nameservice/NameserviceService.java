@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -26,11 +27,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.nameservice.messages.ForwardRegisterMessage;
 import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
-import de.hhu.bsinfo.dxram.nameservice.tcmd.TcmdNameget;
-import de.hhu.bsinfo.dxram.nameservice.tcmd.TcmdNamelist;
-import de.hhu.bsinfo.dxram.nameservice.tcmd.TcmdNamereg;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
@@ -84,9 +81,9 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
      * Register a chunk id for a specific name.
      *
      * @param p_chunkId
-     *     Chunk id to register.
+     *         Chunk id to register.
      * @param p_name
-     *     Name to associate with the ID of the DataStructure.
+     *         Name to associate with the ID of the DataStructure.
      */
     public void register(final long p_chunkId, final String p_name) {
 
@@ -130,9 +127,9 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
      * Register a DataStructure for a specific name.
      *
      * @param p_dataStructure
-     *     DataStructure to register.
+     *         DataStructure to register.
      * @param p_name
-     *     Name to associate with the ID of the DataStructure.
+     *         Name to associate with the ID of the DataStructure.
      */
     public void register(final DataStructure p_dataStructure, final String p_name) {
         register(p_dataStructure.getID(), p_name);
@@ -142,10 +139,10 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
      * Get the chunk ID of the specific name from the service.
      *
      * @param p_name
-     *     Registered name to get the chunk ID for.
+     *         Registered name to get the chunk ID for.
      * @param p_timeoutMs
-     *     Timeout for trying to get the entry (if it does not exist, yet).
-     *     set this to -1 for infinite loop if you know for sure, that the entry has to exist
+     *         Timeout for trying to get the entry (if it does not exist, yet).
+     *         set this to -1 for infinite loop if you know for sure, that the entry has to exist
      * @return If the name was registered with a chunk ID before, returns the chunk ID, -1 otherwise.
      */
     public long getChunkID(final String p_name, final int p_timeoutMs) {
@@ -181,8 +178,6 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 
         m_network.register(ForwardRegisterMessage.class, this);
 
-        registerTerminalCommands();
-
         return true;
     }
 
@@ -195,20 +190,11 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
      * Process an incoming RegisterMessage
      *
      * @param p_message
-     *     Message to process
+     *         Message to process
      */
     private void incomingRegisterMessage(final ForwardRegisterMessage p_message) {
         // Outsource registering to another thread to avoid blocking a message handler
         Runnable task = () -> m_nameservice.register(p_message.getChunkId(), p_message.getName());
         new Thread(task).start();
-    }
-
-    /**
-     * Register terminal commands
-     */
-    private void registerTerminalCommands() {
-        m_terminal.registerTerminalCommand(new TcmdNameget());
-        m_terminal.registerTerminalCommand(new TcmdNamelist());
-        m_terminal.registerTerminalCommand(new TcmdNamereg());
     }
 }

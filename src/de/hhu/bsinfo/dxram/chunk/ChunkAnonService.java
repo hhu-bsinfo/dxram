@@ -29,8 +29,6 @@ import de.hhu.bsinfo.dxram.chunk.messages.GetAnonRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetAnonResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.PutAnonRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.PutAnonResponse;
-import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkget;
-import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkput;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.ChunkState;
@@ -509,7 +507,6 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         registerNetworkMessages();
         registerNetworkMessageListener();
-        registerTerminalCommands();
 
         if (p_engineEngineSettings.getRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup()) {
             if (m_memoryManager.getStatus().getMaxChunkSize().getBytes() > m_backup.getLogSegmentSizeBytes()) {
@@ -544,14 +541,6 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
     private void registerNetworkMessageListener() {
         m_network.register(GetAnonRequest.class, this);
         m_network.register(PutAnonRequest.class, this);
-    }
-
-    /**
-     * Register terminal commands
-     */
-    private void registerTerminalCommands() {
-        m_terminal.registerTerminalCommand(new TcmdChunkget());
-        m_terminal.registerTerminalCommand(new TcmdChunkput());
     }
 
     // -----------------------------------------------------------------------------------

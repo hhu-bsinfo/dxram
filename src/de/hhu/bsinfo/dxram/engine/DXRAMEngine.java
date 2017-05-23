@@ -147,6 +147,28 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     }
 
     @Override
+    public <T extends AbstractDXRAMService> boolean isServiceAvailable(final Class<T> p_class) {
+        AbstractDXRAMService service = null;
+
+        if (m_isInitialized) {
+            service = m_contextHandler.getContext().getServices().get(p_class.getSimpleName());
+        }
+
+        return service != null;
+    }
+
+    @Override
+    public boolean isServiceAvailable(final String p_shortName) {
+        AbstractDXRAMService service = null;
+
+        if (m_isInitialized) {
+            service = m_contextHandler.getContext().getServices().get(m_servicesShortName.get(p_shortName));
+        }
+
+        return service != null;
+    }
+
+    @Override
     public <T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
         T component = null;
 

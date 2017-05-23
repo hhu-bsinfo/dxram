@@ -16,11 +16,11 @@ package de.hhu.bsinfo.dxram.chunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.DumpMemoryMessage;
 import de.hhu.bsinfo.dxram.chunk.messages.ResetMemoryMessage;
-import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdMemdump;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -28,7 +28,6 @@ import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
@@ -60,7 +59,7 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
      * Dump the chunk memory to a file
      *
      * @param p_fileName
-     *     File to dump memory to
+     *         File to dump memory to
      */
     public void dumpChunkMemory(final String p_fileName) {
         // #ifdef ASSERT_NODE_ROLE
@@ -94,7 +93,7 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
      * Dump the chunk memory of a remote peer to a file
      *
      * @param p_fileName
-     *     File to dump memory to
+     *         File to dump memory to
      * @return True if dumping memory of remote peer successful, false on failure
      */
     public boolean dumpChunkMemory(final String p_fileName, final short p_remoteNodeId) {
@@ -161,7 +160,7 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
      * not properly reset anything involved in the backup or nameservice
      *
      * @param p_nodeId
-     *     Remote peer to reset the memory of
+     *         Remote peer to reset the memory of
      */
     public void resetMemory(final short p_nodeId) {
         // #ifdef ASSERT_NODE_ROLE
@@ -228,7 +227,6 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
     protected boolean startService(DXRAMContext.EngineSettings p_engineEngineSettings) {
         registerNetworkMessages();
         registerNetworkMessageListener();
-        registerTerminalCommands();
 
         return true;
     }
@@ -256,20 +254,13 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
         m_network.register(ResetMemoryMessage.class, this);
     }
 
-    /**
-     * Register terminal commands
-     */
-    private void registerTerminalCommands() {
-        m_terminal.registerTerminalCommand(new TcmdMemdump());
-    }
-
     // -----------------------------------------------------------------------------------
 
     /**
      * Handle incoming dump memory messages
      *
      * @param p_message
-     *     Message to handle
+     *         Message to handle
      */
     private void incomingDumpMemoryMessage(final DumpMemoryMessage p_message) {
         // #if LOGGER >= INFO
@@ -300,7 +291,7 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
      * Handle incoming reset memory messages
      *
      * @param p_message
-     *     Message to handle
+     *         Message to handle
      */
     private void incomingResetMemoryMessage(final ResetMemoryMessage p_message) {
         // #if LOGGER >= WARN

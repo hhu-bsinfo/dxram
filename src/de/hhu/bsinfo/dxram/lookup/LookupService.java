@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -29,10 +30,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.LookupMessages;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
-import de.hhu.bsinfo.dxram.lookup.tcmd.TcmdLookuptree;
-import de.hhu.bsinfo.dxram.lookup.tcmd.TcmdMetadata;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -91,7 +89,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
      * Get the corresponding primary peer (the peer storing the Chunk in RAM) for the given ChunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return the primary peer
      */
     public short getPrimaryPeer(final long p_chunkID) {
@@ -102,7 +100,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
      * Get the corresponding LookupRange for the given ChunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return the current location and the range borders
      */
     public LookupRange getLookupRange(final long p_chunkID) {
@@ -113,7 +111,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
      * Returns the responsible superpeer for given peer
      *
      * @param p_nid
-     *     node id to get responsible super peer from
+     *         node id to get responsible super peer from
      * @return node ID of superpeer
      */
     public short getResponsibleSuperpeer(final short p_nid) {
@@ -124,9 +122,9 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
      * sends a message to a superpeer to get a lookuptree from
      *
      * @param p_superPeerNid
-     *     superpeer where the lookuptree to get from
+     *         superpeer where the lookuptree to get from
      * @param p_nodeId
-     *     node id which lookuptree to get
+     *         node id which lookuptree to get
      * @return requested lookup Tree
      */
     public LookupTree getLookupTreeFromSuperpeer(final short p_superPeerNid, final short p_nodeId) {
@@ -154,7 +152,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
      * Sends a request to given superpeer to get a metadata summary
      *
      * @param p_nodeID
-     *     superpeer to get summary from
+     *         superpeer to get summary from
      * @return the metadata summary
      */
     public String getMetadataSummary(final short p_nodeID) {
@@ -189,7 +187,6 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         registerNetworkMessages();
         registerNetworkMessageListener();
-        registerTerminalCommands();
 
         return true;
     }
@@ -206,7 +203,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
      * Sends a Response to a LookupTree Request
      *
      * @param p_message
-     *     the LookupTreeRequest
+     *         the LookupTreeRequest
      */
     private void incomingRequestLookupTreeOnServerMessage(final GetLookupTreeRequest p_message) {
         LookupTree tree = m_lookup.superPeerGetLookUpTree(p_message.getTreeNodeID());
@@ -227,10 +224,10 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_TREE_RESPONSE, GetLookupTreeResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_TREE_REQUEST, GetLookupTreeRequest.class);
 
-        m_network
-            .registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST, GetMetadataSummaryRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST,
+                GetMetadataSummaryRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_RESPONSE,
-            GetMetadataSummaryResponse.class);
+                GetMetadataSummaryResponse.class);
 
     }
 
@@ -240,13 +237,5 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
     private void registerNetworkMessageListener() {
         m_network.register(GetLookupTreeResponse.class, this);
         m_network.register(GetLookupTreeRequest.class, this);
-    }
-
-    /**
-     * Register terminal commands
-     */
-    private void registerTerminalCommands() {
-        m_terminal.registerTerminalCommand(new TcmdLookuptree());
-        m_terminal.registerTerminalCommand(new TcmdMetadata());
     }
 }

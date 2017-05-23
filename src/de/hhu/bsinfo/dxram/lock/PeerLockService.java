@@ -35,9 +35,6 @@ import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
 import de.hhu.bsinfo.dxram.lock.messages.LockRequest;
 import de.hhu.bsinfo.dxram.lock.messages.LockResponse;
 import de.hhu.bsinfo.dxram.lock.messages.UnlockMessage;
-import de.hhu.bsinfo.dxram.lock.tcmd.TcmdChunklock;
-import de.hhu.bsinfo.dxram.lock.tcmd.TcmdChunklocklist;
-import de.hhu.bsinfo.dxram.lock.tcmd.TcmdChunkunlock;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
@@ -351,8 +348,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         m_network.register(UnlockMessage.class, this);
         m_network.register(GetLockedListRequest.class, this);
 
-        registerTerminalCommands();
-
         return true;
     }
 
@@ -365,7 +360,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
      * Handles an incoming LockRequest
      *
      * @param p_request
-     *     the LockRequest
+     *         the LockRequest
      */
     private void incomingLockRequest(final LockRequest p_request) {
         boolean success;
@@ -376,8 +371,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
         // the host handles the timeout as we don't want to block the message receiver thread
         // for too long, execute a tryLock instead
-        success =
-            m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(), p_request.isWriteLockOperation(), (int) m_remoteLockTryTimeout.getMs());
+        success = m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(), p_request.isWriteLockOperation(),
+                (int) m_remoteLockTryTimeout.getMs());
 
         try {
             if (success) {
@@ -398,7 +393,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
      * Handles an incoming UnlockMessage
      *
      * @param p_message
-     *     the UnlockMessage
+     *         the UnlockMessage
      */
     private void incomingUnlockMessage(final UnlockMessage p_message) {
         // #ifdef STATISTICS
@@ -416,7 +411,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
      * Handles an incoming GetLockedListRequest
      *
      * @param p_request
-     *     the GetLockedListRequest
+     *         the GetLockedListRequest
      */
     private void incomingLockedListRequest(final GetLockedListRequest p_request) {
         ArrayList<LockedChunkEntry> list = m_lock.getLockedList();
@@ -430,14 +425,5 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
             LOGGER.error("Sending locked list response for request %s failed: %s", p_request, e);
             // #endif /* LOGGER >= ERROR */
         }
-    }
-
-    /**
-     * Register terminal commands
-     */
-    private void registerTerminalCommands() {
-        m_terminal.registerTerminalCommand(new TcmdChunklock());
-        m_terminal.registerTerminalCommand(new TcmdChunklocklist());
-        m_terminal.registerTerminalCommand(new TcmdChunkunlock());
     }
 }

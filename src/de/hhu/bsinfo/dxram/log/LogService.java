@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.log;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -27,9 +28,7 @@ import de.hhu.bsinfo.dxram.log.messages.LogAnonMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
-import de.hhu.bsinfo.dxram.log.tcmd.TcmdLoginfo;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -117,7 +116,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      * Method is used in js script.
      *
      * @param p_request
-     *     the GetUtilizationRequest
+     *         the GetUtilizationRequest
      */
     @SuppressWarnings("WeakerAccess")
     public void incomingGetUtilizationRequest(final GetUtilizationRequest p_request) {
@@ -142,7 +141,6 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
         registerNetworkMessages();
         registerNetworkMessageListener();
-        registerTerminalCommands();
 
         return true;
     }
@@ -156,7 +154,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      * Handles an incoming LogMessage
      *
      * @param p_message
-     *     the LogMessage
+     *         the LogMessage
      */
     private void incomingLogMessage(final LogMessage p_message) {
         m_log.incomingLogChunks(p_message.getMessageBuffer(), p_message.getSource());
@@ -166,7 +164,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      * Handles an incoming LogAnonMessage
      *
      * @param p_message
-     *     the LogAnonMessage
+     *         the LogAnonMessage
      */
     private void incomingLogBufferMessage(final LogAnonMessage p_message) {
         m_log.incomingLogChunks(p_message.getMessageBuffer(), p_message.getSource());
@@ -176,7 +174,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      * Handles an incoming RemoveMessage
      *
      * @param p_message
-     *     the RemoveMessage
+     *         the RemoveMessage
      */
     private void incomingRemoveMessage(final RemoveMessage p_message) {
         m_log.incomingRemoveChunks(p_message.getMessageBuffer(), p_message.getSource());
@@ -186,7 +184,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      * Handles an incoming InitRequest
      *
      * @param p_request
-     *     the InitRequest
+     *         the InitRequest
      */
     private void incomingInitRequest(final InitRequest p_request) {
         boolean res;
@@ -225,12 +223,5 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
         m_network.register(RemoveMessage.class, this);
         m_network.register(InitRequest.class, this);
         m_network.register(GetUtilizationRequest.class, this);
-    }
-
-    /**
-     * Register terminal commands
-     */
-    private void registerTerminalCommands() {
-        m_terminal.registerTerminalCommand(new TcmdLoginfo());
     }
 }

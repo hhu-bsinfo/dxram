@@ -17,8 +17,6 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.RemoveMessage;
-import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkremove;
-import de.hhu.bsinfo.dxram.chunk.tcmd.TcmdChunkremoverange;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -79,7 +77,7 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
      * Remove chunks/data structures from the storage.
      *
      * @param p_dataStructures
-     *     Data structures to remove from the storage.
+     *         Data structures to remove from the storage.
      * @return Number of successfully removed data structures.
      */
     public int remove(final DataStructure... p_dataStructures) {
@@ -95,7 +93,7 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
      * Remove chunks/data structures from the storage (by handle/ID).
      *
      * @param p_chunkIDs
-     *     ChunkIDs/Handles of the data structures to remove. Invalid values are ignored.
+     *         ChunkIDs/Handles of the data structures to remove. Invalid values are ignored.
      * @return Number of successfully removed data structures.
      */
     public int remove(final long... p_chunkIDs) {
@@ -300,9 +298,6 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
 
         m_network.register(RemoveMessage.class, this);
 
-        m_terminal.registerTerminalCommand(new TcmdChunkremove());
-        m_terminal.registerTerminalCommand(new TcmdChunkremoverange());
-
         return true;
     }
 
@@ -318,7 +313,7 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
      * Handles an incoming RemoveMessage
      *
      * @param p_message
-     *     the RemoveMessage
+     *         the RemoveMessage
      */
 
     private void incomingRemoveMessage(final RemoveMessage p_message) {

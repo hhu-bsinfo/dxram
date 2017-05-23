@@ -38,20 +38,40 @@ public interface DXRAMServiceAccessor {
      * Get a service from DXRAM.
      *
      * @param p_class
-     *     Class of the service to get. If the service has different implementations, use the common interface
-     *     or abstract class to get the registered instance.
+     *         Class of the service to get. If the service has different implementations, use the common interface
+     *         or abstract class to get the registered instance.
      * @param <T>
-     *     Class extending DXRAMService
+     *         Class extending DXRAMService
      * @return Reference to the service if available and enabled, null otherwise.
      */
-    <T extends AbstractDXRAMService> T getService(Class<T> p_class);
+    <T extends AbstractDXRAMService> T getService(final Class<T> p_class);
 
     /**
-     * Get a service by it's short name/identifier.
+     * Get a service by its short name/identifier.
      *
      * @param p_shortName
-     *     Short name of the service.
+     *         Short name of the service.
      * @return Service or null if no service exists for that name.
      */
-    AbstractDXRAMService getService(String p_shortName);
+    AbstractDXRAMService getService(final String p_shortName);
+
+    /**
+     * Check if a service is available/enabled
+     *
+     * @param p_class
+     *         Class of the service to check
+     * @param <T>
+     *         Class extending DXRAMService
+     * @return True if service available/enabled, false otherwise
+     */
+    <T extends AbstractDXRAMService> boolean isServiceAvailable(final Class<T> p_class);
+
+    /**
+     * Check if a service is available by its short name
+     *
+     * @param p_shortName
+     *         Short name of service
+     * @return True if service available/enabled, false otherwise
+     */
+    boolean isServiceAvailable(final String p_shortName);
 }

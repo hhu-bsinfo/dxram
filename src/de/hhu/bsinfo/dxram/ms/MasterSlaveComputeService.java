@@ -42,10 +42,6 @@ import de.hhu.bsinfo.dxram.ms.messages.SubmitTaskRequest;
 import de.hhu.bsinfo.dxram.ms.messages.SubmitTaskResponse;
 import de.hhu.bsinfo.dxram.ms.messages.TaskExecutionFinishedMessage;
 import de.hhu.bsinfo.dxram.ms.messages.TaskExecutionStartedMessage;
-import de.hhu.bsinfo.dxram.ms.tcmd.TcmdCompgrpls;
-import de.hhu.bsinfo.dxram.ms.tcmd.TcmdCompgrpstatus;
-import de.hhu.bsinfo.dxram.ms.tcmd.TcmdComptask;
-import de.hhu.bsinfo.dxram.ms.tcmd.TcmdComptaskscript;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
@@ -108,9 +104,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
      * Create an instance of a task denoted by its task (command) name
      *
      * @param p_taskName
-     *     Name (command) of the task
+     *         Name (command) of the task
      * @param p_args
-     *     Arguments to provide to the task object
+     *         Arguments to provide to the task object
      * @return A task instance
      */
     public static Task createTaskInstance(final String p_taskName, final Object... p_args) {
@@ -132,7 +128,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
      * Read a task script from a json formatted file
      *
      * @param p_taskScriptFileName
-     *     File to read
+     *         File to read
      * @return Read task script or null on read failure
      */
     public static TaskScript readTaskScriptFromJsonFile(final String p_taskScriptFileName) {
@@ -198,7 +194,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
      * Get the status of a remote master node.
      *
      * @param p_computeGroupId
-     *     Compute group id to get the master's status of
+     *         Compute group id to get the master's status of
      * @return Status of the remote master or null if remote node is not a master or getting the status failed.
      */
     public StatusMaster getStatusMaster(final short p_computeGroupId) {
@@ -248,9 +244,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
      * Submit a task script to this master.
      *
      * @param p_taskScript
-     *     TaskScript to submit to this master.
+     *         TaskScript to submit to this master.
      * @param p_listener
-     *     Listener to register to register with the generated task state
+     *         Listener to register to register with the generated task state
      * @return TaskScriptState containing assigned task script id and registered listeners or null on error
      */
     public TaskScriptState submitTaskScript(final TaskScript p_taskScript, final TaskListener... p_listener) {
@@ -276,11 +272,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
      * Submit a task script to remote master node.
      *
      * @param p_taskScript
-     *     TaskScript to submit to another master node.
+     *         TaskScript to submit to another master node.
      * @param p_computeGroupId
-     *     Compute group to submit the task script to.
+     *         Compute group to submit the task script to.
      * @param p_listener
-     *     Listener to register to register with the generated task state
+     *         Listener to register to register with the generated task state
      * @return TaskScriptState containing assigned task script id and registered listeners or null on error
      */
     public TaskScriptState submitTaskScript(final TaskScript p_taskScript, final short p_computeGroupId, final TaskListener... p_listener) {
@@ -341,7 +337,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     public void taskBeforeExecution(final TaskScriptState p_taskScriptState) {
         // only used for remote tasks to callback the node they were submitted on
         TaskExecutionStartedMessage message =
-            new TaskExecutionStartedMessage(p_taskScriptState.getNodeIdSubmitted(), p_taskScriptState.getTaskScriptIdAssigned());
+                new TaskExecutionStartedMessage(p_taskScriptState.getNodeIdSubmitted(), p_taskScriptState.getTaskScriptIdAssigned());
 
         try {
             m_network.sendMessage(message);
@@ -356,8 +352,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     public void taskCompleted(final TaskScriptState p_taskScriptState) {
         // only used for remote tasks to callback the node they were submitted on
         TaskExecutionFinishedMessage message =
-            new TaskExecutionFinishedMessage(p_taskScriptState.getNodeIdSubmitted(), p_taskScriptState.getTaskScriptIdAssigned(),
-                p_taskScriptState.getExecutionReturnCodes());
+                new TaskExecutionFinishedMessage(p_taskScriptState.getNodeIdSubmitted(), p_taskScriptState.getTaskScriptIdAssigned(),
+                        p_taskScriptState.getExecutionReturnCodes());
 
         try {
             m_network.sendMessage(message);
@@ -415,13 +411,13 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST, SubmitTaskRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_RESPONSE, SubmitTaskResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST,
-            GetMasterStatusRequest.class);
+                GetMasterStatusRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_RESPONSE,
-            GetMasterStatusResponse.class);
+                GetMasterStatusResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE,
-            TaskExecutionStartedMessage.class);
+                TaskExecutionStartedMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE,
-            TaskExecutionFinishedMessage.class);
+                TaskExecutionFinishedMessage.class);
 
         m_network.register(SubmitTaskRequest.class, this);
         m_network.register(GetMasterStatusRequest.class, this);
@@ -431,11 +427,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         switch (ComputeRole.toComputeRole(m_role)) {
             case MASTER:
                 m_computeMSInstance =
-                    new ComputeMaster(m_computeGroupId, m_pingInterval.getMs(), getServiceAccessor(), m_network, m_nameservice, m_boot, m_lookup);
+                        new ComputeMaster(m_computeGroupId, m_pingInterval.getMs(), getServiceAccessor(), m_network, m_nameservice, m_boot, m_lookup);
                 break;
             case SLAVE:
                 m_computeMSInstance =
-                    new ComputeSlave(m_computeGroupId, m_pingInterval.getMs(), getServiceAccessor(), m_network, m_nameservice, m_boot, m_lookup);
+                        new ComputeSlave(m_computeGroupId, m_pingInterval.getMs(), getServiceAccessor(), m_network, m_nameservice, m_boot, m_lookup);
                 break;
             case NONE:
                 m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_nameservice, m_boot, m_lookup);
@@ -444,8 +440,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
                 assert false;
                 break;
         }
-
-        registerTerminalCommands();
 
         // #if LOGGER >= INFO
         LOGGER.info("Started compute node type '%s' with compute group id %d", m_role, m_computeGroupId);
@@ -463,20 +457,10 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     }
 
     /**
-     * Register terminal commands
-     */
-    private void registerTerminalCommands() {
-        m_terminal.registerTerminalCommand(new TcmdCompgrpls());
-        m_terminal.registerTerminalCommand(new TcmdCompgrpstatus());
-        m_terminal.registerTerminalCommand(new TcmdComptask());
-        m_terminal.registerTerminalCommand(new TcmdComptaskscript());
-    }
-
-    /**
      * Handle an incoming SubmitTaskRequest
      *
      * @param p_request
-     *     SubmitTaskRequest
+     *         SubmitTaskRequest
      */
     private void incomingSubmitTaskRequest(final SubmitTaskRequest p_request) {
         SubmitTaskResponse response;
@@ -534,7 +518,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
      * Handle an incoming GetMasterStatusRequest
      *
      * @param p_request
-     *     GetMasterStatusRequest
+     *         GetMasterStatusRequest
      */
     private void incomingGetMasterStatusRequest(final GetMasterStatusRequest p_request) {
         GetMasterStatusResponse response;
@@ -562,7 +546,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
      * Handle an incoming TaskExecutionStartedMessage
      *
      * @param p_message
-     *     TaskExecutionStartedMessage
+     *         TaskExecutionStartedMessage
      */
     private void incomingTaskExecutionStartedMessage(final TaskExecutionStartedMessage p_message) {
 
@@ -583,7 +567,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
      * Handle an incoming TaskExecutionFinishedMessage
      *
      * @param p_message
-     *     TaskExecutionFinishedMessage
+     *         TaskExecutionFinishedMessage
      */
     private void incomingTaskExecutionFinishedMessage(final TaskExecutionFinishedMessage p_message) {
         // that's a little risky, but setting the id in the submit call
@@ -627,18 +611,18 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
          * Constructor
          *
          * @param p_masterNodeId
-         *     Node id of the master
+         *         Node id of the master
          * @param p_state
-         *     The current state of the instance
+         *         The current state of the instance
          * @param p_connectedSlaves
-         *     List of connected slave ids to this master.
+         *         List of connected slave ids to this master.
          * @param p_numTaskScriptsQueued
-         *     Number of task scripts queued currently on this master.
+         *         Number of task scripts queued currently on this master.
          * @param p_taskScriptsProcessed
-         *     Number of task scripts processed so far.
+         *         Number of task scripts processed so far.
          */
         StatusMaster(final short p_masterNodeId, final AbstractComputeMSBase.State p_state, final ArrayList<Short> p_connectedSlaves,
-            final int p_numTaskScriptsQueued, final int p_taskScriptsProcessed) {
+                final int p_numTaskScriptsQueued, final int p_taskScriptsProcessed) {
             m_masterNodeId = p_masterNodeId;
             m_state = p_state;
             m_connectedSlaves = p_connectedSlaves;

@@ -3,8 +3,6 @@ package de.hhu.bsinfo.dxram.stats;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.stats.tcmd.TcmdStatsprint;
-import de.hhu.bsinfo.dxram.stats.tcmd.TcmdStatsrecorders;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 
 /**
@@ -29,20 +27,11 @@ public class StatisticsService extends AbstractDXRAMService {
 
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        registerTerminalCommands();
         return true;
     }
 
     @Override
     protected boolean shutdownService() {
         return true;
-    }
-
-    /**
-     * Register terminal commands
-     */
-    private void registerTerminalCommands() {
-        m_terminal.registerTerminalCommand(new TcmdStatsprint());
-        m_terminal.registerTerminalCommand(new TcmdStatsrecorders());
     }
 }

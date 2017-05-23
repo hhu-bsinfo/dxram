@@ -103,6 +103,19 @@ public abstract class AbstractApplication extends Thread {
         return m_dxram.getService(p_class);
     }
 
+    /**
+     * Check if a service is available/enabled
+     *
+     * @param p_class
+     *         Class of the service to check
+     * @param <T>
+     *         Class extending DXRAMService
+     * @return True if service available/enabled, false otherwise
+     */
+    protected <T extends AbstractDXRAMService> boolean isServiceAvailable(final Class<T> p_class) {
+        return m_dxram.isServiceAvailable(p_class);
+    }
+
     void setEngine(final DXRAMEngine p_dxram) {
         m_dxram = p_dxram;
     }

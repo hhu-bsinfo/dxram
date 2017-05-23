@@ -18,11 +18,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
-import de.hhu.bsinfo.dxram.sync.tcmd.TcmdBarrieralloc;
-import de.hhu.bsinfo.dxram.sync.tcmd.TcmdBarrierfree;
-import de.hhu.bsinfo.dxram.sync.tcmd.TcmdBarriersignon;
-import de.hhu.bsinfo.dxram.sync.tcmd.TcmdBarriersize;
-import de.hhu.bsinfo.dxram.sync.tcmd.TcmdBarrierstatus;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 
 /**
@@ -47,7 +42,7 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Allocate a barrier for synchronizing multiple peers.
      *
      * @param p_size
-     *     Size of the barrier, i.e. number of peers that have to sign on until the barrier gets released.
+     *         Size of the barrier, i.e. number of peers that have to sign on until the barrier gets released.
      * @return Barrier identifier on success, -1 on failure.
      */
     public int barrierAllocate(final int p_size) {
@@ -58,7 +53,7 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Free an allocated barrier.
      *
      * @param p_barrierId
-     *     Barrier to free.
+     *         Barrier to free.
      * @return True if successful, false otherwise.
      */
     public boolean barrierFree(final int p_barrierId) {
@@ -69,9 +64,9 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Alter the size of an existing barrier (i.e. you want to keep the barrier id but with a different size).
      *
      * @param p_barrierId
-     *     Id of an allocated barrier to change the size of.
+     *         Id of an allocated barrier to change the size of.
      * @param p_newSize
-     *     New size for the barrier.
+     *         New size for the barrier.
      * @return True if changing size was successful, false otherwise.
      */
     public boolean barrierChangeSize(final int p_barrierId, final int p_newSize) {
@@ -82,9 +77,9 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Sign on to a barrier and wait for it getting released (number of peers, barrier size, have signed on).
      *
      * @param p_barrierId
-     *     Id of the barrier to sign on to.
+     *         Id of the barrier to sign on to.
      * @param p_customData
-     *     Custom data to pass along with the sign on
+     *         Custom data to pass along with the sign on
      * @return BarrierStatus, null on error like barrier does not exist
      */
     public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData) {
@@ -95,7 +90,7 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Get the status of a specific barrier.
      *
      * @param p_barrierId
-     *     Id of the barrier.
+     *         Id of the barrier.
      * @return BarrierStatus, null on error like barrier does not exist
      */
     public BarrierStatus barrierGetStatus(final int p_barrierId) {
@@ -110,23 +105,11 @@ public class SynchronizationService extends AbstractDXRAMService {
 
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        registerTerminalCommands();
         return true;
     }
 
     @Override
     protected boolean shutdownService() {
         return true;
-    }
-
-    /**
-     * Register terminal commands
-     */
-    private void registerTerminalCommands() {
-        m_terminal.registerTerminalCommand(new TcmdBarrieralloc());
-        m_terminal.registerTerminalCommand(new TcmdBarrierfree());
-        m_terminal.registerTerminalCommand(new TcmdBarriersignon());
-        m_terminal.registerTerminalCommand(new TcmdBarriersize());
-        m_terminal.registerTerminalCommand(new TcmdBarrierstatus());
     }
 }

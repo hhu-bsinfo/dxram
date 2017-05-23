@@ -20,15 +20,14 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.messages.LoggerMessages;
 import de.hhu.bsinfo.dxram.logger.messages.SetLogLevelMessage;
-import de.hhu.bsinfo.dxram.logger.tcmd.TcmdLoggerlevel;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -60,7 +59,7 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
      * Method is used in js script.
      *
      * @param p_logLevel
-     *     Log level to set.
+     *         Log level to set.
      */
     @SuppressWarnings("WeakerAccess")
     public static void setLogLevel(final String p_logLevel) {
@@ -73,7 +72,7 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
      * Method is used in js script.
      *
      * @param p_logLevel
-     *     Log level to set.
+     *         Log level to set.
      */
     @SuppressWarnings("WeakerAccess")
     public static void setLogLevel(final Level p_logLevel) {
@@ -90,7 +89,7 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
      * Handles an incoming SetLogLevelMessage
      *
      * @param p_message
-     *     the SetLogLevelMessage
+     *         the SetLogLevelMessage
      */
     private static void incomingSetLogLevelMessage(final SetLogLevelMessage p_message) {
         setLogLevel(p_message.getLogLevel());
@@ -100,9 +99,9 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
      * Set the log level for the logger on another node
      *
      * @param p_logLevel
-     *     Log level to set.
+     *         Log level to set.
      * @param p_nodeId
-     *     Id of the node to change the log level on
+     *         Id of the node to change the log level on
      */
     public void setLogLevel(final String p_logLevel, final Short p_nodeId) {
         setLogLevel(Level.getLevel(p_logLevel.toUpperCase()), p_nodeId);
@@ -136,8 +135,6 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
 
         m_network.register(SetLogLevelMessage.class, this);
 
-        registerTerminalCommands();
-
         return true;
     }
 
@@ -150,9 +147,9 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
      * Set the log level for the logger on another node
      *
      * @param p_logLevel
-     *     Log level to set.
+     *         Log level to set.
      * @param p_nodeId
-     *     Id of the node to change the log level on
+     *         Id of the node to change the log level on
      */
     private void setLogLevel(final Level p_logLevel, final Short p_nodeId) {
         if (m_boot.getNodeID() == p_nodeId) {
@@ -167,12 +164,5 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
                 // #endif /* LOGGER >= ERROR */
             }
         }
-    }
-
-    /**
-     * Register terminal commands
-     */
-    private void registerTerminalCommands() {
-        m_terminal.registerTerminalCommand(new TcmdLoggerlevel());
     }
 }
