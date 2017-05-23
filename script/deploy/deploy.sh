@@ -702,4 +702,3 @@ write_configuration
 execute
 
 echo -e "\n\n"
-close

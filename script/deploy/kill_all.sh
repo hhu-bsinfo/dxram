@@ -124,10 +124,11 @@ close()
 			# Stop ZooKeeper?
 			echo "ZooKeeper might stay alive"
 		else
+			echo "Killing instance on $ip..."
 			if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ]; then
-				pkill -9 -f DXRAM.jar
+				pkill -9 -f dxram.jar
 			else
-				ssh $hostname -n "pkill -9 -f DXRAM.jar"
+				ssh $hostname -n "pkill -9 -f dxram.jar"
 			fi
 		fi
 	done <<< "$NODES"
