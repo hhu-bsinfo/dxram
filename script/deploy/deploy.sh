@@ -666,7 +666,7 @@ if [ `echo $LOCALHOST | cut -d "." -f 1` != "127" ]; then
 fi
 
 readonly THIS_HOST=`resolve $(hostname)`
-readonly DEFAULT_CLASS="de.hhu.bsinfo.dxram.DXRAMMain"
+readonly DEFAULT_CLASS="de.hhu.bsinfo.dxram.DXRAM"
 readonly LIBRARIES="lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:lib/jline-2.15.jar:lib/auto-value-1.4.1.jar:dxram.jar"
 readonly DEFAULT_CONDITION="!---ooo---!"
 readonly ZOOKEEPER_PORT="2181"

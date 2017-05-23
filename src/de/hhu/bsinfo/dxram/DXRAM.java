@@ -54,18 +54,16 @@ import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.dxram.recovery.RecoveryService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
-import de.hhu.bsinfo.dxram.term.TerminalService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.ManifestHelper;
 
 /**
- * Main class/entry point for any application to work with DXRAM and its services.
+ * Main class/entry point for DXRAM.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class DXRAM {
+public final class DXRAM {
     public static final DXRAMVersion VERSION = DXRAMVersion.builder().setMajor(0).setMinor(1).setRevision(0).build();
     private static final String STARTUP_DONE_STR = "!---ooo---!";
 
@@ -78,6 +76,31 @@ public class DXRAM {
         m_engine = new DXRAMEngine(VERSION);
         registerComponents(m_engine);
         registerServices(m_engine);
+    }
+
+    /**
+     * Main entry point
+     *
+     * @param p_args
+     *         Program arguments.
+     */
+    public static void main(final String[] p_args) {
+        DXRAM dxram = new DXRAM();
+
+        System.out.println("Starting DXRAM, version " + dxram.getVersion());
+
+        if (!dxram.initialize(true)) {
+            System.out.println("Initializing DXRAM failed.");
+            System.exit(-1);
+        }
+
+        System.out.println(">>> DXRAM started <<<");
+
+        while (dxram.update()) {
+            // run
+        }
+
+        System.exit(0);
     }
 
     /**
@@ -107,7 +130,9 @@ public class DXRAM {
         if (p_autoShutdown) {
             Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
         }
-        postInit();
+
+        // used for deploy script
+        System.out.println(STARTUP_DONE_STR);
 
         return true;
     }
@@ -139,43 +164,7 @@ public class DXRAM {
      * Shut down DXRAM. Call this if you have not enabled auto shutdown on init.
      */
     public void shutdown() {
-        preShutdown();
         m_engine.shutdown();
-        postShutdown();
-    }
-
-    /**
-     * Soft reboot DXRAM. Triggers reboot on next update cycle
-     */
-    public void triggerSoftReboot() {
-        m_engine.triggerSoftReboot();
-    }
-
-    /**
-     * Returns the DXRAM engine
-     *
-     * @return the DXRAMEngine
-     */
-    protected DXRAMEngine getDXRAMEngine() {
-        return m_engine;
-    }
-
-    /**
-     * Stub method for any class extending this class.
-     * Override this to run some tasks like initializing variables after
-     * DXRAM has booted.
-     */
-    protected void postInit() {
-        // used for deploy script
-        System.out.println(STARTUP_DONE_STR);
-    }
-
-    /**
-     * Stub method for any class extending this class.
-     * Override this to run cleanup before DXRAM shuts down.
-     */
-    protected void preShutdown() {
-        // stub
     }
 
     /**
@@ -201,7 +190,6 @@ public class DXRAM {
         p_engine.registerComponent(NetworkComponent.class);
         p_engine.registerComponent(NullComponent.class);
         p_engine.registerComponent(PeerLockComponent.class);
-        p_engine.registerComponent(TerminalComponent.class);
         p_engine.registerComponent(ZookeeperBootComponent.class);
     }
 
@@ -233,25 +221,7 @@ public class DXRAM {
         p_engine.registerService(RecoveryService.class);
         p_engine.registerService(StatisticsService.class);
         p_engine.registerService(SynchronizationService.class);
-        p_engine.registerService(TerminalService.class);
         p_engine.registerService(TemporaryStorageService.class);
-    }
-
-    /**
-     * Stub method for any class extending this class.
-     * Override this to run some tasks like initializing variables before
-     * DXRAM has booted.
-     */
-    private void preInit() {
-        // stub
-    }
-
-    /**
-     * Stub method for any class extending this class.
-     * Override this to run cleanup after DXRAM shuts down.
-     */
-    private void postShutdown() {
-        // stub
     }
 
     /**

@@ -21,7 +21,6 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxgraph.data.Edge;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
-import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkRemoveService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -38,7 +37,8 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 09.09.2016
  */
-public class DXGraph extends DXRAM {
+// TODO broken, needs refactoring and must be adapted to run as a dxram application
+public class DXGraph {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXGraph.class.getSimpleName());
 
@@ -51,17 +51,17 @@ public class DXGraph extends DXRAM {
     public DXGraph() {
 
     }
-
-    @Override
-    protected void postInit() {
-        m_chunkService = getDXRAMEngine().getService(ChunkService.class);
-        m_chunkRemoveService = getDXRAMEngine().getService(ChunkRemoveService.class);
-    }
-
-    @Override
-    protected void preShutdown() {
-        m_chunkService = null;
-    }
+    //
+    //    @Override
+    //    protected void postInit() {
+    //        m_chunkService = getDXRAMEngine().getService(ChunkService.class);
+    //        m_chunkRemoveService = getDXRAMEngine().getService(ChunkRemoveService.class);
+    //    }
+    //
+    //    @Override
+    //    protected void preShutdown() {
+    //        m_chunkService = null;
+    //    }
 
     /**
      * Create storage on the current node for one or multiple vertices. This assigns
@@ -69,7 +69,7 @@ public class DXGraph extends DXRAM {
      * data stored with the vertex is not stored with this call.
      *
      * @param p_vertices
-     *     Vertices to create storage space for.
+     *         Vertices to create storage space for.
      */
     public void createVertices(final Vertex... p_vertices) {
         m_chunkService.create((DataStructure[]) p_vertices);
@@ -81,9 +81,9 @@ public class DXGraph extends DXRAM {
      * data stored with the vertex is not stored with this call.
      *
      * @param p_nodeId
-     *     Node id of another peer to allocate the space on.
+     *         Node id of another peer to allocate the space on.
      * @param p_vertices
-     *     Vertices to create storage space for.
+     *         Vertices to create storage space for.
      * @return Number of successfully created storage locations.
      */
     public int createVertices(final short p_nodeId, final Vertex... p_vertices) {
@@ -96,7 +96,7 @@ public class DXGraph extends DXRAM {
      * data stored with the edge is not stored with this call.
      *
      * @param p_edges
-     *     Edges to create storage space for.
+     *         Edges to create storage space for.
      * @return Number of successfully created storage locations.
      */
     public void createEdges(final Edge... p_edges) {
@@ -109,9 +109,9 @@ public class DXGraph extends DXRAM {
      * data stored with the edge is not stored with this call.
      *
      * @param p_nodeId
-     *     Node id of another peer to allocate the space on.
+     *         Node id of another peer to allocate the space on.
      * @param p_edges
-     *     VerticEdgeses to create storage space for.
+     *         VerticEdgeses to create storage space for.
      * @return Number of successfully created storage locations.
      */
     public int createEdges(final short p_nodeId, final Edge... p_edges) {
@@ -122,7 +122,7 @@ public class DXGraph extends DXRAM {
      * Write the data of one or multiple vertices to its storage location(s).
      *
      * @param p_vertices
-     *     Vertices to write the data to the storage.
+     *         Vertices to write the data to the storage.
      * @return Number of successfully written vertices.
      */
     public int putVertices(final Vertex... p_vertices) {
@@ -133,7 +133,7 @@ public class DXGraph extends DXRAM {
      * Write the data of one or multiple dges to its storage location(s).
      *
      * @param p_edges
-     *     Edges to write the data to the storage.
+     *         Edges to write the data to the storage.
      * @return Number of successfully written edges.
      */
     public int putEdges(final Edge... p_edges) {
@@ -144,7 +144,7 @@ public class DXGraph extends DXRAM {
      * Read the data of one or multiple vertices from its storage location(s).
      *
      * @param p_vertices
-     *     Vertices to read the data from the storage.
+     *         Vertices to read the data from the storage.
      * @return Number of successfully read vertices.
      */
     public int getVertices(final Vertex... p_vertices) {
@@ -155,7 +155,7 @@ public class DXGraph extends DXRAM {
      * Read the data of one or multiple edges from its storage location(s).
      *
      * @param p_edges
-     *     Edges to read the data from the storage.
+     *         Edges to read the data from the storage.
      * @return Number of successfully read edges.
      */
     public int getEdges(final Edge... p_edges) {
@@ -166,7 +166,7 @@ public class DXGraph extends DXRAM {
      * Delete one or multiple stored vertices from the storage.
      *
      * @param p_vertices
-     *     Vertices to delete from storage.
+     *         Vertices to delete from storage.
      * @return Number of successfully deleted vertices.
      */
     public int deleteVertices(final Vertex... p_vertices) {
@@ -177,7 +177,7 @@ public class DXGraph extends DXRAM {
      * Delete one or multiple stored edges from the storage.
      *
      * @param p_edges
-     *     Edges to delete from storage.
+     *         Edges to delete from storage.
      * @return Number of successfully deleted edges.
      */
     public int deleteEdges(final Edge... p_edges) {
@@ -190,11 +190,11 @@ public class DXGraph extends DXRAM {
      * vertex, this call fails.
      *
      * @param p_vertex
-     *     Vertex to scan. If invalid, null is returned.
+     *         Vertex to scan. If invalid, null is returned.
      * @param p_edgeClass
-     *     Class of the edges to return.
+     *         Class of the edges to return.
      * @param <T>
-     *     Type of the edges to create instances of.
+     *         Type of the edges to create instances of.
      * @return Edge objects of the scanned vertex with their data read from the storage.
      */
     public <T extends Edge> T[] scanEdges(final Vertex p_vertex, final Class<T> p_edgeClass) {
@@ -225,11 +225,11 @@ public class DXGraph extends DXRAM {
      * If the edges are actual objects, they are read but skipped automatically.
      *
      * @param p_vertex
-     *     Vertex to scan. If invalid, null is returned.
+     *         Vertex to scan. If invalid, null is returned.
      * @param p_vertexClass
-     *     Class of the vertex instances to return.
+     *         Class of the vertex instances to return.
      * @param <T>
-     *     Type of the vertex instances to create.
+     *         Type of the vertex instances to create.
      * @return Neighbor vertex objects of the scanned vertex with their data stored.
      */
     public <T extends Vertex> T[] scanNeighborVertices(final Vertex p_vertex, final Class<T> p_vertexClass) {
@@ -313,7 +313,7 @@ public class DXGraph extends DXRAM {
          * Constructor
          */
         public TraverseBFSJob(final long p_startVertexId, final TraversalVertexCallback p_vertexCallback, final TraversalEdgeCallback p_edgeCallback,
-            final Class<? extends Vertex> p_vertexClass, final Class<? extends Edge> p_edgeClass) {
+                final Class<? extends Vertex> p_vertexClass, final Class<? extends Edge> p_edgeClass) {
             m_startVertexId = p_startVertexId;
             m_vertexCallback = p_vertexCallback;
             m_edgeCallback = p_edgeCallback;
