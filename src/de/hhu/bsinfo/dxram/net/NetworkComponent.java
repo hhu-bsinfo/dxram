@@ -98,7 +98,7 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
      * Constructor
      */
     public NetworkComponent() {
-        super(DXRAMComponentOrder.Init.NETWORK, DXRAMComponentOrder.Shutdown.NETWORK);
+        super(DXRAMComponentOrder.Init.NETWORK, DXRAMComponentOrder.Shutdown.NETWORK, true, true);
     }
 
     // --------------------------------------------------------------------------------------
@@ -121,11 +121,11 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
      * Registers a message type
      *
      * @param p_type
-     *     the unique type
+     *         the unique type
      * @param p_subtype
-     *     the unique subtype
+     *         the unique subtype
      * @param p_class
-     *     the calling class
+     *         the calling class
      */
     public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
         m_networkHandler.registerMessageType(p_type, p_subtype, p_class);
@@ -135,9 +135,9 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
      * Connect a node.
      *
      * @param p_nodeID
-     *     Node to connect
+     *         Node to connect
      * @throws NetworkException
-     *     If the destination is unreachable
+     *         If the destination is unreachable
      */
     public void connectNode(final short p_nodeID) throws NetworkException {
         // #if LOGGER == TRACE
@@ -158,9 +158,9 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
      * Send a message.
      *
      * @param p_message
-     *     Message to send
+     *         Message to send
      * @throws NetworkException
-     *     If sending the message failed
+     *         If sending the message failed
      */
     public void sendMessage(final AbstractMessage p_message) throws NetworkException {
         // #if LOGGER == TRACE
@@ -191,9 +191,9 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
      * Send the Request and wait for fulfillment (wait for response).
      *
      * @param p_request
-     *     The request to send.
+     *         The request to send.
      * @throws NetworkException
-     *     If sending the message failed
+     *         If sending the message failed
      */
     public void sendSync(final AbstractRequest p_request) throws NetworkException {
         sendSync(p_request, true);
@@ -203,11 +203,11 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
      * Send the Request and wait for fulfillment (wait for response).
      *
      * @param p_request
-     *     The request to send.
+     *         The request to send.
      * @param p_waitForResponses
-     *     Set to false to not wait/block until the response arrived
+     *         Set to false to not wait/block until the response arrived
      * @throws NetworkException
-     *     If sending the message failed
+     *         If sending the message failed
      */
     public void sendSync(final AbstractRequest p_request, final boolean p_waitForResponses) throws NetworkException {
         // #if LOGGER == TRACE
@@ -244,9 +244,9 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
      * Registers a message receiver
      *
      * @param p_message
-     *     the message
+     *         the message
      * @param p_receiver
-     *     the receiver
+     *         the receiver
      */
     public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
         m_networkHandler.register(p_message, p_receiver);
@@ -256,9 +256,9 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
      * Unregisters a message receiver
      *
      * @param p_message
-     *     the message
+     *         the message
      * @param p_receiver
-     *     the receiver
+     *         the receiver
      */
     public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
         m_networkHandler.unregister(p_message, p_receiver);
@@ -273,6 +273,16 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
         // #endif /* LOGGER >= DEBUG */
 
         RequestMap.removeAll(p_event.getNodeID());
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override
@@ -322,7 +332,7 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
         }
 
         m_networkHandler.initialize(m_boot.getNodeID(), new NodeMappings(m_boot), (int) m_incomingBufferSize.getBytes(), (int) m_outgoingBufferSize.getBytes(),
-            (int) m_maxIncomingBufferSize.getBytes(), (int) m_flowControlWindowSize.getBytes(), (int) m_requestTimeout.getMs());
+                (int) m_maxIncomingBufferSize.getBytes(), (int) m_flowControlWindowSize.getBytes(), (int) m_requestTimeout.getMs());
 
         m_networkHandler.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
 

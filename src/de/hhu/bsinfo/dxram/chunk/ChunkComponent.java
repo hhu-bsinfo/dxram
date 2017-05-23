@@ -50,14 +50,14 @@ public class ChunkComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public ChunkComponent() {
-        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK);
+        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, false, true);
     }
 
     /**
      * Create index chunk for the nameservice.
      *
      * @param p_size
-     *     Size of the index chunk.
+     *         Size of the index chunk.
      * @return Chunkid of the index chunk.
      */
     public long createIndexChunk(final int p_size) {
@@ -77,7 +77,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
      * Internal chunk put for management data.
      *
      * @param p_dataStructure
-     *     Data structure to put
+     *         Data structure to put
      * @return True if successful, false otherwise
      */
     public boolean putChunk(final DataStructure p_dataStructure) {
@@ -111,6 +111,16 @@ public class ChunkComponent extends AbstractDXRAMComponent {
             }
         }
 
+        return true;
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
         return true;
     }
 

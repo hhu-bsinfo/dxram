@@ -54,18 +54,18 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
      * Constructor
      */
     public EventComponent() {
-        super(DXRAMComponentOrder.Init.EVENT, DXRAMComponentOrder.Shutdown.EVENT);
+        super(DXRAMComponentOrder.Init.EVENT, DXRAMComponentOrder.Shutdown.EVENT, true, true);
     }
 
     /**
      * Register a listener to listen to specific event.
      *
      * @param <T>
-     *     Type of the event to listen to
+     *         Type of the event to listen to
      * @param p_listener
-     *     Listener to register.
+     *         Listener to register.
      * @param p_class
-     *     Event to listen to.
+     *         Event to listen to.
      */
     public <T extends AbstractEvent> void registerListener(final EventListener<T> p_listener, final Class<?> p_class) {
         ArrayList<EventListener<?>> listeners = m_eventListener.get(p_class.getName());
@@ -84,9 +84,9 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
      * Fire an event.
      *
      * @param <T>
-     *     Type of event to fire.
+     *         Type of event to fire.
      * @param p_event
-     *     Event to fire.
+     *         Event to fire.
      */
     @Override
     public <T extends AbstractEvent> void fireEvent(final T p_event) {
@@ -104,6 +104,16 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
                 task.run();
             }
         }
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override
@@ -148,7 +158,7 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
      * of the listeners with the event fired as parameter in a separate thread.
      *
      * @param <T>
-     *     Type of the event.
+     *         Type of the event.
      * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
      */
     private static class FireEvent<T extends AbstractEvent> implements Runnable {
@@ -160,9 +170,9 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
          * Constructor
          *
          * @param p_event
-         *     Event to fire.
+         *         Event to fire.
          * @param p_listener
-         *     List of listeners to receive the event.
+         *         List of listeners to receive the event.
          */
         FireEvent(final T p_event, final ArrayList<EventListener<?>> p_listener) {
             m_event = p_event;

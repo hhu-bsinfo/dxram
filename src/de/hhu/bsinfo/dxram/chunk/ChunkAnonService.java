@@ -77,7 +77,7 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
      * Constructor
      */
     public ChunkAnonService() {
-        super("chunkanon");
+        super("chunkanon", false, true);
     }
 
     /**
@@ -489,6 +489,16 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
     }
 
     // -----------------------------------------------------------------------------------
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
+    }
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {

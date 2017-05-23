@@ -30,6 +30,8 @@ import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.util.NodeRole;
+
 /**
  * Handler for DXRAM context, loading configuration, creating default configuration, configuration overriding
  *
@@ -49,9 +51,9 @@ class DXRAMContextHandler {
      * Constructor
      *
      * @param p_componentManager
-     *     the DXRAMComponentManager
+     *         the DXRAMComponentManager
      * @param p_serviceManager
-     *     the DXRAMServiceManager
+     *         the DXRAMServiceManager
      */
     DXRAMContextHandler(final DXRAMComponentManager p_componentManager, final DXRAMServiceManager p_serviceManager) {
         m_componentManager = p_componentManager;
@@ -71,7 +73,7 @@ class DXRAMContextHandler {
      * Override current configuration with further values provided via VM arguments
      *
      * @param p_object
-     *     Root object of JSON configuration tree
+     *         Root object of JSON configuration tree
      */
     private static void overrideConfigurationWithVMArguments(final JsonObject p_object) {
 
@@ -127,7 +129,7 @@ class DXRAMContextHandler {
 
                 // try to determine type, not a very nice way =/
                 if (propertyKey.matches("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$")) {
+                        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$")) {
                     // ip address
                     parent.addProperty(tokens[tokens.length - 1], propertyKey);
                 } else if (propertyKey.matches("[-+]?\\d*\\.?\\d+")) {
@@ -145,7 +147,7 @@ class DXRAMContextHandler {
      * Create a default configuration file
      *
      * @param p_configFilePath
-     *     Path for configuration file
+     *         Path for configuration file
      * @return True if creating config file successful, false otherwise
      */
     boolean createDefaultConfiguration(final String p_configFilePath) {
@@ -182,7 +184,7 @@ class DXRAMContextHandler {
         m_context.fillDefaultComponents(m_componentManager);
         m_context.fillDefaultServices(m_serviceManager);
 
-        Gson gson = DXRAMGsonContext.createGsonInstance();
+        Gson gson = DXRAMGsonContext.createGsonInstance(m_context.getEngineSettings().getRole());
         String jsonString = gson.toJson(m_context);
 
         try {
@@ -200,29 +202,26 @@ class DXRAMContextHandler {
      * Load an existing configuration
      *
      * @param p_configFilePath
-     *     Path to existing configuration file
+     *         Path to existing configuration file
      * @return True if loading successful, false on error
      */
     boolean loadConfiguration(final String p_configFilePath) {
 
         LOGGER.info("Loading configuration '%s'...", p_configFilePath);
 
-        Gson gson = DXRAMGsonContext.createGsonInstance();
+        // chicken-and-egg situation:
+        // the engine needs to know the node role to load the config file containing the node role
+        // solution: load config with superpeer role, then reload with correct role from first pass
+        m_context = loadConfiguration(p_configFilePath, NodeRole.SUPERPEER);
 
-        JsonElement element;
-        try {
-            element = gson.fromJson(new String(Files.readAllBytes(Paths.get(p_configFilePath))), JsonElement.class);
-        } catch (final Exception e) {
-            LOGGER.error("Could not load configuration '%s': %s", p_configFilePath, e.getMessage());
+        if (m_context == null) {
             return false;
         }
 
-        overrideConfigurationWithVMArguments(element.getAsJsonObject());
+        m_context = loadConfiguration(p_configFilePath, m_context.getEngineSettings().getRole());
 
-        try {
-            m_context = gson.fromJson(element, DXRAMContext.class);
-        } catch (final Exception e) {
-            LOGGER.error("Loading configuration '%s' failed: %s", p_configFilePath, e.getMessage());
+        if (m_context == null) {
+            return false;
         }
 
         // filter disabled/null components and services
@@ -230,5 +229,38 @@ class DXRAMContextHandler {
         m_context.getServices().values().removeIf(Objects::isNull);
 
         return true;
+    }
+
+    /**
+     * Load an existing configuration
+     *
+     * @param p_configFilePath
+     *         Path to existing configuration file
+     * @param p_role
+     *         Node role to use while loading and creating context
+     * @return Valid DXRAMContext on success, null otherwise
+     */
+    private DXRAMContext loadConfiguration(final String p_configFilePath, final NodeRole p_role) {
+        DXRAMContext context;
+        Gson gson = DXRAMGsonContext.createGsonInstance(p_role);
+
+        JsonElement element;
+        try {
+            element = gson.fromJson(new String(Files.readAllBytes(Paths.get(p_configFilePath))), JsonElement.class);
+        } catch (final Exception e) {
+            LOGGER.error("Could not load configuration '%s': %s", p_configFilePath, e.getMessage());
+            return null;
+        }
+
+        overrideConfigurationWithVMArguments(element.getAsJsonObject());
+
+        try {
+            context = gson.fromJson(element, DXRAMContext.class);
+        } catch (final Exception e) {
+            LOGGER.error("Loading configuration '%s' failed: %s", p_configFilePath, e.getMessage());
+            return null;
+        }
+
+        return context;
     }
 }

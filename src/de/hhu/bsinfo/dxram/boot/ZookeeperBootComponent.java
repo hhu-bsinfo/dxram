@@ -35,9 +35,9 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.BloomFilter;
 import de.hhu.bsinfo.utils.CRC16;
+import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.ZooKeeperHandler;
 import de.hhu.bsinfo.utils.ZooKeeperHandler.ZooKeeperException;
 import de.hhu.bsinfo.utils.unit.IPV4Unit;
@@ -106,7 +106,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
      * Constructor
      */
     public ZookeeperBootComponent() {
-        super(DXRAMComponentOrder.Init.BOOT, DXRAMComponentOrder.Shutdown.BOOT);
+        super(DXRAMComponentOrder.Init.BOOT, DXRAMComponentOrder.Shutdown.BOOT, true, true);
     }
 
     @Override
@@ -473,6 +473,16 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
             // #endif /* LOGGER >= ERROR */
         }
 
+        return true;
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
         return true;
     }
 

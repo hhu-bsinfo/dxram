@@ -16,7 +16,7 @@ public class StatisticsService extends AbstractDXRAMService {
      * Constructor
      */
     public StatisticsService() {
-        super("stats");
+        super("stats", true, true);
     }
 
     /**
@@ -37,6 +37,16 @@ public class StatisticsService extends AbstractDXRAMService {
      */
     public StatisticsRecorder getRecorder(final String p_name) {
         return StatisticsRecorderManager.getRecorder(p_name);
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

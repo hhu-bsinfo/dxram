@@ -74,7 +74,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
      * Constructor
      */
     public JobService() {
-        super("job");
+        super("job", false, true);
     }
 
     /**
@@ -82,9 +82,9 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
      * Make sure to register all your Job classes.
      *
      * @param p_typeID
-     *     Type ID for the job to register.
+     *         Type ID for the job to register.
      * @param p_clazz
-     *     Class to register for the specified ID.
+     *         Class to register for the specified ID.
      */
     public void registerJobType(final short p_typeID, final Class<? extends AbstractJob> p_clazz) {
         // #if LOGGER >= DEBUG
@@ -98,7 +98,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
      * Schedule a job for execution (local).
      *
      * @param p_job
-     *     Job to be scheduled for execution.
+     *         Job to be scheduled for execution.
      * @return True if scheduling was successful, false otherwise.
      */
     public long pushJob(final AbstractJob p_job) {
@@ -135,9 +135,9 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
      * scheduled for execution there.
      *
      * @param p_job
-     *     Job to schedule.
+     *         Job to schedule.
      * @param p_nodeID
-     *     ID of the node to schedule the job on.
+     *         ID of the node to schedule the job on.
      * @return Valid job ID assigned to the submitted job, false otherwise.
      */
     public long pushJobRemote(final AbstractJob p_job, final short p_nodeID) {
@@ -323,6 +323,16 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
     // --------------------------------------------------------------------------------------------
 
     @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
+    }
+
+    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_job = p_componentAccessor.getComponent(AbstractJobComponent.class);
@@ -374,7 +384,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
      * Handle incoming push queue request.
      *
      * @param p_request
-     *     Incoming request.
+     *         Incoming request.
      */
     private void incomingPushJobQueueMessage(final PushJobQueueMessage p_request) {
         // #ifdef STATISTICS
@@ -405,7 +415,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
      * Handle incoming status request.
      *
      * @param p_request
-     *     Incoming request.
+     *         Incoming request.
      */
     private void incomingStatusRequest(final StatusRequest p_request) {
         Status status = new Status();
@@ -426,7 +436,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
      * Dispatch for JobEventTriggeredMessage
      *
      * @param p_message
-     *     The incoming message
+     *         The incoming message
      */
     private void incomingJobEventTriggeredMessage(final JobEventTriggeredMessage p_message) {
         JobEventEntry job = m_remoteJobCallbackMap.get(p_message.getJobID());

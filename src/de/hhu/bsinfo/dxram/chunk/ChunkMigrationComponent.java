@@ -54,16 +54,16 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public ChunkMigrationComponent() {
-        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK);
+        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, false, true);
     }
 
     /**
      * Puts migrated Chunks
      *
      * @param p_chunkIDs
-     *     The chunk IDs of the migrated chunks
+     *         The chunk IDs of the migrated chunks
      * @param p_data
-     *     The data of the migrated chunks
+     *         The data of the migrated chunks
      * @return whether storing foreign chunks was successful or not
      */
     public boolean putMigratedChunks(final long[] p_chunkIDs, final byte[][] p_data) {
@@ -109,6 +109,16 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
     }
 
     @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
+    }
+
+    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
@@ -133,16 +143,16 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent {
      * Replicate migrated chunks to corresponding backup ranges
      *
      * @param p_chunkIDs
-     *     The chunk IDs of the chunks to replicate
+     *         The chunk IDs of the chunks to replicate
      * @param p_data
-     *     The data of the chunks to replicate
+     *         The data of the chunks to replicate
      * @param p_backupRanges
-     *     a list of all relevant backup ranges
+     *         a list of all relevant backup ranges
      * @param p_cutChunkIDs
-     *     a list of ChunkIDs. For every listed ChunkID the backup range must be replaced by next element in p_backupRanges
+     *         a list of ChunkIDs. For every listed ChunkID the backup range must be replaced by next element in p_backupRanges
      */
     private void replicateMigratedChunks(final long[] p_chunkIDs, final byte[][] p_data, final ArrayList<BackupRange> p_backupRanges,
-        final ArrayList<Long> p_cutChunkIDs) {
+            final ArrayList<Long> p_cutChunkIDs) {
         int counter = 1;
         short rangeID;
         long cutChunkID;

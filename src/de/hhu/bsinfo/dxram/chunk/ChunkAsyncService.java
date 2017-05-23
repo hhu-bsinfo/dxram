@@ -21,6 +21,7 @@ import java.util.TreeMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.PutMessage;
@@ -36,7 +37,6 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -70,14 +70,14 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
      * Constructor
      */
     public ChunkAsyncService() {
-        super("achunk");
+        super("achunk", false, true);
     }
 
     /**
      * Put/Update the contents of the provided data structures in the backend storage.
      *
      * @param p_dataStructres
-     *     Data structures to put/update.
+     *         Data structures to put/update.
      */
     public void put(final DataStructure... p_dataStructres) {
         put(ChunkLockOperation.NO_LOCK_OPERATION, p_dataStructres);
@@ -87,9 +87,9 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
      * Put/Update the contents of the provided data structures in the backend storage.
      *
      * @param p_chunkUnlockOperation
-     *     Unlock operation to execute right after the put operation.
+     *         Unlock operation to execute right after the put operation.
      * @param p_dataStructures
-     *     Data structures to put/update.
+     *         Data structures to put/update.
      */
     public int put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
         int chunksPut = 0;
@@ -111,7 +111,7 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
         } else {
             // #if LOGGER == TRACE
             LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation, p_dataStructures.length,
-                ChunkID.toHexString(p_dataStructures[0].getID()));
+                    ChunkID.toHexString(p_dataStructures[0].getID()));
             // #endif /* LOGGER == TRACE */
         }
 
@@ -204,7 +204,7 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
         } else {
             // #if LOGGER == TRACE
             LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation, p_dataStructures.length,
-                ChunkID.toHexString(p_dataStructures[0].getID()));
+                    ChunkID.toHexString(p_dataStructures[0].getID()));
             // #endif /* LOGGER == TRACE */
         }
 
@@ -232,6 +232,16 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting incomingMessage");
         // #endif /* LOGGER == TRACE */
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override
@@ -282,7 +292,7 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
      * Handles an incoming PutRequest
      *
      * @param p_request
-     *     the PutRequest
+     *         the PutRequest
      */
     private void incomingPutMessage(final PutMessage p_request) {
         long[] chunkIDs = p_request.getChunkIDs();

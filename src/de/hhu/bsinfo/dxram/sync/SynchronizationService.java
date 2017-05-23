@@ -33,7 +33,7 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Constructor
      */
     public SynchronizationService() {
-        super("sync");
+        super("sync", false, true);
     }
 
     /**
@@ -93,6 +93,16 @@ public class SynchronizationService extends AbstractDXRAMService {
      */
     public BarrierStatus barrierGetStatus(final int p_barrierId) {
         return m_lookup.barrierGetStatus(p_barrierId);
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

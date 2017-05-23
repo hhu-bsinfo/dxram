@@ -24,7 +24,17 @@ public class NullService extends AbstractDXRAMService {
      * Constructor
      */
     public NullService() {
-        super("null");
+        super("null", true, true);
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

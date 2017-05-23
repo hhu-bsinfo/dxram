@@ -82,7 +82,7 @@ public class DXRAMContext {
      * Fill the context with all components that registered at the DXRAMComponentManager
      *
      * @param p_manager
-     *     Manager to use
+     *         Manager to use
      */
     void fillDefaultComponents(final DXRAMComponentManager p_manager) {
 
@@ -95,7 +95,7 @@ public class DXRAMContext {
      * Fill the context with all services that registered at the DXRAMServiceManager
      *
      * @param p_manager
-     *     Manager to use
+     *         Manager to use
      */
     void fillDefaultServices(final DXRAMServiceManager p_manager) {
 
@@ -124,11 +124,6 @@ public class DXRAMContext {
          */
         @Expose
         private String m_jniPath = "jni";
-        /**
-         * Path to application modules (jar files)
-         */
-        @Expose
-        private String m_applicationModulePath = "app";
 
         /**
          * Constructor
@@ -162,15 +157,6 @@ public class DXRAMContext {
          */
         String getJNIPath() {
             return m_jniPath;
-        }
-
-        /**
-         * Get the path to the folder with the compiled application modules (jar files)
-         *
-         * @return Path to JNI libraries
-         */
-        String getApplicationModulePath() {
-            return m_applicationModulePath;
         }
     }
 }

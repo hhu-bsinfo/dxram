@@ -95,7 +95,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
      * Constructor
      */
     public MasterSlaveComputeService() {
-        super("mscomp");
+        super("mscomp", false, true);
     }
 
     /**
@@ -392,6 +392,16 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     @Override
     protected boolean isServiceAccessor() {
         // we need this for the tasks
+        return true;
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
         return true;
     }
 

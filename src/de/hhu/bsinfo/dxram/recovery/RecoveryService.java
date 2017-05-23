@@ -19,6 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -31,7 +32,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
@@ -39,8 +39,8 @@ import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.JNIFileRaw;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * This service provides all recovery functionality.
@@ -66,7 +66,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      * Constructor
      */
     public RecoveryService() {
-        super("recovery");
+        super("recovery", false, true);
     }
 
     @Override
@@ -82,6 +82,16 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
                 }
             }
         }
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override
@@ -120,7 +130,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      * Recovers all Chunks of given node from log file on this node
      *
      * @param p_owner
-     *     the NodeID of the node whose Chunks have to be restored
+     *         the NodeID of the node whose Chunks have to be restored
      */
     private void recoverLocallyFromFile(final short p_owner) {
 
@@ -232,9 +242,9 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      * Recovers all Chunks of given backup range
      *
      * @param p_owner
-     *     the NodeID of the node whose Chunks have to be restored
+     *         the NodeID of the node whose Chunks have to be restored
      * @param p_backupRange
-     *     the backup range
+     *         the backup range
      * @return the recovery metadata
      */
     private RecoveryMetadata recoverBackupRange(final short p_owner, final BackupRange p_backupRange) {
@@ -255,7 +265,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      * Handles an incoming GetChunkIDRequest
      *
      * @param p_request
-     *     the RecoverBackupRangeRequest
+     *         the RecoverBackupRangeRequest
      */
     private void incomingRecoverBackupRangeRequest(final RecoverBackupRangeRequest p_request) {
         /*
@@ -333,7 +343,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
                 // Send replicas to backup peers
                 if (replacementBackupPeer != NodeID.INVALID_ID) {
                     m_chunkBackup.replicateBackupRange(replacementBackupPeer, recoveryMetadata.getCIDRanges(), recoveryMetadata.getNumberOfChunks(),
-                        backupRange.getRangeID());
+                            backupRange.getRangeID());
                 }
 
                 try {
@@ -353,9 +363,9 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      */
     private void registerNetworkMessages() {
         m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST,
-            RecoverBackupRangeRequest.class);
+                RecoverBackupRangeRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE,
-            RecoverBackupRangeResponse.class);
+                RecoverBackupRangeResponse.class);
     }
 
     /**

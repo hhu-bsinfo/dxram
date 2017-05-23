@@ -28,7 +28,6 @@ import org.apache.logging.log4j.Logger;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2016
  */
 public abstract class AbstractDXRAMService {
-
     private final Logger LOGGER;
 
     // config values
@@ -38,10 +37,15 @@ public abstract class AbstractDXRAMService {
     @Expose
     private final String m_class = getClass().getName();
     /**
-     * True to enable service, false to disable
+     * True to enable the component if the node is a superpeer, false to disable
      */
     @Expose
-    private final boolean m_enabled = true;
+    private final boolean m_enabledForSuperpeer;
+    /**
+     * True to enable the component if the node is a peer, false to disable
+     */
+    @Expose
+    private final boolean m_enabledForPeer;
 
     private String m_shortName;
     private DXRAMEngine m_parentEngine;
@@ -52,11 +56,21 @@ public abstract class AbstractDXRAMService {
      *
      * @param p_shortName
      *         Short name of the service (used for terminal)
+     * @param p_enabledForSuperpeer
+     *         Enable this service if the node is a superpeer (default value)
+     * @param p_enabledForPeer
+     *         Enable this service if the node is a peer (default value)
      */
-    protected AbstractDXRAMService(final String p_shortName) {
+    protected AbstractDXRAMService(final String p_shortName, final boolean p_enabledForSuperpeer, final boolean p_enabledForPeer) {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_shortName = p_shortName;
+        m_enabledForSuperpeer = p_enabledForSuperpeer;
+        m_enabledForPeer = p_enabledForPeer;
     }
+
+    protected abstract boolean supportedBySuperpeer();
+
+    protected abstract boolean supportedByPeer();
 
     /**
      * Called before the service is initialized. Get all the components your service depends on.
@@ -64,7 +78,7 @@ public abstract class AbstractDXRAMService {
      * @param p_componentAccessor
      *         Component accessor that provides access to the components
      */
-    protected abstract void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor);
+    protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
 
     /**
      * Called when the service is initialized. Setup data structures, get components for operation, read settings etc.
@@ -73,7 +87,7 @@ public abstract class AbstractDXRAMService {
      *         EngineSettings instance provided by the engine.
      * @return True if initialing was successful, false otherwise.
      */
-    protected abstract boolean startService(DXRAMContext.EngineSettings p_engineEngineSettings);
+    protected abstract boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings);
 
     /**
      * Called when the service gets shut down. Cleanup your service in here.

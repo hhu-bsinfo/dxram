@@ -40,7 +40,17 @@ public class ApplicationService extends AbstractDXRAMService {
      * Constructor
      */
     public ApplicationService() {
-        super("app");
+        super("app", false, true);
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

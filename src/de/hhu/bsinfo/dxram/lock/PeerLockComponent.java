@@ -45,7 +45,7 @@ public class PeerLockComponent extends AbstractLockComponent {
      * Constructor
      */
     public PeerLockComponent() {
-        super(DXRAMComponentOrder.Init.PEER_LOCK, DXRAMComponentOrder.Shutdown.PEER_LOCK);
+        super(DXRAMComponentOrder.Init.PEER_LOCK, DXRAMComponentOrder.Shutdown.PEER_LOCK, false, true);
     }
 
     @Override
@@ -153,6 +153,16 @@ public class PeerLockComponent extends AbstractLockComponent {
             }
         }
 
+        return true;
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
         return true;
     }
 

@@ -49,7 +49,7 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
      * Constructor
      */
     public LoggerService() {
-        super("logger");
+        super("logger", true, true);
     }
 
     /**
@@ -118,6 +118,16 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
                 }
             }
         }
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

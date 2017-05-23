@@ -54,7 +54,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
      * Constructor
      */
     public NameserviceService() {
-        super("name");
+        super("name", true, true);
     }
 
     /**
@@ -160,6 +160,16 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
                 }
             }
         }
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

@@ -50,7 +50,7 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
      * Constructor
      */
     protected ChunkDebugService() {
-        super("chunkdebug");
+        super("chunkdebug", false, true);
     }
 
     /**
@@ -210,6 +210,16 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting incomingMessage");
         // #endif /* LOGGER == TRACE */
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

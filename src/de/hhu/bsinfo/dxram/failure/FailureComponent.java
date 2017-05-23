@@ -66,7 +66,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
      * Creates the failure component
      */
     public FailureComponent() {
-        super(DXRAMComponentOrder.Init.FAILURE, DXRAMComponentOrder.Shutdown.FAILURE);
+        super(DXRAMComponentOrder.Init.FAILURE, DXRAMComponentOrder.Shutdown.FAILURE, true, true);
 
         m_nodeStatus = new byte[Short.MAX_VALUE * 2];
         m_failureLock = new ReentrantLock(false);
@@ -180,6 +180,16 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
                 }
             }
         }
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

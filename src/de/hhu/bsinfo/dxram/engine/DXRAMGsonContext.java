@@ -27,6 +27,7 @@ import com.google.gson.JsonSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
 import de.hhu.bsinfo.dxram.util.TimeUnitGsonSerializer;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
@@ -38,7 +39,6 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 20.10.2016
  */
 final class DXRAMGsonContext {
-
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMGsonContext.class.getSimpleName());
 
     /**
@@ -49,29 +49,40 @@ final class DXRAMGsonContext {
 
     /**
      * Create a Gson instance with all adapters attached for serialization/deserialization
+     *
+     * @param p_nodeRole
+     *         Node role of the current instance
      * @return Gson context
      */
-    static Gson createGsonInstance() {
+    static Gson createGsonInstance(final NodeRole p_nodeRole) {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation()
-            .registerTypeAdapter(AbstractDXRAMComponent.class, new ComponentSerializer())
-            .registerTypeAdapter(AbstractDXRAMService.class, new ServiceSerializer()).registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer())
-            .registerTypeAdapter(TimeUnit.class, new TimeUnitGsonSerializer()).create();
+                .registerTypeAdapter(AbstractDXRAMComponent.class, new ComponentSerializer(p_nodeRole))
+                .registerTypeAdapter(AbstractDXRAMService.class, new ServiceSerializer(p_nodeRole))
+                .registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer()).registerTypeAdapter(TimeUnit.class, new TimeUnitGsonSerializer())
+                .create();
     }
 
     /**
      * Gson serializer and deserializer for components
      */
     private static class ComponentSerializer implements JsonDeserializer<AbstractDXRAMComponent>, JsonSerializer<AbstractDXRAMComponent> {
+        private final NodeRole m_nodeRole;
+
+        public ComponentSerializer(final NodeRole p_nodeRole) {
+            m_nodeRole = p_nodeRole;
+        }
+
         @Override
         public AbstractDXRAMComponent deserialize(final JsonElement p_jsonElement, final Type p_type,
-            final JsonDeserializationContext p_jsonDeserializationContext) {
+                final JsonDeserializationContext p_jsonDeserializationContext) {
 
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
             String className = jsonObj.get("m_class").getAsString();
-            boolean enabled = jsonObj.get("m_enabled").getAsBoolean();
+            boolean enabledSuperpeer = jsonObj.get("m_enabledForSuperpeer").getAsBoolean();
+            boolean enabledPeer = jsonObj.get("m_enabledForPeer").getAsBoolean();
 
-            // don't create instance if disabled
-            if (!enabled) {
+            // don't create if disabled for current node role
+            if (!(m_nodeRole == NodeRole.SUPERPEER && enabledSuperpeer || m_nodeRole == NodeRole.PEER && enabledPeer)) {
                 return null;
             }
 
@@ -97,7 +108,7 @@ final class DXRAMGsonContext {
 
         @Override
         public JsonElement serialize(final AbstractDXRAMComponent p_abstractDXRAMComponent, final Type p_type,
-            final JsonSerializationContext p_jsonSerializationContext) {
+                final JsonSerializationContext p_jsonSerializationContext) {
 
             Class<?> clazz;
             try {
@@ -114,16 +125,23 @@ final class DXRAMGsonContext {
      * Gson serializer and deserializer for services
      */
     private static class ServiceSerializer implements JsonDeserializer<AbstractDXRAMService>, JsonSerializer<AbstractDXRAMService> {
+        private final NodeRole m_nodeRole;
+
+        public ServiceSerializer(final NodeRole p_nodeRole) {
+            m_nodeRole = p_nodeRole;
+        }
+
         @Override
         public AbstractDXRAMService deserialize(final JsonElement p_jsonElement, final Type p_type,
-            final JsonDeserializationContext p_jsonDeserializationContext) {
+                final JsonDeserializationContext p_jsonDeserializationContext) {
 
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
             String className = jsonObj.get("m_class").getAsString();
-            boolean enabled = jsonObj.get("m_enabled").getAsBoolean();
+            boolean enabledSuperpeer = jsonObj.get("m_enabledForSuperpeer").getAsBoolean();
+            boolean enabledPeer = jsonObj.get("m_enabledForPeer").getAsBoolean();
 
-            // don't create instance if disabled
-            if (!enabled) {
+            // don't create if disabled for current node role
+            if (!(m_nodeRole == NodeRole.SUPERPEER && enabledSuperpeer || m_nodeRole == NodeRole.PEER && enabledPeer)) {
                 return null;
             }
 
@@ -149,7 +167,7 @@ final class DXRAMGsonContext {
 
         @Override
         public JsonElement serialize(final AbstractDXRAMService p_abstractDXRAMService, final Type p_type,
-            final JsonSerializationContext p_jsonSerializationContext) {
+                final JsonSerializationContext p_jsonSerializationContext) {
 
             Class<?> clazz;
             try {

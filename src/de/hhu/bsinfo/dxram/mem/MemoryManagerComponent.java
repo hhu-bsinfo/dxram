@@ -100,7 +100,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public MemoryManagerComponent() {
-        super(DXRAMComponentOrder.Init.MEMORY, DXRAMComponentOrder.Shutdown.MEMORY);
+        super(DXRAMComponentOrder.Init.MEMORY, DXRAMComponentOrder.Shutdown.MEMORY, false, true);
     }
 
     /**
@@ -1289,6 +1289,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         // #endif /* ASSERT_NODE_ROLE */
 
         m_cidTable.putChunkIDForReuse(p_chunkID);
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

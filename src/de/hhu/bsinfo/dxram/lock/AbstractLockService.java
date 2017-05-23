@@ -38,9 +38,14 @@ public abstract class AbstractLockService extends AbstractDXRAMService {
 
     /**
      * Constructor
+     *
+     * @param p_enabledForSuperpeer
+     *         Enable this service if the node is a superpeer (default value)
+     * @param p_enabledForPeer
+     *         Enable this service if the node is a peer (default value)
      */
-    AbstractLockService() {
-        super("lock");
+    AbstractLockService(final boolean p_enabledForSuperpeer, final boolean p_enabledForPeer) {
+        super("lock", p_enabledForSuperpeer, p_enabledForPeer);
     }
 
     /**
@@ -54,7 +59,7 @@ public abstract class AbstractLockService extends AbstractDXRAMService {
      * Get a list of of locked chunk from a specific node.
      *
      * @param p_nodeId
-     *     Id of the node to get the list from.
+     *         Id of the node to get the list from.
      * @return List of currently locked chunks, null on error.
      */
     public abstract ArrayList<LockedChunkEntry> getLockedList(short p_nodeId);
@@ -63,11 +68,11 @@ public abstract class AbstractLockService extends AbstractDXRAMService {
      * Lock a DataStructure.
      *
      * @param p_writeLock
-     *     True to acquire a write lock, false for read lock (implementation dependent).
+     *         True to acquire a write lock, false for read lock (implementation dependent).
      * @param p_timeout
-     *     -1 for unlimited (not recommended) or time in ms.
+     *         -1 for unlimited (not recommended) or time in ms.
      * @param p_dataStructure
-     *     DataStructure to lock.
+     *         DataStructure to lock.
      * @return ErrorCode of the operation (refer to enum).
      */
     public ErrorCode lock(final boolean p_writeLock, final int p_timeout, final DataStructure p_dataStructure) {
@@ -78,9 +83,9 @@ public abstract class AbstractLockService extends AbstractDXRAMService {
      * Unlock a previously locked DataStructure.
      *
      * @param p_writeLock
-     *     True to unlock a write lock, false for a read lock.
+     *         True to unlock a write lock, false for a read lock.
      * @param p_dataStructure
-     *     DataStructure to unlock.
+     *         DataStructure to unlock.
      * @return ErrorCode of the operation (refer to enum).
      */
     public ErrorCode unlock(final boolean p_writeLock, final DataStructure p_dataStructure) {
@@ -91,11 +96,11 @@ public abstract class AbstractLockService extends AbstractDXRAMService {
      * Lock a DataStructure.
      *
      * @param p_writeLock
-     *     True to acquire a write lock, false for read lock (implementation dependent).
+     *         True to acquire a write lock, false for read lock (implementation dependent).
      * @param p_timeout
-     *     -1 for unlimited (not recommended) or time in ms.
+     *         -1 for unlimited (not recommended) or time in ms.
      * @param p_chunkID
-     *     Chunk ID of the chunk to lock.
+     *         Chunk ID of the chunk to lock.
      * @return ErrorCode of the operation (refer to enum).
      */
     public abstract ErrorCode lock(boolean p_writeLock, int p_timeout, long p_chunkID);
@@ -104,9 +109,9 @@ public abstract class AbstractLockService extends AbstractDXRAMService {
      * Unlock a previously locked DataStructure.
      *
      * @param p_writeLock
-     *     True to unlock a write lock, false for a read lock.
+     *         True to unlock a write lock, false for a read lock.
      * @param p_chunkID
-     *     Chunk ID to unlock.
+     *         Chunk ID to unlock.
      * @return ErrorCode of the operation (refer to enum).
      */
     public abstract ErrorCode unlock(boolean p_writeLock, long p_chunkID);

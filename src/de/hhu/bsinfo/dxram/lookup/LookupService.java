@@ -54,7 +54,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
      * Constructor
      */
     public LookupService() {
-        super("lookup");
+        super("lookup", true, true);
     }
 
     /**
@@ -170,6 +170,16 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
         ret = response.getMetadataSummary();
 
         return ret;
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

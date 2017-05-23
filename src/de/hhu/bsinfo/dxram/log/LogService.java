@@ -50,7 +50,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      * Constructor
      */
     public LogService() {
-        super("log");
+        super("log", false, true);
     }
 
     /**
@@ -126,6 +126,16 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
             LOGGER.error("Could not answer GetUtilizationRequest", e);
             // #endif /* LOGGER >= ERROR */
         }
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

@@ -47,7 +47,7 @@ public class ChunkMemoryService extends AbstractDXRAMService {
      * Constructor
      */
     public ChunkMemoryService() {
-        super("chunkmem");
+        super("chunkmem", false, true);
     }
 
     /**
@@ -55,9 +55,9 @@ public class ChunkMemoryService extends AbstractDXRAMService {
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to read.
+     *         Chunk id of the chunk to read.
      * @param p_offset
-     *     Offset within the chunk to read.
+     *         Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public byte readByte(final long p_chunkID, final int p_offset) {
@@ -77,9 +77,9 @@ public class ChunkMemoryService extends AbstractDXRAMService {
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to read.
+     *         Chunk id of the chunk to read.
      * @param p_offset
-     *     Offset within the chunk to read.
+     *         Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public short readShort(final long p_chunkID, final int p_offset) {
@@ -99,9 +99,9 @@ public class ChunkMemoryService extends AbstractDXRAMService {
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to read.
+     *         Chunk id of the chunk to read.
      * @param p_offset
-     *     Offset within the chunk to read.
+     *         Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public int readInt(final long p_chunkID, final int p_offset) {
@@ -121,9 +121,9 @@ public class ChunkMemoryService extends AbstractDXRAMService {
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to read.
+     *         Chunk id of the chunk to read.
      * @param p_offset
-     *     Offset within the chunk to read.
+     *         Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public long readLong(final long p_chunkID, final int p_offset) {
@@ -143,11 +143,11 @@ public class ChunkMemoryService extends AbstractDXRAMService {
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to write.
+     *         Chunk id of the chunk to write.
      * @param p_offset
-     *     Offset within the chunk to write.
+     *         Offset within the chunk to write.
      * @param p_value
-     *     Value to write.
+     *         Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeByte(final long p_chunkID, final int p_offset, final byte p_value) {
@@ -167,11 +167,11 @@ public class ChunkMemoryService extends AbstractDXRAMService {
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to write.
+     *         Chunk id of the chunk to write.
      * @param p_offset
-     *     Offset within the chunk to write.
+     *         Offset within the chunk to write.
      * @param p_value
-     *     Value to write.
+     *         Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeShort(final long p_chunkID, final int p_offset, final short p_value) {
@@ -191,11 +191,11 @@ public class ChunkMemoryService extends AbstractDXRAMService {
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to write.
+     *         Chunk id of the chunk to write.
      * @param p_offset
-     *     Offset within the chunk to write.
+     *         Offset within the chunk to write.
      * @param p_value
-     *     Value to write.
+     *         Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeInt(final long p_chunkID, final int p_offset, final int p_value) {
@@ -215,11 +215,11 @@ public class ChunkMemoryService extends AbstractDXRAMService {
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to write.
+     *         Chunk id of the chunk to write.
      * @param p_offset
-     *     Offset within the chunk to write.
+     *         Offset within the chunk to write.
      * @param p_value
-     *     Value to write.
+     *         Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeLong(final long p_chunkID, final int p_offset, final long p_value) {
@@ -232,6 +232,16 @@ public class ChunkMemoryService extends AbstractDXRAMService {
         boolean ret = m_memoryManager.writeLong(p_chunkID, p_offset, p_value);
         m_memoryManager.unlockAccess();
         return ret;
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

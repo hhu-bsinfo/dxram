@@ -46,7 +46,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public ApplicationComponent() {
-        super(DXRAMComponentOrder.Init.APPLICATION, DXRAMComponentOrder.Shutdown.APPLICATION);
+        super(DXRAMComponentOrder.Init.APPLICATION, DXRAMComponentOrder.Shutdown.APPLICATION, false, true);
     }
 
     /**
@@ -65,6 +65,16 @@ public class ApplicationComponent extends AbstractDXRAMComponent {
      */
     List<Class<? extends AbstractApplication>> getApplicationClasses() {
         return m_applicationClasses;
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

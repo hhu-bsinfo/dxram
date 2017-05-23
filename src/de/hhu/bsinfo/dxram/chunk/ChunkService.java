@@ -93,7 +93,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      * Constructor
      */
     public ChunkService() {
-        super("chunk");
+        super("chunk", false, true);
     }
 
     /**
@@ -1090,6 +1090,16 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting incomingMessage");
         // #endif /* LOGGER == TRACE */
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

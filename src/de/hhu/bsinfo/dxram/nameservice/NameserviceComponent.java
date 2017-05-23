@@ -67,16 +67,16 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public NameserviceComponent() {
-        super(DXRAMComponentOrder.Init.NAMESERVICE, DXRAMComponentOrder.Shutdown.NAMESERVICE);
+        super(DXRAMComponentOrder.Init.NAMESERVICE, DXRAMComponentOrder.Shutdown.NAMESERVICE, false, true);
     }
 
     /**
      * Register a DataStructure for a specific name.
      *
      * @param p_dataStructure
-     *     DataStructure to register.
+     *         DataStructure to register.
      * @param p_name
-     *     Name to associate with the ID of the DataStructure.
+     *         Name to associate with the ID of the DataStructure.
      */
     public void register(final DataStructure p_dataStructure, final String p_name) {
         register(p_dataStructure.getID(), p_name);
@@ -86,9 +86,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
      * Register a chunk id for a specific name.
      *
      * @param p_chunkId
-     *     Chunk id to register.
+     *         Chunk id to register.
      * @param p_name
-     *     Name to associate with the ID of the DataStructure.
+     *         Name to associate with the ID of the DataStructure.
      */
     public void register(final long p_chunkId, final String p_name) {
         try {
@@ -110,10 +110,10 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
      * Get the chunk ID of the specific name from the service.
      *
      * @param p_name
-     *     Registered name to get the chunk ID for.
+     *         Registered name to get the chunk ID for.
      * @param p_timeoutMs
-     *     Timeout for trying to get the entry (if it does not exist, yet).
-     *     set this to -1 for infinite loop if you know for sure, that the entry has to exist
+     *         Timeout for trying to get the entry (if it does not exist, yet).
+     *         set this to -1 for infinite loop if you know for sure, that the entry has to exist
      * @return If the name was registered with a chunk ID before, returns the chunk ID, -1 otherwise.
      */
     public long getChunkID(final String p_name, final int p_timeoutMs) {
@@ -145,6 +145,16 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
         shutdownName();
         initName();
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override
@@ -231,9 +241,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
      * Inserts the nameservice entry to chunk with LocalID 0 for backup
      *
      * @param p_key
-     *     the key
+     *         the key
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return whether this operation was successful
      */
     private boolean insertMapping(final int p_key, final long p_chunkID) {

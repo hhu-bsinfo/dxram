@@ -54,7 +54,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
      * Constructor
      */
     public BootService() {
-        super("boot");
+        super("boot", true, true);
     }
 
     /**
@@ -316,6 +316,16 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
     @Override
     protected boolean isEngineAccessor() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
         return true;
     }
 

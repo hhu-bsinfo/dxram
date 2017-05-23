@@ -84,6 +84,13 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     private LookupComponent m_lookup;
     private EventComponent m_event;
 
+    /**
+     * Constructor
+     */
+    public PeerLockService() {
+        super(false, true);
+    }
+
     @Override
     public ArrayList<LockedChunkEntry> getLockedList() {
         // #ifdef ASSERT_NODE_ROLE
@@ -319,6 +326,16 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting incomingMessage");
         // #endif /* LOGGER == TRACE */
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

@@ -28,7 +28,6 @@ import org.apache.logging.log4j.Logger;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public abstract class AbstractDXRAMComponent {
-
     private final Logger LOGGER;
 
     // config values
@@ -38,10 +37,15 @@ public abstract class AbstractDXRAMComponent {
     @Expose
     private final String m_class = getClass().getName();
     /**
-     * True to enable the component, false to disable
+     * True to enable the component if the node is a superpeer, false to disable
      */
     @Expose
-    private final boolean m_enabled = true;
+    private final boolean m_enabledForSuperpeer;
+    /**
+     * True to enable the component if the node is a peer, false to disable
+     */
+    @Expose
+    private final boolean m_enabledForPeer;
 
     private final short m_priorityInit;
     private final short m_priorityShutdown;
@@ -53,32 +57,43 @@ public abstract class AbstractDXRAMComponent {
      * Constructor
      *
      * @param p_priorityInit
-     *     Default init priority for this component
+     *         Default init priority for this component
      * @param p_priorityShutdown
-     *     Default shutdown priority for this component
+     *         Default shutdown priority for this component
+     * @param p_enabledForSuperpeer
+     *         Enable this component if the node is a superpeer (default value)
+     * @param p_enabledForPeer
+     *         Enable this component if the node is a peer (default value)
      */
-    protected AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown) {
+    protected AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown, final boolean p_enabledForSuperpeer,
+            final boolean p_enabledForPeer) {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_priorityInit = p_priorityInit;
         m_priorityShutdown = p_priorityShutdown;
+        m_enabledForSuperpeer = p_enabledForSuperpeer;
+        m_enabledForPeer = p_enabledForPeer;
     }
+
+    protected abstract boolean supportedBySuperpeer();
+
+    protected abstract boolean supportedByPeer();
 
     /**
      * Called before the component is initialized. Get all the components your own component depends on.
      *
      * @param p_componentAccessor
-     *     Component accessor that provides access to other components
+     *         Component accessor that provides access to other components
      */
-    protected abstract void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor);
+    protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
 
     /**
      * Called when the component is initialized. Setup data structures, get dependent components, read settings etc.
      *
      * @param p_engineEngineSettings
-     *     EngineSettings instance provided by the engine.
+     *         EngineSettings instance provided by the engine.
      * @return True if initialing was successful, false otherwise.
      */
-    protected abstract boolean initComponent(DXRAMContext.EngineSettings p_engineEngineSettings);
+    protected abstract boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings);
 
     /**
      * Called when the component gets shut down. Cleanup your component in here.
@@ -91,7 +106,7 @@ public abstract class AbstractDXRAMComponent {
      * Initialize this component.
      *
      * @param p_engine
-     *     Engine this component is part of (parent).
+     *         Engine this component is part of (parent).
      * @return True if initializing was successful, false otherwise.
      */
     public boolean init(final DXRAMEngine p_engine) {

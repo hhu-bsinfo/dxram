@@ -53,7 +53,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
      * Constructor
      */
     public JobWorkStealingComponent() {
-        super(DXRAMComponentOrder.Init.JOB_WORK_STEALING, DXRAMComponentOrder.Shutdown.JOB_WORK_STEALING);
+        super(DXRAMComponentOrder.Init.JOB_WORK_STEALING, DXRAMComponentOrder.Shutdown.JOB_WORK_STEALING, false, true);
     }
 
     @Override
@@ -94,6 +94,16 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
             Thread.yield();
         }
 
+        return true;
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
         return true;
     }
 

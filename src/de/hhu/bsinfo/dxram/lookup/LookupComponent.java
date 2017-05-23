@@ -45,9 +45,9 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.Cache;
+import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
 
@@ -102,7 +102,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Creates the lookup component
      */
     public LookupComponent() {
-        super(DXRAMComponentOrder.Init.LOOKUP, DXRAMComponentOrder.Shutdown.LOOKUP);
+        super(DXRAMComponentOrder.Init.LOOKUP, DXRAMComponentOrder.Shutdown.LOOKUP, true, true);
     }
 
     /**
@@ -156,7 +156,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Get the corresponding LookupRange for the given ChunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return the current location and the range borders
      */
     public LookupRange getLookupRange(final long p_chunkID) {
@@ -182,7 +182,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
                 // Add response to cache
                 if (ret != null) {
                     m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[0],
-                        ((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1], ret.getPrimaryPeer());
+                            ((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1], ret.getPrimaryPeer());
                 }
             }
         } else {
@@ -199,7 +199,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Remove the ChunkIDs from range after deletion of that chunks
      *
      * @param p_chunkIDs
-     *     the ChunkIDs
+     *         the ChunkIDs
      */
     public void removeChunkIDs(final ArrayListLong p_chunkIDs) {
         // #ifdef ASSERT_NODE_ROLE
@@ -227,9 +227,9 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Insert a new name service entry
      *
      * @param p_id
-     *     the AID
+     *         the AID
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      */
     public void insertNameserviceEntry(final int p_id, final long p_chunkID) {
         // #ifdef ASSERT_NODE_ROLE
@@ -258,10 +258,10 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Get ChunkID for give AID
      *
      * @param p_id
-     *     the AID
+     *         the AID
      * @param p_timeoutMs
-     *     Timeout for trying to get the entry (if it does not exist, yet).
-     *     set this to -1 for infinite loop if you know for sure, that the entry has to exist
+     *         Timeout for trying to get the entry (if it does not exist, yet).
+     *         set this to -1 for infinite loop if you know for sure, that the entry has to exist
      * @return the corresponding ChunkID
      */
     public long getChunkIDForNameserviceEntry(final int p_id, final int p_timeoutMs) {
@@ -310,9 +310,9 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Store migration of given ChunkID to a new location
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_nodeID
-     *     the new owner
+     *         the new owner
      */
     public void migrate(final long p_chunkID, final short p_nodeID) {
         // #ifdef ASSERT_NODE_ROLE
@@ -340,11 +340,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Store migration of a range of ChunkIDs to a new location
      *
      * @param p_startCID
-     *     the first ChunkID
+     *         the first ChunkID
      * @param p_endCID
-     *     the last ChunkID
+     *         the last ChunkID
      * @param p_nodeID
-     *     the new owner
+     *         the new owner
      */
     public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
         // #ifdef ASSERT_NODE_ROLE
@@ -374,7 +374,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Initialize a new backup range
      *
      * @param p_backupRange
-     *     the backup range to initialize
+     *         the backup range to initialize
      */
     public void initRange(final BackupRange p_backupRange) {
 
@@ -399,7 +399,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Get all backup ranges for given node
      *
      * @param p_nodeID
-     *     the NodeID
+     *         the NodeID
      * @return all backup ranges for given node
      */
     public BackupRange[] getAllBackupRanges(final short p_nodeID) {
@@ -427,9 +427,9 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Removes failed node from superpeer overlay
      *
      * @param p_failedNode
-     *     NodeID of failed node
+     *         NodeID of failed node
      * @param p_role
-     *     NodeRole of failed node
+     *         NodeRole of failed node
      * @return whether this superpeer is responsible for the failed node
      */
     public boolean superpeersNodeFailureHandling(final short p_failedNode, final NodeRole p_role) {
@@ -440,7 +440,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Invalidates the cache entry for given ChunkIDs
      *
      * @param p_chunkIDs
-     *     the IDs
+     *         the IDs
      */
     public void invalidate(final long... p_chunkIDs) {
         for (long chunkID : p_chunkIDs) {
@@ -460,7 +460,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Allocate a barrier for synchronizing multiple peers.
      *
      * @param p_size
-     *     Size of the barrier, i.e. number of peers that have to sign on until the barrier gets released.
+     *         Size of the barrier, i.e. number of peers that have to sign on until the barrier gets released.
      * @return Barrier identifier on success, -1 on failure.
      */
     public int barrierAllocate(final int p_size) {
@@ -477,7 +477,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Free an allocated barrier.
      *
      * @param p_barrierId
-     *     Barrier to free.
+     *         Barrier to free.
      * @return True if successful, false otherwise.
      */
     public boolean barrierFree(final int p_barrierId) {
@@ -494,9 +494,9 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Alter the size of an existing barrier (i.e. you want to keep the barrier id but with a different size).
      *
      * @param p_barrierId
-     *     Id of an allocated barrier to change the size of.
+     *         Id of an allocated barrier to change the size of.
      * @param p_newSize
-     *     New size for the barrier.
+     *         New size for the barrier.
      * @return True if changing size was successful, false otherwise.
      */
     public boolean barrierChangeSize(final int p_barrierId, final int p_newSize) {
@@ -513,9 +513,9 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Sign on to a barrier and wait for it getting released (number of peers, barrier size, have signed on).
      *
      * @param p_barrierId
-     *     Id of the barrier to sign on to.
+     *         Id of the barrier to sign on to.
      * @param p_customData
-     *     Custom data to pass along with the sign on
+     *         Custom data to pass along with the sign on
      * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
      */
     public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData) {
@@ -532,7 +532,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Get the status of a specific barrier.
      *
      * @param p_barrierId
-     *     Id of the barrier.
+     *         Id of the barrier.
      * @return BarrierStatus or null if barrier does not exist
      */
     public BarrierStatus barrierGetStatus(final int p_barrierId) {
@@ -549,9 +549,9 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Create a block of memory in the superpeer storage.
      *
      * @param p_storageId
-     *     Storage id to use to identify the block.
+     *         Storage id to use to identify the block.
      * @param p_size
-     *     Size of the block to allocate
+     *         Size of the block to allocate
      * @return True if successful, false on failure (no space, element count exceeded or id used).
      */
     public boolean superpeerStorageCreate(final int p_storageId, final int p_size) {
@@ -568,7 +568,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Create a block of memory in the superpeer storage.
      *
      * @param p_dataStructure
-     *     Data structure with the storage id assigned to allocate memory for.
+     *         Data structure with the storage id assigned to allocate memory for.
      * @return True if successful, false on failure (no space, element count exceeded or id used).
      */
     public boolean superpeerStorageCreate(final DataStructure p_dataStructure) {
@@ -592,7 +592,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Put data into an allocated block of memory in the superpeer storage.
      *
      * @param p_dataStructure
-     *     Data structure to put with the storage id assigned.
+     *         Data structure to put with the storage id assigned.
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStoragePut(final DataStructure p_dataStructure) {
@@ -616,7 +616,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Put data into an allocated block of memory in the superpeer storage (anonymous chunk)
      *
      * @param p_chunk
-     *     Chunk to put with the storage id assigned.
+     *         Chunk to put with the storage id assigned.
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStoragePutAnon(final ChunkAnon p_chunk) {
@@ -640,7 +640,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Get data from the superpeer storage.
      *
      * @param p_dataStructure
-     *     Data structure with the storage id assigned to read the data into.
+     *         Data structure with the storage id assigned to read the data into.
      * @return True on success, false on failure.
      */
     public boolean superpeerStorageGet(final DataStructure p_dataStructure) {
@@ -664,7 +664,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Get data from the superpeer storage (anonymous chunk)
      *
      * @param p_chunk
-     *     Reference to anonymous chunk with the storage id assigned to read the data into.
+     *         Reference to anonymous chunk with the storage id assigned to read the data into.
      * @return True on success, false on failure.
      */
     public boolean superpeerStorageGetAnon(final ChunkAnon p_chunk) {
@@ -688,7 +688,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Remove an allocated block from the superpeer storage.
      *
      * @param p_id
-     *     Storage id identifying the block to remove.
+     *         Storage id identifying the block to remove.
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStorageRemove(final int p_id) {
@@ -706,7 +706,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Remove an allocated block from the superpeer storage.
      *
      * @param p_dataStructure
-     *     Data structure with the storage id assigned to remove.
+     *         Data structure with the storage id assigned to remove.
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStorageRemove(final DataStructure p_dataStructure) {
@@ -746,11 +746,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Replaces the backup peer for given range on responsible superpeer
      *
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @param p_failedPeer
-     *     the failed peer
+     *         the failed peer
      * @param p_newPeer
-     *     the replacement
+     *         the replacement
      */
     public void replaceBackupPeer(final short p_rangeID, final short p_failedPeer, final short p_newPeer) {
         // #ifdef ASSERT_NODE_ROLE
@@ -793,6 +793,16 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
+    }
+
+    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
@@ -815,7 +825,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             m_superpeer = new OverlaySuperpeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(), m_pingInterval,
-                m_maxBarriersPerSuperpeer, m_storageMaxNumEntries, (int) m_storageMaxSize.getBytes(), m_backup.isActive(), m_boot, m_network);
+                    m_maxBarriersPerSuperpeer, m_storageMaxNumEntries, (int) m_storageMaxSize.getBytes(), m_backup.isActive(), m_boot, m_network);
         } else {
             m_peer = new OverlayPeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_network, m_event);
             m_event.registerListener(this, NameserviceCacheEntryUpdateEvent.class);
@@ -857,7 +867,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Get the corresponding primary peer (the peer storing the Chunk in RAM) for the given ChunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return the primary peer
      */
     short getPrimaryPeer(final long p_chunkID) {
@@ -884,7 +894,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
                 // Add response to cache
                 if (lookupRange != null) {
                     m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[0],
-                        ((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[1], lookupRange.getPrimaryPeer());
+                            ((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[1], lookupRange.getPrimaryPeer());
 
                     ret = lookupRange.getPrimaryPeer();
                 }
@@ -909,7 +919,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Returns the responsible superpeer for given peer
      *
      * @param p_nodeID
-     *     the peer
+     *         the peer
      * @return the responsible superpeer
      */
     short getResponsibleSuperpeer(final short p_nodeID) {
@@ -926,7 +936,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Get Lookup Tree from Superpeer
      *
      * @param p_nodeID
-     *     the NodeID
+     *         the NodeID
      * @return LookupTree from SuperPeerOverlay
      * @note This method must be called by a superpeer
      */
@@ -953,9 +963,9 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Invalidates the cache entry for given ChunkID range
      *
      * @param p_startCID
-     *     the first ChunkID
+     *         the first ChunkID
      * @param p_endCID
-     *     the last ChunkID
+     *         the last ChunkID
      */
     private void invalidate(final long p_startCID, final long p_endCID) {
         long iter = p_startCID;

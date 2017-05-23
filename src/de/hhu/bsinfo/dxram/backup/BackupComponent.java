@@ -114,7 +114,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Creates the backup component
      */
     public BackupComponent() {
-        super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP);
+        super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP, true, true);
     }
 
     /**
@@ -157,9 +157,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Registers a chunk in a backup range. Creates a new backup range if necessary.
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_size
-     *     the size
+     *         the size
      * @lock MemoryManager must be write locked
      */
     public BackupRange registerChunk(final long p_chunkID, final int p_size) {
@@ -174,7 +174,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Registers a chunk in a backup range. Creates a new backup range if necessary.
      *
      * @param p_dataStructure
-     *     the DataStructure
+     *         the DataStructure
      * @return the corresponding backup range
      * @lock MemoryManager must be write locked
      */
@@ -190,7 +190,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Registers chunks in a backup range. Creates new backup ranges if necessary.
      *
      * @param p_dataStructures
-     *     the data structures
+     *         the data structures
      * @lock MemoryManager must be write locked
      */
     public void registerChunks(final DataStructure... p_dataStructures) {
@@ -207,9 +207,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Registers chunks in a backup range. Creates new backup ranges if necessary.
      *
      * @param p_chunkIDs
-     *     the ChunkIDs
+     *         the ChunkIDs
      * @param p_size
-     *     every chunks' size
+     *         every chunks' size
      * @lock MemoryManager must be write locked
      */
     public void registerChunks(final long[] p_chunkIDs, final int p_size) {
@@ -226,9 +226,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Registers chunks in a backup range. Creates new backup ranges if necessary.
      *
      * @param p_chunkIDs
-     *     the ChunkIDs
+     *         the ChunkIDs
      * @param p_sizes
-     *     the chunk sizes
+     *         the chunk sizes
      * @lock MemoryManager must be write locked
      */
     public void registerChunks(final long[] p_chunkIDs, final int[] p_sizes) {
@@ -245,11 +245,11 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Register recovered chunks that were migrated to failed peer
      *
      * @param p_recoveryMetadata
-     *     the ChunkIDs of all recovered chunks, number of recovered chunks and bytes
+     *         the ChunkIDs of all recovered chunks, number of recovered chunks and bytes
      * @param p_backupRange
-     *     the recovered backup range
+     *         the recovered backup range
      * @param p_failedPeer
-     *     the failed peer
+     *         the failed peer
      * @return the replacement backup peer
      */
     public short registerRecoveredChunks(final RecoveryMetadata p_recoveryMetadata, final BackupRange p_backupRange, final short p_failedPeer) {
@@ -270,7 +270,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
             if (backupPeer != NodeID.INVALID_ID) {
                 // #if LOGGER >= INFO
                 LOGGER.info("%d. backup peer determined for recovered range %s of %s: %s", counter++, p_backupRange.getRangeID(),
-                    NodeID.toHexString(p_failedPeer), NodeID.toHexString(backupPeer));
+                        NodeID.toHexString(p_failedPeer), NodeID.toHexString(backupPeer));
                 // #endif /* LOGGER >= INFO */
             }
         }
@@ -289,9 +289,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Deregisters a chunk from a backup range. Reduces the size of the backup range, only.
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_size
-     *     the size
+     *         the size
      * @lock MemoryManager must be write locked
      */
     public void deregisterChunk(final long p_chunkID, final int p_size) {
@@ -314,7 +314,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Returns the corresponding backup range
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return the backup range
      */
 
@@ -334,7 +334,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Returns the corresponding backup peers
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return the backup peers
      */
 
@@ -354,7 +354,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Returns the corresponding backup peers
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return the backup peers
      */
     public short[] getArrayOfBackupPeersForLocalChunks(final long p_chunkID) {
@@ -450,6 +450,16 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
+    }
+
+    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_chunkBackup = p_componentAccessor.getComponent(ChunkBackupComponent.class);
@@ -513,7 +523,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Checks if a new backup range must be created and initialized by adding given chunk
      *
      * @param p_dataStructure
-     *     the DataStructure
+     *         the DataStructure
      * @return the BackupRange the Chunk was put in
      * @lock MemoryManager must be write locked
      */
@@ -525,9 +535,9 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Checks if a new backup range must be created and initialized by adding given chunk
      *
      * @param p_chunkID
-     *     the current ChunkID
+     *         the current ChunkID
      * @param p_size
-     *     the size of the new created chunk
+     *         the size of the new created chunk
      * @return the BackupRange the Chunk was put in
      * @lock MemoryManager must be write locked
      */
@@ -631,7 +641,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Determines a new backup peer to replace a failed one
      *
      * @param p_currentBackupPeers
-     *     all current backup peers
+     *         all current backup peers
      * @return the replacement
      * @lock m_lock must be write-locked
      */

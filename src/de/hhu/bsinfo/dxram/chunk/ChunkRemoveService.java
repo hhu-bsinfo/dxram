@@ -33,8 +33,8 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.ArrayListLong;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * This service provides access to the backend storage system (removals only)
@@ -68,7 +68,7 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
      * Constructor
      */
     public ChunkRemoveService() {
-        super("chunkrem");
+        super("chunkrem", false, true);
     }
 
     /**
@@ -275,6 +275,16 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting incomingMessage");
         // #endif /* LOGGER == TRACE */
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

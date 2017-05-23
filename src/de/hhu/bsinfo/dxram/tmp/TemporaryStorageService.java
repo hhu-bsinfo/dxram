@@ -43,7 +43,7 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      * Constructor
      */
     public TemporaryStorageService() {
-        super("tmpstore");
+        super("tmpstore", false, true);
     }
 
     /**
@@ -155,6 +155,16 @@ public class TemporaryStorageService extends AbstractDXRAMService {
      */
     public boolean remove(final DataStructure p_dataStructure) {
         return m_lookup.superpeerStorageRemove(p_dataStructure);
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

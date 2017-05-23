@@ -26,7 +26,17 @@ public class NullComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public NullComponent() {
-        super(DXRAMComponentOrder.Init.NULL, DXRAMComponentOrder.Shutdown.NULL);
+        super(DXRAMComponentOrder.Init.NULL, DXRAMComponentOrder.Shutdown.NULL, true, true);
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return true;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

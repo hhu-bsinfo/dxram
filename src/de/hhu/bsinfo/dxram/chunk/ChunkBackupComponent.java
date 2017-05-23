@@ -53,18 +53,18 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public ChunkBackupComponent() {
-        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK);
+        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, false, true);
     }
 
     /**
      * Replicates all local Chunks to a specific backup peer
      *
      * @param p_backupPeer
-     *     the new backup peer
+     *         the new backup peer
      * @param p_chunkIDRanges
-     *     the ChunkIDs of the Chunks to replicate arranged in ranges
+     *         the ChunkIDs of the Chunks to replicate arranged in ranges
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @return the number of replicated Chunks
      */
     public int replicateBackupRange(final short p_backupPeer, final long[] p_chunkIDRanges, final short p_rangeID) {
@@ -87,13 +87,13 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      * Replicates all local Chunks to a specific backup peer
      *
      * @param p_backupPeer
-     *     the new backup peer
+     *         the new backup peer
      * @param p_chunkIDRanges
-     *     the ChunkIDs of the Chunks to replicate arranged in ranges
+     *         the ChunkIDs of the Chunks to replicate arranged in ranges
      * @param p_numberOfChunks
-     *     the number of Chunks
+     *         the number of Chunks
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @return the number of replicated Chunks
      */
     public int replicateBackupRange(final short p_backupPeer, final long[] p_chunkIDRanges, final int p_numberOfChunks, final short p_rangeID) {
@@ -156,15 +156,15 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      * Put recovered chunks into local memory.
      *
      * @param p_chunkIDs
-     *     ChunkIDs of recovered Chunks.
+     *         ChunkIDs of recovered Chunks.
      * @param p_data
-     *     the byte array all recovered Chunks are stored in (contains also not to be recovered, invalid Chunks).
+     *         the byte array all recovered Chunks are stored in (contains also not to be recovered, invalid Chunks).
      * @param p_offsets
-     *     the offsets within the byte array.
+     *         the offsets within the byte array.
      * @param p_lengths
-     *     the Chunks lengths.
+     *         the Chunks lengths.
      * @param p_usedEntries
-     *     the number of actually used entries within the arrays (might be smaller than the array lengths).
+     *         the number of actually used entries within the arrays (might be smaller than the array lengths).
      * @lock manage lock from memory manager component must be locked
      */
     public boolean putRecoveredChunks(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
@@ -185,7 +185,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      * Put a recovered chunks into local memory.
      *
      * @param p_chunks
-     *     Chunks to put.
+     *         Chunks to put.
      * @return the number of created and put Chunks
      */
     public int putRecoveredChunks(final DataStructure[] p_chunks) {
@@ -213,6 +213,16 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
 
     public void stopBlockRecovery() {
         m_memoryManager.unlockManage();
+    }
+
+    @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
     }
 
     @Override

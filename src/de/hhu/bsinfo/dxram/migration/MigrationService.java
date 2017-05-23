@@ -20,6 +20,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
@@ -39,12 +40,11 @@ import de.hhu.bsinfo.dxram.migration.messages.MigrationRemoteMessage;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -70,16 +70,16 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
      * Creates an instance of MigrationService
      */
     public MigrationService() {
-        super("migrate");
+        super("migrate", false, true);
     }
 
     /**
      * Migrates the corresponding Chunk for the giving ID to another Node
      *
      * @param p_chunkID
-     *     the ID
+     *         the ID
      * @param p_target
-     *     the Node where to migrate the Chunk
+     *         the Node where to migrate the Chunk
      * @return true=success, false=failed
      */
     public boolean migrate(final long p_chunkID, final short p_target) {
@@ -166,9 +166,9 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
      * Triggers a migrate call to the node a specified chunk
      *
      * @param p_chunkID
-     *     the ID
+     *         the ID
      * @param p_target
-     *     the Node where to migrate the Chunk
+     *         the Node where to migrate the Chunk
      */
     public void targetMigrate(final long p_chunkID, final short p_target) {
 
@@ -184,11 +184,11 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
      * Migrates the corresponding Chunks for the giving ID range to another Node
      *
      * @param p_startChunkID
-     *     the first ID
+     *         the first ID
      * @param p_endChunkID
-     *     the last ID
+     *         the last ID
      * @param p_target
-     *     the Node where to migrate the Chunks
+     *         the Node where to migrate the Chunks
      * @return true=success, false=failed
      */
     public boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
@@ -309,7 +309,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
      * Migrates all chunks to another node.
      *
      * @param p_target
-     *     the peer that should take over all chunks
+     *         the peer that should take over all chunks
      */
     public void migrateAll(final short p_target) {
         long localID;
@@ -370,6 +370,16 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
     }
 
     @Override
+    protected boolean supportedBySuperpeer() {
+        return false;
+    }
+
+    @Override
+    protected boolean supportedByPeer() {
+        return true;
+    }
+
+    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
@@ -393,7 +403,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
      * Handles an incoming MigrationRequest
      *
      * @param p_request
-     *     the MigrationRequest
+     *         the MigrationRequest
      */
     private void incomingMigrationRequest(final MigrationRequest p_request) {
 
@@ -415,7 +425,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
      * terminal peer.
      *
      * @param p_message
-     *     the message to trigger the Migration from another peer
+     *         the message to trigger the Migration from another peer
      */
     private void incomingMigrationMessage(final MigrationRemoteMessage p_message) {
         // Outsource migration to another thread to avoid blocking a message handler
@@ -439,8 +449,8 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
     private void registerNetworkMessages() {
         m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST, MigrationRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE, MigrationResponse.class);
-        m_network
-            .registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE, MigrationRemoteMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE,
+                MigrationRemoteMessage.class);
 
     }
 

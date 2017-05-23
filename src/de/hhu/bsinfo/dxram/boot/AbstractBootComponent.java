@@ -33,12 +33,17 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
      * Constructor
      *
      * @param p_priorityInit
-     *     Default init priority for this component
+     *         Default init priority for this component
      * @param p_priorityShutdown
-     *     Default shutdown priority for this component
+     *         Default shutdown priority for this component
+     * @param p_enabledForSuperpeer
+     *         Enable this component if the node is a superpeer (default value)
+     * @param p_enabledForPeer
+     *         Enable this component if the node is a peer (default value)
      */
-    protected AbstractBootComponent(final short p_priorityInit, final short p_priorityShutdown) {
-        super(p_priorityInit, p_priorityShutdown);
+    protected AbstractBootComponent(final short p_priorityInit, final short p_priorityShutdown, final boolean p_enabledForSuperpeer,
+            final boolean p_enabledForPeer) {
+        super(p_priorityInit, p_priorityShutdown, p_enabledForSuperpeer, p_enabledForPeer);
     }
 
     /**
@@ -101,7 +106,7 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
      * Check if a specific node is online.
      *
      * @param p_nodeID
-     *     Node to check.
+     *         Node to check.
      * @return True if online, false offline.
      */
     public abstract boolean isNodeOnline(short p_nodeID);
@@ -110,7 +115,7 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
      * Get the role of another nodeID.
      *
      * @param p_nodeID
-     *     Node id of the node.
+     *         Node id of the node.
      * @return Role of other nodeID or null if node does not exist.
      */
     public abstract NodeRole getNodeRole(short p_nodeID);
@@ -119,7 +124,7 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
      * Get the IP and port of another node.
      *
      * @param p_nodeID
-     *     Node ID of the node.
+     *         Node ID of the node.
      * @return IP and port of the specified node or an invalid address if not available.
      */
     public abstract InetSocketAddress getNodeAddress(short p_nodeID);
@@ -128,7 +133,7 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
      * Check if a node is available/exists.
      *
      * @param p_nodeID
-     *     Node ID to check.
+     *         Node ID to check.
      * @return True if available, false otherwise.
      */
     public abstract boolean nodeAvailable(short p_nodeID);
@@ -137,9 +142,9 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
      * Report that we detected a node failure.
      *
      * @param p_nodeID
-     *     the failed node
+     *         the failed node
      * @param p_role
-     *     failed node's role
+     *         failed node's role
      */
     public abstract void singleNodeCleanup(short p_nodeID, NodeRole p_role);
 }
