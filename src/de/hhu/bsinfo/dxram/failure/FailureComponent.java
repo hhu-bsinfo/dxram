@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -34,7 +35,6 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
@@ -215,7 +215,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
      * Dispatcher for a node failure
      *
      * @param p_nodeID
-     *     NodeID of failed node
+     *         NodeID of failed node
      */
     private void failureHandling(final short p_nodeID) {
         boolean responsible;
@@ -283,15 +283,6 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
          *          Fire NodeFailureEvent:
          *              In PeerLockService:
          *              i) Unlock all remote locks (for chunks stored on this peer) that are held by the failed terminal
-         *
-         *
-         *  3) This is a terminal:
-         *      a) Failed node was a superpeer: Nothing
-         *      b) Failed node was a peer:
-         *          Fire NodeFailureEvent:
-         *              In LookupComponent (if caches are enabled):
-         *              i) Invalidate all cached lookup ranges in CacheTree that store the failed peer as current location
-         *      c) Failed node was a terminal: Nothing
          */
 
         if (ownRole == NodeRole.SUPERPEER) {
@@ -314,8 +305,8 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
                 // #endif /* LOGGER >= DEBUG */
             }
         } else {
-            // This is a peer or terminal
-            if (roleOfFailedNode == NodeRole.PEER || roleOfFailedNode == NodeRole.TERMINAL) {
+            // This is a peer
+            if (roleOfFailedNode == NodeRole.PEER) {
                 // Notify other components/services (BackupComponent, LookupComponent, PeerLockService)
                 m_event.fireEvent(new NodeFailureEvent(getClass().getSimpleName(), p_nodeID, roleOfFailedNode));
             }
@@ -326,7 +317,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
      * Handles an incoming FailureRequest
      *
      * @param p_request
-     *     the FailureRequest
+     *         the FailureRequest
      */
     private void incomingFailureRequest(final FailureRequest p_request) {
         // Outsource failure handling to another thread to avoid blocking a message handler

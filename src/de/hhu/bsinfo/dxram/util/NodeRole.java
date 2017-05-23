@@ -22,11 +22,10 @@ package de.hhu.bsinfo.dxram.util;
 public enum NodeRole {
 
     // Constants
-    PEER('P'), SUPERPEER('S'), TERMINAL('T');
+    PEER('P'), SUPERPEER('S');
 
     public static final String SUPERPEER_STR = "superpeer";
     public static final String PEER_STR = "peer";
-    public static final String TERMINAL_STR = "terminal";
 
     // Attributes
     private final char m_acronym;
@@ -37,7 +36,7 @@ public enum NodeRole {
      * Creates an instance of Role
      *
      * @param p_acronym
-     *     the role's acronym
+     *         the role's acronym
      */
     NodeRole(final char p_acronym) {
         m_acronym = p_acronym;
@@ -58,15 +57,13 @@ public enum NodeRole {
      * Get the node role from a full string.
      *
      * @param p_str
-     *     String to parse.
+     *         String to parse.
      * @return Role node of string.
      */
     public static NodeRole toNodeRole(final String p_str) {
         String str = p_str.toLowerCase();
         if (str.equals(SUPERPEER_STR) || "s".equals(str)) {
             return NodeRole.SUPERPEER;
-        } else if (str.equals(TERMINAL_STR) || "t".equals(str)) {
-            return NodeRole.TERMINAL;
         } else {
             return NodeRole.PEER;
         }
@@ -76,7 +73,7 @@ public enum NodeRole {
      * Gets the role for the given acronym
      *
      * @param p_acronym
-     *     the acronym
+     *         the acronym
      * @return the corresponding role
      */
     public static NodeRole getRoleByAcronym(final char p_acronym) {
@@ -99,8 +96,6 @@ public enum NodeRole {
     public String toString() {
         if (equals(PEER)) {
             return PEER_STR;
-        } else if (equals(TERMINAL)) {
-            return TERMINAL_STR;
         } else {
             return SUPERPEER_STR;
         }

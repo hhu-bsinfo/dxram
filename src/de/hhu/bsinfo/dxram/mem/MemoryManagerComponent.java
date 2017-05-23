@@ -66,7 +66,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     private static final StatisticsOperation SOP_MULTI_CREATE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "MultiCreate");
     private static final StatisticsOperation SOP_REMOVE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Remove");
     private static final StatisticsOperation SOP_CREATE_PUT_RECOVERED =
-        StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateAndPutRecovered");
+            StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateAndPutRecovered");
 
     // configuration values
     /**
@@ -236,7 +236,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * one and allocate a new block of memory with the same id (0).
      *
      * @param p_size
-     *     Size for the index chunk.
+     *         Size for the index chunk.
      * @return The chunk id 0
      */
     public long createIndex(final int p_size) {
@@ -288,9 +288,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Create a chunk with a specific chunk id (used for migration/recovery).
      *
      * @param p_chunkId
-     *     Chunk id to assign to the chunk.
+     *         Chunk id to assign to the chunk.
      * @param p_size
-     *     Size of the chunk.
+     *         Size of the chunk.
      * @return The chunk id if successful, -1 if another chunk with the same id already exists.
      */
     public long create(final long p_chunkId, final int p_size) {
@@ -348,7 +348,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Batch/Multi create with a list of sizes
      *
      * @param p_sizes
-     *     List of sizes to create chunks for
+     *         List of sizes to create chunks for
      * @return List of chunk ids matching the order of the size list
      */
     public long[] createMultiSizes(final int... p_sizes) {
@@ -359,9 +359,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Batch/Multi create with a list of sizes
      *
      * @param p_consecutive
-     *     True to enforce consecutive chunk ids
+     *         True to enforce consecutive chunk ids
      * @param p_sizes
-     *     List of sizes to create chunks for
+     *         List of sizes to create chunks for
      * @return List of chunk ids matching the order of the size list
      */
     public long[] createMultiSizes(final boolean p_consecutive, final int... p_sizes) {
@@ -434,7 +434,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Batch/Multi create with a list of data structures
      *
      * @param p_dataStructures
-     *     List of data structures. Chunk ids are automatically assigned after creation
+     *         List of data structures. Chunk ids are automatically assigned after creation
      */
     public void createMulti(final DataStructure... p_dataStructures) {
         createMulti(false, p_dataStructures);
@@ -444,9 +444,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Batch/Multi create with a list of data structures
      *
      * @param p_consecutive
-     *     True to enforce consecutive chunk ids
+     *         True to enforce consecutive chunk ids
      * @param p_dataStructures
-     *     List of data structures. Chunk ids are automatically assigned after creation
+     *         List of data structures. Chunk ids are automatically assigned after creation
      */
     public void createMulti(final boolean p_consecutive, final DataStructure... p_dataStructures) {
         int[] sizes = new int[p_dataStructures.length];
@@ -466,9 +466,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Batch create chunks
      *
      * @param p_size
-     *     Size of the chunks
+     *         Size of the chunks
      * @param p_count
-     *     Number of chunks with the specified size
+     *         Number of chunks with the specified size
      * @return Chunk id list of the created chunks
      */
     public long[] createMulti(final int p_size, final int p_count) {
@@ -479,11 +479,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Batch create chunks
      *
      * @param p_size
-     *     Size of the chunks
+     *         Size of the chunks
      * @param p_count
-     *     Number of chunks with the specified size
+     *         Number of chunks with the specified size
      * @param p_consecutive
-     *     True to enforce consecutive chunk ids
+     *         True to enforce consecutive chunk ids
      * @return Chunk id list of the created chunks
      */
     public long[] createMulti(final int p_size, final int p_count, final boolean p_consecutive) {
@@ -558,7 +558,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * This is a management call and has to be locked using lockManage().
      *
      * @param p_size
-     *     Size in bytes of the payload the chunk contains.
+     *         Size in bytes of the payload the chunk contains.
      * @return Chunk ID for the allocated chunk
      */
     public long create(final int p_size) {
@@ -626,7 +626,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * This is an access call and has to be locked using lockAccess().
      *
      * @param p_dataStructure
-     *     Data structure to read specified by its ID.
+     *         Data structure to read specified by its ID.
      * @return True if getting the chunk payload was successful, false if no chunk with the ID specified exists.
      */
     public boolean get(final DataStructure p_dataStructure) {
@@ -634,18 +634,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         boolean ret = true;
 
         try {
-            NodeRole role = m_boot.getNodeRole();
-            if (role == NodeRole.TERMINAL) {
-                return false;
-            }
-
             if (p_dataStructure.getID() == ChunkID.INVALID_ID) {
                 p_dataStructure.setState(ChunkState.INVALID_ID);
                 return false;
             }
 
             // #ifdef ASSERT_NODE_ROLE
-            if (role != NodeRole.PEER) {
+            if (m_boot.getNodeRole() != NodeRole.PEER) {
                 throw new InvalidNodeRoleException(m_boot.getNodeRole());
             }
             // #endif /* ASSERT_NODE_ROLE */
@@ -682,7 +677,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * This is an access call and has to be locked using lockAccess().
      *
      * @param p_chunkID
-     *     Read the chunk data of the specified ID
+     *         Read the chunk data of the specified ID
      * @return A byte array with payload if getting the chunk payload was successful, null if no chunk with the ID exists.
      */
     public byte[] get(final long p_chunkID) {
@@ -690,17 +685,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         long address;
 
         try {
-            NodeRole role = m_boot.getNodeRole();
-            if (role == NodeRole.TERMINAL) {
-                return null;
-            }
-
             if (p_chunkID == ChunkID.INVALID_ID) {
                 return null;
             }
 
             // #ifdef ASSERT_NODE_ROLE
-            if (role != NodeRole.PEER) {
+            if (m_boot.getNodeRole() != NodeRole.PEER) {
                 throw new InvalidNodeRoleException(m_boot.getNodeRole());
             }
             // #endif /* ASSERT_NODE_ROLE */
@@ -742,7 +732,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * The caller has to take care of proper locking to avoid consistency issue with his data.
      *
      * @param p_dataStructure
-     *     Data structure to put
+     *         Data structure to put
      * @return True if putting the data was successful, false if no chunk with the specified id exists
      */
     public boolean put(final DataStructure p_dataStructure) {
@@ -750,18 +740,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         boolean ret = true;
 
         try {
-            NodeRole role = m_boot.getNodeRole();
-            if (role == NodeRole.TERMINAL) {
-                return false;
-            }
-
             if (p_dataStructure.getID() == ChunkID.INVALID_ID) {
                 p_dataStructure.setState(ChunkState.INVALID_ID);
                 return false;
             }
 
             // #ifdef ASSERT_NODE_ROLE
-            if (role != NodeRole.PEER) {
+            if (m_boot.getNodeRole() != NodeRole.PEER) {
                 throw new InvalidNodeRoleException(m_boot.getNodeRole());
             }
             // #endif /* ASSERT_NODE_ROLE */
@@ -800,9 +785,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * The caller has to take care of proper locking to avoid consistency issue with his data.
      *
      * @param p_chunkID
-     *     Chunk ID for the data to put
+     *         Chunk ID for the data to put
      * @param p_data
-     *     Chunk data to put
+     *         Chunk data to put
      * @return True if putting the data was successful, false if no chunk with the specified id exists
      */
     public boolean put(final long p_chunkID, final byte[] p_data) {
@@ -816,13 +801,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * The caller has to take care of proper locking to avoid consistency issue with his data.
      *
      * @param p_chunkID
-     *     Chunk ID for the data to put
+     *         Chunk ID for the data to put
      * @param p_data
-     *     Chunk data to put
+     *         Chunk data to put
      * @param p_offset
-     *     Offset for p_data array
+     *         Offset for p_data array
      * @param p_length
-     *     Number of bytes to put
+     *         Number of bytes to put
      * @return True if putting the data was successful, false if no chunk with the specified id exists
      */
     public boolean put(final long p_chunkID, final byte[] p_data, final int p_offset, final int p_length) {
@@ -830,17 +815,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         boolean ret = true;
 
         try {
-            NodeRole role = m_boot.getNodeRole();
-            if (role == NodeRole.TERMINAL) {
-                return false;
-            }
-
             if (p_chunkID == ChunkID.INVALID_ID) {
                 return false;
             }
 
             // #ifdef ASSERT_NODE_ROLE
-            if (role != NodeRole.PEER) {
+            if (m_boot.getNodeRole() != NodeRole.PEER) {
                 throw new InvalidNodeRoleException(m_boot.getNodeRole());
             }
             // #endif /* ASSERT_NODE_ROLE */
@@ -872,10 +852,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * This is a management call and has to be locked using lockManage().
      *
      * @param p_chunkID
-     *     the ChunkID of the Chunk
+     *         the ChunkID of the Chunk
      * @param p_wasMigrated
-     *     default value for this parameter should be false!
-     *     if chunk was deleted during migration this flag should be set to true
+     *         default value for this parameter should be false!
+     *         if chunk was deleted during migration this flag should be set to true
      * @return The size of the deleted chunk if removing the data was successful, -1 if the chunk with the specified id does not exist
      */
     public int remove(final long p_chunkID, final boolean p_wasMigrated) {
@@ -883,17 +863,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         long addressDeletedChunk;
 
         try {
-            NodeRole role = m_boot.getNodeRole();
-            if (role == NodeRole.TERMINAL) {
-                return ret;
-            }
-
             if (p_chunkID == ChunkID.INVALID_ID) {
                 return -1;
             }
 
             // #ifdef ASSERT_NODE_ROLE
-            if (role != NodeRole.PEER) {
+            if (m_boot.getNodeRole() != NodeRole.PEER) {
                 throw new InvalidNodeRoleException(m_boot.getNodeRole());
             }
             // #endif /* ASSERT_NODE_ROLE */
@@ -942,27 +917,22 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * This is a management call and has to be locked using lockManage().
      *
      * @param p_chunkIDs
-     *     List of recovered chunk ids
+     *         List of recovered chunk ids
      * @param p_data
-     *     Recovered data
+     *         Recovered data
      * @param p_offsets
-     *     Offset list for chunks to address the data array
+     *         Offset list for chunks to address the data array
      * @param p_lengths
-     *     List of chunk sizes
+     *         List of chunk sizes
      * @param p_usedEntries
-     *     TODO kevin ???
+     *         TODO kevin ???
      */
     public void createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
         long[] addresses;
 
         try {
             // #ifdef ASSERT_NODE_ROLE
-            NodeRole role = m_boot.getNodeRole();
-            if (role != NodeRole.PEER) {
-                if (role == NodeRole.TERMINAL) {
-                    return;
-                }
-
+            if (m_boot.getNodeRole() != NodeRole.PEER) {
                 throw new InvalidNodeRoleException(m_boot.getNodeRole());
             }
             // #endif /* ASSERT_NODE_ROLE */
@@ -1008,7 +978,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * This is a management call and has to be locked using lockManage().
      *
      * @param p_fileName
-     *     Name of the file to write the dump to
+     *         Name of the file to write the dump to
      */
     public void dumpMemory(final String p_fileName) {
         // #ifdef ASSERT_NODE_ROLE
@@ -1045,9 +1015,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to read.
+     *         Chunk id of the chunk to read.
      * @param p_offset
-     *     Offset within the chunk to read.
+     *         Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public byte readByte(final long p_chunkID, final int p_offset) {
@@ -1071,9 +1041,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to read.
+     *         Chunk id of the chunk to read.
      * @param p_offset
-     *     Offset within the chunk to read.
+     *         Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public short readShort(final long p_chunkID, final int p_offset) {
@@ -1097,9 +1067,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to read.
+     *         Chunk id of the chunk to read.
      * @param p_offset
-     *     Offset within the chunk to read.
+     *         Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public int readInt(final long p_chunkID, final int p_offset) {
@@ -1123,9 +1093,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to read.
+     *         Chunk id of the chunk to read.
      * @param p_offset
-     *     Offset within the chunk to read.
+     *         Offset within the chunk to read.
      * @return The value read at the offset of the chunk.
      */
     public long readLong(final long p_chunkID, final int p_offset) {
@@ -1149,11 +1119,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to write.
+     *         Chunk id of the chunk to write.
      * @param p_offset
-     *     Offset within the chunk to write.
+     *         Offset within the chunk to write.
      * @param p_value
-     *     Value to write.
+     *         Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeByte(final long p_chunkID, final int p_offset, final byte p_value) {
@@ -1179,11 +1149,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to write.
+     *         Chunk id of the chunk to write.
      * @param p_offset
-     *     Offset within the chunk to write.
+     *         Offset within the chunk to write.
      * @param p_value
-     *     Value to write.
+     *         Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeShort(final long p_chunkID, final int p_offset, final short p_value) {
@@ -1209,11 +1179,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to write.
+     *         Chunk id of the chunk to write.
      * @param p_offset
-     *     Offset within the chunk to write.
+     *         Offset within the chunk to write.
      * @param p_value
-     *     Value to write.
+     *         Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeInt(final long p_chunkID, final int p_offset, final int p_value) {
@@ -1239,11 +1209,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
      *
      * @param p_chunkID
-     *     Chunk id of the chunk to write.
+     *         Chunk id of the chunk to write.
      * @param p_offset
-     *     Offset within the chunk to write.
+     *         Offset within the chunk to write.
      * @param p_value
-     *     Value to write.
+     *         Value to write.
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeLong(final long p_chunkID, final int p_offset, final long p_value) {
@@ -1272,7 +1242,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * This is an access call and has to be locked using lockAccess().
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return whether this Chunk is stored locally or not
      */
     public boolean exists(final long p_chunkID) {
@@ -1298,7 +1268,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Returns whether this Chunk was migrated here or not
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return whether this Chunk was migrated here or not
      */
     public boolean dataWasMigrated(final long p_chunkID) {
@@ -1309,7 +1279,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Removes the ChunkID of a deleted Chunk that was migrated
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      */
     public void prepareChunkIDForReuse(final long p_chunkID) {
         // #ifdef ASSERT_NODE_ROLE
@@ -1379,7 +1349,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Pooling the im/exporters to lower memory footprint.
      *
      * @param p_address
-     *     Start address of the chunk
+     *         Start address of the chunk
      * @return Im/Exporter for the chunk
      */
     private SmallObjectHeapDataStructureImExporter getImExporter(final long p_address) {
@@ -1407,7 +1377,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Otherwise, some memory access errors result in segmentation faults, others aren't detected.
      *
      * @param p_e
-     *     Exception thrown on memory error
+     *         Exception thrown on memory error
      */
     private void handleMemDumpOnError(final MemoryRuntimeException p_e, final boolean p_acquireManageLock) {
         // #if LOGGER == ERROR
@@ -1590,7 +1560,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         @Override
         public int sizeofObject() {
             return Long.BYTES * 3 + m_freeMemory.sizeofObject() + m_totalMemory.sizeofObject() + m_totalPayloadMemory.sizeofObject() +
-                m_totalChunkPayloadMemory.sizeofObject() + m_totalMemoryCIDTables.sizeofObject() + Integer.BYTES + Long.BYTES * 2;
+                    m_totalChunkPayloadMemory.sizeofObject() + m_totalMemoryCIDTables.sizeofObject() + Integer.BYTES + Long.BYTES * 2;
         }
 
         @Override
