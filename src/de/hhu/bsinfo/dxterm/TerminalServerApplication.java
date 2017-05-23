@@ -95,9 +95,9 @@ public class TerminalServerApplication extends AbstractApplication implements Te
     private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalServerApplication.class.getSimpleName());
 
     @Expose
-    private final int m_port = 22219;
+    private final int m_port = 22220;
     @Expose
-    private final int m_maxSessions = 2;
+    private final int m_maxSessions = 1;
 
     private TerminalServer m_terminalServer;
 
