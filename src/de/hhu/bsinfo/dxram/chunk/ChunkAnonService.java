@@ -45,7 +45,6 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -73,7 +72,6 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
     private AbstractLockComponent m_lock;
-    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -500,7 +498,6 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
-        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override

@@ -41,7 +41,6 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
@@ -84,7 +83,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     private AbstractLockComponent m_lock;
     private LookupComponent m_lookup;
     private EventComponent m_event;
-    private TerminalComponent m_terminal;
 
     @Override
     public ArrayList<LockedChunkEntry> getLockedList() {
@@ -331,7 +329,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
-        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override

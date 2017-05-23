@@ -18,7 +18,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 
 /**
  * Service providing mechanisms for synchronizing.
@@ -29,7 +28,6 @@ public class SynchronizationService extends AbstractDXRAMService {
 
     // component dependencies
     private LookupComponent m_lookup;
-    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -100,7 +98,6 @@ public class SynchronizationService extends AbstractDXRAMService {
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override

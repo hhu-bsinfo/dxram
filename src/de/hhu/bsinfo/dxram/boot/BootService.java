@@ -30,7 +30,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -50,7 +49,6 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
     // component dependencies
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;
-    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -325,7 +323,6 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override

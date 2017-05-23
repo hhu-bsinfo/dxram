@@ -28,7 +28,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.messages.LoggerMessages;
 import de.hhu.bsinfo.dxram.logger.messages.SetLogLevelMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -45,7 +44,6 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
     // component dependencies
     private NetworkComponent m_network;
     private AbstractBootComponent m_boot;
-    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -126,7 +124,6 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override

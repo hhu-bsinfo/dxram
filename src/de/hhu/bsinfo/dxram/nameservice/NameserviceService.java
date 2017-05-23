@@ -28,7 +28,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.nameservice.messages.ForwardRegisterMessage;
 import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -50,7 +49,6 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
     private NameserviceComponent m_nameservice;
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;
-    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -169,7 +167,6 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override

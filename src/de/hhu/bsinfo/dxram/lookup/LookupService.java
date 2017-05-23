@@ -31,7 +31,6 @@ import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.LookupMessages;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -50,7 +49,6 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
     private BackupComponent m_backup;
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
-    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -180,7 +178,6 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override

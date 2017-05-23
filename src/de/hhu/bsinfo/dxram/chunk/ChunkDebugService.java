@@ -28,7 +28,6 @@ import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -46,7 +45,6 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
     private MemoryManagerComponent m_memoryManager;
     private NetworkComponent m_network;
     private NameserviceComponent m_nameservice;
-    private TerminalComponent m_terminal;
 
     /**
      * Constructor
@@ -220,7 +218,6 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
         m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
-        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override

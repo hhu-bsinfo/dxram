@@ -21,7 +21,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.nameservice.NameServiceStringConverter;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 
 /**
  * This service provides access to a temporary "chunk" storage residing on the
@@ -37,7 +36,6 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 
     // component dependencies
     private LookupComponent m_lookup;
-    private TerminalComponent m_terminal;
 
     private NameServiceStringConverter m_idConverter = new NameServiceStringConverter("NAME");
 
@@ -162,7 +160,6 @@ public class TemporaryStorageService extends AbstractDXRAMService {
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override

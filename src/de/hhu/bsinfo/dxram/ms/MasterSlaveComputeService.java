@@ -44,7 +44,6 @@ import de.hhu.bsinfo.dxram.ms.messages.TaskExecutionFinishedMessage;
 import de.hhu.bsinfo.dxram.ms.messages.TaskExecutionStartedMessage;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -86,7 +85,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
     private NameserviceComponent m_nameservice;
     private AbstractBootComponent m_boot;
     private LookupComponent m_lookup;
-    private TerminalComponent m_terminal;
 
     private AbstractComputeMSBase m_computeMSInstance;
 
@@ -403,7 +401,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
     }
 
     @Override
