@@ -18,21 +18,12 @@ import java.util.ArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.nameservice.messages.ForwardRegisterMessage;
-import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Nameservice service providing mappings of string identifiers to chunkIDs.
@@ -41,7 +32,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NameserviceService extends AbstractDXRAMService implements MessageReceiver {
+public class NameserviceService extends AbstractDXRAMService {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceService.class.getSimpleName());
 
@@ -54,7 +45,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
      * Constructor
      */
     public NameserviceService() {
-        super("name", true, true);
+        super("name", false, true);
     }
 
     /**
@@ -84,41 +75,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
      *         Name to associate with the ID of the DataStructure.
      */
     public void register(final long p_chunkId, final String p_name) {
-
-        // any other nodes than peers cannot store this locally
-        // (lacking the chunk service/memory block)
-        // peers can also register chunkIDs which don't
-        // have a valid NID (because they have the possibility to store
-        // them in the index chunk). Other nodes have to find a peer
-        // that can store the the nameservice entry
-        // So the easiest solution was to simply require to have a valid NID
-        // (which is the common case)
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            // let each node manage its own index (the chunk part)
-            short nodeId = ChunkID.getCreatorID(p_chunkId);
-            if (nodeId == NodeID.INVALID_ID) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Invalid creator id specified for registering 0x%X for name %s", p_chunkId, p_name);
-                // #endif /* LOGGER >= ERROR */
-                return;
-            }
-
-            if (m_boot.getNodeID() == nodeId) {
-                m_nameservice.register(p_chunkId, p_name);
-            } else {
-                ForwardRegisterMessage message = new ForwardRegisterMessage(nodeId, p_chunkId, p_name);
-
-                try {
-                    m_network.sendMessage(message);
-                } catch (final NetworkException e) {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Sending register message to 0x%X failed: %s", nodeId, e);
-                    // #endif /* LOGGER >= ERROR */
-                }
-            }
-        } else {
-            m_nameservice.register(p_chunkId, p_name);
-        }
+        m_nameservice.register(p_chunkId, p_name);
     }
 
     /**
@@ -148,23 +105,8 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
     }
 
     @Override
-    public void onIncomingMessage(final AbstractMessage p_message) {
-        if (p_message != null) {
-            if (p_message.getType() == DXRAMMessageTypes.NAMESERVICE_MESSAGES_TYPE) {
-                switch (p_message.getSubtype()) {
-                    case NameserviceMessages.SUBTYPE_REGISTER_MESSAGE:
-                        incomingRegisterMessage((ForwardRegisterMessage) p_message);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-
-    @Override
     protected boolean supportedBySuperpeer() {
-        return true;
+        return false;
     }
 
     @Override
@@ -181,27 +123,11 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 
     @Override
     protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        m_network.registerMessageType(DXRAMMessageTypes.NAMESERVICE_MESSAGES_TYPE, NameserviceMessages.SUBTYPE_REGISTER_MESSAGE, ForwardRegisterMessage.class);
-
-        m_network.register(ForwardRegisterMessage.class, this);
-
         return true;
     }
 
     @Override
     protected boolean shutdownService() {
         return true;
-    }
-
-    /**
-     * Process an incoming RegisterMessage
-     *
-     * @param p_message
-     *         Message to process
-     */
-    private void incomingRegisterMessage(final ForwardRegisterMessage p_message) {
-        // Outsource registering to another thread to avoid blocking a message handler
-        Runnable task = () -> m_nameservice.register(p_message.getChunkId(), p_message.getName());
-        new Thread(task).start();
     }
 }
