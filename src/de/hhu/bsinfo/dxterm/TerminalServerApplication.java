@@ -142,6 +142,16 @@ public class TerminalServerApplication extends AbstractApplication implements Te
         }
 
         while (m_run) {
+            if (m_sessions.size() == m_maxSessions) {
+                try {
+                    Thread.sleep(1000);
+                } catch (final InterruptedException ignored) {
+
+                }
+
+                continue;
+            }
+
             Socket sock;
 
             try {
@@ -153,26 +163,6 @@ public class TerminalServerApplication extends AbstractApplication implements Te
                 // #if LOGGER == ERROR
                 LOGGER.error("Accepting client connection failed", e);
                 // #endif /* LOGGER == ERROR */
-                continue;
-            }
-
-            if (m_sessions.size() == m_maxSessions) {
-                // #if LOGGER == ERROR
-                LOGGER.error("Max connection limit (%d) exceeded, closing %s", m_sessions.size(), sock);
-                // #endif /* LOGGER == ERROR */
-
-                try {
-                    sock.close();
-                } catch (final IOException ignored) {
-
-                }
-
-                try {
-                    Thread.sleep(1000);
-                } catch (final InterruptedException ignored) {
-
-                }
-
                 continue;
             }
 
@@ -203,6 +193,12 @@ public class TerminalServerApplication extends AbstractApplication implements Te
 
             m_sessions.add(session);
             m_threadPool.submit(new TerminalServerSession(m_terminalServer, session, this));
+
+            if (m_sessions.size() == m_maxSessions) {
+                // #if LOGGER == DEBUG
+                LOGGER.debug("Max session limit (%d) reached, further sessions won't be accepted", m_maxSessions);
+                // #endif /* LOGGER == DEBUG */
+            }
         }
     }
 

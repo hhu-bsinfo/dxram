@@ -62,6 +62,9 @@ public class TerminalSession {
             m_out.flush();
         } catch (final IOException ignored) {
             return false;
+        } catch (final NoClassDefFoundError e) {
+            // happens if terminal server is killed
+            return false;
         }
 
         return true;

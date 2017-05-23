@@ -101,7 +101,10 @@ public class TerminalClient implements TerminalSession.Listener {
             System.out.println(">>> Running auto start script " + m_autostartScript);
 
             for (String line : lines) {
-                evaluate(line);
+                if (!evaluate(line)) {
+                    System.out.println("Aborting command evaluation");
+                    return;
+                }
             }
         }
 
@@ -156,7 +159,7 @@ public class TerminalClient implements TerminalSession.Listener {
 
     private boolean evaluateCommand(final TerminalCommandString p_cmd) {
         if (!m_session.write(p_cmd)) {
-            System.out.println("Sending command failed");
+            System.out.println("Sending command failed, most likely connection loss");
             return false;
         }
 
@@ -232,8 +235,7 @@ public class TerminalClient implements TerminalSession.Listener {
                 return true;
 
             case "run":
-                runScript(cmd);
-                return true;
+                return runScript(cmd);
 
             default:
                 break;
@@ -268,10 +270,10 @@ public class TerminalClient implements TerminalSession.Listener {
         }
     }
 
-    private void runScript(final TerminalCommandString p_cmd) {
+    private boolean runScript(final TerminalCommandString p_cmd) {
         if (p_cmd.getArgc() < 1) {
             System.out.println("Missing path to script file to run");
-            return;
+            return true;
         }
 
         List<String> stringList;
@@ -280,16 +282,20 @@ public class TerminalClient implements TerminalSession.Listener {
             stringList = Files.readAllLines(new File(p_cmd.getArgs()[0]).toPath(), Charset.defaultCharset());
         } catch (final IOException e) {
             System.out.println("Loading script file " + p_cmd.getArgs()[0] + " failed: " + e.getMessage());
-            return;
+            return true;
         }
 
         System.out.println("Running terminal cmd script " + p_cmd.getArgs()[0] + "...");
 
         for (String line : stringList) {
-            evaluate(line);
+            if (!evaluate(line)) {
+                System.out.println("Evaluating command failed, aborting");
+                return false;
+            }
         }
 
         System.out.println("Finished running script " + p_cmd.getArgs()[0]);
+        return true;
     }
 
     /**
