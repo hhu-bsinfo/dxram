@@ -55,8 +55,8 @@ import de.hhu.bsinfo.dxram.recovery.RecoveryService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
-import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.ManifestHelper;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Main class/entry point for DXRAM.
@@ -94,8 +94,6 @@ public final class DXRAM {
             System.exit(-1);
         }
 
-        System.out.println(">>> DXRAM started <<<");
-
         while (dxram.update()) {
             // run
         }
@@ -126,10 +124,11 @@ public final class DXRAM {
             return false;
         }
 
-        printNodeInfo();
         if (p_autoShutdown) {
             Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
         }
+
+        printNodeInfo();
 
         // used for deploy script
         System.out.println(STARTUP_DONE_STR);
