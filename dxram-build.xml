@@ -59,6 +59,7 @@
             <fileset dir="${script_dir}"/>
         </copy>
         <copy file="${basedir}/env.sh" tofile="${build_proj_dir}/env.sh"/>
+        <copy file="${basedir}/dxterm-client" tofile="${build_proj_dir}/dxterm-client"/>
     </target>
 
     <target name="create_log" depends="create_base_dirs" description="creates the log directory">

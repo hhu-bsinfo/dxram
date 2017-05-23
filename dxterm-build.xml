@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="dxterm" basedir="." default="release">
+    <import file="dxram-build-config.xml"/>
+
+    <property name="name_server" value="dxterm-server"/>
+    <property name="name_client" value="dxterm-client"/>
+
+    <!-- Load the ant contrib lib -->
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+            <pathelement location="${basedir}/lib/ant-contrib-0.6.jar"/>
+        </classpath>
+    </taskdef>
+
+    <target name="debug" description="builds dxterm-server-debug.jar (contains all logger calls)">
+        <antcall target="compile-server">
+            <param name="buildtype" value="debug"/>
+        </antcall>
+        <antcall target="compile-client">
+            <param name="buildtype" value="debug"/>
+        </antcall>
+
+        <move file="${build_proj_dir}/${name_server}-debug.jar" tofile="${build_proj_app_dir}/${name_server}.jar"/>
+        <copy file="${build_proj_app_dir}/${name_server}.jar" tofile="${basedir}/${app_dir}/${name_server}.jar"/>
+        <move file="${build_proj_dir}/${name_client}-debug.jar" tofile="${build_proj_dir}/${name_client}.jar"/>
+        <copy file="${build_proj_dir}/${name_client}.jar" tofile="${basedir}/${name_client}.jar"/>
+    </target>
+
+    <target name="release" description="builds dxterm-server-release-jar">
+        <antcall target="compile-server">
+            <param name="buildtype" value="release"/>
+        </antcall>
+        <antcall target="compile-client">
+            <param name="buildtype" value="release"/>
+        </antcall>
+
+        <move file="${build_proj_dir}/${name_server}-release.jar" tofile="${build_proj_app_dir}/${name_server}.jar"/>
+        <copy file="${build_proj_app_dir}/${name_server}.jar" tofile="${basedir}/${app_dir}/${name_server}.jar"/>
+        <move file="${build_proj_dir}/${name_client}-release.jar" tofile="${build_proj_dir}/${name_client}.jar"/>
+        <copy file="${build_proj_dir}/${name_client}.jar" tofile="${basedir}/${name_client}.jar"/>
+    </target>
+
+    <target name="performance" description="builds dxterm-server-performance.jar (without any logger calls)">
+        <antcall target="compile-server">
+            <param name="buildtype" value="performance"/>
+        </antcall>
+        <antcall target="compile-client">
+            <param name="buildtype" value="performance"/>
+        </antcall>
+
+        <move file="${build_proj_dir}/${name_server}-performance.jar" tofile="${build_proj_app_dir}/${name_server}.jar"/>
+        <copy file="${build_proj_app_dir}/${name_server}.jar" tofile="${basedir}/${app_dir}/${name_server}.jar"/>
+        <move file="${build_proj_dir}/${name_client}-performance.jar" tofile="${build_proj_dir}/${name_client}.jar"/>
+        <copy file="${build_proj_dir}/${name_client}.jar" tofile="${basedir}/${name_client}.jar"/>
+    </target>
+
+    <target name="compile-server" description="builds class files">
+        <echo message="Compiling with build type ${buildtype}"/>
+
+        <mkdir dir="${build_proj_dir}/classes"/>
+        <mkdir dir="${build_proj_dir}/classes/${buildtype}"/>
+
+        <condition property="debugOn" value="true" else="false">
+            <equals arg1="${buildtype}" arg2="debug"/>
+        </condition>
+        <condition property="optimizeOn" value="on" else="off">
+            <equals arg1="${buildtype}" arg2="release"/>
+        </condition>
+        <condition property="optimizeOn" value="on" else="off">
+            <equals arg1="${buildtype}" arg2="performance"/>
+        </condition>
+
+        <javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false"
+               debug="${debugOn}" optimize="${optimizeOn}" target="1.8" encoding="UTF-8">
+            <include name="de/hhu/bsinfo/dxterm/**/*.java"/>
+            <classpath>
+                <file file="${build_proj_dir}/${name_dxram}.jar"></file>
+                <fileset dir="${lib_dir}">
+                    <include name="**/*.jar"/>
+                </fileset>
+            </classpath>
+        </javac>
+
+        <tstamp>
+            <format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss"/>
+        </tstamp>
+
+        <jar destfile="${build_proj_dir}/${name_server}-${buildtype}.jar" basedir="${build_proj_dir}/classes/${buildtype}">
+            <manifest>
+                <attribute name="BuildUser" value="${user.name}"/>
+                <attribute name="BuildDate" value="${TODAY}"/>
+                <attribute name="Main-Class" value="de.hhu.bsinfo.dxram.DXRAMMain"/>
+                <attribute name="Class-Path" value="${jar.classpath}"/>
+            </manifest>
+        </jar>
+
+        <delete dir="${build_proj_dir}/classes"/>
+    </target>
+
+    <target name="compile-client" description="builds class files for client">
+        <echo message="Compiling with build type ${buildtype}"/>
+
+        <mkdir dir="${build_proj_dir}/classes"/>
+        <mkdir dir="${build_proj_dir}/classes/${buildtype}"/>
+
+        <condition property="debugOn" value="true" else="false">
+            <equals arg1="${buildtype}" arg2="debug"/>
+        </condition>
+        <condition property="optimizeOn" value="on" else="off">
+            <equals arg1="${buildtype}" arg2="release"/>
+        </condition>
+        <condition property="optimizeOn" value="on" else="off">
+            <equals arg1="${buildtype}" arg2="performance"/>
+        </condition>
+
+        <javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false"
+               debug="${debugOn}" optimize="${optimizeOn}" target="1.8" encoding="UTF-8">
+            <include name="de/hhu/bsinfo/dxterm/**/*.java"/>
+            <classpath>
+                <file file="${build_proj_dir}/${name_dxram}.jar"></file>
+                <fileset dir="${lib_dir}">
+                    <include name="**/*.jar"/>
+                </fileset>
+            </classpath>
+        </javac>
+
+        <tstamp>
+            <format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss"/>
+        </tstamp>
+
+        <jar destfile="${build_proj_dir}/${name_client}-${buildtype}.jar" basedir="${build_proj_dir}/classes/${buildtype}">
+            <manifest>
+                <attribute name="BuildUser" value="${user.name}"/>
+                <attribute name="BuildDate" value="${TODAY}"/>
+                <attribute name="Main-Class" value="de.hhu.bsinfo.dxterm.TerminalClient"/>
+                <attribute name="Class-Path" value="${jar.classpath}"/>
+            </manifest>
+        </jar>
+
+        <delete dir="${build_proj_dir}/classes"/>
+    </target>
+</project>

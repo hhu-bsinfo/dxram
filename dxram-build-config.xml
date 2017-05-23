@@ -11,7 +11,7 @@
     <property name="script_dir" value="script"/>
     <property name="source_dir" value="src"/>
 
-    <property name="build_proj_dir" value="${build_dir}/${name_dxram}"/>
+    <property name="build_proj_dir" value="../${build_dir}/${name_dxram}" relative="yes"/>
     <property name="build_proj_app_dir" value="${build_proj_dir}/${app_dir}"/>
     <property name="build_proj_conf_dir" value="${build_proj_dir}/${conf_dir}"/>
     <property name="build_proj_lib_dir" value="${build_proj_dir}/${lib_dir}"/>
