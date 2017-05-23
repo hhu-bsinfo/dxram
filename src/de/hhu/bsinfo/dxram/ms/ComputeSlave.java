@@ -37,7 +37,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Implementation of a slave. The slave waits for tasks for execution from the master

@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 

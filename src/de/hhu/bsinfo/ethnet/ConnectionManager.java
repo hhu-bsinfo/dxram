@@ -23,6 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.ethnet.AbstractConnection.DataReceiver;
 import de.hhu.bsinfo.ethnet.AbstractConnectionCreator.ConnectionCreatorListener;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Manages the network connections

@@ -42,7 +42,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Implementation of a master. The master accepts tasks, pushes them to a queue and distributes them

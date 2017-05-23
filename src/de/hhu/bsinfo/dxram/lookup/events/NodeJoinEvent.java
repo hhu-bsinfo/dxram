@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lookup.events;
 
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * An event for node joining

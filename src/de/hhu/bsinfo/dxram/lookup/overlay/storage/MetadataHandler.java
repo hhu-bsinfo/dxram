@@ -29,7 +29,7 @@ import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage.Status;
 import de.hhu.bsinfo.utils.ArrayListLong;
-import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Wrapper class for all data of one superpeer

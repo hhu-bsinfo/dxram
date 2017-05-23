@@ -17,6 +17,8 @@ import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.utils.NodeID;
+
 /**
  * Represents a network message
  *

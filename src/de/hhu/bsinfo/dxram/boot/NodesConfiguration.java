@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.boot;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.unit.IPV4Unit;
 
 /**

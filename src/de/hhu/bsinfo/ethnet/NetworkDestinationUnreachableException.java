@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.ethnet;
 
+import de.hhu.bsinfo.utils.NodeID;
+
 /**
  * Exception if the target destination is unreachable
  *

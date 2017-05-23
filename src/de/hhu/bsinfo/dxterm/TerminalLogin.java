@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxterm;
 
 import java.io.Serializable;
 
-import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.NodeID;
 
 public class TerminalLogin implements Serializable {
     private byte m_sessionId = -1;

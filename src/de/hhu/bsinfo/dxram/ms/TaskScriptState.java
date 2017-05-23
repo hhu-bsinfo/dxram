@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.ms;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * State holding status information about the encapsulated task

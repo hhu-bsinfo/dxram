@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.ethnet;
 
+import de.hhu.bsinfo.utils.NodeID;
+
 /**
  * Exception if a request was sent but the response was not delivered in time.
  *
