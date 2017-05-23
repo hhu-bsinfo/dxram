@@ -55,18 +55,24 @@ public class TerminalServer {
         }
     }
 
+    public List<String> getTerminalCommandList() {
+        Collection<AbstractTerminalCommand> cmds = m_commands.values();
+        List<String> cmdNames = new ArrayList<>();
+
+        for (AbstractTerminalCommand tmp : cmds) {
+            cmdNames.add(tmp.getName());
+        }
+
+        Collections.sort(cmdNames);
+
+        return cmdNames;
+    }
+
     public void evaluate(final TerminalSession p_session, final TerminalCommandString p_cmdStr, final TerminalServiceAccessor p_services) {
         TerminalServerStdout stdout = new TerminalServerStdout(p_session);
 
         if ("list".equals(p_cmdStr.getName())) {
-            Collection<AbstractTerminalCommand> cmds = m_commands.values();
-            List<String> cmdNames = new ArrayList<>();
-
-            for (AbstractTerminalCommand tmp : cmds) {
-                cmdNames.add(tmp.getName());
-            }
-
-            Collections.sort(cmdNames);
+            List<String> cmdNames = getTerminalCommandList();
 
             StringBuilder strBuilder = new StringBuilder();
 

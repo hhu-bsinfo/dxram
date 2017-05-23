@@ -31,7 +31,7 @@ public class TerminalServerSession implements Runnable {
 
     @Override
     public void run() {
-        TerminalLogin login = new TerminalLogin(m_session.getSessionId(), m_server.getNodeId());
+        TerminalLogin login = new TerminalLogin(m_session.getSessionId(), m_server.getNodeId(), m_server.getTerminalCommandList());
 
         if (!m_session.write(login)) {
             // #if LOGGER == ERROR

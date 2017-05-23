@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -38,7 +39,6 @@ public class TerminalClient implements TerminalSession.Listener {
 
     private ConsoleReader m_consoleReader;
     private FileHistory m_history;
-    private ArgumentCompleter m_argCompletor;
 
     private String[] m_localCommands = new String[] {"?", "help", "quit", "exit", "clear", "run"};
 
@@ -54,12 +54,6 @@ public class TerminalClient implements TerminalSession.Listener {
 
         loadHistoryFromFile(m_historyFilePath);
 
-        // TODO implement a completer for remote commands
-        // register commands for auto completion
-        m_argCompletor = new ArgumentCompleter(new StringsCompleter(m_localCommands), new FileNameCompleter());
-
-        //m_consoleReader.addCompleter();
-        m_consoleReader.addCompleter(m_argCompletor);
         // handle ctrl + c
         m_consoleReader.setHandleUserInterrupt(true);
 
@@ -147,6 +141,12 @@ public class TerminalClient implements TerminalSession.Listener {
 
         if (object instanceof TerminalLogin) {
             TerminalLogin login = (TerminalLogin) object;
+
+            // TODO implement a completer for remote commands
+            // add completers for commands
+            List<String> list = login.getCmdNames();
+            Collections.addAll(list, m_localCommands);
+            m_consoleReader.addCompleter(new ArgumentCompleter(new StringsCompleter(list), new FileNameCompleter()));
 
             return login.getSessionId() + "/0x" + String.format("%04x", login.getNodeId()).toUpperCase();
         }

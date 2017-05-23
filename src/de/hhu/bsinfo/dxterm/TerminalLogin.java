@@ -14,20 +14,24 @@
 package de.hhu.bsinfo.dxterm;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
 
 import de.hhu.bsinfo.utils.NodeID;
 
 public class TerminalLogin implements Serializable {
     private byte m_sessionId = -1;
     private short m_nodeId = NodeID.INVALID_ID;
+    private List<String> m_cmdNames = Collections.emptyList();
 
     public TerminalLogin() {
 
     }
 
-    public TerminalLogin(final byte p_sessionId, final short p_nodeId) {
+    public TerminalLogin(final byte p_sessionId, final short p_nodeId, final List<String> p_cmdNames) {
         m_sessionId = p_sessionId;
         m_nodeId = p_nodeId;
+        m_cmdNames = p_cmdNames;
     }
 
     public byte getSessionId() {
@@ -36,5 +40,9 @@ public class TerminalLogin implements Serializable {
 
     public short getNodeId() {
         return m_nodeId;
+    }
+
+    public List<String> getCmdNames() {
+        return m_cmdNames;
     }
 }
