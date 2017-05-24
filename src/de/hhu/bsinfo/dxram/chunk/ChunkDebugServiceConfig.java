@@ -1,14 +1,14 @@
 package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
 
 /**
  * Config for the ChunkDebugService
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public class ChunkDebugServiceConfig extends DXRAMServiceConfig {
+public class ChunkDebugServiceConfig extends AbstractDXRAMServiceConfig {
     /**
      * Constructor
      */

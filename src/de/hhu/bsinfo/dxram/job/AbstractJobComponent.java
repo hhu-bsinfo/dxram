@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.job;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 
 /**
  * Component handling jobs to be executed (local only).
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public abstract class AbstractJobComponent<T extends DXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
+public abstract class AbstractJobComponent<T extends AbstractDXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
     /**
      * Constructor
      *

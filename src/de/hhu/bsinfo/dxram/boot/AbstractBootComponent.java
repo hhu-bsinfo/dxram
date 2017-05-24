@@ -17,7 +17,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public abstract class AbstractBootComponent<T extends DXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
+public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
     /**
      * Constructor
      *

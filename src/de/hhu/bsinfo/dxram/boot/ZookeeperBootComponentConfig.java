@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.unit.IPV4Unit;
@@ -16,7 +16,7 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public class ZookeeperBootComponentConfig extends DXRAMComponentConfig {
+public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private String m_path = "/dxram";
 

@@ -2,7 +2,7 @@ package de.hhu.bsinfo.dxram.lookup;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
 
@@ -11,7 +11,7 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public class LookupComponentConfig extends DXRAMComponentConfig {
+public class LookupComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private boolean m_cachesEnabled = true;
 

@@ -2,7 +2,7 @@ package de.hhu.bsinfo.dxram.net;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
@@ -12,7 +12,7 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public class NetworkComponentConfig extends DXRAMComponentConfig {
+public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private int m_threadCountMsgHandler = 1;
 

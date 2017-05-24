@@ -2,7 +2,7 @@ package de.hhu.bsinfo.dxram.mem;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
@@ -11,7 +11,7 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public class MemoryManagerComponentConfig extends DXRAMComponentConfig {
+public class MemoryManagerComponentConfig extends AbstractDXRAMComponentConfig {
     private static final StorageUnit KEY_VALUE_STORE_SIZE_MIN = new StorageUnit(32L, StorageUnit.MB);
     private static final StorageUnit KEY_VALUE_STORE_SIZE_MAX = new StorageUnit(128, StorageUnit.GB);
 

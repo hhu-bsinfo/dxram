@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public abstract class DXRAMServiceConfig {
+public abstract class AbstractDXRAMServiceConfig {
     protected final Logger LOGGER;
 
     @Expose
@@ -35,7 +35,8 @@ public abstract class DXRAMServiceConfig {
      * @param p_enabledForPeer
      *         True to enable the service if the node is a peer, false to disable
      */
-    protected DXRAMServiceConfig(final Class<? extends AbstractDXRAMService> p_class, final boolean p_enabledForSuperpeer, final boolean p_enabledForPeer) {
+    protected AbstractDXRAMServiceConfig(final Class<? extends AbstractDXRAMService> p_class, final boolean p_enabledForSuperpeer,
+            final boolean p_enabledForPeer) {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_class = getClass().getName();
         m_serviceClass = p_class.getSimpleName();

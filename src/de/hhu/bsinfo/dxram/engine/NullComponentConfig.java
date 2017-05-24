@@ -5,7 +5,7 @@ package de.hhu.bsinfo.dxram.engine;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public class NullComponentConfig extends DXRAMComponentConfig {
+public class NullComponentConfig extends AbstractDXRAMComponentConfig {
     /**
      * Constructor
      */

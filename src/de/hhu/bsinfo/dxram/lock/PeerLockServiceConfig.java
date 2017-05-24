@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.lock;
 
 import com.google.gson.annotations.Expose;
 
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
@@ -11,7 +11,7 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public class PeerLockServiceConfig extends DXRAMServiceConfig {
+public class PeerLockServiceConfig extends AbstractDXRAMServiceConfig {
     @Expose
     private TimeUnit m_remoteLockSendInterval = new TimeUnit(10, TimeUnit.MS);
 

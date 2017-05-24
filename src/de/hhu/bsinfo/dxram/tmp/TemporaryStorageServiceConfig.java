@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.tmp;
 
 import com.google.gson.annotations.Expose;
 
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
@@ -11,7 +11,7 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public class TemporaryStorageServiceConfig extends DXRAMServiceConfig {
+public class TemporaryStorageServiceConfig extends AbstractDXRAMServiceConfig {
     private static final int STORAGE_MAX_NUM_ENTRIES_MAX = 100000;
     private static final StorageUnit STORAGE_MAX_SIZE_MAX = new StorageUnit(1, StorageUnit.GB);
 

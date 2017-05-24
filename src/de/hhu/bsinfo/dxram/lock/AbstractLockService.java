@@ -17,14 +17,14 @@ import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
 
 /**
  * Service to lock chunks.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public abstract class AbstractLockService<T extends DXRAMServiceConfig> extends AbstractDXRAMService<T> {
+public abstract class AbstractLockService<T extends AbstractDXRAMServiceConfig> extends AbstractDXRAMService<T> {
 
     /**
      * Error codes for some methods.

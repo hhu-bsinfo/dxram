@@ -88,7 +88,7 @@ public class DXRAMContext {
      * @return True if verification successful, false on failure
      */
     boolean verifyConfigurationValuesComponents() {
-        for (DXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
+        for (AbstractDXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("Verifying component configuration values of %s...", config.getClassName());
             // #endif /* LOGGER >= DEBUG */
@@ -109,7 +109,7 @@ public class DXRAMContext {
      * @return True if verification successful, false on failure
      */
     boolean verifyConfigurationValuesServices() {
-        for (DXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
+        for (AbstractDXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("Verifying service configuration values of %s...", config.getClassName());
             // #endif /* LOGGER >= DEBUG */
@@ -135,7 +135,7 @@ public class DXRAMContext {
     void createComponentsFromConfig(final DXRAMComponentManager p_manager, final NodeRole p_nodeRole) {
         m_components.clear();
 
-        for (DXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
+        for (AbstractDXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
             if (p_nodeRole == NodeRole.SUPERPEER && config.isEnabledForSuperpeer() || p_nodeRole == NodeRole.PEER && config.isEnabledForPeer()) {
                 AbstractDXRAMComponent comp = p_manager.createInstance(config.getComponentClass());
 
@@ -162,7 +162,7 @@ public class DXRAMContext {
     void createServicesFromConfig(final DXRAMServiceManager p_manager, final NodeRole p_nodeRole) {
         m_services.clear();
 
-        for (DXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
+        for (AbstractDXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
             if (p_nodeRole == NodeRole.SUPERPEER && config.isEnabledForSuperpeer() || p_nodeRole == NodeRole.PEER && config.isEnabledForPeer()) {
                 AbstractDXRAMService serv = p_manager.createInstance(config.getServiceClass());
 
@@ -223,13 +223,13 @@ public class DXRAMContext {
          * Component configurations
          */
         @Expose
-        private Map<String, DXRAMComponentConfig> m_componentConfigs = new HashMap<>();
+        private Map<String, AbstractDXRAMComponentConfig> m_componentConfigs = new HashMap<>();
 
         /**
          * Service configurations
          */
         @Expose
-        private Map<String, DXRAMServiceConfig> m_serviceConfigs = new HashMap<>();
+        private Map<String, AbstractDXRAMServiceConfig> m_serviceConfigs = new HashMap<>();
 
         /**
          * Get the engine configuration
@@ -245,8 +245,8 @@ public class DXRAMContext {
          *         Class of the component configuration to get
          * @return Component configuration class
          */
-        public <T extends DXRAMComponentConfig> T getComponentConfig(final Class<T> p_class) {
-            DXRAMComponentConfig conf = m_componentConfigs.get(p_class.getSimpleName());
+        public <T extends AbstractDXRAMComponentConfig> T getComponentConfig(final Class<T> p_class) {
+            AbstractDXRAMComponentConfig conf = m_componentConfigs.get(p_class.getSimpleName());
 
             return p_class.cast(conf);
         }
@@ -258,8 +258,8 @@ public class DXRAMContext {
          *         Class of the service configuration to get
          * @return Service configuration class
          */
-        public <T extends DXRAMServiceConfig> T getServiceConfig(final Class<T> p_class) {
-            DXRAMServiceConfig conf = m_serviceConfigs.get(p_class.getSimpleName());
+        public <T extends AbstractDXRAMServiceConfig> T getServiceConfig(final Class<T> p_class) {
+            AbstractDXRAMServiceConfig conf = m_serviceConfigs.get(p_class.getSimpleName());
 
             return p_class.cast(conf);
         }
