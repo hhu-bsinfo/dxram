@@ -48,7 +48,6 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMRuntimeException;
-import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -122,12 +121,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
     public ChunkIDRanges getAllLocalChunkIDRanges() {
         ChunkIDRanges list;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         try {
             m_memoryManager.lockAccess();
             list = m_memoryManager.getCIDRangesOfAllLocalChunks();
@@ -163,12 +156,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             // #endif /* LOGGER >= ERROR */
             return null;
         }
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
 
         // own status?
         if (p_nodeID == m_boot.getNodeID()) {
@@ -219,12 +206,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         long[] chunkIDs = null;
 
         assert p_size > 0 && p_count > 0;
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
 
         // #if LOGGER == TRACE
         LOGGER.trace("create[size %d, count %d, consecutive %d]", p_size, p_count, p_consecutive);
@@ -298,12 +279,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
      *         Data structures to create chunks for.
      */
     public void create(final boolean p_consecutive, final DataStructure... p_dataStructures) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         if (p_dataStructures.length == 0) {
             return;
         }
@@ -374,12 +349,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
      */
     public long[] createSizes(final boolean p_consecutive, final int... p_sizes) {
         long[] chunkIDs;
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_sizes.length == 0) {
             return new long[0];
@@ -487,12 +456,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             return null;
         }
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         // #ifdef STATISTICS
         SOP_REMOTE_CREATE.enter(p_sizes.length);
         // #endif /* STATISTICS */
@@ -566,12 +529,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
      */
     public int put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure[] p_chunks, final int p_offset, final int p_count) {
         int chunksPut = 0;
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_chunks.length == 0) {
             return chunksPut;
@@ -761,12 +718,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
 
         assert p_offset >= 0 && p_count >= 0;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         // #if LOGGER == TRACE
         LOGGER.trace("get[dataStructures(%d) ...]", p_count);
         // #endif /* LOGGER == TRACE */
@@ -905,12 +856,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
 
         assert p_offset >= 0 && p_count >= 0;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         if (p_chunks.length == 0) {
             return totalChunksGot;
         }
@@ -976,12 +921,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             return null;
         }
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         if (p_nodeID == m_boot.getNodeID()) {
             list = getAllLocalChunkIDRanges();
         } else {
@@ -1026,12 +965,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             // #endif /* LOGGER >= ERROR */
             return null;
         }
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_nodeID == m_boot.getNodeID()) {
             list = getAllMigratedChunkIDRanges();

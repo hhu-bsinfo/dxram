@@ -15,11 +15,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
  * Component to run applications locally on the DXRAM instance with access to all exposed services
@@ -28,9 +26,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  */
 public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComponentConfig> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ApplicationComponent.class.getSimpleName());
-
-    // component dependencies
-    private AbstractBootComponent m_boot;
 
     private List<Class<? extends AbstractApplication>> m_applicationClasses = new ArrayList<>();
 
@@ -71,31 +66,29 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+
     }
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
-        if (m_boot.getNodeRole() == NodeRole.PEER) {
-            // #if LOGGER >= INFO
-            LOGGER.info("Loading application %s", getConfig().getApplicationPath());
-            // #endif /* LOGGER >= INFO */
+        // #if LOGGER >= INFO
+        LOGGER.info("Loading application %s", getConfig().getApplicationPath());
+        // #endif /* LOGGER >= INFO */
 
-            File dir = new File(getConfig().getApplicationPath());
+        File dir = new File(getConfig().getApplicationPath());
 
-            if (dir.exists() && dir.isDirectory()) {
-                File[] files = dir.listFiles();
+        if (dir.exists() && dir.isDirectory()) {
+            File[] files = dir.listFiles();
 
-                if (files != null) {
-                    for (File file : files) {
-                        m_applicationClasses.addAll(getApplicationClasses(file));
-                    }
+            if (files != null) {
+                for (File file : files) {
+                    m_applicationClasses.addAll(getApplicationClasses(file));
                 }
-            } else {
-                // #if LOGGER >= WARN
-                LOGGER.warn("Can't load applications from %s, no such directory", getConfig().getApplicationPath());
-                // #endif /* LOGGER >= WARN */
             }
+        } else {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Can't load applications from %s, no such directory", getConfig().getApplicationPath());
+            // #endif /* LOGGER >= WARN */
         }
 
         return true;
@@ -103,9 +96,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
 
     @Override
     protected boolean shutdownComponent() {
-        if (m_boot.getNodeRole() == NodeRole.PEER) {
-            m_applicationClasses.clear();
-        }
+        m_applicationClasses.clear();
 
         return false;
     }

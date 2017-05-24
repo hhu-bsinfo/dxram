@@ -31,7 +31,6 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
@@ -40,7 +39,6 @@ import de.hhu.bsinfo.dxram.migration.messages.MigrationRemoteMessage;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -86,12 +84,6 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
         short[] backupPeers;
         DataStructure chunk;
         boolean ret;
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
 
         m_migrationLock.lock();
         if (p_target != m_boot.getNodeID() && m_memoryManager.exists(p_chunkID)) {
@@ -203,12 +195,6 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
         boolean ret;
 
         // TODO: Handle range properly
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_startChunkID <= p_endChunkID) {
             chunkIDs = new long[(int) (p_endChunkID - p_startChunkID + 1)];

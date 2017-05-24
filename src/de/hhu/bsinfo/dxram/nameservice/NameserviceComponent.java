@@ -21,7 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.NameServiceIndexData;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -31,7 +30,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
-import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
  * Nameservice component providing mappings of string identifiers to chunkIDs.
@@ -44,7 +42,6 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
     private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceComponent.class.getSimpleName());
 
     // component dependencies
-    private AbstractBootComponent m_boot;
     private LookupComponent m_lookup;
     private ChunkComponent m_chunk;
 
@@ -149,7 +146,6 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
     }
@@ -202,14 +198,12 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
 
         m_indexData = new NameServiceIndexData();
 
-        if (m_boot.getNodeRole() == NodeRole.PEER) {
-            m_indexData.setID(m_chunk.createIndexChunk(m_indexData.sizeofObject()));
-            if (m_indexData.getID() == ChunkID.INVALID_ID) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Creating root index chunk failed");
-                // #endif /* LOGGER >= ERROR */
-                return false;
-            }
+        m_indexData.setID(m_chunk.createIndexChunk(m_indexData.sizeofObject()));
+        if (m_indexData.getID() == ChunkID.INVALID_ID) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Creating root index chunk failed");
+            // #endif /* LOGGER >= ERROR */
+            return false;
         }
 
         m_indexDataLock = new ReentrantLock(false);

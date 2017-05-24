@@ -21,13 +21,11 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -44,11 +42,9 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkMigrationComponent.class.getSimpleName());
 
     // component dependencies
-    private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
     private MemoryManagerComponent m_memoryManager;
     private NetworkComponent m_network;
-    private LogComponent m_log;
 
     /**
      * Constructor
@@ -120,22 +116,18 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_log = p_componentAccessor.getComponent(LogComponent.class);
     }
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
-        // Add DXRAMComponentOrder.Init value if something is put here
         return true;
     }
 
     @Override
     protected boolean shutdownComponent() {
-        // Add DXRAMComponentOrder.Shutdown value if something is put here
         return true;
     }
 

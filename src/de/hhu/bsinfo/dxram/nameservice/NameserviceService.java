@@ -18,12 +18,10 @@ import java.util.ArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
 /**
  * Nameservice service providing mappings of string identifiers to chunkIDs.
@@ -38,8 +36,6 @@ public class NameserviceService extends AbstractDXRAMService<NameserviceServiceC
 
     // component dependencies
     private NameserviceComponent m_nameservice;
-    private AbstractBootComponent m_boot;
-    private NetworkComponent m_network;
 
     /**
      * Constructor
@@ -117,8 +113,6 @@ public class NameserviceService extends AbstractDXRAMService<NameserviceServiceC
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override

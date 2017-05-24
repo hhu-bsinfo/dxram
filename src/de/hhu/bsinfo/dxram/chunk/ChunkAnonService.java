@@ -36,7 +36,6 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMRuntimeException;
-import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogAnonMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -92,12 +91,6 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
      */
     public int get(final ChunkAnon[] p_ret, final long... p_chunkIDs) {
         int numChunks = 0;
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
 
         // #if LOGGER == TRACE
         LOGGER.trace("get[chunkIDs(%d) ...]", p_chunkIDs.length);
@@ -215,12 +208,6 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
     public int getLocal(final ChunkAnon[] p_ret, final long... p_chunkIDs) {
         int numChunks = 0;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         // #if LOGGER == TRACE
         LOGGER.trace("getLocal[chunkIDs(%d) ...]", p_chunkIDs.length);
         // #endif /* LOGGER == TRACE */
@@ -297,12 +284,6 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
      */
     public int put(final ChunkLockOperation p_chunkUnlockOperation, final ChunkAnon[] p_chunks, final int p_offset, final int p_count) {
         int chunksPut = 0;
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
 
         // #if LOGGER == TRACE
         LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_chunks.length);

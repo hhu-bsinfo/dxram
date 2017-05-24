@@ -23,7 +23,6 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -78,12 +77,6 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
 
     @Override
     public ArrayList<LockedChunkEntry> getLockedList() {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         return m_lock.getLockedList();
     }
 
@@ -111,12 +104,6 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
     public ErrorCode lock(final boolean p_writeLock, final int p_timeout, final long p_chunkID) {
         assert p_timeout >= 0;
         assert p_chunkID != ChunkID.INVALID_ID;
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
 
         // #ifdef STATISTICS
         SOP_LOCK.enter();
@@ -204,12 +191,6 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
 
     @Override
     public ErrorCode unlock(final boolean p_writeLock, final long p_chunkID) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         // #ifdef STATISTICS
         SOP_UNLOCK.enter();
         // #endif /* STATISTICS */

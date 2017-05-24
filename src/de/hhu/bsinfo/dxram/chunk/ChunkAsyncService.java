@@ -31,7 +31,6 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
@@ -39,7 +38,6 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -93,12 +91,6 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
      */
     public int put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
         int chunksPut = 0;
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
 
         if (p_dataStructures.length == 0) {
             return chunksPut;
@@ -257,10 +249,6 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
     protected boolean startService(final DXRAMContext.Config p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
-
-        // if (getSystemData().getNodeRole().equals(NodeRole.PEER)) {
-        // m_backup.registerPeer();
-        // }
 
         return true;
     }

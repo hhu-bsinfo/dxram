@@ -26,7 +26,6 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.job.event.JobEventListener;
 import de.hhu.bsinfo.dxram.job.event.JobEvents;
 import de.hhu.bsinfo.dxram.job.messages.JobEventTriggeredMessage;
@@ -37,7 +36,6 @@ import de.hhu.bsinfo.dxram.job.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
@@ -102,13 +100,6 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      * @return True if scheduling was successful, false otherwise.
      */
     public long pushJob(final AbstractJob p_job) {
-        // early return
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         // #ifdef STATISTICS
         SOP_CREATE.enter();
         // #endif /* STATISTICS */
@@ -141,13 +132,6 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      * @return Valid job ID assigned to the submitted job, false otherwise.
      */
     public long pushJobRemote(final AbstractJob p_job, final short p_nodeID) {
-        // early return
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         // #ifdef STATISTICS
         SOP_REMOTE_SUBMIT.enter();
         // #endif /* STATISTICS */

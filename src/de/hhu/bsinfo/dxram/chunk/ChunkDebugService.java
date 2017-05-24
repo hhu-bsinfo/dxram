@@ -17,18 +17,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.DumpMemoryMessage;
 import de.hhu.bsinfo.dxram.chunk.messages.ResetMemoryMessage;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler;
@@ -41,7 +38,6 @@ import de.hhu.bsinfo.ethnet.NetworkHandler;
 public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceConfig> implements NetworkHandler.MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkDebugService.class.getSimpleName());
 
-    private AbstractBootComponent m_boot;
     private MemoryManagerComponent m_memoryManager;
     private NetworkComponent m_network;
     private NameserviceComponent m_nameservice;
@@ -60,12 +56,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      *         File to dump memory to
      */
     public void dumpChunkMemory(final String p_fileName) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         // #if LOGGER >= INFO
         LOGGER.info("Dumping chunk memory to %s, wait", p_fileName);
         // #endif /* LOGGER >= INFO */
@@ -95,12 +85,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      * @return True if dumping memory of remote peer successful, false on failure
      */
     public boolean dumpChunkMemory(final String p_fileName, final short p_remoteNodeId) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         // #if LOGGER >= INFO
         LOGGER.info("Dumping remote chunk memory of 0x%X to %s...", p_remoteNodeId, p_fileName);
         // #endif /* LOGGER >= INFO */
@@ -129,12 +113,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      * not properly reset anything involved in the backup or nameservice
      */
     public void resetMemory() {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.PEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         // #if LOGGER >= WARN
         LOGGER.warn("FULL chunk memory reset/wipe...");
         // #endif /* LOGGER >= WARN */
@@ -161,12 +139,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      *         Remote peer to reset the memory of
      */
     public void resetMemory(final short p_nodeId) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
-
         // #if LOGGER >= INFO
         LOGGER.info("Resetting remote chunk memory of 0x%X ", p_nodeId);
         // #endif /* LOGGER >= INFO */
@@ -224,7 +196,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
 
     @Override
     protected void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
