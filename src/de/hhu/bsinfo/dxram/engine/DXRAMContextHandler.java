@@ -20,7 +20,6 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Enumeration;
-import java.util.Objects;
 import java.util.Properties;
 
 import com.google.gson.Gson;
@@ -30,21 +29,18 @@ import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.util.NodeRole;
-
 /**
  * Handler for DXRAM context, loading configuration, creating default configuration, configuration overriding
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.10.2016
  */
 class DXRAMContextHandler {
-
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMContextHandler.class.getSimpleName());
 
     private static final String DXRAM_CONFIG_FILE_PATH = "config/dxram.json";
 
-    private DXRAMComponentManager m_componentManager;
-    private DXRAMServiceManager m_serviceManager;
+    private final DXRAMComponentManager m_componentManager;
+    private final DXRAMServiceManager m_serviceManager;
     private DXRAMContext m_context = new DXRAMContext();
 
     /**
@@ -70,20 +66,119 @@ class DXRAMContextHandler {
     }
 
     /**
+     * Create a default configuration file
+     *
+     * @param p_configFilePath
+     *         Path for configuration file
+     * @return True if creating config file successful, false otherwise
+     */
+    boolean createDefaultConfiguration(final String p_configFilePath) {
+        LOGGER.info("No valid configuration found or specified via vm argument -Ddxram.config, creating default configuration '%s'...", p_configFilePath);
+
+        String configFilePath;
+
+        if (p_configFilePath.isEmpty()) {
+            configFilePath = DXRAM_CONFIG_FILE_PATH;
+        } else {
+            configFilePath = p_configFilePath;
+        }
+
+        File file = new File(configFilePath);
+        if (file.exists()) {
+            if (!file.delete()) {
+                LOGGER.error("Deleting existing config file %s failed", file);
+                return false;
+            }
+        }
+
+        try {
+            if (!file.createNewFile()) {
+                LOGGER.error("Creating new config file %s failed", file);
+                return false;
+            }
+        } catch (final IOException e) {
+            LOGGER.error("Creating new config file %s failed: %s", file, e.getMessage());
+            return false;
+        }
+
+        m_context = new DXRAMContext();
+        m_context.createDefaultComponents(m_componentManager);
+        m_context.createDefaultServices(m_serviceManager);
+
+        Gson gson = DXRAMGsonContext.createGsonInstance();
+        String jsonString = gson.toJson(m_context);
+
+        try {
+            PrintWriter writer = new PrintWriter(file);
+            writer.print(jsonString);
+            writer.close();
+        } catch (final FileNotFoundException e) {
+            // we can ignored this here, already checked that
+        }
+
+        return true;
+    }
+
+    /**
+     * Load an existing configuration
+     *
+     * @param p_configFilePath
+     *         Path to existing configuration file
+     * @return True if loading successful, false on error
+     */
+    boolean loadConfiguration(final String p_configFilePath) {
+        LOGGER.info("Loading configuration '%s'...", p_configFilePath);
+
+        Gson gson = DXRAMGsonContext.createGsonInstance();
+
+        JsonElement element;
+        try {
+            element = gson.fromJson(new String(Files.readAllBytes(Paths.get(p_configFilePath))), JsonElement.class);
+        } catch (final Exception e) {
+            LOGGER.error("Could not load configuration '%s': %s", p_configFilePath, e.getMessage());
+            return false;
+        }
+
+        if (element == null) {
+            LOGGER.error("Could not load configuration '%s': empty configuration file", p_configFilePath);
+            return false;
+        }
+
+        overrideConfigurationWithVMArguments(element.getAsJsonObject());
+
+        try {
+            m_context = gson.fromJson(element, DXRAMContext.class);
+        } catch (final Exception e) {
+            LOGGER.error("Loading configuration '%s' failed: %s", p_configFilePath, e.getMessage());
+            return false;
+        }
+
+        if (m_context == null) {
+            LOGGER.error("Loading configuration '%s' failed: context null", p_configFilePath);
+            return false;
+        }
+
+        // create component/service instances
+        m_context.createComponentsFromConfig(m_componentManager, m_context.getConfig().getEngineConfig().getRole());
+        m_context.createServicesFromConfig(m_serviceManager, m_context.getConfig().getEngineConfig().getRole());
+
+        return true;
+    }
+
+    /**
      * Override current configuration with further values provided via VM arguments
      *
      * @param p_object
      *         Root object of JSON configuration tree
      */
     private static void overrideConfigurationWithVMArguments(final JsonObject p_object) {
-
         Properties props = System.getProperties();
         Enumeration e = props.propertyNames();
 
         while (e.hasMoreElements()) {
 
             String key = (String) e.nextElement();
-            if (key.startsWith("dxram.") && !key.equals("dxram.config")) {
+            if (key.startsWith("dxram.") && !"dxram.config".equals(key)) {
 
                 String[] tokens = key.split("\\.");
 
@@ -108,7 +203,6 @@ class DXRAMContextHandler {
 
                     // if first element is already invalid
                     if (elem == null) {
-                        child = null;
                         break;
                     }
 
@@ -141,126 +235,5 @@ class DXRAMContextHandler {
                 }
             }
         }
-    }
-
-    /**
-     * Create a default configuration file
-     *
-     * @param p_configFilePath
-     *         Path for configuration file
-     * @return True if creating config file successful, false otherwise
-     */
-    boolean createDefaultConfiguration(final String p_configFilePath) {
-
-        LOGGER.info("No valid configuration found or specified via vm argument -Ddxram.config, " + "creating default configuration '%s'...", p_configFilePath);
-
-        String configFilePath;
-
-        if (p_configFilePath.isEmpty()) {
-            configFilePath = DXRAM_CONFIG_FILE_PATH;
-        } else {
-            configFilePath = p_configFilePath;
-        }
-
-        File file = new File(configFilePath);
-        if (file.exists()) {
-            if (!file.delete()) {
-                LOGGER.error("Deleting existing config file %s failed", file);
-                return false;
-            }
-        }
-
-        try {
-            if (!file.createNewFile()) {
-                LOGGER.error("Creating new config file %s failed", file);
-                return false;
-            }
-        } catch (final IOException e) {
-            LOGGER.error("Creating new config file %s failed: %s", file, e.getMessage());
-            return false;
-        }
-
-        m_context = new DXRAMContext();
-        m_context.fillDefaultComponents(m_componentManager);
-        m_context.fillDefaultServices(m_serviceManager);
-
-        Gson gson = DXRAMGsonContext.createGsonInstance(m_context.getEngineSettings().getRole());
-        String jsonString = gson.toJson(m_context);
-
-        try {
-            PrintWriter writer = new PrintWriter(file);
-            writer.print(jsonString);
-            writer.close();
-        } catch (final FileNotFoundException e) {
-            // we can ignored this here, already checked that
-        }
-
-        return true;
-    }
-
-    /**
-     * Load an existing configuration
-     *
-     * @param p_configFilePath
-     *         Path to existing configuration file
-     * @return True if loading successful, false on error
-     */
-    boolean loadConfiguration(final String p_configFilePath) {
-
-        LOGGER.info("Loading configuration '%s'...", p_configFilePath);
-
-        // chicken-and-egg situation:
-        // the engine needs to know the node role to load the config file containing the node role
-        // solution: load config with superpeer role, then reload with correct role from first pass
-        m_context = loadConfiguration(p_configFilePath, NodeRole.SUPERPEER);
-
-        if (m_context == null) {
-            return false;
-        }
-
-        m_context = loadConfiguration(p_configFilePath, m_context.getEngineSettings().getRole());
-
-        if (m_context == null) {
-            return false;
-        }
-
-        // filter disabled/null components and services
-        m_context.getComponents().values().removeIf(Objects::isNull);
-        m_context.getServices().values().removeIf(Objects::isNull);
-
-        return true;
-    }
-
-    /**
-     * Load an existing configuration
-     *
-     * @param p_configFilePath
-     *         Path to existing configuration file
-     * @param p_role
-     *         Node role to use while loading and creating context
-     * @return Valid DXRAMContext on success, null otherwise
-     */
-    private DXRAMContext loadConfiguration(final String p_configFilePath, final NodeRole p_role) {
-        DXRAMContext context;
-        Gson gson = DXRAMGsonContext.createGsonInstance(p_role);
-
-        JsonElement element;
-        try {
-            element = gson.fromJson(new String(Files.readAllBytes(Paths.get(p_configFilePath))), JsonElement.class);
-        } catch (final Exception e) {
-            LOGGER.error("Could not load configuration '%s': %s", p_configFilePath, e.getMessage());
-            return null;
-        }
-
-        overrideConfigurationWithVMArguments(element.getAsJsonObject());
-
-        try {
-            context = gson.fromJson(element, DXRAMContext.class);
-        } catch (final Exception e) {
-            LOGGER.error("Loading configuration '%s' failed: %s", p_configFilePath, e.getMessage());
-            return null;
-        }
-
-        return context;
     }
 }

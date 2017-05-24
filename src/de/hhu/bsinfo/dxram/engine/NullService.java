@@ -18,22 +18,21 @@ package de.hhu.bsinfo.dxram.engine;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NullService extends AbstractDXRAMService {
-
+public class NullService extends AbstractDXRAMService<NullServiceConfig> {
     /**
      * Constructor
      */
     public NullService() {
-        super("null", true, true);
+        super("null", NullServiceConfig.class);
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return true;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -43,7 +42,7 @@ public class NullService extends AbstractDXRAMService {
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         return true;
     }
 

@@ -15,7 +15,18 @@ package de.hhu.bsinfo.dxram.engine;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
+/**
+ * Exception for incorrect node role on current instance
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ */
 public class InvalidNodeRoleException extends DXRAMRuntimeException {
+    /**
+     * Constructor
+     *
+     * @param p_role
+     *         The invalid node role
+     */
     public InvalidNodeRoleException(final NodeRole p_role) {
         super("Invalid node role " + p_role);
     }

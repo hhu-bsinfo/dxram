@@ -24,7 +24,6 @@ import de.hhu.bsinfo.utils.OSValidator;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public final class DXRAMJNIManager {
-
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMJNIManager.class.getSimpleName());
 
     private static String ms_jniPath;
@@ -39,7 +38,7 @@ public final class DXRAMJNIManager {
      * Setup JNI related things for DXRAM according to the provided profile via settings.
      *
      * @param p_module
-     *     the module to load.
+     *         the module to load.
      */
     public static void loadJNIModule(final String p_module) {
         // #if LOGGER >= DEBUG
@@ -74,11 +73,11 @@ public final class DXRAMJNIManager {
     /**
      * Setup JNI related things for DXRAM according to the provided profile via settings.
      *
-     * @param p_engineSettings
-     *     EngineSettings data for setup.
+     * @param p_engineConfig
+     *         EngineConfig data for setup.
      */
-    public static void setup(final DXRAMContext.EngineSettings p_engineSettings) {
-        ms_jniPath = p_engineSettings.getJNIPath();
+    public static void setup(final DXRAMContext.EngineConfig p_engineConfig) {
+        ms_jniPath = p_engineConfig.getJNIPath();
     }
 
 }

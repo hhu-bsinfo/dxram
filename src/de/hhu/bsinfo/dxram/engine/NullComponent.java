@@ -20,22 +20,21 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NullComponent extends AbstractDXRAMComponent {
-
+public class NullComponent extends AbstractDXRAMComponent<NullComponentConfig> {
     /**
      * Constructor
      */
     public NullComponent() {
-        super(DXRAMComponentOrder.Init.NULL, DXRAMComponentOrder.Shutdown.NULL, true, true);
+        super(DXRAMComponentOrder.Init.NULL, DXRAMComponentOrder.Shutdown.NULL, NullComponentConfig.class);
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return true;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -45,7 +44,7 @@ public class NullComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
         return true;
     }
 

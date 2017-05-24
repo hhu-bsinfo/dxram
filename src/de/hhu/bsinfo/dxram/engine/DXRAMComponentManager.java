@@ -24,7 +24,6 @@ import java.util.Map;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 21.10.2016
  */
 class DXRAMComponentManager {
-
     private Map<String, Class<? extends AbstractDXRAMComponent>> m_registeredComponents = new HashMap<>();
 
     /**
@@ -38,7 +37,7 @@ class DXRAMComponentManager {
      * Register a component
      *
      * @param p_class
-     *     Component class to register
+     *         Component class to register
      */
     public void register(final Class<? extends AbstractDXRAMComponent> p_class) {
         m_registeredComponents.put(p_class.getSimpleName(), p_class);
@@ -48,11 +47,10 @@ class DXRAMComponentManager {
      * Create an instance of a component
      *
      * @param p_className
-     *     Simple class name (without package path)
+     *         Simple class name (without package path)
      * @return Instance of the component
      */
     AbstractDXRAMComponent createInstance(final String p_className) {
-
         Class<? extends AbstractDXRAMComponent> clazz = m_registeredComponents.get(p_className);
 
         try {

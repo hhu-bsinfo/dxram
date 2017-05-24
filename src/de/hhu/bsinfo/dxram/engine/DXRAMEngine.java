@@ -394,12 +394,12 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     }
 
     /**
-     * Get the settings instance of the engine.
+     * Get the configuration instance
      *
-     * @return EngineSettings instance or null if engine is not initialized.
+     * @return Configuration
      */
-    DXRAMContext.EngineSettings getSettings() {
-        return m_contextHandler.getContext().getEngineSettings();
+    DXRAMContext.Config getConfig() {
+        return m_contextHandler.getContext().getConfig();
     }
 
     /**
@@ -446,6 +446,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      * Setup JNI related stuff.
      */
     private void setupJNI() {
-        DXRAMJNIManager.setup(m_contextHandler.getContext().getEngineSettings());
+        DXRAMJNIManager.setup(m_contextHandler.getContext().getConfig().getEngineConfig());
     }
 }

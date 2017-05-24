@@ -13,15 +13,40 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
+/**
+ * Runtime exception class for DXRAM (engine)
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ */
 public class DXRAMRuntimeException extends RuntimeException {
+    /**
+     * Constructor
+     *
+     * @param p_msg
+     *         Exception message
+     */
     public DXRAMRuntimeException(final String p_msg) {
         super(p_msg);
     }
 
+    /**
+     * Constructor
+     *
+     * @param p_e
+     *         Exception to wrap
+     */
     public DXRAMRuntimeException(final Exception p_e) {
         super(p_e);
     }
 
+    /**
+     * Constructor
+     *
+     * @param p_msg
+     *         Exception message
+     * @param p_e
+     *         Exception to wrap
+     */
     public DXRAMRuntimeException(final String p_msg, final Exception p_e) {
         super(p_msg, p_e);
     }
