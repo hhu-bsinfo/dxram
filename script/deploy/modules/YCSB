@@ -26,9 +26,9 @@ compile_ycsb_application_options_string_peer()
 	YCSP_PARAMS=""
 	YCSP_PARAMS="$YCSP_PARAMS -p log4j.configurationFile=config/log4j.xml"
 	YCSP_PARAMS="$YCSP_PARAMS -p dxram.config=config/dxram.json"
-	YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_engineSettings.m_address.m_ip=$ip"
-	YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_engineSettings.m_address.m_port=$port"
-	YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_engineSettings.m_role=Peer"
+	YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_config.m_engineConfig.m_address.m_ip=$ip"
+	YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_config.m_engineConfig.m_address.m_port=$port"
+	YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_config.m_engineConfig.m_role=Peer"
 
 	YCSP_PARAMS="$YCSP_PARAMS -p zookeeper.string=$zookeeper_string"
 	YCSP_PARAMS="$YCSP_PARAMS -p recordcount=$recordcount"

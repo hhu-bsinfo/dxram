@@ -182,8 +182,8 @@ check_configuration()
 		echo -e "File not found: DXRAM configuration file was created\n"
 		cd "$EXECUTION_DIR"
 	else
-		local component_header=`echo $config_content | grep "m_components"`
-		local service_header=`echo $config_content | grep "m_services"`
+		local component_header=`echo $config_content | grep "m_componentConfigs"`
+		local service_header=`echo $config_content | grep "m_serviceConfigs"`
 		if [ "$component_header" = "" -o "$service_header" = "" ] ; then
 			# Configuration file seems to be corrupted -> start dxram once to create new configuration
 			if ! hash java 2>/dev/null ; then
@@ -270,9 +270,9 @@ write_configuration()
       },"
 
 			# Replace zookeeper configuration
-			current_config=`sed '/ZookeeperBootComponent/q' $CONFIG_FILE`
+			current_config=`sed '/ZookeeperBootComponentConfig/q' $CONFIG_FILE`
 			current_config="$current_config$zookeeper_config_string"
-			end=`sed -ne '/ZookeeperBootComponent/{s///; :a' -e 'n;p;ba' -e '}' $CONFIG_FILE`
+			end=`sed -ne '/ZookeeperBootComponentConfig/{s///; :a' -e 'n;p;ba' -e '}' $CONFIG_FILE`
 			end=`echo "$end" | sed -ne '/},/{s///; :a' -e 'n;p;ba' -e '}'`
 			current_config=`echo -e "$current_config\n$end"`
 

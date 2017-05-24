@@ -19,9 +19,9 @@ compile_vm_options_string_superpeer()
 	VM_OPTS=""
 	VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
 	VM_OPTS="$VM_OPTS -Ddxram.config=config/dxram.json"
-	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_ip=$ip"
-	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_port=$port"
-	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_role=Superpeer"
+	VM_OPTS="$VM_OPTS -Ddxram.m_config.m_engineConfig.m_address.m_ip=$ip"
+	VM_OPTS="$VM_OPTS -Ddxram.m_config.m_engineConfig.m_address.m_port=$port"
+	VM_OPTS="$VM_OPTS -Ddxram.m_config.m_engineConfig.m_role=Superpeer"
 	VM_OPTS="$VM_OPTS $vm_options"
 
 	if [ "$debug" != "" ]; then

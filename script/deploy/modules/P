@@ -26,21 +26,21 @@ compile_vm_options_string_peer()
 	VM_OPTS=""
 	VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
 	VM_OPTS="$VM_OPTS -Ddxram.config=config/dxram.json"
-	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_ip=$ip"
-	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_address.m_port=$port"
-	VM_OPTS="$VM_OPTS -Ddxram.m_engineSettings.m_role=Peer"
+	VM_OPTS="$VM_OPTS -Ddxram.m_config.m_engineConfig.m_address.m_ip=$ip"
+	VM_OPTS="$VM_OPTS -Ddxram.m_config.m_engineConfig.m_address.m_port=$port"
+	VM_OPTS="$VM_OPTS -Ddxram.m_config.m_engineConfig.m_role=Peer"
 
 	if [ "$ram_size_in_mb" ]; then
-		VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=$ram_size_in_mb"
-		VM_OPTS="$VM_OPTS -Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=mb"
+		VM_OPTS="$VM_OPTS -Ddxram.m_config.m_componentConfigs[MemoryManagerComponentConfig].m_keyValueStoreSize.m_value=$ram_size_in_mb"
+		VM_OPTS="$VM_OPTS -Ddxram.m_config.m_componentConfigs[MemoryManagerComponentConfig].m_keyValueStoreSize.m_unit=mb"
 	fi
 
 	if [ "$compute_node_role" ]; then
-		VM_OPTS="$VM_OPTS -Ddxram.m_services[MasterSlaveComputeService].m_role=$compute_node_role"
+		VM_OPTS="$VM_OPTS -Ddxram.m_config.m_serviceConfigs[MasterSlaveComputeServiceConfig].m_role=$compute_node_role"
 	fi
 
 	if [ "$compute_group_id" ]; then
-		VM_OPTS="$VM_OPTS -Ddxram.m_services[MasterSlaveComputeService].m_computeGroupId=$compute_group_id"
+		VM_OPTS="$VM_OPTS -Ddxram.m_config.m_serviceConfigs[MasterSlaveComputeServiceConfig].m_computeGroupId=$compute_group_id"
 	fi
 
 	if [ "$profile" = "yjp" ]; then
