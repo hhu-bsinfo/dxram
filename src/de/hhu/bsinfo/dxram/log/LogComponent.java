@@ -20,9 +20,6 @@ import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
@@ -63,9 +60,6 @@ import de.hhu.bsinfo.utils.StringUtils;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(LogService.class.getSimpleName());
-
     // Constants
     private static final AbstractPrimLogEntryHeader PRIM_LOG_ENTRY_HEADER = new PrimLogEntryHeader();
     private static final int PAYLOAD_PRINT_LENGTH = 128;

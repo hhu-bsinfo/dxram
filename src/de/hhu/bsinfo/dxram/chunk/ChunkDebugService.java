@@ -13,9 +13,6 @@
 
 package de.hhu.bsinfo.dxram.chunk;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.DumpMemoryMessage;
@@ -36,8 +33,6 @@ import de.hhu.bsinfo.ethnet.NetworkHandler;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2017
  */
 public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceConfig> implements NetworkHandler.MessageReceiver {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkDebugService.class.getSimpleName());
-
     private MemoryManagerComponent m_memoryManager;
     private NetworkComponent m_network;
     private NameserviceComponent m_nameservice;

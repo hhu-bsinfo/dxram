@@ -15,9 +15,6 @@ package de.hhu.bsinfo.dxram.job;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -31,8 +28,6 @@ import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkStealingComponentConfig> implements WorkerDelegate {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(JobWorkStealingComponent.class.getSimpleName());
-
     // component dependencies
     private AbstractBootComponent m_boot;
 

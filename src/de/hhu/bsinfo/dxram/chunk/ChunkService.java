@@ -18,9 +18,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
@@ -68,9 +65,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> implements MessageReceiver {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkService.class.getSimpleName());
-
     // statistics recording
     private static final StatisticsOperation SOP_CREATE = StatisticsRecorderManager.getOperation(ChunkService.class, "Create");
     private static final StatisticsOperation SOP_REMOTE_CREATE = StatisticsRecorderManager.getOperation(ChunkService.class, "RemoteCreate");

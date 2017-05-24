@@ -19,9 +19,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -35,9 +32,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class PeerLockComponent extends AbstractLockComponent<PeerLockComponentConfig> {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(PeerLockComponent.class.getSimpleName());
-
     private Map<Long, LockEntry> m_lockedChunks;
     private AtomicBoolean m_mapEntryCreationLock;
 

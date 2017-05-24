@@ -15,9 +15,6 @@ package de.hhu.bsinfo.dxram.chunk;
 
 import java.util.ArrayList;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
@@ -38,9 +35,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrationComponentConfig> {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkMigrationComponent.class.getSimpleName());
-
     // component dependencies
     private BackupComponent m_backup;
     private MemoryManagerComponent m_memoryManager;

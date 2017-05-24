@@ -18,9 +18,6 @@ import java.lang.management.ManagementFactory;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.messages.BootMessages;
 import de.hhu.bsinfo.dxram.boot.messages.RebootMessage;
@@ -43,9 +40,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class BootService extends AbstractDXRAMService<BootServiceConfig> implements MessageReceiver {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(BootService.class.getSimpleName());
-
     // component dependencies
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;

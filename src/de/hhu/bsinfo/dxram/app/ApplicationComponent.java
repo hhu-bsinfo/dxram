@@ -11,9 +11,6 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -25,8 +22,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  */
 public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComponentConfig> {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ApplicationComponent.class.getSimpleName());
-
     private List<Class<? extends AbstractApplication>> m_applicationClasses = new ArrayList<>();
 
     /**

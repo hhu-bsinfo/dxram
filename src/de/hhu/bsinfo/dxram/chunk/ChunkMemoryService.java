@@ -13,9 +13,6 @@
 
 package de.hhu.bsinfo.dxram.chunk;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -36,9 +33,6 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 14.06.2016
  */
 public class ChunkMemoryService extends AbstractDXRAMService<ChunkMemoryServiceConfig> {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkMemoryService.class.getSimpleName());
-
     // component dependencies
     private AbstractBootComponent m_boot;
     private MemoryManagerComponent m_memoryManager;

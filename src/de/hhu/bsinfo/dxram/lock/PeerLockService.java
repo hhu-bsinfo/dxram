@@ -15,9 +15,6 @@ package de.hhu.bsinfo.dxram.lock;
 
 import java.util.ArrayList;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -51,9 +48,6 @@ import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> implements MessageReceiver, EventListener<NodeFailureEvent> {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(PeerLockService.class.getSimpleName());
-
     // statistics recorder
     private static final StatisticsOperation SOP_LOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "Lock");
     private static final StatisticsOperation SOP_UNLOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "Unlock");

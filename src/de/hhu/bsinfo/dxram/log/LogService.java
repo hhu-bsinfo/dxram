@@ -13,9 +13,6 @@
 
 package de.hhu.bsinfo.dxram.log;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -39,9 +36,6 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class LogService extends AbstractDXRAMService<LogServiceConfig> implements MessageReceiver {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(LogService.class.getSimpleName());
-
     // component dependencies
     private NetworkComponent m_network;
     private LogComponent m_log;

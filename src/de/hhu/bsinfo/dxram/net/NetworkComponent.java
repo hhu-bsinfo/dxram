@@ -18,9 +18,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -49,8 +46,6 @@ import de.hhu.bsinfo.ethnet.RequestMap;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentConfig> implements EventListener<NodeFailureEvent> {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkComponent.class.getSimpleName());
-
     // component dependencies
     private AbstractBootComponent m_boot;
     private EventComponent m_event;

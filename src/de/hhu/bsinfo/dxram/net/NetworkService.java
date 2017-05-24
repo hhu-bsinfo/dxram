@@ -28,7 +28,6 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class NetworkService extends AbstractDXRAMService<NetworkServiceConfig> {
-
     // component dependencies
     private NetworkComponent m_network;
 

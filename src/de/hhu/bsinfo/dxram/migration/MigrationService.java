@@ -17,9 +17,6 @@ import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -51,9 +48,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class MigrationService extends AbstractDXRAMService<MigrationServiceConfig> implements MessageReceiver {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(MigrationService.class.getSimpleName());
-
     // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;

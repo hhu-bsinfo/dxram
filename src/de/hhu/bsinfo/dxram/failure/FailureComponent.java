@@ -15,9 +15,6 @@ package de.hhu.bsinfo.dxram.failure;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -48,9 +45,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 05.10.2016
  */
 public class FailureComponent extends AbstractDXRAMComponent<FailureComponentConfig> implements MessageReceiver, EventListener<AbstractEvent> {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(FailureComponent.class.getSimpleName());
-
     // component dependencies
     private AbstractBootComponent m_boot;
     private LookupComponent m_lookup;

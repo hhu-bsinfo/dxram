@@ -12,9 +12,6 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -26,8 +23,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  */
 public class ApplicationService extends AbstractDXRAMService<ApplicationServiceConfig> {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ApplicationService.class.getSimpleName());
-
     // component dependencies
     private ApplicationComponent m_application;
 

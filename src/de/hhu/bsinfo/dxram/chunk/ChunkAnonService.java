@@ -17,9 +17,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
@@ -56,8 +53,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.03.2017
  */
 public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfig> implements MessageReceiver {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkService.class.getSimpleName());
-
     // statistics recording
     private static final StatisticsOperation SOP_GET_ANON = StatisticsRecorderManager.getOperation(ChunkService.class, "GetAnon");
     private static final StatisticsOperation SOP_INCOMING_GET_ANON = StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingGetAnon");

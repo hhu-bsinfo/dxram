@@ -17,9 +17,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -33,8 +30,6 @@ import de.hhu.bsinfo.utils.event.EventInterface;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig> implements EventInterface {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(EventComponent.class.getSimpleName());
-
     // private state
     private Map<String, ArrayList<EventListener<? extends AbstractEvent>>> m_eventListener = new HashMap<>();
     private TaskExecutor m_executor;

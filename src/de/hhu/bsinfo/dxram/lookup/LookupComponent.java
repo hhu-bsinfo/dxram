@@ -15,9 +15,6 @@ package de.hhu.bsinfo.dxram.lookup;
 
 import java.util.ArrayList;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
@@ -56,8 +53,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfig> implements EventListener<AbstractEvent> {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(LookupComponent.class.getSimpleName());
-
     private static final short ORDER = 10;
 
     // component dependencies

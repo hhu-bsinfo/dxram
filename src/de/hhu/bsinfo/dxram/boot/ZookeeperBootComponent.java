@@ -17,8 +17,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -46,8 +44,6 @@ import de.hhu.bsinfo.utils.unit.IPV4Unit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> implements Watcher {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ZookeeperBootComponent.class.getSimpleName());
-
     // component dependencies
     private BackupComponent m_backup;
     private EventComponent m_event;

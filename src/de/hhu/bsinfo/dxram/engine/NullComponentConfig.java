@@ -12,4 +12,6 @@ public class NullComponentConfig extends DXRAMComponentConfig {
     public NullComponentConfig() {
         super(NullComponent.class, true, true);
     }
+
+
 }

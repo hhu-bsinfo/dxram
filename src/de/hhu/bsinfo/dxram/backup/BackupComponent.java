@@ -18,9 +18,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -51,8 +48,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfig> implements EventListener<AbstractEvent> {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(BackupComponent.class.getSimpleName());
-
     // component dependencies
     private AbstractBootComponent m_boot;
     private ChunkBackupComponent m_chunkBackup;

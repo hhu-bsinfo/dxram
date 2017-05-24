@@ -24,9 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.Gson;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -58,8 +55,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
 public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveComputeServiceConfig> implements MessageReceiver, TaskListener {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(MasterSlaveComputeService.class.getSimpleName());
-
     // component dependencies
     private NetworkComponent m_network;
     private NameserviceComponent m_nameservice;

@@ -17,9 +17,6 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.NameServiceIndexData;
@@ -39,8 +36,6 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComponentConfig> {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceComponent.class.getSimpleName());
-
     // component dependencies
     private LookupComponent m_lookup;
     private ChunkComponent m_chunk;

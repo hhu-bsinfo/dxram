@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2016
  */
 public abstract class AbstractDXRAMService<T extends DXRAMServiceConfig> {
-    private final Logger LOGGER;
+    protected final Logger LOGGER;
 
     private final T m_config;
 

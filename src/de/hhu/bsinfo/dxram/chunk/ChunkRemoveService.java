@@ -6,9 +6,6 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
@@ -38,8 +35,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 10.04.2017
  */
 public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceConfig> implements MessageReceiver {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkRemoveService.class.getSimpleName());
-
     // statistics recording
     private static final StatisticsOperation SOP_REMOVE = StatisticsRecorderManager.getOperation(ChunkService.class, "Remove");
     private static final StatisticsOperation SOP_INCOMING_REMOVE = StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingRemove");

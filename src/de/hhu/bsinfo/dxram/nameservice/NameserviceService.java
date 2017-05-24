@@ -15,9 +15,6 @@ package de.hhu.bsinfo.dxram.nameservice;
 
 import java.util.ArrayList;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -31,9 +28,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class NameserviceService extends AbstractDXRAMService<NameserviceServiceConfig> {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceService.class.getSimpleName());
-
     // component dependencies
     private NameserviceComponent m_nameservice;
 

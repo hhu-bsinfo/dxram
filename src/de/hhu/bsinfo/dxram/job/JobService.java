@@ -18,9 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -51,9 +48,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class JobService extends AbstractDXRAMService<JobServiceConfig> implements MessageReceiver, JobEventListener {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(JobService.class.getSimpleName());
-
     // statistics recorder
     private static final StatisticsOperation SOP_CREATE = StatisticsRecorderManager.getOperation(JobService.class, "Submit");
     private static final StatisticsOperation SOP_REMOTE_SUBMIT = StatisticsRecorderManager.getOperation(JobService.class, "RemoteSubmit");

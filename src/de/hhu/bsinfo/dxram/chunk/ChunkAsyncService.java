@@ -18,9 +18,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
@@ -50,9 +47,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.02.2016
  */
 public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceConfig> implements MessageReceiver {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkAsyncService.class.getSimpleName());
-
     // statistics recording
     private static final StatisticsOperation SOP_PUT_ASYNC = StatisticsRecorderManager.getOperation(ChunkAsyncService.class, "PutAsync");
     private static final StatisticsOperation SOP_INCOMING_PUT_ASYNC = StatisticsRecorderManager.getOperation(ChunkAsyncService.class, "IncomingPutAsync");

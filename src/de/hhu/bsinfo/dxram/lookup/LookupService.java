@@ -15,9 +15,6 @@ package de.hhu.bsinfo.dxram.lookup;
 
 import java.util.ArrayList;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -40,9 +37,6 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
  * @author Mike Birkhoff, michael.birkhoff@hhu.de, 15.07.2016
  */
 public class LookupService extends AbstractDXRAMService<LookupServiceConfig> implements MessageReceiver {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(LookupService.class.getSimpleName());
-
     // component dependencies
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;

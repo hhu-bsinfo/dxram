@@ -16,9 +16,6 @@ package de.hhu.bsinfo.dxram.recovery;
 import java.io.File;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
@@ -48,8 +45,6 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.03.16
  */
 public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig> implements MessageReceiver {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(RecoveryService.class.getSimpleName());
-
     // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;

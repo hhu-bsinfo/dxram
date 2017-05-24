@@ -24,7 +24,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public abstract class AbstractLockComponent<T extends DXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
-
     static final int MS_TIMEOUT_UNLIMITED = -1;
 
     /**

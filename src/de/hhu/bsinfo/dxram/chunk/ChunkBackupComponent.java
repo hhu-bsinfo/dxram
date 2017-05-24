@@ -15,9 +15,6 @@ package de.hhu.bsinfo.dxram.chunk;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -38,8 +35,6 @@ import de.hhu.bsinfo.ethnet.NetworkException;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComponentConfig> {
-
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkBackupComponent.class.getSimpleName());
     private static final int MAXIMUM_QUEUE_SIZE = 10;
 
     // component dependencies
