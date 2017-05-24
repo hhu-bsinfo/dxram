@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.lookup;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
@@ -13,5 +14,10 @@ public class LookupServiceConfig extends DXRAMServiceConfig {
      */
     public LookupServiceConfig() {
         super(LookupService.class, true, true);
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        return true;
     }
 }

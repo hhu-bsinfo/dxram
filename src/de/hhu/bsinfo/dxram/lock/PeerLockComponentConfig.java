@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.lock;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 
 /**
  * Config for the PeerLockComponent
@@ -13,5 +14,10 @@ public class PeerLockComponentConfig extends DXRAMComponentConfig {
      */
     public PeerLockComponentConfig() {
         super(PeerLockComponent.class, false, true);
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        return true;
     }
 }

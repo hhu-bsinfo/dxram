@@ -12,4 +12,9 @@ public class NullServiceConfig extends DXRAMServiceConfig {
     public NullServiceConfig() {
         super(NullService.class, true, true);
     }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        return true;
+    }
 }

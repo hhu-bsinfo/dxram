@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.log;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
@@ -104,5 +105,11 @@ public class LogComponentConfig extends DXRAMComponentConfig {
     // TODO kevin: doc
     public boolean sortBufferPooling() {
         return m_sortBufferPooling;
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        // TODO kevin
+        return true;
     }
 }

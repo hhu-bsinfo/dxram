@@ -158,6 +158,15 @@ class DXRAMContextHandler {
             return false;
         }
 
+        // verify configuration values
+        if (!m_context.verifyConfigurationValuesComponents()) {
+            return false;
+        }
+
+        if (!m_context.verifyConfigurationValuesComponents()) {
+            return false;
+        }
+
         // create component/service instances
         m_context.createComponentsFromConfig(m_componentManager, m_context.getConfig().getEngineConfig().getRole());
         m_context.createServicesFromConfig(m_serviceManager, m_context.getConfig().getEngineConfig().getRole());

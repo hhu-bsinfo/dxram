@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.mem;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
@@ -11,6 +12,9 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
 public class MemoryManagerComponentConfig extends DXRAMComponentConfig {
+    private static final StorageUnit KEY_VALUE_STORE_SIZE_MIN = new StorageUnit(32L, StorageUnit.MB);
+    private static final StorageUnit KEY_VALUE_STORE_SIZE_MAX = new StorageUnit(128, StorageUnit.GB);
+
     @Expose
     private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
 
@@ -47,5 +51,24 @@ public class MemoryManagerComponentConfig extends DXRAMComponentConfig {
      */
     public String getMemDumpFolderOnError() {
         return m_memDumpFolderOnError;
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        if (m_keyValueStoreSize.getBytes() < KEY_VALUE_STORE_SIZE_MIN.getBytes()) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Min m_keyValueStoreSize: %s", KEY_VALUE_STORE_SIZE_MIN);
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        if (m_keyValueStoreSize.getBytes() > KEY_VALUE_STORE_SIZE_MAX.getBytes()) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Max m_keyValueStoreSize: %s", KEY_VALUE_STORE_SIZE_MAX);
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        return true;
     }
 }

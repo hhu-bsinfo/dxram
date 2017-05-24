@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
@@ -48,5 +49,11 @@ public class LookupComponentConfig extends DXRAMComponentConfig {
     // TODO kevin: doc
     public int getPingInterval() {
         return m_pingInterval;
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        // TODO kevin
+        return true;
     }
 }

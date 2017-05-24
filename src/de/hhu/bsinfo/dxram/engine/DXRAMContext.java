@@ -83,6 +83,48 @@ public class DXRAMContext {
     }
 
     /**
+     * Run configuration value verification on all component configurations
+     *
+     * @return True if verification successful, false on failure
+     */
+    boolean verifyConfigurationValuesComponents() {
+        for (DXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
+            // #if LOGGER >= DEBUG
+            LOGGER.debug("Verifying component configuration values of %s...", config.getClassName());
+            // #endif /* LOGGER >= DEBUG */
+            if (!config.verify(m_config)) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Verifying component configuration values failed (%s)", config.getClassName());
+                // #endif /* LOGGER >= ERROR */
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Run configuration value verification on all service configurations
+     *
+     * @return True if verification successful, false on failure
+     */
+    boolean verifyConfigurationValuesServices() {
+        for (DXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
+            // #if LOGGER >= DEBUG
+            LOGGER.debug("Verifying service configuration values of %s...", config.getClassName());
+            // #endif /* LOGGER >= DEBUG */
+            if (!config.verify(m_config)) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Verifying service configuration values failed (%s)", config.getClassName());
+                // #endif /* LOGGER >= ERROR */
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Create component instances based on the current configuration
      *
      * @param p_manager

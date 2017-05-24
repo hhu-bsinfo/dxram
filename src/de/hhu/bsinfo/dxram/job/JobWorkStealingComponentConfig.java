@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.job;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 
 /**
  * Config for the JobWorkStealingComponent
@@ -10,6 +11,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
 public class JobWorkStealingComponentConfig extends DXRAMComponentConfig {
+    private static final int NUM_WORKERS_MAX = 64;
+
     @Expose
     private int m_numWorkers = 1;
 
@@ -25,5 +28,24 @@ public class JobWorkStealingComponentConfig extends DXRAMComponentConfig {
      */
     public int getNumWorkers() {
         return m_numWorkers;
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        if (m_numWorkers < 1) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Invalid value (%d) for m_numWorkers", m_numWorkers);
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        if (m_numWorkers > NUM_WORKERS_MAX) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Max limit m_numWorkers: %d", NUM_WORKERS_MAX);
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        return true;
     }
 }

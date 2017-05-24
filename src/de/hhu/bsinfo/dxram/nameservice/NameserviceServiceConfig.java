@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.nameservice;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
@@ -13,5 +14,10 @@ public class NameserviceServiceConfig extends DXRAMServiceConfig {
      */
     public NameserviceServiceConfig() {
         super(NameserviceService.class, false, true);
+    }
+
+    @Override
+    protected boolean verify(DXRAMContext.Config p_config) {
+        return true;
     }
 }

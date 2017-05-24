@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.backup;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
@@ -68,5 +69,11 @@ public class BackupComponentConfig extends DXRAMComponentConfig {
      */
     public byte getReplicationFactor() {
         return m_replicationFactor;
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        // TODO kevin
+        return true;
     }
 }

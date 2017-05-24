@@ -2,12 +2,17 @@ package de.hhu.bsinfo.dxram.engine;
 
 import com.google.gson.annotations.Expose;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Provides configuration values for a component. Use this as a base class for all components to add further configuration values
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public class DXRAMComponentConfig {
+public abstract class DXRAMComponentConfig {
+    protected final Logger LOGGER;
+
     @Expose
     private String m_class;
 
@@ -31,6 +36,7 @@ public class DXRAMComponentConfig {
      *         True to enable the component if the node is a peer, false to disable
      */
     protected DXRAMComponentConfig(final Class<? extends AbstractDXRAMComponent> p_class, final boolean p_enabledForSuperpeer, final boolean p_enabledForPeer) {
+        LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_class = getClass().getName();
         m_componentClass = p_class.getSimpleName();
         m_enabledForSuperpeer = p_enabledForSuperpeer;
@@ -64,4 +70,13 @@ public class DXRAMComponentConfig {
     public boolean isEnabledForPeer() {
         return m_enabledForPeer;
     }
+
+    /**
+     * Verify the configuration values: Check limits, validate strings, ...
+     *
+     * @param p_config
+     *         Full configuration to access other config values on dependencies
+     * @return True if verifcation successful, false on error
+     */
+    protected abstract boolean verify(final DXRAMContext.Config p_config);
 }

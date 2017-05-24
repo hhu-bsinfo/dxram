@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.utils.unit;
 
+import java.util.Locale;
+
 /**
  * Wrapper for handling and converting time units (ns, us, ms, sec, min, h)
  *
@@ -33,9 +35,9 @@ public class TimeUnit {
      * Constructor
      *
      * @param p_value
-     *     Value
+     *         Value
      * @param p_unit
-     *     Unit of the value (ns, us, ms, sec, min, h)
+     *         Unit of the value (ns, us, ms, sec, min, h)
      */
     public TimeUnit(final long p_value, final String p_unit) {
         parse(p_value, p_unit);
@@ -96,6 +98,24 @@ public class TimeUnit {
     }
 
     /**
+     * Get the time in us
+     *
+     * @return Time in us as double value
+     */
+    public double getUsDouble() {
+        return (double) m_timeNs / 1000.0;
+    }
+
+    /**
+     * Get the time in ms
+     *
+     * @return Time in ms as double value
+     */
+    public double getMsDouble() {
+        return (double) m_timeNs / 1000.0 / 1000.0;
+    }
+
+    /**
      * Get the time in seconds
      *
      * @return Time in seconds as double value
@@ -105,12 +125,68 @@ public class TimeUnit {
     }
 
     /**
+     * Get the time in min
+     *
+     * @return Time in min as double value
+     */
+    public double getMinDouble() {
+        return (double) m_timeNs / 1000.0 / 1000.0 / 1000.0 / 60.0;
+    }
+
+    /**
+     * Get the time in hours
+     *
+     * @return Time in hours as double value
+     */
+    public double getHoursDouble() {
+        return (double) m_timeNs / 1000.0 / 1000.0 / 1000.0 / 60.0 / 60.0;
+    }
+
+    /**
+     * Get value in easy readable representation
+     *
+     * @return String with value in ns, us, ms, sec, min, h
+     */
+    public String getHumanReadable() {
+        String ret;
+
+        if (m_timeNs > 1000) {
+            if (getUs() > 1000) {
+                if (getMs() > 1000) {
+                    if (getSec() > 60) {
+                        if (getMin() > 60) {
+                            ret = String.format(Locale.ROOT, "%.3f", getHoursDouble()) + " h";
+                        } else {
+                            ret = String.format(Locale.ROOT, "%.3f", getMinDouble()) + " min";
+                        }
+                    } else {
+                        ret = String.format(Locale.ROOT, "%.3f", getSecDouble()) + " sec";
+                    }
+                } else {
+                    ret = String.format(Locale.ROOT, "%.3f", getMsDouble()) + " ms";
+                }
+            } else {
+                ret = String.format(Locale.ROOT, "%.3f", getUsDouble()) + " us";
+            }
+        } else {
+            ret = m_timeNs + " ns";
+        }
+
+        return ret;
+    }
+
+    @Override
+    public String toString() {
+        return getHumanReadable();
+    }
+
+    /**
      * Parse the value with the specified unit
      *
      * @param p_value
-     *     Value
+     *         Value
      * @param p_unit
-     *     Unit of the value
+     *         Unit of the value
      */
     private void parse(final long p_value, final String p_unit) {
         switch (p_unit) {

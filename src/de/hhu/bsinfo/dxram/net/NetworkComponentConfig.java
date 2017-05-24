@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.net;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
 
@@ -84,5 +85,11 @@ public class NetworkComponentConfig extends DXRAMComponentConfig {
      */
     public TimeUnit getRequestTimeout() {
         return m_requestTimeout;
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        // TODO kevin
+        return true;
     }
 }

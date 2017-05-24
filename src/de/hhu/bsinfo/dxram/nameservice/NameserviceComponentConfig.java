@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.nameservice;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 
 /**
  * Config for the NameserviceComponent
@@ -33,5 +34,11 @@ public class NameserviceComponentConfig extends DXRAMComponentConfig {
     // TODO kevin: doc
     public int getNameserviceCacheEntries() {
         return m_nameserviceCacheEntries;
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        // TODO kevin
+        return true;
     }
 }

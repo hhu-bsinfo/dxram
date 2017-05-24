@@ -2,6 +2,7 @@ package de.hhu.bsinfo.dxram.chunk;
 
 import com.google.gson.annotations.Expose;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
@@ -25,5 +26,17 @@ public class ChunkRemoveServiceConfig extends DXRAMServiceConfig {
      */
     public int getRemoverQueueSize() {
         return m_removerQueueSize;
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        if (m_removerQueueSize < 1) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Invalid value (%d) for m_removerQueueSize", m_removerQueueSize);
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        return true;
     }
 }

@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 
 /**
  * Config for the ChunkMigrationComponent
@@ -13,5 +14,10 @@ public class ChunkMigrationComponentConfig extends DXRAMComponentConfig {
      */
     public ChunkMigrationComponentConfig() {
         super(ChunkMigrationComponent.class, false, true);
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        return true;
     }
 }

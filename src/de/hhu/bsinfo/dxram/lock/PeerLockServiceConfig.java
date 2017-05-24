@@ -2,6 +2,7 @@ package de.hhu.bsinfo.dxram.lock;
 
 import com.google.gson.annotations.Expose;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
 
@@ -36,5 +37,10 @@ public class PeerLockServiceConfig extends DXRAMServiceConfig {
      */
     public TimeUnit getRemoteLockTryTimeout() {
         return m_remoteLockTryTimeout;
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        return true;
     }
 }

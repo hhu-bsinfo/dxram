@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.migration;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
@@ -13,5 +14,10 @@ public class MigrationServiceConfig extends DXRAMServiceConfig {
      */
     public MigrationServiceConfig() {
         super(MigrationService.class, false, true);
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        return true;
     }
 }

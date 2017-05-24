@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.recovery;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
@@ -13,5 +14,11 @@ public class RecoveryServiceConfig extends DXRAMServiceConfig {
      */
     public RecoveryServiceConfig() {
         super(RecoveryService.class, false, true);
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        // TODO kevin
+        return true;
     }
 }

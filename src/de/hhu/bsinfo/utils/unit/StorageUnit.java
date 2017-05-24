@@ -46,9 +46,9 @@ public class StorageUnit implements Importable, Exportable {
      * Constructor
      *
      * @param p_value
-     *     Value
+     *         Value
      * @param p_unit
-     *     Unit of the value (b, kb, mb, gb, tb)
+     *         Unit of the value (b, kb, mb, gb, tb)
      */
     public StorageUnit(final long p_value, final String p_unit) {
         parse(p_value, p_unit.toLowerCase());
@@ -137,7 +137,7 @@ public class StorageUnit implements Importable, Exportable {
 
     @Override
     public String toString() {
-        return m_bytes + " bytes";
+        return getHumanReadable();
     }
 
     /**
@@ -188,9 +188,9 @@ public class StorageUnit implements Importable, Exportable {
      * Parse the value with the specified unit
      *
      * @param p_value
-     *     Value
+     *         Value
      * @param p_unit
-     *     Unit of the value
+     *         Unit of the value
      */
     private void parse(final long p_value, final String p_unit) {
         switch (p_unit) {

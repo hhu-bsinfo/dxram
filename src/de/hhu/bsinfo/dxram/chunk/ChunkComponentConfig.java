@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 
 /**
  * Config for the ChunkComponent
@@ -13,5 +14,10 @@ public class ChunkComponentConfig extends DXRAMComponentConfig {
      */
     public ChunkComponentConfig() {
         super(ChunkComponent.class, false, true);
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        return true;
     }
 }

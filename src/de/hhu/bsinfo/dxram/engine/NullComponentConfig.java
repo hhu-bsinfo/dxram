@@ -13,5 +13,8 @@ public class NullComponentConfig extends DXRAMComponentConfig {
         super(NullComponent.class, true, true);
     }
 
-
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        return true;
+    }
 }

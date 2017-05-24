@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.chunk;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
@@ -13,5 +14,10 @@ public class ChunkDebugServiceConfig extends DXRAMServiceConfig {
      */
     public ChunkDebugServiceConfig() {
         super(ChunkDebugService.class, false, false);
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        return true;
     }
 }

@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.net;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
@@ -13,5 +14,10 @@ public class NetworkServiceConfig extends DXRAMServiceConfig {
      */
     public NetworkServiceConfig() {
         super(NetworkService.class, true, true);
+    }
+
+    @Override
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        return true;
     }
 }
