@@ -41,6 +41,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceComponentConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.sync.SynchronizationServiceConfig;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageServiceConfig;
@@ -788,7 +789,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
             // TODO: Check cache! If number of entries is smaller than number of entries in nameservice, bg won't
             // terminate.
-            m_applicationIDCache = new Cache<>(getConfig().getNameserviceCacheEntries());
+            m_applicationIDCache = new Cache<>(p_config.getComponentConfig(NameserviceComponentConfig.class).getNameserviceCacheEntries());
             // m_aidCache.enableTTL();
 
             m_event.registerListener(this, NodeFailureEvent.class);

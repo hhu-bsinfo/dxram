@@ -13,6 +13,9 @@ public class NameserviceComponentConfig extends DXRAMComponentConfig {
     @Expose
     private String m_type = "NAME";
 
+    @Expose
+    private int m_nameserviceCacheEntries = 1000000;
+
     /**
      * Constructor
      */
@@ -25,5 +28,10 @@ public class NameserviceComponentConfig extends DXRAMComponentConfig {
      */
     public String getType() {
         return m_type;
+    }
+
+    // TODO kevin: doc
+    public int getNameserviceCacheEntries() {
+        return m_nameserviceCacheEntries;
     }
 }

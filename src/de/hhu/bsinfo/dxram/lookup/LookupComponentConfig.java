@@ -18,9 +18,6 @@ public class LookupComponentConfig extends DXRAMComponentConfig {
     private long m_maxCacheEntries = 1000L;
 
     @Expose
-    private int m_nameserviceCacheEntries = 1000000;
-
-    @Expose
     private TimeUnit m_cacheTtl = new TimeUnit(1, TimeUnit.SEC);
 
     @Expose
@@ -41,11 +38,6 @@ public class LookupComponentConfig extends DXRAMComponentConfig {
     // TODO kevin: doc
     public long getMaxCacheEntries() {
         return m_maxCacheEntries;
-    }
-
-    // TODO kevin: doc
-    public int getNameserviceCacheEntries() {
-        return m_nameserviceCacheEntries;
     }
 
     // TODO kevin: doc
