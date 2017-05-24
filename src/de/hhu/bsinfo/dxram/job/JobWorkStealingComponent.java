@@ -15,8 +15,6 @@ package de.hhu.bsinfo.dxram.job;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,16 +30,8 @@ import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class JobWorkStealingComponent extends AbstractJobComponent implements WorkerDelegate {
-
+public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkStealingComponentConfig> implements WorkerDelegate {
     private static final Logger LOGGER = LogManager.getFormatterLogger(JobWorkStealingComponent.class.getSimpleName());
-
-    // configuration values
-    /**
-     * Number of worker threads to dispatch jobs to
-     */
-    @Expose
-    private int m_numWorkers = 1;
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -53,7 +43,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
      * Constructor
      */
     public JobWorkStealingComponent() {
-        super(DXRAMComponentOrder.Init.JOB_WORK_STEALING, DXRAMComponentOrder.Shutdown.JOB_WORK_STEALING, false, true);
+        super(DXRAMComponentOrder.Init.JOB_WORK_STEALING, DXRAMComponentOrder.Shutdown.JOB_WORK_STEALING, JobWorkStealingComponentConfig.class);
     }
 
     @Override
@@ -98,12 +88,12 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -113,8 +103,8 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        m_workers = new Worker[m_numWorkers];
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
+        m_workers = new Worker[getConfig().getNumWorkers()];
 
         for (int i = 0; i < m_workers.length; i++) {
             m_workers[i] = new Worker(i, this);

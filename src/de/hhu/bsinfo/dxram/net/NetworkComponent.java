@@ -18,8 +18,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,8 +41,6 @@ import de.hhu.bsinfo.ethnet.NetworkHandler;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
 import de.hhu.bsinfo.ethnet.RequestMap;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
-import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * Access to the network interface to send messages or requests
@@ -52,40 +48,8 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NetworkComponent extends AbstractDXRAMComponent implements EventListener<NodeFailureEvent> {
-
+public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentConfig> implements EventListener<NodeFailureEvent> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkComponent.class.getSimpleName());
-
-    // configuration values
-    /**
-     * Number of threads to spawn for handling incoming and assembled network messages
-     */
-    @Expose
-    private int m_threadCountMsgHandler = 1;
-    /**
-     * Size of the map that stores outstanding requests and maps them to their incoming responses
-     */
-    @Expose
-    private int m_requestMapEntryCount = (int) Math.pow(2, 20);
-    /**
-     * Size of the buffer for incoming network data
-     */
-    @Expose
-    private StorageUnit m_incomingBufferSize = new StorageUnit(512, StorageUnit.KB);
-    /**
-     * Size of the buffer for outgoing network data
-     */
-    @Expose
-    private StorageUnit m_outgoingBufferSize = new StorageUnit(1, StorageUnit.MB);
-    @Expose
-    private StorageUnit m_maxIncomingBufferSize = new StorageUnit(32, StorageUnit.KB);
-    @Expose
-    private StorageUnit m_flowControlWindowSize = new StorageUnit(1, StorageUnit.MB);
-    /**
-     * Amount of time to wait until a request that did not receive a response is considered timed out
-     */
-    @Expose
-    private TimeUnit m_requestTimeout = new TimeUnit(333, TimeUnit.MS);
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -98,7 +62,7 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
      * Constructor
      */
     public NetworkComponent() {
-        super(DXRAMComponentOrder.Init.NETWORK, DXRAMComponentOrder.Shutdown.NETWORK, true, true);
+        super(DXRAMComponentOrder.Init.NETWORK, DXRAMComponentOrder.Shutdown.NETWORK, NetworkComponentConfig.class);
     }
 
     // --------------------------------------------------------------------------------------
@@ -225,7 +189,7 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
         LOGGER.trace("Waiting for response to request: %s", p_request);
         // #endif /* LOGGER == TRACE */
 
-        if (p_waitForResponses && !p_request.waitForResponses((int) m_requestTimeout.getMs())) {
+        if (p_waitForResponses && !p_request.waitForResponses((int) getConfig().getRequestTimeout().getMs())) {
             // #if LOGGER >= ERROR
             LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
             // #endif /* LOGGER >= ERROR */
@@ -276,12 +240,12 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return true;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -292,8 +256,9 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        m_networkHandler = new NetworkHandler(m_threadCountMsgHandler, m_requestMapEntryCount, (int) m_requestTimeout.getMs());
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
+        m_networkHandler = new NetworkHandler(getConfig().getThreadCountMsgHandler(), getConfig().getRequestMapEntryCount(),
+                (int) getConfig().getRequestTimeout().getMs());
         NetworkHandler.setEventHandler(m_event);
 
         m_event.registerListener(this, NodeFailureEvent.class);
@@ -331,8 +296,9 @@ public class NetworkComponent extends AbstractDXRAMComponent implements EventLis
             }
         }
 
-        m_networkHandler.initialize(m_boot.getNodeID(), new NodeMappings(m_boot), (int) m_incomingBufferSize.getBytes(), (int) m_outgoingBufferSize.getBytes(),
-                (int) m_maxIncomingBufferSize.getBytes(), (int) m_flowControlWindowSize.getBytes(), (int) m_requestTimeout.getMs());
+        m_networkHandler.initialize(m_boot.getNodeID(), new NodeMappings(m_boot), (int) getConfig().getIncomingBufferSize().getBytes(),
+                (int) getConfig().getOutgoingBufferSize().getBytes(), (int) getConfig().getMaxIncomingBufferSize().getBytes(),
+                (int) getConfig().getFlowControlWindowSize().getBytes(), (int) getConfig().getRequestTimeout().getMs());
 
         m_networkHandler.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
 

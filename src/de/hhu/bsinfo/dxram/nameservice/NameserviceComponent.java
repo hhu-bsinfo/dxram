@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,16 +40,8 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NameserviceComponent extends AbstractDXRAMComponent {
-
+public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComponentConfig> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceComponent.class.getSimpleName());
-
-    // configuration values
-    /**
-     * Type of name service string converter to use to convert name service keys (available: NAME and INT)
-     */
-    @Expose
-    private String m_type = "NAME";
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -67,7 +57,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public NameserviceComponent() {
-        super(DXRAMComponentOrder.Init.NAMESERVICE, DXRAMComponentOrder.Shutdown.NAMESERVICE, false, true);
+        super(DXRAMComponentOrder.Init.NAMESERVICE, DXRAMComponentOrder.Shutdown.NAMESERVICE, NameserviceComponentConfig.class);
     }
 
     /**
@@ -148,12 +138,12 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -165,7 +155,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
         return initName();
     }
 
@@ -208,7 +198,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
      * @return True on success, false on error
      */
     private boolean initName() {
-        m_converter = new NameServiceStringConverter(m_type);
+        m_converter = new NameServiceStringConverter(getConfig().getType());
 
         m_indexData = new NameServiceIndexData();
 

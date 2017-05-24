@@ -56,7 +56,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.03.2017
  */
-public class ChunkAnonService extends AbstractDXRAMService implements MessageReceiver {
+public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfig> implements MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkService.class.getSimpleName());
 
     // statistics recording
@@ -77,7 +77,7 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
      * Constructor
      */
     public ChunkAnonService() {
-        super("chunkanon", false, true);
+        super("chunkanon", ChunkAnonServiceConfig.class);
     }
 
     /**
@@ -491,12 +491,12 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
     // -----------------------------------------------------------------------------------
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -511,11 +511,11 @@ public class ChunkAnonService extends AbstractDXRAMService implements MessageRec
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
 
-        if (p_engineEngineSettings.getRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup()) {
+        if (p_config.getEngineConfig().getRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup()) {
             if (m_memoryManager.getStatus().getMaxChunkSize().getBytes() > m_backup.getLogSegmentSizeBytes()) {
                 LOGGER.fatal("Backup is active and segment size (%d bytes) of log is smaller than max chunk size (%d bytes). Fix your configuration");
                 throw new DXRAMRuntimeException("Backup is active and segment size of log is smaller than max chunk size. Fix your configuration");

@@ -34,7 +34,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class PeerLockComponent extends AbstractLockComponent {
+public class PeerLockComponent extends AbstractLockComponent<PeerLockComponentConfig> {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(PeerLockComponent.class.getSimpleName());
 
@@ -45,7 +45,7 @@ public class PeerLockComponent extends AbstractLockComponent {
      * Constructor
      */
     public PeerLockComponent() {
-        super(DXRAMComponentOrder.Init.PEER_LOCK, DXRAMComponentOrder.Shutdown.PEER_LOCK, false, true);
+        super(DXRAMComponentOrder.Init.PEER_LOCK, DXRAMComponentOrder.Shutdown.PEER_LOCK, PeerLockComponentConfig.class);
     }
 
     @Override
@@ -157,12 +157,12 @@ public class PeerLockComponent extends AbstractLockComponent {
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -172,7 +172,7 @@ public class PeerLockComponent extends AbstractLockComponent {
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
         m_lockedChunks = new ConcurrentHashMap<>();
         m_mapEntryCreationLock = new AtomicBoolean(false);
 

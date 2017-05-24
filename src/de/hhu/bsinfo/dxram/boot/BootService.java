@@ -42,7 +42,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class BootService extends AbstractDXRAMService implements MessageReceiver {
+public class BootService extends AbstractDXRAMService<BootServiceConfig> implements MessageReceiver {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(BootService.class.getSimpleName());
 
@@ -54,7 +54,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
      * Constructor
      */
     public BootService() {
-        super("boot", true, true);
+        super("boot", BootServiceConfig.class);
     }
 
     /**
@@ -320,12 +320,12 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return true;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -336,7 +336,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE, RebootMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE, ShutdownMessage.class);
 

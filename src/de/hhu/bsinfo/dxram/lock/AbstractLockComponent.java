@@ -16,13 +16,14 @@ package de.hhu.bsinfo.dxram.lock;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 
 /**
  * Interface for a lock component providing locking of chunks.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public abstract class AbstractLockComponent extends AbstractDXRAMComponent {
+public abstract class AbstractLockComponent<T extends DXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
 
     static final int MS_TIMEOUT_UNLIMITED = -1;
 
@@ -33,13 +34,11 @@ public abstract class AbstractLockComponent extends AbstractDXRAMComponent {
      *         Default init priority for this component
      * @param p_priorityShutdown
      *         Default shutdown priority for this component
-     * @param p_enabledForSuperpeer
-     *         Enable this component if the node is a superpeer (default value)
-     * @param p_enabledForPeer
-     *         Enable this component if the node is a peer (default value)
+     * @param p_configClass
+     *         Configuration class for this component
      */
-    AbstractLockComponent(final short p_priorityInit, final short p_priorityShutdown, final boolean p_enabledForSuperpeer, final boolean p_enabledForPeer) {
-        super(p_priorityInit, p_priorityShutdown, p_enabledForSuperpeer, p_enabledForPeer);
+    protected AbstractLockComponent(final short p_priorityInit, final short p_priorityShutdown, final Class<T> p_configClass) {
+        super(p_priorityInit, p_priorityShutdown, p_configClass);
     }
 
     /**

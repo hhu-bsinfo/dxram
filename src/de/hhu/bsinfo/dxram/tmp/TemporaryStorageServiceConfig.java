@@ -1,7 +1,17 @@
 package de.hhu.bsinfo.dxram.tmp;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
+
 /**
- * Created by nothaas on 5/24/17.
+ * Config for the TemporaryStorageService
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public class TemporaryStorageServiceCOnfig {
+public class TemporaryStorageServiceConfig extends DXRAMServiceConfig {
+    /**
+     * Constructor
+     */
+    public TemporaryStorageServiceConfig() {
+        super(TemporaryStorageService.class, false, true);
+    }
 }

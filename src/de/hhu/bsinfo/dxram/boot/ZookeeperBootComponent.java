@@ -17,8 +17,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
@@ -41,50 +39,14 @@ import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.ZooKeeperHandler;
 import de.hhu.bsinfo.utils.ZooKeeperHandler.ZooKeeperException;
 import de.hhu.bsinfo.utils.unit.IPV4Unit;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
-import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * Implementation of the BootComponent interface with zookeeper.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class ZookeeperBootComponent extends AbstractBootComponent implements Watcher {
-
+public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> implements Watcher {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ZookeeperBootComponent.class.getSimpleName());
-
-    // configuration values
-    /**
-     * Path for zookeeper entry
-     */
-    @Expose
-    private String m_path = "/dxram";
-    /**
-     * Address and port of zookeeper
-     */
-    @Expose
-    private IPV4Unit m_connection = new IPV4Unit("127.0.0.1", 2181);
-    /**
-     * Zookeeper timeout
-     */
-    @Expose
-    private TimeUnit m_timeout = new TimeUnit(10, TimeUnit.SEC);
-    @Expose
-    private StorageUnit m_zookeeperBitfieldSize = new StorageUnit(256, StorageUnit.KB);
-    /**
-     * Nodes configuration
-     * We can't use the NodesConfiguration class with the configuration because the nodes in that class
-     * are already mapped to their node ids
-     */
-    @Expose
-    private ArrayList<NodesConfiguration.NodeEntry> m_nodesConfig = new ArrayList<NodesConfiguration.NodeEntry>() {
-        {
-            // default values for local testing
-            add(new NodeEntry(new IPV4Unit("127.0.0.1", 22221), (short) 0, (short) 0, NodeRole.SUPERPEER, true));
-            add(new NodeEntry(new IPV4Unit("127.0.0.1", 22222), (short) 0, (short) 0, NodeRole.PEER, true));
-            add(new NodeEntry(new IPV4Unit("127.0.0.1", 22223), (short) 0, (short) 0, NodeRole.PEER, true));
-        }
-    };
 
     // component dependencies
     private BackupComponent m_backup;
@@ -106,7 +68,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
      * Constructor
      */
     public ZookeeperBootComponent() {
-        super(DXRAMComponentOrder.Init.BOOT, DXRAMComponentOrder.Shutdown.BOOT, true, true);
+        super(DXRAMComponentOrder.Init.BOOT, DXRAMComponentOrder.Shutdown.BOOT, ZookeeperBootComponentConfig.class);
     }
 
     @Override
@@ -477,12 +439,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return true;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -494,20 +456,20 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        m_ownAddress = p_engineEngineSettings.getAddress();
-        NodeRole role = p_engineEngineSettings.getRole();
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
+        m_ownAddress = p_config.getEngineConfig().getAddress();
+        NodeRole role = p_config.getEngineConfig().getRole();
 
         // #if LOGGER >= INFO
         LOGGER.info("Initializing with address %s, role %s", m_ownAddress, role);
         // #endif /* LOGGER >= INFO */
 
-        m_zookeeper = new ZooKeeperHandler(m_path, m_connection.getAddressStr(), (int) m_timeout.getMs());
+        m_zookeeper = new ZooKeeperHandler(getConfig().getPath(), getConfig().getConnection().getAddressStr(), (int) getConfig().getTimeout().getMs());
         m_isStarting = true;
 
         m_nodes = new NodesConfiguration();
 
-        if (!parseNodes(m_nodesConfig, role)) {
+        if (!parseNodes(getConfig().getNodesConfig(), role)) {
             // #if LOGGER >= ERROR
             LOGGER.error("Parsing nodes failed");
             // #endif /* LOGGER >= ERROR */
@@ -610,7 +572,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
         String barrier;
         boolean parsed = false;
 
-        m_bloomFilter = new BloomFilter((int) m_zookeeperBitfieldSize.getBytes(), 65536);
+        m_bloomFilter = new BloomFilter((int) getConfig().getZookeeperBitfieldSize().getBytes(), 65536);
 
         barrier = "barrier";
 

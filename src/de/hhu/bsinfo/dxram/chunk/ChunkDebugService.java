@@ -38,7 +38,7 @@ import de.hhu.bsinfo.ethnet.NetworkHandler;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2017
  */
-public class ChunkDebugService extends AbstractDXRAMService implements NetworkHandler.MessageReceiver {
+public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceConfig> implements NetworkHandler.MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkDebugService.class.getSimpleName());
 
     private AbstractBootComponent m_boot;
@@ -50,7 +50,7 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
      * Constructor
      */
     protected ChunkDebugService() {
-        super("chunkdebug", false, true);
+        super("chunkdebug", ChunkDebugServiceConfig.class);
     }
 
     /**
@@ -213,12 +213,12 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -231,7 +231,7 @@ public class ChunkDebugService extends AbstractDXRAMService implements NetworkHa
     }
 
     @Override
-    protected boolean startService(DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
 

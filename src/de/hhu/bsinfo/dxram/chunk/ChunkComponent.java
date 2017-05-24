@@ -36,7 +36,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-public class ChunkComponent extends AbstractDXRAMComponent {
+public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig> {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkComponent.class.getSimpleName());
 
@@ -50,7 +50,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public ChunkComponent() {
-        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, false, true);
+        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, ChunkComponentConfig.class);
     }
 
     /**
@@ -115,12 +115,12 @@ public class ChunkComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -133,7 +133,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
         return true;
     }
 

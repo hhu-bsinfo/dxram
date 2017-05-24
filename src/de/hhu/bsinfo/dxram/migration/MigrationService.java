@@ -52,7 +52,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-public class MigrationService extends AbstractDXRAMService implements MessageReceiver {
+public class MigrationService extends AbstractDXRAMService<MigrationServiceConfig> implements MessageReceiver {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(MigrationService.class.getSimpleName());
 
@@ -70,7 +70,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
      * Creates an instance of MigrationService
      */
     public MigrationService() {
-        super("migrate", false, true);
+        super("migrate", MigrationServiceConfig.class);
     }
 
     /**
@@ -370,12 +370,12 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -390,7 +390,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         m_migrationLock = new ReentrantLock(false);
 
         registerNetworkMessages();

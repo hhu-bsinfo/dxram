@@ -24,18 +24,18 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 
 /**
- * This service extends the normal ChunkService by "direct" memory access methods.
+ * This service extends the normal ChunkService with "direct" memory access methods.
  * Instead of get-ing and put-ing whole chunks, there are situations this is not necessary
  * and is harming performance. Thus, we allow reading/writing primitive data types to
  * offsets within chunks. However, this is limited to local access, only. No automatic
  * redirection of read/write requests to remote nodes because this is meant to optimize
  * algorithms that are already aware of their data locality.
  * We also don't have batch methods i.e. combining multiple read/write requests to
- * multiple chunks. So use this wisely if accessing many chunks this way.
+ * multiple chunks. Use it wisely if accessing many chunks this way.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 14.06.2016
  */
-public class ChunkMemoryService extends AbstractDXRAMService {
+public class ChunkMemoryService extends AbstractDXRAMService<ChunkMemoryServiceConfig> {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkMemoryService.class.getSimpleName());
 
@@ -47,7 +47,7 @@ public class ChunkMemoryService extends AbstractDXRAMService {
      * Constructor
      */
     public ChunkMemoryService() {
-        super("chunkmem", false, true);
+        super("chunkmem", ChunkMemoryServiceConfig.class);
     }
 
     /**
@@ -235,12 +235,12 @@ public class ChunkMemoryService extends AbstractDXRAMService {
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -251,7 +251,7 @@ public class ChunkMemoryService extends AbstractDXRAMService {
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         return true;
     }
 

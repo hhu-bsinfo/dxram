@@ -19,7 +19,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -40,13 +39,12 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
  *
  * @author Mike Birkhoff, michael.birkhoff@hhu.de, 15.07.2016
  */
-public class LookupService extends AbstractDXRAMService implements MessageReceiver {
+public class LookupService extends AbstractDXRAMService<LookupServiceConfig> implements MessageReceiver {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(LookupService.class.getSimpleName());
 
     // component dependencies
     private AbstractBootComponent m_boot;
-    private BackupComponent m_backup;
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
 
@@ -54,7 +52,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
      * Constructor
      */
     public LookupService() {
-        super("lookup", true, true);
+        super("lookup", LookupServiceConfig.class);
     }
 
     /**
@@ -173,25 +171,24 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return true;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
 

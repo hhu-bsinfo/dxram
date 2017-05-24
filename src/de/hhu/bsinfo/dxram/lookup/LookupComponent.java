@@ -15,13 +15,11 @@ package de.hhu.bsinfo.dxram.lookup;
 
 import java.util.ArrayList;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.backup.BackupComponent;
+import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
@@ -48,46 +46,18 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.Cache;
 import de.hhu.bsinfo.utils.NodeID;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
-import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * Component for finding chunks in superpeer overlay.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-public class LookupComponent extends AbstractDXRAMComponent implements EventListener<AbstractEvent> {
-
+public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfig> implements EventListener<AbstractEvent> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(LookupComponent.class.getSimpleName());
 
     private static final short ORDER = 10;
 
-    // configuration values
-    @Expose
-    private boolean m_cachesEnabled = true;
-    @Expose
-    private long m_maxCacheEntries = 1000L;
-    @Expose
-    private int m_nameserviceCacheEntries = 1000000;
-    @Expose
-    private TimeUnit m_cacheTtl = new TimeUnit(1, TimeUnit.SEC);
-    @Expose
-    private int m_pingInterval = 1;
-    @Expose
-    private int m_maxBarriersPerSuperpeer = 1000;
-    /**
-     * Maximum number of entries allowed on the superpeer/temporary storage
-     */
-    @Expose
-    private int m_storageMaxNumEntries = 1000;
-    /**
-     * Size of the superpeer/temporary storage
-     */
-    @Expose
-    private StorageUnit m_storageMaxSize = new StorageUnit(32, StorageUnit.MB);
-
     // component dependencies
-    private BackupComponent m_backup;
     private AbstractBootComponent m_boot;
     private EventComponent m_event;
     private NetworkComponent m_network;
@@ -102,7 +72,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      * Creates the lookup component
      */
     public LookupComponent() {
-        super(DXRAMComponentOrder.Init.LOOKUP, DXRAMComponentOrder.Shutdown.LOOKUP, true, true);
+        super(DXRAMComponentOrder.Init.LOOKUP, DXRAMComponentOrder.Shutdown.LOOKUP, LookupComponentConfig.class);
     }
 
     /**
@@ -172,7 +142,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         LOGGER.trace("Entering getLookupRange with: p_chunkID=0x%X", p_chunkID);
         // #endif /* LOGGER == TRACE */
 
-        if (m_cachesEnabled) {
+        if (getConfig().cachesEnabled()) {
             // Read from cache
             ret = m_chunkIDCacheTree.getMetadata(p_chunkID);
             if (ret == null) {
@@ -212,7 +182,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         LOGGER.trace("Entering remove with %d chunkIDs", p_chunkIDs.getSize());
         // #endif /* LOGGER == TRACE */
 
-        if (m_cachesEnabled) {
+        if (getConfig().cachesEnabled()) {
             invalidate(p_chunkIDs);
         }
 
@@ -243,7 +213,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         LOGGER.trace("Entering insertID with: p_id=%d, p_chunkID=0x%X", p_id, p_chunkID);
         // #endif /* LOGGER == TRACE */
 
-        if (m_cachesEnabled) {
+        if (getConfig().cachesEnabled()) {
             m_applicationIDCache.put(p_id, p_chunkID);
         }
 
@@ -278,7 +248,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         LOGGER.trace("Entering getChunkID with: p_id=%d", p_id);
         // #endif /* LOGGER == TRACE */
 
-        if (m_cachesEnabled) {
+        if (getConfig().cachesEnabled()) {
             // Read from application cache first
             final Long chunkID = m_applicationIDCache.get(p_id);
 
@@ -325,7 +295,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         LOGGER.trace("Entering migrate with: p_chunkID=0x%X, p_nodeID=0x%X", p_chunkID, p_nodeID);
         // #endif /* LOGGER == TRACE */
 
-        if (m_cachesEnabled) {
+        if (getConfig().cachesEnabled()) {
             invalidate(p_chunkID);
         }
 
@@ -357,7 +327,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         LOGGER.trace("Entering migrateRange with: p_startChunkID=0x%X, p_endChunkID=0x%X, p_nodeID=0x%X", p_startCID, p_endCID, p_nodeID);
         // #endif /* LOGGER == TRACE */
 
-        if (m_cachesEnabled) {
+        if (getConfig().cachesEnabled()) {
             invalidate(p_startCID, p_endCID);
         }
 
@@ -793,39 +763,40 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return true;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        if (m_cachesEnabled) {
-            m_chunkIDCacheTree = new CacheTree(m_maxCacheEntries, ORDER, m_cacheTtl.getMs());
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
+        if (getConfig().cachesEnabled()) {
+            m_chunkIDCacheTree = new CacheTree(getConfig().getMaxCacheEntries(), ORDER, getConfig().getCacheTtl().getMs());
 
             // TODO: Check cache! If number of entries is smaller than number of entries in nameservice, bg won't
             // terminate.
-            m_applicationIDCache = new Cache<>(m_nameserviceCacheEntries);
+            m_applicationIDCache = new Cache<>(getConfig().getNameserviceCacheEntries());
             // m_aidCache.enableTTL();
 
             m_event.registerListener(this, NodeFailureEvent.class);
         }
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            m_superpeer = new OverlaySuperpeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(), m_pingInterval,
-                    m_maxBarriersPerSuperpeer, m_storageMaxNumEntries, (int) m_storageMaxSize.getBytes(), m_backup.isActive(), m_boot, m_network);
+            m_superpeer = new OverlaySuperpeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(),
+                    getConfig().getPingInterval(), getConfig().getMaxBarriersPerSuperpeer(), getConfig().getStorageMaxNumEntries(),
+                    (int) getConfig().getStorageMaxSize().getBytes(), p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive(), m_boot,
+                    m_network);
         } else {
             m_peer = new OverlayPeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_network, m_event);
             m_event.registerListener(this, NameserviceCacheEntryUpdateEvent.class);
@@ -840,7 +811,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
             m_superpeer.shutdown();
         }
 
-        if (m_cachesEnabled) {
+        if (getConfig().cachesEnabled()) {
             if (m_chunkIDCacheTree != null) {
                 m_chunkIDCacheTree.close();
                 m_chunkIDCacheTree = null;
@@ -884,7 +855,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
         LOGGER.trace("Entering getPrimaryPeer with: p_chunkID=0x%X", p_chunkID);
         // #endif /* LOGGER == TRACE */
 
-        if (m_cachesEnabled) {
+        if (getConfig().cachesEnabled()) {
             // Read from cache
             ret = m_chunkIDCacheTree.getPrimaryPeer(p_chunkID);
             if (ret == NodeID.INVALID_ID) {
@@ -979,7 +950,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
      */
     @SuppressWarnings("unused")
     private void clear() {
-        m_chunkIDCacheTree = new CacheTree(m_maxCacheEntries, ORDER, m_cacheTtl.getMs());
+        m_chunkIDCacheTree = new CacheTree(getConfig().getMaxCacheEntries(), ORDER, getConfig().getCacheTtl().getMs());
         m_applicationIDCache.clear();
     }
 }

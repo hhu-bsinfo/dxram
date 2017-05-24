@@ -32,7 +32,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NameserviceService extends AbstractDXRAMService {
+public class NameserviceService extends AbstractDXRAMService<NameserviceServiceConfig> {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceService.class.getSimpleName());
 
@@ -45,7 +45,7 @@ public class NameserviceService extends AbstractDXRAMService {
      * Constructor
      */
     public NameserviceService() {
-        super("name", false, true);
+        super("name", NameserviceServiceConfig.class);
     }
 
     /**
@@ -105,12 +105,12 @@ public class NameserviceService extends AbstractDXRAMService {
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -122,7 +122,7 @@ public class NameserviceService extends AbstractDXRAMService {
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         return true;
     }
 

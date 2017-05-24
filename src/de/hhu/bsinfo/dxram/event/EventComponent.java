@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,17 +32,8 @@ import de.hhu.bsinfo.utils.event.EventInterface;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class EventComponent extends AbstractDXRAMComponent implements EventInterface {
-
+public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig> implements EventInterface {
     private static final Logger LOGGER = LogManager.getFormatterLogger(EventComponent.class.getSimpleName());
-
-    // configuration values
-    @Expose
-    private boolean m_useExecutor = true;
-    @Expose
-    private int m_threadCount = 1;
-
-    // component dependencies
 
     // private state
     private Map<String, ArrayList<EventListener<? extends AbstractEvent>>> m_eventListener = new HashMap<>();
@@ -54,7 +43,7 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
      * Constructor
      */
     public EventComponent() {
-        super(DXRAMComponentOrder.Init.EVENT, DXRAMComponentOrder.Shutdown.EVENT, true, true);
+        super(DXRAMComponentOrder.Init.EVENT, DXRAMComponentOrder.Shutdown.EVENT, EventComponentConfig.class);
     }
 
     /**
@@ -98,21 +87,17 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
         if (listeners != null) {
             FireEvent<T> task = new FireEvent<>(p_event, listeners);
 
-            if (m_executor != null) {
-                m_executor.execute(task);
-            } else {
-                task.run();
-            }
+            m_executor.execute(task);
         }
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return true;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -122,33 +107,29 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        if (m_useExecutor) {
-            // #if LOGGER >= INFO
-            LOGGER.info("EventExecutor: Initialising %d threads", m_threadCount);
-            // #endif /* LOGGER >= INFO */
-            m_executor = new TaskExecutor("EventExecutor", m_threadCount);
-        }
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
+        // #if LOGGER >= INFO
+        LOGGER.info("EventExecutor: Initialising %d threads", getConfig().getThreadCount());
+        // #endif /* LOGGER >= INFO */
+        m_executor = new TaskExecutor("EventExecutor", getConfig().getThreadCount());
 
         return true;
     }
 
     @Override
     protected boolean shutdownComponent() {
-        if (m_executor != null) {
-            m_executor.shutdown();
-            try {
-                m_executor.awaitTermination();
-                // #if LOGGER >= INFO
-                LOGGER.info("Shutdown of EventExecutor successful");
-                // #endif /* LOGGER >= INFO */
-            } catch (final InterruptedException e) {
-                // #if LOGGER >= WARN
-                LOGGER.warn("Could not wait for event executor thread pool to finish. Interrupted");
-                // #endif /* LOGGER >= WARN */
-            }
-            m_executor = null;
+        m_executor.shutdown();
+        try {
+            m_executor.awaitTermination();
+            // #if LOGGER >= INFO
+            LOGGER.info("Shutdown of EventExecutor successful");
+            // #endif /* LOGGER >= INFO */
+        } catch (final InterruptedException e) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Could not wait for event executor thread pool to finish. Interrupted");
+            // #endif /* LOGGER >= WARN */
         }
+        m_executor = null;
 
         return true;
     }

@@ -24,7 +24,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 06.05.2016
  */
-public class SynchronizationService extends AbstractDXRAMService {
+public class SynchronizationService extends AbstractDXRAMService<SynchronizationServiceConfig> {
 
     // component dependencies
     private LookupComponent m_lookup;
@@ -33,7 +33,7 @@ public class SynchronizationService extends AbstractDXRAMService {
      * Constructor
      */
     public SynchronizationService() {
-        super("sync", false, true);
+        super("sync", SynchronizationServiceConfig.class);
     }
 
     /**
@@ -96,12 +96,12 @@ public class SynchronizationService extends AbstractDXRAMService {
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -111,7 +111,7 @@ public class SynchronizationService extends AbstractDXRAMService {
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         return true;
     }
 

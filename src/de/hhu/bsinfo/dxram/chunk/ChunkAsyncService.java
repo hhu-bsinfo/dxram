@@ -51,7 +51,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.02.2016
  */
-public class ChunkAsyncService extends AbstractDXRAMService implements MessageReceiver {
+public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceConfig> implements MessageReceiver {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkAsyncService.class.getSimpleName());
 
@@ -70,7 +70,7 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
      * Constructor
      */
     public ChunkAsyncService() {
-        super("achunk", false, true);
+        super("achunk", ChunkAsyncServiceConfig.class);
     }
 
     /**
@@ -235,12 +235,12 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -254,7 +254,7 @@ public class ChunkAsyncService extends AbstractDXRAMService implements MessageRe
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
 

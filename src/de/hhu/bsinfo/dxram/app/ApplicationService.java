@@ -27,7 +27,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  */
-public class ApplicationService extends AbstractDXRAMService {
+public class ApplicationService extends AbstractDXRAMService<ApplicationServiceConfig> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ApplicationService.class.getSimpleName());
 
     // component dependencies
@@ -40,16 +40,16 @@ public class ApplicationService extends AbstractDXRAMService {
      * Constructor
      */
     public ApplicationService() {
-        super("app", false, true);
+        super("app", ApplicationServiceConfig.class);
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -60,7 +60,7 @@ public class ApplicationService extends AbstractDXRAMService {
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
             List<Class<? extends AbstractApplication>> applicationClasses = m_application.getApplicationClasses();
 

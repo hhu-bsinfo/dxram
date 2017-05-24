@@ -47,7 +47,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 05.10.2016
  */
-public class FailureComponent extends AbstractDXRAMComponent implements MessageReceiver, EventListener<AbstractEvent> {
+public class FailureComponent extends AbstractDXRAMComponent<FailureComponentConfig> implements MessageReceiver, EventListener<AbstractEvent> {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(FailureComponent.class.getSimpleName());
 
@@ -66,7 +66,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
      * Creates the failure component
      */
     public FailureComponent() {
-        super(DXRAMComponentOrder.Init.FAILURE, DXRAMComponentOrder.Shutdown.FAILURE, true, true);
+        super(DXRAMComponentOrder.Init.FAILURE, DXRAMComponentOrder.Shutdown.FAILURE, FailureComponentConfig.class);
 
         m_nodeStatus = new byte[Short.MAX_VALUE * 2];
         m_failureLock = new ReentrantLock(false);
@@ -183,12 +183,12 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return true;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -201,7 +201,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
         m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST, FailureRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_RESPONSE, FailureResponse.class);
         m_network.register(FailureRequest.class, this);

@@ -68,7 +68,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class ChunkService extends AbstractDXRAMService implements MessageReceiver {
+public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> implements MessageReceiver {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkService.class.getSimpleName());
 
@@ -93,7 +93,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
      * Constructor
      */
     public ChunkService() {
-        super("chunk", false, true);
+        super("chunk", ChunkServiceConfig.class);
     }
 
     /**
@@ -1093,12 +1093,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -1113,11 +1113,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
 
-        if (p_engineEngineSettings.getRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup()) {
+        if (m_backup.isActiveAndAvailableForBackup()) {
             if (m_memoryManager.getStatus().getMaxChunkSize().getBytes() > m_backup.getLogSegmentSizeBytes()) {
                 LOGGER.fatal("Backup is active and segment size (%d bytes) of log is smaller than max chunk size (%d bytes). Fix your configuration");
                 throw new DXRAMRuntimeException("Backup is active and segment size of log is smaller than max chunk size. Fix your configuration");

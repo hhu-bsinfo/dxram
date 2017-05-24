@@ -6,8 +6,6 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,19 +39,12 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 10.04.2017
  */
-public class ChunkRemoveService extends AbstractDXRAMService implements MessageReceiver {
+public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceConfig> implements MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkRemoveService.class.getSimpleName());
 
     // statistics recording
     private static final StatisticsOperation SOP_REMOVE = StatisticsRecorderManager.getOperation(ChunkService.class, "Remove");
     private static final StatisticsOperation SOP_INCOMING_REMOVE = StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingRemove");
-
-    // configuration values
-    /**
-     * Size of the queue that stores the remove requests to be processed asynchronously
-     */
-    @Expose
-    private int m_removerQueueSize = 100000;
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -68,7 +59,7 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
      * Constructor
      */
     public ChunkRemoveService() {
-        super("chunkrem", false, true);
+        super("chunkrem", ChunkRemoveServiceConfig.class);
     }
 
     /**
@@ -278,12 +269,12 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -297,8 +288,8 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        m_remover = new ChunkRemover(m_removerQueueSize);
+    protected boolean startService(final DXRAMContext.Config p_config) {
+        m_remover = new ChunkRemover(getConfig().getRemoverQueueSize());
         m_remover.start();
 
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_REQUEST, RemoveMessage.class);
@@ -337,6 +328,9 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
         }
     }
 
+    /**
+     * Separate remover thread to avoid blocking of message handlers
+     */
     private class ChunkRemover extends Thread {
         private int m_queueMaxSize;
         private volatile boolean m_run = true;
@@ -345,11 +339,20 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
         private ReentrantLock m_condLock = new ReentrantLock(false);
         private Condition m_cond;
 
+        /**
+         * Constructor
+         *
+         * @param p_queueMaxSize
+         *         Max queue size for remove jobs
+         */
         public ChunkRemover(final int p_queueMaxSize) {
             m_queueMaxSize = p_queueMaxSize;
             m_cond = m_condLock.newCondition();
         }
 
+        /**
+         * Shut down the remover thread
+         */
         public void shutdown() {
             m_run = false;
 
@@ -363,6 +366,13 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
             }
         }
 
+        /**
+         * Push one or multiple chunk IDs to the queue to schedule remove jobs
+         *
+         * @param p_chunkIds
+         *         Chunk IDs to remove
+         * @return True if pushing to queue successful, false if not enough space in queue to add all IDs
+         */
         public boolean push(final long[] p_chunkIds) {
             boolean ret;
 
@@ -411,6 +421,12 @@ public class ChunkRemoveService extends AbstractDXRAMService implements MessageR
             }
         }
 
+        /**
+         * Remove chunks denoted by a list of chunk IDs from the key-value store
+         *
+         * @param p_chunkIDs
+         *         Chunk IDs of the chunks to remove
+         */
         private void remove(final long[] p_chunkIDs) {
             int size;
 

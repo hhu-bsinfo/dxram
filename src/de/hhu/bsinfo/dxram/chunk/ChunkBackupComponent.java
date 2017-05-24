@@ -37,7 +37,7 @@ import de.hhu.bsinfo.ethnet.NetworkException;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-public class ChunkBackupComponent extends AbstractDXRAMComponent {
+public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComponentConfig> {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkBackupComponent.class.getSimpleName());
     private static final int MAXIMUM_QUEUE_SIZE = 10;
@@ -53,7 +53,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public ChunkBackupComponent() {
-        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, false, true);
+        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, ChunkBackupComponentConfig.class);
     }
 
     /**
@@ -216,12 +216,12 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -233,7 +233,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
         // Add DXRAMComponentOrder.Init value if something is put here
         return true;
     }

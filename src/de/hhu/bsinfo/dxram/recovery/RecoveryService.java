@@ -47,8 +47,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.03.16
  */
-public class RecoveryService extends AbstractDXRAMService implements MessageReceiver {
-
+public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig> implements MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(RecoveryService.class.getSimpleName());
 
     // component dependencies
@@ -66,7 +65,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
      * Constructor
      */
     public RecoveryService() {
-        super("recovery", false, true);
+        super("recovery", RecoveryServiceConfig.class);
     }
 
     @Override
@@ -85,12 +84,12 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -105,7 +104,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
 

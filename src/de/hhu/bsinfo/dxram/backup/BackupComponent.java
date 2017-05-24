@@ -18,8 +18,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -46,45 +44,14 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.NodeID;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
  * Component for managing backup ranges.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-public class BackupComponent extends AbstractDXRAMComponent implements EventListener<AbstractEvent> {
-
+public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfig> implements EventListener<AbstractEvent> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(BackupComponent.class.getSimpleName());
-
-    // configuration values
-    /**
-     * Activate/Disable the backup. This parameter should be either active for all nodes or inactive for all nodes
-     */
-    @Expose
-    private boolean m_backupActive = false;
-    /**
-     * This parameter can be set to false for single peers to avoid storing backups and the associated overhead.
-     * If this peer is not available for backup, it will not log and recover chunks but all other backup functions, like replicating own chunks, are enabled.
-     * Do not set this parameter globally to deactivate backup. Use backupActive parameter for that purpose.
-     */
-    @Expose
-    private boolean m_availableForBackup = true;
-    /**
-     * Directory where the backup data is stored
-     */
-    @Expose
-    private String m_backupDirectory = "./log/";
-    /**
-     * Size of a backup range
-     */
-    @Expose
-    private StorageUnit m_backupRangeSize = new StorageUnit(256, StorageUnit.MB);
-    /**
-     * The replication factor must must be in [1, 4], for disabling replication set m_backupActive to false
-     */
-    @Expose
-    private byte m_replicationFactor = 3;
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -114,7 +81,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * Creates the backup component
      */
     public BackupComponent() {
-        super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP, true, true);
+        super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP, BackupComponentConfig.class);
     }
 
     /**
@@ -123,7 +90,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * @return whether backup is enabled or not
      */
     public boolean isActive() {
-        return m_backupActive;
+        return getConfig().isBackupActive();
     }
 
     /**
@@ -132,7 +99,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * @return whether backup is enabled and this peer is used for logging/recovery or not
      */
     public boolean isActiveAndAvailableForBackup() {
-        return m_backupActive && m_availableForBackup;
+        return getConfig().isBackupActive() && getConfig().availableForBackup();
     }
 
     /**
@@ -150,7 +117,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * @return the backup directory
      */
     public String getBackupDirectory() {
-        return m_backupDirectory;
+        return getConfig().getBackupDirectory();
     }
 
     /**
@@ -163,7 +130,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * @lock MemoryManager must be write locked
      */
     public BackupRange registerChunk(final long p_chunkID, final int p_size) {
-        if (m_backupActive && p_chunkID != ChunkID.INVALID_ID) {
+        if (getConfig().isBackupActive() && p_chunkID != ChunkID.INVALID_ID) {
             return registerValidChunk(p_chunkID, p_size);
         } else {
             return null;
@@ -179,7 +146,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * @lock MemoryManager must be write locked
      */
     public BackupRange registerChunk(final DataStructure p_dataStructure) {
-        if (m_backupActive && p_dataStructure != null && p_dataStructure.getID() != ChunkID.INVALID_ID) {
+        if (getConfig().isBackupActive() && p_dataStructure != null && p_dataStructure.getID() != ChunkID.INVALID_ID) {
             return registerValidChunk(p_dataStructure);
         } else {
             return null;
@@ -194,7 +161,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * @lock MemoryManager must be write locked
      */
     public void registerChunks(final DataStructure... p_dataStructures) {
-        if (m_backupActive) {
+        if (getConfig().isBackupActive()) {
             for (DataStructure dataStructure : p_dataStructures) {
                 if (dataStructure.getID() != ChunkID.INVALID_ID) {
                     registerValidChunk(dataStructure.getID(), dataStructure.sizeofObject());
@@ -213,7 +180,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * @lock MemoryManager must be write locked
      */
     public void registerChunks(final long[] p_chunkIDs, final int p_size) {
-        if (m_backupActive) {
+        if (getConfig().isBackupActive()) {
             for (long chunkID : p_chunkIDs) {
                 if (chunkID != ChunkID.INVALID_ID) {
                     registerValidChunk(chunkID, p_size);
@@ -232,7 +199,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
      * @lock MemoryManager must be write locked
      */
     public void registerChunks(final long[] p_chunkIDs, final int[] p_sizes) {
-        if (m_backupActive) {
+        if (getConfig().isBackupActive()) {
             for (int i = 0; i < p_chunkIDs.length; i++) {
                 if (p_chunkIDs[i] != ChunkID.INVALID_ID) {
                     registerValidChunk(p_chunkIDs[i], p_sizes[i]);
@@ -299,7 +266,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         int size;
         BackupRange backupRange;
 
-        if (m_backupActive && p_chunkID != ChunkID.INVALID_ID) {
+        if (getConfig().isBackupActive() && p_chunkID != ChunkID.INVALID_ID) {
             m_lock.writeLock().lock();
             rangeID = m_backupRangeTree.getBackupRange(p_chunkID);
             backupRange = m_backupRanges.get(rangeID);
@@ -450,12 +417,12 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return true;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -470,24 +437,24 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        if (m_replicationFactor < 1 || m_replicationFactor > 4) {
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
+        if (getConfig().getReplicationFactor() < 1 || getConfig().getReplicationFactor() > 4) {
             // #if LOGGER >= ERROR
             LOGGER.error("Replication factor must be in [1, 4]!");
             // #endif /* LOGGER >= ERROR */
 
             return false;
         }
-        BackupRange.setReplicationFactor(m_replicationFactor);
-        BackupRange.setBackupRangeSize(m_backupRangeSize.getBytes());
+        BackupRange.setReplicationFactor(getConfig().getReplicationFactor());
+        BackupRange.setBackupRangeSize(getConfig().getBackupRangeSize().getBytes());
         m_nodeID = m_boot.getNodeID();
 
-        short[] backupPeers = new short[m_replicationFactor];
+        short[] backupPeers = new short[getConfig().getReplicationFactor()];
         Arrays.fill(backupPeers, NodeID.INVALID_ID);
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            if (m_backupActive) {
+            if (getConfig().isBackupActive()) {
 
-                if (!m_availableForBackup) {
+                if (!getConfig().availableForBackup()) {
                     // #if LOGGER >= WARN
                     LOGGER.warn("--------------------------------------------------------------------------------------");
                     LOGGER.warn("- This peer replicates its data to other peers but does NOT log data of other peers! -");
@@ -656,7 +623,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         peers = m_boot.getIDsOfAvailableBackupPeers();
         numberOfPeers = (short) peers.size();
 
-        if (numberOfPeers < m_replicationFactor) {
+        if (numberOfPeers < getConfig().getReplicationFactor()) {
             // #if LOGGER >= WARN
             LOGGER.warn("Less than three peers for backup available. Replication will be incomplete!");
             // #endif /* LOGGER >= WARN */
@@ -664,7 +631,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
             return NodeID.INVALID_ID;
         }
 
-        if (numberOfPeers < m_replicationFactor * 2) {
+        if (numberOfPeers < getConfig().getReplicationFactor() * 2) {
             // #if LOGGER >= WARN
             LOGGER.warn("Less than six peers for backup available. Some peers may store more" + " than one backup range of a node!");
             // #endif /* LOGGER >= WARN */
@@ -712,35 +679,35 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
         numberOfPeers = (short) peers.size();
 
         m_lock.writeLock().lock();
-        if (numberOfPeers < m_replicationFactor) {
+        if (numberOfPeers < getConfig().getReplicationFactor()) {
             // #if LOGGER >= WARN
             LOGGER.warn("Less than three peers for backup available. Replication will be incomplete!");
             // #endif /* LOGGER >= WARN */
 
-            newBackupPeers = new short[m_replicationFactor];
+            newBackupPeers = new short[getConfig().getReplicationFactor()];
             Arrays.fill(newBackupPeers, NodeID.INVALID_ID);
 
             insufficientPeers = true;
-        } else if (numberOfPeers < m_replicationFactor * 2) {
+        } else if (numberOfPeers < getConfig().getReplicationFactor() * 2) {
             // #if LOGGER >= WARN
             LOGGER.warn("Less than six peers for backup available. Some peers may store more" + " than one backup range of a node!");
             // #endif /* LOGGER >= WARN */
 
-            oldBackupPeers = new short[m_replicationFactor];
+            oldBackupPeers = new short[getConfig().getReplicationFactor()];
             Arrays.fill(oldBackupPeers, NodeID.INVALID_ID);
 
-            newBackupPeers = new short[m_replicationFactor];
+            newBackupPeers = new short[getConfig().getReplicationFactor()];
             Arrays.fill(newBackupPeers, NodeID.INVALID_ID);
         } else {
             if (m_currentBackupRange != null) {
-                oldBackupPeers = new short[m_replicationFactor];
-                System.arraycopy(m_currentBackupRange.getBackupPeers(), 0, oldBackupPeers, 0, m_replicationFactor);
+                oldBackupPeers = new short[getConfig().getReplicationFactor()];
+                System.arraycopy(m_currentBackupRange.getBackupPeers(), 0, oldBackupPeers, 0, getConfig().getReplicationFactor());
             } else {
-                oldBackupPeers = new short[m_replicationFactor];
+                oldBackupPeers = new short[getConfig().getReplicationFactor()];
                 Arrays.fill(oldBackupPeers, NodeID.INVALID_ID);
             }
 
-            newBackupPeers = new short[m_replicationFactor];
+            newBackupPeers = new short[getConfig().getReplicationFactor()];
             Arrays.fill(newBackupPeers, NodeID.INVALID_ID);
         }
 
@@ -764,7 +731,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
             }
         } else {
             // Determine backup peers
-            for (int i = 0; i < m_replicationFactor; i++) {
+            for (int i = 0; i < getConfig().getReplicationFactor(); i++) {
                 while (!ready) {
                     index = (short) (Math.random() * numberOfPeers);
                     ready = true;

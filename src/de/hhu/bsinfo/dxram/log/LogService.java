@@ -38,7 +38,7 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class LogService extends AbstractDXRAMService implements MessageReceiver {
+public class LogService extends AbstractDXRAMService<LogServiceConfig> implements MessageReceiver {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(LogService.class.getSimpleName());
 
@@ -50,7 +50,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
      * Constructor
      */
     public LogService() {
-        super("log", false, true);
+        super("log", LogServiceConfig.class);
     }
 
     /**
@@ -129,12 +129,12 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -145,7 +145,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
 

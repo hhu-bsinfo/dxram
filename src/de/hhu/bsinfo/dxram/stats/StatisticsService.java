@@ -11,12 +11,12 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 04.04.2017
  */
-public class StatisticsService extends AbstractDXRAMService {
+public class StatisticsService extends AbstractDXRAMService<StatisticsServiceConfig> {
     /**
      * Constructor
      */
     public StatisticsService() {
-        super("stats", true, true);
+        super("stats", StatisticsServiceConfig.class);
     }
 
     /**
@@ -40,12 +40,12 @@ public class StatisticsService extends AbstractDXRAMService {
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return true;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -55,7 +55,7 @@ public class StatisticsService extends AbstractDXRAMService {
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         return true;
     }
 

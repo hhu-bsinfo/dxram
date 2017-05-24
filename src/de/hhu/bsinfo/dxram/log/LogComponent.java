@@ -20,8 +20,6 @@ import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -58,44 +56,19 @@ import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.utils.JNIFileRaw;
 import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.StringUtils;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
  * This service provides access to the backend storage system.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class LogComponent extends AbstractDXRAMComponent {
+public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(LogService.class.getSimpleName());
 
     // Constants
     private static final AbstractPrimLogEntryHeader PRIM_LOG_ENTRY_HEADER = new PrimLogEntryHeader();
     private static final int PAYLOAD_PRINT_LENGTH = 128;
-
-    // configuration values
-    @Expose
-    private String m_harddriveAccess = "raf";
-    @Expose
-    private String m_rawDevicePath = "/dev/raw/raw1";
-    @Expose
-    private boolean m_useChecksum = true;
-    @Expose
-    private StorageUnit m_flashPageSize = new StorageUnit(4, StorageUnit.KB);
-    @Expose
-    private StorageUnit m_logSegmentSize = new StorageUnit(8, StorageUnit.MB);
-    @Expose
-    private StorageUnit m_primaryLogSize = new StorageUnit(256, StorageUnit.MB);
-    @Expose
-    private StorageUnit m_secondaryLogSize = new StorageUnit(512, StorageUnit.MB);
-    @Expose
-    private StorageUnit m_writeBufferSize = new StorageUnit(256, StorageUnit.MB);
-    @Expose
-    private StorageUnit m_secondaryLogBufferSize = new StorageUnit(128, StorageUnit.KB);
-    @Expose
-    private int m_reorgUtilizationThreshold = 70;
-    @Expose
-    private boolean m_sortBufferPooling = true;
 
     private HarddriveAccessMode m_mode;
 
@@ -125,7 +98,7 @@ public class LogComponent extends AbstractDXRAMComponent {
      * Creates the log component
      */
     public LogComponent() {
-        super(DXRAMComponentOrder.Init.LOG, DXRAMComponentOrder.Shutdown.LOG, false, true);
+        super(DXRAMComponentOrder.Init.LOG, DXRAMComponentOrder.Shutdown.LOG, LogComponentConfig.class);
     }
 
     /**
@@ -179,7 +152,7 @@ public class LogComponent extends AbstractDXRAMComponent {
      * @return Segment size of log in bytes
      */
     public int getSegmentSizeBytes() {
-        return (int) m_logSegmentSize.getBytes();
+        return (int) getConfig().getLogSegmentSize().getBytes();
     }
 
     /**
@@ -333,7 +306,8 @@ public class LogComponent extends AbstractDXRAMComponent {
         DataStructure[] ret = null;
 
         try {
-            ret = SecondaryLog.recoverFromFile(p_fileName, p_path, m_useChecksum, m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_mode);
+            ret = SecondaryLog.recoverFromFile(p_fileName, p_path, getConfig().useChecksum(), getConfig().getSecondaryLogSize().getBytes(),
+                    (int) getConfig().getLogSegmentSize().getBytes(), m_mode);
         } catch (final IOException e) {
             // #if LOGGER >= ERROR
             LOGGER.error("Could not recover from file %s: %s", p_path, e);
@@ -425,12 +399,12 @@ public class LogComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -443,23 +417,23 @@ public class LogComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
 
         // Set the segment size. Needed for log entry header to split large chunks (must be called before the first log entry header is created)
-        AbstractLogEntryHeader.setSegmentSize((int) m_logSegmentSize.getBytes());
+        AbstractLogEntryHeader.setSegmentSize((int) getConfig().getLogSegmentSize().getBytes());
         // Set the log entry header crc size (must be called before the first log entry header is created)
-        ChecksumHandler.setCRCSize(m_useChecksum);
+        ChecksumHandler.setCRCSize(getConfig().useChecksum());
 
         m_loggingIsActive = m_boot.getNodeRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup();
         if (m_loggingIsActive) {
             DXRAMJNIManager.loadJNIModule("JNINativeCRCGenerator");
 
-            m_mode = HarddriveAccessMode.convert(m_harddriveAccess);
+            m_mode = HarddriveAccessMode.convert(getConfig().getHarddriveAccess());
             if (m_mode == HarddriveAccessMode.ODIRECT) {
                 DXRAMJNIManager.loadJNIModule(HarddriveAccessMode.getJNIFileName(m_mode));
             } else if (m_mode == HarddriveAccessMode.RAW_DEVICE) {
                 DXRAMJNIManager.loadJNIModule(HarddriveAccessMode.getJNIFileName(m_mode));
-                JNIFileRaw.prepareRawDevice(m_rawDevicePath, 0);
+                JNIFileRaw.prepareRawDevice(getConfig().getRawDevicePath(), 0);
             }
 
             m_nodeID = m_boot.getNodeID();
@@ -468,23 +442,26 @@ public class LogComponent extends AbstractDXRAMComponent {
 
             // Create primary log
             try {
-                m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, m_primaryLogSize.getBytes(), (int) m_flashPageSize.getBytes(), m_mode);
+                m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, getConfig().getPrimaryLogSize().getBytes(),
+                        (int) getConfig().getFlashPageSize().getBytes(), m_mode);
             } catch (final IOException e) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Primary log creation failed", e);
                 // #endif /* LOGGER >= ERROR */
             }
             // #if LOGGER == TRACE
-            LOGGER.trace("Initialized primary log (%d)", (int) m_logSegmentSize.getBytes());
+            LOGGER.trace("Initialized primary log (%d)", (int) getConfig().getLogSegmentSize().getBytes());
             // #endif /* LOGGER == TRACE */
 
             // Create reorganization thread for secondary logs
-            m_secondaryLogsReorgThread = new SecondaryLogsReorgThread(this, m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes());
+            m_secondaryLogsReorgThread =
+                    new SecondaryLogsReorgThread(this, getConfig().getSecondaryLogSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes());
             m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
 
             // Create primary log buffer
-            m_writeBuffer = new PrimaryWriteBuffer(this, m_primaryLog, (int) m_writeBufferSize.getBytes(), (int) m_flashPageSize.getBytes(),
-                    (int) m_secondaryLogBufferSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_useChecksum, m_sortBufferPooling);
+            m_writeBuffer = new PrimaryWriteBuffer(this, m_primaryLog, (int) getConfig().getWriteBufferSize().getBytes(),
+                    (int) getConfig().getFlashPageSize().getBytes(), (int) getConfig().getSecondaryLogSize().getBytes(),
+                    (int) getConfig().getLogSegmentSize().getBytes(), getConfig().useChecksum(), getConfig().sortBufferPooling());
 
             // Create secondary log and secondary log buffer catalogs
             m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
@@ -635,10 +612,11 @@ public class LogComponent extends AbstractDXRAMComponent {
         try {
             if (!cat.exists(p_rangeID)) {
                 // Create new secondary log
-                secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_rangeID, m_backupDirectory, m_secondaryLogSize.getBytes(),
-                        (int) m_flashPageSize.getBytes(), (int) m_logSegmentSize.getBytes(), m_reorgUtilizationThreshold, m_useChecksum, m_mode);
+                secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_rangeID, m_backupDirectory, getConfig().getSecondaryLogSize().getBytes(),
+                        (int) getConfig().getFlashPageSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes(),
+                        getConfig().getReorgUtilizationThreshold(), getConfig().useChecksum(), m_mode);
                 // Insert range in log catalog
-                cat.insertRange(p_rangeID, secLog, (int) m_secondaryLogBufferSize.getBytes(), (int) m_logSegmentSize.getBytes());
+                cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes());
             }
         } catch (final IOException e) {
             // #if LOGGER >= ERROR

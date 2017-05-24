@@ -15,8 +15,6 @@ package de.hhu.bsinfo.dxram.mem;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -54,7 +52,7 @@ import de.hhu.bsinfo.utils.unit.StorageUnit;
  * @author Florian Klein, florian.klein@hhu.de, 13.02.2014
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
-public final class MemoryManagerComponent extends AbstractDXRAMComponent {
+public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryManagerComponentConfig> {
     // statistics recording
     static final StatisticsOperation SOP_MALLOC = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Malloc");
     private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
@@ -67,24 +65,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     private static final StatisticsOperation SOP_REMOVE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Remove");
     private static final StatisticsOperation SOP_CREATE_PUT_RECOVERED =
             StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateAndPutRecovered");
-
-    // configuration values
-    /**
-     * Amount of main memory to use for the key value store
-     */
-    @Expose
-    private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
-    /**
-     * Max block size for a chunk in the key value store
-     */
-    @Expose
-    private StorageUnit m_keyValueStoreMaxBlockSize = new StorageUnit(8, StorageUnit.MB);
-    /**
-     * To enable mem dumps on critical errors (memory corruption), enter a path to a file to dump _ALL_ key value store memory to
-     * (file size approx. key value store size)
-     */
-    @Expose
-    private String m_memDumpFolderOnError = "";
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -100,7 +80,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public MemoryManagerComponent() {
-        super(DXRAMComponentOrder.Init.MEMORY, DXRAMComponentOrder.Shutdown.MEMORY, false, true);
+        super(DXRAMComponentOrder.Init.MEMORY, DXRAMComponentOrder.Shutdown.MEMORY, MemoryManagerComponentConfig.class);
     }
 
     /**
@@ -1292,12 +1272,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -1307,19 +1287,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-        if (p_engineEngineSettings.getRole() == NodeRole.PEER) {
-            initMemory();
-        }
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
+        initMemory();
 
         return true;
     }
 
     @Override
     protected boolean shutdownComponent() {
-        if (m_boot.getNodeRole() == NodeRole.PEER) {
-            shutdownMemory();
-        }
+        shutdownMemory();
 
         return true;
     }
@@ -1329,10 +1305,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
      */
     private void initMemory() {
         // #if LOGGER == INFO
-        LOGGER.info("Allocating native memory (%d mb). This may take a while...", m_keyValueStoreSize.getMB());
+        LOGGER.info("Allocating native memory (%d mb). This may take a while...", getConfig().getKeyValueStoreSize().getMB());
         // #endif /* LOGGER == INFO */
         // Runtime.getRuntime().load("/home/nothaas/dxram/jni/libJNINativeMemory.so");
-        m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory(), m_keyValueStoreSize.getBytes(), (int) m_keyValueStoreMaxBlockSize.getBytes());
+        m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory(), getConfig().getKeyValueStoreSize().getBytes(),
+                (int) getConfig().getKeyValueStoreMaxBlockSize().getBytes());
         m_cidTable = new CIDTable(m_boot.getNodeID());
         m_cidTable.initialize(m_rawMemory);
 
@@ -1394,13 +1371,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
         LOGGER.fatal("Encountered memory error (most likely corruption)", p_e);
         // #endif /* LOGGER == ERROR */
 
-        if (!m_memDumpFolderOnError.isEmpty()) {
-            if (!m_memDumpFolderOnError.endsWith("/")) {
-                m_memDumpFolderOnError += "/";
+        if (!getConfig().getMemDumpFolderOnError().isEmpty()) {
+            String folder = getConfig().getMemDumpFolderOnError();
+
+            if (!folder.endsWith("/")) {
+                folder += "/";
             }
 
             // create unique file name for each thread to avoid collisions
-            String fileName = m_memDumpFolderOnError + "memdump-" + Thread.currentThread().getId() + '-' + System.currentTimeMillis() + ".soh";
+            String fileName = folder + "memdump-" + Thread.currentThread().getId() + '-' + System.currentTimeMillis() + ".soh";
 
             // #if LOGGER == ERROR
             LOGGER.fatal("Full memory dump to file: %s...", fileName);

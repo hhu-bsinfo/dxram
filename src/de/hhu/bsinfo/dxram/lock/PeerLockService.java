@@ -15,8 +15,6 @@ package de.hhu.bsinfo.dxram.lock;
 
 import java.util.ArrayList;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,14 +45,13 @@ import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
-import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * Lock service providing exclusive locking of chunks/data structures.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class PeerLockService extends AbstractLockService implements MessageReceiver, EventListener<NodeFailureEvent> {
+public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> implements MessageReceiver, EventListener<NodeFailureEvent> {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(PeerLockService.class.getSimpleName());
 
@@ -63,18 +60,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     private static final StatisticsOperation SOP_UNLOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "Unlock");
     private static final StatisticsOperation SOP_INCOMING_LOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "IncomingLock");
     private static final StatisticsOperation SOP_INCOMING_UNLOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "IncomingUnlock");
-
-    // configuration values
-    /**
-     * Message frequency for acquiring a remote lock
-     */
-    @Expose
-    private TimeUnit m_remoteLockSendInterval = new TimeUnit(10, TimeUnit.MS);
-    /**
-     * Timeout when trying to acquire a remote lock
-     */
-    @Expose
-    private TimeUnit m_remoteLockTryTimeout = new TimeUnit(100, TimeUnit.MS);
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -88,7 +73,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
      * Constructor
      */
     public PeerLockService() {
-        super(false, true);
+        super(PeerLockServiceConfig.class);
     }
 
     @Override
@@ -168,7 +153,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
                         // avoid heavy network load/lock polling
                         if (idle) {
                             try {
-                                Thread.sleep(m_remoteLockSendInterval.getMs());
+                                Thread.sleep(getConfig().getRemoteLockSendInterval().getMs());
                             } catch (final InterruptedException ignored) {
                             }
                         }
@@ -329,12 +314,12 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -349,7 +334,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         m_event.registerListener(this, NodeFailureEvent.class);
 
         m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, LockRequest.class);
@@ -386,7 +371,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
         // the host handles the timeout as we don't want to block the message receiver thread
         // for too long, execute a tryLock instead
         success = m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(), p_request.isWriteLockOperation(),
-                (int) m_remoteLockTryTimeout.getMs());
+                (int) getConfig().getRemoteLockTryTimeout().getMs());
 
         try {
             if (success) {

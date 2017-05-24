@@ -11,8 +11,6 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,17 +26,11 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  */
-public class ApplicationComponent extends AbstractDXRAMComponent {
+public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComponentConfig> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ApplicationComponent.class.getSimpleName());
 
     // component dependencies
     private AbstractBootComponent m_boot;
-
-    /**
-     * Path for application jar packages
-     */
-    @Expose
-    private String m_applicationPath = "app";
 
     private List<Class<? extends AbstractApplication>> m_applicationClasses = new ArrayList<>();
 
@@ -46,7 +38,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent {
      * Constructor
      */
     public ApplicationComponent() {
-        super(DXRAMComponentOrder.Init.APPLICATION, DXRAMComponentOrder.Shutdown.APPLICATION, false, true);
+        super(DXRAMComponentOrder.Init.APPLICATION, DXRAMComponentOrder.Shutdown.APPLICATION, ApplicationComponentConfig.class);
     }
 
     /**
@@ -55,7 +47,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent {
      * @return Path with application jars
      */
     String getApplicationPath() {
-        return m_applicationPath;
+        return getConfig().getApplicationPath();
     }
 
     /**
@@ -68,12 +60,12 @@ public class ApplicationComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean supportedBySuperpeer() {
+    protected boolean supportsSuperpeer() {
         return false;
     }
 
     @Override
-    protected boolean supportedByPeer() {
+    protected boolean supportsPeer() {
         return true;
     }
 
@@ -83,13 +75,13 @@ public class ApplicationComponent extends AbstractDXRAMComponent {
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
             // #if LOGGER >= INFO
-            LOGGER.info("Loading application %s", m_applicationPath);
+            LOGGER.info("Loading application %s", getConfig().getApplicationPath());
             // #endif /* LOGGER >= INFO */
 
-            File dir = new File(m_applicationPath);
+            File dir = new File(getConfig().getApplicationPath());
 
             if (dir.exists() && dir.isDirectory()) {
                 File[] files = dir.listFiles();
@@ -101,7 +93,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent {
                 }
             } else {
                 // #if LOGGER >= WARN
-                LOGGER.warn("Can't load applications from %s, no such directory", m_applicationPath);
+                LOGGER.warn("Can't load applications from %s, no such directory", getConfig().getApplicationPath());
                 // #endif /* LOGGER >= WARN */
             }
         }

@@ -17,13 +17,14 @@ import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
  * Service to lock chunks.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public abstract class AbstractLockService extends AbstractDXRAMService {
+public abstract class AbstractLockService<T extends DXRAMServiceConfig> extends AbstractDXRAMService<T> {
 
     /**
      * Error codes for some methods.
@@ -39,13 +40,11 @@ public abstract class AbstractLockService extends AbstractDXRAMService {
     /**
      * Constructor
      *
-     * @param p_enabledForSuperpeer
-     *         Enable this service if the node is a superpeer (default value)
-     * @param p_enabledForPeer
-     *         Enable this service if the node is a peer (default value)
+     * @param p_configClass
+     *         Configuration class for this service
      */
-    AbstractLockService(final boolean p_enabledForSuperpeer, final boolean p_enabledForPeer) {
-        super("lock", p_enabledForSuperpeer, p_enabledForPeer);
+    AbstractLockService(final Class<T> p_configClass) {
+        super("lock", p_configClass);
     }
 
     /**
