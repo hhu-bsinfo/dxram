@@ -42,6 +42,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.sync.SynchronizationServiceConfig;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageServiceConfig;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.ArrayListLong;
@@ -795,7 +796,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             m_superpeer = new OverlaySuperpeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(),
-                    getConfig().getPingInterval(), getConfig().getMaxBarriersPerSuperpeer(),
+                    getConfig().getPingInterval(), p_config.getServiceConfig(SynchronizationServiceConfig.class).getMaxBarriersPerSuperpeer(),
                     p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxNumEntries(),
                     (int) p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxSize().getBytes(),
                     p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive(), m_boot, m_network);

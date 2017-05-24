@@ -26,9 +26,6 @@ public class LookupComponentConfig extends DXRAMComponentConfig {
     @Expose
     private int m_pingInterval = 1;
 
-    @Expose
-    private int m_maxBarriersPerSuperpeer = 1000;
-
     /**
      * Constructor
      */
@@ -59,12 +56,5 @@ public class LookupComponentConfig extends DXRAMComponentConfig {
     // TODO kevin: doc
     public int getPingInterval() {
         return m_pingInterval;
-    }
-
-    /**
-     * Maximum number of barriers that can be allocated on a single superpeer
-     */
-    public int getMaxBarriersPerSuperpeer() {
-        return m_maxBarriersPerSuperpeer;
     }
 }
