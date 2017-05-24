@@ -18,6 +18,9 @@ import java.util.Map;
 
 import com.google.gson.annotations.Expose;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.unit.IPV4Unit;
 
@@ -27,6 +30,8 @@ import de.hhu.bsinfo.utils.unit.IPV4Unit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 20.10.2016
  */
 public class DXRAMContext {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMContext.class.getSimpleName());
+
     /**
      * Engine specific settings
      */
@@ -91,7 +96,15 @@ public class DXRAMContext {
         for (DXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
             if (p_nodeRole == NodeRole.SUPERPEER && config.isEnabledForSuperpeer() || p_nodeRole == NodeRole.PEER && config.isEnabledForPeer()) {
                 AbstractDXRAMComponent comp = p_manager.createInstance(config.getComponentClass());
-                m_components.put(comp.getClass().getSimpleName(), comp);
+
+                if (p_nodeRole == NodeRole.SUPERPEER && comp.supportsSuperpeer() || p_nodeRole == NodeRole.PEER && comp.supportsPeer()) {
+                    m_components.put(comp.getClass().getSimpleName(), comp);
+                } else {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Creating instance of component '%s' not possible on current node type '%s', not supported", comp.getComponentName(),
+                            p_nodeRole);
+                    // #endif /* LOGGER >= ERROR */
+                }
             }
         }
     }
@@ -110,7 +123,14 @@ public class DXRAMContext {
         for (DXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
             if (p_nodeRole == NodeRole.SUPERPEER && config.isEnabledForSuperpeer() || p_nodeRole == NodeRole.PEER && config.isEnabledForPeer()) {
                 AbstractDXRAMService serv = p_manager.createInstance(config.getServiceClass());
-                m_services.put(serv.getClass().getSimpleName(), serv);
+
+                if (p_nodeRole == NodeRole.SUPERPEER && serv.supportsSuperpeer() || p_nodeRole == NodeRole.PEER && serv.supportsPeer()) {
+                    m_services.put(serv.getClass().getSimpleName(), serv);
+                } else {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Creating instance of service '%s' not possible on current node type '%s', not supported", serv.getServiceName(), p_nodeRole);
+                    // #endif /* LOGGER >= ERROR */
+                }
             }
         }
     }
