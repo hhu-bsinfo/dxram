@@ -13,15 +13,40 @@
 
 package de.hhu.bsinfo.dxterm;
 
+/**
+ * Exception for terminal related errors
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ */
 public class TerminalException extends Exception {
+    /**
+     * Constructor
+     *
+     * @param p_msg
+     *         Exception message
+     */
     public TerminalException(final String p_msg) {
         super(p_msg);
     }
 
+    /**
+     * Constructor
+     *
+     * @param p_e
+     *         Exception to wrap
+     */
     public TerminalException(final Exception p_e) {
         super(p_e);
     }
 
+    /**
+     * Constructor
+     *
+     * @param p_msg
+     *         Exception message
+     * @param p_e
+     *         Exception to wrap
+     */
     public TerminalException(final String p_msg, final Exception p_e) {
         super(p_msg, p_e);
     }

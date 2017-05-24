@@ -23,16 +23,30 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Terminal server class handling command evaluation
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ */
 public class TerminalServer {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalServer.class.getSimpleName());
 
     private final short m_nodeId;
     private Map<String, AbstractTerminalCommand> m_commands = new HashMap<String, AbstractTerminalCommand>();
 
+    /**
+     * Constructor
+     *
+     * @param p_nodeId
+     *         Node id of the DXRAM peer the server is running on
+     */
     public TerminalServer(final short p_nodeId) {
         m_nodeId = p_nodeId;
     }
 
+    /**
+     * Get the node id of the DXRAM peer the server is running on
+     */
     public short getNodeId() {
         return m_nodeId;
     }
@@ -55,6 +69,9 @@ public class TerminalServer {
         }
     }
 
+    /**
+     * Get a list of terminal commands available
+     */
     public List<String> getTerminalCommandList() {
         Collection<AbstractTerminalCommand> cmds = m_commands.values();
         List<String> cmdNames = new ArrayList<>();
@@ -68,6 +85,16 @@ public class TerminalServer {
         return cmdNames;
     }
 
+    /**
+     * Evaluate a terminal command
+     *
+     * @param p_session
+     *         Session of the client requesting evaluation
+     * @param p_cmdStr
+     *         The client's command string to evaluate
+     * @param p_services
+     *         Service accessor for the terminal command
+     */
     public void evaluate(final TerminalSession p_session, final TerminalCommandString p_cmdStr, final TerminalServiceAccessor p_services) {
         TerminalServerStdout stdout = new TerminalServerStdout(p_session);
 

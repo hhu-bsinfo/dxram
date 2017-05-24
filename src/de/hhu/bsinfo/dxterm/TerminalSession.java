@@ -21,6 +21,11 @@ import java.net.Socket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Terminal session (used on the client and server)
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ */
 public class TerminalSession {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalSession.class.getSimpleName());
 
@@ -30,6 +35,18 @@ public class TerminalSession {
     private ObjectInputStream m_in;
     private ObjectOutputStream m_out;
 
+    /**
+     * Constructor
+     *
+     * @param p_sessionId
+     *         Session ID assigned by the server
+     * @param p_socket
+     *         Opened socket
+     * @param p_listener
+     *         Listener attached to this session
+     * @throws TerminalException
+     *         If opening input/output streams on socket failed
+     */
     public TerminalSession(final byte p_sessionId, final Socket p_socket, final Listener p_listener) throws TerminalException {
         m_sessionId = p_sessionId;
         m_socket = p_socket;
@@ -43,10 +60,18 @@ public class TerminalSession {
         }
     }
 
+    /**
+     * Get the session id
+     */
     public byte getSessionId() {
         return m_sessionId;
     }
 
+    /**
+     * Read an object (blocking)
+     *
+     * @return Object read or null on failure
+     */
     public Object read() {
         try {
             return m_in.readObject();
@@ -55,6 +80,13 @@ public class TerminalSession {
         }
     }
 
+    /**
+     * Write an object
+     *
+     * @param p_object
+     *         Object to write
+     * @return True on success, false on error
+     */
     public boolean write(final Object p_object) {
         try {
             m_out.writeObject(p_object);
@@ -66,6 +98,9 @@ public class TerminalSession {
         return true;
     }
 
+    /**
+     * Close the session
+     */
     public void close() {
         // #if LOGGER == DEBUG
         LOGGER.debug("Closing session: %s", m_socket);
@@ -87,7 +122,16 @@ public class TerminalSession {
         return m_socket.toString();
     }
 
+    /**
+     * Listener interface for session
+     */
     public interface Listener {
+        /**
+         * Called when session is closed
+         *
+         * @param p_session
+         *         Session that was closed
+         */
         void sessionClosed(final TerminalSession p_session);
     }
 }

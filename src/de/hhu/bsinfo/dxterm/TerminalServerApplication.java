@@ -87,9 +87,9 @@ import de.hhu.bsinfo.dxterm.cmd.TcmdTmpremove;
 import de.hhu.bsinfo.dxterm.cmd.TcmdTmpstatus;
 
 /**
- * "Hello world" example DXRAM application
+ * Terminal server running on a DXRAM peer as a DXRAM application. Thin clients can connect to the server and execute terminal commands on the peer
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
 public class TerminalServerApplication extends AbstractApplication implements TerminalSession.Listener, TerminalServiceAccessor {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalServerApplication.class.getSimpleName());
@@ -217,6 +217,9 @@ public class TerminalServerApplication extends AbstractApplication implements Te
         return super.getService(p_class);
     }
 
+    /**
+     * Register all available terminal commands
+     */
     private void registerTerminalCommands() {
         if (isServiceAvailable(BootService.class)) {
             m_terminalServer.registerTerminalCommand(new TcmdNodeinfo());

@@ -15,9 +15,16 @@ package de.hhu.bsinfo.dxterm;
 
 import java.io.Serializable;
 
-public class TerminalCommandDone implements Serializable {
-
-    public TerminalCommandDone() {
+/**
+ * Command sent by the server if a terminal command finished executing on the server
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ */
+class TerminalCommandDone implements Serializable {
+    /**
+     * Constructor
+     */
+    TerminalCommandDone() {
 
     }
 }

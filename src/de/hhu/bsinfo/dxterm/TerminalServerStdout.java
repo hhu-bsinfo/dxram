@@ -13,10 +13,20 @@
 
 package de.hhu.bsinfo.dxterm;
 
+/**
+ * Stdout for terminal server sessions. This redirects any output written to the remote client's stdout
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ */
 public class TerminalServerStdout {
-
     private TerminalSession m_session;
 
+    /**
+     * Constructor
+     *
+     * @param p_session
+     *         Terminal session to attach to
+     */
     public TerminalServerStdout(final TerminalSession p_session) {
         m_session = p_session;
     }
@@ -64,7 +74,7 @@ public class TerminalServerStdout {
     }
 
     /**
-     * Print an error message to the conssole + newline
+     * Print an error message to the console + newline
      *
      * @param p_str
      *         String to print

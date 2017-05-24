@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxterm;
 
 /**
- * Base class for all terminal commands
+ * Base class for all terminal commands (server side)
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
@@ -53,7 +53,9 @@ public abstract class AbstractTerminalCommand {
      * @param p_cmd
      *         Terminal command with arguments
      * @param p_stdout
-     *         Stdout for terminal commands
+     *         Stdout for terminal commands to write output to
+     * @param p_services
+     *         Accessor to dxram services
      */
     public abstract void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services);
 }

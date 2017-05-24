@@ -15,20 +15,46 @@ package de.hhu.bsinfo.dxterm;
 
 import java.io.Serializable;
 
+/**
+ * Stdout data sent from the server to the client
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ */
 public class TerminalStdoutData implements Serializable {
     private String m_text = "";
     private TerminalColor m_color = TerminalColor.DEFAULT;
     private TerminalColor m_background = TerminalColor.DEFAULT;
     private TerminalStyle m_style = TerminalStyle.NORMAL;
 
+    /**
+     * Constructor
+     */
     public TerminalStdoutData() {
 
     }
 
+    /**
+     * Constructor
+     *
+     * @param p_text
+     *         Text to send
+     */
     public TerminalStdoutData(final String p_text) {
         m_text = p_text;
     }
 
+    /**
+     * Constructor
+     *
+     * @param p_text
+     *         Text to send
+     * @param p_color
+     *         Color for text
+     * @param p_background
+     *         Background color
+     * @param p_style
+     *         Style
+     */
     public TerminalStdoutData(final String p_text, final TerminalColor p_color, final TerminalColor p_background, final TerminalStyle p_style) {
         m_text = p_text;
         m_color = p_color;
@@ -36,18 +62,30 @@ public class TerminalStdoutData implements Serializable {
         m_style = p_style;
     }
 
+    /**
+     * Get the text
+     */
     public String getText() {
         return m_text;
     }
 
+    /**
+     * Get the text color
+     */
     public TerminalColor getColor() {
         return m_color;
     }
 
+    /**
+     * Get the background color
+     */
     public TerminalColor getBackground() {
         return m_background;
     }
 
+    /**
+     * Get the style
+     */
     public TerminalStyle getStyle() {
         return m_style;
     }

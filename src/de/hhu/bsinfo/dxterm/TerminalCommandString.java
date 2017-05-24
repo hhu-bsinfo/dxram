@@ -25,11 +25,22 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.NodeID;
 
+/**
+ * Process a string and create a terminal command which splits the input text into tokens of command name and arguments for the command
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ */
 public class TerminalCommandString implements Serializable {
     private String m_name = "";
     private String[] m_args = new String[0];
     private boolean m_isComment = false;
 
+    /**
+     * Constructor
+     *
+     * @param p_str
+     *         Input string to process
+     */
     protected TerminalCommandString(final String p_str) {
         // trim front and end
         String str = p_str.trim();
@@ -293,21 +304,4 @@ public class TerminalCommandString implements Serializable {
 
         return str;
     }
-
-    //    @Override
-    //    public void exportObject(final Exporter p_exporter) {
-    //        p_exporter.writeString(m_name);
-    //        p_exporter.writeStringArray(m_args);
-    //    }
-    //
-    //    @Override
-    //    public void importObject(final Importer p_importer) {
-    //        m_name = p_importer.readString();
-    //        m_args = p_importer.readStringArray();
-    //    }
-    //
-    //    @Override
-    //    public int sizeofObject() {
-    //        return ObjectSizeUtil.sizeofString(m_name) + ObjectSizeUtil.sizeofStringArray(m_args);
-    //    }
 }

@@ -15,6 +15,18 @@ package de.hhu.bsinfo.dxterm;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 
+/**
+ * Accessor interface for terminal commands to provide access to DXRAM services
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ */
 public interface TerminalServiceAccessor {
+    /**
+     * Get a DXRAM service
+     *
+     * @param p_class
+     *         Class of the service to get
+     * @return The service if available, null otherwise
+     */
     <T extends AbstractDXRAMService> T getService(final Class<T> p_class);
 }

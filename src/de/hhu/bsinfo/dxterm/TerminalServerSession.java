@@ -16,6 +16,11 @@ package de.hhu.bsinfo.dxterm;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Remote terminal session on the server running in a separate thread
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ */
 public class TerminalServerSession implements Runnable {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalServerSession.class.getSimpleName());
 
@@ -23,6 +28,16 @@ public class TerminalServerSession implements Runnable {
     private final TerminalSession m_session;
     private final TerminalServiceAccessor m_services;
 
+    /**
+     * Constructor
+     *
+     * @param p_server
+     *         Terminal server object
+     * @param p_session
+     *         Opened session with remove client
+     * @param p_services
+     *         Service accessor for terminal commands
+     */
     public TerminalServerSession(final TerminalServer p_server, final TerminalSession p_session, final TerminalServiceAccessor p_services) {
         m_server = p_server;
         m_session = p_session;

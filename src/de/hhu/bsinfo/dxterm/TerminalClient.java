@@ -31,7 +31,12 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class TerminalClient implements TerminalSession.Listener {
+/**
+ * Standalone thin client application to login to a terminal server running on a DXRAM peer
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ */
+public final class TerminalClient implements TerminalSession.Listener {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalClient.class.getSimpleName());
 
     private String m_autostartScript = "";
@@ -44,7 +49,17 @@ public class TerminalClient implements TerminalSession.Listener {
 
     private TerminalSession m_session;
 
-    public TerminalClient(final String p_hostname, final int p_port) throws TerminalException {
+    /**
+     * Constructor
+     *
+     * @param p_hostname
+     *         Hostname running the DXRAM peer with a terminal server
+     * @param p_port
+     *         Port of the terminal server to login to
+     * @throws TerminalException
+     *         If either creating the terminal environment or connecting to the server failed
+     */
+    private TerminalClient(final String p_hostname, final int p_port) throws TerminalException {
         try {
             m_consoleReader = new ConsoleReader();
             m_consoleReader.setBellEnabled(false);
@@ -64,6 +79,12 @@ public class TerminalClient implements TerminalSession.Listener {
         }
     }
 
+    /**
+     * Main entry point for terminal client
+     *
+     * @param p_args
+     *         Program arguments
+     */
     public static void main(final String[] p_args) {
         if (p_args.length < 1) {
             System.out.println("Usage: TerminalClient <server hostname> [port]");
@@ -88,9 +109,15 @@ public class TerminalClient implements TerminalSession.Listener {
         }
     }
 
+    /**
+     * Run function of the terminal client
+     *
+     * @throws TerminalException
+     *         On error (connection list, readline error, ...)
+     */
     public void run() throws TerminalException {
         System.out.println("Connecting...");
-        String prompt = connect();
+        String prompt = login();
 
         System.out.println("Connected");
         System.out.println("Type '?' or 'help' to print the help message");
@@ -126,6 +153,9 @@ public class TerminalClient implements TerminalSession.Listener {
         }
     }
 
+    /**
+     * Close the terminal client and clean up
+     */
     public void close() {
         // flush history
         try {
@@ -139,7 +169,12 @@ public class TerminalClient implements TerminalSession.Listener {
         // always own session
     }
 
-    private String connect() {
+    /**
+     * Login to the connected server
+     *
+     * @return Command line prompt to display after login
+     */
+    private String login() {
         Object object = m_session.read();
 
         if (object instanceof TerminalLogin) {
@@ -157,6 +192,13 @@ public class TerminalClient implements TerminalSession.Listener {
         return "LOGIN ERROR";
     }
 
+    /**
+     * Evaluate a terminal command
+     *
+     * @param p_cmd
+     *         TerminalCommandString to evaluate
+     * @return True on success, false on error
+     */
     private boolean evaluateCommand(final TerminalCommandString p_cmd) {
         if (!m_session.write(p_cmd)) {
             System.out.println("Sending command failed, most likely connection loss");
@@ -188,6 +230,9 @@ public class TerminalClient implements TerminalSession.Listener {
         return true;
     }
 
+    /**
+     * Quit the terminal session (logout)
+     */
     private void quit() {
         if (!m_session.write(new TerminalLogout())) {
             // #if LOGGER == ERROR
@@ -198,6 +243,13 @@ public class TerminalClient implements TerminalSession.Listener {
         m_session.close();
     }
 
+    /**
+     * Evaluate the text entered on the terminal
+     *
+     * @param p_text
+     *         Text to evaluate
+     * @return True if evaluation was successful and continue with command processing, false on error or quit.
+     */
     private boolean evaluate(final String p_text) {
         // skip empty
         if (p_text.isEmpty()) {
@@ -270,6 +322,13 @@ public class TerminalClient implements TerminalSession.Listener {
         }
     }
 
+    /**
+     * Run a terminal script (list of terminal commands)
+     *
+     * @param p_cmd
+     *         TerminalCommandString identified as run script command
+     * @return True if running script was successful, false on error
+     */
     private boolean runScript(final TerminalCommandString p_cmd) {
         if (p_cmd.getArgc() < 1) {
             System.out.println("Missing path to script file to run");
