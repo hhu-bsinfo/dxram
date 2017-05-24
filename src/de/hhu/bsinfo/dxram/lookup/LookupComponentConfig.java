@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxram.lookup;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
@@ -29,12 +28,6 @@ public class LookupComponentConfig extends DXRAMComponentConfig {
 
     @Expose
     private int m_maxBarriersPerSuperpeer = 1000;
-
-    @Expose
-    private int m_storageMaxNumEntries = 1000;
-
-    @Expose
-    private StorageUnit m_storageMaxSize = new StorageUnit(32, StorageUnit.MB);
 
     /**
      * Constructor
@@ -73,19 +66,5 @@ public class LookupComponentConfig extends DXRAMComponentConfig {
      */
     public int getMaxBarriersPerSuperpeer() {
         return m_maxBarriersPerSuperpeer;
-    }
-
-    /**
-     * Maximum number of entries allowed on the superpeer/temporary storage
-     */
-    public int getStorageMaxNumEntries() {
-        return m_storageMaxNumEntries;
-    }
-
-    /**
-     * Size of the superpeer/temporary storage
-     */
-    public StorageUnit getStorageMaxSize() {
-        return m_storageMaxSize;
     }
 }

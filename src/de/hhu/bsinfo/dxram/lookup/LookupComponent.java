@@ -42,6 +42,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.tmp.TemporaryStorageServiceConfig;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.Cache;
@@ -794,9 +795,10 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             m_superpeer = new OverlaySuperpeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(),
-                    getConfig().getPingInterval(), getConfig().getMaxBarriersPerSuperpeer(), getConfig().getStorageMaxNumEntries(),
-                    (int) getConfig().getStorageMaxSize().getBytes(), p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive(), m_boot,
-                    m_network);
+                    getConfig().getPingInterval(), getConfig().getMaxBarriersPerSuperpeer(),
+                    p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxNumEntries(),
+                    (int) p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxSize().getBytes(),
+                    p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive(), m_boot, m_network);
         } else {
             m_peer = new OverlayPeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_network, m_event);
             m_event.registerListener(this, NameserviceCacheEntryUpdateEvent.class);
