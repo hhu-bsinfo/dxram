@@ -13,6 +13,10 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import de.hhu.bsinfo.dxram.ms.MasterNodeEntry;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
@@ -54,5 +58,22 @@ public class TcmdCompgrpstatus extends AbstractTerminalCommand {
         }
 
         p_stdout.printfln("Status of group %d:\n%s", cgid, status);
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        List<String> list = new ArrayList<String>();
+
+        if (p_argumentPos == 0) {
+            MasterSlaveComputeService mscomp = p_services.getService(MasterSlaveComputeService.class);
+            ArrayList<MasterNodeEntry> masters = mscomp.getMasters();
+
+            for (MasterNodeEntry entry : masters) {
+                list.add(Short.toString(entry.getComputeGroupId()));
+            }
+        }
+
+        return list;
     }
 }

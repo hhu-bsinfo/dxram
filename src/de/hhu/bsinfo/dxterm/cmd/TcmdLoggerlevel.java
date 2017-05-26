@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
@@ -56,5 +59,31 @@ public class TcmdLoggerlevel extends AbstractTerminalCommand {
         } else {
             logger.setLogLevel(level, nid);
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        List<String> list = new ArrayList<String>();
+
+        switch (p_argumentPos) {
+            case 0:
+                list.add("disabled");
+                list.add("error");
+                list.add("warn");
+                list.add("info");
+                list.add("debug");
+                list.add("trace");
+
+                break;
+
+            case 1:
+                return TcmdUtils.getAllOnlineNodeIDsCompSuggestions(p_services);
+
+            default:
+                break;
+        }
+
+        return list;
     }
 }

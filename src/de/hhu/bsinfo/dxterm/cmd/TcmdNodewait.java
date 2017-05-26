@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
@@ -73,5 +74,11 @@ public class TcmdNodewait extends AbstractTerminalCommand {
         }
 
         p_stdout.printfln("%d superpeers and %d peers online", listSuperpeers.size(), listPeers.size());
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        return Collections.emptyList();
     }
 }

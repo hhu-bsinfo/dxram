@@ -14,6 +14,8 @@
 package de.hhu.bsinfo.dxterm.cmd;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
@@ -47,5 +49,11 @@ public class TcmdStatsrecorders extends AbstractTerminalCommand {
         for (StatisticsRecorder recorder : recorders) {
             p_stdout.printfln("> %s", recorder.getName());
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        return Collections.emptyList();
     }
 }

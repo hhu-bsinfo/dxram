@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
@@ -55,5 +58,11 @@ public class TcmdStatsprint extends AbstractTerminalCommand {
                 p_stdout.println(rec.toString());
             }
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        return Collections.emptyList();
     }
 }

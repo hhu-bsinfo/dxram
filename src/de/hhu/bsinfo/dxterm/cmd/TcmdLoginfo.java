@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
@@ -49,5 +52,16 @@ public class TcmdLoginfo extends AbstractTerminalCommand {
         LogService log = p_services.getService(LogService.class);
 
         p_stdout.println(log.getCurrentUtilization(nid));
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        switch (p_argumentPos) {
+            case 0:
+                return TcmdUtils.getAllOnlinePeerNodeIDsCompSuggestions(p_services);
+            default:
+                return Collections.emptyList();
+        }
     }
 }

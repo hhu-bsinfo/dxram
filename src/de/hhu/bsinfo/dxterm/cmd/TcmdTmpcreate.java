@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
@@ -59,5 +62,11 @@ public class TcmdTmpcreate extends AbstractTerminalCommand {
         } else {
             p_stdout.printlnErr("Creating chunk in temporary storage failed");
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        return Collections.emptyList();
     }
 }

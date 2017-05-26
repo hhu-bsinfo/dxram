@@ -16,7 +16,6 @@ package de.hhu.bsinfo.dxterm;
 import jline.console.ConsoleReader;
 import jline.console.UserInterruptException;
 import jline.console.completer.ArgumentCompleter;
-import jline.console.completer.FileNameCompleter;
 import jline.console.completer.StringsCompleter;
 import jline.console.history.FileHistory;
 
@@ -180,11 +179,13 @@ public final class TerminalClient implements TerminalSession.Listener {
         if (object instanceof TerminalLogin) {
             TerminalLogin login = (TerminalLogin) object;
 
-            // TODO implement a completer for remote commands
             // add completers for commands
             List<String> list = login.getCmdNames();
             Collections.addAll(list, m_localCommands);
-            m_consoleReader.addCompleter(new ArgumentCompleter(new StringsCompleter(list), new FileNameCompleter()));
+            ArgumentCompleter comp = new ArgumentCompleter(new StringsCompleter(list), new TerminalCmdArgCompleter(m_consoleReader, m_session));
+            // if strict, a failure on a completion blocks all completions on further arguments
+            comp.setStrict(false);
+            m_consoleReader.addCompleter(comp);
 
             return login.getSessionId() + "/0x" + String.format("%04x", login.getNodeId()).toUpperCase();
         }

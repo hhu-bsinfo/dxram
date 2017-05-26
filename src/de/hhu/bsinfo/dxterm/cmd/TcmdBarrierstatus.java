@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
@@ -64,5 +67,11 @@ public class TcmdBarrierstatus extends AbstractTerminalCommand {
         }
 
         p_stdout.printfln("Barrier status 0x%X, %d/%d: %s", bid, status.getNumberOfSignedOnPeers(), status.getSignedOnNodeIDs().length, peers);
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        return Collections.emptyList();
     }
 }

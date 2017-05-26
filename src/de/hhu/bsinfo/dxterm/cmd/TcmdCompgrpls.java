@@ -14,6 +14,8 @@
 package de.hhu.bsinfo.dxterm.cmd;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import de.hhu.bsinfo.dxram.ms.MasterNodeEntry;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
@@ -48,5 +50,11 @@ public class TcmdCompgrpls extends AbstractTerminalCommand {
         for (MasterNodeEntry master : masters) {
             p_stdout.printfln("%d: 0x%X", master.getComputeGroupId(), master.getNodeId());
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        return Collections.emptyList();
     }
 }

@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxterm;
 
+import java.util.List;
+
 /**
  * Base class for all terminal commands (server side)
  *
@@ -60,5 +62,19 @@ public abstract class AbstractTerminalCommand {
      *         Accessor to dxram services
      */
     public abstract void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
+            final TerminalServiceAccessor p_services);
+
+    /**
+     * Return suggestions for argument completion
+     *
+     * @param p_argumentPos
+     *         Current argument to be completed
+     * @param p_cmdStr
+     *         Current (and probably incomplete) command string from the terminal
+     * @param p_services
+     *         Accessor to dxram services
+     * @return List of suggestions on how to complete the argument
+     */
+    public abstract List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
             final TerminalServiceAccessor p_services);
 }

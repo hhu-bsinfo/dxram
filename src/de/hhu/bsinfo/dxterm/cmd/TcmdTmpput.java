@@ -14,6 +14,8 @@
 package de.hhu.bsinfo.dxterm.cmd;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.List;
 
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
@@ -160,5 +162,11 @@ public class TcmdTmpput extends AbstractTerminalCommand {
         } else {
             p_stdout.printfln("Put to chunk 0x%X to tmp storage successful", id);
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        return Collections.emptyList();
     }
 }

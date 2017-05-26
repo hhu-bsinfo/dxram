@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
@@ -56,5 +57,24 @@ public class TcmdNodelist extends AbstractTerminalCommand {
                 p_stdout.printfln("\t0x%04X   %s", nodeId, curRole);
             }
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        List<String> list = new ArrayList<String>();
+
+        switch (p_argumentPos) {
+            case 0:
+                list.add(NodeRole.SUPERPEER_STR);
+                list.add(NodeRole.PEER_STR);
+
+                break;
+
+            default:
+                break;
+        }
+
+        return list;
     }
 }

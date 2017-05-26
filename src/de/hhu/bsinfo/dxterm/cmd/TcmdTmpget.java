@@ -16,6 +16,8 @@ package de.hhu.bsinfo.dxterm.cmd;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.List;
 
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -173,6 +175,12 @@ public class TcmdTmpget extends AbstractTerminalCommand {
 
             p_stdout.printfln("Chunk data of 0x%X (chunksize %d): \n%s", id, chunk.sizeofObject(), str);
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        return Collections.emptyList();
     }
 
     private static boolean isType(final String p_str) {

@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
@@ -69,6 +72,19 @@ public class TcmdChunklist extends AbstractTerminalCommand {
             }
 
             p_stdout.printfln("Migrated chunk id ranges of 0x%X (%d):\n%s", nid, chunkRanges);
+        }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        switch (p_argumentPos) {
+            case 0:
+                return TcmdUtils.getAllOnlinePeerNodeIDsCompSuggestions(p_services);
+            case 1:
+                return TcmdUtils.getBooleanCompSuggestions();
+            default:
+                return Collections.emptyList();
         }
     }
 }

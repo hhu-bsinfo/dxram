@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lock.AbstractLockService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
@@ -34,7 +37,7 @@ public class TcmdChunkunlock extends AbstractTerminalCommand {
 
     @Override
     public String getHelp() {
-        return "Unlock a previously locked chunk\n" + "Usage (1): chunkunlock <cid>)\n" + "Usage (2): chunkunlock <nid, lid>\n" +
+        return "Unlock a previously locked chunk\n" + "Usage (1): chunkunlock <cid>\n" + "Usage (2): chunkunlock <nid> <lid>\n" +
                 "  cid: Full chunk ID of the chunk to unlock\n" + "  nid: Separate local id part of the chunk to unlock\n" +
                 "  lid: Separate node id part of the chunk to unlock";
     }
@@ -69,5 +72,11 @@ public class TcmdChunkunlock extends AbstractTerminalCommand {
         } else {
             p_stdout.printfln("Unlocked chunk 0x%X", cid);
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        return Collections.emptyList();
     }
 }

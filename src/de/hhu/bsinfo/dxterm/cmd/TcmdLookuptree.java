@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.lookup.LookupService;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
@@ -58,5 +61,16 @@ public class TcmdLookuptree extends AbstractTerminalCommand {
 
         LookupTree tree = lookup.getLookupTreeFromSuperpeer(respSuperpeer, nid);
         p_stdout.printfln("Lookup tree of 0x%X:\n%s", nid, tree);
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        switch (p_argumentPos) {
+            case 0:
+                return TcmdUtils.getAllOnlinePeerNodeIDsCompSuggestions(p_services);
+            default:
+                return Collections.emptyList();
+        }
     }
 }

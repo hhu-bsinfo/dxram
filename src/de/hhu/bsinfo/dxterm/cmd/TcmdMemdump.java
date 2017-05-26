@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.chunk.ChunkDebugService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
@@ -58,5 +61,16 @@ public class TcmdMemdump extends AbstractTerminalCommand {
         p_stdout.printfln("Dumping memory of 0x%X to file %s...", nid, fileName);
         chunkDebug.dumpChunkMemory(fileName, nid);
         p_stdout.println("(Async) Dumping to memory triggered, depending on the memory size, this might take a few seconds");
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        switch (p_argumentPos) {
+            case 0:
+                return TcmdUtils.getAllOnlinePeerNodeIDsCompSuggestions(p_services);
+            default:
+                return Collections.emptyList();
+        }
     }
 }

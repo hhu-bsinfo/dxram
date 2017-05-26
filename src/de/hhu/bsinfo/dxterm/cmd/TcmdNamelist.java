@@ -14,6 +14,8 @@
 package de.hhu.bsinfo.dxterm.cmd;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import de.hhu.bsinfo.dxram.nameservice.NameserviceEntryStr;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
@@ -50,5 +52,11 @@ public class TcmdNamelist extends AbstractTerminalCommand {
         for (NameserviceEntryStr entry : entries) {
             p_stdout.printfln("%s: 0x%X", entry.getName(), entry.getValue());
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        return Collections.emptyList();
     }
 }

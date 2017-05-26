@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
@@ -59,5 +62,16 @@ public class TcmdChunkstatus extends AbstractTerminalCommand {
         }
 
         p_stdout.println(status.toString());
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        switch (p_argumentPos) {
+            case 0:
+                return TcmdUtils.getAllOnlinePeerNodeIDsCompSuggestions(p_services);
+            default:
+                return Collections.emptyList();
+        }
     }
 }

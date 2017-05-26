@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxterm;
 
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -64,10 +66,19 @@ public class TerminalServerSession implements Runnable {
                 if (object instanceof TerminalCommandString) {
                     m_server.evaluate(m_session, (TerminalCommandString) object, m_services);
 
-                    m_session.write(new TerminalCommandDone());
+                    if (!m_session.write(new TerminalCommandDone())) {
+                        break;
+                    }
                 } else if (object instanceof TerminalLogout) {
-                    m_session.close();
-                    return;
+                    break;
+                } else if (object instanceof TerminalReqCmdArgComp) {
+                    TerminalReqCmdArgComp reqArgComp = (TerminalReqCmdArgComp) object;
+
+                    List<String> list = m_server.getCommandArgumentCompletionList(reqArgComp.getArgumentPos(), reqArgComp.getCmdStr(), m_services);
+
+                    if (!m_session.write(new TerminalCmdArgCompList(list))) {
+                        break;
+                    }
                 } else {
                     // #if LOGGER == ERROR
                     LOGGER.error("Received invalid object", object);
@@ -81,5 +92,7 @@ public class TerminalServerSession implements Runnable {
                 }
             }
         }
+
+        m_session.close();
     }
 }

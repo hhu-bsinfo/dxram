@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
@@ -60,7 +63,25 @@ public class TcmdNodeshutdown extends AbstractTerminalCommand {
             p_stdout.printfln("Shutting down node 0x%X failed", nid);
         } else {
             p_stdout.printfln("Shutting down node 0x%X...", nid);
-            p_stdout.printfln("Ignore ERROR messages and continue by pressing <Enter>");
+        }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        switch (p_argumentPos) {
+            case 0:
+                List<String> list = TcmdUtils.getAllOnlineNodeIDsCompSuggestions(p_services);
+
+                list.add(Integer.toString(-1));
+
+                return list;
+
+            case 1:
+                return TcmdUtils.getBooleanCompSuggestions();
+
+            default:
+                return Collections.emptyList();
         }
     }
 }

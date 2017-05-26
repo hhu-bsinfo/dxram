@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.chunk.ChunkRemoveService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkState;
@@ -37,8 +40,8 @@ public class TcmdChunkremoverange extends AbstractTerminalCommand {
 
     @Override
     public String getHelp() {
-        return "Remove a range of existing chunks.\n" + "Usage (1): chunkremoverange <nid> <lid start> <lid end>\n" +
-                "  nid: Node id of the range to remove\n" + "  lid start: Start lid of range (including)\n" + "  lid end: End lid of range (including)\n";
+        return "Remove a range of existing chunks.\n" + "Usage: chunkremoverange <nid> <lid start> <lid end>\n" + "  nid: Node id of the range to remove\n" +
+                "  lid start: Start lid of range (including)\n" + "  lid end: End lid of range (including)\n";
     }
 
     @Override
@@ -91,6 +94,17 @@ public class TcmdChunkremoverange extends AbstractTerminalCommand {
             }
         } else {
             p_stdout.printfln("Chunk(s) removed");
+        }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        switch (p_argumentPos) {
+            case 0:
+                return TcmdUtils.getAllOnlinePeerNodeIDsCompSuggestions(p_services);
+            default:
+                return Collections.emptyList();
         }
     }
 }

@@ -14,6 +14,8 @@
 package de.hhu.bsinfo.dxterm.cmd;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.lock.AbstractLockService;
@@ -64,6 +66,17 @@ public class TcmdChunklocklist extends AbstractTerminalCommand {
         p_stdout.println("<lid: nid that locked the chunk>");
         for (LockedChunkEntry entry : list) {
             p_stdout.printfln("0x%X: 0x%X", entry.getChunkId(), entry.getNodeId());
+        }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        switch (p_argumentPos) {
+            case 0:
+                return TcmdUtils.getAllOnlinePeerNodeIDsCompSuggestions(p_services);
+            default:
+                return Collections.emptyList();
         }
     }
 }

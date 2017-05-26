@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
@@ -75,6 +76,17 @@ public class TcmdMetadata extends AbstractTerminalCommand {
 
             String summary = lookup.getMetadataSummary(nid);
             p_stdout.printfln("Metadata summary of 0x%X:\n%s", nid, summary);
+        }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        switch (p_argumentPos) {
+            case 0:
+                return TcmdUtils.getAllOnlineSuperpeerNodeIDsCompSuggestions(p_services);
+            default:
+                return Collections.emptyList();
         }
     }
 }

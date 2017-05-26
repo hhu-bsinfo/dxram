@@ -13,8 +13,11 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
+import de.hhu.bsinfo.dxram.ms.MasterNodeEntry;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxram.ms.TaskListener;
 import de.hhu.bsinfo.dxram.ms.TaskScript;
@@ -110,5 +113,31 @@ public class TcmdComptaskscript extends AbstractTerminalCommand {
 
             }
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        List<String> list = new ArrayList<String>();
+
+        switch (p_argumentPos) {
+            case 1:
+                MasterSlaveComputeService mscomp = p_services.getService(MasterSlaveComputeService.class);
+                ArrayList<MasterNodeEntry> masters = mscomp.getMasters();
+
+                for (MasterNodeEntry entry : masters) {
+                    list.add(Short.toString(entry.getComputeGroupId()));
+                }
+
+                break;
+
+            case 2:
+                return TcmdUtils.getBooleanCompSuggestions();
+
+            default:
+                break;
+        }
+
+        return list;
     }
 }

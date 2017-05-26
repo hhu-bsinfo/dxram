@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
@@ -56,6 +59,17 @@ public class TcmdNodeinfo extends AbstractTerminalCommand {
             p_stdout.printfln("Node info 0x%X:", boot.getNodeID());
             p_stdout.printfln("\tRole: %s", boot.getNodeRole());
             p_stdout.printfln("\tAddress: %s", boot.getNodeAddress(boot.getNodeID()));
+        }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        switch (p_argumentPos) {
+            case 0:
+                return TcmdUtils.getAllOnlineNodeIDsCompSuggestions(p_services);
+            default:
+                return Collections.emptyList();
         }
     }
 }

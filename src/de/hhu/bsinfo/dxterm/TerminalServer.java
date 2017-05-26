@@ -133,4 +133,25 @@ public class TerminalServer {
 
         cmd.exec(p_cmdStr, stdout, stdin, p_services);
     }
+
+    /**
+     * Get a list of completion suggestions for an argument of a command
+     *
+     * @param p_argumentPos
+     *         Current argument position of the cursor
+     * @param p_cmdStr
+     *         Current (and probably incomplete) cmd string from the terminal
+     * @param p_services
+     *         Service accessor of dxram
+     * @return List of argument suggestions for command
+     */
+    public List<String> getCommandArgumentCompletionList(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        AbstractTerminalCommand cmd = m_commands.get(p_cmdStr.getName());
+        if (cmd == null) {
+            return Collections.emptyList();
+        }
+
+        return cmd.getArgumentCompletionSuggestions(p_argumentPos, p_cmdStr, p_services);
+    }
 }

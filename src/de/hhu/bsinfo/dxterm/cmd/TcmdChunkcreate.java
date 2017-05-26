@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
@@ -66,5 +69,15 @@ public class TcmdChunkcreate extends AbstractTerminalCommand {
         }
 
         p_stdout.printfln("Created chunk of size %d: 0x%X", size, chunkIDs[0]);
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        if (p_argumentPos == 1) {
+            return TcmdUtils.getAllOnlinePeerNodeIDsCompSuggestions(p_services);
+        }
+
+        return Collections.emptyList();
     }
 }

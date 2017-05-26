@@ -13,9 +13,12 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
+import de.hhu.bsinfo.dxram.ms.MasterNodeEntry;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxram.ms.TaskListener;
 import de.hhu.bsinfo.dxram.ms.TaskScript;
@@ -125,5 +128,52 @@ public class TcmdComptask extends AbstractTerminalCommand {
 
             }
         }
+    }
+
+    @Override
+    public List<String> getArgumentCompletionSuggestions(final int p_argumentPos, final TerminalCommandString p_cmdStr,
+            final TerminalServiceAccessor p_services) {
+        List<String> list = new ArrayList<String>();
+
+        switch (p_argumentPos) {
+            case 1:
+                MasterSlaveComputeService mscomp = p_services.getService(MasterSlaveComputeService.class);
+                ArrayList<MasterNodeEntry> masters = mscomp.getMasters();
+
+                for (MasterNodeEntry entry : masters) {
+                    list.add(Short.toString(entry.getComputeGroupId()));
+                }
+
+                break;
+
+            case 2:
+                mscomp = p_services.getService(MasterSlaveComputeService.class);
+                MasterSlaveComputeService.StatusMaster status = mscomp.getStatusMaster(p_cmdStr.getArgShort(1, (short) 0));
+                for (int i = 0; i <= status.getConnectedSlaves().size(); i++) {
+                    list.add(Integer.toString(i));
+                }
+
+                break;
+
+            case 3:
+                mscomp = p_services.getService(MasterSlaveComputeService.class);
+                status = mscomp.getStatusMaster(p_cmdStr.getArgShort(1, (short) 0));
+                int min = p_cmdStr.getArgInt(2, 0);
+                for (int i = 0; i <= status.getConnectedSlaves().size(); i++) {
+                    if (i >= min) {
+                        list.add(Integer.toString(i));
+                    }
+                }
+
+                break;
+
+            case 4:
+                return TcmdUtils.getBooleanCompSuggestions();
+
+            default:
+                break;
+        }
+
+        return list;
     }
 }
