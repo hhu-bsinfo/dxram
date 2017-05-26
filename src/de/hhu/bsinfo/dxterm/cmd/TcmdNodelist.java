@@ -19,6 +19,7 @@ import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
+import de.hhu.bsinfo.dxterm.TerminalServerStdin;
 import de.hhu.bsinfo.dxterm.TerminalServerStdout;
 import de.hhu.bsinfo.dxterm.TerminalServiceAccessor;
 
@@ -38,7 +39,8 @@ public class TcmdNodelist extends AbstractTerminalCommand {
     }
 
     @Override
-    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services) {
+    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
+            final TerminalServiceAccessor p_services) {
         NodeRole nodeRole = p_cmd.getArgNodeRole(0, null);
 
         BootService boot = p_services.getService(BootService.class);

@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxterm.cmd;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
+import de.hhu.bsinfo.dxterm.TerminalServerStdin;
 import de.hhu.bsinfo.dxterm.TerminalServerStdout;
 import de.hhu.bsinfo.dxterm.TerminalServiceAccessor;
 
@@ -35,7 +36,8 @@ public class TcmdCompgrpstatus extends AbstractTerminalCommand {
     }
 
     @Override
-    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services) {
+    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
+            final TerminalServiceAccessor p_services) {
         short cgid = p_cmd.getArgShort(0, (short) -1);
 
         if (cgid == -1) {

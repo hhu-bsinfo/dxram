@@ -97,6 +97,7 @@ public class TerminalServer {
      */
     public void evaluate(final TerminalSession p_session, final TerminalCommandString p_cmdStr, final TerminalServiceAccessor p_services) {
         TerminalServerStdout stdout = new TerminalServerStdout(p_session);
+        TerminalServerStdin stdin = new TerminalServerStdin(p_session);
 
         if ("list".equals(p_cmdStr.getName())) {
             List<String> cmdNames = getTerminalCommandList();
@@ -130,6 +131,6 @@ public class TerminalServer {
             return;
         }
 
-        cmd.exec(p_cmdStr, stdout, p_services);
+        cmd.exec(p_cmdStr, stdout, stdin, p_services);
     }
 }

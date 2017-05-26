@@ -19,6 +19,7 @@ import de.hhu.bsinfo.dxram.ms.MasterNodeEntry;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
+import de.hhu.bsinfo.dxterm.TerminalServerStdin;
 import de.hhu.bsinfo.dxterm.TerminalServerStdout;
 import de.hhu.bsinfo.dxterm.TerminalServiceAccessor;
 
@@ -38,7 +39,8 @@ public class TcmdCompgrpls extends AbstractTerminalCommand {
     }
 
     @Override
-    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services) {
+    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
+            final TerminalServiceAccessor p_services) {
         MasterSlaveComputeService mscomp = p_services.getService(MasterSlaveComputeService.class);
         ArrayList<MasterNodeEntry> masters = mscomp.getMasters();
 

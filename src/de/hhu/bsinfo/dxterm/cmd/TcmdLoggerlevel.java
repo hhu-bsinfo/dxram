@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxterm.cmd;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
+import de.hhu.bsinfo.dxterm.TerminalServerStdin;
 import de.hhu.bsinfo.dxterm.TerminalServerStdout;
 import de.hhu.bsinfo.dxterm.TerminalServiceAccessor;
 import de.hhu.bsinfo.utils.NodeID;
@@ -38,7 +39,8 @@ public class TcmdLoggerlevel extends AbstractTerminalCommand {
     }
 
     @Override
-    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services) {
+    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
+            final TerminalServiceAccessor p_services) {
         String level = p_cmd.getArgString(0, null);
         short nid = p_cmd.getArgNodeId(1, NodeID.INVALID_ID);
 

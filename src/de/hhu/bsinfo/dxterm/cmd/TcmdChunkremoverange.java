@@ -20,6 +20,7 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.DummyDataStructure;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
+import de.hhu.bsinfo.dxterm.TerminalServerStdin;
 import de.hhu.bsinfo.dxterm.TerminalServerStdout;
 import de.hhu.bsinfo.dxterm.TerminalServiceAccessor;
 import de.hhu.bsinfo.utils.NodeID;
@@ -41,7 +42,8 @@ public class TcmdChunkremoverange extends AbstractTerminalCommand {
     }
 
     @Override
-    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services) {
+    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
+            final TerminalServiceAccessor p_services) {
         short nid = p_cmd.getArgNodeId(0, NodeID.INVALID_ID);
         long lidStart = p_cmd.getArgChunkId(1, ChunkID.INVALID_ID);
         long lidEnd = p_cmd.getArgChunkId(2, ChunkID.INVALID_ID);

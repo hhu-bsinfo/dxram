@@ -54,8 +54,11 @@ public abstract class AbstractTerminalCommand {
      *         Terminal command with arguments
      * @param p_stdout
      *         Stdout for terminal commands to write output to
+     * @param p_stdin
+     *         Stdin for terminal commands to read input
      * @param p_services
      *         Accessor to dxram services
      */
-    public abstract void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services);
+    public abstract void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
+            final TerminalServiceAccessor p_services);
 }

@@ -19,6 +19,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
+import de.hhu.bsinfo.dxterm.TerminalServerStdin;
 import de.hhu.bsinfo.dxterm.TerminalServerStdout;
 import de.hhu.bsinfo.dxterm.TerminalServiceAccessor;
 import de.hhu.bsinfo.utils.NodeID;
@@ -39,7 +40,8 @@ public class TcmdBarrierstatus extends AbstractTerminalCommand {
     }
 
     @Override
-    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services) {
+    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
+            final TerminalServiceAccessor p_services) {
         int bid = p_cmd.getArgBarrierId(0, BarrierID.INVALID_ID);
 
         if (bid == BarrierID.INVALID_ID) {

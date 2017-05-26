@@ -21,6 +21,7 @@ import de.hhu.bsinfo.dxram.ms.TaskScript;
 import de.hhu.bsinfo.dxram.ms.TaskScriptState;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
+import de.hhu.bsinfo.dxterm.TerminalServerStdin;
 import de.hhu.bsinfo.dxterm.TerminalServerStdout;
 import de.hhu.bsinfo.dxterm.TerminalServiceAccessor;
 
@@ -41,7 +42,8 @@ public class TcmdComptaskscript extends AbstractTerminalCommand {
     }
 
     @Override
-    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services) {
+    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
+            final TerminalServiceAccessor p_services) {
         String fileName = p_cmd.getArgString(0, null);
         short cgid = p_cmd.getArgShort(1, (short) -1);
         boolean wait = p_cmd.getArgBoolean(2, true);

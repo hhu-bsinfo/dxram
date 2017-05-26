@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxterm.cmd;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
+import de.hhu.bsinfo.dxterm.TerminalServerStdin;
 import de.hhu.bsinfo.dxterm.TerminalServerStdout;
 import de.hhu.bsinfo.dxterm.TerminalServiceAccessor;
 import de.hhu.bsinfo.utils.NodeID;
@@ -32,21 +33,28 @@ public class TcmdNodeshutdown extends AbstractTerminalCommand {
 
     @Override
     public String getHelp() {
-        return "Shutdown a DXRAM node\n" + "Usage: nodeshutdown <nid> [kill]\n" + "  nid: Id of the node to shutdown\n" +
+        return "Shutdown a DXRAM node or the whole cluster\n" + "Usage: nodeshutdown <nid> [kill]\n" +
+                "  nid: Id of the node to shutdown (-1 for full cluster shutdown)\n" +
                 "  kill: If specified, true for a hard shutdown (kill process), false for proper soft shutdown (default)";
     }
 
     @Override
-    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServiceAccessor p_services) {
+    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
+            final TerminalServiceAccessor p_services) {
         short nid = p_cmd.getArgNodeId(0, NodeID.INVALID_ID);
         boolean kill = p_cmd.getArgBoolean(1, false);
 
-        if (nid == NodeID.INVALID_ID) {
-            p_stdout.printlnErr("No node id specified");
-            return;
-        }
-
         BootService boot = p_services.getService(BootService.class);
+
+        if (nid == NodeID.INVALID_ID) {
+            p_stdout.println("Are you sure you want to shut down ALL nodes? Type 'yes' to shut down ALL nodes");
+            String text = p_stdin.readLine();
+
+            if (!"yes".equals(text)) {
+                p_stdout.println("Aborting shut down");
+                return;
+            }
+        }
 
         if (!boot.shutdownNode(nid, kill)) {
             p_stdout.printfln("Shutting down node 0x%X failed", nid);

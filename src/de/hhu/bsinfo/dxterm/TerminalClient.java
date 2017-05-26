@@ -218,6 +218,16 @@ public final class TerminalClient implements TerminalSession.Listener {
                 changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
             } else if (object instanceof TerminalCommandDone) {
                 break;
+            } else if (object instanceof TerminalReqStdin) {
+                String text = null;
+
+                try {
+                    text = m_consoleReader.readLine("> ");
+                } catch (final IOException e) {
+                    e.printStackTrace();
+                }
+
+                m_session.write(new TerminalStdinData(text));
             } else {
                 System.out.println("Lost connection to server, closing");
 
