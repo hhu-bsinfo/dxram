@@ -282,6 +282,10 @@ public class TerminalCommandString implements Serializable {
      * @return True of argument matches a chunk id representation, false otherwise.
      */
     public boolean isArgChunkID(final int p_pos) {
+        if (m_args.length <= p_pos) {
+            return false;
+        }
+
         String str = m_args[p_pos];
 
         if (str.startsWith("0x")) {

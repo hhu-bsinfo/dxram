@@ -63,6 +63,11 @@ public class TcmdChunkput extends AbstractTerminalCommand {
             short nid = p_cmd.getArgNodeId(0, NodeID.INVALID_ID);
             long lid = p_cmd.getArgLocalId(1, ChunkID.INVALID_ID);
 
+            if (nid == ChunkID.INVALID_ID) {
+                p_stdout.printlnErr("No nid specified");
+                return;
+            }
+
             if (lid == ChunkID.INVALID_ID) {
                 p_stdout.printlnErr("No lid specified");
                 return;
