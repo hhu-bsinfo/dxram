@@ -621,8 +621,9 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                         }
                     }
 
-                    // TODO Kevin ???
-                    // m_lookup.invalidate(dataStructure.getID());
+                    for (DataStructure ds : chunksToPut) {
+                        m_lookup.invalidate(ds.getID());
+                    }
 
                     continue;
                 }
@@ -795,8 +796,9 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                         }
                     }
 
-                    // TODO Kevin ???
-                    // m_lookup.invalidate(dataStructure.getID());
+                    for (DataStructure ds : remoteChunks) {
+                        m_lookup.invalidate(ds.getID());
+                    }
 
                     continue;
                 }

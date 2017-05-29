@@ -169,8 +169,9 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
                     LOGGER.error("Sending chunk put message to peer %s failed: %s", NodeID.toHexString(peer), e);
                     // #endif /* LOGGER >= ERROR */
 
-                    // TODO
-                    // m_lookup.invalidate(dataStructure.getID());
+                    for (DataStructure ds : chunksToPut) {
+                        m_lookup.invalidate(ds.getID());
+                    }
 
                     continue;
                 }

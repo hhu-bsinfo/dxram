@@ -374,8 +374,9 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                         }
                     }
 
-                    // TODO Kevin ???
-                    // m_lookup.invalidate(dataStructure.getID());
+                    for (ChunkAnon chunk : chunksToPut) {
+                        m_lookup.invalidate(chunk.getID());
+                    }
 
                     continue;
                 }
