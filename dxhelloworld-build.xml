@@ -74,11 +74,9 @@
             <manifest>
                 <attribute name="BuildUser" value="${user.name}"/>
                 <attribute name="BuildDate" value="${TODAY}"/>
-                <attribute name="Main-Class" value="de.hhu.bsinfo.dxram.DXRAMMain"/>
                 <attribute name="Class-Path" value="${jar.classpath}"/>
             </manifest>
         </jar>
-
         <delete dir="${build_proj_dir}/classes"/>
     </target>
 </project>
