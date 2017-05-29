@@ -18,7 +18,7 @@ In this case, the error can be ignored if the target node is still up and runnin
 
 You can try increasing the message handler threads for the DXRAM nodes in the DXRAM configuration:
 ```
-"NetworkComponent": {
+"NetworkComponentConfig": {
   "m_threadCountMsgHandler": 1,
   ...
 ```

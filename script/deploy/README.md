@@ -1,6 +1,6 @@
 # Deployment script
 
-The deployment script (*deploy.sh*) allows quick deployment of muliple DXRAM instances with minimal effort to a cluster or localhost for testing.
+The deployment script (*deploy.sh*) allows quick deployment of multiple DXRAM instances with minimal effort to a cluster or localhost for testing.
 
 # How to deploy
 
@@ -20,10 +20,10 @@ You can also run it from other locations as long as you have it located inside t
 
 ## Execution paths
 
-Deploying a minimal DXRAM setup is very easy and requires a few paramters, only. Refering to the *conf/example/SimpleTest.conf*, two paths must be specified at the top of the configuration
+Deploying a minimal DXRAM setup is very easy and requires a few parameters, only. Referring to the *conf/example/SimpleTest.conf*, two paths must be specified at the top of the configuration
 ```
-DXRAM_PATH=../../../../
-ZOOKEEPER_PATH=~/zookeeper/
+DXRAM_PATH=~/dxram
+ZOOKEEPER_PATH=~/zookeeper
 ```
 
 Relative paths (relative to the location of the configuration file) as well as ~ to reference the current user's home are supported as well as absolute paths. Make sure *DXRAM_PATH* points to the root *dxram* folder and *ZOOKEEPER_PATH* to the root of your ZooKeeper installation.
@@ -35,11 +35,11 @@ Following the execution paths, every line denotes a single instance, for example
 localhost,Z
 ```
 
-The first parameter *localhost* specifies the location of the instance and the second parameter the type of instance to deploy to that location. Possible instance types are *Z* (ZooKeeper), *S* (DXRAM superpeer), *P* (DXRAM peer), *T* (DXRAM terminal). Further instance types might be added in the future and are located in the subfolder *modules*.
+The first parameter *localhost* specifies the location of the instance and the second parameter the type of instance to deploy to that location. Possible instance types are *Z* (ZooKeeper), *S* (DXRAM superpeer), *P* (DXRAM peer). Further instance types might be added in the future and are located in the sub-folder *modules*.
 
-Refering to the *conf/example/SimpleTest.conf*, we deploy a minimal setup on localhost with one ZooKeeper instance, one DXRAM superpeer, peer and terminal. 
+Referring to the *conf/example/SimpleTest.conf*, we deploy a minimal setup on localhost with one ZooKeeper instance, one DXRAM superpeer and peer.
 
-All instances specified are started sequentially, i.e. specifying the terminal at the end of the list will spawn it after all other instances have been started.
+All instances specified are started sequentially, i.e. specifying the peer at the end of the list will spawn it after all other instances have been started.
 
 ## DXRAM instances/nodes (cluster)
 
@@ -50,7 +50,6 @@ node65,Z
 node65,S
 node66,P
 node67,P
-node65,T
 ```
 
 ## DXRAM instance parameters
@@ -71,18 +70,11 @@ Peers only. Specify the size of the key-value store in MB, e.g. 4 GB = 4096 MB:
 localhost,P,kvss=4096
 ```
 
-### Java program arguments
-
-To pass normal program arguments to main (useful for custom applications built on top of DXRAM):
-```
-localhost,P,args=server 10
-```
-
 ### Wait for instance to finish startup
 
 You can specify a string that needs to appear on the log before the instance is considered as started by the deploy script. The deploy script will start the next instance in order only if that string appeared on the log output.
 
-This can be useful if you want to wait until certain tasks completed to ensure your system is fully up and operatable, e.g. loading of data, waiting for a server connection, etc. This is applicable for superpeers, peers and terminals.
+This can be useful if you want to wait until certain tasks completed to ensure your system is fully up and running, e.g. loading of data, waiting for a server connection, etc. This is applicable for superpeers and peers.
 
 ```
 localhost,P,cond=Server started
@@ -94,4 +86,4 @@ Instead of waiting for a specific string to print on the log, you can also wait 
 localhost,P,tcond=5
 ```
 
-Again, this is something you only need if you have developed your own custom application. 
+Again, this is something you only need if you have developed your own custom application.

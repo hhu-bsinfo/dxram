@@ -1,8 +1,8 @@
-The DXRAM terminal client is a separate application connecting to a DXRAM terminal server running as an application on a DXRAM peer (refer to [applications](Applications.md)). Debugging capabilities are limited but it can be useful to look at single data objects on a live deployment/experiment if something went wrong.
+The DXRAM terminal client is a separate application connecting to a DXRAM terminal server running as an application on a DXRAM peer (for further details about DXRAM applications see [applications](Applications.md)). Debugging capabilities are limited but it can be useful to look at single data objects on a live deployment/experiment if something went wrong.
 
 # Terminal server on a DXRAM peer
 
-The terminal server application must be enabled and running on at least one DXRAM peer. By default, the application package *dxterm-server.jar* is compiled and put into the *app* folder. This results in all DXRAM peers running the terminal server.
+The terminal server application must be enabled and running on at least one DXRAM peer. By default, the application package *dxterm-server.jar* is compiled and put into the *app* folder. This results in all DXRAM peers running a terminal server.
 
 # Launching the terminal client
 
