@@ -22,3 +22,6 @@ Open IntelliJ and create a new project from existing sources and choose the dxra
 ```
 
 Or use the included deployment scripts to run DXRAM on localhost.
+
+## Debugging
+TODO (the easiest way is actually to deploy using the deploy scripts with debug flags and hook a remote debugger to the applications).  

@@ -7,6 +7,6 @@ If you are experiencing network request timeouts but the target node to send the
     "m_unit": "ms"
 }
 ```
-under *NetworkComponent* section.
+under the *NetworkComponent* section.
 
 Furthermore, this can also happen on very high loads (sending too many messages and the other node can't keep up with processing). Depending on your application/use case, you can ignore these errors or handle them accordingly by retrying the transmission.
