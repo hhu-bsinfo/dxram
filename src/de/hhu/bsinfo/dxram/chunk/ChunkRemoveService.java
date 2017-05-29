@@ -12,6 +12,7 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.RemoveMessage;
+import de.hhu.bsinfo.dxram.chunk.messages.ReuseIDMessage;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -98,6 +99,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
         Map<Short, ArrayListLong> remoteChunksByPeers = new TreeMap<>();
         Map<Long, ArrayListLong> remoteChunksByBackupPeers = new TreeMap<>();
         ArrayListLong localChunks = new ArrayListLong();
+        Map<Short, ArrayListLong> reuseChunkIDsByPeers = new TreeMap<>();
 
         try {
             m_memoryManager.lockAccess();
@@ -108,7 +110,13 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                 }
 
                 if (m_memoryManager.exists(p_chunkIDs[i])) {
-                    // local
+                    if (ChunkID.getCreatorID(p_chunkIDs[i]) != m_boot.getNodeID()) {
+                        // sort by initial owner/creator for chunk ID reuse
+                        ArrayListLong reuseChunkIDsOfPeer = reuseChunkIDsByPeers.computeIfAbsent(ChunkID.getCreatorID(p_chunkIDs[i]), a -> new ArrayListLong());
+                        reuseChunkIDsOfPeer.add(localChunks.get(i));
+                    }
+
+                    // local and locally stored migrated chunks
                     localChunks.add(p_chunkIDs[i]);
 
                     if (m_backup.isActive()) {
@@ -118,7 +126,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                         remoteChunkIDsOfBackupPeers.add(p_chunkIDs[i]);
                     }
                 } else {
-                    // remote or migrated, figure out location and sort by peers
+                    // remote chunks, figure out location and sort by peers
                     LookupRange lookupRange;
 
                     lookupRange = m_lookup.getLookupRange(p_chunkIDs[i]);
@@ -155,6 +163,22 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             m_memoryManager.unlockManage();
         }
 
+        // send message to initial creator of locally stored but migrated removed chunks to allow re-use of chunk ID, otherwise chunk ID gets lost here
+        for (final Map.Entry<Short, ArrayListLong> reuseChunkIDs : reuseChunkIDsByPeers.entrySet()) {
+            short peer = reuseChunkIDs.getKey();
+            ArrayListLong chunkIDs = reuseChunkIDs.getValue();
+
+            ReuseIDMessage message = new ReuseIDMessage(peer, chunkIDs);
+
+            try {
+                m_network.sendMessage(message);
+            } catch (final NetworkException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Sending reuse chunk ID message to peer 0x%X failed: %s", peer, e);
+                // #endif /* LOGGER >= ERROR */
+            }
+        }
+
         // go for remote ones by each peer
         for (final Map.Entry<Short, ArrayListLong> peerWithChunks : remoteChunksByPeers.entrySet()) {
             short peer = peerWithChunks.getKey();
@@ -162,10 +186,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
 
             if (peer == m_boot.getNodeID()) {
                 // local remove, migrated data to current node
-
-                // FIXME kevin (refer to onIncomingRemoveRequest
-                // remove local chunks from superpeer overlay first, so cannot be found before being deleted
-                //m_lookup.removeChunkIDs(localChunks, m_boot.getNodeID());
+                // remove migrated chunks from superpeer overlay first, so cannot be found before being deleted
+                m_lookup.removeChunkIDs(remoteChunks);
 
                 try {
                     m_memoryManager.lockManage();
@@ -241,8 +263,11 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
-                    case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
+                    case ChunkMessages.SUBTYPE_REMOVE_MESSAGE:
                         incomingRemoveMessage((RemoveMessage) p_message);
+                        break;
+                    case ChunkMessages.SUBTYPE_REUSE_ID_MESSAGE:
+                        incomingReuseIDMessage((ReuseIDMessage) p_message);
                         break;
                     default:
                         break;
@@ -279,9 +304,11 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
         m_remover = new ChunkRemover(getConfig().getRemoverQueueSize());
         m_remover.start();
 
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_REQUEST, RemoveMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REUSE_ID_MESSAGE, ReuseIDMessage.class);
 
         m_network.register(RemoveMessage.class, this);
+        m_network.register(ReuseIDMessage.class, this);
 
         return true;
     }
@@ -300,7 +327,6 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
      * @param p_message
      *         the RemoveMessage
      */
-
     private void incomingRemoveMessage(final RemoveMessage p_message) {
         while (!m_remover.push(p_message.getChunkIDs())) {
             // #if LOGGER == WARN
@@ -312,6 +338,24 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             } catch (final InterruptedException ignored) {
 
             }
+        }
+    }
+
+    /**
+     * Handles an incoming ReuseIDMessage
+     *
+     * @param p_message
+     *         the ReuseIDMessage
+     */
+    private void incomingReuseIDMessage(final ReuseIDMessage p_message) {
+        try {
+            m_memoryManager.lockAccess();
+
+            for (long chunkID : p_message.getChunkIDs()) {
+                m_memoryManager.prepareChunkIDForReuse(chunkID);
+            }
+        } finally {
+            m_memoryManager.unlockAccess();
         }
     }
 
@@ -422,6 +466,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             // #endif /* STATISTICS */
 
             Map<Long, ArrayListLong> remoteChunksByBackupPeers = new TreeMap<>();
+            Map<Short, ArrayListLong> reuseChunkIDsByPeers = new TreeMap<>();
 
             // remove chunks from superpeer overlay first, so cannot be found before being deleted
             m_lookup.removeChunkIDs(ArrayListLong.wrap(p_chunkIDs));
@@ -446,29 +491,34 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                         // #endif /* LOGGER >= ERROR */
                     } else {
                         m_backup.deregisterChunk(p_chunkIDs[i], size);
+
+                        if (ChunkID.getCreatorID(p_chunkIDs[i]) != m_boot.getNodeID()) {
+                            // sort by initial owner/creator for chunk ID reuse
+                            ArrayListLong reuseChunkIDsOfPeer =
+                                    reuseChunkIDsByPeers.computeIfAbsent(ChunkID.getCreatorID(p_chunkIDs[i]), a -> new ArrayListLong());
+                            reuseChunkIDsOfPeer.add(p_chunkIDs[i]);
+                        }
                     }
                 }
             } finally {
                 m_memoryManager.unlockManage();
             }
 
-            // TODO for migrated chunks, send remove request to peer currently holding the chunk data
-            // for (int i = 0; i < chunkIDs.length; i++) {
-            // byte rangeID = m_backup.getBackupRange(chunkIDs[i]);
-            // short[] backupPeers = m_backup.getBackupPeersForLocalChunks(chunkIDs[i]);
-            // m_backup.removeChunk(chunkIDs[i]);
-            //
-            // if (m_memoryManager.dataWasMigrated(chunkIDs[i])) {
-            // // Inform peer who got the migrated data about removal
-            // RemoveMessage request = new RemoveMessage(ChunkID.getCreatorID(chunkIDs[i]), new Chunk(chunkIDs[i], 0));
-            // try {
-            // request.sendSync(m_network);
-            // request.getResponse(RemoveResponse.class);
-            // } catch (final NetworkException e) {
-            // LOGGER.error("Informing creator about removal of chunk " + chunkIDs[i] + " failed.", e);
-            // }
-            // }
-            // }
+            // send message to initial creator of locally stored but migrated removed chunks to allow re-use of chunk ID, otherwise chunk ID gets lost here
+            for (final Map.Entry<Short, ArrayListLong> reuseChunkIDs : reuseChunkIDsByPeers.entrySet()) {
+                short peer = reuseChunkIDs.getKey();
+                ArrayListLong chunkIDs = reuseChunkIDs.getValue();
+
+                ReuseIDMessage message = new ReuseIDMessage(peer, chunkIDs);
+
+                try {
+                    m_network.sendMessage(message);
+                } catch (final NetworkException e) {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Sending reuse chunk ID message to peer 0x%X failed: %s", peer, e);
+                    // #endif /* LOGGER >= ERROR */
+                }
+            }
 
             // Inform backups
             if (m_backup.isActive()) {

@@ -41,6 +41,7 @@ import de.hhu.bsinfo.dxram.lock.AbstractLockService;
 import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.lookup.LookupService;
+import de.hhu.bsinfo.dxram.migration.MigrationService;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
@@ -51,6 +52,7 @@ import de.hhu.bsinfo.dxterm.cmd.TcmdBarrierfree;
 import de.hhu.bsinfo.dxterm.cmd.TcmdBarriersignon;
 import de.hhu.bsinfo.dxterm.cmd.TcmdBarriersize;
 import de.hhu.bsinfo.dxterm.cmd.TcmdBarrierstatus;
+import de.hhu.bsinfo.dxterm.cmd.TcmdChunkMigrate;
 import de.hhu.bsinfo.dxterm.cmd.TcmdChunkcreate;
 import de.hhu.bsinfo.dxterm.cmd.TcmdChunkdump;
 import de.hhu.bsinfo.dxterm.cmd.TcmdChunkget;
@@ -273,6 +275,10 @@ public class TerminalServerApplication extends AbstractApplication implements Te
             m_terminalServer.registerTerminalCommand(new TcmdCompgrpstatus());
             m_terminalServer.registerTerminalCommand(new TcmdComptask());
             m_terminalServer.registerTerminalCommand(new TcmdComptaskscript());
+        }
+
+        if (isServiceAvailable(MigrationService.class)) {
+            m_terminalServer.registerTerminalCommand(new TcmdChunkMigrate());
         }
 
         if (isServiceAvailable(NameserviceService.class)) {

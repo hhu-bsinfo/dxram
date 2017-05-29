@@ -21,35 +21,34 @@ import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.utils.ArrayListLong;
 
 /**
- * Request for removing a Chunk on a remote node
+ * Message to reuse chunk IDs if migrated chunks are deleted.
  *
- * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 29.05.2017
  */
-public class RemoveMessage extends AbstractMessage {
+public class ReuseIDMessage extends AbstractMessage {
 
     private ArrayListLong m_chunkIDsOut;
     private long[] m_chunkIDs;
 
     /**
-     * Creates an instance of RemoveMessage.
+     * Creates an instance of ReuseIDMessage.
      * This constructor is used when receiving this message.
      */
-    public RemoveMessage() {
+    public ReuseIDMessage() {
         super();
     }
 
     /**
-     * Creates an instance of RemoveMessage.
+     * Creates an instance of ReuseIDMessage.
      * This constructor is used when sending this message.
      *
      * @param p_destination
      *         the destination
      * @param p_chunkIds
-     *         the chunk IDs to remove
+     *         the chunk IDs to reuse
      */
-    public RemoveMessage(final short p_destination, final ArrayListLong p_chunkIds) {
-        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_MESSAGE);
+    public ReuseIDMessage(final short p_destination, final ArrayListLong p_chunkIds) {
+        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REUSE_ID_MESSAGE);
 
         m_chunkIDsOut = p_chunkIds;
 
@@ -57,9 +56,9 @@ public class RemoveMessage extends AbstractMessage {
     }
 
     /**
-     * Get the ID for the Chunk to remove
+     * Get the Chunk IDs of deleted chunks to reuse
      *
-     * @return the ID for the Chunk to remove
+     * @return the IDs to reuse
      */
     public final long[] getChunkIDs() {
         return m_chunkIDs;

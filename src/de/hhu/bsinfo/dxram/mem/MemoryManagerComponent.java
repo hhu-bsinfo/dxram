@@ -1092,7 +1092,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
     /**
      * Returns whether this Chunk is stored locally or not.
-     * Only the LID is evaluated and checked. The NID is masked out.
      * This is an access call and has to be locked using lockAccess().
      *
      * @param p_chunkID
@@ -1127,12 +1126,20 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
     /**
      * Removes the ChunkID of a deleted Chunk that was migrated
+     * This is a management call and has to be locked using lockManage().
      *
      * @param p_chunkID
      *         the ChunkID
      */
     public void prepareChunkIDForReuse(final long p_chunkID) {
-        m_cidTable.putChunkIDForReuse(p_chunkID);
+        // more space for another zombie for reuse in LID store?
+        if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
+            // kill zombie entry
+            m_cidTable.delete(p_chunkID, false);
+        } else {
+            // no space for zombie in LID store, keep him "alive" in table
+            m_cidTable.delete(p_chunkID, true);
+        }
     }
 
     @Override
