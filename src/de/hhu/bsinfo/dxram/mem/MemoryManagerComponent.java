@@ -813,7 +813,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      * @param p_lengths
      *         List of chunk sizes
      * @param p_usedEntries
-     *         TODO kevin ???
+     *         Specifies the actual number of slots used in the array (may be less than p_lengths)
      */
     public void createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
         long[] addresses;
