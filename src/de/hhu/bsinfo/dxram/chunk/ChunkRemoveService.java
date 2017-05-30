@@ -113,7 +113,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                     if (ChunkID.getCreatorID(p_chunkIDs[i]) != m_boot.getNodeID()) {
                         // sort by initial owner/creator for chunk ID reuse
                         ArrayListLong reuseChunkIDsOfPeer = reuseChunkIDsByPeers.computeIfAbsent(ChunkID.getCreatorID(p_chunkIDs[i]), a -> new ArrayListLong());
-                        reuseChunkIDsOfPeer.add(localChunks.get(i));
+                        reuseChunkIDsOfPeer.add(p_chunkIDs[i]);
                     }
 
                     // local and locally stored migrated chunks

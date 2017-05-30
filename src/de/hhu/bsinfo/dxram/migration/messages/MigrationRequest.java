@@ -15,11 +15,11 @@ package de.hhu.bsinfo.dxram.migration.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 
 /**
  * Request for storing a Chunk on a remote node after migration
@@ -50,9 +50,9 @@ public class MigrationRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_dataStructures
-     *     The data structures to migrate.
+     *         The data structures to migrate.
      */
     public MigrationRequest(final short p_destination, final DataStructure... p_dataStructures) {
         super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST);
@@ -83,11 +83,20 @@ public class MigrationRequest extends AbstractRequest {
     protected final int getPayloadLength() {
         int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
 
-        size += m_dataStructures.length * Long.BYTES;
-        size += m_dataStructures.length * Integer.BYTES;
+        if (m_dataStructures != null) {
+            size += m_dataStructures.length * Long.BYTES;
+            size += m_dataStructures.length * Integer.BYTES;
 
-        for (DataStructure dataStructure : m_dataStructures) {
-            size += dataStructure.sizeofObject();
+            for (DataStructure dataStructure : m_dataStructures) {
+                size += dataStructure.sizeofObject();
+            }
+        } else {
+            size += m_chunkIDs.length * Long.BYTES;
+            size += m_chunkIDs.length * Integer.BYTES;
+
+            for (int i = 0; i < m_data.length; i++) {
+                size += m_data[i].length;
+            }
         }
 
         return size;
@@ -114,7 +123,7 @@ public class MigrationRequest extends AbstractRequest {
         m_chunkIDs = new long[numChunks];
         m_data = new byte[numChunks][];
 
-        for (int i = 0; i < m_dataStructures.length; i++) {
+        for (int i = 0; i < m_chunkIDs.length; i++) {
             m_chunkIDs[i] = p_buffer.getLong();
             m_data[i] = new byte[p_buffer.getInt()];
 

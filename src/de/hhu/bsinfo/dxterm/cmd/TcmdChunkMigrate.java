@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxterm.cmd;
 import java.util.Collections;
 import java.util.List;
 
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.migration.MigrationService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
@@ -52,9 +53,14 @@ public class TcmdChunkMigrate extends AbstractTerminalCommand {
         }
 
         MigrationService migrate = p_services.getService(MigrationService.class);
+        BootService boot = p_services.getService(BootService.class);
 
-        if (!migrate.migrate(ChunkID.getChunkID(sourceNid, lid), targetNid)) {
-            p_stdout.printflnErr("Migrating 0x%X to target node 0x%X failed", ChunkID.getChunkID(sourceNid, lid), targetNid);
+        if (boot.getNodeID() != sourceNid) {
+            migrate.targetMigrate(ChunkID.getChunkID(sourceNid, lid), targetNid);
+        } else {
+            if (!migrate.migrate(ChunkID.getChunkID(sourceNid, lid), targetNid)) {
+                p_stdout.printflnErr("Migrating 0x%X to target node 0x%X failed", ChunkID.getChunkID(sourceNid, lid), targetNid);
+            }
         }
     }
 

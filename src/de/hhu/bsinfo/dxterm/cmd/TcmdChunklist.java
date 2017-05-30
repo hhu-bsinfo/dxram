@@ -71,7 +71,7 @@ public class TcmdChunklist extends AbstractTerminalCommand {
                 return;
             }
 
-            p_stdout.printfln("Migrated chunk id ranges of 0x%X (%d):\n%s", nid, chunkRanges);
+            p_stdout.printfln("Migrated chunk id ranges of 0x%X:\n%s", nid, chunkRanges);
         }
     }
 

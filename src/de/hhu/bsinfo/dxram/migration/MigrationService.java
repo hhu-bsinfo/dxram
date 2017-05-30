@@ -114,8 +114,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
             // Update superpeers
             m_lookup.migrate(p_chunkID, p_target);
 
-            // TODO:
-            // Remove all locks
+            // TODO: Remove all locks
             // m_lock.unlockAll(p_chunkID);
 
             // Update local memory management

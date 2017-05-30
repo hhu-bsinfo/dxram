@@ -62,7 +62,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Creates an instance of LookupTree
      *
      * @param p_order
-     *     order of the btree
+     *         order of the btree
      */
     LookupTree(final short p_order, final short p_creator) {
         // too small order for BTree
@@ -85,11 +85,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Prints one node of the btree and walks down the btree recursively
      *
      * @param p_node
-     *     the current node
+     *         the current node
      * @param p_prefix
-     *     the prefix to use
+     *         the prefix to use
      * @param p_isTail
-     *     defines wheter the node is the tail
+     *         defines wheter the node is the tail
      * @return String interpretation of the tree
      */
     private static String getString(final Node p_node, final String p_prefix, final boolean p_isTail) {
@@ -146,9 +146,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Adds one node as pair of long and short from the btree to the byte buffer and walks down the btree recursively
      *
      * @param p_node
-     *     the current node
+     *         the current node
      * @param p_exporter
-     *     bytebuffer to write into
+     *         bytebuffer to write into
      */
     private static void serialize(final Node p_node, final Exporter p_exporter) {
         Node obj;
@@ -179,9 +179,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the node in which the predecessor is
      *
      * @param p_localID
-     *     LocalID whose predecessor's node is searched
+     *         LocalID whose predecessor's node is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the node in which the predecessor of p_localID is or null if there is no predecessor
      */
     private static Node getPredecessorsNode(final long p_localID, final Node p_node) {
@@ -232,9 +232,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the entry of the predecessor
      *
      * @param p_localID
-     *     the LocalID whose predecessor is searched
+     *         the LocalID whose predecessor is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the entry of p_localID's predecessor or null if there is no predecessor
      */
     private static Entry getPredecessorsEntry(final long p_localID, final Node p_node) {
@@ -260,9 +260,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the node in which the successor is
      *
      * @param p_localID
-     *     LocalID whose successor's node is searched
+     *         LocalID whose successor's node is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the node in which the successor of p_localID is or null if there is no successor
      */
     private static Node getSuccessorsNode(final long p_localID, final Node p_node) {
@@ -313,9 +313,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the entry of the successor
      *
      * @param p_localID
-     *     the LocalID whose successor is searched
+     *         the LocalID whose successor is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the entry of p_localID's successor or null if there is no successor
      */
     private static Entry getSuccessorsEntry(final long p_localID, final Node p_node) {
@@ -427,9 +427,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Stores the migration for a single chunk
      *
      * @param p_chunkID
-     *     ChunkID of migrated object
+     *         ChunkID of migrated object
      * @param p_nodeID
-     *     new primary peer
+     *         new primary peer
      * @return true if insertion was successful
      */
     boolean migrate(final long p_chunkID, final short p_nodeID) {
@@ -439,6 +439,10 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
 
         assert localID >= 0;
+
+        if (m_root == null) {
+            createOrReplaceEntry(ChunkID.MAX_LOCALID, m_creator);
+        }
 
         node = createOrReplaceEntry(localID, p_nodeID);
 
@@ -453,11 +457,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Stores the migration for a range
      *
      * @param p_startCID
-     *     ChunkID of first migrated object
+     *         ChunkID of first migrated object
      * @param p_endCID
-     *     ChunkID of last migrated object
+     *         ChunkID of last migrated object
      * @param p_nodeID
-     *     new primary peer
+     *         new primary peer
      * @return true if insertion was successful
      */
     boolean migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
@@ -469,6 +473,10 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         endLID = p_endCID & 0x0000FFFFFFFFFFFFL;
         // end larger than start or start smaller than 1
         assert startLID <= endLID && startLID > 0;
+
+        if (m_root == null) {
+            createOrReplaceEntry(ChunkID.MAX_LOCALID, m_creator);
+        }
 
         if (startLID == endLID) {
             migrate(p_startCID, p_nodeID);
@@ -490,7 +498,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the primary peer for given object
      *
      * @param p_chunkID
-     *     ChunkID of requested object
+     *         ChunkID of requested object
      * @return the NodeID of the primary peer for given object
      */
     short getPrimaryPeer(final long p_chunkID) {
@@ -505,7 +513,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the range given ChunkID is in
      *
      * @param p_chunkID
-     *     ChunkID of requested object
+     *         ChunkID of requested object
      * @return the first and last ChunkID of the range
      */
     LookupRange getMetadata(final long p_chunkID) {
@@ -559,7 +567,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Removes multiple chunks from btree
      *
      * @param p_chunkIDs
-     *     ChunkIDs of deleted objects
+     *         ChunkIDs of deleted objects
      * @note should always be called if an object is deleted
      */
 
@@ -573,7 +581,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Removes given chunk from btree
      *
      * @param p_chunkID
-     *     ChunkID of deleted object
+     *         ChunkID of deleted object
      * @note should always be called if an object is deleted
      */
     void remove(final long p_chunkID) {
@@ -661,9 +669,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Creates a new entry or replaces the old one
      *
      * @param p_localID
-     *     the LocalID
+     *         the LocalID
      * @param p_nodeID
-     *     the NodeID
+     *         the NodeID
      * @return the node in which the entry is stored
      */
     private Node createOrReplaceEntry(final long p_localID, final short p_nodeID) {
@@ -729,11 +737,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Merges the object or range with predecessor
      *
      * @param p_localID
-     *     the LocalID
+     *         the LocalID
      * @param p_nodeID
-     *     the NodeID
+     *         the NodeID
      * @param p_node
-     *     anchor node
+     *         anchor node
      */
     private void mergeWithPredecessorOrBound(final long p_localID, final short p_nodeID, final Node p_node) {
         Entry predecessor;
@@ -770,9 +778,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Merges the object or range with successor
      *
      * @param p_localID
-     *     the LocalID
+     *         the LocalID
      * @param p_nodeID
-     *     the NodeID
+     *         the NodeID
      */
     private void mergeWithSuccessor(final long p_localID, final short p_nodeID) {
         Node node;
@@ -789,9 +797,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Removes all entries between start (inclusive) and end
      *
      * @param p_start
-     *     the first object in range
+     *         the first object in range
      * @param p_end
-     *     the last object in range
+     *         the last object in range
      */
     private void removeEntriesWithinRange(final long p_start, final long p_end) {
         long successor;
@@ -809,7 +817,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the node in which the next entry to given LocalID (could be the LocalID itself) is stored
      *
      * @param p_localID
-     *     LocalID whose node is searched
+     *         LocalID whose node is searched
      * @return node in which LocalID is stored if LocalID is in tree or successors node, null if there is no successor
      */
     private Node getNodeOrSuccessorsNode(final long p_localID) {
@@ -862,7 +870,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns next LocalID to given LocalID (could be the LocalID itself)
      *
      * @param p_localID
-     *     the LocalID
+     *         the LocalID
      * @return p_localID if p_localID is in btree or successor of p_localID, (-1) if there is no successor
      */
     private long getLIDOrSuccessorsLID(final long p_localID) {
@@ -887,7 +895,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Returns the location and backup nodes of next LocalID to given LocalID (could be the LocalID itself)
      *
      * @param p_localID
-     *     the LocalID whose corresponding NodeID is searched
+     *         the LocalID whose corresponding NodeID is searched
      * @return NodeID for p_localID if p_localID is in btree or successors NodeID
      */
     private short getNodeIDOrSuccessorsNodeID(final long p_localID) {
@@ -912,9 +920,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Splits down the middle if node is greater than maxEntries
      *
      * @param p_localID
-     *     the new LocalID that causes the splitting
+     *         the new LocalID that causes the splitting
      * @param p_node
-     *     the node that has to be split
+     *         the node that has to be split
      * @return the node in which p_localID must be inserted
      */
     private Node split(final long p_localID, final Node p_node) {
@@ -987,7 +995,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Removes given p_localID
      *
      * @param p_localID
-     *     the LocalID
+     *         the LocalID
      * @return p_localID or (-1) if there is no entry for p_localID
      */
     private long removeInternal(final long p_localID) {
@@ -1004,9 +1012,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Removes the p_localID from given node and checks invariants
      *
      * @param p_localID
-     *     the LocalID
+     *         the LocalID
      * @param p_node
-     *     the node in which p_localID should be stored
+     *         the node in which p_localID should be stored
      * @return p_localID or (-1) if there is no entry for p_localID
      */
     private long removeInternal(final long p_localID, final Node p_node) {
@@ -1059,7 +1067,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Combines children entries with parent when size is less than minEntries
      *
      * @param p_node
-     *     the node
+     *         the node
      */
     private void combined(final Node p_node) {
         Node parent;
@@ -1177,7 +1185,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Validates the node according to the btree invariants
      *
      * @param p_node
-     *     the node
+     *         the node
      * @return whether the node is valid or not
      */
     private boolean validateNode(final Node p_node) {
@@ -1295,9 +1303,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Creates an instance of Entry
          *
          * @param p_localID
-         *     the LocalID
+         *         the LocalID
          * @param p_nodeID
-         *     the NodeID
+         *         the NodeID
          */
         Entry(final long p_localID, final short p_nodeID) {
             m_localID = p_localID;
@@ -1358,11 +1366,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Creates an instance of Node
          *
          * @param p_parent
-         *     the parent
+         *         the parent
          * @param p_maxEntries
-         *     the number of entries that can be stored
+         *         the number of entries that can be stored
          * @param p_maxChildren
-         *     the number of children that can be stored
+         *         the number of children that can be stored
          */
         private Node(final Node p_parent, final short p_maxEntries, final int p_maxChildren) {
             m_parent = p_parent;
@@ -1377,7 +1385,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Compares two nodes
          *
          * @param p_cmp
-         *     the node to compare with
+         *         the node to compare with
          * @return 0 if the nodes are equal, (-1) if p_cmp is larger, 1 otherwise
          */
         @Override
@@ -1464,7 +1472,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Returns the parent node
          *
          * @param p_parent
-         *     the parent node
+         *         the parent node
          */
         private void setParent(final Node p_parent) {
             m_parent = p_parent;
@@ -1492,7 +1500,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Returns the LocalID to given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the LocalID to given index
          */
         private long getLocalID(final int p_index) {
@@ -1503,7 +1511,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Returns the data leaf to given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the data leaf to given index
          */
         private short getNodeID(final int p_index) {
@@ -1515,7 +1523,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * java.util.Arrays adapted to our needs
          *
          * @param p_localID
-         *     the LocalID
+         *         the LocalID
          * @return the index for given LocalID, if it is contained in the array, (-(insertion point) - 1) otherwise
          */
         private int indexOf(final long p_localID) {
@@ -1552,9 +1560,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Adds an entry
          *
          * @param p_localID
-         *     the LocalID
+         *         the LocalID
          * @param p_nodeID
-         *     the NodeID
+         *         the NodeID
          */
         private void addEntry(final long p_localID, final short p_nodeID) {
             int index;
@@ -1574,11 +1582,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Adds an entry
          *
          * @param p_localID
-         *     the LocalID
+         *         the LocalID
          * @param p_nodeID
-         *     the NodeID
+         *         the NodeID
          * @param p_index
-         *     the index to store the element at
+         *         the index to store the element at
          */
         private void addEntry(final long p_localID, final short p_nodeID, final int p_index) {
             System.arraycopy(m_keys, p_index, m_keys, p_index + 1, m_numberOfEntries - p_index);
@@ -1594,13 +1602,13 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Adds entries from another node
          *
          * @param p_node
-         *     the other node
+         *         the other node
          * @param p_offsetSrc
-         *     the offset in source array
+         *         the offset in source array
          * @param p_endSrc
-         *     the end of source array
+         *         the end of source array
          * @param p_offsetDst
-         *     the offset in destination array or -1 if the source array has to be prepended
+         *         the offset in destination array or -1 if the source array has to be prepended
          */
         private void addEntries(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
             long[] aux1;
@@ -1629,11 +1637,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Changes an entry
          *
          * @param p_localID
-         *     the LocalID
+         *         the LocalID
          * @param p_nodeID
-         *     the NodeID
+         *         the NodeID
          * @param p_index
-         *     the index of given entry in this node
+         *         the index of given entry in this node
          */
         private void changeEntry(final long p_localID, final short p_nodeID, final int p_index) {
 
@@ -1647,7 +1655,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Removes the entry with given LocalID
          *
          * @param p_localID
-         *     LocalID of the entry that has to be deleted
+         *         LocalID of the entry that has to be deleted
          * @return p_localID or (-1) if there is no entry for p_localID in this node
          */
         private long removeEntry(final long p_localID) {
@@ -1671,7 +1679,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Removes the entry with given index
          *
          * @param p_index
-         *     the index of the entry that has to be deleted
+         *         the index of the entry that has to be deleted
          * @return p_localID or (-1) if p_index is to large
          */
         private long removeEntry(final int p_index) {
@@ -1692,7 +1700,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Returns the child with given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the child with given index
          */
         private Node getChild(final int p_index) {
@@ -1712,7 +1720,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * java.util.Arrays adapted to our needs
          *
          * @param p_child
-         *     the child
+         *         the child
          * @return the index of the given child, if it is contained in the array, (-(insertion point) - 1) otherwise
          */
         private int indexOf(final Node p_child) {
@@ -1751,7 +1759,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Adds a child
          *
          * @param p_child
-         *     the child
+         *         the child
          */
         private void addChild(final Node p_child) {
             int index;
@@ -1769,13 +1777,13 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Adds children of another node
          *
          * @param p_node
-         *     the other node
+         *         the other node
          * @param p_offsetSrc
-         *     the offset in source array
+         *         the offset in source array
          * @param p_endSrc
-         *     the end of source array
+         *         the end of source array
          * @param p_offsetDst
-         *     the offset in destination array or -1 if the source array has to be prepended
+         *         the offset in destination array or -1 if the source array has to be prepended
          */
         private void addChildren(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
             Node[] aux;
@@ -1812,7 +1820,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Removes the given child
          *
          * @param p_child
-         *     the child
+         *         the child
          * @return true if the child was found and deleted, false otherwise
          */
         private boolean removeChild(final Node p_child) {
@@ -1834,7 +1842,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
          * Removes the child with given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the deleted child
          */
         private Node removeChild(final int p_index) {
