@@ -1,6 +1,6 @@
-bin/de
-bin/generated
-build/
+/bin/de
+/bin/generated
+/build/
 .checkstyle
 .classpath
 .project
@@ -17,4 +17,4 @@ dxram.iml
 .dxram_term_hist
 out/*
 /tmp/
-app/
+/app/
