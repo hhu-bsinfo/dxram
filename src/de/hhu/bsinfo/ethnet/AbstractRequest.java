@@ -191,7 +191,8 @@ public abstract class AbstractRequest extends AbstractMessage {
                 if (System.currentTimeMillis() > deadline) {
                     // RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
 
-                    //NetworkHandler.getEventHandler().fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), getDestination()));
+                    // TODO: Check
+                    NetworkHandler.getEventHandler().fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), getDestination()));
                     ret = false;
 
                     break;
