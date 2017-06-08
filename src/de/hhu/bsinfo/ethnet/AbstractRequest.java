@@ -13,8 +13,7 @@
 
 package de.hhu.bsinfo.ethnet;
 
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
 
@@ -25,19 +24,15 @@ import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
  */
 public abstract class AbstractRequest extends AbstractMessage {
 
-    // Constants
-    private static final long WAITING_TIMEOUT = 20;
-
     // Attributes
-    private boolean m_fulfilled;
+    private volatile boolean m_fulfilled;
+    private volatile boolean m_aborted;
 
-    private boolean m_aborted;
+    private volatile Thread m_waitingThread;
 
     private boolean m_ignoreTimeout;
 
-    private Semaphore m_wait;
-
-    private AbstractResponse m_response;
+    private volatile AbstractResponse m_response;
 
     // Constructors
 
@@ -46,8 +41,6 @@ public abstract class AbstractRequest extends AbstractMessage {
      */
     protected AbstractRequest() {
         super();
-
-        m_wait = new Semaphore(0, false);
 
         m_response = null;
     }
@@ -80,8 +73,6 @@ public abstract class AbstractRequest extends AbstractMessage {
      */
     protected AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
         super(p_destination, p_type, p_subtype, p_exclusivity);
-
-        m_wait = new Semaphore(0, false);
 
         m_response = null;
     }
@@ -183,29 +174,35 @@ public abstract class AbstractRequest extends AbstractMessage {
      *     Max amount of time to wait for response.
      * @return False if message timed out, true if response received.
      */
-    public final boolean waitForResponses(final int p_timeoutMs) {
-        long timeStart;
-        long timeNow;
+    public final boolean waitForResponse(final int p_timeoutMs) {
+        boolean ret = true;
 
-        timeStart = System.currentTimeMillis();
+        m_waitingThread = Thread.currentThread();
 
-        while (!m_fulfilled && !m_aborted) {
-            timeNow = System.currentTimeMillis();
-            if (timeNow - timeStart > p_timeoutMs && !m_ignoreTimeout) {
-                // RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
+        long deadline = System.currentTimeMillis() + p_timeoutMs;
+        while (!m_fulfilled) {
+
+            if (m_aborted) {
+                ret = false;
                 break;
             }
-            try {
-                m_wait.tryAcquire(WAITING_TIMEOUT, TimeUnit.MILLISECONDS);
-            } catch (final InterruptedException ignored) {
+
+            if (!m_ignoreTimeout) {
+                if (System.currentTimeMillis() > deadline) {
+                    // RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
+
+                    //NetworkHandler.getEventHandler().fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), getDestination()));
+                    ret = false;
+
+                    break;
+                }
+                LockSupport.parkUntil(deadline);
+            } else {
+                LockSupport.park();
             }
         }
 
-        if (!m_fulfilled && !m_aborted) {
-            NetworkHandler.getEventHandler().fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), getDestination()));
-        }
-
-        return m_fulfilled;
+        return ret;
     }
 
     @Override
@@ -230,9 +227,9 @@ public abstract class AbstractRequest extends AbstractMessage {
         // RequestStatistic.getInstance().responseReceived(getRequestID(), getClass());
 
         m_response = p_response;
-
         m_fulfilled = true;
-        m_wait.release();
+
+        LockSupport.unpark(m_waitingThread);
     }
 
 }
