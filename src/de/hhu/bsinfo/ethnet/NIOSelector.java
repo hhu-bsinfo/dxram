@@ -57,8 +57,7 @@ class NIOSelector extends Thread {
     private NIOConnectionCreator m_connectionCreator;
     private NIOInterface m_nioInterface;
 
-    private int m_incomingBufferSize;
-    private int m_outgoingBufferSize;
+    private int m_osBufferSize;
     private int m_connectionTimeout;
     private LinkedHashSet<ChangeOperationsRequest> m_changeRequests;
     private ReentrantLock m_changeLock;
@@ -78,21 +77,18 @@ class NIOSelector extends Thread {
      *     the connection timeout
      * @param p_port
      *     the port
-     * @param p_incomingBufferSize
-     *     the size of incoming buffer
-     * @param p_outgoingBufferSize
-     *     the size of outgoing buffer
+     * @param p_osBufferSize
+     *     the size of incoming and outgoing buffers
      */
     NIOSelector(final NIOConnectionCreator p_connectionCreator, final NIOInterface p_nioInterface, final int p_port, final int p_connectionTimeout,
-        final int p_incomingBufferSize, final int p_outgoingBufferSize) {
+        final int p_osBufferSize) {
         m_serverChannel = null;
         m_selector = null;
 
         m_nioInterface = p_nioInterface;
         m_connectionCreator = p_connectionCreator;
 
-        m_incomingBufferSize = p_incomingBufferSize;
-        m_outgoingBufferSize = p_outgoingBufferSize;
+        m_osBufferSize = p_osBufferSize;
         m_connectionTimeout = p_connectionTimeout;
         m_changeRequests = new LinkedHashSet<ChangeOperationsRequest>();
         m_changeLock = new ReentrantLock(false);
@@ -106,6 +102,13 @@ class NIOSelector extends Thread {
                 m_selector = Selector.open();
                 m_serverChannel = ServerSocketChannel.open();
                 m_serverChannel.configureBlocking(false);
+                m_serverChannel.socket().setReceiveBufferSize(m_osBufferSize);
+                int receiveBufferSize = m_serverChannel.socket().getReceiveBufferSize();
+                if (receiveBufferSize < m_osBufferSize) {
+                    // #if LOGGER >= WARN
+                    LOGGER.warn("Receive buffer could not be set properly. Check OS settings! Requested: %d, actual: %d", m_osBufferSize, receiveBufferSize);
+                    // #endif /* LOGGER >= WARN */
+                }
                 m_serverChannel.socket().bind(new InetSocketAddress(p_port));
                 m_serverChannel.register(m_selector, SelectionKey.OP_ACCEPT);
 
@@ -147,8 +150,9 @@ class NIOSelector extends Thread {
                 Iterator<SelectionKey> iterator = selected.iterator();
                 while (iterator.hasNext()) {
                     SelectionKey key = iterator.next();
-                    if (key.attachment() != null) {
+                    if (key.isValid() && key.attachment() != null) {
                         ret += '[' + NodeID.toHexString(((NIOConnection) key.attachment()).getDestination()) + ", " + key.interestOps() + "] ";
+                        ret += key.attachment().toString();
                     }
                 }
             }
@@ -164,119 +168,130 @@ class NIOSelector extends Thread {
     @Override
     public void run() {
         int interest;
+        ChangeOperationsRequest[] requests;
         NIOConnection connection;
         Iterator<SelectionKey> iterator;
         Set<SelectionKey> selected;
         SelectionKey key;
 
         LinkedHashSet<ChangeOperationsRequest> delayedCloseOperations = new LinkedHashSet<ChangeOperationsRequest>();
-
         while (m_running) {
             m_changeLock.lock();
-            ChangeOperationsRequest[] requests = m_changeRequests.toArray(new ChangeOperationsRequest[m_changeRequests.size()]);
-            m_changeRequests.clear();
+            if (!m_changeRequests.isEmpty()) {
+                requests = m_changeRequests.toArray(new ChangeOperationsRequest[m_changeRequests.size()]);
+                m_changeRequests.clear();
+            } else {
+                requests = null;
+            }
             m_changeLock.unlock();
 
-            for (ChangeOperationsRequest changeRequest : requests) {
-                connection = changeRequest.getConnection();
-                interest = changeRequest.getOperations();
+            if (requests != null) {
+                for (ChangeOperationsRequest changeRequest : requests) {
+                    connection = changeRequest.getConnection();
+                    interest = changeRequest.getOperations();
 
-                switch (interest) {
-                    case READ:
-                        try {
-                            // This is a READ access - Called only after creation
+                    switch (interest) {
+                        case READ:
                             try {
-                                // Use incoming channel for receiving messages
-                                connection.getIncomingChannel().register(m_selector, interest, connection);
-                            } catch (ClosedChannelException e) {
-                                e.printStackTrace();
+                                // This is a READ access - Called only after creation
+                                try {
+                                    // Use incoming channel for receiving messages
+                                    connection.getIncomingChannel().register(m_selector, interest, connection);
+                                } catch (ClosedChannelException e) {
+                                    e.printStackTrace();
+                                }
+                            } catch (final CancelledKeyException e) {
+                                // Ignore
                             }
-                        } catch (final CancelledKeyException e) {
-                            // Ignore
-                        }
-                        break;
-                    case READ_FLOW_CONTROL:
-                        try {
-                            // This is a READ access for flow control - Called only after creation
+                            break;
+                        case READ_FLOW_CONTROL:
                             try {
-                                // Use outgoing channel for receiving flow control messages
-                                connection.getOutgoingChannel().register(m_selector, READ, connection);
-                            } catch (ClosedChannelException e) {
-                                e.printStackTrace();
+                                // This is a READ access for flow control - Called only after creation
+                                try {
+                                    // Use outgoing channel for receiving flow control messages
+                                    connection.getOutgoingChannel().register(m_selector, READ, connection);
+                                } catch (ClosedChannelException e) {
+                                    e.printStackTrace();
+                                }
+                            } catch (final CancelledKeyException e) {
+                                // Ignore
                             }
-                        } catch (final CancelledKeyException e) {
-                            // Ignore
-                        }
-                        break;
-                    case FLOW_CONTROL:
-                        try {
-                            // This is a FLOW_CONTROL access - Write flow control bytes over incoming channel
-                            key = connection.getIncomingChannel().keyFor(m_selector);
-                            if (key != null && key.interestOps() != READ_WRITE) {
-                                // Key might be null if connection was closed during shutdown or due to closing a duplicate connection
-                                // If key interest is READ | WRITE the interest must not be overwritten with WRITE as both incoming
-                                // buffers might be filled causing a deadlock
-                                key.interestOps(WRITE);
-                            }
-                        } catch (final CancelledKeyException e) {
-                            // Ignore
-                        }
-                        break;
-                    case WRITE:
-                    case READ_WRITE:
-                        try {
-                            // This is a WRITE access -> change interest only
-                            key = connection.getOutgoingChannel().keyFor(m_selector);
-                            if (key != null && key.interestOps() != READ_WRITE) {
-                                // Key might be null if connection was closed during shutdown or due to closing a duplicate connection
-                                // If key interest is READ | WRITE the interest must not be overwritten with WRITE as both incoming
-                                // buffers might be filled causing a deadlock
-                                key.interestOps(interest);
-                            }
-                        } catch (final CancelledKeyException e) {
-                            // Ignore
-                        }
-                        break;
-                    case CLOSE:
-                        // CLOSE -> close connection
-                        // Only close connection if since request at least the time for two connection timeouts has elapsed
-                        if (System.currentTimeMillis() - connection.getClosingTimestamp() > 2 * m_connectionTimeout) {
-                            // #if LOGGER >= DEBUG
+                            break;
+                        case FLOW_CONTROL:
                             try {
-                                LOGGER.debug("Closing connection to 0x%X;%s", connection.getDestination(), connection.getOutgoingChannel().getRemoteAddress());
-                            } catch (final IOException ignored) {
+                                // This is a FLOW_CONTROL access - Write flow control bytes over incoming channel
+                                key = connection.getIncomingChannel().keyFor(m_selector);
+                                if (key != null && key.interestOps() != READ_WRITE) {
+                                    // Key might be null if connection was closed during shutdown or due to closing a duplicate connection
+                                    // If key interest is READ | WRITE the interest must not be overwritten with WRITE as both incoming
+                                    // buffers might be filled causing a deadlock
+                                    key.interestOps(WRITE);
+                                }
+                            } catch (final CancelledKeyException e) {
+                                // Ignore
                             }
-                            // #endif /* LOGGER >= DEBUG */
-                            // Close connection
-                            m_connectionCreator.closeConnection(connection, false);
-                        } else {
-                            // Delay connection closure
-                            delayedCloseOperations.add(changeRequest);
-                        }
-                        break;
-                    case CONNECT:
-                        // CONNECT -> register with connection as attachment (ACCEPT is registered directly)
-                        try {
-                            connection.getOutgoingChannel().register(m_selector, interest, connection);
-                        } catch (final ClosedChannelException e) {
-                            // #if LOGGER >= DEBUG
-                            LOGGER.debug("Could not change operations!");
-                            // #endif /* LOGGER >= DEBUG */
-                        }
-                        break;
-                    default:
-                        // #if LOGGER >= ERROR
-                        LOGGER.error("Network-Selector: Registered operation unknown: %s", interest);
-                        // #endif /* LOGGER >= ERROR */
-                        break;
+                            break;
+                        case WRITE:
+                        case READ_WRITE:
+                            try {
+                                // This is a WRITE access -> change interest only
+                                key = connection.getOutgoingChannel().keyFor(m_selector);
+                                if (key == null) {
+                                    // #if LOGGER >= ERROR
+                                    LOGGER.error("Cannot register WRITE operation as key is null for %s", connection);
+                                    // #endif /* LOGGER >= ERROR */
+                                } else if (key.interestOps() != READ_WRITE) {
+                                    // Key might be null if connection was closed during shutdown or due to closing a duplicate connection
+                                    // If key interest is READ | WRITE the interest must not be overwritten with WRITE as both incoming
+                                    // buffers might be filled causing a deadlock
+                                    key.interestOps(interest);
+                                }
+                            } catch (final CancelledKeyException e) {
+                                // Ignore
+                            }
+                            break;
+                        case CLOSE:
+                            // CLOSE -> close connection
+                            // Only close connection if since request at least the time for two connection timeouts has elapsed
+                            if (System.currentTimeMillis() - connection.getClosingTimestamp() > 2 * m_connectionTimeout) {
+                                // #if LOGGER >= DEBUG
+                                try {
+                                    LOGGER.debug("Closing connection to 0x%X;%s", connection.getDestination(),
+                                            connection.getOutgoingChannel().getRemoteAddress());
+                                } catch (final IOException ignored) {
+                                }
+                                // #endif /* LOGGER >= DEBUG */
+                                // Close connection
+                                m_connectionCreator.closeConnection(connection, false);
+                            } else {
+                                // Delay connection closure
+                                delayedCloseOperations.add(changeRequest);
+                            }
+                            break;
+                        case CONNECT:
+                            // CONNECT -> register with connection as attachment (ACCEPT is registered directly)
+                            try {
+                                connection.getOutgoingChannel().register(m_selector, interest, connection);
+                            } catch (final ClosedChannelException e) {
+                                // #if LOGGER >= DEBUG
+                                LOGGER.debug("Could not change operations!");
+                                // #endif /* LOGGER >= DEBUG */
+                            }
+                            break;
+                        default:
+                            // #if LOGGER >= ERROR
+                            LOGGER.error("Network-Selector: Registered operation unknown: %s", interest);
+                            // #endif /* LOGGER >= ERROR */
+                            break;
+                    }
                 }
-            }
 
-            if (!delayedCloseOperations.isEmpty()) {
-                m_changeLock.lock();
-                m_changeRequests.addAll(delayedCloseOperations);
-                delayedCloseOperations.clear();
-                m_changeLock.unlock();
+                if (!delayedCloseOperations.isEmpty()) {
+                    m_changeLock.lock();
+                    m_changeRequests.addAll(delayedCloseOperations);
+                    delayedCloseOperations.clear();
+                    m_changeLock.unlock();
+                }
             }
 
             try {
@@ -294,11 +309,15 @@ class NIOSelector extends Thread {
                             } else {
                                 dispatch(key);
                             }
+                        } else {
+                            // #if LOGGER >= ERROR
+                            LOGGER.error("Selected key is invalid: %s", key);
+                            // #endif /* LOGGER >= ERROR */
                         }
                     }
                 }
             } catch (final ClosedSelectorException e) {
-                // Ignore!
+                // Ignore
             } catch (final IOException e) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Key selection failed!");
@@ -414,7 +433,6 @@ class NIOSelector extends Thread {
         channel.configureBlocking(false);
         channel.socket().setSoTimeout(0);
         channel.socket().setTcpNoDelay(true);
-        channel.socket().setReceiveBufferSize(m_incomingBufferSize);
         channel.socket().setSendBufferSize(32);
 
         channel.register(m_selector, READ);
@@ -467,7 +485,7 @@ class NIOSelector extends Thread {
                     }
                     if (p_key.channel() == connection.getOutgoingChannel()) {
                         try {
-                            complete = m_nioInterface.write(connection);
+                            complete = NIOInterface.write(connection);
                         } catch (final IOException ignored) {
                             // #if LOGGER >= DEBUG
                             LOGGER.debug("Could not write to channel (0x%X)!", connection.getDestination());
@@ -478,21 +496,37 @@ class NIOSelector extends Thread {
                             complete = false;
                         }
 
-                        if (!complete) {
+                        // TODO: Check if this is faster
+                        /*if (!complete) {
+                            // If there is still data left to write on this connection, add another write request
+                            p_key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+                        } else if (!connection.dataLeftToWrite()) {
+                            // Set interest to READ after writing; do not if channel was blocked and data is left
+                            p_key.interestOps(SelectionKey.OP_READ);
+                        }*/
+                        if (!complete || connection.dataLeftToWrite()) {
                             // If there is still data left to write on this connection, add another write request
                             m_changeLock.lock();
                             m_changeRequests.add(new ChangeOperationsRequest(connection, SelectionKey.OP_WRITE | SelectionKey.OP_READ));
                             m_changeLock.unlock();
                         }
-                        // Set interest to READ after writing; do not if channel was blocked and data is left
-                        p_key.interestOps(SelectionKey.OP_READ);
+                        try {
+                            // Set interest to READ after writing; do not if channel was blocked and data is left
+                            p_key.interestOps(SelectionKey.OP_READ);
+                        } catch (final CancelledKeyException ignore) {
+                            // Ignore
+                        }
                     } else {
                         m_nioInterface.writeFlowControlBytes(connection);
-                        // Set interest to READ after writing; do not if channel was blocked and data is left
-                        p_key.interestOps(SelectionKey.OP_READ);
+                        try {
+                            // Set interest to READ after writing
+                            p_key.interestOps(SelectionKey.OP_READ);
+                        } catch (final CancelledKeyException ignore) {
+                            // Ignore
+                        }
                     }
                 } else if (p_key.isConnectable()) {
-                    NIOInterface.connect(connection);
+                    NIOInterface.connect(connection, p_key);
                 }
             } catch (final IOException e) {
                 // #if LOGGER >= ERROR

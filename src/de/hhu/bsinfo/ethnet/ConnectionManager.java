@@ -20,6 +20,9 @@ import java.util.Random;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.ethnet.AbstractConnection.DataReceiver;
 import de.hhu.bsinfo.ethnet.AbstractConnectionCreator.ConnectionCreatorListener;
@@ -35,6 +38,8 @@ final class ConnectionManager implements ConnectionCreatorListener {
     // Constants
     static final int MAX_CONNECTIONS = 1000;
 
+    private static final Logger LOGGER = LogManager.getFormatterLogger(ConnectionManager.class.getSimpleName());
+
     // Attributes
     private AbstractConnection[] m_connections;
     private int m_openConnections;
@@ -45,9 +50,6 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
     private boolean m_deactivated;
     private volatile boolean m_closed;
-
-    private boolean m_waiting;
-    private short m_waitingFor;
 
     private ReentrantLock m_connectionCreationLock;
 
@@ -71,8 +73,6 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
         m_deactivated = false;
         m_closed = false;
-        m_waiting = false;
-        m_waitingFor = -1;
 
         m_connectionCreationLock = new ReentrantLock(false);
 
@@ -182,11 +182,11 @@ final class ConnectionManager implements ConnectionCreatorListener {
         assert p_destination != NodeID.INVALID_ID;
 
         ret = m_connections[p_destination & 0xFFFF];
-        if ((ret == null || !ret.isOutgoingOpen()) && !m_deactivated) {
+        if ((ret == null || !ret.isOutgoingConnected()) && !m_deactivated) {
             m_connectionCreationLock.lock();
 
             ret = m_connections[p_destination & 0xFFFF];
-            if ((ret == null || !ret.isOutgoingOpen()) && !m_deactivated) {
+            if ((ret == null || !ret.isOutgoingConnected()) && !m_deactivated) {
                 if (m_openConnections == MAX_CONNECTIONS) {
                     dismissRandomConnection();
                 }
@@ -202,9 +202,16 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
                     throw e;
                 }
-                ret.setListener(m_connectionListener);
-                m_connections[p_destination & 0xFFFF] = ret;
-                m_openConnections++;
+
+                if (ret != null) {
+                    ret.setListener(m_connectionListener);
+                    m_connections[p_destination & 0xFFFF] = ret;
+                    m_openConnections++;
+                } else {
+                    // #if LOGGER >= ERROR
+                    LOGGER.warn("Connection creation was aborted. No listener was registered.");
+                    // #endif /* LOGGER >= ERROR */
+                }
             }
             m_connectionCreationLock.unlock();
         }
@@ -255,7 +262,10 @@ final class ConnectionManager implements ConnectionCreatorListener {
             random = rand.nextInt(m_connections.length);
             dismiss = m_connections[random & 0xFFFF];
         }
-        System.out.println("Removing " + NodeID.toHexString((short) random));
+        // #if LOGGER >= WARN
+        LOGGER.warn("Removing " + NodeID.toHexString((short) random));
+        // #endif /* LOGGER >= WARN */
+
         m_connections[random & 0xFFFF] = null;
         m_openConnections--;
 

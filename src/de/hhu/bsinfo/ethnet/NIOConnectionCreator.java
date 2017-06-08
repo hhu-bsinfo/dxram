@@ -18,6 +18,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -44,9 +45,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
     private NIOInterface m_nioInterface;
     private NodeMap m_nodeMap;
 
-    private int m_incomingBufferSize;
-    private int m_outgoingBufferSize;
-    private int m_maxIncomingBufferSize;
+    private int m_osBufferSize;
     private int m_flowControlWindowSize;
     private int m_connectionTimeout;
 
@@ -59,34 +58,28 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
      *     the message directory
      * @param p_nodeMap
      *     the node map
-     * @param p_incomingBufferSize
-     *     the size of incoming buffer
-     * @param p_outgoingBufferSize
-     *     the size of outgoing buffer
-     * @param p_maxIncomingBufferSize
-     *     the maximum number of bytes read at once from channel
+     * @param p_osBufferSize
+     *     the size of incoming and outgoing buffers
      * @param p_flowControlWindowSize
      *     the maximal number of ByteBuffer to schedule for sending/receiving
      * @param p_connectionTimeout
      *     the connection timeout
      */
-    NIOConnectionCreator(final MessageDirectory p_messageDirectory, final NodeMap p_nodeMap, final int p_incomingBufferSize, final int p_outgoingBufferSize,
-        final int p_maxIncomingBufferSize, final int p_flowControlWindowSize, final int p_connectionTimeout) {
+    NIOConnectionCreator(final MessageDirectory p_messageDirectory, final NodeMap p_nodeMap, final int p_osBufferSize, final int p_flowControlWindowSize,
+            final int p_connectionTimeout) {
         super();
 
         m_nioSelector = null;
 
         m_messageDirectory = p_messageDirectory;
 
-        m_incomingBufferSize = p_incomingBufferSize;
-        m_outgoingBufferSize = p_outgoingBufferSize;
-        m_maxIncomingBufferSize = p_maxIncomingBufferSize;
+        m_osBufferSize = p_osBufferSize;
         m_flowControlWindowSize = p_flowControlWindowSize;
         m_connectionTimeout = p_connectionTimeout;
 
         m_nodeMap = p_nodeMap;
 
-        m_nioInterface = new NIOInterface(p_incomingBufferSize, p_outgoingBufferSize, p_maxIncomingBufferSize);
+        m_nioInterface = new NIOInterface(p_osBufferSize);
     }
 
     // Methods
@@ -104,14 +97,14 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
         // #if LOGGER >= INFO
         LOGGER.info("Network: MessageCreator");
         // #endif /* LOGGER >= INFO */
-        m_messageCreator = new MessageCreator(m_incomingBufferSize, m_maxIncomingBufferSize);
+        m_messageCreator = new MessageCreator(m_osBufferSize);
         m_messageCreator.setName("Network: MessageCreator");
         m_messageCreator.start();
 
         // #if LOGGER >= INFO
         LOGGER.info("Network: NIOSelector");
         // #endif /* LOGGER >= INFO */
-        m_nioSelector = new NIOSelector(this, m_nioInterface, p_listenPort, m_connectionTimeout, m_incomingBufferSize, m_outgoingBufferSize);
+        m_nioSelector = new NIOSelector(this, m_nioInterface, p_listenPort, m_connectionTimeout, m_osBufferSize);
         m_nioSelector.setName("Network: NIOSelector");
         m_nioSelector.start();
     }
@@ -168,14 +161,19 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
         condLock = new ReentrantLock(false);
         cond = condLock.newCondition();
-        ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, condLock, cond, m_messageCreator, m_nioSelector, m_incomingBufferSize,
-            m_outgoingBufferSize, m_flowControlWindowSize);
+        ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, condLock, cond, m_messageCreator, m_nioSelector, m_osBufferSize,
+                m_flowControlWindowSize);
 
         ret.connect();
 
         timeStart = System.currentTimeMillis();
         condLock.lock();
         while (!ret.isOutgoingConnected()) {
+            if (ret.isConnectionCreationAborted()) {
+                condLock.unlock();
+                return null;
+            }
+
             timeNow = System.currentTimeMillis();
             if (timeNow - timeStart > m_connectionTimeout) {
                 // #if LOGGER >= DEBUG
@@ -200,8 +198,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
     public NIOConnection createConnection(final short p_destination, final SocketChannel p_channel) throws IOException {
         NIOConnection ret;
 
-        ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, p_channel, m_messageCreator, m_nioSelector, m_incomingBufferSize,
-            m_outgoingBufferSize, m_flowControlWindowSize);
+        ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, p_channel, m_messageCreator, m_nioSelector, m_osBufferSize,
+                m_flowControlWindowSize);
 
         // Register connection as attachment
         m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(ret, NIOSelector.READ));
@@ -228,6 +226,11 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
         timeStart = System.currentTimeMillis();
         condLock.lock();
         while (!connection.isOutgoingConnected()) {
+            if (connection.isConnectionCreationAborted()) {
+                condLock.unlock();
+                return;
+            }
+
             timeNow = System.currentTimeMillis();
             if (timeNow - timeStart > m_connectionTimeout) {
                 // #if LOGGER >= DEBUG

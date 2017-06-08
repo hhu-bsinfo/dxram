@@ -45,6 +45,11 @@ public abstract class AbstractResponse extends AbstractMessage {
         m_correspondingRequest = p_request;
     }
 
+    public void reuse(final AbstractRequest p_request) {
+        m_messageID = p_request.getMessageID();
+        m_correspondingRequest = p_request;
+    }
+
     // Getters
 
     /**

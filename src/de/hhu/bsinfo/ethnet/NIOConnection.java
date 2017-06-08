@@ -15,6 +15,8 @@ package de.hhu.bsinfo.ethnet;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.concurrent.locks.Condition;
@@ -52,7 +54,7 @@ class NIOConnection extends AbstractConnection {
     private ReentrantLock m_sliceLock;
     private ReentrantLock m_writerLock;
 
-    private int m_currentQueueSize;
+    private volatile boolean m_aborted;
 
     // Constructors
 
@@ -73,29 +75,32 @@ class NIOConnection extends AbstractConnection {
      *     the incoming buffer storage and message creator
      * @param p_nioSelector
      *     the NIOSelector
-     * @param p_incomingBufferSize
-     *     the size of incoming buffer
-     * @param p_outgoingBufferSize
-     *     the size of outgoing buffer
+     * @param p_osBufferSize
+     *     the size of incoming and outgoing buffers
      * @param p_flowControlWindowSize
      *     the maximal number of ByteBuffer to schedule for sending/receiving
      * @throws IOException
      *     if the connection could not be created
      */
     NIOConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final ReentrantLock p_lock,
-        final Condition p_cond, final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_incomingBufferSize,
-        final int p_outgoingBufferSize, final int p_flowControlWindowSize) throws IOException {
+        final Condition p_cond, final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_osBufferSize,
+            final int p_flowControlWindowSize) throws IOException {
         super(p_destination, p_nodeMap, p_messageDirectory, p_flowControlWindowSize);
 
-        m_incomingBufferSize = p_incomingBufferSize;
-        m_outgoingBufferSize = p_outgoingBufferSize;
+        m_osBufferSize = p_osBufferSize;
 
         m_outgoingChannel = SocketChannel.open();
         m_outgoingChannel.configureBlocking(false);
         m_outgoingChannel.socket().setSoTimeout(0);
         m_outgoingChannel.socket().setTcpNoDelay(true);
         m_outgoingChannel.socket().setReceiveBufferSize(32);
-        m_outgoingChannel.socket().setSendBufferSize(m_outgoingBufferSize);
+        m_outgoingChannel.socket().setSendBufferSize(m_osBufferSize);
+        int sendBufferSize = m_outgoingChannel.socket().getSendBufferSize();
+        if (sendBufferSize < m_osBufferSize) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Send buffer size could not be set properly. Check OS settings! Requested: %d, actual: %d", m_osBufferSize, sendBufferSize);
+            // #endif /* LOGGER >= WARN */
+        }
 
         m_outgoingChannel.connect(getNodeMap().getAddress(p_destination));
 
@@ -133,20 +138,16 @@ class NIOConnection extends AbstractConnection {
      *     the incoming buffer storage and message creator
      * @param p_nioSelector
      *     the NIOSelector
-     * @param p_incomingBufferSize
-     *     the size of incoming buffer
-     * @param p_outgoingBufferSize
+     * @param p_osBufferSize
      *     the size of outgoing buffer
      * @param p_flowControlWindowSize
      *     the maximal number of ByteBuffer to schedule for sending/receiving
      */
     NIOConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final SocketChannel p_channel,
-        final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_incomingBufferSize, final int p_outgoingBufferSize,
-        final int p_flowControlWindowSize) {
+        final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_osBufferSize, final int p_flowControlWindowSize) {
         super(p_destination, p_nodeMap, p_messageDirectory, p_flowControlWindowSize);
 
-        m_incomingBufferSize = p_incomingBufferSize;
-        m_outgoingBufferSize = p_outgoingBufferSize;
+        m_osBufferSize = p_osBufferSize;
 
         m_incomingChannel = p_channel;
         m_messageCreator = p_messageCreator;
@@ -181,6 +182,14 @@ class NIOConnection extends AbstractConnection {
             } catch (final IOException e) {
                 e.printStackTrace();
             }
+        } else if (m_incomingChannel != null && m_incomingChannel.isOpen()) {
+            try {
+                ret += ", address: " + m_incomingChannel.getRemoteAddress() + "]\n";
+            } catch (final IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            ret += ", pending]\n";
         }
 
         return ret;
@@ -219,6 +228,21 @@ class NIOConnection extends AbstractConnection {
      */
     protected void connect() {
         m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(this, NIOSelector.CONNECT));
+    }
+
+    /**
+     * Returns whether the connection creation was aborted or not.
+     * @return true if connection creation was aborted, false otherwise
+     */
+    boolean isConnectionCreationAborted() {
+        return m_aborted;
+    }
+
+    /**
+     * Aborts the connection creation. Is called by selector thread.
+     */
+    void abortConnectionCreation() {
+        m_aborted = true;
     }
 
     /**
@@ -311,7 +335,13 @@ class NIOConnection extends AbstractConnection {
         m_outgoingChannel.socket().setSoTimeout(0);
         m_outgoingChannel.socket().setTcpNoDelay(true);
         m_outgoingChannel.socket().setReceiveBufferSize(32);
-        m_outgoingChannel.socket().setSendBufferSize(m_outgoingBufferSize);
+        m_outgoingChannel.socket().setSendBufferSize(m_osBufferSize);
+        int sendBufferSize = m_outgoingChannel.socket().getSendBufferSize();
+        if (sendBufferSize < m_osBufferSize) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Send buffer size could not be set properly. Check OS settings! Requested: %d, actual: %d", m_osBufferSize, sendBufferSize);
+            // #endif /* LOGGER >= WARN */
+        }
 
         m_outgoingChannel.connect(getNodeMap().getAddress(p_nodeID));
     }
