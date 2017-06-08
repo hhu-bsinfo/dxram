@@ -27,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class StatisticsOperation {
     public static final int INVALID_ID = -1;
     // stats per thread, avoids having locks
-    private static int ms_blockSizeStatsMap = 100;
+    private static int ms_blockSizeStatsMap = 1000;
     private String m_name;
     private boolean m_enabled = true;
     private Stats[][] m_statsMap = new Stats[10000][0];
