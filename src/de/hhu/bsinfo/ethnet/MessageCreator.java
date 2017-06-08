@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.ethnet;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -33,27 +33,25 @@ class MessageCreator extends Thread {
     private int m_maxBytes;
     private long m_currentBytes;
 
-    private int m_posFront;
-    private int m_posBack;
+    private volatile int m_posFront;
+    private volatile int m_posBack;
     private ReentrantLock m_lock;
-    private Condition m_cond;
 
     /**
      * Creates an instance of MessageCreator
      *
-     * @param p_incomingBufferSize
+     * @param p_osBufferSize
      *     the incoming buffer size
      */
-    MessageCreator(final int p_incomingBufferSize, final int p_maxIncomingBufferSize) {
-        m_size = Math.min(p_incomingBufferSize / p_maxIncomingBufferSize * ConnectionManager.MAX_CONNECTIONS, 4 * 1024 * 1024);
+    MessageCreator(final int p_osBufferSize) {
+        m_size = 2 * (2 * 1024 + 1);
         m_buffer = new Object[m_size * 2];
-        m_maxBytes = p_incomingBufferSize;
+        m_maxBytes = p_osBufferSize * 8;
         m_currentBytes = 0;
 
         m_posFront = 0;
         m_posBack = 0;
         m_lock = new ReentrantLock(false);
-        m_cond = m_lock.newCondition();
     }
 
     /**
@@ -62,13 +60,7 @@ class MessageCreator extends Thread {
      * @return whether the ring-buffer is empty or not
      */
     public boolean isEmpty() {
-        boolean ret;
-
-        m_lock.lock();
-        ret = m_posFront == m_posBack;
-        m_lock.unlock();
-
-        return ret;
+        return m_posFront == m_posBack;
     }
 
     /**
@@ -77,13 +69,16 @@ class MessageCreator extends Thread {
      * @return whether the ring-buffer is full or not
      */
     public boolean isFull() {
-        boolean ret;
+        return (m_posBack + 2) % m_size == m_posFront % m_size;
+    }
 
-        m_lock.lock();
-        ret = (m_posBack + 1) % m_size == m_posFront % m_size;
-        m_lock.unlock();
-
-        return ret;
+    /**
+     * Returns the number of pending buffers.
+     *
+     * @return the number of pending buffers
+     */
+    protected int size() {
+        return (m_posBack - m_posFront) / 2;
     }
 
     /**
@@ -103,20 +98,13 @@ class MessageCreator extends Thread {
 
         job = new Object[2];
         while (!m_shutdown) {
-            m_lock.lock();
             if (popJob(job)) {
-                m_lock.unlock();
                 connection = (NIOConnection) job[0];
                 buffer = (ByteBuffer) job[1];
                 connection.processBuffer(buffer);
-                connection.returnBuffer(buffer);
+                connection.returnReadBuffer(buffer);
             } else {
-                try {
-                    m_cond.await();
-                } catch (final InterruptedException ignored) {
-                    break;
-                }
-                m_lock.unlock();
+                LockSupport.park();
             }
         }
     }
@@ -135,40 +123,12 @@ class MessageCreator extends Thread {
         }
 
         interrupt();
+        LockSupport.unpark(this);
         try {
             join();
         } catch (final InterruptedException ignore) {
 
         }
-    }
-
-    /**
-     * Returns the number of pending buffers.
-     *
-     * @return the number of pending buffers
-     */
-    protected int size() {
-        int ret;
-
-        m_lock.lock();
-        if (m_posFront <= m_posBack) {
-            ret = (m_posBack - m_posFront) / 2;
-        } else {
-            ret = (m_buffer.length - m_posFront + m_posBack) / 2;
-        }
-        m_lock.unlock();
-
-        return ret;
-    }
-
-    /**
-     * Returns whether the ring-buffer is full or not.
-     * Result might be out-dated as there is no lock acquired.
-     *
-     * @return whether the ring-buffer is full or not
-     */
-    boolean isFullLazy() {
-        return (m_posBack + 1) % m_size == m_posFront % m_size;
     }
 
     /**
@@ -181,24 +141,31 @@ class MessageCreator extends Thread {
      * @return whether the job was added or not
      */
     boolean pushJob(final NIOConnection p_connection, final ByteBuffer p_buffer) {
-        m_lock.lock();
-        int posBack = m_posBack;
+        boolean locked = false;
 
-        if ((posBack + 1) % m_size == m_posFront % m_size || m_currentBytes >= m_maxBytes) {
+        if (m_posFront != m_posBack) {
+            m_lock.lock();
+            locked = true;
+        }
+
+        if ((m_posBack + 2) % m_size == m_posFront % m_size || m_currentBytes >= m_maxBytes) {
             // Return without adding the job if queue is full or too many bytes are pending
-            m_lock.unlock();
+            if (locked) {
+                m_lock.unlock();
+            }
+
             return false;
         }
 
-        int posBack2 = posBack % m_size;
-        m_buffer[posBack2 * 2 % m_buffer.length] = p_connection;
-        m_buffer[(posBack2 * 2 + 1) % m_buffer.length] = p_buffer;
-        m_posBack = posBack + 1;
-
+        m_buffer[m_posBack % m_size] = p_connection;
+        m_buffer[(m_posBack + 1) % m_size] = p_buffer;
         m_currentBytes += p_buffer.remaining();
+        m_posBack += 2;
 
-        m_cond.signalAll();
-        m_lock.unlock();
+        if (locked) {
+            m_lock.unlock();
+        }
+        LockSupport.unpark(this);
 
         return true;
     }
@@ -211,19 +178,19 @@ class MessageCreator extends Thread {
      * @return whether the job array was filled or not
      */
     private boolean popJob(final Object[] p_job) {
-        int posFront = m_posFront;
-        int posFront2 = posFront % m_size;
+        m_lock.lock();
 
-        if (posFront2 == m_posBack % m_size) {
+        if (m_posFront == m_posBack) {
             // Ring-buffer is empty.
+            m_lock.unlock();
             return false;
         }
 
-        p_job[0] = m_buffer[posFront2 * 2 % m_buffer.length];
-        p_job[1] = m_buffer[(posFront2 * 2 + 1) % m_buffer.length];
-        m_posFront = posFront + 1;
-
+        p_job[0] = m_buffer[m_posFront % m_size];
+        p_job[1] = m_buffer[(m_posFront + 1) % m_size];
         m_currentBytes -= ((ByteBuffer) p_job[1]).remaining();
+        m_posFront += 2;
+        m_lock.unlock();
 
         return true;
     }
