@@ -111,7 +111,7 @@ public class UpdateMetadataAfterRecoveryMessage extends AbstractMessage {
 
     @Override
     protected final int getPayloadLength() {
-        return 3 * Short.BYTES + m_chunkIDRanges.length * Long.BYTES;
+        return 3 * Short.BYTES + Integer.BYTES + m_chunkIDRanges.length * Long.BYTES;
     }
 
     // Methods

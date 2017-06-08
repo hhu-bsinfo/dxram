@@ -745,10 +745,12 @@ public final class MetadataHandler {
      */
     public void updateMetadataAfterRecovery(final short p_rangeID, final short p_creator, final short p_recoveryPeer, final long[] p_chunkIDRanges) {
 
-        PeerHandler peerHandler = m_peerHandlers[p_creator & 0xFFF];
+        m_dataLock.writeLock().lock();
+        PeerHandler peerHandler = m_peerHandlers[p_creator & 0xFFFF];
         if (peerHandler != null) {
             peerHandler.updateMetadataAfterRecovery(p_rangeID, p_recoveryPeer, p_chunkIDRanges);
         }
+        m_dataLock.writeLock().unlock();
     }
 
     /**
@@ -945,7 +947,6 @@ public final class MetadataHandler {
     public BackupRange[] getAllBackupRangesFromLookupTree(final short p_nodeID) {
         BackupRange[] ret = null;
         PeerHandler peerHandler;
-        ArrayListLong backupPeersOfAllRanges;
 
         m_dataLock.readLock().lock();
         peerHandler = getPeerHandler(p_nodeID);
@@ -970,11 +971,11 @@ public final class MetadataHandler {
      * @param p_newBackupPeer
      *     the replacement
      */
-    public void replaceFailedPeerInLookupTree(final short p_rangeID, final short p_failedPeer, final short p_newBackupPeer) {
+    public void replaceFailedPeerInLookupTree(final short p_rangeID, final short p_nodeID, final short p_failedPeer, final short p_newBackupPeer) {
         PeerHandler peerHandler;
 
         m_dataLock.writeLock().lock();
-        peerHandler = getPeerHandler(p_failedPeer);
+        peerHandler = getPeerHandler(p_nodeID);
         // no tree available -> no chunks were created or backup system is deactivated
         if (peerHandler != null) {
             // Replace failedPeer from specific backup peer lists

@@ -114,6 +114,7 @@ import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
+import de.hhu.bsinfo.ethnet.NetworkHandler;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.ArrayListLong;
@@ -283,8 +284,6 @@ public class OverlaySuperpeer implements MessageReceiver {
             return superpeerFailureHandling(p_failedNode);
         } else if (p_nodeRole == NodeRole.PEER) {
             return peerFailureHandling(p_failedNode);
-        } else {
-            return terminalFailureHandling(p_failedNode);
         }
     }
 
@@ -812,11 +811,30 @@ public class OverlaySuperpeer implements MessageReceiver {
         short[] backupPeers;
         RecoverBackupRangeRequest[] requests;
 
+        // #if LOGGER >= INFO
+        LOGGER.info("Starting failure handling for failed node 0x%X", p_failedNode);
+        // #endif /* LOGGER >= INFO */
+
         m_overlayLock.writeLock().lock();
+
+        // #if LOGGER >= INFO
+        LOGGER.info("Initiating ZooKeeper cleanup for failed node 0x%X", p_failedNode);
+        // #endif /* LOGGER >= INFO */
+        if (OverlayHelper.containsPeer(p_failedNode, m_peers)) {
+            // Clean-up zookeeper
+            m_boot.singleNodeCleanup(p_failedNode, NodeRole.PEER);
+        }
+
+        // #if LOGGER >= INFO
+        LOGGER.info("Informing all other peers about failed node 0x%X", p_failedNode);
+        // #endif /* LOGGER >= INFO */
 
         // Inform all peers (this is done by all superpeers)
         for (short peer : m_peers) {
             if (peer != p_failedNode && m_boot.getNodeRole(peer) == NodeRole.PEER) {
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Informing peer 0x%X about failure of 0x%X", peer, p_failedNode);
+                // #endif /* LOGGER >= DEBUG */
                 FailureRequest failureRequest = new FailureRequest(peer, p_failedNode);
 
                 try {
@@ -832,10 +850,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 
             ret = true;
 
+            // #if LOGGER >= INFO
+            LOGGER.info("Informing all other superpeers about failed node 0x%X", p_failedNode);
+            // #endif /* LOGGER >= INFO */
+
             // Inform all superpeers about failed peer
             for (short superpeer : m_superpeers) {
                 // #if LOGGER >= DEBUG
-                LOGGER.debug("Informing 0x%X to remove 0x%X from meta-data", superpeer, p_failedNode);
+                LOGGER.debug("Informing superpeer 0x%X about failure of 0x%X", superpeer, p_failedNode);
                 // #endif /* LOGGER >= DEBUG */
 
                 FailureRequest request = new FailureRequest(superpeer, p_failedNode);
@@ -852,9 +874,6 @@ public class OverlaySuperpeer implements MessageReceiver {
             // Remove peer
             OverlayHelper.removePeer(p_failedNode, m_peers);
 
-            // Clean-up zookeeper
-            m_boot.singleNodeCleanup(p_failedNode, NodeRole.PEER);
-
             // Start recovery
             if (m_backupActive) {
                 // #if LOGGER >= INFO
@@ -868,6 +887,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                 RecoverBackupRangeRequest request;
                 RecoverBackupRangeResponse response;
                 backupRanges = m_metadata.getAllBackupRangesFromLookupTree(p_failedNode);
+                short[] numberOfRangesPerPeer = new short[65535];
 
                 m_overlayLock.writeLock().unlock();
 
@@ -887,6 +907,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                                     // Do not wait for response to enable parallel recovery
                                     m_network.sendSync(request, false);
                                     requests[counter] = request;
+                                    numberOfRangesPerPeer[backupPeer & 0xFFFF]++;
                                     break;
                                 } catch (final NetworkException ignored) {
                                     // Try next backup peer
@@ -898,63 +919,77 @@ public class OverlaySuperpeer implements MessageReceiver {
                     }
 
                     // Collect and evaluate responses
-                    for (int i = 0; i < requests.length; i++) {
-                        RecoverBackupRangeRequest currentRequest = requests[i];
-                        if (currentRequest != null) {
-                            if (currentRequest.waitForResponses(10000)) { // TODO: time-out
+                    int waitingTimerPerBackupRange = 3000;
+                    long timeStart = System.currentTimeMillis();
+                    boolean finished = false;
+                    while (!finished) {
+                        finished = true;
+                        for (int i = 0; i < requests.length; i++) {
+                            RecoverBackupRangeRequest currentRequest = requests[i];
+                            if (currentRequest != null) {
                                 response = currentRequest.getResponse(RecoverBackupRangeResponse.class);
-                                long[] chunkIDRanges = response.getChunkIDRanges();
-                                if (chunkIDRanges != null) {
-                                    // #if LOGGER >= INFO
-                                    LOGGER.info("Recovered %d chunks of range %s", response.getNumberOfChunks(), backupRanges[i]);
-                                    // #endif /* LOGGER >= INFO */
-
-                                    // Update metadata in superpeer overlay
-                                    updateMetadata(currentRequest.getBackupRange().getRangeID(), response.getSource(), chunkIDRanges);
-                                }
-                            } else {
-                                // Try again with other backup peer and wait for response
-                                numberOfRecoveredChunks = 0;
-                                backupPeers = backupRanges[i].getBackupPeers();
-                                for (short backupPeer : backupPeers) {
-                                    if (backupPeer != NodeID.INVALID_ID && backupPeer != requests[i].getDestination()) {
+                                if (response != null) {
+                                    long[] chunkIDRanges = response.getChunkIDRanges();
+                                    if (chunkIDRanges != null) {
                                         // #if LOGGER >= INFO
-                                        LOGGER.info("Initiating recovery of range %s on peer 0x%X", backupRanges[i], backupPeer);
+                                        LOGGER.info("Recovered %d chunks of range %s", response.getNumberOfChunks(), backupRanges[i]);
                                         // #endif /* LOGGER >= INFO */
 
-                                        request = new RecoverBackupRangeRequest(backupPeer, p_failedNode, backupRanges[i]);
-                                        try {
-                                            m_network.sendSync(request, true);
+                                        // Update metadata in superpeer overlay
+                                        updateMetadata(currentRequest.getBackupRange().getRangeID(), response.getSource(), chunkIDRanges);
+                                    }
+                                    requests[i] = null;
+                                } else {
+                                    if (System.currentTimeMillis() > numberOfRangesPerPeer[currentRequest.getDestination() & 0xFFFF]
+                                            * waitingTimerPerBackupRange + timeStart) {
+                                        // #if LOGGER >= INFO
+                                        LOGGER.info("Backup peer 0x%X is not responding! Trying next backup peer for %s (sync).",
+                                                currentRequest.getDestination(), currentRequest.getBackupRange());
+                                        // #endif /* LOGGER >= INFO */
 
-                                            response = request.getResponse(RecoverBackupRangeResponse.class);
-                                            long[] chunkIDRanges = response.getChunkIDRanges();
-                                            numberOfRecoveredChunks = response.getNumberOfChunks();
-                                            if (numberOfRecoveredChunks > 0) {
+                                         // Try again with other backup peer and wait for response
+                                        numberOfRecoveredChunks = 0;
+                                        backupPeers = backupRanges[i].getBackupPeers();
+                                        for (short backupPeer : backupPeers) {
+                                            if (backupPeer != NodeID.INVALID_ID && backupPeer != currentRequest.getDestination()) {
                                                 // #if LOGGER >= INFO
-                                                LOGGER.info("Recovered %d chunks of range %s", numberOfRecoveredChunks, backupRanges[i]);
+                                                LOGGER.info("Initiating recovery of range %s on peer 0x%X", backupRanges[i], backupPeer);
                                                 // #endif /* LOGGER >= INFO */
 
-                                                // Update metadata in superpeer overlay
-                                                updateMetadata(currentRequest.getBackupRange().getRangeID(), response.getSource(), chunkIDRanges);
-                                                break;
+                                                request = new RecoverBackupRangeRequest(backupPeer, p_failedNode, backupRanges[i]);
+                                                try {
+                                                    m_network.sendSync(request, waitingTimerPerBackupRange);
+
+                                                    response = request.getResponse(RecoverBackupRangeResponse.class);
+                                                    long[] chunkIDRanges = response.getChunkIDRanges();
+                                                    numberOfRecoveredChunks = response.getNumberOfChunks();
+                                                    if (numberOfRecoveredChunks > 0) {
+                                                        // #if LOGGER >= INFO
+                                                        LOGGER.info("Recovered %d chunks of range %s", numberOfRecoveredChunks, backupRanges[i]);
+                                                        // #endif /* LOGGER >= INFO */
+
+                                                        // Update metadata in superpeer overlay
+                                                        updateMetadata(currentRequest.getBackupRange().getRangeID(), response.getSource(), chunkIDRanges);
+                                                        break;
+                                                    }
+                                                } catch (final NetworkException ignored) {
+                                                    // Try next backup peer
+                                                }
                                             }
-                                        } catch (final NetworkException ignored) {
-                                            // Try next backup peer
                                         }
+
+                                        if (numberOfRecoveredChunks == 0) {
+                                            // #if LOGGER >= ERROR
+                                            LOGGER.info("Range %s could not be recovered!", backupRanges[i]);
+                                            // #endif /* LOGGER >= ERROR */
+                                        }
+                                    } else {
+                                        finished = false;
                                     }
                                 }
-
-                                if (numberOfRecoveredChunks == 0) {
-                                    // #if LOGGER >= ERROR
-                                    LOGGER.info("Range %s could not be recovered!", backupRanges[i]);
-                                    // #endif /* LOGGER >= ERROR */
-                                }
                             }
-                        } else {
-                            // #if LOGGER >= ERROR
-                            LOGGER.info("Range %s could not be recovered! All backup peers are unavailable.", backupRanges[i]);
-                            // #endif /* LOGGER >= ERROR */
                         }
+                        Thread.yield();
                     }
                 }
 
@@ -975,27 +1010,6 @@ public class OverlaySuperpeer implements MessageReceiver {
     }
 
     /**
-     * Handles a terminal failure for the superpeer overlay
-     *
-     * @param p_failedNode
-     *         the failed node's NodeID
-     * @return whether this superpeer is responsible for the failed terminal
-     */
-
-    private boolean terminalFailureHandling(final short p_failedNode) {
-        boolean ret = false;
-
-        m_overlayLock.writeLock().lock();
-        if (OverlayHelper.containsPeer(p_failedNode, m_peers)) {
-            // Only the responsible superpeer executes this
-            ret = OverlayHelper.removePeer(p_failedNode, m_peers);
-        }
-        m_overlayLock.writeLock().unlock();
-
-        return ret;
-    }
-
-    /**
      * Adds given NodeID to the list of assigned peers
      *
      * @param p_nodeID
@@ -1004,7 +1018,7 @@ public class OverlaySuperpeer implements MessageReceiver {
      */
     private void addToAssignedPeers(final short p_nodeID) {
         int index;
-        index = Collections.binarySearch(m_assignedPeersIncludingBackups, m_nodeID);
+        index = Collections.binarySearch(m_assignedPeersIncludingBackups, p_nodeID);
         if (index < 0) {
             index = index * -1 - 1;
             m_assignedPeersIncludingBackups.add(index, p_nodeID);
@@ -1318,6 +1332,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         // Outsource informing other superpeers/peers to another thread to avoid blocking a message handler
         Runnable task = () -> {
+            m_overlayLock.readLock().lock();
             // Inform all superpeers
             for (short superpeer : m_superpeers) {
                 PeerJoinEventRequest request = new PeerJoinEventRequest(superpeer, newPeer);
@@ -1345,6 +1360,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                     request.getResponse(PeerJoinEventResponse.class);
                 }
             }
+            m_overlayLock.readLock().unlock();
         };
         new Thread(task).start();
     }
@@ -1360,6 +1376,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         LookupRange result;
 
         chunkID = p_getLookupRangeRequest.getChunkID();
+
         // #if LOGGER == TRACE
         LOGGER.trace("Got request: GET_LOOKUP_RANGE_REQUEST 0x%X chunkID: 0x%X", p_getLookupRangeRequest.getSource(), chunkID);
         // #endif /* LOGGER == TRACE */
@@ -1878,6 +1895,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         // Outsource informing other peers to another thread to avoid blocking a message handler
         Runnable task = () -> {
+            m_overlayLock.readLock().lock();
             // Inform own peers
             for (short p : m_peers) {
                 PeerJoinEventRequest request = new PeerJoinEventRequest(p, p_peerJoinEventRequest.getJoinedPeer());
@@ -1890,6 +1908,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
                 request.getResponse(PeerJoinEventResponse.class);
             }
+            m_overlayLock.readLock().unlock();
         };
         new Thread(task).start();
 
@@ -2441,7 +2460,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         newBackupPeer = p_replaceBackupPeerRequest.getNewPeer();
         rangeID = p_replaceBackupPeerRequest.getRangeID();
 
-        m_metadata.replaceFailedPeerInLookupTree(rangeID, failedPeer, newBackupPeer);
+        m_metadata.replaceFailedPeerInLookupTree(rangeID, p_replaceBackupPeerRequest.getSource(), failedPeer, newBackupPeer);
 
         try {
             m_network.sendMessage(new ReplaceBackupPeerResponse(p_replaceBackupPeerRequest));
