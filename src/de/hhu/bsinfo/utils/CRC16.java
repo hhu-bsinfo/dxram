@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.utils;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 /**
  * Implementation of a CRC16 generator
  *
@@ -39,7 +42,7 @@ public final class CRC16 {
             0x81C1, 0x8081, 0x4040};
 
     // Constructors
-
+    static short hash = 0;
     /**
      * Creates an instance of CRC16
      */
@@ -65,7 +68,30 @@ public final class CRC16 {
         for (byte b : bytes) {
             crc = crc >>> 8 ^ TABLE[(crc ^ b) & 0xff];
         }
+
         return (short) crc;
+    }
+
+    /**
+     * Returns the crc16 hash to given integer
+     *
+     * @param p_seed
+     *     the integer that will be hashed
+     * @return the crc16 hash
+     */
+    public static short continuousHash(final int p_seed) {
+        int crc;
+        byte[] bytes;
+
+        crc = hash;
+        bytes = new byte[] {(byte) (p_seed >>> 24), (byte) (p_seed >>> 16), (byte) (p_seed >>> 8), (byte) p_seed};
+
+        for (byte b : bytes) {
+            crc = crc >>> 8 ^ TABLE[(crc ^ b) & 0xff];
+        }
+        hash = (short) crc;
+
+        return hash;
     }
 
     /**
