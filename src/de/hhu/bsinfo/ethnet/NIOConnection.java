@@ -18,7 +18,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -33,26 +32,21 @@ import org.apache.logging.log4j.Logger;
 class NIOConnection extends AbstractConnection {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(NIOConnection.class.getSimpleName());
-    private static final int AGGREGATION_LIMIT = 4 * 1024;
 
     // Attributes
     private SocketChannel m_outgoingChannel;
     private SocketChannel m_incomingChannel;
     private NIOSelector m_nioSelector;
     private MessageCreator m_messageCreator;
-    private ArrayDeque<ByteBuffer> m_outgoing;
-    private int m_incomingBufferSize;
-    private int m_outgoingBufferSize;
+    private int m_osBufferSize;
+    private OutgoingQueue m_outgoing;
     private ReentrantLock m_connectionCondLock;
     private Condition m_connectionCond;
 
-    private ReentrantLock m_outgoingLock;
-    private Condition m_outgoingCond;
     private ChangeOperationsRequest m_writeOperation;
     private ChangeOperationsRequest m_flowControlOperation;
 
     private ReentrantLock m_sliceLock;
-    private ReentrantLock m_writerLock;
 
     private volatile boolean m_aborted;
 
@@ -107,17 +101,12 @@ class NIOConnection extends AbstractConnection {
         m_messageCreator = p_messageCreator;
         m_nioSelector = p_nioSelector;
 
-        m_outgoing = new ArrayDeque<>();
-        m_currentQueueSize = 0;
+        m_outgoing = new OutgoingQueue(m_osBufferSize);
 
         m_connectionCondLock = p_lock;
         m_connectionCond = p_cond;
 
-        m_outgoingLock = new ReentrantLock(false);
-        m_outgoingCond = m_outgoingLock.newCondition();
-
         m_sliceLock = new ReentrantLock(false);
-        m_writerLock = new ReentrantLock(false);
 
         m_writeOperation = new ChangeOperationsRequest(this, NIOSelector.WRITE);
         m_flowControlOperation = new ChangeOperationsRequest(this, NIOSelector.FLOW_CONTROL);
@@ -153,17 +142,12 @@ class NIOConnection extends AbstractConnection {
         m_messageCreator = p_messageCreator;
         m_nioSelector = p_nioSelector;
 
-        m_outgoing = new ArrayDeque<>();
-        m_currentQueueSize = 0;
+        m_outgoing = new OutgoingQueue(m_osBufferSize);
 
         m_connectionCondLock = new ReentrantLock(false);
         m_connectionCond = m_connectionCondLock.newCondition();
 
-        m_outgoingLock = new ReentrantLock(false);
-        m_outgoingCond = m_outgoingLock.newCondition();
-
         m_sliceLock = new ReentrantLock(false);
-        m_writerLock = new ReentrantLock(false);
 
         m_writeOperation = new ChangeOperationsRequest(this, NIOSelector.WRITE);
         m_flowControlOperation = new ChangeOperationsRequest(this, NIOSelector.FLOW_CONTROL);
@@ -206,18 +190,10 @@ class NIOConnection extends AbstractConnection {
     }
 
     @Override
-    protected boolean isIncomingQueueFull() {
-        return m_messageCreator.isFullLazy();
-    }
-
-    @Override
     protected String getInputOutputQueueLength() {
         String ret = "";
 
-        m_outgoingLock.lock();
         ret += "out: " + m_outgoing.size();
-        m_outgoingLock.unlock();
-
         ret += ", in: " + m_messageCreator.size();
 
         return ret;
@@ -253,20 +229,22 @@ class NIOConnection extends AbstractConnection {
      */
     @Override
     protected void doWrite(final AbstractMessage p_message) throws NetworkException {
-        ByteBuffer data = p_message.getBuffer();
-        if (data.limit() > m_outgoingBufferSize) {
+        int messageSize = p_message.getTotalSize();
+
+        if (messageSize > m_osBufferSize) {
+            ByteBuffer data = p_message.getBuffer();
             m_sliceLock.lock();
             int size = data.limit();
             int currentSize = 0;
             while (currentSize < size) {
-                currentSize = Math.min(currentSize + m_outgoingBufferSize, size);
+                currentSize = Math.min(currentSize + m_osBufferSize, size);
                 data.limit(currentSize);
                 writeToChannel(data.slice());
                 data.position(currentSize);
             }
             m_sliceLock.unlock();
         } else {
-            writeToChannel(data);
+            writeToChannel(p_message, messageSize);
         }
     }
 
@@ -280,13 +258,7 @@ class NIOConnection extends AbstractConnection {
 
     @Override
     protected boolean dataLeftToWrite() {
-        boolean ret;
-
-        m_outgoingLock.lock();
-        ret = !m_outgoing.isEmpty();
-        m_outgoingLock.unlock();
-
-        return ret;
+        return !m_outgoing.isEmpty();
     }
 
     @Override
@@ -356,8 +328,20 @@ class NIOConnection extends AbstractConnection {
      * @param p_byteBuffer
      *     the pooled buffer
      */
-    void returnBuffer(final ByteBuffer p_byteBuffer) {
+    void returnReadBuffer(final ByteBuffer p_byteBuffer) {
         m_nioSelector.returnBuffer(p_byteBuffer);
+    }
+
+    /**
+     * Returns the pooled buffer from outgoing queue
+     *
+     * @param p_byteBuffer
+     *     the pooled buffer
+     */
+    void returnWriteBuffer(final ByteBuffer p_byteBuffer) {
+        if (p_byteBuffer.capacity() == m_osBufferSize) {
+            m_outgoing.returnBuffer(p_byteBuffer);
+        }
     }
 
     /**
@@ -398,82 +382,42 @@ class NIOConnection extends AbstractConnection {
     /**
      * Get the next buffers to be sent
      *
-     * @param p_buffer
-     *     buffer to gather in data
      * @return Buffer array
      */
-    ByteBuffer getOutgoingBytes(final ByteBuffer p_buffer) {
-        int length = 0;
-        ByteBuffer buffer;
-        ByteBuffer ret = null;
-
-        m_outgoingLock.lock();
-        buffer = m_outgoing.poll();
-        if (buffer == null) {
-            // The buffer for this write access was sent with previous call -> queue is empty -> do nothing
-        } else if (buffer.position() != 0 || m_outgoing.isEmpty() || buffer.remaining() > AGGREGATION_LIMIT) {
-            // This buffer was sent partially or this is the only buffer in queue or this buffer is reasonably large -> send this buffer alone
-            ret = buffer;
-            m_currentQueueSize -= buffer.remaining();
-            m_outgoingCond.signalAll();
-        } else {
-            // This is a small buffer and there is more in queue -> aggregate buffers and send as one
-            ret = p_buffer;
-            ret.clear();
-
-            length += buffer.remaining();
-            ret.put(buffer);
-
-            while (length < AGGREGATION_LIMIT && !m_outgoing.isEmpty()) {
-                buffer = m_outgoing.poll();
-
-                if (buffer.remaining() + length > m_outgoingBufferSize) {
-                    // This buffer is too large -> write it next time
-                    m_outgoing.addFirst(buffer);
-                    break;
-                }
-
-                length += buffer.remaining();
-                ret.put(buffer);
-            }
-            ret.flip();
-
-            m_currentQueueSize -= length;
-            m_outgoingCond.signalAll();
-        }
-        m_outgoingLock.unlock();
-
-        return ret;
+    ByteBuffer getOutgoingBytes() {
+        return m_outgoing.popFront();
     }
 
     /**
      * Executes after the connection is established
+     * @param p_key
+     *     the selection key
      *
      * @throws IOException
      *     if the connection could not be accessed
      */
 
-    void connected() throws IOException {
+    void connected(final SelectionKey p_key) throws IOException {
         ByteBuffer temp;
 
         m_connectionCondLock.lock();
-        temp = ByteBuffer.allocate(2);
+        temp = ByteBuffer.allocateDirect(2);
         temp.putShort(getNodeMap().getOwnNodeID());
         temp.flip();
 
-        m_outgoingLock.lock();
         // Register first write access containing the NodeID
-        m_outgoing.addFirst(temp);
-        m_outgoingLock.unlock();
+        m_outgoing.pushFront(temp);
 
-        // Change operation (read <-> write) and/or connection
-        m_nioSelector.changeOperationInterestAsync(m_writeOperation);
+        try {
+            // Change operation (read <-> write) and/or connection
+            p_key.interestOps(NIOSelector.WRITE);
+        } catch (final CancelledKeyException ignore) {
+            m_connectionCond.signalAll();
+            m_connectionCondLock.unlock();
+            return;
+        }
 
         setConnected(true, true);
-
-        m_outgoingLock.lock();
-        m_outgoingCond.signalAll();
-        m_outgoingLock.unlock();
 
         m_connectionCond.signalAll();
         m_connectionCondLock.unlock();
@@ -486,35 +430,36 @@ class NIOConnection extends AbstractConnection {
      *     Buffer
      */
     void addBuffer(final ByteBuffer p_buffer) {
-        m_outgoingLock.lock();
-        m_outgoing.addFirst(p_buffer);
-        m_currentQueueSize += p_buffer.remaining();
-        m_outgoingLock.unlock();
+        m_outgoing.pushFront(p_buffer);
     }
 
     /**
      * Enqueue buffer to be written into the channel
      *
      * @param p_buffer
-     *     Buffer
+     *     the buffer
      */
     private void writeToChannel(final ByteBuffer p_buffer) {
-        m_writerLock.lock();
-        m_outgoingLock.lock();
-        while (m_currentQueueSize >= 2 * m_outgoingBufferSize || !isOutgoingConnected()) {
-            try {
-                m_outgoingCond.await();
-            } catch (InterruptedException ignored) {
-            }
+        if (m_outgoing.pushAndAggregateBuffers(p_buffer)) {
+            // Change operation (read <-> write) and/or connection
+            m_nioSelector.changeOperationInterestAsync(m_writeOperation);
+        }
+    }
+
+    /**
+     * Enqueue message to be written into the channel
+     *
+     * @param p_message
+     *     the message
+     */
+    private void writeToChannel(final AbstractMessage p_message, final int p_messageSize) {
+        if (m_outgoing.pushAndAggregateBuffers(p_message, p_messageSize)) {
+            // Change operation (read <-> write) and/or connection
+            m_nioSelector.changeOperationInterestAsync(m_writeOperation);
         }
 
-        m_outgoing.offer(p_buffer);
-        m_currentQueueSize += p_buffer.limit();
-        m_outgoingLock.unlock();
-
-        // Change operation (read <-> write) and/or connection
+        // TODO: Necessary?
         m_nioSelector.changeOperationInterestAsync(m_writeOperation);
-        m_writerLock.unlock();
     }
 
 }
