@@ -16,8 +16,10 @@ package de.hhu.bsinfo.ethnet;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
@@ -30,40 +32,46 @@ import org.apache.logging.log4j.Logger;
  */
 class NIOInterface {
 
-    private static final int BUFFER_POOL_SIZE = 25;
+    private static final int LARGE_BUFFER_POOL_SIZE = 16;
+    private static final int MEDIUM_BUFFER_POOL_SIZE = 16;
+    private static final int SMALL_BUFFER_POOL_SIZE = 5 * 1024;
+    private static final int LARGE_BUFFER_POOL_FACTOR = 2;
+    private static final int MEDIUM_BUFFER_POOL_FACTOR= 4;
+    private static final int SMALL_BUFFER_POOL_FACTOR = 32;
     private static final Logger LOGGER = LogManager.getFormatterLogger(NIOInterface.class.getSimpleName());
 
     // Attributes
-    private int m_outgoingBufferSize;
-    private int m_maxIncomingBufferSize;
+    private int m_osBufferSize;
 
-    private ArrayDeque<ByteBuffer> m_buffers;
-    private ReentrantLock m_lock;
+    private ArrayList<ByteBuffer> m_largeBufferPool;
+    private ArrayList<ByteBuffer> m_mediumBufferPool;
+    private ArrayList<ByteBuffer> m_smallBufferPool;
+    private ReentrantLock m_bufferPoolLock;
 
-    private ByteBuffer m_writeBuffer;
     private ByteBuffer m_flowControlBytes;
 
     /**
      * Creates an instance of NIOInterface
      *
-     * @param p_incomingBufferSize
+     * @param p_osBufferSize
      *     the size of incoming buffer
-     * @param p_outgoingBufferSize
-     *     the size of outgoing buffer
-     * @param p_maxIncomingBufferSize
-     *     the maximum number of bytes read at once from channel
      */
-    NIOInterface(final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_maxIncomingBufferSize) {
-        m_outgoingBufferSize = p_outgoingBufferSize;
-        m_maxIncomingBufferSize = p_maxIncomingBufferSize;
+    NIOInterface(final int p_osBufferSize) {
+        m_osBufferSize = p_osBufferSize;
 
-        m_buffers = new ArrayDeque<ByteBuffer>();
-        for (int i = 0; i < BUFFER_POOL_SIZE; i++) {
-            m_buffers.add(ByteBuffer.allocate(m_maxIncomingBufferSize));
+        m_largeBufferPool = new ArrayList<ByteBuffer>();
+        m_mediumBufferPool = new ArrayList<ByteBuffer>();
+        m_smallBufferPool = new ArrayList<ByteBuffer>();
+        for (int i = 0; i < LARGE_BUFFER_POOL_SIZE; i++) {
+            m_largeBufferPool.add(ByteBuffer.allocate(m_osBufferSize / LARGE_BUFFER_POOL_FACTOR));
         }
-        m_lock = new ReentrantLock(false);
-
-        m_writeBuffer = ByteBuffer.allocateDirect(m_outgoingBufferSize);
+        for (int i = 0; i < MEDIUM_BUFFER_POOL_SIZE; i++) {
+            m_mediumBufferPool.add(ByteBuffer.allocate(m_osBufferSize / MEDIUM_BUFFER_POOL_FACTOR));
+        }
+        for (int i = 0; i < SMALL_BUFFER_POOL_SIZE; i++) {
+            m_smallBufferPool.add(ByteBuffer.allocate(m_osBufferSize / SMALL_BUFFER_POOL_FACTOR));
+        }
+        m_bufferPoolLock = new ReentrantLock(false);
         m_flowControlBytes = ByteBuffer.allocateDirect(Integer.BYTES);
     }
 
@@ -82,7 +90,7 @@ class NIOInterface {
         short ret;
         int bytes;
         int counter = 0;
-        ByteBuffer buffer = ByteBuffer.allocate(2);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(2);
 
         while (counter < buffer.capacity()) {
             bytes = p_channel.read(buffer);
@@ -104,15 +112,27 @@ class NIOInterface {
      *
      * @param p_connection
      *     the connection
+     * @param p_key
+     *     the selection key
      */
-    protected static void connect(final NIOConnection p_connection) {
-        try {
-            if (p_connection.getOutgoingChannel().isConnectionPending()) {
+    protected static void connect(final NIOConnection p_connection, final SelectionKey p_key) {
+        if (p_connection.getOutgoingChannel().isConnectionPending()) {
+            try {
                 if (p_connection.getOutgoingChannel().finishConnect()) {
-                    p_connection.connected();
+                    p_connection.connected(p_key);
+                } else {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Connection could not be finished: %s", p_connection);
+                    // #endif /* LOGGER >= ERROR */
                 }
+            } catch (final IOException ignore) {
+                p_connection.abortConnectionCreation();
             }
-        } catch (final IOException e) { /* ignore */ }
+        } else {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Connection is not pending, connect aborted: %s", p_connection);
+            // #endif /* LOGGER >= WARN */
+        }
     }
 
     /**
@@ -129,15 +149,22 @@ class NIOInterface {
         boolean ret = true;
         long readBytes;
         ByteBuffer buffer;
-        SocketChannel channel;
 
-        m_lock.lock();
-        if (!m_buffers.isEmpty()) {
-            buffer = m_buffers.poll();
+        m_bufferPoolLock.lock();
+        if (!m_largeBufferPool.isEmpty()) {
+            buffer = m_largeBufferPool.remove(m_largeBufferPool.size() - 1);
+        } else if (!m_mediumBufferPool.isEmpty()) {
+            buffer = m_mediumBufferPool.remove(m_mediumBufferPool.size() - 1);
+        } else if (!m_smallBufferPool.isEmpty()) {
+            buffer = m_smallBufferPool.remove(m_smallBufferPool.size() - 1);
         } else {
-            buffer = ByteBuffer.allocate(m_maxIncomingBufferSize);
+            // #if LOGGER >= WARN
+            LOGGER.warn("Insufficient pooled incoming buffers. Allocating temporary buffer.");
+            // #endif /* LOGGER >= WARN */
+            buffer = ByteBuffer.allocate(m_osBufferSize);
         }
-        m_lock.unlock();
+        m_bufferPoolLock.unlock();
+
         while (true) {
             try {
                 readBytes = p_connection.getIncomingChannel().read(buffer);
@@ -149,13 +176,12 @@ class NIOInterface {
                 // Connection closed
                 ret = false;
                 break;
-            } else if (readBytes == 0 && buffer.position() != 0 || readBytes == m_maxIncomingBufferSize) {
+            } else if (readBytes == 0 && buffer.position() != 0 || readBytes >= m_osBufferSize * 0.9) {
                 // There is nothing more to read at the moment
                 buffer.limit(buffer.position());
                 buffer.rewind();
 
                 p_connection.addIncoming(buffer);
-
                 break;
             }
         }
@@ -168,55 +194,35 @@ class NIOInterface {
      *
      * @param p_connection
      *     the connection
-     * @return whether all data could be written or data is left
+     * @return whether all data could be written
      * @throws IOException
      *     if the data could not be written
      */
-    protected boolean write(final NIOConnection p_connection) throws IOException {
+    protected static boolean write(final NIOConnection p_connection) throws IOException {
         boolean ret = true;
         int bytes;
-        int size;
         ByteBuffer buffer;
-        ByteBuffer view;
-        ByteBuffer slice;
-        ByteBuffer buf;
 
-        buffer = p_connection.getOutgoingBytes(m_writeBuffer);
+        buffer = p_connection.getOutgoingBytes();
         if (buffer != null) {
-            int tries = 0;
             while (buffer.remaining() > 0) {
                 try {
                     bytes = p_connection.getOutgoingChannel().write(buffer);
                     if (bytes == 0) {
-                        if (++tries == 10) {
-                            // Read-buffer on the other side is full. Abort writing and schedule buffer for next write
-                            if (buffer == m_writeBuffer) {
-                                // Copy buffer to avoid manipulation of scheduled data
-                                buf = ByteBuffer.allocateDirect(buffer.remaining() + 1);
-                                // Add one additional byte at beginning and set position to 1 to recognize it as a re-write later
-                                buf.put((byte) 0);
-                                buf.put(buffer);
-                                buf.position(1);
-
-                                p_connection.addBuffer(buf);
-                            } else {
-                                p_connection.addBuffer(buffer);
-                            }
-                            ret = false;
-                            break;
-                        }
-                    } else {
-                        tries = 0;
+                        // Read-buffer on the other side is full. Abort writing and schedule buffer for next write
+                        p_connection.addBuffer(buffer);
+                        ret = false;
+                        break;
                     }
-                } catch (final ClosedChannelException e) {
-                    // Channel is closed -> ignore
+                } catch (final ClosedChannelException | NotYetConnectedException e) {
+                    // Channel is closed or cannot be opened -> ignore
                     break;
                 }
             }
             // ThroughputStatistic.getInstance().outgoingExtern(writtenBytes - length);
-        }
-        if (ret) {
-            ret = !p_connection.dataLeftToWrite();
+            if (ret) {
+                p_connection.returnWriteBuffer(buffer);
+            }
         }
 
         return ret;
@@ -281,12 +287,22 @@ class NIOInterface {
      *     the pooled buffer
      */
     void returnBuffer(final ByteBuffer p_byteBuffer) {
-        m_lock.lock();
-        if (m_buffers.size() < BUFFER_POOL_SIZE) {
-            p_byteBuffer.clear();
-            m_buffers.push(p_byteBuffer);
+        m_bufferPoolLock.lock();
+        p_byteBuffer.clear();
+        if (p_byteBuffer.capacity() == m_osBufferSize / LARGE_BUFFER_POOL_FACTOR) {
+            if (m_largeBufferPool.size() < LARGE_BUFFER_POOL_SIZE) {
+                m_largeBufferPool.add(p_byteBuffer);
+            }
+        } else if (p_byteBuffer.capacity() == m_osBufferSize / MEDIUM_BUFFER_POOL_FACTOR) {
+            if (m_mediumBufferPool.size() < MEDIUM_BUFFER_POOL_SIZE) {
+                m_mediumBufferPool.add(p_byteBuffer);
+            }
+        } else  if (p_byteBuffer.capacity() == m_osBufferSize / SMALL_BUFFER_POOL_FACTOR) {
+            if (m_smallBufferPool.size() < SMALL_BUFFER_POOL_SIZE) {
+                m_smallBufferPool.add(p_byteBuffer);
+            }
         }
-        m_lock.unlock();
+        m_bufferPoolLock.unlock();
     }
 
 }
