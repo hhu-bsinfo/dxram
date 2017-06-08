@@ -231,21 +231,21 @@ class VersionsHashTable {
         newTable = new int[m_elementCapacity * 4];
         m_table = newTable;
 
-        // #if LOGGER == TRACE
-        LOGGER.trace("Reached threshold -> Rehashing. New size: %d... ", m_elementCapacity);
-        // #endif /* LOGGER == TRACE */
+        // #if LOGGER == DEBUG
+        LOGGER.debug("Reached threshold -> Rehashing. New size: %d... ", m_elementCapacity);
+        // #endif /* LOGGER == DEBUG */
 
         m_count = 0;
         while (index < oldElementCapacity) {
             if (oldTable[index * 4] != 0) {
-                put(((long) oldTable[index] << 32 | oldTable[index + 1] & 0xFFFFFFFFL) - 1, oldTable[index + 2], oldTable[index + 3]);
+                put(((long) oldTable[index * 4] << 32 | (long) oldTable[index * 4 + 1] & 0xFFFFFFFFL) - 1, oldTable[index * 4 + 2], oldTable[index * 4 + 3]);
             }
-            index = (index + 1) % m_elementCapacity;
+            index++;
         }
         m_count = oldCount;
 
-        // #if LOGGER == TRACE
-        LOGGER.trace("done");
-        // #endif /* LOGGER == TRACE */
+        // #if LOGGER == DEBUG
+        LOGGER.debug("Done rehashing");
+        // #endif /* LOGGER == DEBUG */
     }
 }

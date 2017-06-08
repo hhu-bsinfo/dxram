@@ -249,7 +249,9 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
 
         m_recoveryLock.lock();
         ret = m_log.recoverBackupRange(p_owner, rangeID);
-        m_log.removeBackupRange(p_owner, rangeID);
+        if (ret != null) {
+            m_log.removeBackupRange(p_owner, rangeID);
+        }
         m_recoveryLock.unlock();
 
         return ret;
@@ -327,10 +329,11 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                 try {
                     m_network.sendMessage(new RecoverBackupRangeResponse(p_request, 0, null));
                 } catch (final NetworkException ignored) {
-
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("RecoverBackupRangeResponse could not be sent!");
+                    // #endif /* LOGGER >= ERROR */
                 }
             } else {
-
                 // Initialize backup ranges in backup, lookup and log modules by joining recovered chunks with migrated chunks
                 replacementBackupPeer = m_backup.registerRecoveredChunks(recoveryMetadata, backupRange, p_request.getOwner());
 

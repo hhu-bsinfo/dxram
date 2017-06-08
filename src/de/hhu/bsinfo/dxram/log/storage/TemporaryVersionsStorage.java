@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxram.log.storage;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 
 /**
@@ -20,7 +21,7 @@ import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 24.11.2016
  */
-final class TemporaryVersionsStorage {
+public final class TemporaryVersionsStorage {
 
     private long m_maximumBackupRangeSize;
     private VersionsArray m_versionsArray;
@@ -34,7 +35,7 @@ final class TemporaryVersionsStorage {
      * @param p_secondaryLogSize
      *     the size of the secondary log
      */
-    TemporaryVersionsStorage(final long p_secondaryLogSize) {
+    public TemporaryVersionsStorage(final long p_secondaryLogSize) {
         m_maximumBackupRangeSize = p_secondaryLogSize / 2;
 
         // Initialize array with default value suitable for 64-byte chunks; use localID 0 to fit first backup range as well; size: ~28 MB
@@ -88,14 +89,16 @@ final class TemporaryVersionsStorage {
      *
      * @param p_chunkID
      *     the ChunkID
-     * @param p_lowestLID
-     *     the lowest localID
+     * @param p_lowestCID
+     *     the lowest CID
      * @return the version
      */
-    Version get(final long p_chunkID, final long p_lowestLID, final SecondaryLog.Statistics p_stat) {
-        if (p_chunkID >= p_lowestLID && p_chunkID < p_lowestLID + m_versionsArray.capacity()) {
+    Version get(final long p_chunkID, final long p_lowestCID, final SecondaryLog.Statistics p_stat) {
+        long localID = ChunkID.getLocalID(p_chunkID);
+        long lowestLID = ChunkID.getLocalID(p_lowestCID);
+        if (localID >= lowestLID && localID < lowestLID + m_versionsArray.capacity()) {
             p_stat.m_readVersionsFromArray++;
-            return m_versionsArray.get(p_chunkID, p_lowestLID);
+            return m_versionsArray.get(p_chunkID, p_lowestCID);
         } else {
             p_stat.m_readVersionsFromHashTable++;
             return m_versionsHashTable.get(p_chunkID);

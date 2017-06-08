@@ -84,12 +84,12 @@ class VersionsArray {
      *
      * @param p_key
      *     the searched key (is incremented before insertion to avoid 0)
-     * @param p_lowestLID
-     *     the lowest LID at the time the versions were read-in
+     * @param p_lowestCID
+     *     the lowest CID at the time the versions were read-in
      * @return the value to which the key is mapped in VersionsArray
      */
-    final Version get(final long p_key, final long p_lowestLID) {
-        int index = (int) ((p_key - p_lowestLID) * 2);
+    final Version get(final long p_key, final long p_lowestCID) {
+        int index = (int) ((p_key - p_lowestCID) * 2);
         short epoch = (short) getEpoch(index);
 
         if (epoch != -1) {

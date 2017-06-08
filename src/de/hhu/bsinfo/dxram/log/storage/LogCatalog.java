@@ -72,7 +72,7 @@ public final class LogCatalog {
      */
     public boolean exists(final short p_rangeID) {
 
-        return p_rangeID < m_logs.length && m_logs[p_rangeID] != null;
+        return p_rangeID < m_logs.length && m_logs[p_rangeID & 0xFFFF] != null;
     }
 
     /**
@@ -85,7 +85,7 @@ public final class LogCatalog {
     public SecondaryLog getLog(final short p_rangeID) {
         SecondaryLog ret;
 
-        ret = m_logs[p_rangeID];
+        ret = m_logs[p_rangeID & 0xFFFF];
         // #if LOGGER >= ERROR
         if (ret == null) {
             LOGGER.error("There is no secondary log for RID=%d", p_rangeID);
@@ -105,7 +105,7 @@ public final class LogCatalog {
     public SecondaryLogBuffer getBuffer(final short p_rangeID) {
         SecondaryLogBuffer ret;
 
-        ret = m_buffers[p_rangeID];
+        ret = m_buffers[p_rangeID & 0xFFFF];
 
         // #if LOGGER >= ERROR
         if (ret == null) {
@@ -142,11 +142,11 @@ public final class LogCatalog {
             System.arraycopy(m_buffers, 0, temp2, 0, m_buffers.length);
             m_buffers = temp2;
         }
-        m_logs[p_rangeID] = p_log;
+        m_logs[p_rangeID & 0xFFFF] = p_log;
 
         // Create new secondary log buffer
         buffer = new SecondaryLogBuffer(p_log, p_secondaryLogBufferSize, p_logSegmentSize);
-        m_buffers[p_rangeID] = buffer;
+        m_buffers[p_rangeID & 0xFFFF] = buffer;
 
         m_numberOfLogs++;
     }
@@ -154,15 +154,25 @@ public final class LogCatalog {
     /**
      * Removes buffer and secondary log for given range
      */
-    public void removeBufferAndLog(final short p_rangeID) throws IOException {
+    public void removeBufferAndLog(final short p_rangeID) {
+        m_buffers[p_rangeID & 0xFFFF] = null;
+        m_logs[p_rangeID & 0xFFFF] = null;
+
+        m_numberOfLogs--;
+    }
+
+    /**
+     * Removes buffer and secondary log for given range and closes both
+     */
+    public void removeAndCloseBufferAndLog(final short p_rangeID) throws IOException {
         SecondaryLog secondaryLog;
         SecondaryLogBuffer secondaryLogBuffer;
 
-        secondaryLogBuffer = m_buffers[p_rangeID];
-        m_buffers[p_rangeID] = null;
+        secondaryLogBuffer = m_buffers[p_rangeID & 0xFFFF];
+        m_buffers[p_rangeID & 0xFFFF] = null;
         secondaryLogBuffer.close();
-        secondaryLog = m_logs[p_rangeID];
-        m_logs[p_rangeID] = null;
+        secondaryLog = m_logs[p_rangeID & 0xFFFF];
+        m_logs[p_rangeID & 0xFFFF] = null;
         secondaryLog.closeAndRemove();
 
         m_numberOfLogs--;

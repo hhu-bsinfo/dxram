@@ -134,4 +134,9 @@ public class Version {
     byte getEon() {
         return (byte) (m_epoch >> 15);
     }
+
+    @Override
+    public String toString() {
+        return m_epoch + "-" + m_version;
+    }
 }

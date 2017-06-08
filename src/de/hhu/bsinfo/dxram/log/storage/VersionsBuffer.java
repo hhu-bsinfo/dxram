@@ -18,7 +18,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
@@ -50,11 +49,12 @@ class VersionsBuffer {
     private static final Logger LOGGER = LogManager.getFormatterLogger(VersionsBuffer.class.getSimpleName());
 
     // Attributes
-    private static ByteBuffer ms_flushBuffer;
+    private static ByteBuffer ms_flushBuffer = ByteBuffer.allocate(SSD_ENTRY_SIZE * VERSIONS_BUFFER_CAPACITY);
 
     private LogComponent m_logComponent;
     private HarddriveAccessMode m_mode;
 
+    private short m_originalOwner;
     private int[] m_table;
     private int m_count;
     private int m_intCapacity;
@@ -62,7 +62,7 @@ class VersionsBuffer {
     private short m_epoch;
 
     private int m_windowSize;
-    private long m_numberOfLIDs = 0;
+    private long m_numberOfCIDs = 0;
     private double m_averageLID = 0;
 
     private String m_path;
@@ -82,6 +82,8 @@ class VersionsBuffer {
     /**
      * Creates an instance of VersionsBuffer
      *
+     * @param p_originalOwner
+     *     the creator of the original backup range
      * @param p_logComponent
      *     the log component to enable calling access granting methods
      * @param p_secondaryLogSize
@@ -91,11 +93,14 @@ class VersionsBuffer {
      * @param p_mode
      *     the harddrive access mode
      */
-    VersionsBuffer(final LogComponent p_logComponent, final long p_secondaryLogSize, final String p_path, final HarddriveAccessMode p_mode) {
+    VersionsBuffer(final short p_originalOwner, final LogComponent p_logComponent, final long p_secondaryLogSize, final String p_path,
+            final HarddriveAccessMode p_mode) {
         super();
 
         m_logComponent = p_logComponent;
         m_mode = p_mode;
+
+        m_originalOwner = p_originalOwner;
 
         m_windowSize = AbstractSecLogEntryHeader.getMaximumNumberOfVersions(p_secondaryLogSize / 2, 64, false);
 
@@ -103,7 +108,6 @@ class VersionsBuffer {
         m_intCapacity = VERSIONS_BUFFER_CAPACITY * 3;
 
         m_table = new int[m_intCapacity];
-        ms_flushBuffer = ByteBuffer.allocate(SSD_ENTRY_SIZE * VERSIONS_BUFFER_CAPACITY);
 
         m_eon = 0;
         m_epoch = 0;
@@ -213,81 +217,6 @@ class VersionsBuffer {
     // Getter
 
     /**
-     * Write all versions to SSD and clear hash table
-     *
-     * @return whether an overflow during incrementation of epoch occurred or not
-     */
-    protected final boolean flush() {
-        boolean ret = false;
-        long chunkID;
-        int version;
-        int count;
-        int[] newTable;
-        int[] oldTable;
-
-        // Append all new versions to versions file
-        m_accessLock.lock();
-        if (m_count > 0) {
-            // "Copy" all data to release lock as soon as possible
-            count = m_count;
-            newTable = new int[m_intCapacity];
-            oldTable = m_table;
-            m_table = newTable;
-            m_count = 0;
-
-            ret = incrementEpoch();
-            m_accessLock.unlock();
-
-            try {
-                // Re-use ByteBuffer
-                Arrays.fill(ms_flushBuffer.array(), count * SSD_ENTRY_SIZE, ms_flushBuffer.capacity() - 1, (byte) 0);
-                ms_flushBuffer.clear();
-
-                // Iterate over all entries (4 bytes per cell)
-                for (int i = 0; i < oldTable.length; i += 3) {
-                    chunkID = (long) oldTable[i] << 32 | oldTable[i + 1] & 0xFFFFFFFFL;
-                    if (chunkID != 0) {
-                        // ChunkID (-1 because 1 is added before putting to avoid LID 0)
-                        ms_flushBuffer.putLong(chunkID - 1);
-                        // Epoch (2 Bytes in persistent table; was incremented before!)
-                        ms_flushBuffer.putShort((short) (m_epoch - 1 + (m_eon << 15)));
-                        // Version (4 Bytes in hashtable, 3 in persistent table)
-                        version = oldTable[i + 2];
-                        ms_flushBuffer.put((byte) (version >>> 16));
-                        ms_flushBuffer.put((byte) (version >>> 8));
-                        ms_flushBuffer.put((byte) version);
-                    }
-                }
-
-                if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
-                    m_versionsFile.seek((int) m_versionsFile.length());
-                    m_versionsFile.write(ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE);
-                } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                    if (JNIFileDirect
-                        .dwrite(m_fileID, ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE, (int) JNIFileDirect.length(m_fileID), m_writeBufferPointer,
-                            m_writeBufferSize) < 0) {
-                        throw new IOException("JNI Error.");
-                    }
-                } else {
-                    long writePosition = JNIFileRaw.dlength(m_fileID);
-                    if (JNIFileRaw.dwrite(m_fileID, ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE, writePosition, m_writeBufferPointer, m_writeBufferSize) <
-                        0) {
-                        throw new IOException("JNI Error.");
-                    }
-                }
-            } catch (final IOException e) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Could write to versions file", e);
-                // #endif /* LOGGER >= ERROR */
-            }
-        } else {
-            m_accessLock.unlock();
-        }
-
-        return ret;
-    }
-
-    /**
      * Returns the value to which the specified key is mapped in VersionsBuffer
      *
      * @param p_key
@@ -299,6 +228,7 @@ class VersionsBuffer {
         Version ret = null;
         int index;
         long iter;
+        // Increment key to avoid ChunkID 0
         final long key = p_key + 1;
 
         index = (hash(key) & 0x7FFFFFFF) % VERSIONS_BUFFER_CAPACITY;
@@ -424,7 +354,6 @@ class VersionsBuffer {
      *     the version
      */
     final void tryPut(final long p_key, final int p_version) {
-        // Avoid rehashing and excessive memory usage by waiting
         if (m_count == WAIT_THRESHOLD) {
             // #if LOGGER >= WARN
             LOGGER.warn("Could not transfer log entry to new eon as current epoch is full");
@@ -441,16 +370,14 @@ class VersionsBuffer {
      *
      * @param p_key
      *     the searched key (is incremented before insertion to avoid 0)
-     * @param p_owner
-     *     the owner
      * @return the 1 + value to which the key is mapped in VersionsBuffer
      */
-    final Version getNext(final long p_key, final short p_owner) {
+    final Version getNext(final long p_key) {
         Version ret = null;
         int index;
-        long localID = -1;
         long iter;
-        long key;
+        // Increment key to avoid ChunkID 0
+        final long key = p_key + 1;
 
         // Avoid rehashing by waiting
         while (m_count == WAIT_THRESHOLD) {
@@ -458,31 +385,23 @@ class VersionsBuffer {
             Thread.yield();
         }
 
-        if (p_owner == ChunkID.getCreatorID(p_key)) {
-            // Use localID for not migrated/recovered chunks
-            localID = ChunkID.getLocalID(p_key);
-            key = localID + 1;
-        } else {
-            // Use complete ChunkID for migrated/recovered chunks
-            key = p_key + 1;
-        }
-
         index = (hash(key) & 0x7FFFFFFF) % VERSIONS_BUFFER_CAPACITY;
 
         m_accessLock.lock();
         // Determine range barriers for not migrated/recovered chunks
-        if (localID != -1) {
-            if (m_numberOfLIDs == 0) {
+        if (m_originalOwner == ChunkID.getCreatorID(p_key)) {
+            long localID = ChunkID.getLocalID(p_key);
+            if (m_numberOfCIDs == 0) {
                 m_averageLID = localID;
             } else {
-                if (m_numberOfLIDs < OUTLIERS_THRESHOLD || Math.abs(localID - m_averageLID) <= m_windowSize) {
+                if (m_numberOfCIDs < OUTLIERS_THRESHOLD || Math.abs(localID - m_averageLID) <= m_windowSize) {
                     // If the euclidean distance is less than or equal to the window size, adjust the window
                     // -> Chunks with re-used ChunkIDs are not considered for average calculation
                     // Initially, use all ChunkIDs to reduce probability of a misplaced window because of re-used ChunkIDs at the beginning
-                    m_averageLID += ((double) localID - m_averageLID) / (m_numberOfLIDs + 1);
+                    m_averageLID += ((double) localID - m_averageLID) / (m_numberOfCIDs + 1);
                 }
             }
-            m_numberOfLIDs++;
+            m_numberOfCIDs++;
         }
 
         iter = getKey(index);
@@ -506,13 +425,88 @@ class VersionsBuffer {
     }
 
     /**
+     * Write all versions to SSD and clear hash table
+     *
+     * @return whether an overflow during incrementation of epoch occurred or not
+     */
+    final boolean flush() {
+        boolean ret = false;
+        long chunkID;
+        int version;
+        int count;
+        int[] newTable;
+        int[] oldTable;
+
+        // Append all new versions to versions file
+        m_accessLock.lock();
+        if (m_count > 0) {
+            // "Copy" all data to release lock as soon as possible
+            count = m_count;
+            newTable = new int[m_intCapacity];
+            oldTable = m_table;
+            m_table = newTable;
+            m_count = 0;
+
+            ret = incrementEpoch();
+            m_accessLock.unlock();
+
+            try {
+                // Re-use ByteBuffer
+                ms_flushBuffer.position(0);
+                ms_flushBuffer.limit(count * SSD_ENTRY_SIZE);
+
+                // Iterate over all entries (4 bytes per cell)
+                for (int i = 0; i < oldTable.length; i += 3) {
+                    chunkID = (long) oldTable[i] << 32 | oldTable[i + 1] & 0xFFFFFFFFL;
+                    if (chunkID != 0) {
+                        // ChunkID (-1 because 1 is added before putting to avoid CID 0)
+                        ms_flushBuffer.putLong(chunkID - 1);
+                        // Epoch (2 Bytes in persistent table; was incremented before!)
+                        ms_flushBuffer.putShort((short) (m_epoch - 1 + (m_eon << 15)));
+                        // Version (4 Bytes in hashtable, 3 in persistent table)
+                        version = oldTable[i + 2];
+                        ms_flushBuffer.put((byte) (version >>> 16));
+                        ms_flushBuffer.put((byte) (version >>> 8));
+                        ms_flushBuffer.put((byte) version);
+                    }
+                }
+
+                if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                    m_versionsFile.seek(m_versionsFile.length());
+                    m_versionsFile.write(ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE);
+                } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                    if (JNIFileDirect
+                        .dwrite(m_fileID, ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE, (int) JNIFileDirect.length(m_fileID), m_writeBufferPointer,
+                            m_writeBufferSize) < 0) {
+                        throw new IOException("JNI Error.");
+                    }
+                } else {
+                    long writePosition = JNIFileRaw.dlength(m_fileID);
+                    if (JNIFileRaw.dwrite(m_fileID, ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE, writePosition, m_writeBufferPointer, m_writeBufferSize) <
+                        0) {
+                        throw new IOException("JNI Error.");
+                    }
+                }
+            } catch (final IOException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Could write to versions file", e);
+                // #endif /* LOGGER >= ERROR */
+            }
+        } else {
+            m_accessLock.unlock();
+        }
+
+        return ret;
+    }
+
+    /**
      * Read all versions from SSD, add current versions and write back (if specified, only)
      *
      * @param p_allVersions
      *     the array and hashtable to put eons, epochs and versions in
      * @param p_writeBack
      *     whether the versions should be written-back for compactification
-     * @return the lowest LID at the time the versions are read-in
+     * @return the lowest CID at the time the versions are read-in
      */
     long readAll(final TemporaryVersionsStorage p_allVersions, final boolean p_writeBack) {
         int length;
@@ -520,6 +514,7 @@ class VersionsBuffer {
         boolean update = false;
         long chunkID;
         long averageLID;
+        long lowestCID;
         long lowestLID;
         long highestLID;
         byte[] data;
@@ -538,6 +533,7 @@ class VersionsBuffer {
         int size = versionsArray.capacity();
         lowestLID = Math.max(0, averageLID - size / 2);
         highestLID = lowestLID + size - 1;
+        lowestCID = ((long) m_originalOwner << 48) + lowestLID;
 
         try {
             if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
@@ -568,111 +564,119 @@ class VersionsBuffer {
                     }
                 }
 
-                buffer = ByteBuffer.wrap(data);
+                if (!Thread.currentThread().isInterrupted()) {
+                    buffer = ByteBuffer.wrap(data);
 
-                for (int i = 0; i * SSD_ENTRY_SIZE < length; i++) {
-                    chunkID = buffer.getLong();
-                    if (chunkID >= lowestLID && chunkID <= highestLID) {
-                        // ChunkID is in range -> put in array
-                        versionsArray.put(chunkID, buffer.getShort(), buffer.get() << 16 | buffer.get() << 8 | buffer.get(), lowestLID);
-                    } else {
-                        // ChunkID is outside of range -> put in hashtable
-                        versionsHashTable.put(chunkID, buffer.getShort(), buffer.get() << 16 | buffer.get() << 8 | buffer.get());
+                    for (int i = 0; i * SSD_ENTRY_SIZE < length; i++) {
+                        chunkID = buffer.getLong();
+
+                        long localID = ChunkID.getLocalID(chunkID);
+                        if (localID >= lowestLID && localID <= highestLID) {
+                            // ChunkID is in range -> put in array
+                            versionsArray.put(chunkID, buffer.getShort(), (buffer.get() & 0xFF) << 16 | (buffer.get() & 0xFF) << 8 | buffer.get() & 0xFF,
+                                    lowestCID);
+                        } else {
+                            // ChunkID is outside of range -> put in hashtable
+                            versionsHashTable.put(chunkID, buffer.getShort(), (buffer.get() & 0xFF) << 16 | (buffer.get() & 0xFF) << 8 | buffer.get() & 0xFF);
+                        }
                     }
-                }
 
-                if ((versionsArray.size() + versionsHashTable.size()) * SSD_ENTRY_SIZE < length) {
-                    // Versions log was not empty -> compact
-                    update = true;
+                    if ((versionsArray.size() + versionsHashTable.size()) * SSD_ENTRY_SIZE < length) {
+                        // Versions log was not empty -> compact
+                        update = true;
+                    }
                 }
             } else {
                 // There is nothing on SSD yet
             }
 
-            // Put all versions from versions buffer to VersionsHashTable
-            m_accessLock.lock();
-            if (m_count > 0) {
-                // "Copy" all data to release lock as soon as possible
-                newTable = new int[m_intCapacity];
-                oldTable = m_table;
-                m_table = newTable;
-                m_count = 0;
+            if (!Thread.currentThread().isInterrupted()) {
+                // Put all versions from versions buffer to VersionsHashTable
+                m_accessLock.lock();
+                if (m_count > 0) {
+                    // "Copy" all data to release lock as soon as possible
+                    newTable = new int[m_intCapacity];
+                    oldTable = m_table;
+                    m_table = newTable;
+                    m_count = 0;
 
-                incrementEpoch();
-                m_accessLock.unlock();
+                    incrementEpoch();
+                    m_accessLock.unlock();
 
-                for (int i = 0; i < oldTable.length; i += 3) {
-                    chunkID = (long) oldTable[i] << 32 | oldTable[i + 1] & 0xFFFFFFFFL;
-                    if (chunkID != 0) {
-                        // ChunkID: -1 because 1 is added before putting to avoid LID 0; epoch was incremented before
-                        if (chunkID - 1 >= lowestLID && chunkID - 1 <= highestLID) {
-                            // ChunkID is in range -> put in array
-                            versionsArray.put(chunkID - 1, (short) (m_epoch - 1 + (m_eon << 15)), oldTable[i + 2], lowestLID);
-                        } else {
-                            // ChunkID is outside of range -> put in hashtable
-                            versionsHashTable.put(chunkID - 1, (short) (m_epoch - 1 + (m_eon << 15)), oldTable[i + 2]);
+                    for (int i = 0; i < oldTable.length; i += 3) {
+                        chunkID = (long) oldTable[i] << 32 | oldTable[i + 1] & 0xFFFFFFFFL;
+                        if (chunkID != 0) {
+                            // ChunkID (-1 because 1 is added before putting to avoid CID 0); epoch was incremented before
+                            long localID = ChunkID.getLocalID(chunkID - 1);
+                            if (localID >= lowestLID && localID <= highestLID) {
+                                // ChunkID is in range -> put in array
+                                versionsArray.put(chunkID - 1, (short) (m_epoch - 1 + (m_eon << 15)), oldTable[i + 2], lowestCID);
+                            } else {
+                                // ChunkID is outside of range -> put in hashtable
+                                versionsHashTable.put(chunkID - 1, (short) (m_epoch - 1 + (m_eon << 15)), oldTable[i + 2]);
+                            }
                         }
                     }
+                    update = true;
+                } else {
+                    m_accessLock.unlock();
                 }
-                update = true;
-            } else {
-                m_accessLock.unlock();
             }
 
-            if (p_writeBack && update) {
-                // Write back current hashtable compactified
-                data = new byte[(versionsArray.size() + versionsHashTable.size()) * SSD_ENTRY_SIZE];
-                buffer = ByteBuffer.wrap(data);
+            if (!Thread.currentThread().isInterrupted()) {
+                if (p_writeBack && update) {
+                    // Write back current hashtable compactified
+                    data = new byte[(versionsArray.size() + versionsHashTable.size()) * SSD_ENTRY_SIZE];
+                    buffer = ByteBuffer.wrap(data);
 
-                // Gather all entries from array
-                short epoch;
-                for (int i = 0; i < versionsArray.capacity(); i++) {
-                    chunkID = i + lowestLID;
-                    epoch = versionsArray.getEpoch(i, 0);
-
-                    if (epoch != -1) {
-                        buffer.putLong(chunkID);
-                        // Epoch (4 Bytes in hashtable, 2 in persistent table)
-                        buffer.putShort(epoch);
-                        // Version (4 Bytes in hashtable, 3 in persistent table)
+                    // Gather all entries from array
+                    for (int i = 0; i < versionsArray.capacity(); i++) {
+                        chunkID = i + lowestCID;
                         version = versionsArray.getVersion(i, 0);
-                        buffer.put((byte) (version >>> 16));
-                        buffer.put((byte) (version >>> 8));
-                        buffer.put((byte) version);
-                    }
-                }
 
-                // Gather all entries from hashtable
-                int[] hashTable = versionsHashTable.getTable();
-                for (int i = 0; i < hashTable.length; i += 4) {
-                    chunkID = (long) hashTable[i] << 32 | hashTable[i + 1] & 0xFFFFFFFFL;
-                    if (chunkID != 0) {
-                        // ChunkID (-1 because 1 is added before putting to avoid LID 0)
-                        buffer.putLong(chunkID - 1);
-                        // Epoch (4 Bytes in hashtable, 2 in persistent table)
-                        buffer.putShort((short) hashTable[i + 2]);
-                        // Version (4 Bytes in hashtable, 3 in persistent table)
-                        version = hashTable[i + 3];
-                        buffer.put((byte) (version >>> 16));
-                        buffer.put((byte) (version >>> 8));
-                        buffer.put((byte) version);
+                        if (version != -1) {
+                            buffer.putLong(chunkID);
+                            // Epoch (4 Bytes in hashtable, 2 in persistent table)
+                            buffer.putShort(versionsArray.getEpoch(i, 0));
+                            // Version (4 Bytes in hashtable, 3 in persistent table)
+                            buffer.put((byte) (version >>> 16));
+                            buffer.put((byte) (version >>> 8));
+                            buffer.put((byte) version);
+                        }
                     }
-                }
 
-                if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
-                    m_versionsFile.seek(0);
-                    m_versionsFile.write(data);
-                    m_versionsFile.setLength(data.length);
-                } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                    if (JNIFileDirect.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
-                        throw new IOException("JNI error: Could not write to file");
+                    // Gather all entries from hashtable
+                    int[] hashTable = versionsHashTable.getTable();
+                    for (int i = 0; i < hashTable.length; i += 4) {
+                        chunkID = (long) hashTable[i] << 32 | hashTable[i + 1] & 0xFFFFFFFFL;
+                        if (chunkID != 0) {
+                            // ChunkID (-1 because 1 is added before putting to avoid CID 0)
+                            buffer.putLong(chunkID - 1);
+                            // Epoch (4 Bytes in hashtable, 2 in persistent table)
+                            buffer.putShort((short) hashTable[i + 2]);
+                            // Version (4 Bytes in hashtable, 3 in persistent table)
+                            version = hashTable[i + 3];
+                            buffer.put((byte) (version >>> 16));
+                            buffer.put((byte) (version >>> 8));
+                            buffer.put((byte) version);
+                        }
                     }
-                } else {
-                    if (JNIFileRaw.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
-                        throw new IOException("JNI error: Could not write to file");
-                    }
-                    if (JNIFileRaw.setDFileLength(m_fileID, data.length) < 0) {
-                        throw new IOException("JNI error: Could not set file length");
+
+                    if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                        m_versionsFile.seek(0);
+                        m_versionsFile.write(data);
+                        m_versionsFile.setLength(data.length);
+                    } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                        if (JNIFileDirect.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
+                            throw new IOException("JNI error: Could not write to file");
+                        }
+                    } else {
+                        if (JNIFileRaw.dwrite(m_fileID, data, 0, data.length, 0, m_writeBufferPointer, m_writeBufferSize) < 0) {
+                            throw new IOException("JNI error: Could not write to file");
+                        }
+                        if (JNIFileRaw.setDFileLength(m_fileID, data.length) < 0) {
+                            throw new IOException("JNI error: Could not set file length");
+                        }
                     }
                 }
             }
@@ -682,7 +686,7 @@ class VersionsBuffer {
             // #endif /* LOGGER >= ERROR */
         }
 
-        return lowestLID;
+        return lowestCID;
     }
 
     /**
@@ -696,6 +700,7 @@ class VersionsBuffer {
     private void putInternal(final long p_key, final int p_version) {
         int index;
         long iter;
+        // Increment key to avoid ChunkID 0
         final long key = p_key + 1;
 
         // Avoid rehashing by waiting
@@ -785,5 +790,4 @@ class VersionsBuffer {
         m_table[index + 1] = (int) p_key;
         m_table[index + 2] = p_version;
     }
-
 }

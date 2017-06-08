@@ -49,9 +49,12 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      *     the RangeID
      * @param p_owner
      *     the owner NodeID
+     * @param p_originalOwner
+     *     the original owner (before recovery)
      * @return the log entry
      */
-    public abstract byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner);
+    public abstract byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner,
+            final short p_originalOwner);
 
     /**
      * Returns RangeID of a log entry
@@ -62,7 +65,7 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      *     offset in buffer
      * @return the version
      */
-    public abstract byte getRangeID(final byte[] p_buffer, final int p_offset);
+    public abstract short getRangeID(final byte[] p_buffer, final int p_offset);
 
     /**
      * Returns owner of a log entry

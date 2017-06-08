@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.storage.Version;
 
 /**
- * Extends AbstractLogEntryHeader for a migration log entry header (primary log)
+ * Extends AbstractPrimLogEntryHeader for a primary log log entry header
  * Fields: | Type | RangeID | Owner | NodeID | LocalID | Length  | Epoch | Version | Chaining | Checksum |
  * Length: |  1   |    1    |   2   |   2    | 1,2,4,6 | 0,1,2,3 |   2   | 0,1,2,4 |   0,2    |    0,4   |
  * Type field contains type, length of LocalID field, length of length field and length of version field
@@ -53,8 +53,10 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
 
     // Getter
     @Override
-    public byte getRangeID(final byte[] p_buffer, final int p_offset) {
-        return p_buffer[p_offset + ms_ridOffset];
+    public short getRangeID(final byte[] p_buffer, final int p_offset) {
+        final int offset = p_offset + ms_ridOffset;
+
+        return (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
     }
 
     @Override
@@ -66,7 +68,8 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
 
     // Methods
     @Override
-    public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner) {
+    public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner,
+            final short p_originalOwner) {
         byte[] result;
         byte headerSize;
         byte lengthSize;
@@ -84,7 +87,7 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
         }
         headerSize = (byte) (ms_lidOffset + localIDSize + lengthSize + LOG_ENTRY_EPO_SIZE + versionSize + checksumSize);
 
-        if (ChunkID.getCreatorID(p_chunkID) == p_owner) {
+        if (ChunkID.getCreatorID(p_chunkID) == p_originalOwner) {
             type = 0;
         } else {
             type = 1;
