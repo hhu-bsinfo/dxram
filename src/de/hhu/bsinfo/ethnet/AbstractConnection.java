@@ -53,11 +53,10 @@ abstract class AbstractConnection {
     private short m_destination;
     private NodeMap m_nodeMap;
     private MessageDirectory m_messageDirectory;
-    private DataReceiver m_listener;
+    private volatile DataReceiver m_listener;
     private long m_creationTimestamp;
     private long m_lastAccessTimestamp;
     private long m_closingTimestamp;
-    private ReentrantLock m_lock;
     private int m_unconfirmedBytes;
     private int m_receivedBytes;
     private int m_sentMessages;
@@ -66,8 +65,8 @@ abstract class AbstractConnection {
     private ReentrantLock m_flowControlCondLock;
     private Condition m_flowControlCond;
 
-    private boolean m_outgoingConnected;
-    private boolean m_incomingConnected;
+    private volatile boolean m_outgoingConnected;
+    private volatile boolean m_incomingConnected;
 
     // Constructors
 
@@ -103,8 +102,6 @@ abstract class AbstractConnection {
         m_flowControlWindowSize = p_flowControlWindowSize;
         m_flowControlCondLock = new ReentrantLock(false);
         m_flowControlCond = m_flowControlCondLock.newCondition();
-
-        m_lock = new ReentrantLock(false);
     }
 
     /**
@@ -120,13 +117,6 @@ abstract class AbstractConnection {
      * @return true if incoming socket is open
      */
     protected abstract boolean isIncomingOpen();
-
-    /**
-     * Returns whether the incoming buffer queue is full or not
-     *
-     * @return whether the incoming buffer queue is full or not
-     */
-    protected abstract boolean isIncomingQueueFull();
 
     /**
      * Returns the size of input and output queues
@@ -279,7 +269,7 @@ abstract class AbstractConnection {
         m_flowControlCondLock.lock();
         ret = m_receivedBytes;
 
-        // reset received bytes counter
+        // Reset received bytes counter
         m_receivedBytes = 0;
         m_flowControlCondLock.unlock();
 
@@ -296,13 +286,7 @@ abstract class AbstractConnection {
      * @return true if the connection is connected, false otherwise
      */
     final boolean isOutgoingConnected() {
-        boolean ret;
-
-        m_lock.lock();
-        ret = m_outgoingConnected;
-        m_lock.unlock();
-
-        return ret;
+        return m_outgoingConnected;
     }
 
     /**
@@ -311,13 +295,7 @@ abstract class AbstractConnection {
      * @return true if the connection is connected, false otherwise
      */
     final boolean isIncomingConnected() {
-        boolean ret;
-
-        m_lock.lock();
-        ret = m_incomingConnected;
-        m_lock.unlock();
-
-        return ret;
+        return m_incomingConnected;
     }
 
     /**
@@ -327,22 +305,11 @@ abstract class AbstractConnection {
      *     if true the connection is marked as connected, otherwise the connections marked as not connected
      */
     final void setConnected(final boolean p_connected, final boolean p_outgoing) {
-        m_lock.lock();
         if (p_outgoing) {
             m_outgoingConnected = p_connected;
         } else {
             m_incomingConnected = p_connected;
         }
-        m_lock.unlock();
-    }
-
-    /**
-     * Checks if the connection is connected
-     *
-     * @return true if the connection is connected, false otherwise
-     */
-    final boolean isCongested() {
-        return m_unconfirmedBytes > m_flowControlWindowSize || isIncomingQueueFull();
     }
 
     /**
@@ -406,6 +373,8 @@ abstract class AbstractConnection {
      * @author Marc Ewert 28.10.2014
      */
     private static class ByteStreamInterpreter {
+
+        // TODO: Further evaluate direct byte buffer (in comments)
 
         // Attributes
         private ByteBuffer m_headerBytes;
@@ -521,14 +490,23 @@ abstract class AbstractConnection {
                         m_headerBytes.put(p_buffer.array(), p_buffer.position(), remaining);
                         p_buffer.position(p_buffer.position() + remaining);
 
+                        /*int limit = p_buffer.limit();
+                        p_buffer.limit(p_buffer.position() + remaining);
+                        m_headerBytes.put(p_buffer);
+                        p_buffer.limit(limit);*/
+
                         // Header complete
 
                         // Read payload size (copied at the end of m_headerBytes before)
                         m_payloadSize = m_headerBytes.getInt(m_headerBytes.limit() - AbstractMessage.PAYLOAD_SIZE_LENGTH);
 
                         // Create message buffer and copy header into (without payload size)
-                        m_messageBytes = ByteBuffer.allocateDirect(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + m_payloadSize);
+                        m_messageBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + m_payloadSize);
                         m_messageBytes.put(m_headerBytes.array(), 0, AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+
+                        /*m_headerBytes.position(0);
+                        m_headerBytes.limit(m_headerBytes.capacity() - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+                        m_messageBytes.put(m_headerBytes);*/
 
                         if (m_payloadSize == 0) {
                             // There is no payload -> message complete
@@ -552,9 +530,16 @@ abstract class AbstractConnection {
                             // Create message buffer and copy header into (without payload size)
                             m_wasCopied = true;
 
-                            m_messageBytes = ByteBuffer.allocateDirect(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + m_payloadSize);
+                            m_messageBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + m_payloadSize);
                             m_messageBytes.put(p_buffer.array(), p_buffer.position(), AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
                             p_buffer.position(p_buffer.position() + remaining);
+
+                            /*int limit = p_buffer.limit();
+                            p_buffer.position(currentPosition);
+                            p_buffer.limit(currentPosition + AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+                            m_messageBytes.put(p_buffer);
+                            p_buffer.limit(limit);
+                            p_buffer.getInt();*/
 
                             // Payload must be read next
                             m_step = Step.READ_PAYLOAD;
@@ -584,6 +569,12 @@ abstract class AbstractConnection {
                 } else {
                     m_messageBytes.put(p_buffer.array(), p_buffer.position(), remaining);
                     p_buffer.position(p_buffer.position() + remaining);
+
+                    /*int limit = p_buffer.limit();
+                    p_buffer.limit(p_buffer.position() + remaining);
+                    m_messageBytes.put(p_buffer);
+                    p_buffer.limit(limit);*/
+
                     m_step = Step.DONE;
                     m_messageBytes.flip();
                 }
@@ -604,6 +595,10 @@ abstract class AbstractConnection {
      */
     private class DataHandler {
 
+        // Attributes
+        AbstractMessage[] m_normalMessages = new AbstractMessage[25];
+        AbstractMessage[] m_exclusiveMessages = new AbstractMessage[25];
+
         /**
          * Default constructor
          */
@@ -611,7 +606,6 @@ abstract class AbstractConnection {
         }
 
         // Methods
-
         /**
          * Adds a buffer to byte stream and creates a message if all data was gathered.
          *
@@ -621,13 +615,7 @@ abstract class AbstractConnection {
         void processBuffer(final ByteBuffer p_buffer) {
             int counterNormal = 0;
             int counterExclusive = 0;
-            ByteBuffer messageBuffer;
             AbstractMessage currentMessage;
-            AbstractMessage[] normalMessages;
-            AbstractMessage[] exclusiveMessages;
-
-            normalMessages = new AbstractMessage[25];
-            exclusiveMessages = new AbstractMessage[25];
 
             // Flow-control
             m_flowControlCondLock.lock();
@@ -643,8 +631,8 @@ abstract class AbstractConnection {
                 m_streamInterpreter.update(p_buffer);
 
                 if (m_streamInterpreter.isMessageComplete()) {
-                    currentMessage =
-                        createMessage(m_streamInterpreter.getMessageBuffer(), m_streamInterpreter.getPayloadSize(), m_streamInterpreter.bufferWasCopied());
+                    currentMessage = createMessage(m_streamInterpreter.getMessageBuffer(), m_streamInterpreter.getPayloadSize(),
+                            m_streamInterpreter.bufferWasCopied());
 
                     if (currentMessage != null) {
                         currentMessage.setDestination(m_nodeMap.getOwnNodeID());
@@ -654,41 +642,34 @@ abstract class AbstractConnection {
                             RequestMap.fulfill((AbstractResponse) currentMessage);
                         } else {
                             if (!currentMessage.isExclusive()) {
-                                normalMessages[counterNormal++] = currentMessage;
-                                if (counterNormal == normalMessages.length) {
-                                    deliverMessages(normalMessages);
-                                    Arrays.fill(normalMessages, null);
+                                m_normalMessages[counterNormal++] = currentMessage;
+                                if (counterNormal == m_normalMessages.length) {
+                                    deliverMessages(m_normalMessages);
+                                    Arrays.fill(m_normalMessages, null);
                                     counterNormal = 0;
                                 }
                             } else {
-                                exclusiveMessages[counterExclusive++] = currentMessage;
-                                if (counterExclusive == exclusiveMessages.length) {
-                                    deliverMessages(exclusiveMessages);
-                                    Arrays.fill(exclusiveMessages, null);
+                                m_exclusiveMessages[counterExclusive++] = currentMessage;
+                                if (counterExclusive == m_exclusiveMessages.length) {
+                                    deliverMessages(m_exclusiveMessages);
+                                    Arrays.fill(m_exclusiveMessages, null);
                                     counterExclusive = 0;
                                 }
                             }
                         }
                         m_receivedMessages++;
                     }
-
                     m_streamInterpreter.clear();
                 }
             }
 
             if (counterNormal > 0) {
-                if (counterNormal == 1) {
-                    deliverMessage(normalMessages[0]);
-                } else {
-                    deliverMessages(normalMessages);
-                }
+                deliverMessages(m_normalMessages);
+                Arrays.fill(m_normalMessages, 0, counterNormal, null);
             }
             if (counterExclusive > 0) {
-                if (counterExclusive == 1) {
-                    deliverMessage(exclusiveMessages[0]);
-                } else {
-                    deliverMessages(exclusiveMessages);
-                }
+                deliverMessages(m_exclusiveMessages);
+                Arrays.fill(m_exclusiveMessages, 0, counterExclusive, null);
             }
         }
 
@@ -714,13 +695,16 @@ abstract class AbstractConnection {
          */
         private void deliverMessage(final AbstractMessage p_message) {
 
-            if (m_listener != null) {
-                m_listener.newMessage(p_message);
-            } else {
+            if (m_listener == null){
                 // #if LOGGER >= ERROR
-                LOGGER.error("No listener registered. Message will be discarded: %s", p_message);
+                LOGGER.error("No listener registered. Waiting...");
                 // #endif /* LOGGER >= ERROR */
+
+                while (m_listener == null) {
+                    Thread.yield();
+                }
             }
+            m_listener.newMessage(p_message);
         }
 
         /**
@@ -731,13 +715,16 @@ abstract class AbstractConnection {
          */
         private void deliverMessages(final AbstractMessage[] p_messages) {
 
-            if (m_listener != null) {
-                m_listener.newMessages(p_messages);
-            } else {
+            if (m_listener == null){
                 // #if LOGGER >= ERROR
-                LOGGER.error("No listener registered. Messages will be discarded");
+                LOGGER.error("No listener registered. Waiting...");
                 // #endif /* LOGGER >= ERROR */
+
+                while (m_listener == null) {
+                    Thread.yield();
+                }
             }
+            m_listener.newMessages(p_messages);
         }
 
         /**
