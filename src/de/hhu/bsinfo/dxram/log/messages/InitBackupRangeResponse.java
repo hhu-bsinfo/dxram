@@ -18,11 +18,11 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
- * Response to a InitRequest
+ * Response to a InitBackupRangeRequest
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 20.04.2016
  */
-public class InitResponse extends AbstractResponse {
+public class InitBackupRangeResponse extends AbstractResponse {
 
     // Attributes
     private boolean m_success;
@@ -30,24 +30,24 @@ public class InitResponse extends AbstractResponse {
     // Constructors
 
     /**
-     * Creates an instance of InitResponse
+     * Creates an instance of InitBackupRangeResponse
      */
-    public InitResponse() {
+    public InitBackupRangeResponse() {
         super();
 
         m_success = false;
     }
 
     /**
-     * Creates an instance of InitResponse
+     * Creates an instance of InitBackupRangeResponse
      *
      * @param p_request
      *     the request
      * @param p_success
      *     true if remove was successful
      */
-    public InitResponse(final InitRequest p_request, final boolean p_success) {
-        super(p_request, LogMessages.SUBTYPE_INIT_RESPONSE);
+    public InitBackupRangeResponse(final InitBackupRangeRequest p_request, final boolean p_success) {
+        super(p_request, LogMessages.SUBTYPE_INIT_BACKUP_RANGE_RESPONSE);
 
         m_success = p_success;
     }

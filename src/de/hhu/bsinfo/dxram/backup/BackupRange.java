@@ -120,32 +120,54 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
     }
 
     /**
+     * Adds the backup peer
+     *
+     * @param p_backupPeers
+     *     current backup peers
+     * @param p_newPeer
+     *     the new backup peer
+     * @return all backup peers in a short array
+     */
+    public static long addBackupPeer(final long p_backupPeers, final short p_newPeer) {
+        long ret = -1;
+
+        for (int i = 0; i < ms_replicationFactor; i++) {
+            if ((short) ((p_backupPeers & 0xFFFFL << i * 16) >> i * 16) == -1) {
+                ret = replace(p_backupPeers, i, p_newPeer);
+                break;
+            }
+        }
+
+        return ret;
+    }
+
+    /**
      * Replaces the failed backup peer
      *
      * @param p_backupPeers
      *     current backup peers
-     * @param p_failedPeer
+     * @param p_oldPeer
      *     the failed backup peer
      * @param p_newPeer
      *     the new backup peer
      * @return all backup peers in a short array
      */
-    public static long replaceBackupPeer(final long p_backupPeers, final short p_failedPeer, final short p_newPeer) {
+    public static long replaceBackupPeer(final long p_backupPeers, final short p_oldPeer, final short p_newPeer) {
         long backupPeers = p_backupPeers;
         short nextBackupPeer;
-        int lastPos;
+        int addIndex = ms_replicationFactor - 1;
 
         for (int i = 0; i < ms_replicationFactor; i++) {
-            if (p_failedPeer == (short) ((backupPeers & 0xFFFF << i * 16) >> i * 16)) {
-                for (lastPos = i; lastPos < ms_replicationFactor - 1; lastPos++) {
-                    nextBackupPeer = (short) ((backupPeers & 0xFFFF << (lastPos + 1) * 16) >> (lastPos + 1) * 16);
+            if ((short) ((backupPeers & 0xFFFFL << i * 16) >> i * 16) == p_oldPeer) {
+                for (int j = i; j < ms_replicationFactor - 1; j++) {
+                    nextBackupPeer = (short) ((backupPeers & 0xFFFFL << (j + 1) * 16) >> (j + 1) * 16);
                     if (nextBackupPeer == NodeID.INVALID_ID) {
-                        // Break if backups are incomplete
+                        addIndex = j;
                         break;
                     }
-                    backupPeers = replace(backupPeers, lastPos, nextBackupPeer);
+                    backupPeers = replace(backupPeers, j, nextBackupPeer);
                 }
-                backupPeers = replace(backupPeers, lastPos + 1, p_newPeer);
+                backupPeers = replace(backupPeers, addIndex, p_newPeer);
                 break;
             }
         }
@@ -185,7 +207,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * @return all backup peers including replacement
      */
     private static long replace(final long p_backupPeers, final int p_index, final short p_newPeer) {
-        return p_backupPeers & ~(0xFFFF << p_index * 16) + ((long) p_newPeer << p_index * 16);
+        return p_backupPeers & ~(0xFFFFL << p_index * 16) | (long) p_newPeer << p_index * 16;
     }
 
     /**
@@ -195,6 +217,16 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      */
     public short getRangeID() {
         return m_rangeID;
+    }
+
+    /**
+     * Set RangeID
+     *
+     * @param p_rangeID
+     *      the RangeID
+     */
+    void setRangeID(final short p_rangeID) {
+        m_rangeID = p_rangeID;
     }
 
     // Getter
@@ -274,7 +306,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
     }
 
     /**
-     * Adds the backup peer
+     * Adds the backup peer at the end of the array or first entry with INVALID_ID
      *
      * @param p_newPeer
      *     the new backup peer
@@ -295,7 +327,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
     }
 
     /**
-     * Replaces the backup peer with another one
+     * Replaces the backup peer with another one. The old peer is removed and the new peer is appended.
      *
      * @param p_oldPeer
      *     the old backup peer
@@ -303,9 +335,18 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      *     the new backup peer
      */
     void replaceBackupPeer(final short p_oldPeer, final short p_newPeer) {
+        int addIndex = m_backupPeers.length - 1;
+
         for (int i = 0; i < m_backupPeers.length; i++) {
             if (m_backupPeers[i] == p_oldPeer) {
-                m_backupPeers[i] = p_newPeer;
+                for (int j = i; j < m_backupPeers.length - 1; j++) {
+                    if (m_backupPeers[j + 1] == NodeID.INVALID_ID) {
+                        addIndex = j;
+                        break;
+                    }
+                    m_backupPeers[j] = m_backupPeers[j + 1];
+                }
+                m_backupPeers[addIndex] = p_newPeer;
                 break;
             }
         }

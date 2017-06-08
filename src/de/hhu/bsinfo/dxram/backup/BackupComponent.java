@@ -32,8 +32,10 @@ import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.log.LogComponent;
-import de.hhu.bsinfo.dxram.log.messages.InitRequest;
-import de.hhu.bsinfo.dxram.log.messages.InitResponse;
+import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
+import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeResponse;
+import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeRequest;
+import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeResponse;
 import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
@@ -48,6 +50,9 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfig> implements EventListener<AbstractEvent> {
+
+    private static final boolean REREPLICATION_ACTIVE = false;
+
     // component dependencies
     private AbstractBootComponent m_boot;
     private ChunkBackupComponent m_chunkBackup;
@@ -69,6 +74,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
 
     // Current backup range
     private BackupRange m_currentBackupRange;
+
+    private ArrayList<Short> m_firstBackupPeers;
 
     private ReentrantReadWriteLock m_lock;
 
@@ -216,23 +223,29 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      */
     public short registerRecoveredChunks(final RecoveryMetadata p_recoveryMetadata, final BackupRange p_backupRange, final short p_failedPeer) {
         short ret;
+        final short oldBackupRange = p_backupRange.getRangeID();
 
         // Create a new backup range for recovered backup range; use two old backup peers
         m_lock.writeLock().lock();
-        ret = determineReplacementBackupPeer(p_backupRange.getBackupPeers());
+        if (REREPLICATION_ACTIVE) {
+            ret = determineReplacementBackupPeer(p_backupRange.getBackupPeers());
+        } else {
+            ret = NodeID.INVALID_ID;
+        }
         p_backupRange.replaceBackupPeer(m_nodeID, ret);
         p_backupRange.addChunks(p_recoveryMetadata.getSizeInBytes());
+        p_backupRange.setRangeID((short) m_backupRanges.size());
 
         m_backupRanges.add(p_backupRange);
         m_lookup.initRange(p_backupRange);
-        m_log.initBackupRange(p_backupRange);
+        m_log.initRecoveredBackupRange(p_backupRange, oldBackupRange, p_failedPeer, ret);
 
         int counter = 1;
         for (short backupPeer : p_backupRange.getBackupPeers()) {
             if (backupPeer != NodeID.INVALID_ID) {
                 // #if LOGGER >= INFO
-                LOGGER.info("%d. backup peer determined for recovered range %s of %s: %s", counter++, p_backupRange.getRangeID(),
-                        NodeID.toHexString(p_failedPeer), NodeID.toHexString(backupPeer));
+                LOGGER.info("%d. backup peer determined for recovered range %d of 0x%X (now: %d on 0x%X): 0x%X", counter++, oldBackupRange, p_failedPeer,
+                        p_backupRange.getRangeID(), m_nodeID, backupPeer);
                 // #endif /* LOGGER >= INFO */
             }
         }
@@ -281,12 +294,18 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      */
 
     public BackupRange getBackupRange(final long p_chunkID) {
-        BackupRange ret;
+        BackupRange ret = null;
         short rangeID;
 
         m_lock.readLock().lock();
         rangeID = m_backupRangeTree.getBackupRange(p_chunkID);
-        ret = m_backupRanges.get(rangeID);
+        if (rangeID != RangeID.INVALID_ID) {
+            ret = m_backupRanges.get(rangeID);
+        } else {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Backup range for 0x%X is unknown!", p_chunkID);
+            // #endif /* LOGGER >= ERROR */
+        }
         m_lock.readLock().unlock();
 
         return ret;
@@ -354,15 +373,21 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                 for (int j = 0; j < backupPeers.length; j++) {
                     currentBackupPeer = backupPeers[j];
                     if (currentBackupPeer == failedPeer) {
-                        // Determine new backup peer and replace it in backup range
-                        newBackupPeer = determineReplacementBackupPeer(backupPeers);
+                        if (REREPLICATION_ACTIVE) {
+                            // Determine new backup peer and replace it in backup range
+                            newBackupPeer = determineReplacementBackupPeer(backupPeers);
 
-                        currentBackupRange.replaceBackupPeer(failedPeer, newBackupPeer);
-                        m_lock.writeLock().unlock();
+                            currentBackupRange.replaceBackupPeer(failedPeer, newBackupPeer);
+                            m_lock.writeLock().unlock();
 
-                        // Send new backup peer all chunks of backup range
-                        if (newBackupPeer != -1) {
-                            m_chunkBackup.replicateBackupRange(newBackupPeer, m_backupRangeTree.getAllChunkIDRangesOfBackupRange(rangeID), rangeID);
+                            // Send new backup peer all chunks of backup range
+                            if (newBackupPeer != NodeID.INVALID_ID) {
+                                m_chunkBackup.replicateBackupRange(newBackupPeer, m_backupRangeTree.getAllChunkIDRangesOfBackupRange(rangeID), rangeID);
+                            }
+                        } else {
+                            newBackupPeer = NodeID.INVALID_ID;
+                            currentBackupRange.replaceBackupPeer(failedPeer, newBackupPeer);
+                            m_lock.writeLock().unlock();
                         }
 
                         // Inform responsible superpeer to update backup range
@@ -385,12 +410,16 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                 if (peer == joinedPeer) {
                     BackupRange currentBackupRange;
                     // Search for backup ranges with insufficient backup peers
-                    m_lock.writeLock().lock();
                     for (int i = 0; i < m_backupRanges.size(); i++) {
                         currentBackupRange = m_backupRanges.get(i);
                         rangeID = currentBackupRange.getRangeID();
 
+                        m_lock.writeLock().lock();
                         if (currentBackupRange.addBackupPeer(joinedPeer)) {
+                            m_lock.writeLock().unlock();
+                            // Inform responsible superpeer to update backup range
+                            m_lookup.replaceBackupPeer(rangeID, NodeID.INVALID_ID, joinedPeer);
+
                             // #if LOGGER >= INFO
                             LOGGER.info("Replicating backup range %d to new peer 0x%X", i, joinedPeer);
                             // #endif /* LOGGER >= INFO */
@@ -401,9 +430,10 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                             // #if LOGGER >= INFO
                             LOGGER.info("Replicated %d chunk(s) of backup range %d to new peer 0x%X", num, i, joinedPeer);
                             // #endif /* LOGGER >= INFO */
+                        } else {
+                            m_lock.writeLock().unlock();
                         }
                     }
-                    m_lock.writeLock().unlock();
 
                     break;
                 }
@@ -444,8 +474,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
         BackupRange.setBackupRangeSize(getConfig().getBackupRangeSize().getBytes());
         m_nodeID = m_boot.getNodeID();
 
-        short[] backupPeers = new short[getConfig().getReplicationFactor()];
-        Arrays.fill(backupPeers, NodeID.INVALID_ID);
         if (m_boot.getNodeRole() == NodeRole.PEER) {
             if (getConfig().isBackupActive()) {
 
@@ -465,8 +493,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                 m_backupRangeTree = new BackupRangeTree((short) 10, m_nodeID);
 
                 m_currentBackupRange = null;
-
-                if (m_forceDisjunctiveFirstBackupPeers) {
+                if (getConfig().getForceDisjunctiveFirstBackupPeers()) {
                     m_firstBackupPeers = new ArrayList<>();
                 }
 
@@ -522,7 +549,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
             initializeNewBackupRange();
             ret = m_currentBackupRange;
         } else {
-            if (ChunkID.getCreatorID(p_chunkID) == 0) {
+            if (ChunkID.getCreatorID(p_chunkID) == m_nodeID) {
                 // Locally created chunk
                 long localID = ChunkID.getLocalID(p_chunkID);
                 if (localID > m_currentLocalID) {
@@ -533,6 +560,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                     m_lock.writeLock().lock();
                     short rangeID = m_backupRangeTree.getBackupRange(localID);
                     ret = m_backupRanges.get(rangeID);
+
                     if (ret.fits(size)) {
                         // New chunk fits in backup range of old chunk
                         ret.addChunk(size);
@@ -568,6 +596,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
         m_lock.writeLock().lock();
         m_backupRangeTree.putChunkID(p_chunkID, ret.getRangeID());
         m_lock.writeLock().unlock();
+
         ret.addChunk(size);
 
         return ret;
@@ -731,22 +760,67 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                     newBackupPeers[i] = peers.get(index);
                     ready = false;
                 }
+
+                if (getConfig().getForceDisjunctiveFirstBackupPeers()) {
+                    m_firstBackupPeers.add(newBackupPeers[0]);
+                }
             }
         } else {
-            // Determine backup peers
-            for (int i = 0; i < getConfig().getReplicationFactor(); i++) {
-                while (!ready) {
-                    index = (short) (Math.random() * numberOfPeers);
-                    ready = true;
-                    for (int j = 0; j < i; j++) {
-                        if (peers.get(index) == oldBackupPeers[j] || peers.get(index) == newBackupPeers[j]) {
-                            ready = false;
-                            break;
+            if (!getConfig().getForceDisjunctiveFirstBackupPeers()) {
+                // Determine backup peers
+                for (int i = 0; i < getConfig().getReplicationFactor(); i++) {
+                    while (!ready) {
+                        index = (short) (Math.random() * numberOfPeers);
+                        ready = true;
+                        for (int j = 0; j < i; j++) {
+                            if (peers.get(index) == oldBackupPeers[j] || peers.get(index) == newBackupPeers[j]) {
+                                ready = false;
+                                break;
+                            }
                         }
                     }
+                    newBackupPeers[i] = peers.get(index);
+                    ready = false;
                 }
-                newBackupPeers[i] = peers.get(index);
-                ready = false;
+            } else {
+                List<Short> availablePeers;
+
+                // Use a disjunctive first backup peers if possible
+                if (numberOfPeers > m_firstBackupPeers.size()) {
+                    // Remove already used first backup peers
+                    availablePeers = new ArrayList<>();
+                    availablePeers.addAll(peers);
+                    availablePeers.removeAll(m_firstBackupPeers);
+                } else {
+                    // Not enough backup peers available to be picky
+                    // #if LOGGER >= WARN
+                    LOGGER.warn("Too less peers available for disjunctive backup strategy. Backup determination starts all over again!");
+                    // #endif /* LOGGER >= WARN */
+
+                    m_firstBackupPeers.clear();
+                    availablePeers = peers;
+                }
+
+                // Determine backup peers
+                for (int i = 0; i < getConfig().getReplicationFactor(); i++) {
+                    while (!ready) {
+                        index = (short) (Math.random() * availablePeers.size());
+                        ready = true;
+                        for (int j = 0; j < i; j++) {
+                            if (availablePeers.get(index) == oldBackupPeers[j] || availablePeers.get(index) == newBackupPeers[j]) {
+                                ready = false;
+                                break;
+                            }
+                        }
+                    }
+                    newBackupPeers[i] = availablePeers.get(index);
+                    ready = false;
+
+                    if (i == 0) {
+                        availablePeers = peers;
+                        m_firstBackupPeers.add(newBackupPeers[i]);
+                    }
+                }
             }
         }
 

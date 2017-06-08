@@ -24,7 +24,7 @@ import de.hhu.bsinfo.ethnet.AbstractRequest;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 20.04.2016
  */
-public class InitRequest extends AbstractRequest {
+public class InitBackupRangeRequest extends AbstractRequest {
 
     // Attributes
     private short m_rangeID = RangeID.INVALID_ID;
@@ -32,22 +32,22 @@ public class InitRequest extends AbstractRequest {
     // Constructors
 
     /**
-     * Creates an instance of InitRequest
+     * Creates an instance of InitBackupRangeRequest
      */
-    public InitRequest() {
+    public InitBackupRangeRequest() {
         super();
     }
 
     /**
-     * Creates an instance of InitRequest
+     * Creates an instance of InitBackupRangeRequest
      *
      * @param p_destination
      *     the destination
      * @param p_rangeID
      *     the RangeID
      */
-    public InitRequest(final short p_destination, final short p_rangeID) {
-        super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_REQUEST, true);
+    public InitBackupRangeRequest(final short p_destination, final short p_rangeID) {
+        super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_BACKUP_RANGE_REQUEST, true);
 
         m_rangeID = p_rangeID;
     }
@@ -62,6 +62,7 @@ public class InitRequest extends AbstractRequest {
     public final short getRangeID() {
         return m_rangeID;
     }
+
 
     @Override
     protected final int getPayloadLength() {

@@ -23,7 +23,7 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.log.messages.InitRequest;
+import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -97,7 +97,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
         DataStructure[] chunks;
 
         // Initialize backup range on backup peer
-        InitRequest request = new InitRequest(p_backupPeer, p_rangeID);
+        InitBackupRangeRequest request = new InitBackupRangeRequest(p_backupPeer, p_rangeID);
 
         try {
             m_network.sendSync(request);
@@ -107,6 +107,8 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
             // #endif /* LOGGER == ERROR */
             return 0;
         }
+
+        // TODO: Replicates all created chunks including chunks that have not been put
 
         // Gather all chunks of backup range
         chunks = new DataStructure[p_numberOfChunks];

@@ -20,13 +20,15 @@ package de.hhu.bsinfo.dxram.log.messages;
  */
 public final class LogMessages {
     public static final byte SUBTYPE_LOG_MESSAGE = 1;
-    public static final byte SUBTYPE_LOG_BUFFER_MESSAGE = 2;
+    public static final byte SUBTYPE_LOG_ANON_MESSAGE = 2;
     public static final byte SUBTYPE_REMOVE_MESSAGE = 3;
-    public static final byte SUBTYPE_INIT_REQUEST = 4;
-    public static final byte SUBTYPE_INIT_RESPONSE = 5;
+    public static final byte SUBTYPE_INIT_BACKUP_RANGE_REQUEST = 4;
+    public static final byte SUBTYPE_INIT_BACKUP_RANGE_RESPONSE = 5;
+    public static final byte SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST = 6;
+    public static final byte SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_RESPONSE = 7;
 
-    public static final byte SUBTYPE_GET_UTILIZATION_REQUEST = 6;
-    public static final byte SUBTYPE_GET_UTILIZATION_RESPONSE = 7;
+    public static final byte SUBTYPE_GET_UTILIZATION_REQUEST = 8;
+    public static final byte SUBTYPE_GET_UTILIZATION_RESPONSE = 9;
 
     /**
      * Hidden constructor

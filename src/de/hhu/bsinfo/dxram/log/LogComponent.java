@@ -23,6 +23,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -36,14 +37,17 @@ import de.hhu.bsinfo.dxram.log.header.AbstractPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.ChecksumHandler;
 import de.hhu.bsinfo.dxram.log.header.PrimLogEntryHeader;
-import de.hhu.bsinfo.dxram.log.messages.InitRequest;
-import de.hhu.bsinfo.dxram.log.messages.InitResponse;
+import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
+import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeResponse;
+import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeRequest;
+import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeResponse;
 import de.hhu.bsinfo.dxram.log.storage.LogCatalog;
 import de.hhu.bsinfo.dxram.log.storage.PrimaryLog;
 import de.hhu.bsinfo.dxram.log.storage.PrimaryWriteBuffer;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogsReorgThread;
+import de.hhu.bsinfo.dxram.log.storage.TemporaryVersionsStorage;
 import de.hhu.bsinfo.dxram.log.storage.Version;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
@@ -192,8 +196,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      */
     public void initBackupRange(final BackupRange p_backupRange) {
         short[] backupPeers;
-        InitRequest request;
-        InitResponse response;
+        InitBackupRangeRequest request;
+        InitBackupRangeResponse response;
         long time;
 
         backupPeers = p_backupRange.getBackupPeers();
@@ -202,7 +206,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         if (backupPeers != null) {
             for (int i = 0; i < backupPeers.length; i++) {
                 if (backupPeers[i] != NodeID.INVALID_ID) {
-                    request = new InitRequest(backupPeers[i], p_backupRange.getRangeID());
+                    // The last peer is new in a recovered backup range
+                    request = new InitBackupRangeRequest(backupPeers[i], p_backupRange.getRangeID());
 
                     try {
                         m_network.sendSync(request);
@@ -211,13 +216,76 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                         continue;
                     }
 
-                    response = request.getResponse(InitResponse.class);
+                    response = request.getResponse(InitBackupRangeResponse.class);
 
                     if (!response.getStatus()) {
                         i--;
                     }
                 }
             }
+        }
+        // #if LOGGER == TRACE
+        LOGGER.trace("Time to initialize range: %d", System.currentTimeMillis() - time);
+        // #endif /* LOGGER == TRACE */
+    }
+
+    /**
+     * Initializes a recovered backup range
+     *
+     * @param p_backupRange
+     *     the backup range
+     * @param p_oldBackupRange
+     *     the old backup range on the failed peer
+     * @param p_failedPeer
+     *     the failed peer
+     */
+    public void initRecoveredBackupRange(final BackupRange p_backupRange, final short p_oldBackupRange, final short p_failedPeer, final short p_newBackupPeer) {
+        short[] backupPeers = p_backupRange.getBackupPeers();
+        if (backupPeers != null) {
+            for (int i = 0; i < backupPeers.length; i++) {
+                if (backupPeers[i] != NodeID.INVALID_ID) {
+                    if (backupPeers[i] == p_newBackupPeer) {
+                        initBackupRangeOnPeer(backupPeers[i], p_backupRange.getRangeID(), p_oldBackupRange, p_failedPeer, true);
+                    } else {
+                        initBackupRangeOnPeer(backupPeers[i], p_backupRange.getRangeID(), p_oldBackupRange, p_failedPeer, false);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Initializes a new backup range
+     *
+     * @param p_backupPeer
+     *     the backup peer
+     * @param p_rangeID
+     *     the new range ID
+     * @param p_originalRangeID
+     *     the old range ID
+     * @param p_originalOwner
+     *     the failed peer
+     * @param p_isNewPeer
+     *     whether this backup range is new for given backup peer or already stored for failed peer
+     */
+    private void initBackupRangeOnPeer(final short p_backupPeer, final short p_rangeID, final short p_originalRangeID, final short p_originalOwner,
+            final boolean p_isNewPeer) {
+        InitRecoveredBackupRangeRequest request;
+        InitRecoveredBackupRangeResponse response;
+        long time;
+
+        time = System.currentTimeMillis();
+        request = new InitRecoveredBackupRangeRequest(p_backupPeer, p_rangeID, p_originalRangeID, p_originalOwner, p_isNewPeer);
+        try {
+            m_network.sendSync(request);
+        } catch (final NetworkException ignore) {}
+
+        response = request.getResponse(InitRecoveredBackupRangeResponse.class);
+
+        if (response == null || !response.getStatus()) {
+            // #if LOGGER == ERROR
+            LOGGER.error("Backup range could not be initialized on 0x%X!", p_backupPeer);
+            // #endif /* LOGGER == ERROR */
         }
         // #if LOGGER == TRACE
         LOGGER.trace("Time to initialize range: %d", System.currentTimeMillis() - time);
@@ -584,7 +652,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     }
 
     /**
-     * Removes Chunks from log
+     * Initializes a new backup range
      *
      * @param p_rangeID
      *         the RangeID
@@ -597,6 +665,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         LogCatalog cat;
         SecondaryLog secLog;
 
+        // Initialize a new backup range created by p_owner
         m_secondaryLogCreationLock.writeLock().lock();
         cat = m_logCatalogs[p_owner & 0xFFFF];
         if (cat == null) {
@@ -624,6 +693,91 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     }
 
     /**
+     * Initializes a backup range after recovery (creating a new one or transferring the old)
+     *
+     * @param p_rangeID
+     *     the RangeID
+     * @param p_owner
+     *     the Chunks' owner
+     * @return whether the backup range is initialized or not
+     */
+    boolean incomingInitRecoveredBackupRange(final short p_rangeID, final short p_owner, final short p_originalRangeID, final short p_originalOwner,
+            final boolean p_isNewBackupRange) {
+        boolean ret = true;
+        LogCatalog cat;
+        SecondaryLog secLog;
+
+        if (p_isNewBackupRange) {
+            // This is a new backup peer determined during recovery (replicas will be sent shortly by p_owner)
+            flushDataToPrimaryLog();
+            m_secondaryLogCreationLock.writeLock().lock();
+            cat = m_logCatalogs[p_owner & 0xFFFF];
+            if (cat == null) {
+                cat = new LogCatalog();
+                m_logCatalogs[p_owner & 0xFFFF] = cat;
+            }
+
+            try {
+                if (!cat.exists(p_rangeID)) {
+                    // Create new secondary log
+                    secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_originalOwner, p_rangeID, m_backupDirectory,
+                            getConfig().getSecondaryLogSize().getBytes(), (int) getConfig().getFlashPageSize().getBytes(),
+                            (int) getConfig().getLogSegmentSize().getBytes(), getConfig().getReorgUtilizationThreshold(), getConfig().useChecksum(), m_mode);
+                    // Insert range in log catalog
+                    cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(),
+                            (int) getConfig().getLogSegmentSize().getBytes());
+                } else {
+                    // #if LOGGER >= WARN
+                    LOGGER.warn("Transfer of backup range %d from 0x%X to 0x%X failed! Secondary log already exists!", p_originalRangeID,
+                            p_originalOwner, p_owner);
+                    // #endif /* LOGGER >= WARN */
+                }
+            } catch (final IOException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Transfer of backup range %d from 0x%X to 0x%X failed! %s", p_originalRangeID, p_originalOwner, p_owner, e);
+                // #endif /* LOGGER >= ERROR */
+                ret = false;
+            }
+            m_secondaryLogCreationLock.writeLock().unlock();
+        } else {
+            // Transfer recovered backup range from p_originalOwner to p_owner
+            flushDataToPrimaryLog();
+            m_secondaryLogCreationLock.writeLock().lock();
+            cat = m_logCatalogs[p_originalOwner & 0xFFFF];
+            secLog = cat.getLog(p_originalRangeID);
+            if (secLog != null) {
+                // This is an old backup peer (it has the entire data already)
+                try {
+                    cat.getBuffer(p_originalRangeID).flushSecLogBuffer();
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+                cat.removeBufferAndLog(p_originalRangeID);
+                secLog.transferBackupRange(p_owner, p_rangeID);
+                cat = m_logCatalogs[p_owner & 0xFFFF];
+                if (cat == null) {
+                    cat = new LogCatalog();
+                    m_logCatalogs[p_owner & 0xFFFF] = cat;
+                }
+
+                if (!cat.exists(p_rangeID)) {
+                    // Insert range in log catalog
+                    cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(),
+                            (int) getConfig().getLogSegmentSize().getBytes());
+                } else {
+                    // #if LOGGER >= WARN
+                    LOGGER.warn("Transfer of backup range %d from 0x%X to 0x%X failed! Secondary log already exists!", p_originalRangeID, p_originalOwner,
+                            p_owner);
+                    // #endif /* LOGGER >= WARN */
+                }
+            }
+            m_secondaryLogCreationLock.writeLock().unlock();
+        }
+
+        return ret;
+    }
+
+    /**
      * Logs a buffer with Chunks on SSD
      *
      * @param p_buffer
@@ -646,6 +800,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             return;
         }
 
+
+        short originalOwner = secLog.getOriginalOwner();
         for (int i = 0; i < size; i++) {
             chunkID = p_buffer.getLong();
             length = p_buffer.getInt();
@@ -727,85 +883,6 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      */
     private void flushDataToPrimaryLog() {
         m_writeBuffer.signalWriterThreadAndFlushToPrimLog();
-    }
-
-    /**
-     * Reads the local data of one log
-     *
-     * @param p_owner
-     *         the NodeID
-     * @param p_rangeID
-     *         the RangeID
-     * @return the local data
-     * @note for testing only
-     */
-    private byte[][] readBackupRange(final short p_owner, final short p_rangeID) {
-        byte[][] ret = null;
-        SecondaryLogBuffer secLogBuffer;
-        SecondaryLog secLog;
-
-        try {
-            flushDataToPrimaryLog();
-            flushDataToSecondaryLogs();
-
-            secLogBuffer = getSecondaryLogBuffer(p_owner, p_rangeID);
-            secLog = getSecondaryLog(p_owner, p_rangeID);
-            if (secLogBuffer != null && secLog != null) {
-                secLogBuffer.flushSecLogBuffer();
-
-                ret = secLog.readAllSegments();
-            } else {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Backup range %d could not be read. Secondary log is missing!", p_rangeID);
-                // #endif /* LOGGER >= ERROR */
-            }
-        } catch (final IOException | InterruptedException ignored) {
-        }
-
-        return ret;
-    }
-
-    /**
-     * Prints the metadata of one node's log
-     *
-     * @param p_owner
-     *         the NodeID
-     * @param p_chunkID
-     *         the ChunkID
-     * @param p_rangeID
-     *         the RangeID
-     * @note for testing only
-     */
-    private void printBackupRange(final short p_owner, final long p_chunkID, final short p_rangeID) {
-        byte[][] segments;
-        int i = 0;
-        int j = 1;
-        int readBytes;
-        int length;
-        int offset = 0;
-        long chunkID;
-        Version version;
-        AbstractSecLogEntryHeader logEntryHeader;
-
-        segments = readBackupRange(p_owner, p_rangeID);
-        if (segments != null) {
-            System.out.println();
-            System.out.println("NodeID: " + NodeID.toHexString(p_owner));
-            while (segments[i] != null) {
-                System.out.println("Segment " + i + ": " + segments[i].length);
-                readBytes = offset;
-                offset = 0;
-                while (readBytes < segments[i].length) {
-                    logEntryHeader = AbstractSecLogEntryHeader.getHeader(segments[i], readBytes);
-                    chunkID = logEntryHeader.getCID(segments[i], readBytes);
-                    length = logEntryHeader.getLength(segments[i], readBytes);
-                    version = logEntryHeader.getVersion(segments[i], readBytes);
-                    printMetadata(chunkID, segments[i], readBytes, length, version, j++, logEntryHeader);
-                    readBytes += length + logEntryHeader.getHeaderSize(segments[i], readBytes);
-                }
-                i++;
-            }
-        }
     }
 
 }

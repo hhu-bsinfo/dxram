@@ -27,6 +27,9 @@ public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private byte m_replicationFactor = 3;
 
+    @Expose
+    private boolean m_forceDisjunctiveFirstBackupPeers = false;
+
     /**
      * Constructor
      */
@@ -69,6 +72,13 @@ public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
      */
     public byte getReplicationFactor() {
         return m_replicationFactor;
+    }
+
+    /**
+     * Defines whether the first backup peer for every backup range is chosen randomly or disjunctive
+     */
+    public boolean getForceDisjunctiveFirstBackupPeers() {
+        return m_forceDisjunctiveFirstBackupPeers;
     }
 
     @Override
