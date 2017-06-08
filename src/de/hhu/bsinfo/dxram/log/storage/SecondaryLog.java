@@ -20,7 +20,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
@@ -38,6 +37,7 @@ import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.ChecksumHandler;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
+import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.JNIFileDirect;
 import de.hhu.bsinfo.utils.JNIFileRaw;
@@ -56,6 +56,7 @@ public class SecondaryLog extends AbstractLog {
     private static final String SECLOG_PREFIX_FILENAME = "sec";
     private static final String SECLOG_POSTFIX_FILENAME = ".log";
     private static final byte[] SECLOG_HEADER = "DXRAMSecLogv1".getBytes(Charset.forName("UTF-8"));
+    private static final int RECOVERY_THREADS = 4;
     private static final int SORT_THRESHOLD = 100000;
 
     // Attributes
@@ -75,8 +76,6 @@ public class SecondaryLog extends AbstractLog {
     private ReentrantLock m_segmentAssignmentlock;
     private byte[] m_reorgVector;
     private int m_segmentReorgCounter;
-
-    private TemporaryVersionsStorage m_versionsForRecovery;
 
     private volatile boolean m_isAccessedByReorgThread;
     private volatile boolean m_isClosed;
@@ -149,6 +148,55 @@ public class SecondaryLog extends AbstractLog {
         // #if LOGGER == TRACE
         LOGGER.trace("Initialized secondary log (%d)", m_secondaryLogSize);
         // #endif /* LOGGER == TRACE */
+    }
+
+    /**
+     * Creates an instance of SecondaryLog with default configuration except
+     * secondary log size
+     *
+     * @param p_logComponent
+     *     the log component to enable calling access granting methods in VersionsBuffer
+     * @param p_reorganizationThread
+     *     the reorganization thread
+     * @param p_owner
+     *     the NodeID
+     * @param p_rangeID
+     *     the RangeID
+     * @param p_backupDirectory
+     *     the backup directory
+     * @param p_secondaryLogSize
+     *     the size of a secondary log
+     * @param p_flashPageSize
+     *     the flash page size
+     * @param p_logSegmentSize
+     *     the segment size
+     * @param p_reorgUtilizationThreshold
+     *     the threshold size for a secondary size to trigger reorganization
+     * @param p_useChecksum
+     *     the logger component
+     * @param p_mode
+     *     the HarddriveAccessMode
+     * @throws IOException
+     *     if secondary log could not be created
+     */
+    public SecondaryLog(final LogComponent p_logComponent, final SecondaryLogsReorgThread p_reorganizationThread, final short p_owner, final short p_rangeID,
+        final String p_backupDirectory, final long p_secondaryLogSize, final int p_flashPageSize, final int p_logSegmentSize,
+        final int p_reorgUtilizationThreshold, final boolean p_useChecksum, final HarddriveAccessMode p_mode) throws IOException {
+        this(p_logComponent, p_reorganizationThread, p_owner, p_owner, p_rangeID, p_backupDirectory, p_secondaryLogSize, p_flashPageSize, p_logSegmentSize,
+        p_reorgUtilizationThreshold, p_useChecksum, p_mode);
+    }
+
+    /**
+     * Update owner and range ID after recovery
+     *
+     * @param p_restorer
+     *      NodeID of the peer which recovered the backup range
+     * @param p_newRangeID
+     *      the new RangeID
+     */
+    public void transferBackupRange(final short p_restorer, final short p_newRangeID) {
+        m_owner = p_restorer;
+        m_rangeID = p_newRangeID;
     }
 
     /**
@@ -301,15 +349,6 @@ public class SecondaryLog extends AbstractLog {
     }
 
     // Setter
-
-    /**
-     * Returns the NodeID
-     *
-     * @return the NodeID
-     */
-    public final short getNodeID() {
-        return m_owner;
-    }
 
     /**
      * Returns the log size on disk
@@ -539,24 +578,34 @@ public class SecondaryLog extends AbstractLog {
     /**
      * Returns a list with all log entries wrapped in chunks
      *
+     * @param p_versions
+     *     all versions read from SSD
+     * @param p_lowestCID
+     *     the lowest CID in range
+     * @param p_timeToGetLock
+     *     the time for acquiring recovery lock
+     * @param p_timeToReadVersions
+     *     the time for loading the versions
      * @param p_chunkComponent
      *     the ChunkBackupComponent to store recovered chunks
      * @param p_doCRCCheck
      *     whether to check the payload or not
      * @return ChunkIDs of all recovered chunks, number of recovered chunks and bytes
      */
-    public final RecoveryMetadata recoverFromLog(final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck) {
+    public final RecoveryMetadata recoverFromLog(final TemporaryVersionsStorage p_versions, final long p_lowestCID, final long p_timeToGetLock,
+            final long p_timeToReadVersions, final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck) {
         int numberOfRecoveredLargeChunks = 0;
-        long lowestLID;
         long timeToPut = 0;
         boolean doCRCCheck = p_doCRCCheck;
-        AtomicInteger currentIndexCaller = new AtomicInteger(0);
-        AtomicInteger currentIndexHelper = new AtomicInteger(m_segmentHeaders.length - 1);
+        byte[] index = new byte[m_segmentHeaders.length];
+        ReentrantLock indexLock = new ReentrantLock(false);
         ReentrantLock largeChunkLock = new ReentrantLock(false);
         final RecoveryMetadata recoveryMetadata = new RecoveryMetadata();
         HashMap<Long, DSByteBuffer> largeChunks;
 
         // TODO: Guarantee that there is no more data to come
+
+        // TODO: Recovery fails if versions (partly only?) are stored in hashtable
 
         if (determineLogSize() == 0) {
             // #if LOGGER >= INFO
@@ -574,46 +623,64 @@ public class SecondaryLog extends AbstractLog {
         }
 
         Statistics statsCaller = new Statistics();
-        Statistics statsHelper = new Statistics();
-        long time = System.currentTimeMillis();
 
         // HashMap to store large Chunks in
         largeChunks = new HashMap<>();
-        m_reorganizationThread.block();
+
         // #if LOGGER >= INFO
-        LOGGER.info("Starting recovery of backup range %d", m_rangeID);
+        if (m_owner == m_originalOwner) {
+            LOGGER.info("Starting recovery of backup range %d of 0x%X", m_rangeID, m_owner);
+        } else {
+            LOGGER.info("Starting recovery of backup range %d of 0x%X. Original owner: 0x%x", m_rangeID, m_owner, m_originalOwner);
+        }
         // #endif /* LOGGER >= INFO */
 
-        // Get all current versions
-        if (m_versionsForRecovery == null) {
-            m_versionsForRecovery = new TemporaryVersionsStorage(m_secondaryLogSize);
-        } else {
-            m_versionsForRecovery.clear();
-        }
-        lowestLID = m_versionsBuffer.readAll(m_versionsForRecovery, false);
-
-        statsCaller.m_timeToReadVersionsFromDisk = System.currentTimeMillis() - time;
+        long time = System.currentTimeMillis();
 
         // Write Chunks in parallel
         RecoveryWriterThread writerThread = p_chunkComponent.initRecoveryThread();
 
         // Determine ChunkID ranges in parallel
-        RecoveryHelperThread helperThread =
-            new RecoveryHelperThread(recoveryMetadata, largeChunks, largeChunkLock, lowestLID, currentIndexCaller, currentIndexHelper, p_doCRCCheck,
-                statsHelper, p_chunkComponent);
-        helperThread.setName("Recovery: Helper-Thread");
-        helperThread.start();
+        RecoveryHelperThread[] helperThreads = new RecoveryHelperThread[RECOVERY_THREADS];
+        for (int i = 0; i < RECOVERY_THREADS; i++) {
+            RecoveryHelperThread helperThread = new RecoveryHelperThread(recoveryMetadata, p_versions, largeChunks, largeChunkLock, p_lowestCID, index,
+                    indexLock, p_doCRCCheck, p_chunkComponent);
+            helperThread.setName("Recovery: Helper-Thread " + (i + 1));
+            helperThread.start();
+            helperThreads[i] = helperThread;
+        }
 
-        int cur = 0;
-        while (cur < currentIndexHelper.get()) {
-            if (m_segmentHeaders[cur] != null && !m_segmentHeaders[cur].isEmpty()) {
-                recoverSegment(cur, m_versionsForRecovery, lowestLID, recoveryMetadata, largeChunks, largeChunkLock, p_chunkComponent, doCRCCheck, statsCaller);
+        // Determine CID ranges
+        long t = System.currentTimeMillis();
+        recoveryMetadata.setChunkIDRanges(determineRanges(p_versions, p_lowestCID));
+        statsCaller.m_timeToDetermineRanges = System.currentTimeMillis() - t;
+
+        // Recover segments
+        int idx = 0;
+        while (true) {
+            indexLock.lock();
+            while (idx < index.length && index[idx] == 1) {
+                idx++;
             }
-            cur = currentIndexCaller.incrementAndGet();
+            if (idx == index.length) {
+                indexLock.unlock();
+                break;
+            }
+            index[idx] = 1;
+            indexLock.unlock();
+
+            if (m_segmentHeaders[idx] != null && !m_segmentHeaders[idx].isEmpty()) {
+                recoverSegment(idx, p_versions, p_lowestCID, recoveryMetadata, largeChunks, largeChunkLock, p_chunkComponent, doCRCCheck,
+                        statsCaller);
+            }
+            idx++;
         }
 
         try {
-            helperThread.join();
+            for (int i = 0; i < RECOVERY_THREADS; i++) {
+                helperThreads[i].join();
+                statsCaller.merge(helperThreads[i].getStatistics());
+            }
             while (!writerThread.finished()) {
                 Thread.yield();
             }
@@ -629,7 +696,6 @@ public class SecondaryLog extends AbstractLog {
         if (!largeChunks.isEmpty()) {
             numberOfRecoveredLargeChunks = p_chunkComponent.putRecoveredChunks(largeChunks.values().toArray(new DSByteBuffer[largeChunks.size()]));
         }
-        m_reorganizationThread.unblock();
 
         // #if LOGGER >= INFO
         LOGGER.info("Recovery of backup range finished: ");
@@ -639,48 +705,27 @@ public class SecondaryLog extends AbstractLog {
             ranges += ChunkID.toHexString(chunkID) + ' ';
         }
         LOGGER.info(ranges);
-        LOGGER.info("\t Read versions from array: \t\t\t\t%.2f %%", (double) (statsCaller.m_readVersionsFromArray + statsHelper.m_readVersionsFromArray) /
-            (statsCaller.m_readVersionsFromArray + statsHelper.m_readVersionsFromArray + statsCaller.m_readVersionsFromHashTable +
-                statsHelper.m_readVersionsFromHashTable) * 100);
-        LOGGER.info("\t Time to read versions from SSD: \t\t\t %d ms", statsCaller.m_timeToReadVersionsFromDisk);
-        LOGGER.info("\t Time to determine ranges: \t\t\t\t %d ms", statsHelper.m_timeToDetermineRanges);
-        LOGGER.info("\t Time to read segments from SSD (sequential): \t\t %d ms",
-            statsCaller.m_timeToReadSegmentsFromDisk + statsHelper.m_timeToReadSegmentsFromDisk);
-        LOGGER.info("\t Time to read headers, check versions and checksums: \t %d ms", statsCaller.m_timeToCheck + statsHelper.m_timeToCheck);
+        LOGGER.info("\t Read versions from array: \t\t\t\t%.2f %%", (double) (statsCaller.m_readVersionsFromArray /
+                (statsCaller.m_readVersionsFromArray + statsCaller.m_readVersionsFromHashTable) * 100));
+        LOGGER.info("\t Time to acquire recovery lock: \t\t\t %d ms", p_timeToGetLock);
+        LOGGER.info("\t Time to read versions from SSD: \t\t\t %d ms", p_timeToReadVersions);
+        LOGGER.info("\t Time to determine ranges: \t\t\t\t %d ms", statsCaller.m_timeToDetermineRanges);
+        LOGGER.info("\t Time to read segments from SSD (sequential): \t\t %d ms", statsCaller.m_timeToReadSegmentsFromDisk);
+        LOGGER.info("\t Time to read headers, check versions and checksums: \t %d ms", statsCaller.m_timeToCheck);
         LOGGER.info("\t Time to create and put chunks in memory management: \t %d ms", timeToPut);
         // #endif /* LOGGER >= INFO */
 
         return recoveryMetadata;
     }
 
-    /**
-     * Returns all segments of secondary log
-     *
-     * @return all data
-     * @throws IOException
-     *     if the secondary log could not be read
-     * @note executed only by reorganization thread
-     */
-    public final byte[][] readAllSegments() throws IOException {
-        byte[][] result;
-        SegmentHeader header;
-        int length;
-
-        result = new byte[m_segmentHeaders.length][];
-        for (int i = 0; i < m_segmentHeaders.length; i++) {
-            header = m_segmentHeaders[i];
-            if (header != null) {
-                length = header.getUsedBytes();
-                result[i] = new byte[length];
-                readFromSecondaryLog(result[i], length, i * m_logSegmentSize, true);
-            }
-        }
-        return result;
-    }
-
     @Override
     public String toString() {
-        return "NodeID: " + m_owner + " - RangeID: " + m_rangeID + " - Written bytes: " + determineLogSize();
+        if (m_owner == m_originalOwner) {
+            return "Owner: " + m_owner + " - RangeID: " + m_rangeID + " - Written bytes: " + determineLogSize();
+        } else {
+            return "Owner: " + m_owner + " - RangeID: " + m_rangeID + " - Original Owner: " + m_owner + " - Original RangeID: " + m_rangeID +
+                    " - Written bytes: " + determineLogSize();
+        }
     }
 
     /**
@@ -822,7 +867,7 @@ public class SecondaryLog extends AbstractLog {
      * @param p_stat
      *     timing statistics
      */
-    private void recoverSegment(final int p_segmentIndex, final TemporaryVersionsStorage p_allVersions, final long p_lowestLID,
+    private void recoverSegment(final int p_segmentIndex, final TemporaryVersionsStorage p_allVersions, final long p_lowestCID,
         final RecoveryMetadata p_recoveryMetadata, final HashMap<Long, DSByteBuffer> p_largeChunks, final ReentrantLock p_largeChunkLock,
         final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck, final Statistics p_stat) {
         int headerSize;
@@ -901,7 +946,6 @@ public class SecondaryLog extends AbstractLog {
                             byte chainID = logEntryHeader.getChainID(segmentData, readBytes);
                             byte chainSize = logEntryHeader.getChainSize(segmentData, readBytes);
                             int maxLogEntrySize = AbstractLogEntryHeader.getMaxLogEntrySize();
-                            //System.out.println("Found segment " + chainID + " of chained chunk " + chunkID);
 
                             p_largeChunkLock.lock();
                             DSByteBuffer chunk = p_largeChunks.get(chunkID);
@@ -1434,6 +1478,257 @@ public class SecondaryLog extends AbstractLog {
         return ret;
     }
 
+    /**
+     * Determines ChunkID ranges for recovery
+     *
+     * @param p_versionStorage
+     *     all versions in array and hashtable
+     * @param p_lowestCID
+     *     the lowest ChunkID in versions array
+     * @return all ChunkID ranges
+     */
+    private long[] determineRanges(final TemporaryVersionsStorage p_versionStorage, final long p_lowestCID) {
+        long[] ret;
+        long[] localRanges = null;
+        long[] otherRanges = null;
+
+        if (p_versionStorage.getVersionsArray().size() > 0) {
+            localRanges = getRanges(p_versionStorage.getVersionsArray(), p_lowestCID);
+        }
+        if (p_versionStorage.getVersionsHashTable().size() > 0) {
+            System.out.println("Hashtable contains " + p_versionStorage.getVersionsHashTable().size() + " entries. " + ChunkID.toHexString(p_lowestCID));
+            System.out.println("Local ranges: ");
+            for (long chunkID : localRanges) {
+                System.out.print(ChunkID.toHexString(chunkID) + " ");
+            }
+            otherRanges = getRanges(p_versionStorage.getVersionsHashTable());
+            System.out.println("Other ranges: ");
+            for (long chunkID : otherRanges) {
+                System.out.print(ChunkID.toHexString(chunkID) + " ");
+            }
+        }
+
+        if (localRanges == null) {
+            ret = otherRanges;
+        } else if (otherRanges == null) {
+            ret = localRanges;
+        } else {
+            ret = new long[localRanges.length + otherRanges.length];
+            System.arraycopy(localRanges, 0, ret, 0, localRanges.length);
+            System.arraycopy(otherRanges, 0, ret, localRanges.length, otherRanges.length);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Determines all ChunkID ranges in versions array
+     *
+     * @param p_versionsArray
+     *     the versions array
+     * @return all ChunkID ranges in versions array
+     */
+    private long[] getRanges(final VersionsArray p_versionsArray, final long p_lowestCID) {
+        int currentIndex;
+        int index = 0;
+        long currentCID;
+        ArrayListLong ranges = new ArrayListLong();
+
+        while (index < p_versionsArray.capacity()) {
+            if (p_versionsArray.getVersion(index, 0) == Version.INVALID_VERSION) {
+                index++;
+                continue;
+            }
+
+            currentCID = index + p_lowestCID;
+            ranges.add(currentCID);
+            currentIndex = 1;
+
+            while (index + currentIndex < p_versionsArray.capacity() && p_versionsArray.getVersion(index + currentIndex, 0) != Version.INVALID_VERSION) {
+                currentIndex++;
+            }
+            ranges.add(currentCID + currentIndex - 1);
+            index += currentIndex;
+        }
+
+        return Arrays.copyOfRange(ranges.getArray(), 0, ranges.getSize());
+    }
+
+    /**
+     * Determines all ChunkID ranges in versions hashtable
+     *
+     * @param p_versionsHT
+     *     the versions hashtable
+     * @return all ChunkID ranges in versions hashtable
+     */
+    private long[] getRanges(final VersionsHashTable p_versionsHT) {
+        int currentIndex;
+        int index = 0;
+        long currentCID;
+        int[] table = p_versionsHT.getTable();
+        ArrayListLong ranges = new ArrayListLong();
+
+        // Sort table
+        if (p_versionsHT.size() < SORT_THRESHOLD) {
+            // There are only a few elements in table -> for a nearly sorted table insertion sort is much faster than quicksort
+            insertionSort(table);
+        } else {
+            quickSort(table, 0, table.length - 1);
+        }
+
+        while (index < table.length) {
+            if (table[index] == 0) {
+                index += 4;
+                continue;
+            }
+
+            currentCID = (long) table[index] << 32 | table[index + 1] & 0xFFFFFFFFL;
+            ranges.add(currentCID);
+            currentIndex = 4;
+
+            while (index + currentIndex < table.length &&
+                    ((long) table[index + currentIndex] << 32 | table[index + currentIndex + 1] & 0xFFFFFFFFL) == currentCID + currentIndex / 4) {
+                currentIndex += 4;
+            }
+            ranges.add(currentCID + currentIndex - 1);
+            index += currentIndex;
+        }
+
+        return Arrays.copyOfRange(ranges.getArray(), 0, ranges.getSize());
+    }
+
+    /**
+     * Sorts the versions hashtable with insertion sort; Used for a barely utilized hashtable as insertion sort is best for nearly sorted series
+     *
+     * @param p_table
+     *     the array of the versions hashtable
+     */
+    private void insertionSort(int[] p_table) {
+        for (int i = 0; i < p_table.length / 4; i++) {
+            for (int j = i; j > 0 && p_table[j * 4] < p_table[(j - 1) * 4]; j--) {
+                swap(p_table, j, j - 1);
+            }
+        }
+    }
+
+    /**
+     * Sorts the versions hashtable with quicksort (iterative!); Used for highly a utilized hashtable
+     *
+     * @param p_table
+     *     the array of the versions hashtable
+     * @param p_left
+     *     the index of the pivot element
+     * @param p_right
+     *     the range index
+     */
+    private void quickSort(int[] p_table, int p_left, int p_right) {
+        int left = p_left;
+        int right = p_right;
+
+        int[] stack = new int[right - left + 1];
+        int top = -1;
+
+        stack[++top] = left;
+        stack[++top] = right;
+
+        while (top >= 0) {
+            right = stack[top--];
+            left = stack[top--];
+
+            int pivot = partition(p_table, left, right);
+
+            if (pivot - 1 > left) {
+                stack[++top] = left;
+                stack[++top] = pivot - 1;
+            }
+
+            if (pivot + 1 < right) {
+                stack[++top] = pivot + 1;
+                stack[++top] = right;
+            }
+        }
+    }
+
+    /**
+     * Helper method for quicksort to partition the range
+     *
+     * @param p_table
+     *     the array of the versions hashtable
+     * @param p_left
+     *     the index of the pivot element
+     * @param p_right
+     *     the range index
+     * @return the partition index
+     */
+    private int partition(int[] p_table, int p_left, int p_right) {
+        int x = p_table[p_right * 4];
+        int i = p_left - 1;
+
+        for (int j = p_left; j <= p_right- 1; j++) {
+            if (p_table[j * 4] <= x) {
+                i++;
+                swap(p_table, i, j);
+            }
+        }
+        swap(p_table, i + 1, p_right);
+
+        return i + 1;
+    }
+
+    /**
+     * Helper method for quicksort and insertion sort to swap to elements
+     *
+     * @param p_table
+     *     the array of the versions hashtable
+     * @param p_index1
+     *     the first index
+     * @param p_index2
+     *     the second index
+     */
+    private void swap(int[] p_table, int p_index1, int p_index2) {
+        int index1 = p_index1 * 4;
+        int index2 = p_index2 * 4;
+
+        if (p_table[index1] == 0) {
+            if (p_table[index2] != 0) {
+                p_table[index1] = p_table[index2];
+                p_table[index1 + 1] = p_table[index2 + 1];
+                p_table[index1 + 2] = p_table[index2 + 2];
+                p_table[index1 + 3] = p_table[index2 + 3];
+
+                p_table[index2] = 0;
+                p_table[index2 + 1] = 0;
+                p_table[index2 + 2] = 0;
+                p_table[index2 + 3] = 0;
+            }
+        } else if (p_table[index2] == 0) {
+            p_table[index2] = p_table[index1];
+            p_table[index2 + 1] = p_table[index1 + 1];
+            p_table[index2 + 2] = p_table[index1 + 2];
+            p_table[index2 + 3] = p_table[index2 + 3];
+
+            p_table[index1] = 0;
+            p_table[index1 + 1] = 0;
+            p_table[index1 + 2] = 0;
+            p_table[index1 + 3] = 0;
+        } else {
+            int temp1 = p_table[index1];
+            int temp2 = p_table[index1 + 1];
+            int temp3 = p_table[index1 + 2];
+            int temp4 = p_table[index1 + 3];
+
+            p_table[index1] = p_table[index2];
+            p_table[index1 + 1] = p_table[index2 + 1];
+            p_table[index1 + 2] = p_table[index2 + 2];
+            p_table[index1 + 3] = p_table[index2 + 3];
+
+            p_table[index2] = temp1;
+            p_table[index2 + 1] = temp2;
+            p_table[index2 + 2] = temp3;
+            p_table[index2 + 3] = temp4;
+        }
+    }
+
     // Classes
 
     /**
@@ -1442,7 +1737,6 @@ public class SecondaryLog extends AbstractLog {
     static final class Statistics {
 
         // Attributes
-        long m_timeToReadVersionsFromDisk;
         long m_timeToDetermineRanges;
         long m_timeToReadSegmentsFromDisk;
         long m_timeToCheck;
@@ -1454,13 +1748,21 @@ public class SecondaryLog extends AbstractLog {
          * Constructor
          */
         private Statistics() {
-            m_timeToReadVersionsFromDisk = 0;
             m_timeToDetermineRanges = 0;
             m_timeToReadSegmentsFromDisk = 0;
             m_timeToCheck = 0;
             m_readVersionsFromArray = 0;
             m_readVersionsFromHashTable = 0;
             m_recoveredLargeChunks = 0;
+        }
+
+        void merge(final Statistics p_stats) {
+            m_timeToDetermineRanges += p_stats.m_timeToDetermineRanges;
+            m_timeToReadSegmentsFromDisk += p_stats.m_timeToReadSegmentsFromDisk;
+            m_timeToCheck += p_stats.m_timeToCheck;
+            m_readVersionsFromArray += p_stats.m_readVersionsFromArray;
+            m_readVersionsFromHashTable += p_stats.m_readVersionsFromHashTable;
+            m_recoveredLargeChunks += p_stats.m_recoveredLargeChunks;
         }
     }
 
@@ -1601,276 +1903,57 @@ public class SecondaryLog extends AbstractLog {
     private class RecoveryHelperThread extends Thread {
 
         private RecoveryMetadata m_recoveryMetadata;
+        private TemporaryVersionsStorage m_versionsForRecovery;
         private HashMap<Long, DSByteBuffer> m_largeChunks;
-        private long m_lowestLID;
-        private AtomicInteger m_currentIndexCaller;
-        private AtomicInteger m_currentIndexHelper;
         private ReentrantLock m_largeChunkLock;
+        private long m_lowestCID;
+        private byte[] m_index;
+        private ReentrantLock m_indexLock;
         private boolean m_doCRCCheck;
         private Statistics m_stats;
         private ChunkBackupComponent m_chunkComponent;
 
-        RecoveryHelperThread(final RecoveryMetadata p_metadata, final HashMap<Long, DSByteBuffer> p_largeChunks, final ReentrantLock p_largeChunkLock,
-            final long p_lowestLID, final AtomicInteger p_currentIndexCaller, final AtomicInteger p_currentIndexHelper, final boolean p_doCRCCheck,
-            final Statistics p_stat, final ChunkBackupComponent p_chunkComponent) {
+        RecoveryHelperThread(final RecoveryMetadata p_metadata, final TemporaryVersionsStorage p_versionsForRecovery, final HashMap<Long,
+                DSByteBuffer> p_largeChunks, final ReentrantLock p_largeChunkLock, final long p_lowestCID, final byte[] p_index,
+                final ReentrantLock p_indexLock, final boolean p_doCRCCheck, final ChunkBackupComponent p_chunkComponent) {
             m_recoveryMetadata = p_metadata;
+            m_versionsForRecovery = p_versionsForRecovery;
             m_largeChunks = p_largeChunks;
-            m_lowestLID = p_lowestLID;
-            m_currentIndexCaller = p_currentIndexCaller;
-            m_currentIndexHelper = p_currentIndexHelper;
             m_largeChunkLock = p_largeChunkLock;
+            m_lowestCID = p_lowestCID;
+            m_index = p_index;
+            m_indexLock = p_indexLock;
             m_doCRCCheck = p_doCRCCheck;
-            m_stats = p_stat;
+            m_stats = new Statistics();
             m_chunkComponent = p_chunkComponent;
+        }
+
+        Statistics getStatistics() {
+            return m_stats;
         }
 
         @Override
         public void run() {
-            long t = System.currentTimeMillis();
-            m_recoveryMetadata.setChunkIDRanges(determineRanges(m_versionsForRecovery, m_owner, m_lowestLID));
-            m_stats.m_timeToDetermineRanges = System.currentTimeMillis() - t;
-
-            int cur = m_segmentHeaders.length - 1;
-            while (cur > m_currentIndexCaller.get()) {
-                if (m_segmentHeaders[cur] != null && !m_segmentHeaders[cur].isEmpty()) {
-                    recoverSegment(cur, m_versionsForRecovery, m_lowestLID, m_recoveryMetadata, m_largeChunks, m_largeChunkLock, m_chunkComponent, m_doCRCCheck,
-                        m_stats);
-                }
-                cur = m_currentIndexHelper.decrementAndGet();
-            }
-        }
-
-        /**
-         * Determines ChunkID ranges for recovery
-         *
-         * @param p_versionStorage
-         *     all versions in array and hashtable
-         * @param p_owner
-         *     the owner of all chunks
-         * @param p_lowestLID
-         *     the lowest ChunkID in versions array
-         * @return all ChunkID ranges
-         */
-        private long[] determineRanges(final TemporaryVersionsStorage p_versionStorage, final short p_owner, final long p_lowestLID) {
-            long[] ret;
-            long[] localRanges = null;
-            long[] otherRanges = null;
-
-            if (p_versionStorage.getVersionsArray().size() > 0) {
-                localRanges = getRanges(p_versionStorage.getVersionsArray(), p_owner, p_lowestLID);
-            }
-            if (p_versionStorage.getVersionsHashTable().size() > 0) {
-                otherRanges = getRanges(p_versionStorage.getVersionsHashTable());
-            }
-
-            if (localRanges == null) {
-                ret = otherRanges;
-            } else if (otherRanges == null) {
-                ret = localRanges;
-            } else {
-                ret = new long[localRanges.length + otherRanges.length];
-                System.arraycopy(localRanges, 0, ret, 0, localRanges.length);
-                System.arraycopy(otherRanges, 0, ret, localRanges.length, otherRanges.length);
-            }
-
-            return ret;
-        }
-
-        /**
-         * Determines all ChunkID ranges in versions array
-         *
-         * @param p_versionsArray
-         *     the versions array
-         * @param p_creator
-         *     the creator and current owner
-         * @return all ChunkID ranges in versions array
-         */
-        private long[] getRanges(final VersionsArray p_versionsArray, final short p_creator, final long p_lowestLID) {
-            int currentIndex;
-            int index = 0;
-            long currentLID;
-            ArrayListLong ranges = new ArrayListLong();
-
-            while (index < p_versionsArray.capacity()) {
-                if (p_versionsArray.getVersion(index, 0) == Version.INVALID_VERSION) {
-                    index++;
-                    continue;
-                }
-
-                currentLID = index + p_lowestLID;
-                ranges.add(((long) p_creator << 48) + currentLID);
-                currentIndex = 1;
-
-                while (index + currentIndex < p_versionsArray.capacity() && p_versionsArray.getVersion(index + currentIndex, 0) != Version.INVALID_VERSION) {
-                    currentIndex++;
-                }
-                ranges.add(((long) p_creator << 48) + currentLID + currentIndex - 1);
-                index += currentIndex;
-            }
-
-            return Arrays.copyOfRange(ranges.getArray(), 0, ranges.getSize());
-        }
-
-        /**
-         * Determines all ChunkID ranges in versions hashtable
-         *
-         * @param p_versionsHT
-         *     the versions hashtable
-         * @return all ChunkID ranges in versions hashtable
-         */
-        private long[] getRanges(final VersionsHashTable p_versionsHT) {
-            int currentIndex;
-            int index = 0;
-            long currentCID;
-            int[] table = p_versionsHT.getTable();
-            ArrayListLong ranges = new ArrayListLong();
-
-            // Sort table
-            if (p_versionsHT.size() < SORT_THRESHOLD) {
-                // There are only a few elements in table -> for a nearly sorted table insertion sort is much faster than quicksort
-                insertionSort(table);
-            } else {
-                quickSort(table, 0, table.length - 1);
-            }
-
-            while (index < table.length) {
-                if (table[index] == 0) {
-                    index += 4;
-                    continue;
-                }
-
-                currentCID = (long) table[index] << 32 | table[index + 1] & 0xFFFFFFFFL;
-                ranges.add(currentCID);
-                currentIndex = 4;
-
-                while (index + currentIndex < table.length &&
-                    ((long) table[index + currentIndex] << 32 | table[index + currentIndex + 1] & 0xFFFFFFFFL) == currentCID + currentIndex / 4) {
-                    currentIndex += 4;
-                }
-                ranges.add(currentCID + currentIndex - 1);
-                index += currentIndex;
-            }
-
-            return Arrays.copyOfRange(ranges.getArray(), 0, ranges.getSize());
-        }
-
-        /**
-         * Sorts the versions hashtable with insertion sort; Used for a barely utilized hashtable as insertion sort is best for nearly sorted series
-         *
-         * @param p_table
-         *     the array of the versions hashtable
-         */
-        private void insertionSort(int[] p_table) {
-            for (int i = 0; i < p_table.length; i += 4) {
-                for (int j = i; j > 0 && p_table[j] < p_table[j - 4]; j -= 4) {
-                    swap(p_table, j, j - 4);
-                }
-            }
-        }
-
-        /**
-         * Sorts the versions hashtable with quicksort; Used for highly a utilized hashtable
-         *
-         * @param p_table
-         *     the array of the versions hashtable
-         * @param p_pivotIndex
-         *     the index of the pivot element
-         * @param p_rangeIndex
-         *     the range index
-         */
-        private void quickSort(int[] p_table, int p_pivotIndex, int p_rangeIndex) {
-            if (p_pivotIndex < p_rangeIndex) {
-                int q = partition(p_table, p_pivotIndex, p_rangeIndex);
-                quickSort(p_table, p_pivotIndex, q);
-                quickSort(p_table, q + 4, p_rangeIndex);
-            }
-        }
-
-        /**
-         * Helper method for quicksort to partition the range
-         *
-         * @param p_table
-         *     the array of the versions hashtable
-         * @param p_pivotIndex
-         *     the index of the pivot element
-         * @param p_rangeIndex
-         *     the range index
-         * @return the partition index
-         */
-        private int partition(int[] p_table, int p_pivotIndex, int p_rangeIndex) {
-
-            int cmpIndex = p_table[p_pivotIndex];
-            int i = p_pivotIndex - 4;
-            int j = p_rangeIndex + 4;
-
+            int idx = 0;
             while (true) {
-                i += 4;
-                while (i < p_rangeIndex && p_table[i] < cmpIndex) {
-                    i += 4;
+                m_indexLock.lock();
+                while (idx < m_index.length && m_index[idx] == 1) {
+                    idx++;
                 }
-
-                j -= 4;
-                while (j > p_pivotIndex && p_table[j] > cmpIndex) {
-                    j -= 4;
+                if (idx == m_index.length) {
+                    m_indexLock.unlock();
+                    break;
                 }
+                m_index[idx] = 1;
+                m_indexLock.unlock();
 
-                if (i < j) {
-                    swap(p_table, i, j);
-                } else {
-                    return j;
+                if (m_segmentHeaders[idx] != null && !m_segmentHeaders[idx].isEmpty()) {
+                    recoverSegment(idx, m_versionsForRecovery, m_lowestCID, m_recoveryMetadata, m_largeChunks, m_largeChunkLock, m_chunkComponent, m_doCRCCheck,
+                            m_stats);
                 }
-            }
-        }
-
-        /**
-         * Helper method for quicksort and insertion sort to swap to elements
-         *
-         * @param p_table
-         *     the array of the versions hashtable
-         * @param p_index1
-         *     the first index
-         * @param p_index2
-         *     the second index
-         */
-        private void swap(int[] p_table, int p_index1, int p_index2) {
-            if (p_table[p_index1] == 0) {
-                if (p_table[p_index2] != 0) {
-                    p_table[p_index1] = p_table[p_index2];
-                    p_table[p_index1 + 1] = p_table[p_index2 + 1];
-                    p_table[p_index1 + 2] = p_table[p_index2 + 2];
-                    p_table[p_index1 + 3] = p_table[p_index2 + 3];
-
-                    p_table[p_index2] = 0;
-                    p_table[p_index2 + 1] = 0;
-                    p_table[p_index2 + 2] = 0;
-                    p_table[p_index2 + 3] = 0;
-                }
-            } else if (p_table[p_index2] == 0) {
-                p_table[p_index2] = p_table[p_index1];
-                p_table[p_index2 + 1] = p_table[p_index1 + 1];
-                p_table[p_index2 + 2] = p_table[p_index1 + 2];
-                p_table[p_index2 + 3] = p_table[p_index2 + 3];
-
-                p_table[p_index1] = 0;
-                p_table[p_index1 + 1] = 0;
-                p_table[p_index1 + 2] = 0;
-                p_table[p_index1 + 3] = 0;
-            } else {
-                int temp1 = p_table[p_index1];
-                int temp2 = p_table[p_index1 + 1];
-                int temp3 = p_table[p_index1 + 2];
-                int temp4 = p_table[p_index1 + 3];
-
-                p_table[p_index1] = p_table[p_index2];
-                p_table[p_index1 + 1] = p_table[p_index2 + 1];
-                p_table[p_index1 + 2] = p_table[p_index2 + 2];
-                p_table[p_index1 + 3] = p_table[p_index2 + 3];
-
-                p_table[p_index2] = temp1;
-                p_table[p_index2 + 1] = temp2;
-                p_table[p_index2 + 2] = temp3;
-                p_table[p_index2 + 3] = temp4;
+                idx++;
             }
         }
     }
+
 }

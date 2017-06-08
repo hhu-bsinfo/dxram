@@ -92,6 +92,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
     private String m_backupDirectory;
 
+    private TemporaryVersionsStorage m_versionsForRecovery;
+
     /**
      * Creates the log component
      */
@@ -309,7 +311,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
         if (cat != null) {
             try {
-                cat.removeBufferAndLog(p_rangeID);
+                cat.removeAndCloseBufferAndLog(p_rangeID);
             } catch (IOException e) {
                 // #if LOGGER == WARN
                 LOGGER.trace("Backup range could not be removed from hard drive.");
@@ -334,13 +336,26 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         SecondaryLog secLog;
 
         try {
-            flushDataToPrimaryLog();
+            long start = System.currentTimeMillis();
+            m_secondaryLogsReorgThread.block();
+            long timeToGetLock = System.currentTimeMillis() - start;
 
             secLogBuffer = getSecondaryLogBuffer(p_owner, p_rangeID);
             secLog = getSecondaryLog(p_owner, p_rangeID);
             if (secLogBuffer != null && secLog != null) {
+                // Read all versions for recovery (must be done before flushing)
+                long time = System.currentTimeMillis();
+                if (m_versionsForRecovery == null) {
+                    m_versionsForRecovery = new TemporaryVersionsStorage(m_secondaryLogSize.getBytes());
+                } else {
+                    m_versionsForRecovery.clear();
+                }
+                long lowestCID = secLog.getCurrentVersions(m_versionsForRecovery, false);
+                long timeToReadVersions = System.currentTimeMillis() - time;
+
+                flushDataToPrimaryLog();
                 secLogBuffer.flushSecLogBuffer();
-                ret = secLog.recoverFromLog(m_chunk, true);
+                ret = secLog.recoverFromLog(m_versionsForRecovery, lowestCID, timeToGetLock, timeToReadVersions, m_chunk, true);
             } else {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Backup range %d could not be recovered. Secondary log is missing!", p_rangeID);
@@ -350,6 +365,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             // #if LOGGER >= ERROR
             LOGGER.error("Backup range recovery failed: %s", e);
             // #endif /* LOGGER >= ERROR */
+        } finally {
+            m_secondaryLogsReorgThread.unblock();
         }
 
         return ret;
@@ -629,6 +646,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                             if (secondaryLogs[j].isAccessed()) {
                                 ret += "#Active log# ";
                             }
+
                             counterAllocated += secondaryLogs[j].getLogFileSize() + secondaryLogs[j].getVersionsFileSize();
                             occupiedInRange = secondaryLogs[j].getOccupiedSpace();
                             counterOccupied += occupiedInRange;
@@ -809,7 +827,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             assert length > 0;
 
             try {
-                logEntryHeader = PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length, secLog.getNextVersion(chunkID), rangeID, p_owner);
+                logEntryHeader = PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length, secLog.getNextVersion(chunkID), rangeID, p_owner, originalOwner);
                 m_writeBuffer.putLogData(logEntryHeader, p_buffer, length);
             } catch (final InterruptedException e) {
                 // #if LOGGER >= ERROR
@@ -867,7 +885,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
         if (cat == null) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Log catalog for peer 0x%X is empty!", p_rangeID);
+            LOGGER.error("Log catalog for peer 0x%X is empty!", p_owner);
             // #endif /* LOGGER >= ERROR */
             return null;
         }

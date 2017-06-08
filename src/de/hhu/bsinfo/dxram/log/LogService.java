@@ -19,8 +19,10 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.messages.GetUtilizationRequest;
 import de.hhu.bsinfo.dxram.log.messages.GetUtilizationResponse;
-import de.hhu.bsinfo.dxram.log.messages.InitRequest;
-import de.hhu.bsinfo.dxram.log.messages.InitResponse;
+import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
+import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeResponse;
+import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeRequest;
+import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeResponse;
 import de.hhu.bsinfo.dxram.log.messages.LogAnonMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessages;
@@ -84,14 +86,17 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
                     case LogMessages.SUBTYPE_LOG_MESSAGE:
                         incomingLogMessage((LogMessage) p_message);
                         break;
-                    case LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE:
+                    case LogMessages.SUBTYPE_LOG_ANON_MESSAGE:
                         incomingLogBufferMessage((LogAnonMessage) p_message);
                         break;
                     case LogMessages.SUBTYPE_REMOVE_MESSAGE:
                         incomingRemoveMessage((RemoveMessage) p_message);
                         break;
-                    case LogMessages.SUBTYPE_INIT_REQUEST:
-                        incomingInitRequest((InitRequest) p_message);
+                    case LogMessages.SUBTYPE_INIT_BACKUP_RANGE_REQUEST:
+                        incomingInitBackupRangeRequest((InitBackupRangeRequest) p_message);
+                        break;
+                    case LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST:
+                        incomingInitRecoveredBackupRangeRequest((InitRecoveredBackupRangeRequest) p_message);
                         break;
                     case LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST:
                         incomingGetUtilizationRequest((GetUtilizationRequest) p_message);
@@ -182,21 +187,43 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
     }
 
     /**
-     * Handles an incoming InitRequest
+     * Handles an incoming InitBackupRangeRequest
      *
      * @param p_request
-     *         the InitRequest
+     *     the InitBackupRangeRequest
      */
-    private void incomingInitRequest(final InitRequest p_request) {
+    private void incomingInitBackupRangeRequest(final InitBackupRangeRequest p_request) {
         boolean res;
 
         res = m_log.incomingInitBackupRange(p_request.getRangeID(), p_request.getSource());
 
         try {
-            m_network.sendMessage(new InitResponse(p_request, res));
+            m_network.sendMessage(new InitBackupRangeResponse(p_request, res));
         } catch (final NetworkException e) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Could not acknowledge initilization of backup range", e);
+            LOGGER.error("Could not acknowledge initialization of backup range", e);
+            // #endif /* LOGGER >= ERROR */
+
+        }
+    }
+
+    /**
+     * Handles an incoming InitBackupRangeRequest
+     *
+     * @param p_request
+     *     the InitBackupRangeRequest
+     */
+    private void incomingInitRecoveredBackupRangeRequest(final InitRecoveredBackupRangeRequest p_request) {
+        boolean res;
+
+        res = m_log.incomingInitRecoveredBackupRange(p_request.getRangeID(), p_request.getSource(), p_request.getOriginalRangeID(), p_request.getOriginalOwner(),
+                p_request.isNewBackupRange());
+
+        try {
+            m_network.sendMessage(new InitRecoveredBackupRangeResponse(p_request, res));
+        } catch (final NetworkException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Could not acknowledge initialization of backup range", e);
             // #endif /* LOGGER >= ERROR */
 
         }
@@ -209,7 +236,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      */
     private void registerNetworkMessages() {
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, LogMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE, LogMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_ANON_MESSAGE, LogMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST, GetUtilizationRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE, GetUtilizationResponse.class);
