@@ -92,7 +92,7 @@ public class GetResponse extends AbstractResponse {
             size += request.getChunks().length * Byte.BYTES;
 
             for (int i = 0; i < request.getChunks().length; i++) {
-                if (request.getChunks()[i] != null) {
+                if (request.getChunks()[i] != null && request.getChunks()[i].getState() == ChunkState.OK) {
                     size += request.getChunks()[i].sizeofObject();
                 }
             }

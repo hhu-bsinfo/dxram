@@ -117,11 +117,20 @@ public class PutRequest extends AbstractRequest {
     protected final int getPayloadLength() {
         int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
 
-        size += m_dataStructures.length * Long.BYTES;
-        size += m_dataStructures.length * Integer.BYTES;
+        if (m_dataStructures != null) {
+            size += m_dataStructures.length * Long.BYTES;
+            size += m_dataStructures.length * Integer.BYTES;
 
-        for (DataStructure dataStructure : m_dataStructures) {
-            size += dataStructure.sizeofObject();
+            for (DataStructure dataStructure : m_dataStructures) {
+                size += dataStructure.sizeofObject();
+            }
+        } else {
+            size += m_chunkIDs.length * Long.BYTES;
+            size += m_chunkIDs.length * Integer.BYTES;
+
+            for (byte[] byteArray : m_data) {
+                size += byteArray.length;
+            }
         }
 
         return size;
@@ -149,7 +158,7 @@ public class PutRequest extends AbstractRequest {
         m_chunkIDs = new long[numChunks];
         m_data = new byte[numChunks][];
 
-        for (int i = 0; i < m_dataStructures.length; i++) {
+        for (int i = 0; i < numChunks; i++) {
             m_chunkIDs[i] = p_buffer.getLong();
             m_data[i] = new byte[p_buffer.getInt()];
 
