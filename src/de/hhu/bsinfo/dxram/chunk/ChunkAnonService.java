@@ -451,7 +451,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                     case ChunkMessages.SUBTYPE_GET_ANON_REQUEST:
                         incomingGetBufferRequest((GetAnonRequest) p_message);
                         break;
-                    case ChunkMessages.SUBTYPE_PUT_BUFFER_REQUEST:
+                    case ChunkMessages.SUBTYPE_PUT_ANON_REQUEST:
                         incomingPutBufferRequest((PutAnonRequest) p_message);
                         break;
                     default:

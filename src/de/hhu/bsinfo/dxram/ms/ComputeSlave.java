@@ -139,7 +139,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
                     case MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST:
                         incomingExecuteTaskScriptRequest((ExecuteTaskScriptRequest) p_message);
                         break;
-                    case MasterSlaveMessages.SUBTYPE_SIGNAL:
+                    case MasterSlaveMessages.SUBTYPE_SIGNAL_MESSAGE:
                         incomingSignalMessage((SignalMessage) p_message);
                         break;
                     default:

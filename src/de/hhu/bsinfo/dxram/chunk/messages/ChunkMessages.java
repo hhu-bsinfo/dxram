@@ -25,8 +25,8 @@ public final class ChunkMessages {
     public static final byte SUBTYPE_GET_ANON_RESPONSE = 4;
     public static final byte SUBTYPE_PUT_REQUEST = 5;
     public static final byte SUBTYPE_PUT_RESPONSE = 6;
-    public static final byte SUBTYPE_PUT_BUFFER_REQUEST = 7;
-    public static final byte SUBTYPE_PUT_BUFFER_RESPONSE = 8;
+    public static final byte SUBTYPE_PUT_ANON_REQUEST = 7;
+    public static final byte SUBTYPE_PUT_ANON_RESPONSE = 8;
     public static final byte SUBTYPE_PUT_MESSAGE = 9;
     public static final byte SUBTYPE_PUT_ANON_MESSAGE = 10;
     public static final byte SUBTYPE_REMOVE_MESSAGE = 11;

@@ -28,7 +28,7 @@ public final class MasterSlaveMessages {
     public static final byte SUBTYPE_GET_MASTER_STATUS_RESPONSE = 8;
     public static final byte SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE = 9;
     public static final byte SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE = 10;
-    public static final byte SUBTYPE_SIGNAL = 11;
+    public static final byte SUBTYPE_SIGNAL_MESSAGE = 11;
 
     /**
      * Static class

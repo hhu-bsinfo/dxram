@@ -44,7 +44,7 @@ public class PutAnonResponse extends AbstractResponse {
      *     Status code for every single chunk put.
      */
     public PutAnonResponse(final PutAnonRequest p_request, final byte... p_statusCodes) {
-        super(p_request, ChunkMessages.SUBTYPE_PUT_BUFFER_RESPONSE);
+        super(p_request, ChunkMessages.SUBTYPE_PUT_ANON_RESPONSE);
 
         m_chunkStatusCodes = p_statusCodes;
 

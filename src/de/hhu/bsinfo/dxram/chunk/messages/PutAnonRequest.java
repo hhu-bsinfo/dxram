@@ -54,7 +54,7 @@ public class PutAnonRequest extends AbstractRequest {
      *     Chunk buffers with the data to put.
      */
     public PutAnonRequest(final short p_destination, final ChunkLockOperation p_unlockOperation, final ChunkAnon... p_chunks) {
-        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_BUFFER_REQUEST);
+        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_ANON_REQUEST);
 
         m_chunks = p_chunks;
 

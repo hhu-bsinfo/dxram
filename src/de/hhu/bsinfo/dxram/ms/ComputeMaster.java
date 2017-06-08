@@ -187,7 +187,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
                     case MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST:
                         incomingSlaveJoinRequest((SlaveJoinRequest) p_message);
                         break;
-                    case MasterSlaveMessages.SUBTYPE_SIGNAL:
+                    case MasterSlaveMessages.SUBTYPE_SIGNAL_MESSAGE:
                         incomingSignalMessage((SignalMessage) p_message);
                         break;
                     default:
