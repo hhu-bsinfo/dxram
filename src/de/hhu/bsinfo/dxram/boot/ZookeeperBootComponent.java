@@ -317,6 +317,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 // Remove peer
                 status = zookeeperGetStatus("nodes/peers/" + p_nodeID);
                 if (status != null) {
+                    // Remove all children if there are any (currently not unused)
+                    List<String> children = m_zookeeper.getChildren("nodes/peers/" + p_nodeID, this);
+                    for (String child : children) {
+                        Stat stat = zookeeperGetStatus("nodes/peers/" + p_nodeID + '/' + child);
+                        if (stat != null) {
+                            zookeeperDelete("nodes/peers/" + p_nodeID + '/' + child, stat.getVersion());
+                        }
+                    }
+
                     zookeeperDelete("nodes/peers/" + p_nodeID, status.getVersion());
                     if (!m_nodes.getNode(p_nodeID).readFromFile()) {
                         // Enable re-usage of NodeID if failed peer was not in nodes file
@@ -361,7 +370,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         String path;
         String prefix;
 
-        List<String> childs;
+        List<String> children;
         short nodeID;
         NodeRole role;
         String node;
@@ -385,8 +394,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                     if (path != null) {
                         if (path.equals(prefix + "nodes/new")) {
 
-                            childs = m_zookeeper.getChildren("nodes/new", this);
-                            for (String child : childs) {
+                            children = m_zookeeper.getChildren("nodes/new", this);
+                            for (String child : children) {
                                 nodeID = Short.parseShort(child);
                                 node = new String(zookeeperGetData("nodes/new/" + nodeID));
                                 splits = node.split(":");
@@ -638,9 +647,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             seed = 1;
 
             for (NodeEntry entry : p_nodes) {
-                nodeID = CRC16.hash(seed);
+                nodeID = CRC16.continuousHash(seed);
                 while (m_bloomFilter.contains(nodeID) || nodeID == NodeID.INVALID_ID) {
-                    nodeID = CRC16.hash(++seed);
+                    nodeID = CRC16.continuousHash(++seed);
                 }
                 seed++;
 
@@ -742,9 +751,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             seed = 1;
 
             for (NodeEntry entry : p_nodes) {
-                nodeID = CRC16.hash(seed);
+                nodeID = CRC16.continuousHash(seed);
                 while (m_bloomFilter.contains(nodeID) || nodeID == NodeID.INVALID_ID) {
-                    nodeID = CRC16.hash(++seed);
+                    nodeID = CRC16.continuousHash(++seed);
                 }
                 seed++;
 
@@ -809,9 +818,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 } else {
                     splits = m_ownAddress.getIP().split("\\.");
                     seed = ((Integer.parseInt(splits[1]) << 16) + (Integer.parseInt(splits[2]) << 8) + Integer.parseInt(splits[3])) * -1;
-                    nodeID = CRC16.hash(seed);
+                    nodeID = CRC16.continuousHash(seed);
                     while (m_bloomFilter.contains(nodeID) || nodeID == NodeID.INVALID_ID) {
-                        nodeID = CRC16.hash(--seed);
+                        nodeID = CRC16.continuousHash(--seed);
                     }
                     m_bloomFilter.add(nodeID);
                     // Set own NodeID
