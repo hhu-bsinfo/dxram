@@ -37,6 +37,8 @@ import de.hhu.bsinfo.utils.event.EventInterface;
 public final class NetworkHandler implements DataReceiver {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkHandler.class.getSimpleName());
+    private static final int DEFAULT_MESSAGE_STORE_SIZE = 100;
+    private static final int EXCLUSIVE_MESSAGE_STORE_SIZE = 20;
 
     // Attributes
     private static EventInterface ms_eventInterface;
@@ -53,8 +55,9 @@ public final class NetworkHandler implements DataReceiver {
 
     private NodeMap m_nodeMap;
 
+    private AtomicLongArray m_lastFailures;
+
     private int m_timeOut;
-    private int m_numMessageHandlerThreads;
 
     // Constructors
 
@@ -69,8 +72,6 @@ public final class NetworkHandler implements DataReceiver {
      *     the request time out in ms
      */
     public NetworkHandler(final int p_numMessageHandlerThreads, final int p_requestMapSize, final int p_requestTimeOut) {
-        final byte networkType;
-
         RequestMap.initialize(p_requestMapSize);
 
         m_timeOut = p_requestTimeOut;
@@ -84,6 +85,8 @@ public final class NetworkHandler implements DataReceiver {
         m_exclusiveMessageHandler.start();
 
         m_messageDirectory = new MessageDirectory(p_requestTimeOut);
+
+        m_lastFailures = new AtomicLongArray(65536);
     }
 
     /**
@@ -152,19 +155,15 @@ public final class NetworkHandler implements DataReceiver {
      *     the own NodeID
      * @param p_nodeMap
      *     the node map
-     * @param p_incomingBufferSize
-     *     the size of incoming buffer
-     * @param p_outgoingBufferSize
-     *     the size of outgoing buffer
-     * @param p_maxIncomingBufferSize
-     *     the maximum number of bytes read at once from channel
+     * @param p_osBufferSize
+     *     the size of incoming and outgoing buffers
      * @param p_flowControlWindowSize
      *     the maximal number of ByteBuffer to schedule for sending/receiving
      * @param p_connectionTimeout
      *     the connection timeout
      */
-    public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize, final int p_outgoingBufferSize,
-        final int p_maxIncomingBufferSize, final int p_flowControlWindowSize, final int p_connectionTimeout) {
+    public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_osBufferSize, final int p_flowControlWindowSize,
+            final int p_connectionTimeout) {
 
         // #if LOGGER == TRACE
         LOGGER.trace("Entering initialize");
@@ -172,8 +171,7 @@ public final class NetworkHandler implements DataReceiver {
 
         m_nodeMap = p_nodeMap;
 
-        m_connectionCreator = new NIOConnectionCreator(m_messageDirectory, m_nodeMap, p_incomingBufferSize, p_outgoingBufferSize, p_maxIncomingBufferSize,
-            p_flowControlWindowSize, p_connectionTimeout);
+        m_connectionCreator = new NIOConnectionCreator(m_messageDirectory, m_nodeMap, p_osBufferSize, p_flowControlWindowSize, p_connectionTimeout);
         m_connectionCreator.initialize(p_nodeMap.getAddress(p_ownNodeID).getPort());
         m_manager = new ConnectionManager(m_connectionCreator, this);
 
@@ -204,6 +202,7 @@ public final class NetworkHandler implements DataReceiver {
         m_defaultMessageHandlerPool.shutdown();
 
         // Shutdown exclusive message handler
+        LockSupport.unpark(m_exclusiveMessageHandler);
         m_exclusiveMessageHandler.interrupt();
         m_exclusiveMessageHandler.shutdown();
         try {
@@ -299,7 +298,9 @@ public final class NetworkHandler implements DataReceiver {
         // #endif /* LOGGER == TRACE */
 
         try {
-            m_manager.getConnection(p_nodeID);
+            if (m_manager.getConnection(p_nodeID) == null) {
+                throw new IOException("Connection to " + NodeID.toHexString(p_nodeID) + " could not be established");
+            }
         } catch (final IOException e) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("IOException during connection lookup", e);
@@ -338,7 +339,7 @@ public final class NetworkHandler implements DataReceiver {
                 connection = m_manager.getConnection(p_message.getDestination());
             } catch (final IOException e) {
                 // #if LOGGER >= DEBUG
-                LOGGER.debug("Connection invalid", e);
+                LOGGER.debug("Connection invalid. Ignoring connection exceptions regarding 0x%X during the next second!", p_message.getDestination());
                 // #endif /* LOGGER >= DEBUG */
                 throw new NetworkDestinationUnreachableException(p_message.getDestination());
             }
@@ -346,16 +347,23 @@ public final class NetworkHandler implements DataReceiver {
                 if (connection != null) {
                     connection.write(p_message);
                 } else {
-                    // #if LOGGER >= DEBUG
-                    LOGGER.debug("Connection invalid");
-                    // #endif /* LOGGER >= DEBUG */
-                    throw new NetworkDestinationUnreachableException(p_message.getDestination());
+                    long timestamp = m_lastFailures.get(p_message.getDestination() & 0xFFFF);
+                    if (timestamp == 0 || timestamp + 1000 < System.currentTimeMillis()) {
+                        m_lastFailures.set(p_message.getDestination() & 0xFFFF, System.currentTimeMillis());
+
+                        // #if LOGGER >= DEBUG
+                        LOGGER.debug("Connection invalid. Ignoring connection exceptions regarding 0x%X during the next second!", p_message.getDestination());
+                        // #endif /* LOGGER >= DEBUG */
+                        throw new NetworkDestinationUnreachableException(p_message.getDestination());
+                    } else {
+                        return;
+                    }
                 }
             } catch (final NetworkException e) {
                 // #if LOGGER >= DEBUG
-                LOGGER.debug("Sending data failed, Message invalid", e);
+                LOGGER.debug("Sending data failed ", e);
                 // #endif /* LOGGER >= DEBUG */
-                throw new NetworkException("Sending data failed, invalid message", e);
+                throw new NetworkException("Sending data failed ", e);
             }
         }
 
@@ -379,15 +387,9 @@ public final class NetworkHandler implements DataReceiver {
         // #endif /* LOGGER == TRACE */
 
         if (!p_message.isExclusive()) {
-            int maxMessages = m_numMessageHandlerThreads * 2;
-            while (!m_defaultMessageHandlerPool.newMessage(p_message, maxMessages)) {
-                Thread.yield();
-            }
+            m_defaultMessageHandlerPool.newMessage(p_message);
         } else {
-            int maxMessages = 4;
-            while (!m_exclusiveMessageHandler.newMessage(p_message, maxMessages)) {
-                Thread.yield();
-            }
+            m_exclusiveMessageHandler.newMessage(p_message);
         }
     }
 
@@ -398,15 +400,9 @@ public final class NetworkHandler implements DataReceiver {
         // #endif /* LOGGER == TRACE */
 
         if (!p_messages[0].isExclusive()) {
-            int maxMessages = m_numMessageHandlerThreads * 2;
-            while (!m_defaultMessageHandlerPool.newMessages(p_messages, maxMessages)) {
-                Thread.yield();
-            }
+            m_defaultMessageHandlerPool.newMessages(p_messages);
         } else {
-            int maxMessages = 4;
-            while (!m_exclusiveMessageHandler.newMessages(p_messages, maxMessages)) {
-                Thread.yield();
-            }
+            m_exclusiveMessageHandler.newMessages(p_messages);
         }
     }
 
@@ -418,11 +414,10 @@ public final class NetworkHandler implements DataReceiver {
      */
     private final class DefaultMessageHandlerPool {
 
-        private final ArrayDeque<AbstractMessage> m_defaultMessages;
+        private final MessageStore m_defaultMessages;
         // Attributes
         private DefaultMessageHandler[] m_threads;
         private ReentrantLock m_defaultMessagesLock;
-        private Condition m_messageAvailable;
 
         // Constructors
 
@@ -433,9 +428,8 @@ public final class NetworkHandler implements DataReceiver {
          *     the number of default message handler
          */
         private DefaultMessageHandlerPool(final int p_numMessageHandlerThreads) {
-            m_defaultMessages = new ArrayDeque<>();
+            m_defaultMessages = new MessageStore(DEFAULT_MESSAGE_STORE_SIZE);
             m_defaultMessagesLock = new ReentrantLock(false);
-            m_messageAvailable = m_defaultMessagesLock.newCondition();
 
             // #if LOGGER >= INFO
             LOGGER.info("Network: DefaultMessageHandlerPool: Initialising %d threads", p_numMessageHandlerThreads);
@@ -444,7 +438,7 @@ public final class NetworkHandler implements DataReceiver {
             DefaultMessageHandler t;
             m_threads = new DefaultMessageHandler[p_numMessageHandlerThreads];
             for (int i = 0; i < m_threads.length; i++) {
-                t = new DefaultMessageHandler(m_defaultMessages, m_defaultMessagesLock, m_messageAvailable);
+                t = new DefaultMessageHandler(m_defaultMessages, m_defaultMessagesLock);
                 t.setName("Network: DefaultMessageHandler " + (i + 1));
                 m_threads[i] = t;
                 t.start();
@@ -460,6 +454,7 @@ public final class NetworkHandler implements DataReceiver {
             DefaultMessageHandler t;
             for (int i = 0; i < m_threads.length; i++) {
                 t = m_threads[i];
+                LockSupport.unpark(t);
                 t.interrupt();
                 t.shutdown();
 
@@ -481,48 +476,49 @@ public final class NetworkHandler implements DataReceiver {
          *
          * @param p_message
          *     the message
-         * @param p_maxMessages
-         *     the maximal number of pending messages
-         * @return whether the message was appended or not
          */
-        private boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
-            boolean ret = true;
-
-            m_defaultMessagesLock.lock();
-            if (m_defaultMessages.size() > p_maxMessages) {
-                ret = false;
+        private void newMessage(final AbstractMessage p_message) {
+            // Ignore network test messages (e.g. ping after response delay)
+            if (p_message.getType() != 0 || p_message.getSubtype() != 0) {
+                m_defaultMessagesLock.lock();
+                while (!m_defaultMessages.pushMessage(p_message)) {
+                    m_defaultMessagesLock.unlock();
+                    for (Thread thread : m_threads) {
+                        LockSupport.unpark(thread);
+                    }
+                    Thread.yield();
+                    m_defaultMessagesLock.lock();
+                }
                 m_defaultMessagesLock.unlock();
-            } else {
-                m_defaultMessages.offer(p_message);
-
-                m_messageAvailable.signalAll();
-                m_defaultMessagesLock.unlock();
+                for (Thread thread : m_threads) {
+                    LockSupport.unpark(thread);
+                }
             }
-
-            return ret;
         }
 
-        private boolean newMessages(final AbstractMessage[] p_messages, final int p_maxMessages) {
-            boolean ret = true;
-
+        private void newMessages(final AbstractMessage[] p_messages) {
             m_defaultMessagesLock.lock();
-            if (m_defaultMessages.size() > p_maxMessages) {
-                ret = false;
-                m_defaultMessagesLock.unlock();
-            } else {
-                for (AbstractMessage message : p_messages) {
-                    if (message != null) {
-                        m_defaultMessages.offer(message);
-                    } else {
-                        break;
-                    }
+            for (AbstractMessage message : p_messages) {
+                if (message == null) {
+                    break;
                 }
 
-                m_messageAvailable.signalAll();
-                m_defaultMessagesLock.unlock();
+                // Ignore network test messages (e.g. ping after response delay)
+                if (message.getType() != 0 || message.getSubtype() != 0) {
+                    while (!m_defaultMessages.pushMessage(message)) {
+                        m_defaultMessagesLock.unlock();
+                        for (Thread thread : m_threads) {
+                            LockSupport.unpark(thread);
+                        }
+                        Thread.yield();
+                        m_defaultMessagesLock.lock();
+                    }
+                }
             }
-
-            return ret;
+            m_defaultMessagesLock.unlock();
+            for (Thread thread : m_threads) {
+                LockSupport.unpark(thread);
+            }
         }
     }
 
@@ -534,9 +530,8 @@ public final class NetworkHandler implements DataReceiver {
     private final class DefaultMessageHandler extends Thread {
 
         // Attributes
-        private ArrayDeque<AbstractMessage> m_defaultMessages;
+        private MessageStore m_defaultMessages;
         private ReentrantLock m_defaultMessagesLock;
-        private Condition m_messageAvailable;
         private volatile boolean m_shutdown;
 
         // Constructors
@@ -548,17 +543,13 @@ public final class NetworkHandler implements DataReceiver {
          *     the message queue
          * @param p_lock
          *     the lock for accessing message queue
-         * @param p_cond
-         *     the condition for new messages
          */
-        private DefaultMessageHandler(final ArrayDeque<AbstractMessage> p_queue, final ReentrantLock p_lock, final Condition p_cond) {
+        private DefaultMessageHandler(final MessageStore p_queue, final ReentrantLock p_lock) {
             m_defaultMessages = p_queue;
             m_defaultMessagesLock = p_lock;
-            m_messageAvailable = p_cond;
         }
 
         // Methods
-
         @Override
         public void run() {
             long time;
@@ -566,18 +557,15 @@ public final class NetworkHandler implements DataReceiver {
             MessageReceiver messageReceiver;
 
             while (!m_shutdown) {
-                while (message == null) {
+                while (message == null && !m_shutdown) {
                     m_defaultMessagesLock.lock();
                     if (m_defaultMessages.isEmpty()) {
-                        try {
-                            m_messageAvailable.await();
-                        } catch (final InterruptedException ignored) {
-                            m_defaultMessagesLock.unlock();
-                            return;
-                        }
+                        m_defaultMessagesLock.unlock();
+                        LockSupport.park();
+                        m_defaultMessagesLock.lock();
                     }
 
-                    message = m_defaultMessages.poll();
+                    message = m_defaultMessages.popMessage();
                     m_defaultMessagesLock.unlock();
                 }
 
@@ -593,7 +581,7 @@ public final class NetworkHandler implements DataReceiver {
                     LOGGER.warn("Message receiver null for %d, %d! Waiting...", + message.getType(), message.getSubtype());
                     // #endif /* LOGGER >= WARN */
                     time = System.currentTimeMillis();
-                    while (messageReceivers == null && System.currentTimeMillis() < time + m_timeOut) {
+                    while (messageReceiver == null && System.currentTimeMillis() < time + m_timeOut) {
                         m_receiversLock.lock();
                         messageReceiver = m_receivers[message.getType()][message.getSubtype()];
                         m_receiversLock.unlock();
@@ -627,9 +615,8 @@ public final class NetworkHandler implements DataReceiver {
     private class ExclusiveMessageHandler extends Thread {
 
         // Attributes
-        private final ArrayDeque<AbstractMessage> m_exclusiveMessages;
+        private final MessageStore m_exclusiveMessages;
         private ReentrantLock m_exclusiveMessagesLock;
-        private Condition m_messageAvailable;
         private volatile boolean m_shutdown;
 
         // Constructors
@@ -638,9 +625,8 @@ public final class NetworkHandler implements DataReceiver {
          * Creates an instance of MessageHandler
          */
         ExclusiveMessageHandler() {
-            m_exclusiveMessages = new ArrayDeque<>();
+            m_exclusiveMessages = new MessageStore(EXCLUSIVE_MESSAGE_STORE_SIZE);
             m_exclusiveMessagesLock = new ReentrantLock(false);
-            m_messageAvailable = m_exclusiveMessagesLock.newCondition();
         }
 
         // Methods
@@ -656,22 +642,18 @@ public final class NetworkHandler implements DataReceiver {
         public void run() {
             long time;
             AbstractMessage message = null;
-            MessageReceivers messageReceivers;
+            MessageReceiver messageReceiver;
 
             while (!m_shutdown) {
-                while (message == null) {
+                while (message == null && !m_shutdown) {
                     m_exclusiveMessagesLock.lock();
-
                     if (m_exclusiveMessages.isEmpty()) {
-                        try {
-                            m_messageAvailable.await();
-                        } catch (final InterruptedException ignored) {
-                            m_exclusiveMessagesLock.unlock();
-                            return;
-                        }
+                        m_exclusiveMessagesLock.unlock();
+                        LockSupport.park();
+                        m_exclusiveMessagesLock.lock();
                     }
 
-                    message = m_exclusiveMessages.poll();
+                    message = m_exclusiveMessages.popMessage();
                     m_exclusiveMessagesLock.unlock();
                 }
 
@@ -687,7 +669,7 @@ public final class NetworkHandler implements DataReceiver {
                     LOGGER.warn("Message receiver null for %d, %d! Waiting...", + message.getType(), message.getSubtype());
                     // #endif /* LOGGER >= WARN */
                     time = System.currentTimeMillis();
-                    while (messageReceivers == null && System.currentTimeMillis() < time + m_timeOut) {
+                    while (messageReceiver == null && System.currentTimeMillis() < time + m_timeOut) {
                         m_receiversLock.lock();
                         messageReceiver = m_receivers[message.getType()][message.getSubtype()];
                         m_receiversLock.unlock();
@@ -710,54 +692,35 @@ public final class NetworkHandler implements DataReceiver {
          *
          * @param p_message
          *     the message
-         * @param p_maxMessages
-         *     the maximal number of pending messages
-         * @return whether the message was appended or not
          */
-        boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
-            boolean ret = true;
-
+        void newMessage(final AbstractMessage p_message) {
             m_exclusiveMessagesLock.lock();
-            if (m_exclusiveMessages.size() > p_maxMessages) {
-                ret = false;
+            while(!m_exclusiveMessages.pushMessage(p_message)) {
                 m_exclusiveMessagesLock.unlock();
-            } else {
-                m_exclusiveMessages.offer(p_message);
-                if (m_exclusiveMessages.size() == 1) {
-                    m_messageAvailable.signalAll();
-                }
-                m_exclusiveMessagesLock.unlock();
+                LockSupport.unpark(this);
+                Thread.yield();
+                m_exclusiveMessagesLock.lock();
             }
-
-            return ret;
+            m_exclusiveMessagesLock.unlock();
+            LockSupport.unpark(this);
         }
 
-        boolean newMessages(final AbstractMessage[] p_messages, final int p_maxMessages) {
-            boolean ret = true;
-            boolean signal = false;
-
+        void newMessages(final AbstractMessage[] p_messages) {
             m_exclusiveMessagesLock.lock();
-            if (m_exclusiveMessages.size() > p_maxMessages) {
-                ret = false;
-                m_exclusiveMessagesLock.unlock();
-            } else {
-                if (m_exclusiveMessages.isEmpty()) {
-                    signal = true;
+            for (AbstractMessage message : p_messages) {
+                if (message == null) {
+                    break;
                 }
-                for (AbstractMessage message : p_messages) {
-                    if (message != null) {
-                        m_exclusiveMessages.offer(message);
-                    } else {
-                        break;
-                    }
-                }
-                if (signal) {
-                    m_messageAvailable.signalAll();
-                }
-                m_exclusiveMessagesLock.unlock();
-            }
 
-            return ret;
+                while (!m_exclusiveMessages.pushMessage(message)) {
+                    m_exclusiveMessagesLock.unlock();
+                    LockSupport.unpark(this);
+                    Thread.yield();
+                    m_exclusiveMessagesLock.lock();
+                }
+            }
+            m_exclusiveMessagesLock.unlock();
+            LockSupport.unpark(this);
         }
     }
 
