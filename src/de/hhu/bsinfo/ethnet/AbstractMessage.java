@@ -15,7 +15,7 @@ package de.hhu.bsinfo.ethnet;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -40,11 +40,12 @@ public abstract class AbstractMessage {
     private static final byte DEFAULT_TYPE = 0;
     private static final byte DEFAULT_SUBTYPE = 0;
     private static final byte DEFAULT_STATUS_CODE = 0;
-    private static int ms_nextMessageID = 1;
-    private static ReentrantLock ms_lock = new ReentrantLock(false);
+
+    private static AtomicInteger ms_nextMessageID = new AtomicInteger();
+
     // Attributes
     // (!) MessageID occupies only 3 byte in message header
-    private int m_messageID;
+    int m_messageID;
     private short m_source;
     private short m_destination;
     // Message type: message and requests -> 0, responses -> 1; used to avoid instanceof in message processing
@@ -214,13 +215,7 @@ public abstract class AbstractMessage {
      * @return next free messageID
      */
     private static int getNextMessageID() {
-        int ret;
-
-        ms_lock.lock();
-        ret = ms_nextMessageID++;
-        ms_lock.unlock();
-
-        return ret;
+        return ms_nextMessageID.incrementAndGet();
     }
 
     /**
@@ -329,6 +324,10 @@ public abstract class AbstractMessage {
         return 0;
     }
 
+    int getTotalSize() {
+        return HEADER_SIZE + getPayloadLength();
+    }
+
     /**
      * Get a ByteBuffer with the Message as content
      *
@@ -346,6 +345,10 @@ public abstract class AbstractMessage {
         buffer.flip();
 
         return buffer;
+    }
+
+    protected final void serialize(final ByteBuffer p_buffer, final int p_messageSize) throws NetworkException {
+        fillBuffer(p_buffer, p_messageSize - HEADER_SIZE);
     }
 
     /**
