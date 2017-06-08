@@ -13,8 +13,7 @@
 
 package de.hhu.bsinfo.ethnet;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +29,8 @@ public final class RequestMap {
 
     // Attributes
     private static AbstractRequest[] ms_pendingRequests;
-    private static Lock ms_lock;
+
+    private static ReentrantReadWriteLock ms_lock = new ReentrantReadWriteLock(false);
 
     // Constructors
 
@@ -50,17 +50,14 @@ public final class RequestMap {
      * @return the removed Request
      */
     public static AbstractRequest remove(final int p_requestID) {
+        AbstractRequest ret;
         int index;
 
-        AbstractRequest ret;
-
-        ms_lock.lock();
-
+        ms_lock.readLock().lock();
         index = p_requestID % ms_pendingRequests.length;
         ret = ms_pendingRequests[index];
         ms_pendingRequests[index] = null;
-
-        ms_lock.unlock();
+        ms_lock.readLock().unlock();
 
         return ret;
     }
@@ -74,16 +71,14 @@ public final class RequestMap {
     public static void removeAll(final short p_nodeID) {
         AbstractRequest request;
 
-        ms_lock.lock();
-
+        ms_lock.writeLock().lock();
         for (int i = 0; i < ms_pendingRequests.length; i++) {
             request = ms_pendingRequests[i];
             if (request != null && request.getDestination() == p_nodeID) {
                 request.abort();
             }
         }
-
-        ms_lock.unlock();
+        ms_lock.writeLock().unlock();
     }
 
     /**
@@ -94,15 +89,13 @@ public final class RequestMap {
      * @return the request
      */
     static AbstractRequest getRequest(final AbstractResponse p_resonse) {
-        AbstractRequest req;
+        AbstractRequest ret;
 
-        ms_lock.lock();
+        ms_lock.readLock().lock();
+        ret = ms_pendingRequests[p_resonse.getRequestID() % ms_pendingRequests.length];
+        ms_lock.readLock().unlock();
 
-        req = ms_pendingRequests[p_resonse.getRequestID() % ms_pendingRequests.length];
-
-        ms_lock.unlock();
-
-        return req;
+        return ret;
     }
 
     /**
@@ -132,9 +125,7 @@ public final class RequestMap {
     static void put(final AbstractRequest p_request) {
         int index;
 
-        assert p_request != null;
-
-        ms_lock.lock();
+        ms_lock.readLock().lock();
         index = p_request.getRequestID() % ms_pendingRequests.length;
         if (ms_pendingRequests[index] != null) {
             // #if LOGGER >= ERROR
@@ -142,8 +133,7 @@ public final class RequestMap {
             // #endif /* LOGGER >= ERROR */
         }
         ms_pendingRequests[index] = p_request;
-
-        ms_lock.unlock();
+        ms_lock.readLock().unlock();
     }
 
     /**
@@ -154,7 +144,6 @@ public final class RequestMap {
      */
     static void initialize(final int p_size) {
         ms_pendingRequests = new AbstractRequest[p_size];
-        ms_lock = new ReentrantLock(false);
     }
 
 }
