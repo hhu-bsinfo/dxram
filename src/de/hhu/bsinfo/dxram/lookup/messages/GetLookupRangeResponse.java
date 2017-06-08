@@ -15,8 +15,10 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.PeerState;
 import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
@@ -67,38 +69,23 @@ public class GetLookupRangeResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        int ret;
-
-        if (m_lookupRange == null) {
-            ret = Byte.BYTES;
-        } else {
-            ret = Byte.BYTES + m_lookupRange.sizeofObject();
-        }
-
-        return ret;
+        return m_lookupRange.sizeofObject();
     }
 
     // Methods
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
-        if (m_lookupRange == null) {
-            p_buffer.put((byte) 0);
-        } else {
-            final ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
+        final ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
 
-            p_buffer.put((byte) 1);
-            exporter.exportObject(m_lookupRange);
-        }
+        exporter.exportObject(m_lookupRange);
     }
 
     @Override
     protected final void readPayload(final ByteBuffer p_buffer) {
-        if (p_buffer.get() != 0) {
-            final ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
+        final ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
 
-            m_lookupRange = new LookupRange();
-            importer.importObject(m_lookupRange);
-        }
+        m_lookupRange = new LookupRange();
+        importer.importObject(m_lookupRange);
     }
 
 }

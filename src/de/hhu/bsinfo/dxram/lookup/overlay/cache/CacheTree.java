@@ -20,6 +20,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.utils.RandomUtils;
 
 /**
@@ -54,11 +55,6 @@ public final class CacheTree {
      *     order of the btree
      */
     public CacheTree(final long p_cacheMaxSize, final short p_order, final long p_ttl) {
-        Thread thread;
-        long ttl;
-
-        ttl = Math.max(p_cacheMaxSize, 1000);
-
         // too small order for BTree
         assert p_order > 1;
 
@@ -75,15 +71,26 @@ public final class CacheTree {
         createOrReplaceEntry(Long.MAX_VALUE, NodeID.INVALID_ID);
 
         m_lock = new ReentrantReadWriteLock();
-        m_ttlHandler = new TTLHandler(ttl);
 
-        thread = new Thread(m_ttlHandler);
+        /*long ttl = Math.max(p_cacheMaxSize, 1000);
+        m_ttlHandler = new TTLHandler(ttl);
+        Thread thread = new Thread(m_ttlHandler);
         thread.setName(TTLHandler.class.getSimpleName() + " for " + CacheTree.class.getSimpleName());
         thread.setDaemon(true);
-        // thread.start();
+        thread.start();*/
     }
 
     // Methods
+
+    public void clear() {
+        m_lock.writeLock().lock();
+        m_root = null;
+        m_size = -1;
+        m_changedEntry = null;
+
+        createOrReplaceEntry(Long.MAX_VALUE, NodeID.INVALID_ID);
+        m_lock.writeLock().unlock();
+    }
 
     /**
      * Returns the node in which the predecessor is
@@ -277,9 +284,9 @@ public final class CacheTree {
         ret.append("] ");
         for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
             ret.append("(ChunkID: ");
-            ret.append(p_node.getCID(i));
+            ret.append(ChunkID.toHexString(p_node.getCID(i)));
             ret.append(" NodeID: ");
-            ret.append(p_node.getNodeID(i));
+            ret.append(NodeID.toHexString(p_node.getNodeID(i)));
             ret.append(')');
             if (i < p_node.getNumberOfEntries() - 1) {
                 ret.append(", ");
@@ -351,7 +358,7 @@ public final class CacheTree {
      * Stops the TTLHandler
      */
     public void close() {
-        m_ttlHandler.stop();
+        //m_ttlHandler.stop();
     }
 
     /**
@@ -414,7 +421,7 @@ public final class CacheTree {
                 range[0] = 0;
             }
             if (nodeID != NodeID.INVALID_ID) {
-                ret = new LookupRange(nodeID, range);
+                ret = new LookupRange(nodeID, range, LookupState.OK);
             }
         }
         m_lock.readLock().unlock();
@@ -467,6 +474,52 @@ public final class CacheTree {
     }
 
     /**
+     * Removes ChunkID range with given ChunkID from btree
+     *
+     * @param p_chunkID
+     *     the ChunkID
+     */
+    public void invalidateRange(final long p_chunkID) {
+        short nodeID;
+        long successorCID;
+        long predecessorCID = ChunkID.INVALID_ID;
+        int index;
+        Node node;
+
+        m_lock.writeLock().lock();
+        // Get end of range
+        node = getNodeOrSuccessorsNode(p_chunkID, true);
+        if (node != null) {
+            index = node.indexOf(p_chunkID);
+            if (index >= 0) {
+                nodeID = node.getNodeID(index);
+                successorCID = p_chunkID;
+            } else {
+                // ChunkID was not found, but successor
+                nodeID = node.getNodeID(index * -1 - 1);
+                successorCID = node.getCID(index * -1 - 1);
+            }
+
+            if (nodeID != NodeID.INVALID_ID) {
+                // Get begin of range
+                node = getPredecessorsNode(successorCID, node);
+                if (node != null) {
+                    for (int i = node.getNumberOfEntries() - 1; i >= 0; i--) {
+                        if (p_chunkID > node.getCID(i)) {
+                            predecessorCID = node.getNodeID(i);
+                            break;
+                        }
+                    }
+                    if (predecessorCID != ChunkID.INVALID_ID) {
+                        cacheRange(predecessorCID, successorCID, NodeID.INVALID_ID);
+                    }
+                }
+            }
+        }
+        m_lock.writeLock().unlock();
+    }
+
+    /**
      * Removes all ChunkIDs of given peer from btree
      *
      * @param p_nodeID
@@ -477,7 +530,7 @@ public final class CacheTree {
         ArrayList<CacheNodeElement> allEntries = toListFilteredInverse(p_nodeID);
 
         for (int i = 0; i < allEntries.size(); i++) {
-            remove(allEntries.get(i).getChunkId());
+            removeEntry(allEntries.get(i).getChunkId());
 
         }
         m_lock.writeLock().unlock();
@@ -1867,7 +1920,7 @@ public final class CacheTree {
          */
         @Override
         public String toString() {
-            return "(ChunkID: " + m_chunkID + ", NodeID: " + m_nodeID + ')';
+            return "(ChunkID: " + ChunkID.toHexString(m_chunkID) + ", NodeID: " + NodeID.toHexString(m_nodeID) + ')';
         }
 
         /**

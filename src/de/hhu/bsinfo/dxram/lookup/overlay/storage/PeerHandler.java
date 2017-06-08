@@ -17,7 +17,9 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.utils.ArrayListLong;
 
 /**
@@ -28,7 +30,7 @@ import de.hhu.bsinfo.utils.ArrayListLong;
 public final class PeerHandler {
 
     // Attributes
-    private boolean m_recovered;
+    private volatile PeerState m_state;
 
     private LookupTree m_lookupTree;
     private ArrayListLong m_backupRanges;
@@ -42,13 +44,29 @@ public final class PeerHandler {
      *     order of the btree
      */
     PeerHandler(final short p_order, final short p_creator) {
-        m_recovered = false;
+        m_state = PeerState.ONLINE;
 
         m_lookupTree = new LookupTree(p_order, p_creator);
         m_backupRanges = new ArrayListLong();
     }
 
     // Methods
+
+    /**
+     * Gets the state of given peer
+     */
+    PeerState getState() {
+        return m_state;
+    }
+
+    /**
+     * Sets the state
+     * @param p_state
+     *      ONLINE, LOST, IN_RECOVERY or RECOVERED
+     */
+    void setState(final PeerState p_state) {
+        m_state = p_state;
+    }
 
     /**
      * Returns the lookup tree
@@ -70,10 +88,9 @@ public final class PeerHandler {
      *     ChunkIDs of all recovered chunks arranged in ranges
      */
     void updateMetadataAfterRecovery(final short p_rangeID, final short p_recoveryPeer, final long[] p_chunkIDRanges) {
-        m_recovered = true;
-
         // "Migrate" recovered ChunkIDs
         for (int i = 0; i < p_chunkIDRanges.length; i += 2) {
+
             if (p_chunkIDRanges[i] == -1) {
                 break;
             }
@@ -86,17 +103,6 @@ public final class PeerHandler {
     }
 
     /**
-     * Returns the primary peer for given object
-     *
-     * @param p_chunkID
-     *     ChunkID of requested object
-     * @return the NodeID of the primary peer for given object
-     */
-    short getPrimaryPeer(final long p_chunkID) {
-        return m_lookupTree.getPrimaryPeer(p_chunkID);
-    }
-
-    /**
      * Returns the range given ChunkID is in
      *
      * @param p_chunkID
@@ -104,7 +110,23 @@ public final class PeerHandler {
      * @return the first and last ChunkID of the range
      */
     LookupRange getMetadata(final long p_chunkID) {
-        return m_lookupTree.getMetadata(p_chunkID);
+        if (m_state == PeerState.LOST) {
+            return new LookupRange(LookupState.DATA_LOST);
+        }
+
+        if (m_state == PeerState.IN_RECOVERY) {
+            return new LookupRange(LookupState.DATA_TEMPORARY_UNAVAILABLE);
+        }
+
+        LookupRange ret = m_lookupTree.getMetadata(p_chunkID);
+        if (m_state == PeerState.RECOVERED) {
+            if (ret.getPrimaryPeer() == ChunkID.getCreatorID(p_chunkID)) {
+                // Backup range was not successfully recovered
+                ret.setState(LookupState.DATA_LOST);
+            }
+        }
+
+        return ret;
     }
 
     /**
@@ -179,16 +201,20 @@ public final class PeerHandler {
      *
      * @param p_rangeID
      *     the RangeID
-     * @param p_failedPeer
-     *     NodeID of failed peer
+     * @param p_toBeReplacedPeer
+     *     NodeID of peer to replace
      * @param p_replacement
      *     NodeID of new backup peer
      */
-    void replaceBackupPeer(final short p_rangeID, final short p_failedPeer, final short p_replacement) {
+    void replaceBackupPeer(final short p_rangeID, final short p_toBeReplacedPeer, final short p_replacement) {
         long backupPeers;
 
-        // This is a migration backup range
-        backupPeers = BackupRange.replaceBackupPeer(m_backupRanges.get(p_rangeID), p_failedPeer, p_replacement);
+        if (p_toBeReplacedPeer == -1) {
+            backupPeers = BackupRange.addBackupPeer(m_backupRanges.get(p_rangeID), p_replacement);
+        } else {
+            backupPeers = BackupRange.replaceBackupPeer(m_backupRanges.get(p_rangeID), p_toBeReplacedPeer, p_replacement);
+        }
+
         m_backupRanges.set(p_rangeID, backupPeers);
     }
 
@@ -228,8 +254,17 @@ public final class PeerHandler {
     void receiveMetadata(ByteBuffer p_data) {
         ByteBufferImExporter exporter;
 
-        p_data.put((byte) (m_recovered ? 1 : 0));
-
+        switch (m_state) {
+            case ONLINE:  p_data.put((byte) 0);
+                break;
+            case LOST:  p_data.put((byte) 1);
+                break;
+            case IN_RECOVERY: // Temporary state is ignored because it is relevant for recovery coordinator, only
+            case RECOVERED:  p_data.put((byte) 3);
+                break;
+            default:
+                break;
+        }
         exporter = new ByteBufferImExporter(p_data);
         exporter.exportObject(m_lookupTree);
         exporter.exportObject(m_backupRanges);
@@ -245,7 +280,17 @@ public final class PeerHandler {
         ByteBufferImExporter importer;
 
         // Creator was read before
-        m_recovered = p_data.get() != 0;
+
+        switch (p_data.get()) {
+            case 0:  m_state = PeerState.ONLINE;
+                break;
+            case 1:  m_state = PeerState.LOST;
+                break;
+            case 3:  m_state = PeerState.RECOVERED;
+                break;
+            default:
+                break;
+        }
 
         importer = new ByteBufferImExporter(p_data);
         importer.importObject(m_lookupTree);

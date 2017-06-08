@@ -49,6 +49,7 @@ import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
@@ -522,10 +523,10 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
      * @return Number of successfully updated data structures.
      */
     public int put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure[] p_chunks, final int p_offset, final int p_count) {
-        int chunksPut = 0;
+        int totalChunksPut = 0;
 
         if (p_chunks.length == 0) {
-            return chunksPut;
+            return totalChunksPut;
         }
 
         // #if LOGGER == TRACE
@@ -544,14 +545,14 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             m_memoryManager.lockAccess();
             for (int i = 0; i < p_count; i++) {
                 // filter null values
-                if (p_chunks[i + p_offset] == null) {
+                if (p_chunks[i + p_offset] == null || p_chunks[i + p_offset].getID() == ChunkID.INVALID_ID) {
                     continue;
                 }
 
                 // try to put every chunk locally, returns false if it does not exist
                 // and saves us an additional check
                 if (m_memoryManager.put(p_chunks[i + p_offset])) {
-                    chunksPut++;
+                    totalChunksPut++;
                     p_chunks[i + p_offset].setState(ChunkState.OK);
 
                     // unlock chunk as well
@@ -572,13 +573,23 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                 } else {
                     // remote or migrated, figure out location and sort by peers
                     LookupRange location = m_lookup.getLookupRange(p_chunks[i + p_offset].getID());
-                    if (location != null) {
+                    while (location.getState() == LookupState.DATA_TEMPORARY_UNAVAILABLE) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (final InterruptedException ignore) {
+                        }
+                        location = m_lookup.getLookupRange(p_chunks[i + p_offset].getID());
+                    }
+
+                    if (location.getState() == LookupState.OK) {
                         short peer = location.getPrimaryPeer();
 
                         ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
                         remoteChunksOfPeer.add(p_chunks[i + p_offset]);
-                    } else {
+                    } else if (location.getState() == LookupState.DOES_NOT_EXIST) {
                         p_chunks[i + p_offset].setState(ChunkState.DOES_NOT_EXIST);
+                    } else if (location.getState() == LookupState.DATA_LOST) {
+                        p_chunks[i + p_offset].setState(ChunkState.DATA_LOST);
                     }
                 }
             }
@@ -596,7 +607,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                     m_memoryManager.lockAccess();
                     for (DataStructure dataStructure : entry.getValue()) {
                         if (m_memoryManager.put(dataStructure)) {
-                            chunksPut++;
+                            totalChunksPut++;
                         }
                         // else: put failed, state for chunk set by memory manager
                     }
@@ -614,17 +625,14 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                     if (m_backup.isActive()) {
                         for (DataStructure ds : chunksToPut) {
                             ds.setState(ChunkState.DATA_TEMPORARY_UNAVAILABLE);
+                            m_lookup.invalidate(ds.getID());
                         }
                     } else {
                         for (DataStructure ds : chunksToPut) {
                             ds.setState(ChunkState.DATA_LOST);
+                            m_lookup.invalidate(ds.getID());
                         }
                     }
-
-                    for (DataStructure ds : chunksToPut) {
-                        m_lookup.invalidate(ds.getID());
-                    }
-
                     continue;
                 }
 
@@ -633,7 +641,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                 byte[] statusCodes = response.getStatusCodes();
                 // try short cut, i.e. all puts successful
                 if (statusCodes.length == 1 && statusCodes[0] == ChunkState.OK.ordinal()) {
-                    chunksPut += chunksToPut.size();
+                    totalChunksPut += chunksToPut.size();
 
                     for (DataStructure ds : chunksToPut) {
                         ds.setState(ChunkState.OK);
@@ -642,7 +650,9 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                     for (int i = 0; i < statusCodes.length; i++) {
                         chunksToPut.get(i).setState(ChunkState.values()[statusCodes[i]]);
                         if (statusCodes[i] == ChunkState.OK.ordinal()) {
-                            chunksPut++;
+                            totalChunksPut++;
+                        } else {
+                            m_lookup.invalidateRange(chunksToPut.get(i).getID());
                         }
                     }
                 }
@@ -680,10 +690,10 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
-        LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...] -> %d", p_chunkUnlockOperation, p_chunks.length, chunksPut);
+        LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...] -> %d", p_chunkUnlockOperation, p_chunks.length, totalChunksPut);
         // #endif /* LOGGER == TRACE */
 
-        return chunksPut;
+        return totalChunksPut;
     }
 
     /**
@@ -742,16 +752,24 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                     p_chunks[i + p_offset].setState(ChunkState.OK);
                 } else {
                     // remote or migrated, figure out location and sort by peers
-                    LookupRange lookupRange;
+                    LookupRange location = m_lookup.getLookupRange(p_chunks[i + p_offset].getID());
+                    while (location.getState() == LookupState.DATA_TEMPORARY_UNAVAILABLE) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (final InterruptedException ignore) {
+                        }
+                        location = m_lookup.getLookupRange(p_chunks[i + p_offset].getID());
+                    }
 
-                    lookupRange = m_lookup.getLookupRange(p_chunks[i + p_offset].getID());
-                    if (lookupRange != null) {
-                        short peer = lookupRange.getPrimaryPeer();
+                    if (location.getState() == LookupState.OK) {
+                        short peer = location.getPrimaryPeer();
 
                         ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
                         remoteChunksOfPeer.add(p_chunks[i + p_offset]);
-                    } else {
+                    } else if (location.getState() == LookupState.DOES_NOT_EXIST) {
                         p_chunks[i + p_offset].setState(ChunkState.DOES_NOT_EXIST);
+                    } else if (location.getState() == LookupState.DATA_LOST) {
+                        p_chunks[i + p_offset].setState(ChunkState.DATA_LOST);
                     }
                 }
             }
@@ -789,26 +807,33 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                     if (m_backup.isActive()) {
                         for (DataStructure chunk : remoteChunks) {
                             chunk.setState(ChunkState.DATA_TEMPORARY_UNAVAILABLE);
+                            m_lookup.invalidate(chunk.getID());
                         }
                     } else {
                         for (DataStructure chunk : remoteChunks) {
                             chunk.setState(ChunkState.DATA_LOST);
+                            m_lookup.invalidate(chunk.getID());
                         }
                     }
-
-                    for (DataStructure ds : remoteChunks) {
-                        m_lookup.invalidate(ds.getID());
-                    }
-
                     continue;
                 }
 
                 GetResponse response = request.getResponse(GetResponse.class);
                 totalChunksGot += response.getTotalSuccessful();
 
+                if (response.getTotalSuccessful() != remoteChunks.size()) {
+                    for (DataStructure chunk : remoteChunks) {
+                        if (chunk.getState() != ChunkState.OK) {
+                            m_lookup.invalidateRange(chunk.getID());
+                        }
+                    }
+                }
+
                 // Chunk data is written directly to the provided data structure on receive
             }
         }
+
+
 
         // #ifdef STATISTICS
         SOP_GET.leave();

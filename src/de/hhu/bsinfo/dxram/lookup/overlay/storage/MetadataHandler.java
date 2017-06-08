@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage.Status;
 import de.hhu.bsinfo.utils.ArrayListLong;
@@ -76,6 +77,26 @@ public final class MetadataHandler {
         m_assignedPeersIncludingBackups = p_assignedPeersIncludingBackups;
 
         m_dataLock = new ReentrantReadWriteLock(false);
+    }
+
+    /**
+     * Gets the state of given peer
+     * @param p_nodeID
+     *      the peer's NodeID
+     */
+    public PeerState getState(final short p_nodeID) {
+        return m_peerHandlers[p_nodeID & 0xFFFF].getState();
+    }
+
+    /**
+     * Sets the state of given peer
+     * @param p_nodeID
+     *      the peer's NodeID
+     * @param p_state
+     *      the new state
+     */
+    public void setState(final short p_nodeID, final PeerState p_state) {
+        m_peerHandlers[p_nodeID & 0xFFFF].setState(p_state);
     }
 
     /**
@@ -700,6 +721,7 @@ public final class MetadataHandler {
 
                 peerHandler = new PeerHandler(OverlayHelper.ORDER, nodeID);
                 peerHandler.storeMetadata(data);
+
                 m_peerHandlers[nodeID & 0xFFFF] = peerHandler;
                 ret[i] = nodeID;
             }
@@ -787,7 +809,7 @@ public final class MetadataHandler {
      * @return the lookup range
      */
     public LookupRange getLookupRangeFromLookupTree(final long p_chunkID, boolean p_backupActive) {
-        LookupRange ret = null;
+        LookupRange ret;
         PeerHandler peerHandler;
 
         m_dataLock.readLock().lock();
@@ -795,9 +817,13 @@ public final class MetadataHandler {
         // no tree available -> no chunks were created or backup system is deactivated
         if (peerHandler != null) {
             ret = peerHandler.getMetadata(p_chunkID);
-        } else if (!p_backupActive) {
-            // With backup deactivated a lookup tree is only created for migrations -> no migrations -> return complete range
-            ret = new LookupRange(ChunkID.getCreatorID(p_chunkID), new long[] {0, (long) Math.pow(2, 48) - 1});
+        } else {
+            if (!p_backupActive) {
+                // With backup deactivated a lookup tree is only created for migrations -> no migrations -> return complete range
+                ret = new LookupRange(ChunkID.getCreatorID(p_chunkID), new long[] {0, (long) Math.pow(2, 48) - 1}, LookupState.OK);
+            } else {
+                ret = new LookupRange(LookupState.DOES_NOT_EXIST);
+            }
         }
         m_dataLock.readLock().unlock();
 
@@ -825,6 +851,7 @@ public final class MetadataHandler {
                 // With backup deactivated this is the place to initialize a peer handler
                 short creator = ChunkID.getCreatorID(p_chunkID);
                 peerHandler = new PeerHandler(OverlayHelper.ORDER, creator);
+
                 m_peerHandlers[creator & 0xFFFF] = peerHandler;
                 return peerHandler.migrate(p_chunkID, p_owner);
             }
@@ -862,6 +889,7 @@ public final class MetadataHandler {
                 // With backup deactivated this is the place to initialize a peer handler
                 short creator = ChunkID.getCreatorID(p_firstChunkID);
                 peerHandler = new PeerHandler(OverlayHelper.ORDER, creator);
+
                 m_peerHandlers[creator & 0xFFFF] = peerHandler;
                 return peerHandler.migrateRange(p_firstChunkID, p_lastChunkID, p_owner);
             }

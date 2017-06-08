@@ -106,6 +106,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.MetadataHandler;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.PeerHandler;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.PeerState;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
@@ -626,11 +627,13 @@ public class OverlaySuperpeer implements MessageReceiver {
             currentPeer = m_assignedPeersIncludingBackups.get(index++);
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, firstPeer, p_nodeID)) {
                 if (Collections.binarySearch(m_peers, currentPeer) < 0 && Collections.binarySearch(m_superpeers, currentPeer) < 0) {
-                    // #if LOGGER >= INFO
-                    LOGGER.info("** Taking over 0x%X", currentPeer);
-                    // #endif /* LOGGER >= INFO */
-                    OverlayHelper.insertPeer(currentPeer, m_peers);
-                    addToAssignedPeers(currentPeer);
+                    if (m_metadata.getState(currentPeer) == PeerState.ONLINE) {
+                        // #if LOGGER >= INFO
+                        LOGGER.info("** Taking over 0x%X", currentPeer);
+                        // #endif /* LOGGER >= INFO */
+                        OverlayHelper.insertPeer(currentPeer, m_peers);
+                        addToAssignedPeers(currentPeer);
+                    }
                 }
                 if (index == m_assignedPeersIncludingBackups.size()) {
                     index = 0;
@@ -858,6 +861,8 @@ public class OverlaySuperpeer implements MessageReceiver {
                 LOGGER.info("Starting recovery for failed node 0x%X", p_failedNode);
                 // #endif /* LOGGER >= INFO */
 
+                m_metadata.setState(p_failedNode, PeerState.IN_RECOVERY);
+
                 // Send all recovery requests
                 counter = 0;
                 RecoverBackupRangeRequest request;
@@ -953,10 +958,13 @@ public class OverlaySuperpeer implements MessageReceiver {
                     }
                 }
 
+                m_metadata.setState(p_failedNode, PeerState.RECOVERED);
+
                 // #if LOGGER >= INFO
                 LOGGER.info("Recovery of failed node 0x%X complete", p_failedNode);
                 // #endif /* LOGGER >= INFO */
             } else {
+                m_metadata.setState(p_failedNode, PeerState.LOST);
                 m_overlayLock.writeLock().unlock();
             }
         } else {
@@ -2039,7 +2047,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                 }
             });
 
-            // reset for reuse
+            // Reset for reuse
             m_metadata.resetBarrier(m_nodeID, barrierId);
         }
     }

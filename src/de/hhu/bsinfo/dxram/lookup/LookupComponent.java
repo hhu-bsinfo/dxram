@@ -148,7 +148,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
                 ret = m_peer.getLookupRange(p_chunkID);
 
                 // Add response to cache
-                if (ret != null) {
+                if (ret != null && ret.getState() == LookupState.OK) {
                     m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[0],
                             ((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1], ret.getPrimaryPeer());
                 }
@@ -411,16 +411,39 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         the IDs
      */
     public void invalidate(final long... p_chunkIDs) {
-        for (long chunkID : p_chunkIDs) {
-            assert chunkID != ChunkID.INVALID_ID;
-            m_chunkIDCacheTree.invalidateChunkID(chunkID);
+        if (getConfig().cachesEnabled()) {
+            for (long chunkID : p_chunkIDs) {
+                assert chunkID != ChunkID.INVALID_ID;
+                m_chunkIDCacheTree.invalidateChunkID(chunkID);
+            }
         }
     }
 
+    /**
+     * Invalidates the cache entry for given ChunkIDs
+     *
+     * @param p_chunkIDs
+     *     the IDs in an array list
+     */
     public void invalidate(final ArrayListLong p_chunkIDs) {
-        for (int i = 0; i < p_chunkIDs.getSize(); i++) {
-            assert p_chunkIDs.get(i) != ChunkID.INVALID_ID;
-            m_chunkIDCacheTree.invalidateChunkID(p_chunkIDs.get(i));
+        if (getConfig().cachesEnabled()) {
+            for (int i = 0; i < p_chunkIDs.getSize(); i++) {
+                assert p_chunkIDs.get(i) != ChunkID.INVALID_ID;
+                m_chunkIDCacheTree.invalidateChunkID(p_chunkIDs.get(i));
+            }
+        }
+    }
+
+    /**
+     * Invalidates the cache range for given ChunkID
+     *
+     * @param p_chunkID
+     *     the ID whose range range is invalidated
+     */
+    public void invalidateRange(final long p_chunkID) {
+        if (getConfig().cachesEnabled()) {
+            assert p_chunkID != ChunkID.INVALID_ID;
+            m_chunkIDCacheTree.invalidateRange(p_chunkID);
         }
     }
 
@@ -737,7 +760,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
             NodeFailureEvent event = (NodeFailureEvent) p_event;
 
             if (event.getRole() == NodeRole.PEER) {
-                m_chunkIDCacheTree.invalidatePeer(event.getNodeID());
+                if (getConfig().cachesEnabled()) {
+                    m_chunkIDCacheTree.invalidatePeer(event.getNodeID());
+                }
             }
 
         } else if (p_event instanceof NameserviceCacheEntryUpdateEvent) {
@@ -949,7 +974,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      */
     @SuppressWarnings("unused")
     private void clear() {
-        m_chunkIDCacheTree = new CacheTree(getConfig().getMaxCacheEntries(), ORDER, getConfig().getCacheTtl().getMs());
-        m_applicationIDCache.clear();
+        if (getConfig().cachesEnabled()) {
+            m_chunkIDCacheTree = new CacheTree(getConfig().getMaxCacheEntries(), ORDER, getConfig().getCacheTtl().getMs());
+            m_applicationIDCache.clear();
+        }
     }
 }

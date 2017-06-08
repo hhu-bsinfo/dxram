@@ -29,6 +29,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.lookup.events.NameserviceCacheEntryUpdateEvent;
 import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorRequest;
@@ -265,8 +266,6 @@ public class OverlayPeer implements MessageReceiver {
             check = true;
         }
         nodeID = ChunkID.getCreatorID(p_chunkID);
-        // FIXME will not terminate if chunk id requested does not exist
-        // while (null == ret) {
         responsibleSuperpeer = getResponsibleSuperpeer(nodeID, check);
         m_overlayLock.readLock().unlock();
 
@@ -275,14 +274,14 @@ public class OverlayPeer implements MessageReceiver {
             try {
                 m_network.sendSync(request);
             } catch (final NetworkException e) {
-                // Responsible superpeer is not available, try again and check responsible superpeer
+                // Responsible superpeer is not available
+                return new LookupRange(LookupState.DATA_TEMPORARY_UNAVAILABLE);
             }
 
             response = request.getResponse(GetLookupRangeResponse.class);
 
             ret = response.getLookupRange();
         }
-        // }
 
         return ret;
     }

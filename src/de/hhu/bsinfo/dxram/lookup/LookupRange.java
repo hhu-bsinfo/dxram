@@ -30,6 +30,7 @@ public final class LookupRange implements Importable, Exportable {
     // Attributes
     private short m_primaryPeer;
     private long[] m_range;
+    private LookupState m_state;
 
     /**
      * Default constructor
@@ -37,6 +38,7 @@ public final class LookupRange implements Importable, Exportable {
     public LookupRange() {
         m_primaryPeer = NodeID.INVALID_ID;
         m_range = null;
+        m_state = LookupState.OK;
     }
 
     // Constructors
@@ -48,12 +50,27 @@ public final class LookupRange implements Importable, Exportable {
      *     the primary peer
      * @param p_range
      *     the range's beginning and ending
+     * @param p_lookupState
+     *     the state
      */
-    public LookupRange(final short p_primaryPeer, final long[] p_range) {
+    public LookupRange(final short p_primaryPeer, final long[] p_range, final LookupState p_lookupState) {
         super();
 
         m_primaryPeer = p_primaryPeer;
         m_range = p_range;
+        m_state = p_lookupState;
+    }
+
+    /**
+     * Creates an instance of LookupRange
+     *
+     * @param p_lookupState
+     *     the state
+     */
+    public LookupRange(final LookupState p_lookupState) {
+        super();
+
+        m_state = p_lookupState;
     }
 
     /**
@@ -84,12 +101,41 @@ public final class LookupRange implements Importable, Exportable {
         return m_range;
     }
 
+    /**
+     * Set the state
+     * @param p_state
+     *      the status
+     */
+    public void setState(final LookupState p_state) {
+        m_state = p_state;
+    }
+
+    /**
+     * Get the state of lookup operation
+     * @return OK, DOES_NOT_EXIST, DATA_TEMPORARY_UNAVAILABLE or DATA_LOST
+     */
+    public LookupState getState() {
+        return m_state;
+    }
+
     // Getter
 
     @Override
     public void importObject(final Importer p_importer) {
         m_primaryPeer = p_importer.readShort();
         m_range = new long[] {p_importer.readLong(), p_importer.readLong()};
+        switch (p_importer.readByte()) {
+            case 0:  m_state = LookupState.OK;
+                break;
+            case 1:  m_state = LookupState.DOES_NOT_EXIST;
+                break;
+            case 2:  m_state = LookupState.DATA_TEMPORARY_UNAVAILABLE;
+                break;
+            case 3:  m_state = LookupState.DATA_LOST;
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
@@ -97,11 +143,23 @@ public final class LookupRange implements Importable, Exportable {
         p_exporter.writeShort(m_primaryPeer);
         p_exporter.writeLong(getStartID());
         p_exporter.writeLong(getEndID());
+        switch (m_state) {
+            case OK:  p_exporter.writeByte((byte) 0);
+                break;
+            case DOES_NOT_EXIST:  p_exporter.writeByte((byte) 1);
+                break;
+            case DATA_TEMPORARY_UNAVAILABLE:  p_exporter.writeByte((byte) 2);
+                break;
+            case DATA_LOST:  p_exporter.writeByte((byte) 3);
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
     public int sizeofObject() {
-        return Short.BYTES + 2 * Long.BYTES;
+        return Short.BYTES + 2 * Long.BYTES + Byte.BYTES;
     }
 
     /**
@@ -128,7 +186,11 @@ public final class LookupRange implements Importable, Exportable {
      * @return the start LocalID
      */
     private long getStartID() {
-        return m_range[0];
+        if (m_range != null) {
+            return m_range[0];
+        } else {
+            return ChunkID.INVALID_ID;
+        }
     }
 
     // Methods
@@ -139,6 +201,10 @@ public final class LookupRange implements Importable, Exportable {
      * @return the end LocalID
      */
     private long getEndID() {
-        return m_range[1];
+        if (m_range != null) {
+            return m_range[1];
+        } else {
+            return ChunkID.INVALID_ID;
+        }
     }
 }

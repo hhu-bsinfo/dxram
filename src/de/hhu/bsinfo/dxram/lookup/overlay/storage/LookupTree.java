@@ -18,6 +18,7 @@ import java.io.Serializable;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -495,21 +496,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     }
 
     /**
-     * Returns the primary peer for given object
-     *
-     * @param p_chunkID
-     *         ChunkID of requested object
-     * @return the NodeID of the primary peer for given object
-     */
-    short getPrimaryPeer(final long p_chunkID) {
-        if (m_root != null) {
-            return getNodeIDOrSuccessorsNodeID(p_chunkID & 0x0000FFFFFFFFFFFFL);
-        } else {
-            return m_creator;
-        }
-    }
-
-    /**
      * Returns the range given ChunkID is in
      *
      * @param p_chunkID
@@ -517,7 +503,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * @return the first and last ChunkID of the range
      */
     LookupRange getMetadata(final long p_chunkID) {
-        LookupRange ret = null;
+        LookupRange ret;
         long[] range;
         short nodeID;
         int index;
@@ -528,36 +514,34 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         if (m_root != null) {
             localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
             node = getNodeOrSuccessorsNode(localID);
-            if (node != null) {
-                index = node.indexOf(localID);
-                if (index >= 0) {
-                    // LocalID was found: Store NodeID and determine successor
-                    range = new long[2];
-                    nodeID = node.getNodeID(index);
-                    Entry successor = getSuccessorsEntry(localID, node);
-                    if (successor != null) {
-                        range[1] = successor.getLocalID();
-                    } else {
-                        range[1] = localID;
-                    }
+            index = node.indexOf(localID);
+            if (index >= 0) {
+                // LocalID was found: Store NodeID and determine successor
+                range = new long[2];
+                nodeID = node.getNodeID(index);
+                Entry successor = getSuccessorsEntry(localID, node);
+                if (successor != null) {
+                    range[1] = successor.getLocalID();
                 } else {
-                    // LocalID was not found, but successor: Store NodeID and LocalID of successor
-                    range = new long[2];
-                    nodeID = node.getNodeID(index * -1 - 1);
-                    range[1] = node.getLocalID(index * -1 - 1);
+                    range[1] = localID;
                 }
-                // Determine LocalID of predecessor
-                predecessorEntry = getPredecessorsEntry(range[1], node);
-                if (predecessorEntry != null) {
-                    range[0] = predecessorEntry.getLocalID() + 1;
-                } else {
-                    range[0] = 0;
-                }
-                ret = new LookupRange(nodeID, range);
+            } else {
+                // LocalID was not found, but successor: Store NodeID and LocalID of successor
+                range = new long[2];
+                nodeID = node.getNodeID(index * -1 - 1);
+                range[1] = node.getLocalID(index * -1 - 1);
             }
+            // Determine LocalID of predecessor
+            predecessorEntry = getPredecessorsEntry(range[1], node);
+            if (predecessorEntry != null) {
+                range[0] = predecessorEntry.getLocalID() + 1;
+            } else {
+                range[0] = 0;
+            }
+            ret = new LookupRange(nodeID, range, LookupState.OK);
         } else {
             // Lookup tree is empty -> no migrations
-            ret = new LookupRange(m_creator, new long[] {0, (long) (Math.pow(2, 48) - 1)});
+            ret = new LookupRange(m_creator, new long[] {0, (long) (Math.pow(2, 48) - 1)}, LookupState.OK);
         }
 
         return ret;
@@ -585,7 +569,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * @note should always be called if an object is deleted
      */
     void remove(final long p_chunkID) {
-        short creatorOrRestorer;
         int index;
         Node node;
         long localID;
@@ -596,8 +579,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
         if (m_root != null) {
-            // This is a placeholder, the right NodeID is set in getter, only
-            creatorOrRestorer = NodeID.INVALID_ID;
             node = getNodeOrSuccessorsNode(localID);
             if (node != null) {
                 index = node.indexOf(localID);
@@ -607,30 +588,30 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                     predecessor = getPredecessorsEntry(localID, node);
                     currentEntry = new Entry(currentLID, node.getNodeID(index));
                     successor = getSuccessorsEntry(localID, node);
-                    if (creatorOrRestorer != currentEntry.getNodeID() && predecessor != null) {
+                    if (m_creator != currentEntry.getNodeID() && predecessor != null) {
                         if (localID - 1 == predecessor.getLocalID()) {
                             // Predecessor is direct neighbor: AB
                             // Successor might be direct neighbor or not: ABC or AB___C
-                            if (creatorOrRestorer == successor.getNodeID()) {
+                            if (m_creator == successor.getNodeID()) {
                                 // Successor is barrier: ABC -> A_C or AB___C -> A___C
                                 removeInternal(localID);
                             } else {
                                 // Successor is no barrier: ABC -> AXC or AB___C -> AX___C
-                                node.changeEntry(localID, creatorOrRestorer, index);
+                                node.changeEntry(localID, m_creator, index);
                             }
-                            if (creatorOrRestorer == predecessor.getNodeID()) {
+                            if (m_creator == predecessor.getNodeID()) {
                                 // Predecessor is barrier: A_C -> ___C or AXC -> ___XC
                                 // or A___C -> ___C or AX___C -> ___X___C
                                 removeInternal(predecessor.getLocalID());
                             }
                         } else {
                             // Predecessor is no direct neighbor: A___B
-                            if (creatorOrRestorer == successor.getNodeID()) {
+                            if (m_creator == successor.getNodeID()) {
                                 // Successor is barrier: A___BC -> A___C or A___B___C -> A___'___C
                                 removeInternal(localID);
                             } else {
                                 // Successor is no barrier: A___BC -> A___XC or A___B___C -> A___X___C
-                                node.changeEntry(localID, creatorOrRestorer, index);
+                                node.changeEntry(localID, m_creator, index);
                             }
                             // Predecessor is barrier: A___C -> A___(B-1)_C or A___XC -> ___(B-1)XC
                             // or A___'___C -> A___(B-1)___C or A___X___C -> A___(B-1)X___C
@@ -642,13 +623,13 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                     index = index * -1 - 1;
                     successor = new Entry(node.getLocalID(index), node.getNodeID(index));
                     predecessor = getPredecessorsEntry(successor.getLocalID(), node);
-                    if (creatorOrRestorer != successor.getNodeID() && predecessor != null) {
+                    if (m_creator != successor.getNodeID() && predecessor != null) {
                         // Entry is in range
                         if (localID - 1 == predecessor.getLocalID()) {
                             // Predecessor is direct neighbor: A'B'
                             // Successor might be direct neighbor or not: A'B'C -> AXC or A'B'___C -> AX___C
-                            createOrReplaceEntry(localID, creatorOrRestorer);
-                            if (creatorOrRestorer == predecessor.getNodeID()) {
+                            createOrReplaceEntry(localID, m_creator);
+                            if (m_creator == predecessor.getNodeID()) {
                                 // Predecessor is barrier: AXC -> ___XC or AX___C -> ___X___C
                                 removeInternal(localID - 1);
                             }
@@ -656,7 +637,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
                             // Predecessor is no direct neighbor: A___'B'
                             // Successor might be direct neighbor or not: A___'B'C -> A___(B-1)XC
                             // or A___'B'___C -> A___(B-1)X___C
-                            createOrReplaceEntry(localID, creatorOrRestorer);
+                            createOrReplaceEntry(localID, m_creator);
                             createOrReplaceEntry(localID - 1, successor.getNodeID());
                         }
                     }
@@ -749,7 +730,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
         predecessor = getPredecessorsEntry(p_localID, p_node);
         if (predecessor == null) {
-            createOrReplaceEntry(p_localID - 1, NodeID.INVALID_ID);
+            createOrReplaceEntry(p_localID - 1, m_creator);
         } else {
             if (p_localID - 1 == predecessor.getLocalID()) {
                 if (p_nodeID == predecessor.getNodeID()) {
@@ -899,7 +880,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * @return NodeID for p_localID if p_localID is in btree or successors NodeID
      */
     private short getNodeIDOrSuccessorsNodeID(final long p_localID) {
-        short ret = NodeID.INVALID_ID;
+        short ret = m_creator;
         int index;
         Node node;
 
@@ -1024,40 +1005,40 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         long replaceLID;
         short replaceNodeID;
 
-        assert p_node != null;
-
-        index = p_node.indexOf(p_localID);
-        if (index >= 0) {
-            ret = p_node.removeEntry(p_localID);
-            if (p_node.getNumberOfChildren() == 0) {
-                // Leaf node
-                if (p_node.getParent() != null && p_node.getNumberOfEntries() < m_minEntries) {
-                    combined(p_node);
-                } else if (p_node.getParent() == null && p_node.getNumberOfEntries() == 0) {
-                    // Removing root node with no keys or children
-                    m_root = null;
+        if (p_node != null) {
+            index = p_node.indexOf(p_localID);
+            if (index >= 0) {
+                ret = p_node.removeEntry(p_localID);
+                if (p_node.getNumberOfChildren() == 0) {
+                    // Leaf node
+                    if (p_node.getParent() != null && p_node.getNumberOfEntries() < m_minEntries) {
+                        combined(p_node);
+                    } else if (p_node.getParent() == null && p_node.getNumberOfEntries() == 0) {
+                        // Removing root node with no keys or children
+                        m_root = null;
+                    }
+                } else {
+                    // Internal node
+                    greatest = p_node.getChild(index);
+                    while (greatest.getNumberOfChildren() > 0) {
+                        greatest = greatest.getChild(greatest.getNumberOfChildren() - 1);
+                    }
+                    replaceLID = -1;
+                    replaceNodeID = m_creator;
+                    if (greatest.getNumberOfEntries() > 0) {
+                        replaceNodeID = greatest.getNodeID(greatest.getNumberOfEntries() - 1);
+                        replaceLID = greatest.removeEntry(greatest.getNumberOfEntries() - 1);
+                    }
+                    p_node.addEntry(replaceLID, replaceNodeID);
+                    if (greatest.getParent() != null && greatest.getNumberOfEntries() < m_minEntries) {
+                        combined(greatest);
+                    }
+                    if (greatest.getNumberOfChildren() > m_maxChildren) {
+                        split(p_localID, greatest);
+                    }
                 }
-            } else {
-                // Internal node
-                greatest = p_node.getChild(index);
-                while (greatest.getNumberOfChildren() > 0) {
-                    greatest = greatest.getChild(greatest.getNumberOfChildren() - 1);
-                }
-                replaceLID = -1;
-                replaceNodeID = NodeID.INVALID_ID;
-                if (greatest.getNumberOfEntries() > 0) {
-                    replaceNodeID = greatest.getNodeID(greatest.getNumberOfEntries() - 1);
-                    replaceLID = greatest.removeEntry(greatest.getNumberOfEntries() - 1);
-                }
-                p_node.addEntry(replaceLID, replaceNodeID);
-                if (greatest.getParent() != null && greatest.getNumberOfEntries() < m_minEntries) {
-                    combined(greatest);
-                }
-                if (greatest.getNumberOfChildren() > m_maxChildren) {
-                    split(p_localID, greatest);
-                }
+                m_size--;
             }
-            m_size--;
         }
 
         return ret;
