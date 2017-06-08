@@ -130,7 +130,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
             m_networkHandler.sendMessage(p_message);
         } catch (final NetworkDestinationUnreachableException e) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Sending message %s failed: %s", p_message, e);
+            LOGGER.error("Sending message %s failed: %s", p_message.getClass().getSimpleName(), e);
             // #endif /* LOGGER >= ERROR */
 
             // Connection creation failed -> trigger failure handling
@@ -162,13 +162,43 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * Send the Request and wait for fulfillment (wait for response).
      *
      * @param p_request
-     *         The request to send.
+     *     The request to send.
+     * @param p_timeout
+     *     The amount of time to wait for a response
+     * @throws NetworkException
+     *     If sending the message failed
+     */
+    public void sendSync(final AbstractRequest p_request, final int p_timeout) throws NetworkException {
+        sendSync(p_request, p_timeout, true);
+    }
+
+    /**
+     * Send the Request and wait for fulfillment (wait for response).
+     *
+     * @param p_request
+     *     The request to send.
      * @param p_waitForResponses
      *         Set to false to not wait/block until the response arrived
      * @throws NetworkException
      *         If sending the message failed
      */
     public void sendSync(final AbstractRequest p_request, final boolean p_waitForResponses) throws NetworkException {
+        sendSync(p_request, -1, p_waitForResponses);
+    }
+
+    /**
+     * Send the Request and wait for fulfillment (wait for response).
+     *
+     * @param p_request
+     *     The request to send.
+     * @param p_timeout
+     *     The amount of time to wait for a response
+     * @param p_waitForResponses
+     *     Set to false to not wait/block until the response arrived
+     * @throws NetworkException
+     *     If sending the message failed
+     */
+    public void sendSync(final AbstractRequest p_request, final int p_timeout, final boolean p_waitForResponses) throws NetworkException {
         // #if LOGGER == TRACE
         LOGGER.trace("Sending request (sync): %s", p_request);
         // #endif /* LOGGER == TRACE */
@@ -184,14 +214,11 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
         LOGGER.trace("Waiting for response to request: %s", p_request);
         // #endif /* LOGGER == TRACE */
 
-        if (p_waitForResponses && !p_request.waitForResponses((int) getConfig().getRequestTimeout().getMs())) {
+        int timeout = p_timeout != -1 ? p_timeout : (int) getConfig().getRequestTimeout().getMs();
+        if (p_waitForResponses && !p_request.waitForResponse(timeout)) {
             // #if LOGGER >= ERROR
             LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
             // #endif /* LOGGER >= ERROR */
-
-            // #if LOGGER >= DEBUG
-            LOGGER.debug(m_networkHandler.getStatus());
-            // #endif /* LOGGER >= DEBUG */
 
             RequestMap.remove(p_request.getRequestID());
 
@@ -295,8 +322,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
             }
         }
 
-        m_networkHandler.initialize(m_boot.getNodeID(), new NodeMappings(m_boot), (int) getConfig().getIncomingBufferSize().getBytes(),
-                (int) getConfig().getOutgoingBufferSize().getBytes(), (int) getConfig().getMaxIncomingBufferSize().getBytes(),
+        m_networkHandler.initialize(m_boot.getNodeID(), new NodeMappings(m_boot), (int) getConfig().getOSBufferSize().getBytes(),
                 (int) getConfig().getFlowControlWindowSize().getBytes(), (int) getConfig().getRequestTimeout().getMs());
 
         m_networkHandler.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);

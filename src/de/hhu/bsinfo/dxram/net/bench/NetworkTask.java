@@ -119,7 +119,6 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver {
             long messagesToSend = messagesPerThread[threadIdx];
 
             threads[i] = new Thread(() -> {
-
                 switch (m_pattern) {
                     case PATTERN_END_TO_END:
                         // find index of receiver node in the slaveNodeIds array
@@ -176,7 +175,6 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver {
                     default:
                         throw new RuntimeException("Unsupported pattern");
                 }
-
             });
         }
 
@@ -321,15 +319,15 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver {
     }
 
     private void registerReceiverAndMessageTypes() {
-        m_networkService.registerReceiver(NetworkTestMessage.class, this);
-        m_networkService.registerReceiver(NetworkTestRequest.class, this);
+        m_networkService.registerReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE, this);
+        m_networkService.registerReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST, this);
         m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE, NetworkTestMessage.class);
         m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST, NetworkTestRequest.class);
         m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_RESPONSE, NetworkTestResponse.class);
     }
 
     private void unregisterReceiver() {
-        m_networkService.unregisterReceiver(NetworkTestMessage.class, this);
-        m_networkService.unregisterReceiver(NetworkTestRequest.class, this);
+        m_networkService.unregisterReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE, this);
+        m_networkService.unregisterReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST, this);
     }
 }
