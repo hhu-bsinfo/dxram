@@ -307,8 +307,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REUSE_ID_MESSAGE, ReuseIDMessage.class);
 
-        m_network.register(RemoveMessage.class, this);
-        m_network.register(ReuseIDMessage.class, this);
+        m_network.register(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REUSE_ID_MESSAGE, this);
 
         return true;
     }

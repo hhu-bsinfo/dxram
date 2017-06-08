@@ -466,10 +466,18 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
 
                 m_currentBackupRange = null;
 
+                if (m_forceDisjunctiveFirstBackupPeers) {
+                    m_firstBackupPeers = new ArrayList<>();
+                }
+
                 m_lock = new ReentrantReadWriteLock(false);
 
-                m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
-                m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
+                m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_BACKUP_RANGE_REQUEST, InitBackupRangeRequest.class);
+                m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_BACKUP_RANGE_RESPONSE, InitBackupRangeResponse.class);
+                m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST,
+                        InitRecoveredBackupRangeRequest.class);
+                m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_RESPONSE,
+                        InitRecoveredBackupRangeResponse.class);
             }
         }
 

@@ -318,9 +318,9 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
         m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST, GetLockedListRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_RESPONSE, GetLockedListResponse.class);
 
-        m_network.register(LockRequest.class, this);
-        m_network.register(UnlockMessage.class, this);
-        m_network.register(GetLockedListRequest.class, this);
+        m_network.register(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST, this);
 
         return true;
     }

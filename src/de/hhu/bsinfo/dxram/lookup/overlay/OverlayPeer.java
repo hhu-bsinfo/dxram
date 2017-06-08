@@ -832,7 +832,7 @@ public class OverlayPeer implements MessageReceiver {
         };
 
         // make sure to register the listener BEFORE sending the sign on to not miss the release message
-        m_network.register(BarrierReleaseMessage.class, msg);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
 
         short responsibleSuperpeer = BarrierID.getOwnerID(p_barrierId);
         BarrierSignOnRequest request = new BarrierSignOnRequest(responsibleSuperpeer, p_barrierId, p_customData);
@@ -842,7 +842,7 @@ public class OverlayPeer implements MessageReceiver {
             // #if LOGGER >= ERROR
             LOGGER.error("Sign on barrier 0x%X failed: %s", p_barrierId, e);
             // #endif /* LOGGER >= ERROR */
-            m_network.unregister(BarrierReleaseMessage.class, msg);
+            m_network.unregister(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
             return null;
         }
 
@@ -851,7 +851,7 @@ public class OverlayPeer implements MessageReceiver {
             // #if LOGGER >= ERROR
             LOGGER.error("Sign on barrier 0x%X failed", p_barrierId);
             // #endif /* LOGGER >= ERROR */
-            m_network.unregister(BarrierReleaseMessage.class, msg);
+            m_network.unregister(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
             return null;
         }
 
@@ -860,7 +860,7 @@ public class OverlayPeer implements MessageReceiver {
         } catch (final InterruptedException ignored) {
         }
 
-        m_network.unregister(BarrierReleaseMessage.class, msg);
+        m_network.unregister(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
 
         return releaseMessage[0].getBarrierResults();
     }
@@ -1650,9 +1650,9 @@ public class OverlayPeer implements MessageReceiver {
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(SendSuperpeersMessage.class, this);
-        m_network.register(NameserviceUpdatePeerCachesMessage.class, this);
-        m_network.register(PeerJoinEventRequest.class, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PEER_JOIN_EVENT_REQUEST, this);
     }
 
 }

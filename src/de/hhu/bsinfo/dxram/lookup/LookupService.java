@@ -219,8 +219,8 @@ public class LookupService extends AbstractDXRAMService<LookupServiceConfig> imp
      * Register network messages we use in here.
      */
     private void registerNetworkMessages() {
-        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_TREE_RESPONSE, GetLookupTreeResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_TREE_REQUEST, GetLookupTreeRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_TREE_RESPONSE, GetLookupTreeResponse.class);
 
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST,
                 GetMetadataSummaryRequest.class);
@@ -233,7 +233,6 @@ public class LookupService extends AbstractDXRAMService<LookupServiceConfig> imp
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(GetLookupTreeResponse.class, this);
-        m_network.register(GetLookupTreeRequest.class, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_TREE_REQUEST, this);
     }
 }

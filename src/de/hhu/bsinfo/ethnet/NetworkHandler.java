@@ -14,10 +14,11 @@
 package de.hhu.bsinfo.ethnet;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
@@ -40,7 +41,7 @@ public final class NetworkHandler implements DataReceiver {
     // Attributes
     private static EventInterface ms_eventInterface;
 
-    private final HashMap<Class<? extends AbstractMessage>, MessageReceivers> m_receivers;
+    private MessageReceiver[][] m_receivers;
 
     private final DefaultMessageHandlerPool m_defaultMessageHandlerPool;
     private final ExclusiveMessageHandler m_exclusiveMessageHandler;
@@ -73,9 +74,7 @@ public final class NetworkHandler implements DataReceiver {
         RequestMap.initialize(p_requestMapSize);
 
         m_timeOut = p_requestTimeOut;
-        m_numMessageHandlerThreads = p_numMessageHandlerThreads;
-
-        m_receivers = new HashMap<>();
+        m_receivers = new MessageReceiver[100][100];
         m_receiversLock = new ReentrantLock(false);
 
         m_defaultMessageHandlerPool = new DefaultMessageHandlerPool(p_numMessageHandlerThreads);
@@ -225,21 +224,44 @@ public final class NetworkHandler implements DataReceiver {
     /**
      * Registers a message receiver
      *
-     * @param p_message
-     *     the message
+     * @param p_type
+     *     the message type
+     * @param p_subtype
+     *     the message subtype
      * @param p_receiver
      *     the receiver
      */
-    public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
-        MessageReceivers messageReceivers;
-
+    public void register(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
         if (p_receiver != null) {
             m_receiversLock.lock();
-            messageReceivers = m_receivers.computeIfAbsent(p_message, mapper -> new MessageReceivers());
-            messageReceivers.add(p_receiver);
+            // enlarge array
+            if (m_receivers.length <= p_type) {
+                final MessageReceiver[][] newArray = new MessageReceiver[p_type + 1][];
+                System.arraycopy(m_receivers, 0, newArray, 0, m_receivers.length);
+                m_receivers = newArray;
+            }
+
+            // create new sub array when it is not existing until now
+            if (m_receivers[p_type] == null) {
+                m_receivers[p_type] = new MessageReceiver[p_subtype + 1];
+            }
+
+            // enlarge subtype array
+            if (m_receivers[p_type].length <= p_subtype) {
+                final MessageReceiver[] newArray = new MessageReceiver[p_subtype + 1];
+                System.arraycopy(m_receivers[p_type], 0, newArray, 0, m_receivers[p_type].length);
+                m_receivers[p_type] = newArray;
+            }
+
+            if (m_receivers[p_type][p_subtype] != null) {
+                // #if LOGGER >= WARN
+                LOGGER.warn("Receiver for %d %d is already registered", p_type, p_subtype);
+                // #endif /* LOGGER >= WARN */
+            }
+            m_receivers[p_type][p_subtype] = p_receiver;
 
             // #if LOGGER >= TRACE
-            LOGGER.trace("Added new MessageReceiver %s for %s", p_receiver.getClass(), p_message.getSimpleName());
+            LOGGER.trace("Added new MessageReceiver %s for %d %d", p_receiver.getClass(), p_type, p_subtype);
             // #endif /* LOGGER >= TRACE */
             m_receiversLock.unlock();
         }
@@ -248,24 +270,17 @@ public final class NetworkHandler implements DataReceiver {
     /**
      * Unregisters a message receiver
      *
-     * @param p_message
-     *     the message
+     * @param p_type
+     *     the message type
+     * @param p_subtype
+     *     the message subtype
      * @param p_receiver
      *     the receiver
      */
-    public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
-        MessageReceivers messageReceivers;
-
+    public void unregister(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
         if (p_receiver != null) {
             m_receiversLock.lock();
-            messageReceivers = m_receivers.get(p_message);
-            if (messageReceivers != null) {
-                messageReceivers.remove(p_receiver);
-
-                // #if LOGGER >= TRACE
-                LOGGER.trace("Removed MessageReceiver %s from listening to %s", p_receiver, p_message.getSimpleName());
-                // #endif /* LOGGER >= TRACE */
-            }
+            m_receivers[p_type][p_subtype] = null;
             m_receiversLock.unlock();
         }
     }
@@ -396,62 +411,6 @@ public final class NetworkHandler implements DataReceiver {
     }
 
     // Classes
-
-    /**
-     * Wrapper class for message type - MessageReceiver pairs
-     *
-     * @author Florian Klein 23.07.2013
-     * @author Marc Ewert 14.08.2014
-     */
-    private static class MessageReceivers {
-
-        // Attributes
-        private final CopyOnWriteArrayList<MessageReceiver> m_receivers;
-
-        // Constructors
-
-        /**
-         * Creates an instance of Entry
-         */
-        MessageReceivers() {
-            m_receivers = new CopyOnWriteArrayList<>();
-        }
-
-        // Methods
-
-        /**
-         * Adds a MessageReceiver
-         *
-         * @param p_receiver
-         *     the MessageReceiver
-         */
-        public void add(final MessageReceiver p_receiver) {
-            m_receivers.add(p_receiver);
-        }
-
-        /**
-         * Removes a MessageReceiver
-         *
-         * @param p_receiver
-         *     the MessageReceiver
-         */
-        public void remove(final MessageReceiver p_receiver) {
-            m_receivers.remove(p_receiver);
-        }
-
-        /**
-         * Informs all MessageReceivers about a new message
-         *
-         * @param p_message
-         *     the message
-         */
-        void newMessage(final AbstractMessage p_message) {
-            for (int i = 0; i < m_receivers.size(); i++) {
-                m_receivers.get(i).onIncomingMessage(p_message);
-            }
-        }
-    }
-
     /**
      * Distributes incoming default messages
      *
@@ -604,7 +563,7 @@ public final class NetworkHandler implements DataReceiver {
         public void run() {
             long time;
             AbstractMessage message = null;
-            MessageReceivers messageReceivers;
+            MessageReceiver messageReceiver;
 
             while (!m_shutdown) {
                 while (message == null) {
@@ -622,28 +581,31 @@ public final class NetworkHandler implements DataReceiver {
                     m_defaultMessagesLock.unlock();
                 }
 
-                messageReceivers = m_receivers.get(message.getClass());
+                if (m_shutdown) {
+                    break;
+                }
+
+                messageReceiver = m_receivers[message.getType()][message.getSubtype()];
 
                 // Try again in a loop, if receivers were not registered. Stop if request timeout is reached as answering later has no effect
-                if (messageReceivers == null) {
+                if (messageReceiver == null) {
+                    // #if LOGGER >= WARN
+                    LOGGER.warn("Message receiver null for %d, %d! Waiting...", + message.getType(), message.getSubtype());
+                    // #endif /* LOGGER >= WARN */
                     time = System.currentTimeMillis();
                     while (messageReceivers == null && System.currentTimeMillis() < time + m_timeOut) {
                         m_receiversLock.lock();
-                        messageReceivers = m_receivers.get(message.getClass());
+                        messageReceiver = m_receivers[message.getType()][message.getSubtype()];
                         m_receiversLock.unlock();
                     }
                 }
 
-                if (messageReceivers != null) {
-                    messageReceivers.newMessage(message);
+                if (messageReceiver != null) {
+                    messageReceiver.onIncomingMessage(message);
                 } else {
-                    if (message.getType() != (byte) 0) {
-                        // Type 0 are default messages and can be ignored
-
-                        // #if LOGGER >= ERROR
-                        LOGGER.error("No message receiver was registered for %d, %d!", message.getType(), message.getSubtype());
-                        // #endif /* LOGGER >= ERROR */
-                    }
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("No message receiver was registered for %d, %d!", message.getType(), message.getSubtype());
+                    // #endif /* LOGGER >= ERROR */
                 }
                 message = null;
             }
@@ -713,20 +675,27 @@ public final class NetworkHandler implements DataReceiver {
                     m_exclusiveMessagesLock.unlock();
                 }
 
-                messageReceivers = m_receivers.get(message.getClass());
+                if (m_shutdown) {
+                    break;
+                }
+
+                messageReceiver = m_receivers[message.getType()][message.getSubtype()];
 
                 // Try again in a loop, if receivers were not registered. Stop if request timeout is reached as answering later has no effect
-                if (messageReceivers == null) {
+                if (messageReceiver == null) {
+                    // #if LOGGER >= WARN
+                    LOGGER.warn("Message receiver null for %d, %d! Waiting...", + message.getType(), message.getSubtype());
+                    // #endif /* LOGGER >= WARN */
                     time = System.currentTimeMillis();
                     while (messageReceivers == null && System.currentTimeMillis() < time + m_timeOut) {
                         m_receiversLock.lock();
-                        messageReceivers = m_receivers.get(message.getClass());
+                        messageReceiver = m_receivers[message.getType()][message.getSubtype()];
                         m_receiversLock.unlock();
                     }
                 }
 
-                if (messageReceivers != null) {
-                    messageReceivers.newMessage(message);
+                if (messageReceiver != null) {
+                    messageReceiver.onIncomingMessage(message);
                 } else {
                     // #if LOGGER >= ERROR
                     LOGGER.error("No message receiver was registered for %d, %d", message.getType(), message.getSubtype());

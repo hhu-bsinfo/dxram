@@ -223,8 +223,8 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(DumpMemoryMessage.class, this);
-        m_network.register(ResetMemoryMessage.class, this);
+        m_network.register(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_DUMP_MEMORY_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_RESET_MEMORY_MESSAGE, this);
     }
 
     // -----------------------------------------------------------------------------------

@@ -55,25 +55,29 @@ public class NetworkService extends AbstractDXRAMService<NetworkServiceConfig> {
     /**
      * Registers a message receiver
      *
-     * @param p_message
-     *         the message
+     * @param p_type
+     *     the message type
+     * @param p_subtype
+     *     the message subtype
      * @param p_receiver
      *         the receiver
      */
-    public void registerReceiver(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
-        m_network.register(p_message, p_receiver);
+    public void registerReceiver(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
+        m_network.register(p_type, p_subtype, p_receiver);
     }
 
     /**
      * Unregisters a message receiver
      *
-     * @param p_message
-     *         the message
+     * @param p_type
+     *     the message type
+     * @param p_subtype
+     *     the message subtype
      * @param p_receiver
      *         the receiver
      */
-    public void unregisterReceiver(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
-        m_network.unregister(p_message, p_receiver);
+    public void unregisterReceiver(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
+        m_network.unregister(p_type, p_subtype, p_receiver);
     }
 
     /**

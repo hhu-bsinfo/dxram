@@ -437,8 +437,8 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(MigrationRequest.class, this);
-        m_network.register(MigrationRemoteMessage.class, this);
+        m_network.register(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE, this);
     }
 
 }

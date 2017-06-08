@@ -515,16 +515,16 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
     private void registerNetworkMessages() {
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_ANON_REQUEST, GetAnonRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_ANON_RESPONSE, GetAnonResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_BUFFER_REQUEST, PutAnonRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_BUFFER_RESPONSE, PutAnonResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_ANON_REQUEST, PutAnonRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_ANON_RESPONSE, PutAnonResponse.class);
     }
 
     /**
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(GetAnonRequest.class, this);
-        m_network.register(PutAnonRequest.class, this);
+        m_network.register(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_ANON_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_ANON_REQUEST, this);
     }
 
     // -----------------------------------------------------------------------------------

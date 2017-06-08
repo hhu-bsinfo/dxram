@@ -435,9 +435,9 @@ public class GraphAlgorithmBFSTask implements Task {
 
             m_markVisited = p_verticesMarkVisited;
 
-            m_networkService.registerReceiver(VerticesForNextFrontierMessage.class, this);
-            m_networkService.registerReceiver(BFSTerminateMessage.class, this);
-            m_networkService.registerReceiver(BFSResultMessage.class, this);
+            m_networkService.registerReceiver(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE, this);
+            m_networkService.registerReceiver(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_TERMINATE_MESSAGE, this);
+            m_networkService.registerReceiver(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE, this);
 
             m_statisticsThread = new StatisticsThread();
 
@@ -732,9 +732,9 @@ public class GraphAlgorithmBFSTask implements Task {
 
             m_syncBFSFinished.cleanup();
 
-            m_networkService.unregisterReceiver(VerticesForNextFrontierMessage.class, this);
-            m_networkService.unregisterReceiver(BFSTerminateMessage.class, this);
-            m_networkService.unregisterReceiver(BFSResultMessage.class, this);
+            m_networkService.unregisterReceiver(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE, this);
+            m_networkService.unregisterReceiver(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_TERMINATE_MESSAGE, this);
+            m_networkService.unregisterReceiver(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE, this);
 
             // #if LOGGER >= DEBUG
             LOGGER.debug("BFS shutdown");

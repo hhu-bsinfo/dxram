@@ -266,7 +266,7 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(PutMessage.class, this);
+        m_network.register(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_MESSAGE, this);
     }
 
     // -----------------------------------------------------------------------------------

@@ -85,11 +85,10 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             .registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskScriptRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE,
             ExecuteTaskScriptResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SIGNAL, SignalMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SIGNAL_MESSAGE, SignalMessage.class);
 
-        m_network.register(SlaveJoinResponse.class, this);
-        m_network.register(ExecuteTaskScriptRequest.class, this);
-        m_network.register(SignalMessage.class, this);
+        m_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SIGNAL_MESSAGE, this);
 
         m_masterExecutionBarrierId = BarrierID.INVALID_ID;
 

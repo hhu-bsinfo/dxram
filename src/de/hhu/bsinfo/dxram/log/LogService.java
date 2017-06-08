@@ -219,10 +219,11 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(LogMessage.class, this);
-        m_network.register(LogAnonMessage.class, this);
-        m_network.register(RemoveMessage.class, this);
-        m_network.register(InitRequest.class, this);
-        m_network.register(GetUtilizationRequest.class, this);
+        m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_ANON_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_BACKUP_RANGE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST, this);
     }
 }

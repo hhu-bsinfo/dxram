@@ -576,10 +576,10 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(AskAboutBackupsRequest.class, this);
-        m_network.register(AskAboutSuccessorRequest.class, this);
-        m_network.register(SendBackupsMessage.class, this);
-        m_network.register(NotifyAboutNewPredecessorMessage.class, this);
-        m_network.register(NotifyAboutNewSuccessorMessage.class, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE, this);
     }
 }

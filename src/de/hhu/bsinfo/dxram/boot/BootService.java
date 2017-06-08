@@ -334,16 +334,16 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
         m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE, RebootMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE, ShutdownMessage.class);
 
-        m_network.register(RebootMessage.class, this);
-        m_network.register(ShutdownMessage.class, this);
+        m_network.register(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE, this);
 
         return true;
     }
 
     @Override
     protected boolean shutdownService() {
-        m_network.unregister(RebootMessage.class, this);
-        m_network.unregister(ShutdownMessage.class, this);
+        m_network.unregister(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE, this);
+        m_network.unregister(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE, this);
 
         return true;
     }

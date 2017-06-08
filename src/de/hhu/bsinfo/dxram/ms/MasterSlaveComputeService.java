@@ -401,10 +401,10 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE,
                 TaskExecutionFinishedMessage.class);
 
-        m_network.register(SubmitTaskRequest.class, this);
-        m_network.register(GetMasterStatusRequest.class, this);
-        m_network.register(TaskExecutionStartedMessage.class, this);
-        m_network.register(TaskExecutionFinishedMessage.class, this);
+        m_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE, this);
 
         switch (ComputeRole.toComputeRole(getConfig().getRole())) {
             case MASTER:

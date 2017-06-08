@@ -353,9 +353,9 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      * Register listener for incoming messages.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(PushJobQueueMessage.class, this);
-        m_network.register(StatusRequest.class, this);
-        m_network.register(JobEventTriggeredMessage.class, this);
+        m_network.register(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE, this);
     }
 
     /**

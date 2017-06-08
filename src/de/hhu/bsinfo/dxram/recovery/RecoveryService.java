@@ -366,7 +366,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(RecoverBackupRangeRequest.class, this);
+        m_network.register(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, this);
     }
 
 }

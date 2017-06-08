@@ -136,7 +136,7 @@ public class LoggerService extends AbstractDXRAMService<LoggerServiceConfig> imp
     protected boolean startService(final DXRAMContext.Config p_config) {
         m_network.registerMessageType(DXRAMMessageTypes.LOGGER_MESSAGES_TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE, SetLogLevelMessage.class);
 
-        m_network.register(SetLogLevelMessage.class, this);
+        m_network.register(DXRAMMessageTypes.LOGGER_MESSAGES_TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE, this);
 
         return true;
     }

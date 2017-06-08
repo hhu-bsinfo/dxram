@@ -87,7 +87,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
         final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
         super(ComputeRole.MASTER, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_nameservice, p_boot, p_lookup);
 
-        p_network.register(SlaveJoinRequest.class, this);
+        p_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, this);
 
         m_executionBarrierId = m_lookup.barrierAllocate(1);
 

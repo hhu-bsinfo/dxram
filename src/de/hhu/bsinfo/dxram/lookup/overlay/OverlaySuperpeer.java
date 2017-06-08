@@ -2579,37 +2579,37 @@ public class OverlaySuperpeer implements MessageReceiver {
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(JoinRequest.class, this);
-        m_network.register(FinishedStartupMessage.class, this);
-        m_network.register(GetLookupRangeRequest.class, this);
-        m_network.register(RemoveChunkIDsRequest.class, this);
-        m_network.register(InsertNameserviceEntriesRequest.class, this);
-        m_network.register(GetChunkIDForNameserviceEntryRequest.class, this);
-        m_network.register(GetNameserviceEntryCountRequest.class, this);
-        m_network.register(GetNameserviceEntriesRequest.class, this);
-        m_network.register(MigrateRequest.class, this);
-        m_network.register(MigrateRangeRequest.class, this);
-        m_network.register(InitRangeRequest.class, this);
-        m_network.register(GetAllBackupRangesRequest.class, this);
-        m_network.register(UpdateMetadataAfterRecoveryMessage.class, this);
-        m_network.register(ReplaceBackupPeerRequest.class, this);
-        m_network.register(PeerJoinEventRequest.class, this);
-        m_network.register(PingSuperpeerMessage.class, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_JOIN_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_FINISHED_STARTUP_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_UPDATE_METADATA_AFTER_RECOVERY_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REPLACE_BACKUP_PEER_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PEER_JOIN_EVENT_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE, this);
 
-        m_network.register(BarrierAllocRequest.class, this);
-        m_network.register(BarrierFreeRequest.class, this);
-        m_network.register(BarrierSignOnRequest.class, this);
-        m_network.register(BarrierGetStatusRequest.class, this);
-        m_network.register(BarrierChangeSizeRequest.class, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_STATUS_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST, this);
 
-        m_network.register(SuperpeerStorageCreateRequest.class, this);
-        m_network.register(SuperpeerStorageGetRequest.class, this);
-        m_network.register(SuperpeerStorageGetAnonRequest.class, this);
-        m_network.register(SuperpeerStoragePutRequest.class, this);
-        m_network.register(SuperpeerStoragePutAnonRequest.class, this);
-        m_network.register(SuperpeerStorageRemoveMessage.class, this);
-        m_network.register(SuperpeerStorageStatusRequest.class, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_ANON_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST, this);
 
-        m_network.register(GetMetadataSummaryRequest.class, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST, this);
     }
 }

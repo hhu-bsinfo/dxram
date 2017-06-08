@@ -202,25 +202,29 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     /**
      * Registers a message receiver
      *
-     * @param p_message
-     *         the message
+     * @param p_type
+     *     the message type
+     * @param p_subtype
+     *     the message subtype
      * @param p_receiver
      *         the receiver
      */
-    public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
-        m_networkHandler.register(p_message, p_receiver);
+    public void register(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
+        m_networkHandler.register(p_type, p_subtype, p_receiver);
     }
 
     /**
      * Unregisters a message receiver
      *
-     * @param p_message
-     *         the message
+     * @param p_type
+     *     the message type
+     * @param p_subtype
+     *     the message subtype
      * @param p_receiver
      *         the receiver
      */
-    public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
-        m_networkHandler.unregister(p_message, p_receiver);
+    public void unregister(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
+        m_networkHandler.unregister(p_type, p_subtype, p_receiver);
     }
 
     // --------------------------------------------------------------------------------------

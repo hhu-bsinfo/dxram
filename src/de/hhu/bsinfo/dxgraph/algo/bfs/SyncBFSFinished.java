@@ -56,7 +56,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
         m_networkService.registerMessageType(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE,
                 BFSLevelFinishedMessage.class);
 
-        m_networkService.registerReceiver(BFSLevelFinishedMessage.class, this);
+        m_networkService.registerReceiver(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE, this);
     }
 
     void incrementSentVertexMsgCountLocal() {
@@ -178,7 +178,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
     }
 
     void cleanup() {
-        m_networkService.unregisterReceiver(BFSLevelFinishedMessage.class, this);
+        m_networkService.unregisterReceiver(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE, this);
     }
 
     @Override

@@ -198,7 +198,8 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
     protected boolean initComponent(final DXRAMContext.Config p_config) {
         m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST, FailureRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_RESPONSE, FailureResponse.class);
-        m_network.register(FailureRequest.class, this);
+
+        m_network.register(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST, this);
 
         m_event.registerListener(this, ConnectionLostEvent.class);
         m_event.registerListener(this, ResponseDelayedEvent.class);
