@@ -14,10 +14,7 @@
 package de.hhu.bsinfo.ethnet;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLongArray;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -66,11 +63,11 @@ public final class NetworkHandler implements DataReceiver {
      * Creates an instance of NetworkHandler
      *
      * @param p_numMessageHandlerThreads
-     *     the number of default message handler (+ one exclusive message handler)
+     *         the number of default message handler (+ one exclusive message handler)
      * @param p_requestMapSize
-     *     the number of entries in the request map
+     *         the number of entries in the request map
      * @param p_requestTimeOut
-     *     the request time out in ms
+     *         the request time out in ms
      */
     public NetworkHandler(final int p_numMessageHandlerThreads, final int p_requestMapSize, final int p_requestTimeOut) {
         RequestMap.initialize(p_requestMapSize);
@@ -103,7 +100,7 @@ public final class NetworkHandler implements DataReceiver {
      * Sets the EventInterface
      *
      * @param p_event
-     *     the EventInterface
+     *         the EventInterface
      */
     public static void setEventHandler(final EventInterface p_event) {
         ms_eventInterface = p_event;
@@ -128,11 +125,11 @@ public final class NetworkHandler implements DataReceiver {
      * Registers a message type
      *
      * @param p_type
-     *     the unique type
+     *         the unique type
      * @param p_subtype
-     *     the unique subtype
+     *         the unique subtype
      * @param p_class
-     *     the calling class
+     *         the calling class
      */
     public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
         boolean ret;
@@ -142,7 +139,7 @@ public final class NetworkHandler implements DataReceiver {
         // #if LOGGER >= WARN
         if (!ret) {
             LOGGER.warn("Registering network message %s for type %s and subtype %s failed, type and subtype already used", p_class.getSimpleName(), p_type,
-                p_subtype);
+                    p_subtype);
         }
         // #endif /* LOGGER >= WARN */
     }
@@ -153,15 +150,15 @@ public final class NetworkHandler implements DataReceiver {
      * Initializes the network handler
      *
      * @param p_ownNodeID
-     *     the own NodeID
+     *         the own NodeID
      * @param p_nodeMap
-     *     the node map
+     *         the node map
      * @param p_osBufferSize
-     *     the size of incoming and outgoing buffers
+     *         the size of incoming and outgoing buffers
      * @param p_flowControlWindowSize
-     *     the maximal number of ByteBuffer to schedule for sending/receiving
+     *         the maximal number of ByteBuffer to schedule for sending/receiving
      * @param p_connectionTimeout
-     *     the connection timeout
+     *         the connection timeout
      */
     public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_osBufferSize, final int p_flowControlWindowSize,
             final int p_connectionTimeout) {
@@ -225,11 +222,11 @@ public final class NetworkHandler implements DataReceiver {
      * Registers a message receiver
      *
      * @param p_type
-     *     the message type
+     *         the message type
      * @param p_subtype
-     *     the message subtype
+     *         the message subtype
      * @param p_receiver
-     *     the receiver
+     *         the receiver
      */
     public void register(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
         if (p_receiver != null) {
@@ -271,11 +268,11 @@ public final class NetworkHandler implements DataReceiver {
      * Unregisters a message receiver
      *
      * @param p_type
-     *     the message type
+     *         the message type
      * @param p_subtype
-     *     the message subtype
+     *         the message subtype
      * @param p_receiver
-     *     the receiver
+     *         the receiver
      */
     public void unregister(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
         if (p_receiver != null) {
@@ -289,9 +286,9 @@ public final class NetworkHandler implements DataReceiver {
      * Connects a node.
      *
      * @param p_nodeID
-     *     Node to connect
+     *         Node to connect
      * @throws NetworkException
-     *     If sending the message failed
+     *         If sending the message failed
      */
     public void connectNode(final short p_nodeID) throws NetworkException {
         // #if LOGGER == TRACE
@@ -318,9 +315,9 @@ public final class NetworkHandler implements DataReceiver {
      * Sends a message
      *
      * @param p_message
-     *     the message to send
+     *         the message to send
      * @throws NetworkException
-     *     If sending the message failed
+     *         If sending the message failed
      */
     public void sendMessage(final AbstractMessage p_message) throws NetworkException {
         AbstractConnection connection;
@@ -376,10 +373,50 @@ public final class NetworkHandler implements DataReceiver {
     }
 
     /**
+     * Send the Request and wait for fulfillment (wait for response).
+     *
+     * @param p_request
+     *         The request to send.
+     * @param p_timeout
+     *         The amount of time to wait for a response
+     * @param p_waitForResponses
+     *         Set to false to not wait/block until the response arrived
+     * @throws NetworkException
+     *         If sending the message failed
+     */
+    public void sendSync(final AbstractRequest p_request, final int p_timeout, final boolean p_waitForResponses) throws NetworkException {
+        // #if LOGGER == TRACE
+        LOGGER.trace("Sending request (sync): %s", p_request);
+        // #endif /* LOGGER == TRACE */
+
+        try {
+            sendMessage(p_request);
+        } catch (final NetworkException e) {
+            RequestMap.remove(p_request.getRequestID());
+            throw e;
+        }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("Waiting for response to request: %s", p_request);
+        // #endif /* LOGGER == TRACE */
+
+        int timeout = p_timeout != -1 ? p_timeout : m_timeOut;
+        if (p_waitForResponses && !p_request.waitForResponse(timeout)) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
+            // #endif /* LOGGER >= ERROR */
+
+            RequestMap.remove(p_request.getRequestID());
+
+            throw new NetworkResponseTimeoutException(p_request.getDestination());
+        }
+    }
+
+    /**
      * Handles an incoming Message
      *
      * @param p_message
-     *     the incoming Message
+     *         the incoming Message
      */
     @Override
     public void newMessage(final AbstractMessage p_message) {
@@ -408,6 +445,7 @@ public final class NetworkHandler implements DataReceiver {
     }
 
     // Classes
+
     /**
      * Distributes incoming default messages
      *
@@ -426,7 +464,7 @@ public final class NetworkHandler implements DataReceiver {
          * Creates an instance of DefaultMessageHandlerPool
          *
          * @param p_numMessageHandlerThreads
-         *     the number of default message handler
+         *         the number of default message handler
          */
         private DefaultMessageHandlerPool(final int p_numMessageHandlerThreads) {
             m_defaultMessages = new MessageStore(DEFAULT_MESSAGE_STORE_SIZE);
@@ -476,7 +514,7 @@ public final class NetworkHandler implements DataReceiver {
          * Enqueue a new message for delivering
          *
          * @param p_message
-         *     the message
+         *         the message
          */
         private void newMessage(final AbstractMessage p_message) {
             // Ignore network test messages (e.g. ping after response delay)
@@ -541,9 +579,9 @@ public final class NetworkHandler implements DataReceiver {
          * Creates an instance of DefaultMessageHandler
          *
          * @param p_queue
-         *     the message queue
+         *         the message queue
          * @param p_lock
-         *     the lock for accessing message queue
+         *         the lock for accessing message queue
          */
         private DefaultMessageHandler(final MessageStore p_queue, final ReentrantLock p_lock) {
             m_defaultMessages = p_queue;
@@ -579,7 +617,7 @@ public final class NetworkHandler implements DataReceiver {
                 // Try again in a loop, if receivers were not registered. Stop if request timeout is reached as answering later has no effect
                 if (messageReceiver == null) {
                     // #if LOGGER >= WARN
-                    LOGGER.warn("Message receiver null for %d, %d! Waiting...", + message.getType(), message.getSubtype());
+                    LOGGER.warn("Message receiver null for %d, %d! Waiting...", +message.getType(), message.getSubtype());
                     // #endif /* LOGGER >= WARN */
                     time = System.currentTimeMillis();
                     while (messageReceiver == null && System.currentTimeMillis() < time + m_timeOut) {
@@ -667,7 +705,7 @@ public final class NetworkHandler implements DataReceiver {
                 // Try again in a loop, if receivers were not registered. Stop if request timeout is reached as answering later has no effect
                 if (messageReceiver == null) {
                     // #if LOGGER >= WARN
-                    LOGGER.warn("Message receiver null for %d, %d! Waiting...", + message.getType(), message.getSubtype());
+                    LOGGER.warn("Message receiver null for %d, %d! Waiting...", +message.getType(), message.getSubtype());
                     // #endif /* LOGGER >= WARN */
                     time = System.currentTimeMillis();
                     while (messageReceiver == null && System.currentTimeMillis() < time + m_timeOut) {
@@ -692,11 +730,11 @@ public final class NetworkHandler implements DataReceiver {
          * Enqueue a new message for delivering
          *
          * @param p_message
-         *     the message
+         *         the message
          */
         void newMessage(final AbstractMessage p_message) {
             m_exclusiveMessagesLock.lock();
-            while(!m_exclusiveMessages.pushMessage(p_message)) {
+            while (!m_exclusiveMessages.pushMessage(p_message)) {
                 m_exclusiveMessagesLock.unlock();
                 LockSupport.unpark(this);
                 Thread.yield();
@@ -738,7 +776,7 @@ public final class NetworkHandler implements DataReceiver {
          * Handles an incoming Message
          *
          * @param p_message
-         *     the Message
+         *         the Message
          */
         void onIncomingMessage(AbstractMessage p_message);
 

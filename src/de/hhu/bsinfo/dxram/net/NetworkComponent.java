@@ -36,7 +36,6 @@ import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
 import de.hhu.bsinfo.ethnet.RequestMap;
 
 /**
@@ -169,7 +168,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      *         If sending the message failed
      */
     public void sendSync(final AbstractRequest p_request, final int p_timeout) throws NetworkException {
-        sendSync(p_request, p_timeout, true);
+        m_networkHandler.sendSync(p_request, p_timeout, true);
     }
 
     /**
@@ -183,47 +182,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      *         If sending the message failed
      */
     public void sendSync(final AbstractRequest p_request, final boolean p_waitForResponses) throws NetworkException {
-        sendSync(p_request, -1, p_waitForResponses);
-    }
-
-    /**
-     * Send the Request and wait for fulfillment (wait for response).
-     *
-     * @param p_request
-     *         The request to send.
-     * @param p_timeout
-     *         The amount of time to wait for a response
-     * @param p_waitForResponses
-     *         Set to false to not wait/block until the response arrived
-     * @throws NetworkException
-     *         If sending the message failed
-     */
-    public void sendSync(final AbstractRequest p_request, final int p_timeout, final boolean p_waitForResponses) throws NetworkException {
-        // #if LOGGER == TRACE
-        LOGGER.trace("Sending request (sync): %s", p_request);
-        // #endif /* LOGGER == TRACE */
-
-        try {
-            sendMessage(p_request);
-        } catch (final NetworkException e) {
-            RequestMap.remove(p_request.getRequestID());
-            throw e;
-        }
-
-        // #if LOGGER == TRACE
-        LOGGER.trace("Waiting for response to request: %s", p_request);
-        // #endif /* LOGGER == TRACE */
-
-        int timeout = p_timeout != -1 ? p_timeout : (int) getConfig().getRequestTimeout().getMs();
-        if (p_waitForResponses && !p_request.waitForResponse(timeout)) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
-            // #endif /* LOGGER >= ERROR */
-
-            RequestMap.remove(p_request.getRequestID());
-
-            throw new NetworkResponseTimeoutException(p_request.getDestination());
-        }
+        m_networkHandler.sendSync(p_request, -1, p_waitForResponses);
     }
 
     /**
