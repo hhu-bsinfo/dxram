@@ -346,7 +346,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                 // Read all versions for recovery (must be done before flushing)
                 long time = System.currentTimeMillis();
                 if (m_versionsForRecovery == null) {
-                    m_versionsForRecovery = new TemporaryVersionsStorage(m_secondaryLogSize.getBytes());
+                    m_versionsForRecovery = new TemporaryVersionsStorage(getConfig().getSecondaryLogSize().getBytes());
                 } else {
                     m_versionsForRecovery.clear();
                 }

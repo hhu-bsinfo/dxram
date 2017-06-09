@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
-import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Request for initialization of a backup range (which was recovered from a failed peer) on a remote node

@@ -282,7 +282,7 @@ public class OverlaySuperpeer implements MessageReceiver {
     public boolean nodeFailureHandling(final short p_failedNode, final NodeRole p_nodeRole) {
         if (p_nodeRole == NodeRole.SUPERPEER) {
             return superpeerFailureHandling(p_failedNode);
-        } else if (p_nodeRole == NodeRole.PEER) {
+        } else {
             return peerFailureHandling(p_failedNode);
         }
     }
