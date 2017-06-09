@@ -61,20 +61,6 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     // --------------------------------------------------------------------------------------
 
     /**
-     * Activates the connection manager
-     */
-    public void activateConnectionManager() {
-        m_networkHandler.activateConnectionManager();
-    }
-
-    /**
-     * Deactivates the connection manager
-     */
-    public void deactivateConnectionManager() {
-        m_networkHandler.deactivateConnectionManager();
-    }
-
-    /**
      * Registers a message type
      *
      * @param p_type

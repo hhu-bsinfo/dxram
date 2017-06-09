@@ -181,20 +181,6 @@ public final class NetworkHandler implements DataReceiver {
     }
 
     /**
-     * Activates the connection manager
-     */
-    public void activateConnectionManager() {
-        m_manager.activate();
-    }
-
-    /**
-     * Deactivates the connection manager
-     */
-    public void deactivateConnectionManager() {
-        m_manager.deactivate();
-    }
-
-    /**
      * Closes the network handler
      */
     public void close() {

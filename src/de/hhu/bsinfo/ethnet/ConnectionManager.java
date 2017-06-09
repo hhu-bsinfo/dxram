@@ -48,7 +48,6 @@ final class ConnectionManager implements ConnectionCreatorListener {
     private ConnectionCreatorHelperThread m_connectionCreatorHelperThread;
     private DataReceiver m_connectionListener;
 
-    private boolean m_deactivated;
     private volatile boolean m_closed;
 
     private ReentrantLock m_connectionCreationLock;
@@ -59,9 +58,9 @@ final class ConnectionManager implements ConnectionCreatorListener {
      * Creates an instance of ConnectionStore
      *
      * @param p_creator
-     *     the ConnectionCreator
+     *         the ConnectionCreator
      * @param p_listener
-     *     the ConnectionListener
+     *         the ConnectionListener
      */
     ConnectionManager(final AbstractConnectionCreator p_creator, final DataReceiver p_listener) {
         m_connections = new AbstractConnection[65536];
@@ -71,7 +70,6 @@ final class ConnectionManager implements ConnectionCreatorListener {
         m_creator.setListener(this);
         m_connectionListener = p_listener;
 
-        m_deactivated = false;
         m_closed = false;
 
         m_connectionCreationLock = new ReentrantLock(false);
@@ -110,7 +108,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
      * A new connection must be created
      *
      * @param p_destination
-     *     the remote NodeID
+     *         the remote NodeID
      * @note is called by selector thread only
      */
     @Override
@@ -122,7 +120,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
      * A connection was closed
      *
      * @param p_connection
-     *     the closed connection
+     *         the closed connection
      * @note is called by selector thread only
      */
     @Override
@@ -149,32 +147,14 @@ final class ConnectionManager implements ConnectionCreatorListener {
         return ret;
     }
 
-    // Methods
-
-    /**
-     * Activates the connection manager
-     */
-    void activate() {
-        m_connectionCreationLock.lock();
-        m_deactivated = false;
-        m_connectionCreationLock.unlock();
-    }
-
-    /**
-     * Deactivates the connection manager
-     */
-    void deactivate() {
-        m_deactivated = true;
-    }
-
     /**
      * Get the connection for the given destination
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @return the connection
      * @throws IOException
-     *     if the connection could not be get
+     *         if the connection could not be get
      */
     AbstractConnection getConnection(final short p_destination) throws IOException {
         AbstractConnection ret;
@@ -182,11 +162,11 @@ final class ConnectionManager implements ConnectionCreatorListener {
         assert p_destination != NodeID.INVALID_ID;
 
         ret = m_connections[p_destination & 0xFFFF];
-        if ((ret == null || !ret.isOutgoingConnected()) && !m_deactivated) {
+        if (ret == null || !ret.isOutgoingConnected()) {
             m_connectionCreationLock.lock();
 
             ret = m_connections[p_destination & 0xFFFF];
-            if ((ret == null || !ret.isOutgoingConnected()) && !m_deactivated) {
+            if (ret == null || !ret.isOutgoingConnected()) {
                 if (m_openConnections == MAX_CONNECTIONS) {
                     dismissRandomConnection();
                 }
@@ -284,7 +264,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
          * Creates an instance of Job
          *
          * @param p_id
-         *     the static job identification
+         *         the static job identification
          */
         protected Job(final byte p_id) {
             m_id = p_id;
@@ -313,9 +293,9 @@ final class ConnectionManager implements ConnectionCreatorListener {
          * Creates an instance of Job
          *
          * @param p_destination
-         *     the NodeID of destination
+         *         the NodeID of destination
          * @param p_channel
-         *     the already established SocketChannel
+         *         the already established SocketChannel
          */
         private CreationJob(final short p_destination, final SocketChannel p_channel) {
             super((byte) 0);
@@ -354,7 +334,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
          * Creates an instance of Job
          *
          * @param p_connection
-         *     the AbstractConnection
+         *         the AbstractConnection
          */
         private ClosureJob(final AbstractConnection p_connection) {
             super((byte) 1);
@@ -389,11 +369,6 @@ final class ConnectionManager implements ConnectionCreatorListener {
             Job job;
 
             while (!m_closed) {
-                if (m_deactivated) {
-                    Thread.yield();
-                    continue;
-                }
-
                 m_lock.lock();
                 while (m_jobs.isEmpty()) {
                     try {
@@ -456,7 +431,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
          * Push new job
          *
          * @param p_job
-         *     the new job to add
+         *         the new job to add
          */
         private void pushJob(final Job p_job) {
             m_lock.lock();
