@@ -41,7 +41,7 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      * Constructor
      */
     protected ChunkDebugService() {
-        super("chunkdebug", ChunkDebugServiceConfig.class);
+        super("chunkdebug");
     }
 
     /**

@@ -71,7 +71,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
      * Constructor
      */
     public ChunkAnonService() {
-        super("chunkanon", ChunkAnonServiceConfig.class);
+        super("chunkanon");
     }
 
     /**

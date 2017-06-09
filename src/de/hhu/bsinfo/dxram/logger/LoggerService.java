@@ -45,7 +45,7 @@ public class LoggerService extends AbstractDXRAMService<LoggerServiceConfig> imp
      * Constructor
      */
     public LoggerService() {
-        super("logger", LoggerServiceConfig.class);
+        super("logger");
     }
 
     /**

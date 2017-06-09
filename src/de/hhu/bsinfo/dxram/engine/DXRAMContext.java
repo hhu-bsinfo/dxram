@@ -138,6 +138,7 @@ public class DXRAMContext {
         for (AbstractDXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
             if (p_nodeRole == NodeRole.SUPERPEER && config.isEnabledForSuperpeer() || p_nodeRole == NodeRole.PEER && config.isEnabledForPeer()) {
                 AbstractDXRAMComponent comp = p_manager.createInstance(config.getComponentClass());
+                comp.setConfig(config);
 
                 if (p_nodeRole == NodeRole.SUPERPEER && comp.supportsSuperpeer() || p_nodeRole == NodeRole.PEER && comp.supportsPeer()) {
                     m_components.put(comp.getClass().getSimpleName(), comp);
@@ -165,6 +166,7 @@ public class DXRAMContext {
         for (AbstractDXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
             if (p_nodeRole == NodeRole.SUPERPEER && config.isEnabledForSuperpeer() || p_nodeRole == NodeRole.PEER && config.isEnabledForPeer()) {
                 AbstractDXRAMService serv = p_manager.createInstance(config.getServiceClass());
+                serv.setConfig(config);
 
                 if (p_nodeRole == NodeRole.SUPERPEER && serv.supportsSuperpeer() || p_nodeRole == NodeRole.PEER && serv.supportsPeer()) {
                     m_services.put(serv.getClass().getSimpleName(), serv);

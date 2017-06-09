@@ -57,7 +57,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * Constructor
      */
     public NetworkComponent() {
-        super(DXRAMComponentOrder.Init.NETWORK, DXRAMComponentOrder.Shutdown.NETWORK, NetworkComponentConfig.class);
+        super(DXRAMComponentOrder.Init.NETWORK, DXRAMComponentOrder.Shutdown.NETWORK);
     }
 
     // --------------------------------------------------------------------------------------
@@ -162,11 +162,11 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * Send the Request and wait for fulfillment (wait for response).
      *
      * @param p_request
-     *     The request to send.
+     *         The request to send.
      * @param p_timeout
-     *     The amount of time to wait for a response
+     *         The amount of time to wait for a response
      * @throws NetworkException
-     *     If sending the message failed
+     *         If sending the message failed
      */
     public void sendSync(final AbstractRequest p_request, final int p_timeout) throws NetworkException {
         sendSync(p_request, p_timeout, true);
@@ -176,7 +176,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * Send the Request and wait for fulfillment (wait for response).
      *
      * @param p_request
-     *     The request to send.
+     *         The request to send.
      * @param p_waitForResponses
      *         Set to false to not wait/block until the response arrived
      * @throws NetworkException
@@ -190,13 +190,13 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * Send the Request and wait for fulfillment (wait for response).
      *
      * @param p_request
-     *     The request to send.
+     *         The request to send.
      * @param p_timeout
-     *     The amount of time to wait for a response
+     *         The amount of time to wait for a response
      * @param p_waitForResponses
-     *     Set to false to not wait/block until the response arrived
+     *         Set to false to not wait/block until the response arrived
      * @throws NetworkException
-     *     If sending the message failed
+     *         If sending the message failed
      */
     public void sendSync(final AbstractRequest p_request, final int p_timeout, final boolean p_waitForResponses) throws NetworkException {
         // #if LOGGER == TRACE
@@ -230,9 +230,9 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * Registers a message receiver
      *
      * @param p_type
-     *     the message type
+     *         the message type
      * @param p_subtype
-     *     the message subtype
+     *         the message subtype
      * @param p_receiver
      *         the receiver
      */
@@ -244,9 +244,9 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * Unregisters a message receiver
      *
      * @param p_type
-     *     the message type
+     *         the message type
      * @param p_subtype
-     *     the message subtype
+     *         the message subtype
      * @param p_receiver
      *         the receiver
      */

@@ -46,7 +46,7 @@ public class LookupService extends AbstractDXRAMService<LookupServiceConfig> imp
      * Constructor
      */
     public LookupService() {
-        super("lookup", LookupServiceConfig.class);
+        super("lookup");
     }
 
     /**

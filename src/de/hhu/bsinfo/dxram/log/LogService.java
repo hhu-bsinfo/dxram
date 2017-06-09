@@ -46,7 +46,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      * Constructor
      */
     public LogService() {
-        super("log", LogServiceConfig.class);
+        super("log");
     }
 
     /**
@@ -190,7 +190,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      * Handles an incoming InitBackupRangeRequest
      *
      * @param p_request
-     *     the InitBackupRangeRequest
+     *         the InitBackupRangeRequest
      */
     private void incomingInitBackupRangeRequest(final InitBackupRangeRequest p_request) {
         boolean res;
@@ -211,13 +211,13 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      * Handles an incoming InitBackupRangeRequest
      *
      * @param p_request
-     *     the InitBackupRangeRequest
+     *         the InitBackupRangeRequest
      */
     private void incomingInitRecoveredBackupRangeRequest(final InitRecoveredBackupRangeRequest p_request) {
         boolean res;
 
-        res = m_log.incomingInitRecoveredBackupRange(p_request.getRangeID(), p_request.getSource(), p_request.getOriginalRangeID(), p_request.getOriginalOwner(),
-                p_request.isNewBackupRange());
+        res = m_log.incomingInitRecoveredBackupRange(p_request.getRangeID(), p_request.getSource(), p_request.getOriginalRangeID(),
+                p_request.getOriginalOwner(), p_request.isNewBackupRange());
 
         try {
             m_network.sendMessage(new InitRecoveredBackupRangeResponse(p_request, res));

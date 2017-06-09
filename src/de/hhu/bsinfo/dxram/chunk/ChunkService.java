@@ -87,7 +87,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
      * Constructor
      */
     public ChunkService() {
-        super("chunk", ChunkServiceConfig.class);
+        super("chunk");
     }
 
     /**
@@ -832,8 +832,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                 // Chunk data is written directly to the provided data structure on receive
             }
         }
-
-
 
         // #ifdef STATISTICS
         SOP_GET.leave();

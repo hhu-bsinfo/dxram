@@ -83,7 +83,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      * Creates the backup component
      */
     public BackupComponent() {
-        super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP, BackupComponentConfig.class);
+        super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP);
     }
 
     /**
@@ -500,7 +500,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                 m_lock = new ReentrantReadWriteLock(false);
 
                 m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_BACKUP_RANGE_REQUEST, InitBackupRangeRequest.class);
-                m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_BACKUP_RANGE_RESPONSE, InitBackupRangeResponse.class);
+                m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_BACKUP_RANGE_RESPONSE,
+                        InitBackupRangeResponse.class);
                 m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST,
                         InitRecoveredBackupRangeRequest.class);
                 m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_RESPONSE,

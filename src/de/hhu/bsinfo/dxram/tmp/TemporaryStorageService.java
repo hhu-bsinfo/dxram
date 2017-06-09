@@ -43,7 +43,7 @@ public class TemporaryStorageService extends AbstractDXRAMService<TemporaryStora
      * Constructor
      */
     public TemporaryStorageService() {
-        super("tmpstore", TemporaryStorageServiceConfig.class);
+        super("tmpstore");
     }
 
     /**

@@ -28,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 public abstract class AbstractDXRAMService<T extends AbstractDXRAMServiceConfig> {
     protected final Logger LOGGER;
 
-    private final T m_config;
+    private T m_config;
 
     private final String m_shortName;
     private DXRAMEngine m_parentEngine;
@@ -39,18 +39,10 @@ public abstract class AbstractDXRAMService<T extends AbstractDXRAMServiceConfig>
      *
      * @param p_shortName
      *         Short name of the service (used for terminal)
-     * @param p_configClass
-     *         Configuration class for this service
      */
-    protected AbstractDXRAMService(final String p_shortName, final Class<T> p_configClass) {
+    protected AbstractDXRAMService(final String p_shortName) {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_shortName = p_shortName;
-
-        try {
-            m_config = p_configClass.getConstructor().newInstance();
-        } catch (final Exception e) {
-            throw new DXRAMRuntimeException(e);
-        }
     }
 
     /**
@@ -244,5 +236,15 @@ public abstract class AbstractDXRAMService<T extends AbstractDXRAMServiceConfig>
      */
     String getServiceName() {
         return getClass().getSimpleName();
+    }
+
+    /**
+     * Set the configuration read from file
+     *
+     * @param p_config
+     *         Config to set
+     */
+    void setConfig(final T p_config) {
+        m_config = p_config;
     }
 }

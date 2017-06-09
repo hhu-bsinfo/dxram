@@ -70,7 +70,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
      * Constructor
      */
     public MasterSlaveComputeService() {
-        super("mscomp", MasterSlaveComputeServiceConfig.class);
+        super("mscomp");
     }
 
     /**

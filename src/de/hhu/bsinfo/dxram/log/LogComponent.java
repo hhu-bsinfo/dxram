@@ -23,7 +23,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -98,7 +97,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      * Creates the log component
      */
     public LogComponent() {
-        super(DXRAMComponentOrder.Init.LOG, DXRAMComponentOrder.Shutdown.LOG, LogComponentConfig.class);
+        super(DXRAMComponentOrder.Init.LOG, DXRAMComponentOrder.Shutdown.LOG);
     }
 
     /**
@@ -235,11 +234,11 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      * Initializes a recovered backup range
      *
      * @param p_backupRange
-     *     the backup range
+     *         the backup range
      * @param p_oldBackupRange
-     *     the old backup range on the failed peer
+     *         the old backup range on the failed peer
      * @param p_failedPeer
-     *     the failed peer
+     *         the failed peer
      */
     public void initRecoveredBackupRange(final BackupRange p_backupRange, final short p_oldBackupRange, final short p_failedPeer, final short p_newBackupPeer) {
         short[] backupPeers = p_backupRange.getBackupPeers();
@@ -260,15 +259,15 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      * Initializes a new backup range
      *
      * @param p_backupPeer
-     *     the backup peer
+     *         the backup peer
      * @param p_rangeID
-     *     the new range ID
+     *         the new range ID
      * @param p_originalRangeID
-     *     the old range ID
+     *         the old range ID
      * @param p_originalOwner
-     *     the failed peer
+     *         the failed peer
      * @param p_isNewPeer
-     *     whether this backup range is new for given backup peer or already stored for failed peer
+     *         whether this backup range is new for given backup peer or already stored for failed peer
      */
     private void initBackupRangeOnPeer(final short p_backupPeer, final short p_rangeID, final short p_originalRangeID, final short p_originalOwner,
             final boolean p_isNewPeer) {
@@ -280,7 +279,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         request = new InitRecoveredBackupRangeRequest(p_backupPeer, p_rangeID, p_originalRangeID, p_originalOwner, p_isNewPeer);
         try {
             m_network.sendSync(request);
-        } catch (final NetworkException ignore) {}
+        } catch (final NetworkException ignore) {
+        }
 
         response = request.getResponse(InitRecoveredBackupRangeResponse.class);
 
@@ -714,9 +714,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      * Initializes a backup range after recovery (creating a new one or transferring the old)
      *
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @param p_owner
-     *     the Chunks' owner
+     *         the Chunks' owner
      * @return whether the backup range is initialized or not
      */
     boolean incomingInitRecoveredBackupRange(final short p_rangeID, final short p_owner, final short p_originalRangeID, final short p_originalOwner,
@@ -746,8 +746,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                             (int) getConfig().getLogSegmentSize().getBytes());
                 } else {
                     // #if LOGGER >= WARN
-                    LOGGER.warn("Transfer of backup range %d from 0x%X to 0x%X failed! Secondary log already exists!", p_originalRangeID,
-                            p_originalOwner, p_owner);
+                    LOGGER.warn("Transfer of backup range %d from 0x%X to 0x%X failed! Secondary log already exists!", p_originalRangeID, p_originalOwner,
+                            p_owner);
                     // #endif /* LOGGER >= WARN */
                 }
             } catch (final IOException e) {
@@ -817,7 +817,6 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             // #endif /* LOGGER >= ERROR */
             return;
         }
-
 
         short originalOwner = secLog.getOriginalOwner();
         for (int i = 0; i < size; i++) {

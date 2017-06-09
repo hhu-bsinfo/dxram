@@ -36,11 +36,9 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      *         Default init priority for this component
      * @param p_priorityShutdown
      *         Default shutdown priority for this component
-     * @param p_configClass
-     *         Configuration class for this component
      */
-    protected AbstractBootComponent(final short p_priorityInit, final short p_priorityShutdown, final Class<T> p_configClass) {
-        super(p_priorityInit, p_priorityShutdown, p_configClass);
+    protected AbstractBootComponent(final short p_priorityInit, final short p_priorityShutdown) {
+        super(p_priorityInit, p_priorityShutdown);
     }
 
     /**

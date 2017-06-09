@@ -66,7 +66,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
      * Constructor
      */
     public PeerLockService() {
-        super(PeerLockServiceConfig.class);
+        super();
     }
 
     @Override

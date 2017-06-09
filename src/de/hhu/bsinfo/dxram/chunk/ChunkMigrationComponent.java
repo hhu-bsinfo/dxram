@@ -44,7 +44,7 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
      * Constructor
      */
     public ChunkMigrationComponent() {
-        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, ChunkMigrationComponentConfig.class);
+        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK);
     }
 
     /**

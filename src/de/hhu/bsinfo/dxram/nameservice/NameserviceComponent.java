@@ -49,7 +49,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
      * Constructor
      */
     public NameserviceComponent() {
-        super(DXRAMComponentOrder.Init.NAMESERVICE, DXRAMComponentOrder.Shutdown.NAMESERVICE, NameserviceComponentConfig.class);
+        super(DXRAMComponentOrder.Init.NAMESERVICE, DXRAMComponentOrder.Shutdown.NAMESERVICE);
     }
 
     /**

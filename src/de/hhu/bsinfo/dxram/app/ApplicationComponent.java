@@ -28,7 +28,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
      * Constructor
      */
     public ApplicationComponent() {
-        super(DXRAMComponentOrder.Init.APPLICATION, DXRAMComponentOrder.Shutdown.APPLICATION, ApplicationComponentConfig.class);
+        super(DXRAMComponentOrder.Init.APPLICATION, DXRAMComponentOrder.Shutdown.APPLICATION);
     }
 
     /**

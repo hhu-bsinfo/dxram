@@ -41,7 +41,7 @@ public class ChunkMemoryService extends AbstractDXRAMService<ChunkMemoryServiceC
      * Constructor
      */
     public ChunkMemoryService() {
-        super("chunkmem", ChunkMemoryServiceConfig.class);
+        super("chunkmem");
     }
 
     /**

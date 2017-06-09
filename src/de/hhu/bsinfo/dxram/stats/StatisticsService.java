@@ -16,7 +16,7 @@ public class StatisticsService extends AbstractDXRAMService<StatisticsServiceCon
      * Constructor
      */
     public StatisticsService() {
-        super("stats", StatisticsServiceConfig.class);
+        super("stats");
     }
 
     /**

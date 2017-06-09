@@ -38,7 +38,7 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
      * Constructor
      */
     public EventComponent() {
-        super(DXRAMComponentOrder.Init.EVENT, DXRAMComponentOrder.Shutdown.EVENT, EventComponentConfig.class);
+        super(DXRAMComponentOrder.Init.EVENT, DXRAMComponentOrder.Shutdown.EVENT);
     }
 
     /**

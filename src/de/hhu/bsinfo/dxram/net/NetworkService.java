@@ -35,7 +35,7 @@ public class NetworkService extends AbstractDXRAMService<NetworkServiceConfig> {
      * Constructor
      */
     public NetworkService() {
-        super("net", NetworkServiceConfig.class);
+        super("net");
     }
 
     /**
@@ -56,9 +56,9 @@ public class NetworkService extends AbstractDXRAMService<NetworkServiceConfig> {
      * Registers a message receiver
      *
      * @param p_type
-     *     the message type
+     *         the message type
      * @param p_subtype
-     *     the message subtype
+     *         the message subtype
      * @param p_receiver
      *         the receiver
      */
@@ -70,9 +70,9 @@ public class NetworkService extends AbstractDXRAMService<NetworkServiceConfig> {
      * Unregisters a message receiver
      *
      * @param p_type
-     *     the message type
+     *         the message type
      * @param p_subtype
-     *     the message subtype
+     *         the message subtype
      * @param p_receiver
      *         the receiver
      */

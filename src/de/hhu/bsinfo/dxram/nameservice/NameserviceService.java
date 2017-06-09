@@ -35,7 +35,7 @@ public class NameserviceService extends AbstractDXRAMService<NameserviceServiceC
      * Constructor
      */
     public NameserviceService() {
-        super("name", NameserviceServiceConfig.class);
+        super("name");
     }
 
     /**

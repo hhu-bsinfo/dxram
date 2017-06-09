@@ -70,7 +70,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * Creates the lookup component
      */
     public LookupComponent() {
-        super(DXRAMComponentOrder.Init.LOOKUP, DXRAMComponentOrder.Shutdown.LOOKUP, LookupComponentConfig.class);
+        super(DXRAMComponentOrder.Init.LOOKUP, DXRAMComponentOrder.Shutdown.LOOKUP);
     }
 
     /**
@@ -423,7 +423,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * Invalidates the cache entry for given ChunkIDs
      *
      * @param p_chunkIDs
-     *     the IDs in an array list
+     *         the IDs in an array list
      */
     public void invalidate(final ArrayListLong p_chunkIDs) {
         if (getConfig().cachesEnabled()) {
@@ -438,7 +438,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * Invalidates the cache range for given ChunkID
      *
      * @param p_chunkID
-     *     the ID whose range range is invalidated
+     *         the ID whose range range is invalidated
      */
     public void invalidateRange(final long p_chunkID) {
         if (getConfig().cachesEnabled()) {

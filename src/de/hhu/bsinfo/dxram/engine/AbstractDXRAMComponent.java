@@ -28,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentConfig> {
     protected final Logger LOGGER;
 
-    private final T m_config;
+    private T m_config;
 
     private final short m_priorityInit;
     private final short m_priorityShutdown;
@@ -43,19 +43,11 @@ public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentCon
      *         Default init priority for this component
      * @param p_priorityShutdown
      *         Default shutdown priority for this component
-     * @param p_configClass
-     *         Configuration class for this component
      */
-    protected AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown, final Class<T> p_configClass) {
+    protected AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown) {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_priorityInit = p_priorityInit;
         m_priorityShutdown = p_priorityShutdown;
-
-        try {
-            m_config = p_configClass.getConstructor().newInstance();
-        } catch (final Exception e) {
-            throw new DXRAMRuntimeException(e);
-        }
     }
 
     /**
@@ -236,5 +228,15 @@ public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentCon
      */
     int getPriorityShutdown() {
         return m_priorityShutdown;
+    }
+
+    /**
+     * Set the configuration read from file
+     *
+     * @param p_config
+     *         Config to set
+     */
+    void setConfig(final T p_config) {
+        m_config = p_config;
     }
 }

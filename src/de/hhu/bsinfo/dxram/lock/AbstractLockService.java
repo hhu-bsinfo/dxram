@@ -39,12 +39,9 @@ public abstract class AbstractLockService<T extends AbstractDXRAMServiceConfig> 
 
     /**
      * Constructor
-     *
-     * @param p_configClass
-     *         Configuration class for this service
      */
-    AbstractLockService(final Class<T> p_configClass) {
-        super("lock", p_configClass);
+    AbstractLockService() {
+        super("lock");
     }
 
     /**
