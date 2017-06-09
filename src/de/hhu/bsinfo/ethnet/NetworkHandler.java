@@ -324,8 +324,6 @@ public final class NetworkHandler implements DataReceiver {
     public void sendMessage(final AbstractMessage p_message) throws NetworkException {
         AbstractConnection connection;
 
-        p_message.beforeSend();
-
         // #if LOGGER == TRACE
         LOGGER.trace("Entering sendMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */
@@ -366,8 +364,6 @@ public final class NetworkHandler implements DataReceiver {
                 throw new NetworkException("Sending data failed ", e);
             }
         }
-
-        p_message.afterSend();
 
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting sendMessage");

@@ -189,8 +189,6 @@ public abstract class AbstractRequest extends AbstractMessage {
 
             if (!m_ignoreTimeout) {
                 if (System.currentTimeMillis() > deadline) {
-                    // RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
-
                     // TODO: Check
                     NetworkHandler.getEventHandler().fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), getDestination()));
                     ret = false;
@@ -206,16 +204,6 @@ public abstract class AbstractRequest extends AbstractMessage {
         return ret;
     }
 
-    @Override
-    protected final void beforeSend() {
-  
-    }
-
-    @Override
-    protected final void afterSend() {
-        // RequestStatistic.getInstance().requestSend(getRequestID());
-    }
-
     /**
      * Fulfill the Request
      *
@@ -224,8 +212,6 @@ public abstract class AbstractRequest extends AbstractMessage {
      */
     final void fulfill(final AbstractResponse p_response) {
         assert p_response != null;
-
-        // RequestStatistic.getInstance().responseReceived(getRequestID(), getClass());
 
         m_response = p_response;
         m_fulfilled = true;
