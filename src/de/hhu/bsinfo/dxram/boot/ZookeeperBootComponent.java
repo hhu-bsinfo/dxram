@@ -24,7 +24,7 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.data.Stat;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.backup.BackupComponent;
+import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -45,7 +45,6 @@ import de.hhu.bsinfo.utils.unit.IPV4Unit;
  */
 public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> implements Watcher {
     // component dependencies
-    private BackupComponent m_backup;
     private EventComponent m_event;
     private LookupComponent m_lookup;
 
@@ -54,6 +53,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     private ZooKeeperHandler m_zookeeper;
     private short m_bootstrap = NodeID.INVALID_ID;
     private BloomFilter m_bloomFilter;
+
+    private boolean m_isActiveAndAvailableForBackup;
 
     private NodesConfiguration m_nodes;
 
@@ -428,7 +429,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.SUPERPEER) {
                 m_zookeeper.create("nodes/superpeers/" + m_nodes.getOwnNodeID());
             } else if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.PEER) {
-                if (m_backup.isActiveAndAvailableForBackup()) {
+                if (m_isActiveAndAvailableForBackup) {
                     m_zookeeper.create("nodes/peers/" + m_nodes.getOwnNodeID(), new byte[] {1});
                 } else {
                     m_zookeeper.create("nodes/peers/" + m_nodes.getOwnNodeID(), new byte[] {0});
@@ -455,7 +456,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
@@ -480,6 +480,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             // #endif /* LOGGER >= ERROR */
             return false;
         }
+
+        m_isActiveAndAvailableForBackup = p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive() &&
+                p_config.getComponentConfig(BackupComponentConfig.class).availableForBackup();
 
         return true;
     }
