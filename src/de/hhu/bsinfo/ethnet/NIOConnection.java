@@ -56,30 +56,32 @@ class NIOConnection extends AbstractConnection {
      * Creates an instance of NIOConnection (this node creates a new connection with another node)
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_nodeMap
-     *     the node map
+     *         the node map
      * @param p_messageDirectory
-     *     the message directory
+     *         the message directory
+     * @param p_requestMap
+     *         the request map
      * @param p_lock
-     *     the ReentrantLock
+     *         the ReentrantLock
      * @param p_cond
-     *     the Condition
+     *         the Condition
      * @param p_messageCreator
-     *     the incoming buffer storage and message creator
+     *         the incoming buffer storage and message creator
      * @param p_nioSelector
-     *     the NIOSelector
+     *         the NIOSelector
      * @param p_osBufferSize
-     *     the size of incoming and outgoing buffers
+     *         the size of incoming and outgoing buffers
      * @param p_flowControlWindowSize
-     *     the maximal number of ByteBuffer to schedule for sending/receiving
+     *         the maximal number of ByteBuffer to schedule for sending/receiving
      * @throws IOException
-     *     if the connection could not be created
+     *         if the connection could not be created
      */
-    NIOConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final ReentrantLock p_lock,
-        final Condition p_cond, final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_osBufferSize,
-            final int p_flowControlWindowSize) throws IOException {
-        super(p_destination, p_nodeMap, p_messageDirectory, p_flowControlWindowSize);
+    NIOConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap,
+            final ReentrantLock p_lock, final Condition p_cond, final MessageCreator p_messageCreator, final NIOSelector p_nioSelector,
+            final int p_osBufferSize, final int p_flowControlWindowSize) throws IOException {
+        super(p_destination, p_nodeMap, p_messageDirectory, p_requestMap, p_flowControlWindowSize);
 
         m_osBufferSize = p_osBufferSize;
 
@@ -116,25 +118,28 @@ class NIOConnection extends AbstractConnection {
      * Creates an instance of NIOConnection (this node creates a new connection with another node)
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_nodeMap
-     *     the node map
+     *         the node map
      * @param p_messageDirectory
-     *     the message directory
+     *         the message directory
+     * @param p_requestMap
+     *         the request map
      * @param p_channel
-     *     the socket channel
+     *         the socket channel
      * @param p_messageCreator
-     *     the incoming buffer storage and message creator
+     *         the incoming buffer storage and message creator
      * @param p_nioSelector
-     *     the NIOSelector
+     *         the NIOSelector
      * @param p_osBufferSize
-     *     the size of outgoing buffer
+     *         the size of outgoing buffer
      * @param p_flowControlWindowSize
-     *     the maximal number of ByteBuffer to schedule for sending/receiving
+     *         the maximal number of ByteBuffer to schedule for sending/receiving
      */
-    NIOConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final SocketChannel p_channel,
-        final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_osBufferSize, final int p_flowControlWindowSize) {
-        super(p_destination, p_nodeMap, p_messageDirectory, p_flowControlWindowSize);
+    NIOConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap,
+            final SocketChannel p_channel, final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_osBufferSize,
+            final int p_flowControlWindowSize) {
+        super(p_destination, p_nodeMap, p_messageDirectory, p_requestMap, p_flowControlWindowSize);
 
         m_osBufferSize = p_osBufferSize;
 
@@ -208,6 +213,7 @@ class NIOConnection extends AbstractConnection {
 
     /**
      * Returns whether the connection creation was aborted or not.
+     *
      * @return true if connection creation was aborted, false otherwise
      */
     boolean isConnectionCreationAborted() {
@@ -225,7 +231,7 @@ class NIOConnection extends AbstractConnection {
      * Writes data to the connection
      *
      * @param p_message
-     *     the AbstractMessage to send
+     *         the AbstractMessage to send
      */
     @Override
     protected void doWrite(final AbstractMessage p_message) throws NetworkException {
@@ -326,7 +332,7 @@ class NIOConnection extends AbstractConnection {
      * Returns the pooled buffer from nio interface
      *
      * @param p_byteBuffer
-     *     the pooled buffer
+     *         the pooled buffer
      */
     void returnReadBuffer(final ByteBuffer p_byteBuffer) {
         m_nioSelector.returnBuffer(p_byteBuffer);
@@ -336,7 +342,7 @@ class NIOConnection extends AbstractConnection {
      * Returns the pooled buffer from outgoing queue
      *
      * @param p_byteBuffer
-     *     the pooled buffer
+     *         the pooled buffer
      */
     void returnWriteBuffer(final ByteBuffer p_byteBuffer) {
         if (p_byteBuffer.capacity() == m_osBufferSize) {
@@ -366,7 +372,7 @@ class NIOConnection extends AbstractConnection {
      * Append an incoming ByteBuffer to the Queue
      *
      * @param p_buffer
-     *     the ByteBuffer
+     *         the ByteBuffer
      */
     void addIncoming(final ByteBuffer p_buffer) {
         // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
@@ -390,11 +396,11 @@ class NIOConnection extends AbstractConnection {
 
     /**
      * Executes after the connection is established
-     * @param p_key
-     *     the selection key
      *
+     * @param p_key
+     *         the selection key
      * @throws IOException
-     *     if the connection could not be accessed
+     *         if the connection could not be accessed
      */
 
     void connected(final SelectionKey p_key) throws IOException {
@@ -427,7 +433,7 @@ class NIOConnection extends AbstractConnection {
      * Prepend buffer to be written into the channel. Called if buffer could not be written completely.
      *
      * @param p_buffer
-     *     Buffer
+     *         Buffer
      */
     void addBuffer(final ByteBuffer p_buffer) {
         m_outgoing.pushFront(p_buffer);
@@ -437,7 +443,7 @@ class NIOConnection extends AbstractConnection {
      * Enqueue buffer to be written into the channel
      *
      * @param p_buffer
-     *     the buffer
+     *         the buffer
      */
     private void writeToChannel(final ByteBuffer p_buffer) {
         if (m_outgoing.pushAndAggregateBuffers(p_buffer)) {
@@ -450,7 +456,7 @@ class NIOConnection extends AbstractConnection {
      * Enqueue message to be written into the channel
      *
      * @param p_message
-     *     the message
+     *         the message
      */
     private void writeToChannel(final AbstractMessage p_message, final int p_messageSize) {
         if (m_outgoing.pushAndAggregateBuffers(p_message, p_messageSize)) {

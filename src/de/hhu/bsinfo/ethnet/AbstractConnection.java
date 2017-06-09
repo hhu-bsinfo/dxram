@@ -53,6 +53,7 @@ abstract class AbstractConnection {
     private short m_destination;
     private NodeMap m_nodeMap;
     private MessageDirectory m_messageDirectory;
+    private RequestMap m_requestMap;
     private volatile DataReceiver m_listener;
     private long m_creationTimestamp;
     private long m_lastAccessTimestamp;
@@ -74,15 +75,18 @@ abstract class AbstractConnection {
      * Creates an instance of AbstractConnection
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_nodeMap
-     *     the node map
+     *         the node map
      * @param p_messageDirectory
-     *     the message directory
+     *         the message directory
+     * @param p_requestMap
+     *         the request map
      * @param p_flowControlWindowSize
-     *     the maximal number of ByteBuffer to schedule for sending/receiving
+     *         the maximal number of ByteBuffer to schedule for sending/receiving
      */
-    AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final int p_flowControlWindowSize) {
+    AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap,
+            final int p_flowControlWindowSize) {
         assert p_destination != NodeID.INVALID_ID;
 
         m_dataHandler = new DataHandler();
@@ -90,6 +94,7 @@ abstract class AbstractConnection {
 
         m_destination = p_destination;
         m_nodeMap = p_nodeMap;
+        m_requestMap = p_requestMap;
         m_messageDirectory = p_messageDirectory;
 
         m_outgoingConnected = false;
@@ -129,9 +134,9 @@ abstract class AbstractConnection {
      * Writes data to the connection
      *
      * @param p_message
-     *     the AbstractMessage to send
+     *         the AbstractMessage to send
      * @throws NetworkException
-     *     if message buffer is too small
+     *         if message buffer is too small
      */
     protected abstract void doWrite(AbstractMessage p_message) throws NetworkException;
 
@@ -139,7 +144,7 @@ abstract class AbstractConnection {
      * Writes flow control data to the connection without delay
      *
      * @throws NetworkException
-     *     if message buffer is too small
+     *         if message buffer is too small
      */
     protected abstract void doFlowControlWrite() throws NetworkException;
 
@@ -202,10 +207,10 @@ abstract class AbstractConnection {
         String ret;
 
         m_flowControlCondLock.lock();
-        ret =
-            getClass().getSimpleName() + '[' + NodeID.toHexString(m_destination) + ", outgoing: " + (isOutgoingOpen() ? "open" : "not open") + ", incoming: " +
-                (isIncomingOpen() ? "open" : "not open") + ", sent(messages): " + m_sentMessages + ", received(messages): " + m_receivedMessages +
-                ", unconfirmed(b): " + m_unconfirmedBytes + ", received_to_confirm(b): " + m_receivedBytes + ", buffer queues: " + getInputOutputQueueLength();
+        ret = getClass().getSimpleName() + '[' + NodeID.toHexString(m_destination) + ", outgoing: " + (isOutgoingOpen() ? "open" : "not open") +
+                ", incoming: " + (isIncomingOpen() ? "open" : "not open") + ", sent(messages): " + m_sentMessages + ", received(messages): " +
+                m_receivedMessages + ", unconfirmed(b): " + m_unconfirmedBytes + ", received_to_confirm(b): " + m_receivedBytes + ", buffer queues: " +
+                getInputOutputQueueLength();
         m_flowControlCondLock.unlock();
 
         return ret;
@@ -215,7 +220,7 @@ abstract class AbstractConnection {
      * Writes data to the connection
      *
      * @param p_message
-     *     the AbstractMessage to send
+     *         the AbstractMessage to send
      */
     protected final void write(final AbstractMessage p_message) {
         m_flowControlCondLock.lock();
@@ -302,7 +307,7 @@ abstract class AbstractConnection {
      * Marks the connection as (not) connected
      *
      * @param p_connected
-     *     if true the connection is marked as connected, otherwise the connections marked as not connected
+     *         if true the connection is marked as connected, otherwise the connections marked as not connected
      */
     final void setConnected(final boolean p_connected, final boolean p_outgoing) {
         if (p_outgoing) {
@@ -334,7 +339,7 @@ abstract class AbstractConnection {
      * Set the ConnectionListener
      *
      * @param p_listener
-     *     the ConnectionListener
+     *         the ConnectionListener
      */
     final void setListener(final DataReceiver p_listener) {
         m_listener = p_listener;
@@ -351,7 +356,7 @@ abstract class AbstractConnection {
      * Forward buffer to DataHandler to fill byte stream and create messages.
      *
      * @param p_buffer
-     *     the new buffer
+     *         the new buffer
      */
     final void processBuffer(final ByteBuffer p_buffer) {
         m_dataHandler.processBuffer(p_buffer);
@@ -412,7 +417,7 @@ abstract class AbstractConnection {
          * Updates the current data
          *
          * @param p_buffer
-         *     the ByteBuffer with new data
+         *         the ByteBuffer with new data
          */
         public void update(final ByteBuffer p_buffer) {
             assert p_buffer != null;
@@ -473,7 +478,7 @@ abstract class AbstractConnection {
          * Reads the remaining message header
          *
          * @param p_buffer
-         *     the ByteBuffer with the data
+         *         the ByteBuffer with the data
          */
         private void readHeader(final ByteBuffer p_buffer) {
             try {
@@ -558,7 +563,7 @@ abstract class AbstractConnection {
          * Reads the message payload
          *
          * @param p_buffer
-         *     the ByteBuffer with the data
+         *         the ByteBuffer with the data
          */
         private void readPayload(final ByteBuffer p_buffer) {
             try {
@@ -606,11 +611,12 @@ abstract class AbstractConnection {
         }
 
         // Methods
+
         /**
          * Adds a buffer to byte stream and creates a message if all data was gathered.
          *
          * @param p_buffer
-         *     the new buffer
+         *         the new buffer
          */
         void processBuffer(final ByteBuffer p_buffer) {
             int counterNormal = 0;
@@ -631,15 +637,15 @@ abstract class AbstractConnection {
                 m_streamInterpreter.update(p_buffer);
 
                 if (m_streamInterpreter.isMessageComplete()) {
-                    currentMessage = createMessage(m_streamInterpreter.getMessageBuffer(), m_streamInterpreter.getPayloadSize(),
-                            m_streamInterpreter.bufferWasCopied());
+                    currentMessage =
+                            createMessage(m_streamInterpreter.getMessageBuffer(), m_streamInterpreter.getPayloadSize(), m_streamInterpreter.bufferWasCopied());
 
                     if (currentMessage != null) {
                         currentMessage.setDestination(m_nodeMap.getOwnNodeID());
                         currentMessage.setSource(m_destination);
 
                         if (currentMessage.isResponse()) {
-                            RequestMap.fulfill((AbstractResponse) currentMessage);
+                            m_requestMap.fulfill((AbstractResponse) currentMessage);
                         } else {
                             if (!currentMessage.isExclusive()) {
                                 m_normalMessages[counterNormal++] = currentMessage;
@@ -677,7 +683,7 @@ abstract class AbstractConnection {
          * Handles a received flow control data
          *
          * @param p_confirmedBytes
-         *     the number of confirmed bytes
+         *         the number of confirmed bytes
          */
         void handleFlowControlMessage(final int p_confirmedBytes) {
             m_flowControlCondLock.lock();
@@ -691,11 +697,11 @@ abstract class AbstractConnection {
          * Informs the ConnectionListener about a new message
          *
          * @param p_message
-         *     the new message
+         *         the new message
          */
         private void deliverMessage(final AbstractMessage p_message) {
 
-            if (m_listener == null){
+            if (m_listener == null) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("No listener registered. Waiting...");
                 // #endif /* LOGGER >= ERROR */
@@ -711,11 +717,11 @@ abstract class AbstractConnection {
          * Informs the ConnectionListener about new messages
          *
          * @param p_messages
-         *     the new messages
+         *         the new messages
          */
         private void deliverMessages(final AbstractMessage[] p_messages) {
 
-            if (m_listener == null){
+            if (m_listener == null) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("No listener registered. Waiting...");
                 // #endif /* LOGGER >= ERROR */
@@ -744,7 +750,7 @@ abstract class AbstractConnection {
          * Create a message from a given buffer
          *
          * @param p_buffer
-         *     buffer containing a message
+         *         buffer containing a message
          * @return message
          */
         private AbstractMessage createMessage(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
@@ -774,7 +780,7 @@ abstract class AbstractConnection {
                 // before de-serializing the network buffer for every request.
                 if (message.isResponse()) {
                     response = (AbstractResponse) message;
-                    request = RequestMap.getRequest(response);
+                    request = m_requestMap.getRequest(response);
                     if (request == null) {
                         p_buffer.position(p_buffer.position() + p_payloadSize);
                         // Request is not available, probably because of a time-out
@@ -793,7 +799,7 @@ abstract class AbstractConnection {
                 int calculatedPayloadSize = message.getPayloadLength() + AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH;
                 if (readBytes < calculatedPayloadSize) {
                     throw new IOException("Message buffer is too large: " + calculatedPayloadSize + " > " + readBytes + " (read payload without metadata: " +
-                        (readBytes - AbstractMessage.HEADER_SIZE + AbstractMessage.PAYLOAD_SIZE_LENGTH) + " bytes)");
+                            (readBytes - AbstractMessage.HEADER_SIZE + AbstractMessage.PAYLOAD_SIZE_LENGTH) + " bytes)");
                 }
             } catch (final Exception e) {
                 // #if LOGGER >= ERROR
@@ -822,7 +828,7 @@ abstract class AbstractConnection {
          * New messsage is available
          *
          * @param p_message
-         *     the message which has been received
+         *         the message which has been received
          */
         void newMessage(AbstractMessage p_message);
 

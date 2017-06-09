@@ -23,21 +23,24 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  */
-public final class RequestMap {
-
+final class RequestMap {
     private static final Logger LOGGER = LogManager.getFormatterLogger(RequestMap.class.getSimpleName());
 
     // Attributes
-    private static AbstractRequest[] ms_pendingRequests;
+    private AbstractRequest[] m_pendingRequests;
 
-    private static ReentrantReadWriteLock ms_lock = new ReentrantReadWriteLock(false);
+    private ReentrantReadWriteLock m_lock = new ReentrantReadWriteLock(false);
 
     // Constructors
 
     /**
      * Creates an instance of RequestStore
+     *
+     * @param p_size
+     *         the number of entries in request map
      */
-    private RequestMap() {
+    RequestMap(final int p_size) {
+        m_pendingRequests = new AbstractRequest[p_size];
     }
 
     // Methods
@@ -46,18 +49,18 @@ public final class RequestMap {
      * Remove the Request of the given requestID from the store
      *
      * @param p_requestID
-     *     the requestID
+     *         the requestID
      * @return the removed Request
      */
-    public static AbstractRequest remove(final int p_requestID) {
+    AbstractRequest remove(final int p_requestID) {
         AbstractRequest ret;
         int index;
 
-        ms_lock.readLock().lock();
-        index = p_requestID % ms_pendingRequests.length;
-        ret = ms_pendingRequests[index];
-        ms_pendingRequests[index] = null;
-        ms_lock.readLock().unlock();
+        m_lock.readLock().lock();
+        index = p_requestID % m_pendingRequests.length;
+        ret = m_pendingRequests[index];
+        m_pendingRequests[index] = null;
+        m_lock.readLock().unlock();
 
         return ret;
     }
@@ -66,34 +69,34 @@ public final class RequestMap {
      * Removes all requests send to given NodeID
      *
      * @param p_nodeID
-     *     the NodeID
+     *         the NodeID
      */
-    public static void removeAll(final short p_nodeID) {
+    void removeAll(final short p_nodeID) {
         AbstractRequest request;
 
-        ms_lock.writeLock().lock();
-        for (int i = 0; i < ms_pendingRequests.length; i++) {
-            request = ms_pendingRequests[i];
+        m_lock.writeLock().lock();
+        for (int i = 0; i < m_pendingRequests.length; i++) {
+            request = m_pendingRequests[i];
             if (request != null && request.getDestination() == p_nodeID) {
                 request.abort();
             }
         }
-        ms_lock.writeLock().unlock();
+        m_lock.writeLock().unlock();
     }
 
     /**
      * Returns the corresponding request
      *
      * @param p_resonse
-     *     the response
+     *         the response
      * @return the request
      */
-    static AbstractRequest getRequest(final AbstractResponse p_resonse) {
+    AbstractRequest getRequest(final AbstractResponse p_resonse) {
         AbstractRequest ret;
 
-        ms_lock.readLock().lock();
-        ret = ms_pendingRequests[p_resonse.getRequestID() % ms_pendingRequests.length];
-        ms_lock.readLock().unlock();
+        m_lock.readLock().lock();
+        ret = m_pendingRequests[p_resonse.getRequestID() % m_pendingRequests.length];
+        m_lock.readLock().unlock();
 
         return ret;
     }
@@ -102,9 +105,9 @@ public final class RequestMap {
      * Fulfill a Request by the given Response
      *
      * @param p_response
-     *     the Response
+     *         the Response
      */
-    static void fulfill(final AbstractResponse p_response) {
+    void fulfill(final AbstractResponse p_response) {
         AbstractRequest request;
 
         if (p_response != null) {
@@ -120,30 +123,19 @@ public final class RequestMap {
      * Put a Request in the store
      *
      * @param p_request
-     *     the Request
+     *         the Request
      */
-    static void put(final AbstractRequest p_request) {
+    void put(final AbstractRequest p_request) {
         int index;
 
-        ms_lock.readLock().lock();
-        index = p_request.getRequestID() % ms_pendingRequests.length;
-        if (ms_pendingRequests[index] != null) {
+        m_lock.readLock().lock();
+        index = p_request.getRequestID() % m_pendingRequests.length;
+        if (m_pendingRequests[index] != null) {
             // #if LOGGER >= ERROR
             LOGGER.error("Request for idx=%d still registered! Request Map might be too small", index);
             // #endif /* LOGGER >= ERROR */
         }
-        ms_pendingRequests[index] = p_request;
-        ms_lock.readLock().unlock();
+        m_pendingRequests[index] = p_request;
+        m_lock.readLock().unlock();
     }
-
-    /**
-     * Initializes the request map
-     *
-     * @param p_size
-     *     the number of entries in request map
-     */
-    static void initialize(final int p_size) {
-        ms_pendingRequests = new AbstractRequest[p_size];
-    }
-
 }

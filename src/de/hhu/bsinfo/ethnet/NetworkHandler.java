@@ -55,7 +55,8 @@ public final class NetworkHandler implements DataReceiver {
 
     private AtomicLongArray m_lastFailures;
 
-    private int m_timeOut;
+    private final RequestMap m_requestMap;
+    private final int m_timeOut;
 
     // Constructors
 
@@ -70,7 +71,7 @@ public final class NetworkHandler implements DataReceiver {
      *         the request time out in ms
      */
     public NetworkHandler(final int p_numMessageHandlerThreads, final int p_requestMapSize, final int p_requestTimeOut) {
-        RequestMap.initialize(p_requestMapSize);
+        m_requestMap = new RequestMap(p_requestMapSize);
 
         m_timeOut = p_requestTimeOut;
         m_receivers = new MessageReceiver[100][100];
@@ -169,7 +170,8 @@ public final class NetworkHandler implements DataReceiver {
 
         m_nodeMap = p_nodeMap;
 
-        m_connectionCreator = new NIOConnectionCreator(m_messageDirectory, m_nodeMap, p_osBufferSize, p_flowControlWindowSize, p_connectionTimeout);
+        m_connectionCreator =
+                new NIOConnectionCreator(m_messageDirectory, m_requestMap, m_nodeMap, p_osBufferSize, p_flowControlWindowSize, p_connectionTimeout);
         m_connectionCreator.initialize(p_nodeMap.getAddress(p_ownNodeID).getPort());
         m_manager = new ConnectionManager(m_connectionCreator, this);
 
@@ -390,9 +392,10 @@ public final class NetworkHandler implements DataReceiver {
         // #endif /* LOGGER == TRACE */
 
         try {
+            m_requestMap.put(p_request);
             sendMessage(p_request);
         } catch (final NetworkException e) {
-            RequestMap.remove(p_request.getRequestID());
+            m_requestMap.remove(p_request.getRequestID());
             throw e;
         }
 
@@ -406,10 +409,21 @@ public final class NetworkHandler implements DataReceiver {
             LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
             // #endif /* LOGGER >= ERROR */
 
-            RequestMap.remove(p_request.getRequestID());
+            m_requestMap.remove(p_request.getRequestID());
 
             throw new NetworkResponseTimeoutException(p_request.getDestination());
         }
+    }
+
+    /**
+     * Cancel all pending requests waiting for a response
+     *
+     * @param p_nodeId
+     *         Node id of the target node the requests
+     *         are waiting for a response
+     */
+    public void cancelAllRequests(final short p_nodeId) {
+        m_requestMap.removeAll(p_nodeId);
     }
 
     /**

@@ -36,7 +36,6 @@ import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
 import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.ethnet.RequestMap;
 
 /**
  * Access to the network interface to send messages or requests
@@ -221,7 +220,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
         LOGGER.debug("Connection to peer 0x%X lost, aborting and removing all pending requests", p_event.getNodeID());
         // #endif /* LOGGER >= DEBUG */
 
-        RequestMap.removeAll(p_event.getNodeID());
+        m_networkHandler.cancelAllRequests(p_event.getNodeID());
     }
 
     @Override

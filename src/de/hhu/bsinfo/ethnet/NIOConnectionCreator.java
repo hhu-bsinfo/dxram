@@ -18,7 +18,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -42,6 +41,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
     private NIOSelector m_nioSelector;
 
     private MessageDirectory m_messageDirectory;
+    private RequestMap m_requestMap;
     private NIOInterface m_nioInterface;
     private NodeMap m_nodeMap;
 
@@ -55,23 +55,26 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
      * Creates an instance of NIOConnectionCreator
      *
      * @param p_messageDirectory
-     *     the message directory
+     *         the message directory
+     * @param p_requestMap
+     *         the request map
      * @param p_nodeMap
-     *     the node map
+     *         the node map
      * @param p_osBufferSize
-     *     the size of incoming and outgoing buffers
+     *         the size of incoming and outgoing buffers
      * @param p_flowControlWindowSize
-     *     the maximal number of ByteBuffer to schedule for sending/receiving
+     *         the maximal number of ByteBuffer to schedule for sending/receiving
      * @param p_connectionTimeout
-     *     the connection timeout
+     *         the connection timeout
      */
-    NIOConnectionCreator(final MessageDirectory p_messageDirectory, final NodeMap p_nodeMap, final int p_osBufferSize, final int p_flowControlWindowSize,
-            final int p_connectionTimeout) {
+    NIOConnectionCreator(final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final NodeMap p_nodeMap, final int p_osBufferSize,
+            final int p_flowControlWindowSize, final int p_connectionTimeout) {
         super();
 
         m_nioSelector = null;
 
         m_messageDirectory = p_messageDirectory;
+        m_requestMap = p_requestMap;
 
         m_osBufferSize = p_osBufferSize;
         m_flowControlWindowSize = p_flowControlWindowSize;
@@ -146,10 +149,10 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
      * Creates a new connection to the given destination
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @return a new connection
      * @throws IOException
-     *     if the connection could not be created
+     *         if the connection could not be created
      */
     @Override
     public NIOConnection createConnection(final short p_destination) throws IOException {
@@ -161,7 +164,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
         condLock = new ReentrantLock(false);
         cond = condLock.newCondition();
-        ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, condLock, cond, m_messageCreator, m_nioSelector, m_osBufferSize,
+        ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, m_requestMap, condLock, cond, m_messageCreator, m_nioSelector, m_osBufferSize,
                 m_flowControlWindowSize);
 
         ret.connect();
@@ -198,7 +201,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
     public NIOConnection createConnection(final short p_destination, final SocketChannel p_channel) throws IOException {
         NIOConnection ret;
 
-        ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, p_channel, m_messageCreator, m_nioSelector, m_osBufferSize,
+        ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, m_requestMap, p_channel, m_messageCreator, m_nioSelector, m_osBufferSize,
                 m_flowControlWindowSize);
 
         // Register connection as attachment
@@ -315,9 +318,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
      * m_buffer needs to be synchronized externally
      *
      * @param p_channel
-     *     the channel of the connection
+     *         the channel of the connection
      * @throws IOException
-     *     if the connection could not be created
+     *         if the connection could not be created
      */
     void createConnection(final SocketChannel p_channel) throws IOException {
         short remoteNodeID;

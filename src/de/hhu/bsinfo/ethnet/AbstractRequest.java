@@ -49,11 +49,11 @@ public abstract class AbstractRequest extends AbstractMessage {
      * Creates an instance of Request
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_type
-     *     the message type
+     *         the message type
      * @param p_subtype
-     *     the message subtype
+     *         the message subtype
      */
     protected AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype) {
         this(p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE);
@@ -63,13 +63,13 @@ public abstract class AbstractRequest extends AbstractMessage {
      * Creates an instance of Request
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_type
-     *     the message type
+     *         the message type
      * @param p_subtype
-     *     the message subtype
+     *         the message subtype
      * @param p_exclusivity
-     *     whether this request type allows parallel execution
+     *         whether this request type allows parallel execution
      */
     protected AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
         super(p_destination, p_type, p_subtype, p_exclusivity);
@@ -92,7 +92,7 @@ public abstract class AbstractRequest extends AbstractMessage {
      * Set the ignore timeout option
      *
      * @param p_ignoreTimeout
-     *     if true the request ignores the network timeout
+     *         if true the request ignores the network timeout
      */
     public final void setIgnoreTimeout(final boolean p_ignoreTimeout) {
         m_ignoreTimeout = p_ignoreTimeout;
@@ -147,9 +147,9 @@ public abstract class AbstractRequest extends AbstractMessage {
      * Get the Response
      *
      * @param <T>
-     *     the Response type
+     *         the Response type
      * @param p_class
-     *     the Class of the Response
+     *         the Class of the Response
      * @return the Response
      */
     public final <T extends AbstractResponse> T getResponse(final Class<T> p_class) {
@@ -171,7 +171,7 @@ public abstract class AbstractRequest extends AbstractMessage {
      * Wait until the Request is fulfilled or aborted
      *
      * @param p_timeoutMs
-     *     Max amount of time to wait for response.
+     *         Max amount of time to wait for response.
      * @return False if message timed out, true if response received.
      */
     public final boolean waitForResponse(final int p_timeoutMs) {
@@ -208,7 +208,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 
     @Override
     protected final void beforeSend() {
-        RequestMap.put(this);
+  
     }
 
     @Override
@@ -220,7 +220,7 @@ public abstract class AbstractRequest extends AbstractMessage {
      * Fulfill the Request
      *
      * @param p_response
-     *     the Response
+     *         the Response
      */
     final void fulfill(final AbstractResponse p_response) {
         assert p_response != null;
