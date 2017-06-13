@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.ms.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.core.AbstractRequest;
 
 /**
  * Get the current status of a master compute node.

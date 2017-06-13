@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.core.AbstractRequest;
 
 /**
  * Message to notify peers about an update in the nameservice to update their local caches

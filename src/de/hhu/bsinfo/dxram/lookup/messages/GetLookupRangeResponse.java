@@ -15,11 +15,9 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.lookup.overlay.storage.PeerState;
 import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
-import de.hhu.bsinfo.dxram.lookup.LookupState;
-import de.hhu.bsinfo.ethnet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.core.AbstractResponse;
 
 /**
  * Response to a LookupRequest

@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.core.AbstractRequest;
 
 /**
  * Init Range Request

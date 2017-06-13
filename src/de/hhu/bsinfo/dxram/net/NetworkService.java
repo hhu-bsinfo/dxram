@@ -16,10 +16,10 @@ package de.hhu.bsinfo.dxram.net;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.AbstractRequest;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.MessageReceiver;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.AbstractRequest;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 
 /**
  * Service to access the backend network service for sending messages

@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.dxram.net.messages;
 
-import de.hhu.bsinfo.ethnet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.core.AbstractResponse;
 
 import java.nio.ByteBuffer;
 

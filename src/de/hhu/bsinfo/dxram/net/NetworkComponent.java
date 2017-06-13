@@ -28,14 +28,17 @@ import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
+import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.net.messages.NetworkMessages;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
-import de.hhu.bsinfo.ethnet.NetworkException;
 import de.hhu.bsinfo.ethnet.NetworkHandler;
-import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.NetworkResponseDelayedException;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.AbstractRequest;
+import de.hhu.bsinfo.ethnet.core.ConnectionManagerListener;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 
 /**
  * Access to the network interface to send messages or requests
@@ -43,7 +46,7 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentConfig> implements EventListener<NodeFailureEvent> {
+public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentConfig> implements EventListener<NodeFailureEvent>, ConnectionManagerListener {
     // component dependencies
     private AbstractBootComponent m_boot;
     private EventComponent m_event;
@@ -167,7 +170,12 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      *         If sending the message failed
      */
     public void sendSync(final AbstractRequest p_request, final boolean p_waitForResponses) throws NetworkException {
-        m_networkHandler.sendSync(p_request, -1, p_waitForResponses);
+
+        try {
+            m_networkHandler.sendSync(p_request, -1, p_waitForResponses);
+        } catch (final NetworkResponseDelayedException e) {
+            m_event.fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), e.getDesinationNodeId()));
+        }
     }
 
     /**
@@ -210,6 +218,22 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     }
 
     @Override
+    public void connectionCreated(final short p_destination) {
+        // #if LOGGER >= DEBUG
+        LOGGER.debug("Connection to node 0x%X created", p_destination);
+        // #endif /* LOGGER >= DEBUG */
+    }
+
+    @Override
+    public void connectionLost(final short p_destination) {
+        // #if LOGGER >= DEBUG
+        LOGGER.debug("Connection to node 0x%X lost", p_destination);
+        // #endif /* LOGGER >= DEBUG */
+
+        m_event.fireEvent(new ConnectionLostEvent(getClass().getSimpleName(), p_destination));
+    }
+
+    @Override
     protected boolean supportsSuperpeer() {
         return true;
     }
@@ -227,49 +251,50 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
-        m_networkHandler = new NetworkHandler(getConfig().getThreadCountMsgHandler(), getConfig().getRequestMapEntryCount(),
-                (int) getConfig().getRequestTimeout().getMs());
-        NetworkHandler.setEventHandler(m_event);
-
-        m_event.registerListener(this, NodeFailureEvent.class);
-
-        // Check if given ip address is bound to one of this node's network interfaces
-        boolean found = false;
-        InetAddress myAddress = m_boot.getNodeAddress(m_boot.getNodeID()).getAddress();
-        try {
-            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-            outerloop:
-            while (networkInterfaces.hasMoreElements()) {
-                NetworkInterface currentNetworkInterface = networkInterfaces.nextElement();
-                Enumeration<InetAddress> addresses = currentNetworkInterface.getInetAddresses();
-                while (addresses.hasMoreElements()) {
-                    InetAddress currentAddress = addresses.nextElement();
-                    if (myAddress.equals(currentAddress)) {
-                        // #if LOGGER >= INFO
-                        LOGGER.info("%s is bound to %s", myAddress.getHostAddress(), currentNetworkInterface.getDisplayName());
-                        // #endif /* LOGGER >= INFO */
-                        found = true;
-                        break outerloop;
+        if (!getConfig().isInfiniband()) {
+            // Check if given ip address is bound to one of this node's network interfaces
+            boolean found = false;
+            InetAddress myAddress = m_boot.getNodeAddress(m_boot.getNodeID()).getAddress();
+            try {
+                Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+                outerloop:
+                while (networkInterfaces.hasMoreElements()) {
+                    NetworkInterface currentNetworkInterface = networkInterfaces.nextElement();
+                    Enumeration<InetAddress> addresses = currentNetworkInterface.getInetAddresses();
+                    while (addresses.hasMoreElements()) {
+                        InetAddress currentAddress = addresses.nextElement();
+                        if (myAddress.equals(currentAddress)) {
+                            // #if LOGGER >= INFO
+                            LOGGER.info("%s is bound to %s", myAddress.getHostAddress(), currentNetworkInterface.getDisplayName());
+                            // #endif /* LOGGER >= INFO */
+                            found = true;
+                            break outerloop;
+                        }
                     }
                 }
-            }
-        } catch (final SocketException e1) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Could not get network interfaces for ip confirmation");
-            // #endif /* LOGGER >= ERROR */
-        } finally {
-            if (!found) {
+            } catch (final SocketException e1) {
                 // #if LOGGER >= ERROR
-                LOGGER.error("Could not find network interface with address %s", myAddress.getHostAddress());
+                LOGGER.error("Could not get network interfaces for ip confirmation");
                 // #endif /* LOGGER >= ERROR */
-                return false;
+            } finally {
+                if (!found) {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Could not find network interface with address %s", myAddress.getHostAddress());
+                    // #endif /* LOGGER >= ERROR */
+                    return false;
+                }
             }
         }
 
-        m_networkHandler.initialize(m_boot.getNodeID(), new NodeMappings(m_boot), (int) getConfig().getOSBufferSize().getBytes(),
-                (int) getConfig().getFlowControlWindowSize().getBytes(), (int) getConfig().getRequestTimeout().getMs());
+        m_networkHandler = new NetworkHandler(m_boot.getNodeID(), getConfig().getMaxConnections(), (int) getConfig().getBufferSize().getBytes(),
+                (int) getConfig().getFlowControlWindowSize().getBytes(), getConfig().getNumMessageHandlerThreads(), getConfig().getRequestMapEntryCount(),
+                (int) getConfig().getRequestTimeout().getMs(), (int) getConfig().getConnectionTimeout().getMs(), new NodeMappings(m_boot),
+                getConfig().isInfiniband());
 
+        m_networkHandler.setConnectionManagerListener(this);
         m_networkHandler.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
+
+        m_event.registerListener(this, NodeFailureEvent.class);
 
         return true;
     }

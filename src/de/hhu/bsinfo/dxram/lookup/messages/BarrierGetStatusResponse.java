@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
-import de.hhu.bsinfo.ethnet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.core.AbstractResponse;
 
 /**
  * Message to get the current status of an active barrier.

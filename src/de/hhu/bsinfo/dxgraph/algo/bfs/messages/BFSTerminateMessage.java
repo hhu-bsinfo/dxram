@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
 
 /**
  * Message to determine if BFS has to terminate after the iteration is finished.

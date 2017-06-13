@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
-import de.hhu.bsinfo.ethnet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.core.AbstractResponse;
 
 /**
  * Response with status information about the key value store memory

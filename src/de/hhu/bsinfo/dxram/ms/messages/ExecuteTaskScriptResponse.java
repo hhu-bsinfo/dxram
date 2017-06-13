@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import de.hhu.bsinfo.ethnet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.core.AbstractResponse;
 
 /**
  * Reponse to the execute task script request with status code.

@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.core.AbstractRequest;
 
 /**
  * Request for getting an anonymous chunk from a remote node. The size of a chunk is _NOT_ known prior fetching the data

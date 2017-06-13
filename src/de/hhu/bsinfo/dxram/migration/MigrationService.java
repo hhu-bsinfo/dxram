@@ -36,9 +36,9 @@ import de.hhu.bsinfo.dxram.migration.messages.MigrationRemoteMessage;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.MessageReceiver;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.NodeID;
 

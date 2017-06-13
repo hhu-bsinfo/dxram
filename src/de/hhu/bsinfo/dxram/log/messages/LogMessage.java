@@ -19,7 +19,7 @@ import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
 
 /**
  * Message for logging a Chunk on a remote node

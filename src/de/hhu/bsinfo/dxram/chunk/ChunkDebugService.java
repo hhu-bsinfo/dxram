@@ -23,16 +23,16 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler;
+import de.hhu.bsinfo.ethnet.MessageReceiver;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 
 /**
  * Special and separate service for debug/benchmark only ChunkService related calls
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2017
  */
-public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceConfig> implements NetworkHandler.MessageReceiver {
+public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceConfig> implements MessageReceiver {
     private MemoryManagerComponent m_memoryManager;
     private NetworkComponent m_network;
     private NameserviceComponent m_nameservice;

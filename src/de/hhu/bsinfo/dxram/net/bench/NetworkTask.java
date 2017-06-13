@@ -30,9 +30,9 @@ import de.hhu.bsinfo.dxram.net.messages.NetworkMessages;
 import de.hhu.bsinfo.dxram.net.messages.NetworkTestMessage;
 import de.hhu.bsinfo.dxram.net.messages.NetworkTestRequest;
 import de.hhu.bsinfo.dxram.net.messages.NetworkTestResponse;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler;
+import de.hhu.bsinfo.ethnet.MessageReceiver;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
@@ -43,7 +43,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 04.04.2017
  */
-public class NetworkTask implements Task, NetworkHandler.MessageReceiver {
+public class NetworkTask implements Task, MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkTask.class.getSimpleName());
 
     private static final int PATTERN_END_TO_END = 0;
@@ -110,8 +110,8 @@ public class NetworkTask implements Task, NetworkHandler.MessageReceiver {
         }
 
         System.out
-            .printf("Network benchmark, pattern %d, message count %d, message size %d byte, isMessages %b with %d thread(s)...\n", m_pattern, m_messageCnt,
-                m_messageSize, m_isMessage, m_threadCnt);
+                .printf("Network benchmark, pattern %d, message count %d, message size %d byte, isMessages %b with %d thread(s)...\n", m_pattern, m_messageCnt,
+                        m_messageSize, m_isMessage, m_threadCnt);
 
         // thread runnables
         for (int i = 0; i < threads.length; i++) {

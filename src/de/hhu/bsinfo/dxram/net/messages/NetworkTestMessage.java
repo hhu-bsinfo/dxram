@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.net.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
 
 /**
  * Network message for running tests/benchmarks.

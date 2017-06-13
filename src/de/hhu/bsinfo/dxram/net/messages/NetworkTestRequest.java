@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.net.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.core.AbstractRequest;
 
 /**
  * Network request for running tests/benchmarks.

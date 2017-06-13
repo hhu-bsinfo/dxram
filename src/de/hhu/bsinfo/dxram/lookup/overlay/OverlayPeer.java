@@ -97,12 +97,12 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.ethnet.MessageReceiver;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.CRC16;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Peer functionality for overlay
@@ -129,20 +129,20 @@ public class OverlayPeer implements MessageReceiver {
      * Creates an instance of OverlayPeer
      *
      * @param p_nodeID
-     *     the own NodeID
+     *         the own NodeID
      * @param p_contactSuperpeer
-     *     the superpeer to contact for joining
+     *         the superpeer to contact for joining
      * @param p_initialNumberOfSuperpeers
-     *     the number of expeced superpeers
+     *         the number of expeced superpeers
      * @param p_boot
-     *     the BootComponent
+     *         the BootComponent
      * @param p_network
-     *     the NetworkComponent
+     *         the NetworkComponent
      * @param p_event
-     *     the EventComponent
+     *         the EventComponent
      */
     public OverlayPeer(final short p_nodeID, final short p_contactSuperpeer, final int p_initialNumberOfSuperpeers, final AbstractBootComponent p_boot,
-        final NetworkComponent p_network, final EventComponent p_event) {
+            final NetworkComponent p_network, final EventComponent p_event) {
         m_boot = p_boot;
         m_network = p_network;
         m_event = p_event;
@@ -249,7 +249,7 @@ public class OverlayPeer implements MessageReceiver {
      * Get the corresponding LookupRange for the given ChunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return the current location and the range borders
      */
     public LookupRange getLookupRange(final long p_chunkID) {
@@ -290,7 +290,7 @@ public class OverlayPeer implements MessageReceiver {
      * Returns the responsible superpeer for given peer
      *
      * @param p_nodeID
-     *     the peer
+     *         the peer
      * @return the responsible superpeer
      */
     public short getResponsibleSuperpeer(final short p_nodeID) {
@@ -311,7 +311,7 @@ public class OverlayPeer implements MessageReceiver {
      * Remove the ChunkIDs from range after deletion of that chunks
      *
      * @param p_chunkIDs
-     *     the ChunkIDs
+     *         the ChunkIDs
      */
     public void removeChunkIDs(final ArrayListLong p_chunkIDs) {
         short responsibleSuperpeer;
@@ -362,9 +362,9 @@ public class OverlayPeer implements MessageReceiver {
      * Insert a new name service entry
      *
      * @param p_id
-     *     the AID
+     *         the AID
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      */
     public void insertNameserviceEntry(final int p_id, final long p_chunkID) {
         short responsibleSuperpeer;
@@ -435,10 +435,10 @@ public class OverlayPeer implements MessageReceiver {
      * that your entry has to exist.
      *
      * @param p_id
-     *     the nameservice id
+     *         the nameservice id
      * @param p_timeoutMs
-     *     Timeout for trying to get the entry (if it does not exist, yet).
-     *     set this to -1 for infinite loop if you know for sure, that the entry has to exist
+     *         Timeout for trying to get the entry (if it does not exist, yet).
+     *         set this to -1 for infinite loop if you know for sure, that the entry has to exist
      * @return the corresponding ChunkID
      */
     public long getChunkIDForNameserviceEntry(final int p_id, final int p_timeoutMs) {
@@ -498,9 +498,9 @@ public class OverlayPeer implements MessageReceiver {
      * Store migration of given ChunkID to a new location
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_nodeID
-     *     the new owner
+     *         the new owner
      */
     public void migrate(final long p_chunkID, final short p_nodeID) {
         short responsibleSuperpeer;
@@ -536,11 +536,11 @@ public class OverlayPeer implements MessageReceiver {
      * Store migration of a range of ChunkIDs to a new location
      *
      * @param p_startCID
-     *     the first ChunkID
+     *         the first ChunkID
      * @param p_endCID
-     *     the last ChunkID
+     *         the last ChunkID
      * @param p_nodeID
-     *     the new owner
+     *         the new owner
      */
     public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
         short creator;
@@ -582,7 +582,7 @@ public class OverlayPeer implements MessageReceiver {
      * Initialize a new backup range
      *
      * @param p_backupRange
-     *     the backup range to initialize
+     *         the backup range to initialize
      */
     public void initRange(final BackupRange p_backupRange) {
         short responsibleSuperpeer;
@@ -618,7 +618,7 @@ public class OverlayPeer implements MessageReceiver {
      * Get all backup ranges for given node
      *
      * @param p_nodeID
-     *     the NodeID
+     *         the NodeID
      * @return all backup ranges for given node
      */
     public BackupRange[] getAllBackupRanges(final short p_nodeID) {
@@ -704,7 +704,7 @@ public class OverlayPeer implements MessageReceiver {
      * Allocate a new barrier.
      *
      * @param p_size
-     *     Size of the barrier (i.e. number of peers that have to sign on).
+     *         Size of the barrier (i.e. number of peers that have to sign on).
      * @return Id of the barrier allocated or -1 on failure.
      */
     public int barrierAllocate(final int p_size) {
@@ -730,7 +730,7 @@ public class OverlayPeer implements MessageReceiver {
      * Free an allocate barrier.
      *
      * @param p_barrierId
-     *     Id of the barrier to free.
+     *         Id of the barrier to free.
      * @return True if successful, false otherwise.
      */
     public boolean barrierFree(final int p_barrierId) {
@@ -765,9 +765,9 @@ public class OverlayPeer implements MessageReceiver {
      * Alter the size of an existing barrier (i.e. you want to keep the barrier id but with a different size).
      *
      * @param p_barrierId
-     *     Id of an allocated barrier to change the size of.
+     *         Id of an allocated barrier to change the size of.
      * @param p_size
-     *     New size for the barrier.
+     *         New size for the barrier.
      * @return True if changing size was successful, false otherwise.
      */
     public boolean barrierChangeSize(final int p_barrierId, final int p_size) {
@@ -800,9 +800,9 @@ public class OverlayPeer implements MessageReceiver {
      * Sign on to a barrier and wait for it getting released (number of peers, barrier size, have signed on).
      *
      * @param p_barrierId
-     *     Id of the barrier to sign on to.
+     *         Id of the barrier to sign on to.
      * @param p_customData
-     *     Custom data to pass along with the sign on
+     *         Custom data to pass along with the sign on
      * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
      */
     public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData) {
@@ -868,7 +868,7 @@ public class OverlayPeer implements MessageReceiver {
      * Get the status of a barrier.
      *
      * @param p_barrierId
-     *     Id of the barrier.
+     *         Id of the barrier.
      * @return Status of the barrier or null if the barrier does not exist
      */
     public BarrierStatus barrierGetStatus(final int p_barrierId) {
@@ -903,9 +903,9 @@ public class OverlayPeer implements MessageReceiver {
      * Create a block of memory in the superpeer storage.
      *
      * @param p_storageId
-     *     Local storage id to assign to the newly created block.
+     *         Local storage id to assign to the newly created block.
      * @param p_size
-     *     Size of the block to create
+     *         Size of the block to create
      * @return True if creating successful, false if failed.
      */
     public boolean superpeerStorageCreate(final int p_storageId, final int p_size) {
@@ -945,7 +945,7 @@ public class OverlayPeer implements MessageReceiver {
                 if (response.getStatusCode() != 0) {
                     // #if LOGGER >= ERROR
                     LOGGER.error("Allocating temporary storage on superpeer 0x%X for 0x%X, size %d failed: %d", response.getSource(), p_storageId, p_size,
-                        response.getStatusCode());
+                            response.getStatusCode());
                     // #endif /* LOGGER >= ERROR */
                     return false;
                 } else {
@@ -963,7 +963,7 @@ public class OverlayPeer implements MessageReceiver {
      * Put data into an allocated block in the superpeer storage.
      *
      * @param p_dataStructure
-     *     Data structure with data to put.
+     *         Data structure with data to put.
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStoragePut(final DataStructure p_dataStructure) {
@@ -1020,7 +1020,7 @@ public class OverlayPeer implements MessageReceiver {
      * Put data of an anonymous chunk into an allocated block in the superpeer storage.
      *
      * @param p_chunk
-     *     Chunk with data to put.
+     *         Chunk with data to put.
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStoragePutAnon(final ChunkAnon p_chunk) {
@@ -1077,7 +1077,7 @@ public class OverlayPeer implements MessageReceiver {
      * Get data from an allocated block in the superpeer storage.
      *
      * @param p_dataStructure
-     *     Data structure with set storage id to read the data from the storage into.
+     *         Data structure with set storage id to read the data from the storage into.
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStorageGet(final DataStructure p_dataStructure) {
@@ -1134,7 +1134,7 @@ public class OverlayPeer implements MessageReceiver {
      * Get data from an allocated block in the superpeer storage.
      *
      * @param p_chunk
-     *     Reference to an instance of an anonymous chunk
+     *         Reference to an instance of an anonymous chunk
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStorageGetAnon(final ChunkAnon p_chunk) {
@@ -1191,7 +1191,7 @@ public class OverlayPeer implements MessageReceiver {
      * Remove an allocated block in the superpeer storage.
      *
      * @param p_superpeerStorageId
-     *     Id of the allocated block to remove.
+     *         Id of the allocated block to remove.
      */
     public void superpeerStorageRemove(final int p_superpeerStorageId) {
         boolean check = false;
@@ -1283,11 +1283,11 @@ public class OverlayPeer implements MessageReceiver {
      * Replaces the backup peer for given range on responsible superpeer
      *
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @param p_failedPeer
-     *     the failed peer
+     *         the failed peer
      * @param p_newPeer
-     *     the replacement
+     *         the replacement
      */
     public void replaceBackupPeer(final short p_rangeID, final short p_failedPeer, final short p_newPeer) {
         short responsibleSuperpeer;
@@ -1311,7 +1311,7 @@ public class OverlayPeer implements MessageReceiver {
      * Handles an incoming Message
      *
      * @param p_message
-     *     the Message
+     *         the Message
      */
     @Override
     public void onIncomingMessage(final AbstractMessage p_message) {
@@ -1361,7 +1361,7 @@ public class OverlayPeer implements MessageReceiver {
      * Joins the superpeer overlay through contactSuperpeer
      *
      * @param p_contactSuperpeer
-     *     NodeID of a known superpeer
+     *         NodeID of a known superpeer
      * @return whether joining was successful
      * @lock no need for acquiring overlay lock in this method
      */
@@ -1416,9 +1416,9 @@ public class OverlayPeer implements MessageReceiver {
      * Determines the responsible superpeer for given NodeID
      *
      * @param p_nodeID
-     *     NodeID from chunk whose location is searched
+     *         NodeID from chunk whose location is searched
      * @param p_check
-     *     whether the result has to be checked (in case of incomplete superpeer overlay) or not
+     *         whether the result has to be checked (in case of incomplete superpeer overlay) or not
      * @return the responsible superpeer for given ChunkID
      * @lock overlay lock must be read-locked
      */
@@ -1493,7 +1493,7 @@ public class OverlayPeer implements MessageReceiver {
      * Handles an incoming SendSuperpeersMessage
      *
      * @param p_sendSuperpeersMessage
-     *     the SendSuperpeersMessage
+     *         the SendSuperpeersMessage
      */
     private void incomingSendSuperpeersMessage(final SendSuperpeersMessage p_sendSuperpeersMessage) {
         short source;
@@ -1519,7 +1519,7 @@ public class OverlayPeer implements MessageReceiver {
      * Handles an incoming NameserviceUpdatePeerCachesMessage
      *
      * @param p_message
-     *     the NameserviceUpdatePeerCachesMessage
+     *         the NameserviceUpdatePeerCachesMessage
      */
     private void incomingNameserviceUpdatePeerCachesMessage(final NameserviceUpdatePeerCachesMessage p_message) {
         m_event.fireEvent(new NameserviceCacheEntryUpdateEvent(getClass().getSimpleName(), p_message.getID(), p_message.getChunkID()));
@@ -1529,7 +1529,7 @@ public class OverlayPeer implements MessageReceiver {
      * Handles an incoming PeerJoinEventRequest
      *
      * @param p_peerJoinEventRequest
-     *     the PeerJoinEventRequest
+     *         the PeerJoinEventRequest
      */
     private void incomingPeerJoinEventRequest(final PeerJoinEventRequest p_peerJoinEventRequest) {
 
@@ -1561,42 +1561,42 @@ public class OverlayPeer implements MessageReceiver {
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST, RemoveChunkIDsRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_RESPONSE, RemoveChunkIDsResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST,
-            InsertNameserviceEntriesRequest.class);
+                InsertNameserviceEntriesRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_RESPONSE,
-            InsertNameserviceEntriesResponse.class);
+                InsertNameserviceEntriesResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST,
-            GetChunkIDForNameserviceEntryRequest.class);
+                GetChunkIDForNameserviceEntryRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_RESPONSE,
-            GetChunkIDForNameserviceEntryResponse.class);
+                GetChunkIDForNameserviceEntryResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST,
-            GetNameserviceEntryCountRequest.class);
+                GetNameserviceEntryCountRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE,
-            GetNameserviceEntryCountResponse.class);
+                GetNameserviceEntryCountResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST,
-            GetNameserviceEntriesRequest.class);
+                GetNameserviceEntriesRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_RESPONSE,
-            GetNameserviceEntriesResponse.class);
+                GetNameserviceEntriesResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE,
-            NameserviceUpdatePeerCachesMessage.class);
+                NameserviceUpdatePeerCachesMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST, MigrateRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_RESPONSE, MigrateResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST, MigrateRangeRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_RESPONSE, MigrateRangeResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST, InitRangeRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INIT_RANGE_RESPONSE, InitRangeResponse.class);
-        m_network
-            .registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST, GetAllBackupRangesRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST,
+                GetAllBackupRangesRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE,
-            GetAllBackupRangesResponse.class);
+                GetAllBackupRangesResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_UPDATE_METADATA_AFTER_RECOVERY_MESSAGE,
-            UpdateMetadataAfterRecoveryMessage.class);
+                UpdateMetadataAfterRecoveryMessage.class);
 
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE, PingSuperpeerMessage.class);
 
-        m_network
-            .registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST, AskAboutSuccessorRequest.class);
-        m_network
-            .registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE, AskAboutSuccessorResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST,
+                AskAboutSuccessorRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE,
+                AskAboutSuccessorResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE, SendSuperpeersMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PEER_JOIN_EVENT_REQUEST, PeerJoinEventRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PEER_JOIN_EVENT_RESPONSE, PeerJoinEventResponse.class);
@@ -1610,39 +1610,39 @@ public class OverlayPeer implements MessageReceiver {
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, BarrierReleaseMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_STATUS_REQUEST, BarrierGetStatusRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_STATUS_RESPONSE, BarrierGetStatusResponse.class);
-        m_network
-            .registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST, BarrierChangeSizeRequest.class);
-        m_network
-            .registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE, BarrierChangeSizeResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST,
+                BarrierChangeSizeRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE,
+                BarrierChangeSizeResponse.class);
 
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST,
-            SuperpeerStorageCreateRequest.class);
+                SuperpeerStorageCreateRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_RESPONSE,
-            SuperpeerStorageCreateResponse.class);
+                SuperpeerStorageCreateResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST,
-            SuperpeerStorageGetRequest.class);
+                SuperpeerStorageGetRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE,
-            SuperpeerStorageGetResponse.class);
+                SuperpeerStorageGetResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_REQUEST,
-            SuperpeerStorageGetAnonRequest.class);
+                SuperpeerStorageGetAnonRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_RESPONSE,
-            SuperpeerStorageGetAnonResponse.class);
+                SuperpeerStorageGetAnonResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST,
-            SuperpeerStoragePutRequest.class);
+                SuperpeerStoragePutRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE,
-            SuperpeerStoragePutResponse.class);
+                SuperpeerStoragePutResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_ANON_REQUEST,
-            SuperpeerStoragePutAnonRequest.class);
+                SuperpeerStoragePutAnonRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_ANON_RESPONSE,
-            SuperpeerStoragePutAnonResponse.class);
+                SuperpeerStoragePutAnonResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE,
-            SuperpeerStorageRemoveMessage.class);
+                SuperpeerStorageRemoveMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST,
-            SuperpeerStorageStatusRequest.class);
+                SuperpeerStorageStatusRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE,
-            SuperpeerStorageStatusResponse.class);
-        m_network
-            .registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REPLACE_BACKUP_PEER_RESPONSE, ReplaceBackupPeerResponse.class);
+                SuperpeerStorageStatusResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REPLACE_BACKUP_PEER_RESPONSE,
+                ReplaceBackupPeerResponse.class);
     }
 
     /**

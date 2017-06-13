@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.core.AbstractRequest;
 
 /**
  * Request to get status information from a remote chunk service.

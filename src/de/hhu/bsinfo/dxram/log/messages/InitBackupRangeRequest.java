@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.core.AbstractRequest;
 
 /**
  * Request for initialization of a backup range on a remote node

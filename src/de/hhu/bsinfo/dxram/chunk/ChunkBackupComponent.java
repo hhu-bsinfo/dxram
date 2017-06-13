@@ -27,7 +27,7 @@ import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.ethnet.NetworkException;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 
 /**
  * Component for chunk handling.

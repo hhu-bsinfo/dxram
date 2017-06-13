@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.core.AbstractRequest;
 
 /**
  * Request for updating a Chunk using an anonymous Chunk on a remote node

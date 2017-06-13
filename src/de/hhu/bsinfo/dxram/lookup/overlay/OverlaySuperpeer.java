@@ -114,13 +114,12 @@ import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler;
-import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.ethnet.MessageReceiver;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.CRC16;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Superpeer functionality for overlay
@@ -942,14 +941,14 @@ public class OverlaySuperpeer implements MessageReceiver {
                                     }
                                     requests[i] = null;
                                 } else {
-                                    if (System.currentTimeMillis() > numberOfRangesPerPeer[currentRequest.getDestination() & 0xFFFF]
-                                            * waitingTimerPerBackupRange + timeStart) {
+                                    if (System.currentTimeMillis() >
+                                            numberOfRangesPerPeer[currentRequest.getDestination() & 0xFFFF] * waitingTimerPerBackupRange + timeStart) {
                                         // #if LOGGER >= INFO
                                         LOGGER.info("Backup peer 0x%X is not responding! Trying next backup peer for %s (sync).",
                                                 currentRequest.getDestination(), currentRequest.getBackupRange());
                                         // #endif /* LOGGER >= INFO */
 
-                                         // Try again with other backup peer and wait for response
+                                        // Try again with other backup peer and wait for response
                                         numberOfRecoveredChunks = 0;
                                         backupPeers = backupRanges[i].getBackupPeers();
                                         for (short backupPeer : backupPeers) {

@@ -14,20 +14,28 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  */
 public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
-    private int m_threadCountMsgHandler = 2;
+    private int m_maxConnections = 1000;
 
     @Expose
-    private int m_requestMapEntryCount = (int) Math.pow(2, 20);
-
-    @Expose
-    private StorageUnit m_osBufferSize = new StorageUnit(1, StorageUnit.MB);
+    private StorageUnit m_bufferSize = new StorageUnit(1, StorageUnit.MB);
 
     @Expose
     private StorageUnit m_flowControlWindowSize = new StorageUnit(256, StorageUnit.KB);
 
     @Expose
+    private int m_numMessageHandlerThreads = 2;
+
+    @Expose
+    private int m_requestMapEntryCount = (int) Math.pow(2, 20);
+
+    @Expose
     private TimeUnit m_requestTimeout = new TimeUnit(333, TimeUnit.MS);
 
+    @Expose
+    private TimeUnit m_connectionTimeout = new TimeUnit(333, TimeUnit.MS);
+
+    @Expose
+    private boolean m_infiniband = false;
 
     /**
      * Constructor
@@ -37,31 +45,38 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
     }
 
     /**
-     * Number of threads to spawn for handling incoming and assembled network messages.
+     * Max number of connections to keep before dismissing existing connections (for new ones)
      */
-    public int getThreadCountMsgHandler() {
-        return m_threadCountMsgHandler;
+    public int getMaxConnections() {
+        return m_maxConnections;
     }
 
     /**
-     * Size of the map that stores outstanding requests and maps them to their incoming responses (index is incremented for messages as well).
+     * Size of the buffer for incoming and outgoing network data
      */
-    public int getRequestMapEntryCount() {
-        return m_requestMapEntryCount;
+    public StorageUnit getBufferSize() {
+        return m_bufferSize;
     }
 
     /**
-     * Size of the buffer for incoming and outgoing network data.
-     */
-    public StorageUnit getOSBufferSize() {
-        return m_osBufferSize;
-    }
-
-    /**
-     * Maximum number of bytes to be send until acknowledgment is needed.
+     * Number of bytes to receive on a flow control message before flow control is considered delayed
      */
     public StorageUnit getFlowControlWindowSize() {
         return m_flowControlWindowSize;
+    }
+
+    /**
+     * Number of threads to spawn for handling incoming and assembled network messages
+     */
+    public int getNumMessageHandlerThreads() {
+        return m_numMessageHandlerThreads;
+    }
+
+    /**
+     * Size of the map that stores outstanding requests and maps them to their incoming responses
+     */
+    public int getRequestMapEntryCount() {
+        return m_requestMapEntryCount;
     }
 
     /**
@@ -69,6 +84,20 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
      */
     public TimeUnit getRequestTimeout() {
         return m_requestTimeout;
+    }
+
+    /**
+     * Amount of time to try to establish a connection before giving up
+     */
+    public TimeUnit getConnectionTimeout() {
+        return m_connectionTimeout;
+    }
+
+    /**
+     * True if you want to use the infiniband interface, false for ethernet
+     */
+    public boolean isInfiniband() {
+        return m_infiniband;
     }
 
     @Override
@@ -81,7 +110,7 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
             return true;
         }
 
-        if (m_flowControlWindowSize.getBytes() * 2 > m_osBufferSize.getBytes()) {
+        if (m_flowControlWindowSize.getBytes() * 2 > m_bufferSize.getBytes()) {
             // #if LOGGER >= ERROR
             LOGGER.error("OS buffer size must be at least twice the size of flow control window size!");
             // #endif /* LOGGER >= ERROR */

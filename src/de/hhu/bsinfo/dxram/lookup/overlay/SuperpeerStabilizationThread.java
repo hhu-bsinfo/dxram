@@ -19,6 +19,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorRequest;
@@ -29,10 +30,9 @@ import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewSuccessorMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SendBackupsMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.MessageReceiver;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -66,22 +66,22 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * Creates an instance of Worker
      *
      * @param p_superpeer
-     *     the overlay superpeer
+     *         the overlay superpeer
      * @param p_nodeID
-     *     the own NodeID
+     *         the own NodeID
      * @param p_overlayLock
-     *     the overlay lock
+     *         the overlay lock
      * @param p_initialNumberOfSuperpeers
-     *     the number of expected superpeers
+     *         the number of expected superpeers
      * @param p_superpeers
-     *     all other superpeers
+     *         all other superpeers
      * @param p_sleepInterval
-     *     the ping interval in ms
+     *         the ping interval in ms
      * @param p_network
-     *     the network component
+     *         the network component
      */
     SuperpeerStabilizationThread(final OverlaySuperpeer p_superpeer, final short p_nodeID, final ReentrantReadWriteLock p_overlayLock,
-        final int p_initialNumberOfSuperpeers, final ArrayList<Short> p_superpeers, final int p_sleepInterval, final NetworkComponent p_network) {
+            final int p_initialNumberOfSuperpeers, final ArrayList<Short> p_superpeers, final int p_sleepInterval, final NetworkComponent p_network) {
         m_superpeer = p_superpeer;
 
         m_network = p_network;
@@ -140,7 +140,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * Handles an incoming Message
      *
      * @param p_message
-     *     the Message
+     *         the Message
      */
     @Override
     public void onIncomingMessage(final AbstractMessage p_message) {
@@ -344,7 +344,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * Gather all missing metadata in the responsible area
      *
      * @param p_responsibleArea
-     *     the responsible area
+     *         the responsible area
      */
     private void gatherBackups(final short[] p_responsibleArea) {
         short currentSuperpeer;
@@ -461,7 +461,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * Handles an incoming SendBackupsMessage
      *
      * @param p_sendBackupsMessage
-     *     the SendBackupsMessage
+     *         the SendBackupsMessage
      */
     private void incomingSendBackupsMessage(final SendBackupsMessage p_sendBackupsMessage) {
 
@@ -478,7 +478,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * Handles an incoming AskAboutBackupsRequest
      *
      * @param p_askAboutBackupsRequest
-     *     the AskAboutBackupsRequest
+     *         the AskAboutBackupsRequest
      */
     private void incomingAskAboutBackupsRequest(final AskAboutBackupsRequest p_askAboutBackupsRequest) {
         byte[] missingMetadata;
@@ -489,7 +489,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 
         m_overlayLock.readLock().lock();
         missingMetadata = m_superpeer.compareAndReturnBackups(p_askAboutBackupsRequest.getPeers(), p_askAboutBackupsRequest.getNumberOfNameserviceEntries(),
-            p_askAboutBackupsRequest.getNumberOfStorages(), p_askAboutBackupsRequest.getNumberOfBarriers());
+                p_askAboutBackupsRequest.getNumberOfStorages(), p_askAboutBackupsRequest.getNumberOfBarriers());
         m_overlayLock.readLock().unlock();
 
         try {
@@ -504,7 +504,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * Handles an incoming AskAboutSuccessorRequest
      *
      * @param p_askAboutSuccessorRequest
-     *     the AskAboutSuccessorRequest
+     *         the AskAboutSuccessorRequest
      */
     private void incomingAskAboutSuccessorRequest(final AskAboutSuccessorRequest p_askAboutSuccessorRequest) {
         short successor;
@@ -528,7 +528,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * Handles an incoming NotifyAboutNewPredecessorMessage
      *
      * @param p_notifyAboutNewPredecessorMessage
-     *     the NotifyAboutNewPredecessorMessage
+     *         the NotifyAboutNewPredecessorMessage
      */
     private void incomingNotifyAboutNewPredecessorMessage(final NotifyAboutNewPredecessorMessage p_notifyAboutNewPredecessorMessage) {
         short possiblePredecessor;
@@ -551,7 +551,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * Handles an incoming NotifyAboutNewSuccessorMessage
      *
      * @param p_notifyAboutNewSuccessorMessage
-     *     the NotifyAboutNewSuccessorMessage
+     *         the NotifyAboutNewSuccessorMessage
      */
     private void incomingNotifyAboutNewSuccessorMessage(final NotifyAboutNewSuccessorMessage p_notifyAboutNewSuccessorMessage) {
         short possibleSuccessor;

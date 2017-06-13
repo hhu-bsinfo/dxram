@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
-import de.hhu.bsinfo.ethnet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.core.AbstractResponse;
 
 /**
  * Response to a PutRequest

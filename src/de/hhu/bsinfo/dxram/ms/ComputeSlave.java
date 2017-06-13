@@ -19,6 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
@@ -33,10 +34,9 @@ import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.MessageReceiver;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -61,30 +61,30 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      * Constructor
      *
      * @param p_computeGroupId
-     *     Compute group id the instance is assigned to.
+     *         Compute group id the instance is assigned to.
      * @param p_pingIntervalMs
-     *     Ping interval in ms to check back with the compute group if still alive.
+     *         Ping interval in ms to check back with the compute group if still alive.
      * @param p_serviceAccessor
-     *     Service accessor for tasks.
+     *         Service accessor for tasks.
      * @param p_network
-     *     NetworkComponent
+     *         NetworkComponent
      * @param p_nameservice
-     *     NameserviceComponent
+     *         NameserviceComponent
      * @param p_boot
-     *     BootComponent
+     *         BootComponent
      * @param p_lookup
-     *     LookupComponent
+     *         LookupComponent
      */
     ComputeSlave(final short p_computeGroupId, final long p_pingIntervalMs, final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
-        final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
+            final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
         super(ComputeRole.SLAVE, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_nameservice, p_boot, p_lookup);
 
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
-        m_network
-            .registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskScriptRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST,
+                ExecuteTaskScriptRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE,
-            ExecuteTaskScriptResponse.class);
+                ExecuteTaskScriptResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SIGNAL_MESSAGE, SignalMessage.class);
 
         m_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, this);
@@ -175,7 +175,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             if (tmp == -1) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Setting up slave, cannot find nameservice entry for master node id for key %s of compute group %d", m_nameserviceMasterNodeIdKey,
-                    m_computeGroupId);
+                        m_computeGroupId);
                 // #endif /* LOGGER >= ERROR */
                 try {
                     Thread.sleep(1000);
@@ -330,9 +330,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      * Execute the give task script node
      *
      * @param p_taskScriptNode
-     *     Script node to execute
+     *         Script node to execute
      * @param p_prevReturnCode
-     *     Return code of the previous task executed
+     *         Return code of the previous task executed
      * @return Return value of the node executed
      */
     private Integer executeTaskScriptNode(final TaskScriptNode p_taskScriptNode, final Integer p_prevReturnCode) {
@@ -406,7 +406,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      * Handle an incoming ExecuteTaskScriptScriptRequest
      *
      * @param p_message
-     *     ExecuteTaskScriptScriptRequest
+     *         ExecuteTaskScriptScriptRequest
      */
     private void incomingExecuteTaskScriptRequest(final ExecuteTaskScriptRequest p_message) {
         ExecuteTaskScriptResponse response = new ExecuteTaskScriptResponse(p_message);
@@ -443,7 +443,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      * Handle a SignalMessage
      *
      * @param p_message
-     *     SignalMessage
+     *         SignalMessage
      */
     private void incomingSignalMessage(final SignalMessage p_message) {
         m_handleSignalLock.lock();

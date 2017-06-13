@@ -21,14 +21,14 @@ import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSLevelFinishedMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
 import de.hhu.bsinfo.dxram.net.NetworkService;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler;
+import de.hhu.bsinfo.ethnet.MessageReceiver;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 
 /**
  * Created by nothaas on 9/1/16.
  */
-public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
+public class SyncBFSFinished implements MessageReceiver {
     private short[] m_nodeIDs;
     private short m_ownNodeID;
     private NetworkService m_networkService;
@@ -53,8 +53,8 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 
         m_signalAbortExecution = false;
 
-        m_networkService.registerMessageType(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE,
-                BFSLevelFinishedMessage.class);
+        m_networkService
+                .registerMessageType(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE, BFSLevelFinishedMessage.class);
 
         m_networkService.registerReceiver(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE, this);
     }

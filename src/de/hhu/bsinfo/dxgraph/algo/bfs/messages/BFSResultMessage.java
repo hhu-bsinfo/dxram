@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
 import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
 
 /**
  * Message to send bfs result to other node(s).

@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.ethnet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.core.AbstractResponse;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**

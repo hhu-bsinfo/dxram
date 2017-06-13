@@ -39,9 +39,9 @@ import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
-import de.hhu.bsinfo.ethnet.NetworkException;
-import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.MessageReceiver;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -69,22 +69,22 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
      * Constructor
      *
      * @param p_computeGroupId
-     *     Compute group id the instance is assigned to.
+     *         Compute group id the instance is assigned to.
      * @param p_pingIntervalMs
-     *     Ping interval in ms to check back with the compute group if still alive.
+     *         Ping interval in ms to check back with the compute group if still alive.
      * @param p_serviceAccessor
-     *     Accessor to services for compute tasks.
+     *         Accessor to services for compute tasks.
      * @param p_network
-     *     NetworkComponent
+     *         NetworkComponent
      * @param p_nameservice
-     *     NameserviceComponent
+     *         NameserviceComponent
      * @param p_boot
-     *     BootComponent
+     *         BootComponent
      * @param p_lookup
-     *     LookupComponent
+     *         LookupComponent
      */
     ComputeMaster(final short p_computeGroupId, final long p_pingIntervalMs, final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
-        final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
+            final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
         super(ComputeRole.MASTER, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_nameservice, p_boot, p_lookup);
 
         p_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, this);
@@ -107,7 +107,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
      * Submit a task to this master.
      *
      * @param p_taskScriptState
-     *     TaskScriptState containing the script to submit.
+     *         TaskScriptState containing the script to submit.
      * @return True if submission was successful, false if the max number of tasks queued is reached.
      */
     boolean submitTask(final TaskScriptState p_taskScriptState) {
@@ -297,7 +297,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
         while (m_signedOnSlaves.size() < minSlaves || m_signedOnSlaves.size() > maxSlaves) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("Waiting for num slaves in interval [%d, %d] for task script %s (current slave count: %d)...", minSlaves, maxSlaves, taskScript,
-                m_signedOnSlaves.size());
+                    m_signedOnSlaves.size());
             // #endif /* LOGGER >= DEBUG */
 
             try {
@@ -349,7 +349,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
                 // exclude slave from execution
                 // #if LOGGER >= ERROR
                 LOGGER.error("Slave 0x%X response %d on execution of task script %s excluding from current execution", slave, response.getStatusCode(),
-                    taskScript);
+                        taskScript);
                 // #endif /* LOGGER >= ERROR */
             } else {
                 numberOfSlavesOnExecution++;
@@ -463,7 +463,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
      * Handle a SlaveJoinRequest
      *
      * @param p_message
-     *     SlaveJoinRequest
+     *         SlaveJoinRequest
      */
     private void incomingSlaveJoinRequest(final SlaveJoinRequest p_message) {
         if (m_joinLock.tryLock()) {
@@ -519,7 +519,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
      * Handle a SignalMessage
      *
      * @param p_message
-     *     SignalMessage
+     *         SignalMessage
      */
     private void incomingSignalMessage(final SignalMessage p_message) {
         switch (p_message.getSignal()) {

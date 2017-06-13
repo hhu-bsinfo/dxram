@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
 
 /**
  * Message to inform all nodes about finished startup.

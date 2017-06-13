@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
 
 /**
  * (Async) Message for updating an anonymous Chunk

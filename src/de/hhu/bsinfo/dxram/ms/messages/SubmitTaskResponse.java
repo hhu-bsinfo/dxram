@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.ms.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.ethnet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.core.AbstractResponse;
 
 /**
  * Response by the remote master to the submitted task.
