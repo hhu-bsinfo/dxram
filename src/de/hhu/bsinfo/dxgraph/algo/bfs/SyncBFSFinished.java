@@ -21,9 +21,9 @@ import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSLevelFinishedMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
 import de.hhu.bsinfo.dxram.net.NetworkService;
-import de.hhu.bsinfo.ethnet.MessageReceiver;
-import de.hhu.bsinfo.ethnet.core.AbstractMessage;
-import de.hhu.bsinfo.ethnet.core.NetworkException;
+import de.hhu.bsinfo.net.MessageReceiver;
+import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.NetworkException;
 
 /**
  * Created by nothaas on 9/1/16.

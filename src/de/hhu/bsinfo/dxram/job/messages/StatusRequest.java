@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.job.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
  * Request the status of a the job service from a remote node.

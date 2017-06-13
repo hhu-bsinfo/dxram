@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessage;
 
 /**
  * Message to send signal codes from master to slave or vice versa

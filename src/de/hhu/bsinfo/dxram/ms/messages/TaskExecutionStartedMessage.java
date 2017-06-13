@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.ms.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessage;
 
 /**
  * Notify all remote listeners about a task that started execution.

@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.log.messages;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import de.hhu.bsinfo.ethnet.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
  * Response to a GetUtilizationRequest

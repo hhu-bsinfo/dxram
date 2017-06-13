@@ -36,11 +36,11 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.ethnet.MessageReceiver;
-import de.hhu.bsinfo.ethnet.NetworkDestinationUnreachableException;
-import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
-import de.hhu.bsinfo.ethnet.core.AbstractMessage;
-import de.hhu.bsinfo.ethnet.core.NetworkException;
+import de.hhu.bsinfo.net.MessageReceiver;
+import de.hhu.bsinfo.net.NetworkDestinationUnreachableException;
+import de.hhu.bsinfo.net.NetworkResponseTimeoutException;
+import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.NetworkException;
 
 /**
  * Lock service providing exclusive locking of chunks/data structures.

@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.ms.TaskScript;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
  * Submit a task script to a remote master compute node.

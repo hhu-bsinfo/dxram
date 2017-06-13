@@ -35,9 +35,9 @@ import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.ethnet.MessageReceiver;
-import de.hhu.bsinfo.ethnet.core.AbstractMessage;
-import de.hhu.bsinfo.ethnet.core.NetworkException;
+import de.hhu.bsinfo.net.MessageReceiver;
+import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**

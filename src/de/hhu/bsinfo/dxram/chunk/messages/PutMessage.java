@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessage;
 
 /**
  * (Async) Message for updating a Chunk on a remote node

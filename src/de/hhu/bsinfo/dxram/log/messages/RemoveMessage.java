@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.utils.ArrayListLong;
-import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessage;
 
 /**
  * Message for removing a Chunk on a remote node

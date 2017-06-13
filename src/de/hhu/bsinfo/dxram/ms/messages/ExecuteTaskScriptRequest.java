@@ -19,7 +19,7 @@ import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.ms.TaskContextData;
 import de.hhu.bsinfo.dxram.ms.TaskScript;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
  * Request to execute a task script on another slave compute node.

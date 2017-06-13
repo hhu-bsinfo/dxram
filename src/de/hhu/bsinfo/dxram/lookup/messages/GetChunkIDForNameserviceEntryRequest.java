@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
  * Request for getting the ChunkID to corresponding id on a remote node

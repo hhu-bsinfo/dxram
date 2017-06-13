@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
-import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessage;
 
 /**
  * Message broadcasted by one bfs peer to all other participating peers when

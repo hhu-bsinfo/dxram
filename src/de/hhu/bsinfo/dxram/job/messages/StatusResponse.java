@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.job.JobService;
-import de.hhu.bsinfo.ethnet.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
  * Response to the status request to get information about remote job systems.

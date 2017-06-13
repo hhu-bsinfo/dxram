@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.ethnet.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
  * Peer Join Event Request. Request to propagate a peer joining to all other peers (two-phase: 1. inform all superpeers 2. superpeers inform peers).

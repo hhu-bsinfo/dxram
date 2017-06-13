@@ -16,10 +16,10 @@ package de.hhu.bsinfo.dxram.net;
 import java.net.InetSocketAddress;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.ethnet.NodeMap;
+import de.hhu.bsinfo.net.NodeMap;
 
 /**
- * Wrapper interface to hide the boot component for ethnet
+ * Wrapper interface to hide the boot component for net
  * but give access to the list of participating machines (ip, port).
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016

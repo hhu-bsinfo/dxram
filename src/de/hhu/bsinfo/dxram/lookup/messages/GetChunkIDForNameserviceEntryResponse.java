@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.ethnet.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
  * Response to a GetChunkIDRequest

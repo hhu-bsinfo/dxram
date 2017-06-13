@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.ethnet.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
  * Response to the change size request

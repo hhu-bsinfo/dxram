@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.recovery.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.ethnet.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
  * Response to a RecoverBackupRangeRequest

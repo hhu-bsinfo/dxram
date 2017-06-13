@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
-import de.hhu.bsinfo.ethnet.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
  * Response to the request sending the chunk id ranges of all migrated locally stored chunks.
