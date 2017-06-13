@@ -29,6 +29,10 @@ public abstract class AbstractFlowControl {
         m_flowControlCond = m_flowControlCondLock.newCondition();
     }
 
+    public short getDestinationNodeId() {
+        return m_destinationNodeId;
+    }
+
     public boolean isCongested() {
         return m_unconfirmedBytes > m_flowControlWindowSize;
     }

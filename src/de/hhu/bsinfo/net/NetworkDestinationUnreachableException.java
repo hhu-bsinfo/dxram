@@ -27,9 +27,9 @@ public class NetworkDestinationUnreachableException extends NetworkException {
      * Network Destination Unreachable Exception
      *
      * @param p_nodeId
-     *     the NodeID of the unreachable node
+     *         the NodeID of the unreachable node
      */
-    NetworkDestinationUnreachableException(final short p_nodeId) {
+    public NetworkDestinationUnreachableException(final short p_nodeId) {
         super("Destination node " + NodeID.toHexString(p_nodeId) + " unreachable");
     }
 }

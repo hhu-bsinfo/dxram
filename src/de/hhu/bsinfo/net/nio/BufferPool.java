@@ -27,7 +27,7 @@ public final class BufferPool {
     private final ArrayList<ByteBuffer> m_smallBufferPool;
     private final ReentrantLock m_bufferPoolLock;
 
-    BufferPool(final int p_osBufferSize) {
+    public BufferPool(final int p_osBufferSize) {
         m_osBufferSize = p_osBufferSize;
 
         m_largeBufferPool = new ArrayList<ByteBuffer>();
