@@ -159,6 +159,11 @@ check_peer_startup()
 	local hostname=$2
 	local condition="$3"
 
+	if [ "$condition" == "none" ]; then
+        	echo " SKIPPING CHECK"
+        	return
+	fi
+
 	local logfile="${LOG_DIR}/${hostname}_${port}_peer"
 
 	while true; do

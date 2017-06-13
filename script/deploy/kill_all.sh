@@ -5,7 +5,7 @@
 # Globals:
 # Arguments:
 ######################################################
-check_shell() 
+check_shell()
 {
 	if [ "$(echo $SHELL | grep "bash")" = "" ]; then
 		echo "ERROR: Current shell not supported by deploy script, bash only"
@@ -28,7 +28,7 @@ check_shell()
 # Arguments:
 #   node_file - The configuration file
 ######################################################
-check_programs() 
+check_programs()
 {
 	local node_file=$1
 
@@ -81,7 +81,7 @@ check_programs()
 # Return:
 #   ip - The IP address
 ######################################################
-resolve() 
+resolve()
 {
 	local hostname=$1
 	local ip=""
@@ -105,13 +105,13 @@ resolve()
 # Arguments:
 #   None
 ######################################################
-close() 
+close()
 {
 	echo "Closing all dxram instances..."
 	local node=""
 
 	while read node || [[ -n "$node" ]]; do
-		# Skip empty lines	
+		# Skip empty lines
 		if [ "$node" = "" ]; then
 			continue
 		fi
@@ -126,9 +126,9 @@ close()
 		else
 			echo "Killing instance on $ip..."
 			if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ]; then
-				pkill -9 -f "de.hhu.bsinfo.dxram.DXRAM"
+				pkill -9 -f "dxram.jar"
 			else
-				ssh $hostname -n "pkill -9 -f de.hhu.bsinfo.dxram.DXRAM"
+				ssh $hostname -n "pkill -9 -f dxram.jar"
 			fi
 		fi
 	done <<< "$NODES"
