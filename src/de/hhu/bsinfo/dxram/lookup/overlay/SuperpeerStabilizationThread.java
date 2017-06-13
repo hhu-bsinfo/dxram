@@ -76,7 +76,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * @param p_superpeers
      *     all other superpeers
      * @param p_sleepInterval
-     *     the ping interval
+     *     the ping interval in ms
      * @param p_network
      *     the network component
      */
@@ -110,7 +110,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
     public void run() {
         while (!m_shutdown) {
             try {
-                Thread.sleep(m_sleepInterval * 1000);
+                Thread.sleep(m_sleepInterval);
             } catch (final InterruptedException ignored) {
                 m_shutdown = true;
                 break;

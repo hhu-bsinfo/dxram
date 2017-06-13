@@ -18,7 +18,6 @@ public class RecoveryServiceConfig extends AbstractDXRAMServiceConfig {
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
-        // TODO kevin
         return true;
     }
 }

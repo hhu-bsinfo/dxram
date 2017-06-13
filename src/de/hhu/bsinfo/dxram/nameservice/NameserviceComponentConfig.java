@@ -31,14 +31,15 @@ public class NameserviceComponentConfig extends AbstractDXRAMComponentConfig {
         return m_type;
     }
 
-    // TODO kevin: doc
+    /**
+     * The maximum number of nameservice entries to cache locally.
+     */
     public int getNameserviceCacheEntries() {
         return m_nameserviceCacheEntries;
     }
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
-        // TODO kevin
         return true;
     }
 }

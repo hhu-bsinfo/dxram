@@ -114,15 +114,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
     }
 
     /**
-     * Return the path to all logs
-     *
-     * @return the backup directory
-     */
-    public String getBackupDirectory() {
-        return getConfig().getBackupDirectory();
-    }
-
-    /**
      * Registers a chunk in a backup range. Creates a new backup range if necessary.
      *
      * @param p_chunkID
@@ -463,15 +454,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
-        if (getConfig().getReplicationFactor() < 1 || getConfig().getReplicationFactor() > 4) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Replication factor must be in [1, 4]!");
-            // #endif /* LOGGER >= ERROR */
-
-            return false;
-        }
-        BackupRange.setReplicationFactor(getConfig().getReplicationFactor());
-        BackupRange.setBackupRangeSize(getConfig().getBackupRangeSize().getBytes());
         m_nodeID = m_boot.getNodeID();
 
         if (m_boot.getNodeRole() == NodeRole.PEER) {

@@ -49,12 +49,14 @@ public final class CacheTree {
     /**
      * Creates an instance of CacheTree
      *
-     * @param p_cacheMaxSize
-     *     the maximal number of cache entries
      * @param p_order
      *     order of the btree
+     * @param p_ttl
+     *     the ttl for cached entries
+     * @param p_cacheMaxSize
+     *     the maximal number of cache entries
      */
-    public CacheTree(final long p_cacheMaxSize, final short p_order, final long p_ttl) {
+    public CacheTree(final short p_order, final long p_ttl, final long p_cacheMaxSize) {
         // too small order for BTree
         assert p_order > 1;
 
@@ -72,8 +74,7 @@ public final class CacheTree {
 
         m_lock = new ReentrantReadWriteLock();
 
-        /*long ttl = Math.max(p_cacheMaxSize, 1000);
-        m_ttlHandler = new TTLHandler(ttl);
+        /*m_ttlHandler = new TTLHandler(p_ttl, p_cacheMaxSize);
         Thread thread = new Thread(m_ttlHandler);
         thread.setName(TTLHandler.class.getSimpleName() + " for " + CacheTree.class.getSimpleName());
         thread.setDaemon(true);
@@ -1998,7 +1999,7 @@ public final class CacheTree {
          * @param p_ttl
          *     the TTL value
          */
-        TTLHandler(final long p_ttl) {
+        TTLHandler(final long p_ttl, final long p_maxCachedEntries) {
             m_ttl = p_ttl;
 
             m_running = false;

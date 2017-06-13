@@ -108,7 +108,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
             LOGGER.warn("Backup is not activated/available. Recovery service will not work!");
         }
         // #endif /* LOGGER >= WARN */
-        m_backupDirectory = m_backup.getBackupDirectory();
+        m_backupDirectory = m_backup.getConfig().getBackupDirectory();
 
         m_recoveryLock = new ReentrantLock(false);
 
@@ -130,8 +130,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
 
         // FIXME
 
-        // TODO: Read-in access mode
-        HarddriveAccessMode mode = HarddriveAccessMode.RANDOM_ACCESS_FILE;
+        HarddriveAccessMode mode = HarddriveAccessMode.convert(m_log.getConfig().getHarddriveAccess());
         if (mode != HarddriveAccessMode.RAW_DEVICE) {
             String fileName;
             File folderToScan;

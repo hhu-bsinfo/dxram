@@ -111,6 +111,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
+import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -169,7 +170,7 @@ public class OverlaySuperpeer implements MessageReceiver {
      * @param p_initialNumberOfSuperpeers
      *         the number of expeced superpeers
      * @param p_sleepInterval
-     *         the ping interval
+     *         the ping interval in ms
      * @param p_maxNumOfBarriers
      *         Max number of barriers
      * @param p_storageMaxNumEntries
@@ -1042,7 +1043,7 @@ public class OverlaySuperpeer implements MessageReceiver {
      * @param p_contactSuperpeer
      *         NodeID of a known superpeer
      * @param p_sleepInterval
-     *         the ping interval
+     *         the ping interval in ms
      * @return whether the joining was successful
      * @lock no need for acquiring overlay lock in this method
      */
@@ -2600,6 +2601,12 @@ public class OverlaySuperpeer implements MessageReceiver {
                 SuperpeerStorageStatusRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE,
                 SuperpeerStorageStatusResponse.class);
+
+
+        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST,
+                RecoverBackupRangeRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE,
+                RecoverBackupRangeResponse.class);
     }
 
     /**

@@ -457,8 +457,7 @@ public final class MetadataHandler {
         LOGGER.trace("Compare and return metadata of area: 0x%X, 0x%X", p_predecessor, p_nodeID);
         // #endif /* LOGGER == TRACE */
 
-        // TODO: Inefficient to send all data (nameservice, storages, barriers) in corresponding area if quantity
-        // differs
+        // TODO: Inefficient to send all data (nameservice, storages, barriers) in corresponding area if quantity differs
         size = 4 * Integer.BYTES;
         // Compare number of actual nameservice entries with expected number
         if (m_nameservice.quantifyMetadata(p_predecessor, p_nodeID) != p_numberOfNameserviceEntries) {

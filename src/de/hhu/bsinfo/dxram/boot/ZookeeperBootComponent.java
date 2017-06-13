@@ -580,7 +580,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         String barrier;
         boolean parsed = false;
 
-        m_bloomFilter = new BloomFilter((int) getConfig().getZookeeperBitfieldSize().getBytes(), 65536);
+        m_bloomFilter = new BloomFilter((int) getConfig().getBitfieldSize().getBytes(), 65536);
 
         barrier = "barrier";
 

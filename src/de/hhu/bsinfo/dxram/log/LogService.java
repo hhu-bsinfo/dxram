@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.dxram.log;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -41,6 +42,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
     // component dependencies
     private NetworkComponent m_network;
     private LogComponent m_log;
+    private ZookeeperBootComponent m_boot;
 
     /**
      * Constructor
@@ -64,18 +66,22 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      * @return the current utilization
      */
     public String getCurrentUtilization(final short p_nid) {
-        GetUtilizationRequest request = new GetUtilizationRequest(p_nid);
+        if (p_nid == m_boot.getNodeID()) {
+            return getCurrentUtilization();
+        } else {
+            GetUtilizationRequest request = new GetUtilizationRequest(p_nid);
 
-        try {
-            m_network.sendSync(request);
-        } catch (NetworkException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Sending GetUtilizationRequest failed", e);
-            // #endif /* LOGGER >= ERROR */
+            try {
+                m_network.sendSync(request);
+            } catch (NetworkException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Sending GetUtilizationRequest failed", e);
+                // #endif /* LOGGER >= ERROR */
+            }
+
+            GetUtilizationResponse response = (GetUtilizationResponse) request.getResponse();
+            return response.getUtilization();
         }
-
-        GetUtilizationResponse response = (GetUtilizationResponse) request.getResponse();
-        return response.getUtilization();
     }
 
     @Override
@@ -141,6 +147,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_log = p_componentAccessor.getComponent(LogComponent.class);
+        m_boot = p_componentAccessor.getComponent(ZookeeperBootComponent.class);
     }
 
     @Override

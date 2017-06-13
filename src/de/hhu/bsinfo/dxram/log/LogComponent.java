@@ -79,6 +79,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     private short m_nodeID;
     private boolean m_loggingIsActive;
 
+    private long m_secondaryLogSize;
+
     private PrimaryWriteBuffer m_writeBuffer;
     private PrimaryLog m_primaryLog;
     private LogCatalog[] m_logCatalogs;
@@ -346,7 +348,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                 // Read all versions for recovery (must be done before flushing)
                 long time = System.currentTimeMillis();
                 if (m_versionsForRecovery == null) {
-                    m_versionsForRecovery = new TemporaryVersionsStorage(getConfig().getSecondaryLogSize().getBytes());
+                    m_versionsForRecovery = new TemporaryVersionsStorage(m_secondaryLogSize);
                 } else {
                     m_versionsForRecovery.clear();
                 }
@@ -385,7 +387,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         DataStructure[] ret = null;
 
         try {
-            ret = SecondaryLog.recoverFromFile(p_fileName, p_path, getConfig().useChecksum(), getConfig().getSecondaryLogSize().getBytes(),
+            ret = SecondaryLog.recoverFromFile(p_fileName, p_path, getConfig().useChecksum(), m_secondaryLogSize,
                     (int) getConfig().getLogSegmentSize().getBytes(), m_mode);
         } catch (final IOException e) {
             // #if LOGGER >= ERROR
@@ -517,7 +519,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
             m_nodeID = m_boot.getNodeID();
 
-            m_backupDirectory = m_backup.getBackupDirectory();
+            m_backupDirectory = m_backup.getConfig().getBackupDirectory();
+            m_secondaryLogSize = m_backup.getConfig().getBackupRangeSize().getBytes() * 2;
 
             // Create primary log
             try {
@@ -534,13 +537,14 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
             // Create reorganization thread for secondary logs
             m_secondaryLogsReorgThread =
-                    new SecondaryLogsReorgThread(this, getConfig().getSecondaryLogSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes());
+                    new SecondaryLogsReorgThread(this, m_backup.getConfig().getBackupRangeSize().getBytes() * 2,
+                            (int) getConfig().getLogSegmentSize().getBytes());
             m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
 
             // Create primary log buffer
             m_writeBuffer = new PrimaryWriteBuffer(this, m_primaryLog, (int) getConfig().getWriteBufferSize().getBytes(),
-                    (int) getConfig().getFlashPageSize().getBytes(), (int) getConfig().getSecondaryLogSize().getBytes(),
-                    (int) getConfig().getLogSegmentSize().getBytes(), getConfig().useChecksum(), getConfig().sortBufferPooling());
+                    (int) getConfig().getFlashPageSize().getBytes(), (int) m_secondaryLogSize, (int) getConfig().getLogSegmentSize().getBytes(),
+                    getConfig().useChecksum(), getConfig().sortBufferPooling());
 
             // Create secondary log and secondary log buffer catalogs
             m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
@@ -693,7 +697,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         try {
             if (!cat.exists(p_rangeID)) {
                 // Create new secondary log
-                secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_rangeID, m_backupDirectory, getConfig().getSecondaryLogSize().getBytes(),
+                secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_rangeID, m_backupDirectory, m_secondaryLogSize,
                         (int) getConfig().getFlashPageSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes(),
                         getConfig().getReorgUtilizationThreshold(), getConfig().useChecksum(), m_mode);
                 // Insert range in log catalog
@@ -738,9 +742,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             try {
                 if (!cat.exists(p_rangeID)) {
                     // Create new secondary log
-                    secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_originalOwner, p_rangeID, m_backupDirectory,
-                            getConfig().getSecondaryLogSize().getBytes(), (int) getConfig().getFlashPageSize().getBytes(),
-                            (int) getConfig().getLogSegmentSize().getBytes(), getConfig().getReorgUtilizationThreshold(), getConfig().useChecksum(), m_mode);
+                    secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_originalOwner, p_rangeID, m_backupDirectory, m_secondaryLogSize,
+                            (int) getConfig().getFlashPageSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes(),
+                            getConfig().getReorgUtilizationThreshold(), getConfig().useChecksum(), m_mode);
                     // Insert range in log catalog
                     cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(),
                             (int) getConfig().getLogSegmentSize().getBytes());

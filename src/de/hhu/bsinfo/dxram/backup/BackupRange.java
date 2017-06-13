@@ -181,7 +181,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * @param p_replicationFactor
      *     the replication factor
      */
-    static void setReplicationFactor(final byte p_replicationFactor) {
+    public static void setReplicationFactor(final byte p_replicationFactor) {
         ms_replicationFactor = p_replicationFactor;
     }
 
@@ -191,7 +191,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * @param p_backupRangeSize
      *     the backup range size that must not be exceeded
      */
-    static void setBackupRangeSize(final long p_backupRangeSize) {
+    public static void setBackupRangeSize(final long p_backupRangeSize) {
         ms_backupRangeSize = p_backupRangeSize;
     }
 

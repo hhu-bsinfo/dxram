@@ -27,7 +27,7 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
     private TimeUnit m_timeout = new TimeUnit(10, TimeUnit.SEC);
 
     @Expose
-    private StorageUnit m_zookeeperBitfieldSize = new StorageUnit(256, StorageUnit.KB);
+    private StorageUnit m_bitfieldSize = new StorageUnit(2, StorageUnit.MB);
 
     @Expose
     private ArrayList<NodesConfiguration.NodeEntry> m_nodesConfig = new ArrayList<NodesConfiguration.NodeEntry>() {
@@ -67,8 +67,11 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
         return m_timeout;
     }
 
-    public StorageUnit getZookeeperBitfieldSize() {
-        return m_zookeeperBitfieldSize;
+    /**
+     * Bloom filter size. Bloom filter is used to increase node ID creation performance.
+     */
+    public StorageUnit getBitfieldSize() {
+        return m_bitfieldSize;
     }
 
     /**
@@ -82,7 +85,13 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
-        // TODO kevin
+
+        if (m_bitfieldSize.getBytes() < 2048*1024) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Bitfield size is rather small. Not all node IDs may be addressable because of high false positives rate!");
+            // #endif /* LOGGER >= WARN */
+        }
+
         return true;
     }
 }

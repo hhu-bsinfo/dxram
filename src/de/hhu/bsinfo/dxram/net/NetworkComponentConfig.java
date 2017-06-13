@@ -14,7 +14,7 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  */
 public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
-    private int m_threadCountMsgHandler = 1;
+    private int m_threadCountMsgHandler = 2;
 
     @Expose
     private int m_requestMapEntryCount = (int) Math.pow(2, 20);
@@ -37,33 +37,35 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
     }
 
     /**
-     * Number of threads to spawn for handling incoming and assembled network messages
+     * Number of threads to spawn for handling incoming and assembled network messages.
      */
     public int getThreadCountMsgHandler() {
         return m_threadCountMsgHandler;
     }
 
     /**
-     * Size of the map that stores outstanding requests and maps them to their incoming responses
+     * Size of the map that stores outstanding requests and maps them to their incoming responses (index is incremented for messages as well).
      */
     public int getRequestMapEntryCount() {
         return m_requestMapEntryCount;
     }
 
     /**
-     * Size of the buffer for incoming and outgoing network data
+     * Size of the buffer for incoming and outgoing network data.
      */
     public StorageUnit getOSBufferSize() {
         return m_osBufferSize;
     }
 
-
+    /**
+     * Maximum number of bytes to be send until acknowledgment is needed.
+     */
     public StorageUnit getFlowControlWindowSize() {
         return m_flowControlWindowSize;
     }
 
     /**
-     * Amount of time to wait until a request that did not receive a response is considered timed out
+     * Amount of time to wait until a request that did not receive a response is considered timed out.
      */
     public TimeUnit getRequestTimeout() {
         return m_requestTimeout;
@@ -71,7 +73,21 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
-        // TODO kevin
+
+        if (m_requestMapEntryCount <= (int) Math.pow(2, 15)) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Request map entry count is rather small. Requests might be discarded!");
+            // #endif /* LOGGER >= WARN */
+            return true;
+        }
+
+        if (m_flowControlWindowSize.getBytes() * 2 > m_osBufferSize.getBytes()) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("OS buffer size must be at least twice the size of flow control window size!");
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
         return true;
     }
 }

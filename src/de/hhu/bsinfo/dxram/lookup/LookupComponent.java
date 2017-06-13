@@ -804,11 +804,14 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
-        if (getConfig().cachesEnabled()) {
-            m_chunkIDCacheTree = new CacheTree(getConfig().getMaxCacheEntries(), ORDER, getConfig().getCacheTtl().getMs());
+        // Set static values for backup range (cannot be set in BackupComponent as superpeers do not initialize it)
+        BackupRange.setReplicationFactor(p_config.getComponentConfig(BackupComponentConfig.class).getReplicationFactor());
+        BackupRange.setBackupRangeSize(p_config.getComponentConfig(BackupComponentConfig.class).getBackupRangeSize().getBytes());
 
-            // TODO: Check cache! If number of entries is smaller than number of entries in nameservice, bg won't
-            // terminate.
+        if (getConfig().cachesEnabled()) {
+            m_chunkIDCacheTree = new CacheTree(ORDER, getConfig().getCacheTtl().getMs(), getConfig().getMaxCacheEntries());
+
+            // TODO: Check cache! If number of entries is smaller than number of entries in nameservice, bg won't terminate.
             m_applicationIDCache = new Cache<>(p_config.getComponentConfig(NameserviceComponentConfig.class).getNameserviceCacheEntries());
             // m_aidCache.enableTTL();
 
@@ -817,7 +820,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             m_superpeer = new OverlaySuperpeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(),
-                    getConfig().getPingInterval(), p_config.getServiceConfig(SynchronizationServiceConfig.class).getMaxBarriersPerSuperpeer(),
+                    (int) getConfig().getStabilizationBreakTime(), p_config.getServiceConfig(SynchronizationServiceConfig.class).getMaxBarriersPerSuperpeer(),
                     p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxNumEntries(),
                     (int) p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxSize().getBytes(),
                     p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive(), m_boot, m_network);
@@ -975,7 +978,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     @SuppressWarnings("unused")
     private void clear() {
         if (getConfig().cachesEnabled()) {
-            m_chunkIDCacheTree = new CacheTree(getConfig().getMaxCacheEntries(), ORDER, getConfig().getCacheTtl().getMs());
+            m_chunkIDCacheTree = new CacheTree(ORDER, getConfig().getCacheTtl().getMs(), getConfig().getMaxCacheEntries());
             m_applicationIDCache.clear();
         }
     }

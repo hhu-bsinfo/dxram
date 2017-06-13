@@ -22,7 +22,7 @@ public class LookupComponentConfig extends AbstractDXRAMComponentConfig {
     private TimeUnit m_cacheTtl = new TimeUnit(1, TimeUnit.SEC);
 
     @Expose
-    private int m_pingInterval = 1;
+    private TimeUnit m_stabilizationBreakTime = new TimeUnit(1, TimeUnit.SEC);
 
     /**
      * Constructor
@@ -31,29 +31,53 @@ public class LookupComponentConfig extends AbstractDXRAMComponentConfig {
         super(LookupComponent.class, true, true);
     }
 
-    // TODO kevin: doc
+    /**
+     * Set to enable client-side lookup caching.
+     */
     public boolean cachesEnabled() {
         return m_cachesEnabled;
     }
 
-    // TODO kevin: doc
+    /**
+     * Maximum number of entries in cache tree. Currently unused!
+     */
     public long getMaxCacheEntries() {
         return m_maxCacheEntries;
     }
 
-    // TODO kevin: doc
+    /**
+     * Time to live for btree nodes in cache tree.
+     */
     public TimeUnit getCacheTtl() {
         return m_cacheTtl;
     }
 
-    // TODO kevin: doc
-    public int getPingInterval() {
-        return m_pingInterval;
+    /**
+     * The break time between superpeer stabilization routines (such as pinging all peers and check neighbors).
+     */
+    public long getStabilizationBreakTime() {
+        return m_stabilizationBreakTime.getMs();
     }
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
-        // TODO kevin
+
+        if (m_cacheTtl.getMs() < 1000L) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("A high effort is needed to satisfy TTL!");
+            // #endif /* LOGGER >= WARN */
+        }
+
+        if (m_stabilizationBreakTime.getMs() < 100L) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Low break time might cause high CPU load!");
+            // #endif /* LOGGER >= WARN */
+        } else if (m_stabilizationBreakTime.getMs() > 1000L) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Failure detection might be impeded by high break time!");
+            // #endif /* LOGGER >= WARN */
+        }
+
         return true;
     }
 }
