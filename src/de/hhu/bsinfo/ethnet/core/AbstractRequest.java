@@ -11,11 +11,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.ethnet;
+package de.hhu.bsinfo.ethnet.core;
 
 import java.util.concurrent.locks.LockSupport;
 
-import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
+import de.hhu.bsinfo.ethnet.NetworkResponseDelayedException;
+import de.hhu.bsinfo.ethnet.NetworkResponseTimeoutException;
 
 /**
  * Represents a Request
@@ -172,35 +173,26 @@ public abstract class AbstractRequest extends AbstractMessage {
      *
      * @param p_timeoutMs
      *         Max amount of time to wait for response.
-     * @return False if message timed out, true if response received.
      */
-    public final boolean waitForResponse(final int p_timeoutMs) {
-        boolean ret = true;
-
+    public final void waitForResponse(final int p_timeoutMs) throws NetworkException {
         m_waitingThread = Thread.currentThread();
 
         long deadline = System.currentTimeMillis() + p_timeoutMs;
         while (!m_fulfilled) {
 
             if (m_aborted) {
-                ret = false;
-                break;
+                throw new NetworkResponseTimeoutException(getDestination());
             }
 
             if (!m_ignoreTimeout) {
                 if (System.currentTimeMillis() > deadline) {
-                    NetworkHandler.getEventHandler().fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), getDestination()));
-                    ret = false;
-
-                    break;
+                    throw new NetworkResponseDelayedException(getDestination());
                 }
                 LockSupport.parkUntil(deadline);
             } else {
                 LockSupport.park();
             }
         }
-
-        return ret;
     }
 
     /**

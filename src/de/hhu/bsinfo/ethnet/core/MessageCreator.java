@@ -11,11 +11,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.ethnet;
+package de.hhu.bsinfo.ethnet.core;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * The MessageCreator builds messages and forwards them to the MessageHandlers.
@@ -23,7 +26,8 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.05.2016
  */
-class MessageCreator extends Thread {
+public class MessageCreator extends Thread {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(MessageCreator.class.getSimpleName());
 
     // Attributes
     private volatile boolean m_shutdown;
@@ -41,9 +45,9 @@ class MessageCreator extends Thread {
      * Creates an instance of MessageCreator
      *
      * @param p_osBufferSize
-     *     the incoming buffer size
+     *         the incoming buffer size
      */
-    MessageCreator(final int p_osBufferSize) {
+    public MessageCreator(final int p_osBufferSize) {
         m_size = 2 * (2 * 1024 + 1);
         m_buffer = new Object[m_size * 2];
         m_maxBytes = p_osBufferSize * 8;
@@ -77,7 +81,7 @@ class MessageCreator extends Thread {
      *
      * @return the number of pending buffers
      */
-    protected int size() {
+    public int size() {
         return (m_posBack - m_posFront) / 2;
     }
 
@@ -93,16 +97,16 @@ class MessageCreator extends Thread {
     @Override
     public void run() {
         Object[] job;
-        NIOConnection connection;
+        AbstractConnection connection;
         ByteBuffer buffer;
 
         job = new Object[2];
         while (!m_shutdown) {
             if (popJob(job)) {
-                connection = (NIOConnection) job[0];
+                connection = (AbstractConnection) job[0];
                 buffer = (ByteBuffer) job[1];
-                connection.processBuffer(buffer);
-                connection.returnReadBuffer(buffer);
+                connection.getPipeIn().processBuffer(buffer);
+                connection.returnProcessedBuffer(buffer);
             } else {
                 LockSupport.park();
             }
@@ -112,7 +116,11 @@ class MessageCreator extends Thread {
     /**
      * Shutdown
      */
-    protected void shutdown() {
+    public void shutdown() {
+        // #if LOGGER == INFO
+        LOGGER.info("Message creator shutdown...");
+        // #endif /* LOGGER == INFO */
+
         m_shutdown = true;
 
         try {
@@ -135,12 +143,12 @@ class MessageCreator extends Thread {
      * Adds a job (connection and incoming buffer) at the end of the buffer.
      *
      * @param p_connection
-     *     the connection associated with the buffer
+     *         the connection associated with the buffer
      * @param p_buffer
-     *     the incoming buffer
+     *         the incoming buffer
      * @return whether the job was added or not
      */
-    boolean pushJob(final NIOConnection p_connection, final ByteBuffer p_buffer) {
+    public boolean pushJob(final AbstractConnection p_connection, final ByteBuffer p_buffer) {
         boolean locked = false;
 
         if (m_posFront != m_posBack) {
@@ -174,7 +182,7 @@ class MessageCreator extends Thread {
      * Gets a job (connection and incoming buffer) from the beginning of the buffer.
      *
      * @param p_job
-     *     the job array to be filled
+     *         the job array to be filled
      * @return whether the job array was filled or not
      */
     private boolean popJob(final Object[] p_job) {

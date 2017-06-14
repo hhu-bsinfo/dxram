@@ -11,7 +11,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.ethnet;
+package de.hhu.bsinfo.ethnet.core;
 
 /**
  * Represents a Response to a Request

@@ -13,11 +13,14 @@
 
 package de.hhu.bsinfo.ethnet;
 
+import de.hhu.bsinfo.ethnet.core.AbstractMessage;
+
 /**
+ * Ring buffer for messages
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 01.05.2017
  */
-class MessageStore {
+public class MessageStore {
 
     // Attributes
     private AbstractMessage[] m_buffer;
@@ -30,9 +33,9 @@ class MessageStore {
      * Creates an instance of MessageStore
      *
      * @param p_size
-     *     the maximum number of messages to store
+     *         the maximum number of messages to store
      */
-    MessageStore(final int p_size) {
+    public MessageStore(final int p_size) {
         m_size = p_size;
         m_buffer = new AbstractMessage[m_size];
 
@@ -63,7 +66,7 @@ class MessageStore {
      *
      * @return the number of pending buffers
      */
-    protected int size() {
+    public int size() {
         return m_posBack - m_posFront;
     }
 
@@ -71,10 +74,10 @@ class MessageStore {
      * Adds a message at the end of the buffer.
      *
      * @param p_message
-     *     the message
+     *         the message
      * @return whether the job was added or not
      */
-    boolean pushMessage(final AbstractMessage p_message) {
+    public boolean pushMessage(final AbstractMessage p_message) {
         if ((m_posBack + 1) % m_size == m_posFront % m_size) {
             // Return without adding the message if queue is full
             return false;
@@ -91,7 +94,7 @@ class MessageStore {
      *
      * @return the message or null if empty
      */
-    AbstractMessage popMessage() {
+    public AbstractMessage popMessage() {
         AbstractMessage ret;
 
         if (m_posFront == m_posBack) {

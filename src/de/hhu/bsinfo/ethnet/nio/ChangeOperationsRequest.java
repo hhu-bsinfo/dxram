@@ -11,7 +11,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.ethnet;
+package de.hhu.bsinfo.ethnet.nio;
 
 /**
  * Represents a request to change the connection options
@@ -30,9 +30,9 @@ class ChangeOperationsRequest {
      * Creates an instance of ChangeOperationsRequest
      *
      * @param p_connection
-     *     the connection
+     *         the connection
      * @param p_operations
-     *     the operations
+     *         the operations
      */
     ChangeOperationsRequest(final NIOConnection p_connection, final int p_operations) {
         m_connection = p_connection;
@@ -62,15 +62,15 @@ class ChangeOperationsRequest {
     @Override
     public boolean equals(final Object p_request) {
         return p_request instanceof ChangeOperationsRequest &&
-            m_connection.getDestination() == ((ChangeOperationsRequest) p_request).m_connection.getDestination() &&
-            m_operations == ((ChangeOperationsRequest) p_request).m_operations;
+                m_connection.getDestinationNodeId() == ((ChangeOperationsRequest) p_request).m_connection.getDestinationNodeId() &&
+                m_operations == ((ChangeOperationsRequest) p_request).m_operations;
     }
 
     @Override
     public int hashCode() {
         int ret = 1247687943;
 
-        ret = 37 * ret + m_connection.getDestination();
+        ret = 37 * ret + m_connection.getDestinationNodeId();
         ret = 37 * ret + m_operations;
 
         return ret;
@@ -78,6 +78,6 @@ class ChangeOperationsRequest {
 
     @Override
     public String toString() {
-        return "[" + m_connection.getDestination() + ", " + m_operations + ']';
+        return "[" + m_connection.getDestinationNodeId() + ", " + m_operations + ']';
     }
 }

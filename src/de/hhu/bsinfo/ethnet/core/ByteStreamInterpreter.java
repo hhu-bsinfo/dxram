@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.ethnet;
+package de.hhu.bsinfo.ethnet.core;
 
 import java.nio.ByteBuffer;
 
@@ -16,13 +16,20 @@ final class ByteStreamInterpreter {
 
     // TODO: Further evaluate direct byte buffer (in comments)
 
+    /**
+     * Represents the steps in the creation process
+     */
+    public enum Step {
+        READ_HEADER, READ_PAYLOAD, DONE
+    }
+
     // Attributes
     private ByteBuffer m_headerBytes;
     private ByteBuffer m_messageBytes;
 
     private int m_payloadSize;
 
-    private AbstractConnection.Step m_step;
+    private Step m_step;
     private boolean m_wasCopied;
 
     // Constructors
@@ -44,7 +51,7 @@ final class ByteStreamInterpreter {
     public void clear() {
         m_headerBytes.clear();
         m_payloadSize = 0;
-        m_step = AbstractConnection.Step.READ_HEADER;
+        m_step = Step.READ_HEADER;
         m_wasCopied = false;
     }
 
@@ -57,7 +64,7 @@ final class ByteStreamInterpreter {
     public void update(final ByteBuffer p_buffer) {
         assert p_buffer != null;
 
-        while (m_step != AbstractConnection.Step.DONE && p_buffer.hasRemaining()) {
+        while (m_step != Step.DONE && p_buffer.hasRemaining()) {
             switch (m_step) {
                 case READ_HEADER:
                     readHeader(p_buffer);
@@ -106,7 +113,7 @@ final class ByteStreamInterpreter {
      * @return true if the Message is complete, false otherwise
      */
     boolean isMessageComplete() {
-        return m_step == AbstractConnection.Step.DONE;
+        return m_step == Step.DONE;
     }
 
     /**
@@ -150,11 +157,11 @@ final class ByteStreamInterpreter {
 
                     if (m_payloadSize == 0) {
                         // There is no payload -> message complete
-                        m_step = AbstractConnection.Step.DONE;
+                        m_step = Step.DONE;
                         m_messageBytes.flip();
                     } else {
                         // Payload must be read next
-                        m_step = AbstractConnection.Step.READ_PAYLOAD;
+                        m_step = Step.READ_PAYLOAD;
                     }
                 } else {
                     int currentPosition = p_buffer.position();
@@ -164,7 +171,7 @@ final class ByteStreamInterpreter {
                     if (currentPosition + m_payloadSize + AbstractMessage.HEADER_SIZE <= p_buffer.limit()) {
                         // Complete message is in this buffer -> avoid copying by using this buffer for de-serialization
                         m_messageBytes = p_buffer;
-                        m_step = AbstractConnection.Step.DONE;
+                        m_step = Step.DONE;
                         m_messageBytes.position(currentPosition);
                     } else {
                         // Create message buffer and copy header into (without payload size)
@@ -182,7 +189,7 @@ final class ByteStreamInterpreter {
                             p_buffer.getInt();*/
 
                         // Payload must be read next
-                        m_step = AbstractConnection.Step.READ_PAYLOAD;
+                        m_step = Step.READ_PAYLOAD;
                     }
                 }
             }
@@ -215,7 +222,7 @@ final class ByteStreamInterpreter {
                     m_messageBytes.put(p_buffer);
                     p_buffer.limit(limit);*/
 
-                m_step = AbstractConnection.Step.DONE;
+                m_step = Step.DONE;
                 m_messageBytes.flip();
             }
         } catch (final Exception e) {

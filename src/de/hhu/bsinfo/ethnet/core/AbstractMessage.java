@@ -11,7 +11,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.ethnet;
+package de.hhu.bsinfo.ethnet.core;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
@@ -210,15 +210,6 @@ public abstract class AbstractMessage {
     }
 
     /**
-     * Get next free messageID
-     *
-     * @return next free messageID
-     */
-    private static int getNextMessageID() {
-        return ms_nextMessageID.incrementAndGet();
-    }
-
-    /**
      * Get the source
      *
      * @return the source
@@ -281,6 +272,15 @@ public abstract class AbstractMessage {
      */
     public final byte getSubtype() {
         return m_subtype;
+    }
+
+    /**
+     * Returns whether this message type allows parallel execution
+     *
+     * @return the exclusivity
+     */
+    public final boolean isExclusive() {
+        return m_exclusivity;
     }
 
     // Setters
@@ -354,7 +354,8 @@ public abstract class AbstractMessage {
      *         the ByteBuffer to store serialized message
      * @param p_messageSize
      *         the message to serialize
-     * @throws NetworkException if message could not be serialized
+     * @throws NetworkException
+     *         if message could not be serialized
      */
     protected final void serialize(final ByteBuffer p_buffer, final int p_messageSize) throws NetworkException {
         fillBuffer(p_buffer, p_messageSize - HEADER_SIZE);
@@ -402,12 +403,12 @@ public abstract class AbstractMessage {
     }
 
     /**
-     * Returns whether this message type allows parallel execution
+     * Get next free messageID
      *
-     * @return the exclusivity
+     * @return next free messageID
      */
-    final boolean isExclusive() {
-        return m_exclusivity;
+    private static int getNextMessageID() {
+        return ms_nextMessageID.incrementAndGet();
     }
 
     /**

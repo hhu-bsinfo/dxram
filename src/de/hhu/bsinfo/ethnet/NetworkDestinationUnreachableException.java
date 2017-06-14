@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.ethnet;
 
+import de.hhu.bsinfo.ethnet.core.NetworkException;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**

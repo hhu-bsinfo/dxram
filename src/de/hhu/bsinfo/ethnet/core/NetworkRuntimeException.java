@@ -11,25 +11,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.ethnet;
-
-import de.hhu.bsinfo.ethnet.core.NetworkException;
-import de.hhu.bsinfo.utils.NodeID;
+package de.hhu.bsinfo.ethnet.core;
 
 /**
- * Exception if a request was sent but the response was not delivered in time.
+ * A netork runtime exception
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.10.2016
+ * @author Stefan Nothaas, stefan.nothass@hhu.de, 01.02.2016
  */
-public class NetworkResponseTimeoutException extends NetworkException {
+public class NetworkRuntimeException extends RuntimeException {
+    private static final long serialVersionUID = -1801173917259116729L;
 
     /**
-     * Network Response Timeout Exception
+     * Creates an instance of NetworkRuntimeException
      *
-     * @param p_nodeId
-     *     the NodeID
+     * @param p_message
+     *         the message
      */
-    public NetworkResponseTimeoutException(final short p_nodeId) {
-        super("Waiting for response from node " + NodeID.toHexString(p_nodeId) + " failed, timeout");
+    public NetworkRuntimeException(final String p_message) {
+        super(p_message);
+    }
+
+    /**
+     * Creates an instance of NetworkRuntimeException
+     *
+     * @param p_message
+     *         the message
+     * @param p_cause
+     *         the cause
+     */
+    public NetworkRuntimeException(final String p_message, final Throwable p_cause) {
+        super(p_message, p_cause);
     }
 }

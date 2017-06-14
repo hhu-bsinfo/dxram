@@ -11,11 +11,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.ethnet;
+package de.hhu.bsinfo.ethnet.nio;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
@@ -54,8 +53,7 @@ class NIOSelector extends Thread {
     private ServerSocketChannel m_serverChannel;
     private Selector m_selector;
 
-    private NIOConnectionCreator m_connectionCreator;
-    private NIOInterface m_nioInterface;
+    private NIOConnectionManager m_connectionManager;
 
     private int m_osBufferSize;
     private int m_connectionTimeout;
@@ -69,24 +67,18 @@ class NIOSelector extends Thread {
     /**
      * Creates an instance of NIOSelector
      *
-     * @param p_connectionCreator
-     *     the NIOConnectionCreator
-     * @param p_nioInterface
-     *     the NIOInterface to send/receive data
      * @param p_connectionTimeout
-     *     the connection timeout
+     *         the connection timeout
      * @param p_port
-     *     the port
+     *         the port
      * @param p_osBufferSize
-     *     the size of incoming and outgoing buffers
+     *         the size of incoming and outgoing buffers
      */
-    NIOSelector(final NIOConnectionCreator p_connectionCreator, final NIOInterface p_nioInterface, final int p_port, final int p_connectionTimeout,
-        final int p_osBufferSize) {
+    NIOSelector(final NIOConnectionManager p_connectionManager, final int p_port, final int p_connectionTimeout, final int p_osBufferSize) {
         m_serverChannel = null;
         m_selector = null;
 
-        m_nioInterface = p_nioInterface;
-        m_connectionCreator = p_connectionCreator;
+        m_connectionManager = p_connectionManager;
 
         m_osBufferSize = p_osBufferSize;
         m_connectionTimeout = p_connectionTimeout;
@@ -151,7 +143,7 @@ class NIOSelector extends Thread {
                 while (iterator.hasNext()) {
                     SelectionKey key = iterator.next();
                     if (key.isValid() && key.attachment() != null) {
-                        ret += '[' + NodeID.toHexString(((NIOConnection) key.attachment()).getDestination()) + ", " + key.interestOps() + "] ";
+                        ret += '[' + NodeID.toHexString(((NIOConnection) key.attachment()).getDestinationNodeId()) + ", " + key.interestOps() + "] ";
                         ret += key.attachment().toString();
                     }
                 }
@@ -196,7 +188,7 @@ class NIOSelector extends Thread {
                                 // This is a READ access - Called only after creation
                                 try {
                                     // Use incoming channel for receiving messages
-                                    connection.getIncomingChannel().register(m_selector, interest, connection);
+                                    connection.getPipeIn().getChannel().register(m_selector, interest, connection);
                                 } catch (ClosedChannelException e) {
                                     e.printStackTrace();
                                 }
@@ -209,7 +201,7 @@ class NIOSelector extends Thread {
                                 // This is a READ access for flow control - Called only after creation
                                 try {
                                     // Use outgoing channel for receiving flow control messages
-                                    connection.getOutgoingChannel().register(m_selector, READ, connection);
+                                    connection.getPipeOut().getChannel().register(m_selector, READ, connection);
                                 } catch (ClosedChannelException e) {
                                     e.printStackTrace();
                                 }
@@ -220,7 +212,7 @@ class NIOSelector extends Thread {
                         case FLOW_CONTROL:
                             try {
                                 // This is a FLOW_CONTROL access - Write flow control bytes over incoming channel
-                                key = connection.getIncomingChannel().keyFor(m_selector);
+                                key = connection.getPipeIn().getChannel().keyFor(m_selector);
                                 if (key != null && key.interestOps() != READ_WRITE) {
                                     // Key might be null if connection was closed during shutdown or due to closing a duplicate connection
                                     // If key interest is READ | WRITE the interest must not be overwritten with WRITE as both incoming
@@ -235,7 +227,7 @@ class NIOSelector extends Thread {
                         case READ_WRITE:
                             try {
                                 // This is a WRITE access -> change interest only
-                                key = connection.getOutgoingChannel().keyFor(m_selector);
+                                key = connection.getPipeOut().getChannel().keyFor(m_selector);
                                 if (key == null) {
                                     // #if LOGGER >= ERROR
                                     LOGGER.error("Cannot register WRITE operation as key is null for %s", connection);
@@ -256,13 +248,13 @@ class NIOSelector extends Thread {
                             if (System.currentTimeMillis() - connection.getClosingTimestamp() > 2 * m_connectionTimeout) {
                                 // #if LOGGER >= DEBUG
                                 try {
-                                    LOGGER.debug("Closing connection to 0x%X;%s", connection.getDestination(),
-                                            connection.getOutgoingChannel().getRemoteAddress());
+                                    LOGGER.debug("Closing connection to 0x%X;%s", connection.getDestinationNodeId(),
+                                            connection.getPipeOut().getChannel().getRemoteAddress());
                                 } catch (final IOException ignored) {
                                 }
                                 // #endif /* LOGGER >= DEBUG */
                                 // Close connection
-                                m_connectionCreator.closeConnection(connection, false);
+                                m_connectionManager.closeConnection(connection, false);
                             } else {
                                 // Delay connection closure
                                 delayedCloseOperations.add(changeRequest);
@@ -271,7 +263,7 @@ class NIOSelector extends Thread {
                         case CONNECT:
                             // CONNECT -> register with connection as attachment (ACCEPT is registered directly)
                             try {
-                                connection.getOutgoingChannel().register(m_selector, interest, connection);
+                                connection.getPipeOut().getChannel().register(m_selector, interest, connection);
                             } catch (final ClosedChannelException e) {
                                 // #if LOGGER >= DEBUG
                                 LOGGER.debug("Could not change operations!");
@@ -331,6 +323,14 @@ class NIOSelector extends Thread {
      * Closes the Worker
      */
     protected void close() {
+        try {
+            m_serverChannel.close();
+        } catch (final IOException ignore) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Unable to shutdown server channel!");
+            // #endif /* LOGGER >= ERROR */
+        }
+
         m_running = false;
 
         try {
@@ -357,29 +357,6 @@ class NIOSelector extends Thread {
     }
 
     /**
-     * Reject new incoming connections
-     */
-    void prepareClosure() {
-        try {
-            m_serverChannel.close();
-        } catch (final IOException ignore) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Unable to shutdown server channel!");
-            // #endif /* LOGGER >= ERROR */
-        }
-    }
-
-    /**
-     * Returns the pooled buffer from nio interface
-     *
-     * @param p_byteBuffer
-     *     the pooled buffer
-     */
-    void returnBuffer(final ByteBuffer p_byteBuffer) {
-        m_nioInterface.returnBuffer(p_byteBuffer);
-    }
-
-    /**
      * Returns the Selector
      *
      * @return the Selector
@@ -392,7 +369,7 @@ class NIOSelector extends Thread {
      * Append the given ChangeOperationsRequest to the Queue
      *
      * @param p_request
-     *     the ChangeOperationsRequest
+     *         the ChangeOperationsRequest
      */
     void changeOperationInterestAsync(final ChangeOperationsRequest p_request) {
         boolean res;
@@ -410,7 +387,7 @@ class NIOSelector extends Thread {
      * Append the given NIOConnection to the Queue
      *
      * @param p_connection
-     *     the NIOConnection to close
+     *         the NIOConnection to close
      */
     void closeConnectionAsync(final NIOConnection p_connection) {
         m_changeLock.lock();
@@ -424,7 +401,7 @@ class NIOSelector extends Thread {
      * Accept a new incoming connection
      *
      * @throws IOException
-     *     if the new connection could not be accesses
+     *         if the new connection could not be accesses
      */
     private void accept() throws IOException {
         SocketChannel channel;
@@ -442,7 +419,7 @@ class NIOSelector extends Thread {
      * Execute key by creating a new connection, reading from channel or writing to channel
      *
      * @param p_key
-     *     the current key
+     *         the current key
      */
     private void dispatch(final SelectionKey p_key) {
         boolean complete;
@@ -455,23 +432,23 @@ class NIOSelector extends Thread {
                 if (p_key.isReadable()) {
                     if (connection == null || !connection.isIncomingOpen()) {
                         // Channel was accepted but not used yet -> Read NodeID, create NIOConnection and attach to key
-                        m_connectionCreator.createConnection((SocketChannel) p_key.channel());
+                        m_connectionManager.createConnection((SocketChannel) p_key.channel());
                     } else {
-                        if (p_key.channel() == connection.getIncomingChannel()) {
+                        if (p_key.channel() == connection.getPipeIn().getChannel()) {
                             try {
-                                successful = m_nioInterface.read(connection);
+                                successful = connection.getPipeIn().read();
                             } catch (final IOException e) {
                                 // #if LOGGER >= DEBUG
-                                LOGGER.debug("Could not read from channel (0x%X)!", connection.getDestination());
+                                LOGGER.debug("Could not read from channel (0x%X)!", connection.getDestinationNodeId());
                                 // #endif /* LOGGER >= DEBUG */
 
                                 successful = false;
                             }
                             if (!successful) {
-                                m_connectionCreator.closeConnection(connection, true);
+                                m_connectionManager.closeConnection(connection, true);
                             }
                         } else {
-                            m_nioInterface.readFlowControlBytes(connection);
+                            connection.getPipeOut().readFlowControlBytes();
                         }
                     }
                 } else if (p_key.isWritable()) {
@@ -480,18 +457,18 @@ class NIOSelector extends Thread {
                         LOGGER.error("If connection is null key has to be either readable or connectable!");
                         // #endif /* LOGGER >= ERROR */
 
-                        m_connectionCreator.closeConnection(null, true);
+                        m_connectionManager.closeConnection(null, true);
                         return;
                     }
-                    if (p_key.channel() == connection.getOutgoingChannel()) {
+                    if (p_key.channel() == connection.getPipeOut().getChannel()) {
                         try {
-                            complete = NIOInterface.write(connection);
+                            complete = connection.getPipeOut().write();
                         } catch (final IOException ignored) {
                             // #if LOGGER >= DEBUG
-                            LOGGER.debug("Could not write to channel (0x%X)!", connection.getDestination());
+                            LOGGER.debug("Could not write to channel (0x%X)!", connection.getDestinationNodeId());
                             // #endif /* LOGGER >= DEBUG */
 
-                            m_connectionCreator.closeConnection(connection, true);
+                            m_connectionManager.closeConnection(connection, true);
 
                             complete = false;
                         }
@@ -504,7 +481,7 @@ class NIOSelector extends Thread {
                             // Set interest to READ after writing; do not if channel was blocked and data is left
                             p_key.interestOps(SelectionKey.OP_READ);
                         }*/
-                        if (!complete || connection.dataLeftToWrite()) {
+                        if (!complete || !connection.getPipeOut().isOutgoingQueueEmpty()) {
                             // If there is still data left to write on this connection, add another write request
                             m_changeLock.lock();
                             m_changeRequests.add(new ChangeOperationsRequest(connection, SelectionKey.OP_WRITE | SelectionKey.OP_READ));
@@ -517,7 +494,7 @@ class NIOSelector extends Thread {
                             // Ignore
                         }
                     } else {
-                        m_nioInterface.writeFlowControlBytes(connection);
+                        connection.getPipeIn().writeFlowControlBytes();
                         try {
                             // Set interest to READ after writing
                             p_key.interestOps(SelectionKey.OP_READ);
@@ -526,7 +503,15 @@ class NIOSelector extends Thread {
                         }
                     }
                 } else if (p_key.isConnectable()) {
-                    NIOInterface.connect(connection, p_key);
+                    try {
+                        connection.connect(p_key);
+                    } catch (final Exception e) {
+                        // #if LOGGER >= ERROR
+                        LOGGER.error("Establishing connection to %s failed", connection);
+                        // #endif /* LOGGER >= ERROR */
+
+                        m_connectionManager.closeConnection(null, true);
+                    }
                 }
             } catch (final IOException e) {
                 // #if LOGGER >= ERROR

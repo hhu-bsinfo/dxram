@@ -11,11 +11,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.ethnet;
+package de.hhu.bsinfo.ethnet.core;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The MessageCreator builds messages and forwards them to the MessageHandlers.
@@ -23,7 +21,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.05.2016
  */
-class OutgoingQueue {
+public final class OutgoingQueue {
 
     // Constants
     private static final int BUFFER_POOL_SIZE = 4;
@@ -44,9 +42,9 @@ class OutgoingQueue {
      * Creates an instance of MessageCreator
      *
      * @param p_osBufferSize
-     *     the outgoing buffer size
+     *         the outgoing buffer size
      */
-    OutgoingQueue(final int p_osBufferSize) {
+    public OutgoingQueue(final int p_osBufferSize) {
         m_osBufferSize = p_osBufferSize;
 
         m_buffer = new ByteBuffer[BUFFER_POOL_SIZE];
@@ -104,7 +102,7 @@ class OutgoingQueue {
      *
      * @return the ByteBuffer
      */
-    ByteBuffer popFront() {
+    public ByteBuffer popFront() {
         ByteBuffer ret;
 
         if (m_posFront == m_posBack) {
@@ -128,15 +126,15 @@ class OutgoingQueue {
      * Adds a buffer at the beginning of the array.
      *
      * @param p_buffer
-     *     the outgoing buffer
+     *         the outgoing buffer
      * @return whether the job was added or not
      */
-    boolean pushFront(final ByteBuffer p_buffer) {
+    public boolean pushFront(final ByteBuffer p_buffer) {
         synchronized (m_buffer) {
             if (m_posFront == 0) {
                 m_buffer[0] = p_buffer;
                 m_posBack++;
-            } else{
+            } else {
                 m_buffer[(m_posFront - 1) % BUFFER_POOL_SIZE] = p_buffer;
                 m_posFront--;
             }
@@ -146,7 +144,7 @@ class OutgoingQueue {
         return true;
     }
 
-    void returnBuffer(ByteBuffer p_buffer) {
+    public void returnBuffer(ByteBuffer p_buffer) {
         p_buffer.clear();
         synchronized (m_bufferPool) {
             if (m_bufferPoolIndex < BUFFER_POOL_SIZE - 1) {
@@ -159,22 +157,22 @@ class OutgoingQueue {
      * Adds and aggregates a buffer at the end of the array.
      *
      * @param p_buffer
-     *     the outgoing buffer
+     *         the outgoing buffer
      * @return whether the queue was empty or not
      */
     boolean pushAndAggregateBuffers(ByteBuffer p_buffer) {
         boolean ret;
         ByteBuffer buf;
 
-        while ((m_posBack + 2) % BUFFER_POOL_SIZE == m_posFront % BUFFER_POOL_SIZE || (m_posBack + 1) % BUFFER_POOL_SIZE == m_posFront % BUFFER_POOL_SIZE
-                || m_currentBytes >= m_maxBytes) {
+        while ((m_posBack + 2) % BUFFER_POOL_SIZE == m_posFront % BUFFER_POOL_SIZE || (m_posBack + 1) % BUFFER_POOL_SIZE == m_posFront % BUFFER_POOL_SIZE ||
+                m_currentBytes >= m_maxBytes) {
             try {
                 synchronized (m_buffer) {
                     m_buffer.wait();
                 }
-            } catch (InterruptedException ignore) {}
+            } catch (InterruptedException ignore) {
+            }
         }
-
 
         int counter = 0;
         int size = p_buffer.remaining();
@@ -238,7 +236,7 @@ class OutgoingQueue {
      * Serializes, adds and aggregates a message at the end of the array.
      *
      * @param p_message
-     *     the outgoing message
+     *         the outgoing message
      * @return whether the queue was empty or not
      * @throws NetworkException if message could not be serialized
      */
@@ -246,13 +244,14 @@ class OutgoingQueue {
         boolean ret;
         ByteBuffer buf;
 
-        while ((m_posBack + 2) % BUFFER_POOL_SIZE == m_posFront % BUFFER_POOL_SIZE || (m_posBack + 1) % BUFFER_POOL_SIZE == m_posFront % BUFFER_POOL_SIZE
-                || m_currentBytes >= m_maxBytes) {
+        while ((m_posBack + 2) % BUFFER_POOL_SIZE == m_posFront % BUFFER_POOL_SIZE || (m_posBack + 1) % BUFFER_POOL_SIZE == m_posFront % BUFFER_POOL_SIZE ||
+                m_currentBytes >= m_maxBytes) {
             try {
                 synchronized (m_buffer) {
                     m_buffer.wait();
                 }
-            } catch (InterruptedException ignore) {}
+            } catch (InterruptedException ignore) {
+            }
         }
 
         int counter = 0;
@@ -325,7 +324,7 @@ class OutgoingQueue {
      * Adds a buffer at the end of the array.
      *
      * @param p_buffer
-     *     the outgoing buffer
+     *         the outgoing buffer
      * @lock must be locked
      */
     private void push(final ByteBuffer p_buffer) {

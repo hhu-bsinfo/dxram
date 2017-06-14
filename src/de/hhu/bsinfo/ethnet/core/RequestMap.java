@@ -11,7 +11,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.ethnet;
+package de.hhu.bsinfo.ethnet.core;
 
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -23,7 +23,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  */
-final class RequestMap {
+public final class RequestMap {
     private static final Logger LOGGER = LogManager.getFormatterLogger(RequestMap.class.getSimpleName());
 
     // Attributes
@@ -39,11 +39,29 @@ final class RequestMap {
      * @param p_size
      *         the number of entries in request map
      */
-    RequestMap(final int p_size) {
+    public RequestMap(final int p_size) {
         m_pendingRequests = new AbstractRequest[p_size];
     }
 
-    // Methods
+    /**
+     * Put a Request in the store
+     *
+     * @param p_request
+     *         the Request
+     */
+    public void put(final AbstractRequest p_request) {
+        int index;
+
+        m_lock.readLock().lock();
+        index = p_request.getRequestID() % m_pendingRequests.length;
+        if (m_pendingRequests[index] != null) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Request for idx=%d still registered! Request Map might be too small", index);
+            // #endif /* LOGGER >= ERROR */
+        }
+        m_pendingRequests[index] = p_request;
+        m_lock.readLock().unlock();
+    }
 
     /**
      * Remove the Request of the given requestID from the store
@@ -52,7 +70,7 @@ final class RequestMap {
      *         the requestID
      * @return the removed Request
      */
-    AbstractRequest remove(final int p_requestID) {
+    public AbstractRequest remove(final int p_requestID) {
         AbstractRequest ret;
         int index;
 
@@ -71,7 +89,7 @@ final class RequestMap {
      * @param p_nodeID
      *         the NodeID
      */
-    void removeAll(final short p_nodeID) {
+    public void removeAll(final short p_nodeID) {
         AbstractRequest request;
 
         m_lock.writeLock().lock();
@@ -117,25 +135,5 @@ final class RequestMap {
                 request.fulfill(p_response);
             }
         }
-    }
-
-    /**
-     * Put a Request in the store
-     *
-     * @param p_request
-     *         the Request
-     */
-    void put(final AbstractRequest p_request) {
-        int index;
-
-        m_lock.readLock().lock();
-        index = p_request.getRequestID() % m_pendingRequests.length;
-        if (m_pendingRequests[index] != null) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Request for idx=%d still registered! Request Map might be too small", index);
-            // #endif /* LOGGER >= ERROR */
-        }
-        m_pendingRequests[index] = p_request;
-        m_lock.readLock().unlock();
     }
 }

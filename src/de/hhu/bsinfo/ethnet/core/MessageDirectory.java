@@ -11,7 +11,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.ethnet;
+package de.hhu.bsinfo.ethnet.core;
 
 import java.lang.reflect.Constructor;
 import java.util.concurrent.locks.ReentrantLock;
@@ -22,7 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author Marc Ewert, marc.ewert@hhu.de, 21.10.14
  */
-class MessageDirectory {
+public final class MessageDirectory {
 
     // Attributes
     private Constructor<?>[][] m_constructors = new Constructor[0][0];
@@ -33,9 +33,9 @@ class MessageDirectory {
      * MessageDirectory is not designated to be instantiable
      *
      * @param p_requestTimeOut
-     *     the request time out in ms
+     *         the request time out in ms
      */
-    MessageDirectory(final int p_requestTimeOut) {
+    public MessageDirectory(final int p_requestTimeOut) {
         m_timeOut = p_requestTimeOut;
     }
 
@@ -43,14 +43,14 @@ class MessageDirectory {
      * Registers a Message Type for receiving
      *
      * @param p_type
-     *     the type of the Message
+     *         the type of the Message
      * @param p_subtype
-     *     the subtype of the Message
+     *         the subtype of the Message
      * @param p_class
-     *     Message class
+     *         Message class
      * @return True if successful, false if the specified type and subtype are already in use.
      */
-    protected boolean register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
+    public boolean register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
         Constructor<?>[][] constructors = m_constructors;
         Constructor<?> constructor;
 
@@ -103,12 +103,12 @@ class MessageDirectory {
      * Creates a Message instance for the type and subtype
      *
      * @param p_type
-     *     the type of the Message
+     *         the type of the Message
      * @param p_subtype
-     *     the subtype of the Message
+     *         the subtype of the Message
      * @return a new Message instance
      */
-    protected AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
+    public AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
         AbstractMessage ret;
         long time;
         Constructor<?> constructor;
@@ -142,9 +142,9 @@ class MessageDirectory {
      * Lookup, if a specific message type is already registered
      *
      * @param p_type
-     *     the type of the Message
+     *         the type of the Message
      * @param p_subtype
-     *     the subtype of the Message
+     *         the subtype of the Message
      * @return true if registered
      */
     private boolean contains(final byte p_type, final byte p_subtype) {
@@ -152,7 +152,7 @@ class MessageDirectory {
         final Constructor<?>[][] constructors = m_constructors;
 
         result = constructors.length > p_type && !(constructors[p_type] == null || constructors[p_type].length <= p_subtype) &&
-            constructors[p_type][p_subtype] != null;
+                constructors[p_type][p_subtype] != null;
 
         return result;
     }
@@ -161,9 +161,9 @@ class MessageDirectory {
      * Returns the constructor for a message class by its type and subtype
      *
      * @param p_type
-     *     the type of the Message
+     *         the type of the Message
      * @param p_subtype
-     *     the subtype of the Message
+     *         the subtype of the Message
      * @return message class constructor
      */
     private Constructor<?> getConstructor(final byte p_type, final byte p_subtype) {
