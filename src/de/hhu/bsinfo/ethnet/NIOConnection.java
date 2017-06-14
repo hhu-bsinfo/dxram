@@ -446,10 +446,8 @@ class NIOConnection extends AbstractConnection {
      *         the buffer
      */
     private void writeToChannel(final ByteBuffer p_buffer) {
-        if (m_outgoing.pushAndAggregateBuffers(p_buffer)) {
-            // Change operation (read <-> write) and/or connection
-            m_nioSelector.changeOperationInterestAsync(m_writeOperation);
-        }
+        m_outgoing.pushAndAggregateBuffers(p_buffer);
+        m_nioSelector.changeOperationInterestAsync(m_writeOperation);
     }
 
     /**
@@ -458,13 +456,8 @@ class NIOConnection extends AbstractConnection {
      * @param p_message
      *         the message
      */
-    private void writeToChannel(final AbstractMessage p_message, final int p_messageSize) {
-        if (m_outgoing.pushAndAggregateBuffers(p_message, p_messageSize)) {
-            // Change operation (read <-> write) and/or connection
-            m_nioSelector.changeOperationInterestAsync(m_writeOperation);
-        }
-
-        // TODO: Necessary?
+    private void writeToChannel(final AbstractMessage p_message, final int p_messageSize) throws NetworkException {
+        m_outgoing.pushAndAggregateBuffers(p_message, p_messageSize);
         m_nioSelector.changeOperationInterestAsync(m_writeOperation);
     }
 

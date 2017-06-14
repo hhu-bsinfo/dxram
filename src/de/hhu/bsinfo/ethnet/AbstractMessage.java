@@ -347,6 +347,15 @@ public abstract class AbstractMessage {
         return buffer;
     }
 
+    /**
+     * Serialize the message into given byte buffer
+     *
+     * @param p_buffer
+     *         the ByteBuffer to store serialized message
+     * @param p_messageSize
+     *         the message to serialize
+     * @throws NetworkException if message could not be serialized
+     */
     protected final void serialize(final ByteBuffer p_buffer, final int p_messageSize) throws NetworkException {
         fillBuffer(p_buffer, p_messageSize - HEADER_SIZE);
     }

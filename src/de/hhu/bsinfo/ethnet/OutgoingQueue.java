@@ -69,13 +69,7 @@ class OutgoingQueue {
      * @return whether the ring-buffer is empty or not
      */
     public boolean isEmpty() {
-        // TODO:
-        boolean ret;
-        synchronized (m_buffer) {
-            ret = m_currentBytes == 0;
-        }
-        return ret;
-        //return m_currentBytes == 0;
+        return m_currentBytes == 0;
     }
 
     /**
@@ -246,8 +240,9 @@ class OutgoingQueue {
      * @param p_message
      *     the outgoing message
      * @return whether the queue was empty or not
+     * @throws NetworkException if message could not be serialized
      */
-    boolean pushAndAggregateBuffers(AbstractMessage p_message, final int p_messageSize) {
+    boolean pushAndAggregateBuffers(AbstractMessage p_message, final int p_messageSize) throws NetworkException {
         boolean ret;
         ByteBuffer buf;
 
@@ -309,8 +304,12 @@ class OutgoingQueue {
                     p_message.serialize(buf, p_messageSize);
                     buf.limit(buf.position());
                     buf.position(oldPos);
-                } catch (NetworkException e) {
-                    e.printStackTrace();
+                } catch (final NetworkException e) {
+                    m_posBack -= counterBackup - p_messageSize;
+                    m_buffer[m_posBack % BUFFER_POOL_SIZE] = buf;
+                    m_posBack++;
+
+                    throw e;
                 }
 
                 m_posBack -= counterBackup;
@@ -341,17 +340,13 @@ class OutgoingQueue {
      *
      * @param p_message
      *     the message
+     * @throws NetworkException if message could not be serialized
      * @lock must be locked
      */
-    private void push(final AbstractMessage p_message, final int p_messageSize) {
-        try {
+    private void push(final AbstractMessage p_message, final int p_messageSize) throws NetworkException {
             m_buffer[m_posBack % BUFFER_POOL_SIZE] = p_message.getBuffer();
             m_posBack++;
 
             m_currentBytes += p_messageSize;
-        } catch (NetworkException e) {
-            // TODO
-            e.printStackTrace();
-        }
     }
 }
