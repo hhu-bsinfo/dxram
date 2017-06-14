@@ -62,7 +62,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      * Creates an instance of MigrationService
      */
     public MigrationService() {
-        super("migrate");
+        super("migrate", MigrationServiceConfig.class);
     }
 
     /**

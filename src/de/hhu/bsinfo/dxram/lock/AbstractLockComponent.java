@@ -36,8 +36,8 @@ public abstract class AbstractLockComponent<T extends AbstractDXRAMComponentConf
      * @param p_configClass
      *         Configuration class for this component
      */
-    protected AbstractLockComponent(final short p_priorityInit, final short p_priorityShutdown) {
-        super(p_priorityInit, p_priorityShutdown);
+    protected AbstractLockComponent(final short p_priorityInit, final short p_priorityShutdown, final Class<T> p_configClass) {
+        super(p_priorityInit, p_priorityShutdown, p_configClass);
     }
 
     /**

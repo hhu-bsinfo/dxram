@@ -39,7 +39,7 @@ public class PeerLockComponent extends AbstractLockComponent<PeerLockComponentCo
      * Constructor
      */
     public PeerLockComponent() {
-        super(DXRAMComponentOrder.Init.PEER_LOCK, DXRAMComponentOrder.Shutdown.PEER_LOCK);
+        super(DXRAMComponentOrder.Init.PEER_LOCK, DXRAMComponentOrder.Shutdown.PEER_LOCK, PeerLockComponentConfig.class);
     }
 
     @Override

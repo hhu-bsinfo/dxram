@@ -48,7 +48,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      * Constructor
      */
     public LogService() {
-        super("log");
+        super("log", LogServiceConfig.class);
     }
 
     /**

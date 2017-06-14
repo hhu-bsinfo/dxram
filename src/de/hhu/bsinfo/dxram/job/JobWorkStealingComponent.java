@@ -38,7 +38,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
      * Constructor
      */
     public JobWorkStealingComponent() {
-        super(DXRAMComponentOrder.Init.JOB_WORK_STEALING, DXRAMComponentOrder.Shutdown.JOB_WORK_STEALING);
+        super(DXRAMComponentOrder.Init.JOB_WORK_STEALING, DXRAMComponentOrder.Shutdown.JOB_WORK_STEALING, JobWorkStealingComponentConfig.class);
     }
 
     @Override

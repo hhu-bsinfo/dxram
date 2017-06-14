@@ -60,7 +60,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
      * Constructor
      */
     public RecoveryService() {
-        super("recovery");
+        super("recovery", RecoveryServiceConfig.class);
     }
 
     @Override

@@ -53,7 +53,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
      * Constructor
      */
     public ChunkRemoveService() {
-        super("chunkrem");
+        super("chunkrem", ChunkRemoveServiceConfig.class);
     }
 
     /**

@@ -87,7 +87,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
      * Constructor
      */
     public ChunkService() {
-        super("chunk");
+        super("chunk", ChunkServiceConfig.class);
     }
 
     /**

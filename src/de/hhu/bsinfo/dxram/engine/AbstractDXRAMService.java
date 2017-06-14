@@ -40,9 +40,16 @@ public abstract class AbstractDXRAMService<T extends AbstractDXRAMServiceConfig>
      * @param p_shortName
      *         Short name of the service (used for terminal)
      */
-    protected AbstractDXRAMService(final String p_shortName) {
+    protected AbstractDXRAMService(final String p_shortName, final Class<T> p_configClass) {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_shortName = p_shortName;
+
+        // create default configuration
+        try {
+            m_config = p_configClass.newInstance();
+        } catch (final InstantiationException | IllegalAccessException e) {
+            throw new DXRAMRuntimeException(e);
+        }
     }
 
     /**

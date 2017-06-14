@@ -83,7 +83,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      * Creates the backup component
      */
     public BackupComponent() {
-        super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP);
+        super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP, BackupComponentConfig.class);
     }
 
     /**

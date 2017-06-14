@@ -32,7 +32,7 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
      * Constructor
      */
     public ApplicationService() {
-        super("app");
+        super("app", ApplicationServiceConfig.class);
     }
 
     @Override

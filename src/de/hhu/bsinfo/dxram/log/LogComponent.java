@@ -99,7 +99,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      * Creates the log component
      */
     public LogComponent() {
-        super(DXRAMComponentOrder.Init.LOG, DXRAMComponentOrder.Shutdown.LOG);
+        super(DXRAMComponentOrder.Init.LOG, DXRAMComponentOrder.Shutdown.LOG, LogComponentConfig.class);
     }
 
     /**

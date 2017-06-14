@@ -23,7 +23,7 @@ public class NullService extends AbstractDXRAMService<NullServiceConfig> {
      * Constructor
      */
     public NullService() {
-        super("null");
+        super("null", NullServiceConfig.class);
     }
 
     @Override

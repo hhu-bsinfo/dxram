@@ -65,7 +65,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      * Constructor
      */
     public ZookeeperBootComponent() {
-        super(DXRAMComponentOrder.Init.BOOT, DXRAMComponentOrder.Shutdown.BOOT);
+        super(DXRAMComponentOrder.Init.BOOT, DXRAMComponentOrder.Shutdown.BOOT, ZookeeperBootComponentConfig.class);
     }
 
     @Override

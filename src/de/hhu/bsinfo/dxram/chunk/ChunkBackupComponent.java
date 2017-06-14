@@ -48,7 +48,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
      * Constructor
      */
     public ChunkBackupComponent() {
-        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK);
+        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, ChunkBackupComponentConfig.class);
     }
 
     /**

@@ -33,7 +33,7 @@ public class SynchronizationService extends AbstractDXRAMService<Synchronization
      * Constructor
      */
     public SynchronizationService() {
-        super("sync");
+        super("sync", SynchronizationServiceConfig.class);
     }
 
     /**

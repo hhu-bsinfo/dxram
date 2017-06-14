@@ -66,7 +66,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      * Constructor
      */
     public JobService() {
-        super("job");
+        super("job", JobServiceConfig.class);
     }
 
     /**

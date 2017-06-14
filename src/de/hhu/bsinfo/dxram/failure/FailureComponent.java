@@ -65,7 +65,7 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
      * Creates the failure component
      */
     public FailureComponent() {
-        super(DXRAMComponentOrder.Init.FAILURE, DXRAMComponentOrder.Shutdown.FAILURE);
+        super(DXRAMComponentOrder.Init.FAILURE, DXRAMComponentOrder.Shutdown.FAILURE, FailureComponentConfig.class);
 
         m_nodeStatus = new byte[Short.MAX_VALUE * 2 / 8];
         m_nodeTimestamps = new long[Short.MAX_VALUE * 2];

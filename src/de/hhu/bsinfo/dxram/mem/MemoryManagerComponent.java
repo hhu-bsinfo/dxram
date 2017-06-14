@@ -78,7 +78,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      * Constructor
      */
     public MemoryManagerComponent() {
-        super(DXRAMComponentOrder.Init.MEMORY, DXRAMComponentOrder.Shutdown.MEMORY);
+        super(DXRAMComponentOrder.Init.MEMORY, DXRAMComponentOrder.Shutdown.MEMORY, MemoryManagerComponentConfig.class);
     }
 
     /**

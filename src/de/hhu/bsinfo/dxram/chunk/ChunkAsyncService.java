@@ -62,7 +62,7 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
      * Constructor
      */
     public ChunkAsyncService() {
-        super("achunk");
+        super("achunk", ChunkAsyncServiceConfig.class);
     }
 
     /**

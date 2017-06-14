@@ -44,10 +44,17 @@ public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentCon
      * @param p_priorityShutdown
      *         Default shutdown priority for this component
      */
-    protected AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown) {
+    protected AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown, final Class<T> p_configClass) {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_priorityInit = p_priorityInit;
         m_priorityShutdown = p_priorityShutdown;
+
+        // create default configuration
+        try {
+            m_config = p_configClass.newInstance();
+        } catch (final InstantiationException | IllegalAccessException e) {
+            throw new DXRAMRuntimeException(e);
+        }
     }
 
     /**

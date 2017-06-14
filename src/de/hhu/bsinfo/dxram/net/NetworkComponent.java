@@ -55,7 +55,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * Constructor
      */
     public NetworkComponent() {
-        super(DXRAMComponentOrder.Init.NETWORK, DXRAMComponentOrder.Shutdown.NETWORK);
+        super(DXRAMComponentOrder.Init.NETWORK, DXRAMComponentOrder.Shutdown.NETWORK, NetworkComponentConfig.class);
     }
 
     // --------------------------------------------------------------------------------------

@@ -35,7 +35,7 @@ public class NetworkService extends AbstractDXRAMService<NetworkServiceConfig> {
      * Constructor
      */
     public NetworkService() {
-        super("net");
+        super("net", NetworkServiceConfig.class);
     }
 
     /**

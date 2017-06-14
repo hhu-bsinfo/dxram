@@ -70,7 +70,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * Creates the lookup component
      */
     public LookupComponent() {
-        super(DXRAMComponentOrder.Init.LOOKUP, DXRAMComponentOrder.Shutdown.LOOKUP);
+        super(DXRAMComponentOrder.Init.LOOKUP, DXRAMComponentOrder.Shutdown.LOOKUP, LookupComponentConfig.class);
     }
 
     /**

@@ -48,7 +48,7 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
      * Constructor
      */
     public BootService() {
-        super("boot");
+        super("boot", BootServiceConfig.class);
     }
 
     /**
