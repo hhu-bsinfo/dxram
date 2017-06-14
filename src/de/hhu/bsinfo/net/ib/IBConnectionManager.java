@@ -86,8 +86,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         // give the ibnet system a moment to catch up with new nodes
         try {
             Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (final InterruptedException ignored) {
         }
     }
 
