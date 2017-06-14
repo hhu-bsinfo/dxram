@@ -239,7 +239,7 @@ public class SecondaryLog extends AbstractLog {
         HashMap<Long, DataStructure> chunkMap;
         AbstractSecLogEntryHeader logEntryHeader;
 
-        // TODO: See recoverFromLog(...)
+        // FIXME:
 
         nodeID = Short.parseShort(p_fileName.split("_")[0].substring(1));
         storesMigrations = p_fileName.contains("M");
@@ -248,7 +248,6 @@ public class SecondaryLog extends AbstractLog {
 
         segments = readAllSegmentsFromFile(p_path + p_fileName, p_secondaryLogSize, p_logSegmentSize, p_mode);
 
-        // TODO: Reorganize log
         while (i < segments.length) {
             if (segments[i] != null) {
                 while (offset < segments[i].length && segments[i][offset] != 0) {
@@ -612,9 +611,7 @@ public class SecondaryLog extends AbstractLog {
         final RecoveryMetadata recoveryMetadata = new RecoveryMetadata();
         HashMap<Long, DSByteBuffer> largeChunks;
 
-        // TODO: Guarantee that there is no more data to come
-
-        // TODO: Recovery fails if versions (partly only?) are stored in hashtable
+        // FIXME: Recovery fails if versions (partly only?) are stored in hashtable
 
         if (determineLogSize() == 0) {
             // #if LOGGER >= INFO

@@ -33,6 +33,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
+import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkException;
@@ -45,6 +46,9 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 05.10.2016
  */
 public class FailureComponent extends AbstractDXRAMComponent<FailureComponentConfig> implements MessageReceiver, EventListener<AbstractEvent> {
+
+    private static final int EVENT_TIMEOUT = 1000;
+
     // component dependencies
     private AbstractBootComponent m_boot;
     private LookupComponent m_lookup;
@@ -52,6 +56,7 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
     private NetworkComponent m_network;
 
     private byte[] m_nodeStatus;
+    private long[] m_nodeTimestamps;
     private ReentrantLock m_failureLock;
 
     private volatile boolean m_isActive;
@@ -62,7 +67,8 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
     public FailureComponent() {
         super(DXRAMComponentOrder.Init.FAILURE, DXRAMComponentOrder.Shutdown.FAILURE);
 
-        m_nodeStatus = new byte[Short.MAX_VALUE * 2];
+        m_nodeStatus = new byte[Short.MAX_VALUE * 2 / 8];
+        m_nodeTimestamps = new long[Short.MAX_VALUE * 2];
         m_failureLock = new ReentrantLock(false);
 
         m_isActive = true;
@@ -70,6 +76,8 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
 
     @Override
     public void eventTriggered(final AbstractEvent p_event) {
+        int index;
+        int mask;
 
         if (m_isActive) {
             if (p_event instanceof ConnectionLostEvent) {
@@ -77,21 +85,28 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
                 short nodeID = event.getNodeID();
 
                 if (nodeID != NodeID.INVALID_ID) {
+
+                    // Helper variables for bitmap access
+                    index = (nodeID & 0xFFFF) / 8;
+                    mask = 1 << (nodeID & 0xFFFF) % 8;
+
                     m_failureLock.lock();
-                    if (m_nodeStatus[nodeID & 0xFFFF] < 5) {
-                        m_nodeStatus[nodeID & 0xFFFF] = 5;
+                    if (m_nodeTimestamps[nodeID & 0xFFFF] + EVENT_TIMEOUT < System.currentTimeMillis() || (m_nodeStatus[index] & mask) != 0) {
+                        m_nodeTimestamps[nodeID & 0xFFFF] = System.currentTimeMillis();
+
+                        // Set bit to 0
+                        m_nodeStatus[index] &= ~mask;
                         m_failureLock.unlock();
 
-                    /*
-                     * Section A - High priority
-                     * A connection was removed after an error -> try to re-connect
-                     * If re-connecting fails, failure will be handled
-                     *
-                     * There can only be one thread per NodeID in here, but there might be another thread in section B for
-                     * the same NodeID. All other events (ConnectionLostEvents and ResponseDelayedEvents) for given NodeID
-                     * are ignored meanwhile. If there is a thread in section B for given NodeID, this section is still
-                     * reachable.
-                     */
+                        /*
+                         * Section A - High priority
+                         * A connection was removed after an error -> try to re-connect
+                         * If re-connecting fails, failure will be handled
+                         *
+                         * There can only be one thread per NodeID in here, but there might be another thread in section B for
+                         * the same NodeID. All other events (ConnectionLostEvents and ResponseDelayedEvents) for given NodeID
+                         * are ignored for given interval.
+                         */
 
                         // #if LOGGER == DEBUG
                         LOGGER.debug("ConnectionLostEvent triggered: 0x%X", nodeID);
@@ -108,13 +123,10 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
                             LOGGER.debug("Node is unreachable. Initiating failure handling");
                             // #endif /* LOGGER == DEBUG */
 
-                            failureHandling(nodeID);
+                            failureHandling(nodeID, false);
                         }
-
-                        m_failureLock.lock();
-                        m_nodeStatus[nodeID & 0xFFFF] = 0;
-                        m_failureLock.unlock();
                     } else {
+                        // Event is already being handled
                         m_failureLock.unlock();
                     }
                 }
@@ -124,33 +136,30 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
 
                 if (nodeID != NodeID.INVALID_ID) {
                     m_failureLock.lock();
-                    if (m_nodeStatus[nodeID & 0xFFFF] == 0) {
-                        m_nodeStatus[nodeID & 0xFFFF]++;
+                    if (m_nodeTimestamps[nodeID & 0xFFFF] + EVENT_TIMEOUT < System.currentTimeMillis()) {
+                        m_nodeTimestamps[nodeID & 0xFFFF] = System.currentTimeMillis();
+
+                        // Set bit to 1
+                        m_nodeStatus[(nodeID & 0xFFFF) / 8] |= 1 << (nodeID & 0xFFFF) % 8;
                         m_failureLock.unlock();
 
-                    /*
-                     * Section B - Low priority
-                     * A response was delayed -> send a message to check connection
-                     *
-                     * There can only be one thread per NodeID in here, but there might be another thread in section A for
-                     * the same NodeID. All other ResponseDelayedEvents for given NodeID are ignored meanwhile. If there is
-                     * a thread in section A for given NodeID, this section is unreachable.
-                     */
+                        /*
+                         * Section B - Low priority
+                         * A response was delayed -> send a message to check connection
+                         *
+                         * There can only be one thread per NodeID in here, but there might be another thread in section A for
+                         * the same NodeID. All other ResponseDelayedEvents for given NodeID are ignored for given interval.
+                         */
 
                         // #if LOGGER == DEBUG
                         LOGGER.debug("ResponseDelayedEvent triggered: 0x%X. Sending default message and return.", nodeID);
                         // #endif /* LOGGER == DEBUG */
 
                         try {
-                            // Sending default message to detect connection failure. If the connection is broken,
-                            // a ConnectionLostEvent will be triggered
+                            // Sending default message to detect connection failure. If the connection is broken, a ConnectionLostEvent will be triggered
                             m_network.sendMessage(new DefaultMessage(nodeID));
                         } catch (final NetworkException ignored) {
                         }
-
-                        m_failureLock.lock();
-                        m_nodeStatus[nodeID & 0xFFFF]--;
-                        m_failureLock.unlock();
                     } else {
                         m_failureLock.unlock();
                     }
@@ -221,8 +230,10 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
      *
      * @param p_nodeID
      *         NodeID of failed node
+     * @param p_remoteDetect
+     *         false if failure was detected on this node, true if failure was communicated over network
      */
-    private void failureHandling(final short p_nodeID) {
+    private void failureHandling(final short p_nodeID, final boolean p_remoteDetect) {
         boolean responsible;
         NodeRole ownRole;
         NodeRole roleOfFailedNode;
@@ -258,36 +269,26 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
          *          i)   This is the responsible superpeer: Remove peer from "/nodes/peers"
          *          ii)  This is the responsible superpeer: Add ChunkID of failed peer to "/nodes/free" if node was not registered in file at startup
          *          iii) This is the responsible superpeer: If peer was not registered in file at startup, remove its ChunkID from "/nodes/new"
-         *      c) Failed node was a terminal:
-         *          In LookupComponent:
-         *          i)   This is the responsible superpeer: Remove terminal (locally; a terminal is handled like a peer here)
-         *          In ZooKeeperBootComponent:
-         *          i)   This is the responsible superpeer: Remove peer from "/nodes/terminals"
-         *          ii)  This is the responsible superpeer: Add ChunkID of failed terminal to "/nodes/free" if node was not registered in file at startup
-         *          iii) This is the responsible superpeer: If terminal was not registered in file at startup (default), remove its ChunkID from "/nodes/new"
          *
          *
          *  2) This is a peer:
          *      a) Failed node was a superpeer: Nothing
          *      b) Failed node was a peer:
-         *          Fire NodeFailureEvent:
-         *              In BackupComponent (if backup is active):
-         *              i)   Iterate over all backup ranges
-         *                      For every hit:
-         *                      - Determine a new backup peer
-         *                      - Replace it in local backup range
-         *                      In ChunkBackupComponent:
+         *          i)  Inform own superpeer
+         *          ii) Fire NodeFailureEvent:
+         *                  In BackupComponent (if backup is active):
+         *                      - Iterate over all backup ranges
+         *                          For every hit:
+         *                              - Determine a new backup peer
+         *                              - Replace it in local backup range
+         *                  In ChunkBackupComponent:
          *                      - Replicate every single chunk of this backup range to the new backup peer
-         *                      In LookupComponent
+         *                  In LookupComponent
          *                      - Replace the failed backup peer by the new determined backup peer on the responsible superpeer
-         *              In LookupComponent (if caches are enabled):
-         *              i) Invalidate all cached lookup ranges in CacheTree that store the failed peer as current location
-         *              In PeerLockService:
-         *              i) Unlock all remote locks (for chunks stored on this peer) that are held by the failed peer
-         *      c) Failed node was a terminal:
-         *          Fire NodeFailureEvent:
-         *              In PeerLockService:
-         *              i) Unlock all remote locks (for chunks stored on this peer) that are held by the failed terminal
+         *                  In LookupComponent (if caches are enabled):
+         *                      i) Invalidate all cached lookup ranges in CacheTree that store the failed peer as current location
+         *                  In PeerLockService:
+         *                      i) Unlock all remote locks (for chunks stored on this peer) that are held by the failed peer
          */
 
         if (ownRole == NodeRole.SUPERPEER) {
@@ -295,11 +296,13 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
             LOGGER.debug("********** ********** Node Failure ********** **********");
             // #endif /* LOGGER >= DEBUG */
 
+            System.out.println(p_remoteDetect);
+
             // Restore superpeer overlay, cleanup ZooKeeper and/or initiate recovery
             responsible = m_lookup.superpeersNodeFailureHandling(p_nodeID, roleOfFailedNode);
 
             if (responsible) {
-                // Failed node was either the predecessor superpeer or a peer/terminal this superpeer is responsible for
+                // Failed node was either the predecessor superpeer or a peer this superpeer is responsible for
 
                 // #if LOGGER >= DEBUG
                 LOGGER.debug("Failed node was a %s, NodeID: 0x%X", roleOfFailedNode, p_nodeID);
@@ -312,6 +315,22 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
         } else {
             // This is a peer
             if (roleOfFailedNode == NodeRole.PEER) {
+                if (!p_remoteDetect) {
+                    short responsibleSuperpeer = m_lookup.getResponsibleSuperpeer(m_boot.getNodeID());
+
+                    // #if LOGGER >= DEBUG
+                    LOGGER.debug("Detected failure of 0x%X. Informing own superpeer 0x%X.", p_nodeID, responsibleSuperpeer);
+                    // #endif /* LOGGER >= DEBUG */
+
+                    // Notify superpeer
+                    FailureRequest request = new FailureRequest(responsibleSuperpeer, p_nodeID);
+                    try {
+                        // Do not wait for an answer
+                        m_network.sendSync(request, false);
+                    } catch (final NetworkException ignore) {
+                    }
+                }
+
                 // Notify other components/services (BackupComponent, LookupComponent, PeerLockService)
                 m_event.fireEvent(new NodeFailureEvent(getClass().getSimpleName(), p_nodeID, roleOfFailedNode));
             }
@@ -325,30 +344,30 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
      *         the FailureRequest
      */
     private void incomingFailureRequest(final FailureRequest p_request) {
-        // Outsource failure handling to another thread to avoid blocking a message handler
-        Runnable task = () -> {
-            short nodeID = p_request.getFailedNode();
+        short nodeID = p_request.getFailedNode();
 
-            m_failureLock.lock();
-            if (m_nodeStatus[nodeID & 0xFFFF] < 5) {
-                m_nodeStatus[nodeID & 0xFFFF] = 5;
-                m_failureLock.unlock();
+        // Helper variables for bitmap access
+        int index = (nodeID & 0xFFFF) / 8;
+        int mask = 1 << (nodeID & 0xFFFF) % 8;
 
-                failureHandling(nodeID);
+        m_failureLock.lock();
+        if (m_nodeTimestamps[nodeID & 0xFFFF] + EVENT_TIMEOUT < System.currentTimeMillis() || (m_nodeStatus[index] & mask) != 0) {
+            m_nodeTimestamps[nodeID & 0xFFFF] = System.currentTimeMillis();
 
-                m_failureLock.lock();
-                m_nodeStatus[nodeID & 0xFFFF] = 0;
-                m_failureLock.unlock();
-            } else {
-                m_failureLock.unlock();
-            }
-        };
-        new Thread(task).start();
+            // Set bit to 0
+            m_nodeStatus[index] &= ~mask;
+            m_failureLock.unlock();
+
+            // Outsource failure handling to another thread to avoid blocking a message handler
+            Runnable task = () -> failureHandling(nodeID, true);
+            new Thread(task).start();
+        } else {
+            m_failureLock.unlock();
+        }
 
         try {
             m_network.sendMessage(new FailureResponse(p_request));
         } catch (final NetworkException ignore) {
-
         }
     }
 

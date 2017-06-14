@@ -32,6 +32,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.failure.messages.FailureRequest;
+import de.hhu.bsinfo.dxram.failure.messages.FailureResponse;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsRequest;
@@ -729,7 +730,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                         continue;
                     }
 
-                    request.getResponse(RecoverBackupRangeResponse.class);
+                    request.getResponse(FailureResponse.class);
                 }
             }
 

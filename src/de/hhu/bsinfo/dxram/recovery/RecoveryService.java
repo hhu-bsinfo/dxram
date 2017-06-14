@@ -128,7 +128,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
      */
     private void recoverLocallyFromFile(final short p_owner) {
 
-        // FIXME
+        // FIXME:
 
         HarddriveAccessMode mode = HarddriveAccessMode.convert(m_log.getConfig().getHarddriveAccess());
         if (mode != HarddriveAccessMode.RAW_DEVICE) {

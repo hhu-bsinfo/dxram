@@ -920,7 +920,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         the peer
      * @return the responsible superpeer
      */
-    short getResponsibleSuperpeer(final short p_nodeID) {
+    public short getResponsibleSuperpeer(final short p_nodeID) {
         // #ifdef ASSERT_NODE_ROLE
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             throw new InvalidNodeRoleException(m_boot.getNodeRole());
