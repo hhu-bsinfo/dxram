@@ -340,7 +340,8 @@ public abstract class AbstractMessage {
         ByteBuffer buffer;
 
         payloadSize = getPayloadLength();
-        buffer = ByteBuffer.allocate(HEADER_SIZE + payloadSize);
+        // TODO infiniband requires a direct buffer here. check and verify nio performance
+        buffer = ByteBuffer.allocateDirect(HEADER_SIZE + payloadSize);
         buffer = fillBuffer(buffer, payloadSize);
         buffer.flip();
 

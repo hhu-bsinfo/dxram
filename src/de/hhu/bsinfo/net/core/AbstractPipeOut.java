@@ -97,18 +97,13 @@ public abstract class AbstractPipeOut {
     }
 
     public void postBuffer(final ByteBuffer p_buffer) throws NetworkException {
-        if (m_outgoing.pushAndAggregateBuffers(p_buffer)) {
-            bufferPosted();
-        }
+        m_outgoing.pushAndAggregateBuffers(p_buffer);
+        bufferPosted();
     }
 
     public void postBuffer(final AbstractMessage p_message, final int p_messageSize) throws NetworkException {
-        if (m_outgoing.pushAndAggregateBuffers(p_message, p_messageSize)) {
-            bufferPosted();
-        }
-
-        // TODO: Necessary?
-        //m_nioSelector.changeOperationInterestAsync(m_writeOperation);
+        m_outgoing.pushAndAggregateBuffers(p_message, p_messageSize);
+        bufferPosted();
     }
 
     protected abstract boolean isOpen();

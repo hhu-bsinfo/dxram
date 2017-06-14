@@ -16,8 +16,6 @@ package de.hhu.bsinfo.net;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongArray;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,6 +28,7 @@ import de.hhu.bsinfo.net.core.MessageCreator;
 import de.hhu.bsinfo.net.core.MessageDirectory;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.net.core.RequestMap;
+import de.hhu.bsinfo.net.ib.IBConnectionManager;
 import de.hhu.bsinfo.net.nio.NIOConnectionManager;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -81,8 +80,9 @@ public final class NetworkHandler {
             m_connectionManager = new NIOConnectionManager(p_ownNodeId, p_maxConnections, p_bufferSize, p_flowControlWindowSize, p_connectionTimeout, p_nodeMap,
                     m_messageDirectory, m_requestMap, m_messageCreator, m_messageHandlers);
         } else {
-            // TODO infiniband
-            throw new NotImplementedException();
+            m_connectionManager =
+                    new IBConnectionManager(p_ownNodeId, p_maxConnections, p_bufferSize, p_flowControlWindowSize, p_nodeMap, m_messageDirectory, m_requestMap,
+                            m_messageCreator, m_messageHandlers);
         }
     }
 

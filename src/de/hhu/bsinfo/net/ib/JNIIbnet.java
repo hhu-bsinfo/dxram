@@ -15,7 +15,7 @@ package de.hhu.bsinfo.net.ib;
 
 import java.nio.ByteBuffer;
 
-public final class JNIIBnet {
+public final class JNIIbnet {
 
     public interface Callbacks {
         void nodeDiscovered(final short p_nodeId);
@@ -36,7 +36,7 @@ public final class JNIIBnet {
         void receivedFlowControlData(final short p_sourceNodeId, final int p_bytes);
     }
 
-    private JNIIBnet() {
+    private JNIIbnet() {
 
     }
 

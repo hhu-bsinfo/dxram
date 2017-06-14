@@ -268,7 +268,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         // return "proper" invalid address if entry does not exist
         if (entry == null) {
             // #if LOGGER >= WARN
-            LOGGER.warn("Could not find ip and port for node id %s", NodeID.toHexString(p_nodeID));
+            //LOGGER.warn("Could not find ip and port for node id %s", NodeID.toHexString(p_nodeID));
             // #endif /* LOGGER >= WARN */
             address = new InetSocketAddress("255.255.255.255", 0xFFFF);
         } else {

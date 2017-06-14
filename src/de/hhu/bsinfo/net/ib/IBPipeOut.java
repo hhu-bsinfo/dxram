@@ -38,7 +38,7 @@ public class IBPipeOut extends AbstractPipeOut {
                 throw new IllegalStateException("Buffer _MUST_ be direct for InfiniBand");
             }
 
-            if (!JNIIBnet.postBuffer(getDestinationNodeId(), buffer, buffer.limit())) {
+            if (!JNIIbnet.postBuffer(getDestinationNodeId(), buffer, buffer.limit())) {
                 // #if LOGGER == ERROR
                 LOGGER.error("Posting buffer (%d) to 0x%X failed", buffer.limit(), getDestinationNodeId());
                 // #endif /* LOGGER == ERROR */

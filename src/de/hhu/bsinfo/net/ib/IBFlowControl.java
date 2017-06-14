@@ -18,7 +18,7 @@ public class IBFlowControl extends AbstractFlowControl {
 
     @Override
     public void flowControlWrite() throws NetworkException {
-        if (!JNIIBnet.postFlowControlData(getDestinationNodeId(), getAndResetFlowControlData())) {
+        if (!JNIIbnet.postFlowControlData(getDestinationNodeId(), getAndResetFlowControlData())) {
             // #if LOGGER >= ERROR
             LOGGER.error("Could not send flow control data to node 0x%X!", getDestinationNodeId());
             // #endif /* LOGGER >= ERROR */
