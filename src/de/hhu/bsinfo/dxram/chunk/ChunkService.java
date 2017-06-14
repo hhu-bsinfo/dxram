@@ -350,7 +350,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         }
 
         // #if LOGGER == TRACE
-        LOGGER.trace("create[consecutive(%d), sizes(%d) %d, ...]", p_consecutive, p_sizes.length, p_sizes[0]);
+        LOGGER.trace("create[consecutive(%s), sizes(%d) %d, ...]", p_consecutive, p_sizes.length, p_sizes[0]);
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
@@ -388,7 +388,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
-        LOGGER.trace("create[consecutive(%d), sizes(%d) %d, ...] -> %s, ...", p_consecutive, p_sizes.length, p_sizes[0], ChunkID.toHexString(chunkIDs[0]));
+        LOGGER.trace("create[consecutive(%s), sizes(%d) %d, ...] -> %s, ...", p_consecutive, p_sizes.length, p_sizes[0], ChunkID.toHexString(chunkIDs[0]));
         // #endif /* LOGGER == TRACE */
 
         return chunkIDs;
