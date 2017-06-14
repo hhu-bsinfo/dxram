@@ -2,10 +2,10 @@ package de.hhu.bsinfo.dxram.log;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.mem.MemoryManagerComponentConfig;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
@@ -125,7 +125,7 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
     protected boolean verify(final DXRAMContext.Config p_config) {
 
         StorageUnit backupRangeSize = p_config.getComponentConfig(BackupComponentConfig.class).getBackupRangeSize();
-        long secondaryLogSize = backupRangeSize.getBytes();
+        long secondaryLogSize = backupRangeSize.getBytes() * 2;
 
         if (m_primaryLogSize.getBytes() % m_flashPageSize.getBytes() != 0 || m_primaryLogSize.getBytes() <= m_flashPageSize.getBytes() ||
                 secondaryLogSize % m_flashPageSize.getBytes() != 0 || secondaryLogSize <= m_flashPageSize.getBytes() ||
@@ -134,7 +134,7 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
                 m_secondaryLogBufferSize.getBytes() % m_flashPageSize.getBytes() != 0 || m_secondaryLogBufferSize.getBytes() <= m_flashPageSize.getBytes()) {
             // #if LOGGER >= ERROR
             LOGGER.error("Primary log size, secondary log size, write buffer size, log segment size and secondary log buffer size " +
-                            "must be a multiple (integer) of and greater than flash page size");
+                    "must be a multiple (integer) of and greater than flash page size");
             // #endif /* LOGGER >= ERROR */
             return false;
         }
@@ -160,6 +160,14 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
             LOGGER.warn("Reorganization threshold is < 50. Reorganization is triggered continuously!");
             // #endif /* LOGGER >= WARN */
             return true;
+        }
+
+        if (secondaryLogSize < p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize().getBytes() ||
+                m_writeBufferSize.getBytes() < p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize().getBytes()) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Secondary log and write buffer size must be greater than the max size of a chunk");
+            // #endif /* LOGGER >= ERROR */
+            return false;
         }
 
         return true;
