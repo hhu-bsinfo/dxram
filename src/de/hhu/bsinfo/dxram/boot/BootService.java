@@ -183,13 +183,6 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
      * @return True if successful, false on failure.
      */
     public boolean shutdownNode(final short p_nodeID, final boolean p_hardShutdown) {
-        if (p_nodeID == m_boot.getNodeID()) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Shutting down ourselves is not possible like this");
-            // #endif /* LOGGER >= ERROR */
-            return false;
-        }
-
         if (p_nodeID == NodeID.INVALID_ID) {
             List<Short> nodeIds = m_boot.getIDsOfOnlineNodes();
 
@@ -235,20 +228,24 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
             shutdown(p_hardShutdown);
 
         } else {
-            ShutdownMessage message = new ShutdownMessage(p_nodeID, p_hardShutdown);
+            if (p_nodeID == m_boot.getNodeID()) {
+                shutdown(p_hardShutdown);
+            } else {
+                ShutdownMessage message = new ShutdownMessage(p_nodeID, p_hardShutdown);
 
-            try {
-                m_network.sendMessage(message);
-            } catch (final NetworkException e) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(p_nodeID), e);
-                // #endif /* LOGGER >= ERROR */
-                return false;
+                try {
+                    m_network.sendMessage(message);
+                } catch (final NetworkException e) {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(p_nodeID), e);
+                    // #endif /* LOGGER >= ERROR */
+                    return false;
+                }
+
+                // #if LOGGER >= INFO
+                LOGGER.info("Sent remote shutdown to node %s", NodeID.toHexString(p_nodeID));
+                // #endif /* LOGGER >= INFO */
             }
-
-            // #if LOGGER >= INFO
-            LOGGER.info("Sent remote shutdown to node %s", NodeID.toHexString(p_nodeID));
-            // #endif /* LOGGER >= INFO */
         }
 
         return true;
