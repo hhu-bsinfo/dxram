@@ -38,7 +38,7 @@ import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.net.MessageReceiver;
 import de.hhu.bsinfo.net.NetworkDestinationUnreachableException;
-import de.hhu.bsinfo.net.NetworkResponseTimeoutException;
+import de.hhu.bsinfo.net.NetworkResponseCancelledException;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.NetworkException;
 
@@ -147,7 +147,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
                         } catch (final NetworkDestinationUnreachableException ignore) {
                             err = ErrorCode.PEER_NOT_AVAILABLE;
                             break;
-                        } catch (final NetworkResponseTimeoutException ignore) {
+                        } catch (final NetworkResponseCancelledException ignore) {
                             err = ErrorCode.NETWORK;
                             break;
                         } catch (final NetworkException ignore) {

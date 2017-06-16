@@ -130,9 +130,10 @@ public final class NetworkHandler {
      * Closes the network handler
      */
     public void close() {
+        m_messageHandlers.close();
+
         m_messageCreator.shutdown();
 
-        m_messageHandlers.close();
         m_connectionManager.close();
     }
 
@@ -217,7 +218,7 @@ public final class NetworkHandler {
                 connection = m_connectionManager.getConnection(p_message.getDestination());
             } catch (final NetworkException e) {
                 // #if LOGGER >= DEBUG
-                LOGGER.debug("Connection invalid. Ignoring connection exceptions regarding 0x%X during the next second!", p_message.getDestination());
+                LOGGER.debug("Connection could not be established!", p_message.getDestination());
                 // #endif /* LOGGER >= DEBUG */
                 throw new NetworkDestinationUnreachableException(p_message.getDestination());
             }
@@ -284,12 +285,18 @@ public final class NetworkHandler {
             if (p_waitForResponses) {
                 p_request.waitForResponse(timeout);
             }
-        } catch (final NetworkResponseTimeoutException e) {
+        } catch (final NetworkResponseDelayedException e) {
             // #if LOGGER >= ERROR
             LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
             // #endif /* LOGGER >= ERROR */
 
             m_requestMap.remove(p_request.getRequestID());
+
+            throw e;
+        } catch (final NetworkResponseCancelledException e) {
+            // #if LOGGER >= TRACE
+            LOGGER.trace("Sending sync, waiting for responses %s failed, cancelled", p_request);
+            // #endif /* LOGGER >= TRACE */
 
             throw e;
         }

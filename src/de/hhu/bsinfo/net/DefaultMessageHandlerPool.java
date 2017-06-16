@@ -54,9 +54,9 @@ final class DefaultMessageHandlerPool {
         DefaultMessageHandler t;
         for (int i = 0; i < m_threads.length; i++) {
             t = m_threads[i];
+            t.shutdown();
             LockSupport.unpark(t);
             t.interrupt();
-            t.shutdown();
 
             try {
                 t.join();

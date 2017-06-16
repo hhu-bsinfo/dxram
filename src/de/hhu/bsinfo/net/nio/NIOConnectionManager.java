@@ -104,8 +104,10 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         cond = condLock.newCondition();
 
         if (p_existingConnection == null) {
+
             ret = new NIOConnection(m_ownNodeId, p_destination, m_bufferSize, m_flowControlWindowSize, m_messageCreator, m_messageDirectory, m_requestMap,
                     m_dataReceiver, m_bufferPool, m_nioSelector, m_nodeMap, condLock, cond);
+
         } else {
             ret = (NIOConnection) p_existingConnection;
         }

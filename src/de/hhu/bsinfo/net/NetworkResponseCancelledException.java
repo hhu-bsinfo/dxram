@@ -17,11 +17,11 @@ import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
- * Exception if a request was sent but the response was not delivered in time.
+ * Exception if a request was sent but the response delivery was cancelled.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.10.2016
  */
-public class NetworkResponseTimeoutException extends NetworkException {
+public class NetworkResponseCancelledException extends NetworkException {
 
     /**
      * Network Response Timeout Exception
@@ -29,7 +29,7 @@ public class NetworkResponseTimeoutException extends NetworkException {
      * @param p_nodeId
      *     the NodeID
      */
-    public NetworkResponseTimeoutException(final short p_nodeId) {
-        super("Waiting for response from node " + NodeID.toHexString(p_nodeId) + " failed, timeout");
+    public NetworkResponseCancelledException(final short p_nodeId) {
+        super("Waiting for response from node " + NodeID.toHexString(p_nodeId) + " failed, cancelled");
     }
 }

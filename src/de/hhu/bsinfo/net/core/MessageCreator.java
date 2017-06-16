@@ -135,7 +135,6 @@ public class MessageCreator extends Thread {
         try {
             join();
         } catch (final InterruptedException ignore) {
-
         }
     }
 

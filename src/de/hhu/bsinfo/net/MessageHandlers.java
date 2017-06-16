@@ -105,9 +105,9 @@ final class MessageHandlers implements DataReceiver, MessageReceiverStore {
         m_defaultMessageHandlerPool.shutdown();
 
         // Shutdown exclusive message handler
+        m_exclusiveMessageHandler.shutdown();
         LockSupport.unpark(m_exclusiveMessageHandler);
         m_exclusiveMessageHandler.interrupt();
-        m_exclusiveMessageHandler.shutdown();
         try {
             m_exclusiveMessageHandler.join();
             // #if LOGGER >= INFO

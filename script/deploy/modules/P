@@ -171,8 +171,8 @@ check_peer_startup()
 
 		local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$condition"`
 		local fail_init=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
-		# Abort execution after an exception was thrown (every exception but NetworkResponseTimeoutException)
-		local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseTimeoutException"`
+		# Abort execution after an exception was thrown (every exception but NetworkResponseCancelledException)
+		local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseCancelledException"`
 
 		if [ "$success" != "" ]; then
 			echo " SUCCESS"

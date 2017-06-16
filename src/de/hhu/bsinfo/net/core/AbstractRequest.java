@@ -15,8 +15,8 @@ package de.hhu.bsinfo.net.core;
 
 import java.util.concurrent.locks.LockSupport;
 
+import de.hhu.bsinfo.net.NetworkResponseCancelledException;
 import de.hhu.bsinfo.net.NetworkResponseDelayedException;
-import de.hhu.bsinfo.net.NetworkResponseTimeoutException;
 
 /**
  * Represents a Request
@@ -181,7 +181,7 @@ public abstract class AbstractRequest extends AbstractMessage {
         while (!m_fulfilled) {
 
             if (m_aborted) {
-                throw new NetworkResponseTimeoutException(getDestination());
+                throw new NetworkResponseCancelledException(getDestination());
             }
 
             if (!m_ignoreTimeout) {

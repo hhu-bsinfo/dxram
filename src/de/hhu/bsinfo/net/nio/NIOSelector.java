@@ -428,36 +428,45 @@ class NIOSelector extends Thread {
 
         connection = (NIOConnection) p_key.attachment();
         if (p_key.isValid()) {
-            try {
                 if (p_key.isReadable()) {
                     if (connection == null || !connection.isIncomingOpen()) {
                         // Channel was accepted but not used yet -> Read NodeID, create NIOConnection and attach to key
-                        m_connectionManager.createConnection((SocketChannel) p_key.channel());
+                        try {
+                            m_connectionManager.createConnection((SocketChannel) p_key.channel());
+                        } catch (final IOException e) {
+                            // #if LOGGER >= ERROR
+                            LOGGER.error("Connection could not be created!");
+                            // #endif /* LOGGER >= ERROR */
+                        }
                     } else {
                         if (p_key.channel() == connection.getPipeIn().getChannel()) {
                             try {
                                 successful = connection.getPipeIn().read();
                             } catch (final IOException e) {
+                                successful = false;
+                            }
+                            if (!successful) {
                                 // #if LOGGER >= DEBUG
                                 LOGGER.debug("Could not read from channel (0x%X)!", connection.getDestinationNodeId());
                                 // #endif /* LOGGER >= DEBUG */
 
-                                successful = false;
-                            }
-                            if (!successful) {
                                 m_connectionManager.closeConnection(connection, true);
                             }
                         } else {
-                            connection.getPipeOut().readFlowControlBytes();
+                            try {
+                                connection.getPipeOut().readFlowControlBytes();
+                            } catch (final IOException e) {
+                                // #if LOGGER >= WARN
+                                LOGGER.warn("Failed to read flow control data!");
+                                // #endif /* LOGGER >= WARN */
+                            }
                         }
                     }
                 } else if (p_key.isWritable()) {
                     if (connection == null) {
                         // #if LOGGER >= ERROR
-                        LOGGER.error("If connection is null key has to be either readable or connectable!");
+                        LOGGER.error("If connection is null, key has to be either readable or connectable!");
                         // #endif /* LOGGER >= ERROR */
-
-                        m_connectionManager.closeConnection(null, true);
                         return;
                     }
                     if (p_key.channel() == connection.getPipeOut().getChannel()) {
@@ -469,8 +478,7 @@ class NIOSelector extends Thread {
                             // #endif /* LOGGER >= DEBUG */
 
                             m_connectionManager.closeConnection(connection, true);
-
-                            complete = false;
+                            return;
                         }
 
                         // TODO: Check if this is faster
@@ -494,12 +502,18 @@ class NIOSelector extends Thread {
                             // Ignore
                         }
                     } else {
+                        try {
                         connection.getPipeIn().writeFlowControlBytes();
+                        } catch (final IOException e) {
+                            // #if LOGGER >= WARN
+                            LOGGER.warn("Failed to write flow control data!");
+                            // #endif /* LOGGER >= WARN */
+                        }
                         try {
                             // Set interest to READ after writing
                             p_key.interestOps(SelectionKey.OP_READ);
                         } catch (final CancelledKeyException ignore) {
-                            // Ignore
+                            // Ignores
                         }
                     }
                 } else if (p_key.isConnectable()) {
@@ -509,15 +523,8 @@ class NIOSelector extends Thread {
                         // #if LOGGER >= ERROR
                         LOGGER.error("Establishing connection to %s failed", connection);
                         // #endif /* LOGGER >= ERROR */
-
-                        m_connectionManager.closeConnection(null, true);
                     }
                 }
-            } catch (final IOException e) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Could not access channel properly!");
-                // #endif /* LOGGER >= ERROR */
-            }
         }
     }
 }

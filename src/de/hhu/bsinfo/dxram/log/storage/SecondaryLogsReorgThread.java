@@ -403,55 +403,57 @@ public final class SecondaryLogsReorgThread extends Thread {
         SecondaryLog secLog;
 
         allCats = m_logComponent.getAllLogCatalogs();
-        cats = new ArrayList<>();
-        for (int i = 0; i < allCats.length; i++) {
-            cat = allCats[i];
-            if (cat != null) {
-                cats.add(cat);
+        if (allCats != null) {
+            cats = new ArrayList<>();
+            for (int i = 0; i < allCats.length; i++) {
+                cat = allCats[i];
+                if (cat != null) {
+                    cats.add(cat);
+                }
             }
-        }
 
-        for (LogCatalog ct : cats) {
-            numberOfLogs += ct.getNumberOfLogs();
-        }
+            for (LogCatalog ct : cats) {
+                numberOfLogs += ct.getNumberOfLogs();
+            }
 
-        /*
-         * Choose the largest log (or a log that has un-reorganized segments within an advanced eon)
-         * To avoid starvation choose every third log randomly
-         */
-        if (m_counter++ < 2) {
-            m_isRandomChoice = false;
-            outerloop:
-            for (LogCatalog currentCat : cats) {
-                secLogs = currentCat.getAllLogs();
-                for (int j = 0; j < secLogs.length; j++) {
-                    secLog = secLogs[j];
-                    if (secLog != null) {
-                        if (secLog.needToBeReorganized()) {
-                            ret = secLog;
-                            break outerloop;
-                        }
-                        current = secLog.getOccupiedSpace();
-                        if (current > max) {
-                            max = current;
-                            ret = secLog;
+            /*
+             * Choose the largest log (or a log that has un-reorganized segments within an advanced eon)
+             * To avoid starvation choose every third log randomly
+             */
+            if (m_counter++ < 2) {
+                m_isRandomChoice = false;
+                outerloop:
+                for (LogCatalog currentCat : cats) {
+                    secLogs = currentCat.getAllLogs();
+                    for (int j = 0; j < secLogs.length; j++) {
+                        secLog = secLogs[j];
+                        if (secLog != null) {
+                            if (secLog.needToBeReorganized()) {
+                                ret = secLog;
+                                break outerloop;
+                            }
+                            current = secLog.getOccupiedSpace();
+                            if (current > max) {
+                                max = current;
+                                ret = secLog;
+                            }
                         }
                     }
                 }
+            } else {
+                m_counter = 0;
             }
-        } else {
-            m_counter = 0;
-        }
-        if (m_counter == 0 && !cats.isEmpty() && numberOfLogs > 1) {
-            m_isRandomChoice = true;
-            // Choose one secondary log randomly
-            cat = cats.get(RandomUtils.getRandomValue(cats.size() - 1));
-            secLogs = cat.getAllLogs();
-            if (secLogs.length > 0) {
-                int tries = 0;
-                while (ret == null && ++tries < 100) {
-                    // Skip last log to speed up loading phase
-                    ret = secLogs[RandomUtils.getRandomValue(secLogs.length - 2)];
+            if (m_counter == 0 && !cats.isEmpty() && numberOfLogs > 1) {
+                m_isRandomChoice = true;
+                // Choose one secondary log randomly
+                cat = cats.get(RandomUtils.getRandomValue(cats.size() - 1));
+                secLogs = cat.getAllLogs();
+                if (secLogs.length > 0) {
+                    int tries = 0;
+                    while (ret == null && ++tries < 100) {
+                        // Skip last log to speed up loading phase
+                        ret = secLogs[RandomUtils.getRandomValue(secLogs.length - 2)];
+                    }
                 }
             }
         }

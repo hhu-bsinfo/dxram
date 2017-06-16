@@ -65,12 +65,7 @@ public class NIOPipeIn extends AbstractPipeIn {
         buffer = m_bufferPool.getBuffer();
 
         while (true) {
-            try {
-                readBytes = m_incomingChannel.read(buffer);
-            } catch (final ClosedChannelException e) {
-                // Channel is closed -> ignore
-                break;
-            }
+            readBytes = m_incomingChannel.read(buffer);
             if (readBytes == -1) {
                 // Connection closed
                 ret = false;

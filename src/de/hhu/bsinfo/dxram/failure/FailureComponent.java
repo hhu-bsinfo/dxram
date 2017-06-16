@@ -294,9 +294,8 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
         if (ownRole == NodeRole.SUPERPEER) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("********** ********** Node Failure ********** **********");
+            LOGGER.debug("Remote detection: " + p_remoteDetect);
             // #endif /* LOGGER >= DEBUG */
-
-            System.out.println(p_remoteDetect);
 
             // Restore superpeer overlay, cleanup ZooKeeper and/or initiate recovery
             responsible = m_lookup.superpeersNodeFailureHandling(p_nodeID, roleOfFailedNode);

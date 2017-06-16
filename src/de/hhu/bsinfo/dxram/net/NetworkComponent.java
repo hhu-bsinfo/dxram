@@ -134,7 +134,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     }
 
     /**
-     * Send the Request and wait for fulfillment (wait for response).
+     * Send the Request and wait for fulfillment (wait for response, default timeout).
      *
      * @param p_request
      *         The request to send.
@@ -146,7 +146,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     }
 
     /**
-     * Send the Request and wait for fulfillment (wait for response).
+     * Send the Request and wait for fulfillment (wait for response, specific timeout).
      *
      * @param p_request
      *         The request to send.
@@ -156,11 +156,21 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      *         If sending the message failed
      */
     public void sendSync(final AbstractRequest p_request, final int p_timeout) throws NetworkException {
-        m_networkHandler.sendSync(p_request, p_timeout, true);
+        try {
+            m_networkHandler.sendSync(p_request, p_timeout, true);
+        } catch (final NetworkDestinationUnreachableException e) {
+            m_event.fireEvent(new ConnectionLostEvent(getClass().getSimpleName(), p_request.getDestination()));
+
+            throw e;
+        } catch (final NetworkResponseDelayedException e) {
+            m_event.fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), e.getDesinationNodeId()));
+
+            throw e;
+        }
     }
 
     /**
-     * Send the Request and wait for fulfillment (wait for response).
+     * Send the Request and wait for fulfillment (wait for response if corresponding parameter is true).
      *
      * @param p_request
      *         The request to send.
@@ -173,8 +183,14 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
 
         try {
             m_networkHandler.sendSync(p_request, -1, p_waitForResponses);
+        } catch (final NetworkDestinationUnreachableException e) {
+            m_event.fireEvent(new ConnectionLostEvent(getClass().getSimpleName(), p_request.getDestination()));
+
+            throw e;
         } catch (final NetworkResponseDelayedException e) {
             m_event.fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), e.getDesinationNodeId()));
+
+            throw e;
         }
     }
 

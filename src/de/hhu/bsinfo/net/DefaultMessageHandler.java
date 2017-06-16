@@ -48,7 +48,6 @@ final class DefaultMessageHandler extends Thread {
     // Methods
     @Override
     public void run() {
-        long time;
         AbstractMessage message = null;
         MessageReceiver messageReceiver;
 
