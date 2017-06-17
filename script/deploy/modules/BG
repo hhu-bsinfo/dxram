@@ -1,0 +1,295 @@
+#!/bin/bash
+
+######################################################
+# Compile the parameter string for dxram
+# Globals:
+#   BG_PARAMS - Created by function ("return value")
+#   JVM_PARAMS - Created by function ("return value")
+# Arguments:
+#   ip - The IP of the Peer
+#   port - The port of Peer
+#   ram_size_in_mb - The key-value store size (optional)
+#   total_storage_nodes - Total number of DXRAM storage nodes
+#   useroffset - Start record offset for node
+#   usercount - Total number of records for node
+#   bg_load_threads - Number of loading threads for BG instance
+#   bg_exec_threads - Number of execution threads for BG instance
+######################################################
+compile_bg_application_options_string_peer()
+{
+	local ip=$1
+	local port=$2
+	local ram_size_in_mb=$3
+	local total_storage_nodes=$4
+	local useroffset=$5
+	local usercount=$6
+	local bg_load_threads=$7
+	local bg_exec_threads=$8
+
+	JVM_PARAMS=""
+	JVM_PARAMS="$JVM_PARAMS -Dlog4j.configurationFile=config/log4j.xml"
+	JVM_PARAMS="$JVM_PARAMS -Ddxram.config=config/dxram.json"
+	JVM_PARAMS="$JVM_PARAMS -Ddxram.m_config.m_engineConfig.m_address.m_ip=$ip"
+	JVM_PARAMS="$JVM_PARAMS -Ddxram.m_config.m_engineConfig.m_address.m_port=$port"
+	JVM_PARAMS="$JVM_PARAMS -Ddxram.m_config.m_engineConfig.m_role=Peer"
+
+	# parameters only used on storage instance
+	if [ "$ram_size_in_mb" != "-" ]; then
+		JVM_PARAMS="$JVM_PARAMS -Ddxram.dxram.m_config.m_componentConfigs[MemoryManagerComponentConfig].m_keyValueStoreSize.m_value=$ram_size_in_mb"
+		JVM_PARAMS="$JVM_PARAMS -Ddxram.dxram.m_config.m_componentConfigs[MemoryManagerComponentConfig].m_keyValueStoreSize.m_unit=mb"
+	fi
+
+	BG_PARAMS=""
+	if [ "$total_storage_nodes" != "-" ]; then
+		BG_PARAMS="$BG_PARAMS -p dxram.nodes=$total_storage_nodes"
+	fi
+	BG_PARAMS="$BG_PARAMS -p usercount=$usercount"
+	if [ "$useroffset" != "-" ]; then
+		BG_PARAMS="$BG_PARAMS -p useroffset=$useroffset"
+	fi
+	BG_PARAMS="$BG_PARAMS -p initapproach=deterministic"
+	BG_PARAMS="$BG_PARAMS -p insertimage=true"
+	BG_PARAMS="$BG_PARAMS -p imagesize=12"
+	if [ "$bg_load_threads" != "-" ]; then
+        BG_PARAMS="$BG_PARAMS -p numloadthreads=$bg_load_threads"
+    else
+        echo "Number of load threads must be defined (benchmark clients need to know to calculate distribution)!"
+        exit -1
+    fi
+	if [ "$bg_exec_threads" != "-" ]; then
+	    BG_PARAMS="$BG_PARAMS -p threadcount=$bg_exec_threads"
+	fi
+}
+
+######################################################
+# Start a Peer on a remote node
+# Globals:
+#   DXRAM_PATH
+# Arguments:
+#   ip - The IP of the Peer
+#   port - The port of Peer
+#   hostname - The hostname
+#   ram_size_in_mb - The key-value store size
+#   total_storage_nodes - Total number of DXRAM storage nodes
+#   useroffset - Start record offset for node
+#   usercount - Total number of records for node
+#   bg_type - Type of BG instance (load or run)
+#   bg_load_threads - Number of loading threads for BG instance
+#   bg_exec_threads - Number of execution threads for BG instance
+#   bg_workload - Workload to execute
+######################################################
+start_remote_peer()
+{
+	local ip=$1
+	local port=$2
+	local ram_size_in_mb=$3
+	local total_storage_nodes=$4
+	local useroffset=$5
+	local usercount=$6
+	local bg_type=$7
+	local bg_load_threads=$8
+	local bg_exec_threads=$9
+	local bg_workload=${10}
+	local additional_shell_cmds="${11}"
+
+	compile_bg_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$useroffset" "$usercount" "$bg_load_threads" "$bg_exec_threads"
+
+	echo "Executing peer on $3 ($ip, $port):"
+
+	if [ "$additional_shell_cmds" != "" ]; then
+        if [ "$bg_type" == "load" ]; then
+            ssh $hostname -n "$additional_shell_cmds && cd ${DXRAM_PATH} && java -Ddxramdeployscript $JVM_PARAMS -cp bg.jar edu.usc.bg.BGMainClass onetime -load -db dxramdb.DXRAMDBClient -P workloads/$bg_workload $BG_PARAMS"
+        elif [ "$bg_type" == "run" ]; then
+            ssh $hostname -n "$additional_shell_cmds && cd ${DXRAM_PATH} && java -Ddxramdeployscript $JVM_PARAMS -cp bg.jar edu.usc.bg.BGMainClass onetime -t -db dxramdb.DXRAMDBClient -P workloads/$bg_workload $BG_PARAMS"
+        else
+            echo "Unknown mode: $bg_type"
+            exit -1
+        fi
+	else
+		# we assume the bg and dxram folder are merged
+        if [ "$bg_type" == "load" ]; then
+            ssh $hostname -n "cd ${DXRAM_PATH} && java -Ddxramdeployscript $JVM_PARAMS -cp bg.jar edu.usc.bg.BGMainClass onetime -load -db dxramdb.DXRAMDBClient -P workloads/$bg_workload $BG_PARAMS"
+        elif [ "$bg_type" == "run" ]; then
+            ssh $hostname -n "cd ${DXRAM_PATH} && java -Ddxramdeployscript $JVM_PARAMS -cp bg.jar edu.usc.bg.BGMainClass onetime -t -db dxramdb.DXRAMDBClient -P workloads/$bg_workload $BG_PARAMS"
+        else
+            echo "Unknown mode: $bg_type"
+            exit -1
+        fi
+	fi
+}
+
+######################################################
+# Start a Peer locally
+# Globals:
+#   DXRAM_PATH
+# Arguments:
+#   ip - The IP of the Peer
+#   port - The port of Peer
+#   ram_size_in_mb - The key-value store size
+#   total_storage_nodes - Total number of DXRAM storage nodes
+#   useroffset - Start record offset for node
+#   usercount - Total number of records for node
+#   bg_type - Type of BG instance (load or run)
+#   bg_load_threads - Number of loading threads for BG instance
+#   bg_exec_threads - Number of execution threads for BG instance
+#   bg_workload - Workload to execute
+######################################################
+start_local_peer()
+{
+	local ip=$1
+	local port=$2
+	local ram_size_in_mb=$3
+	local total_storage_nodes=$4
+	local useroffset=$5
+	local usercount=$6
+	local bg_type=$7
+	local bg_load_threads=$8
+	local bg_exec_threads=$9
+	local bg_workload=${10}
+	local additional_shell_cmds="${11}"
+
+	compile_bg_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$useroffset" "$usercount" "$bg_load_threads" "$bg_exec_threads"
+
+	if [ "$additional_shell_cmds" != "" ]; then
+		eval $additional_shell_cmds
+	fi
+
+	# we assume the bg and dxram folder are merged
+	cd "${DXRAM_PATH}"
+	if [ "$bg_type" == "load" ]; then
+	    java -Ddxramdeployscript $JVM_PARAMS -cp bg.jar edu.usc.bg.BGMainClass onetime -load -db dxramdb.DXRAMDBClient -P workloads/$bg_workload $BG_PARAMS
+	elif [ "$bg_type" == "run" ]; then
+	    java -Ddxramdeployscript $JVM_PARAMS -cp bg.jar edu.usc.bg.BGMainClass onetime -t -db dxramdb.DXRAMDBClient -P workloads/$bg_workload $BG_PARAMS
+	else
+	    echo "Unknown mode: $bg_type"
+	    exit -1
+	fi
+	cd "$EXECUTION_DIR"
+}
+
+######################################################
+# Check Peer startup, exit on failure
+# Globals:
+#   LOG_DIR
+# Arguments:
+#   port - The port of Peer
+#   hostname - The hostname
+#   condition - The string to wait for
+######################################################
+check_peer_startup()
+{
+	local port=$1
+	local hostname=$2
+	local condition="$3"
+
+	if [ "$condition" == "none" ]; then
+        echo " SKIPPING CHECK"
+        return
+    fi
+
+	local logfile="${LOG_DIR}/${hostname}_${port}_peer"
+
+	while true; do
+		echo -n "."
+
+		local success=`cat "$logfile" 2> /dev/null | grep "$condition"`
+		local fail_init=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
+		# Abort execution after an exception was thrown (every exception but NetworkResponseCancelledException)
+		local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseCancelledException"`
+		if [ "$success" != "" ] ; then
+			echo " SUCCESS"
+			break
+		elif [ "$fail_init" != "" ] ; then
+			echo " ERROR: BG Peer could not be started. See log file $logfile"
+			exit -1
+		elif [ "$fail_error" != "" ] ; then
+			echo " ERROR: BG Peer failed. See log file $logfile"
+			exit -1
+		fi
+		sleep 1.0
+	done
+}
+
+
+
+###############
+# Entry point #
+###############
+
+EXECUTION_DIR=$1
+LOG_DIR=$2
+DXRAM_PATH=$3
+DEFAULT_CLASS=$4
+LIBRARIES=$5
+DEFAULT_CONDITION=$6
+
+ip=$7
+port=$8
+hostname=$9
+role=${10}
+is_remote=${11}
+node_conf_entry=${12}
+zookeeper_ip=${13}
+zookeeper_port=${14}
+additional_shell_cmds=${15}
+
+# default values: unused indicator
+ram_size_in_mb="-"
+bg_nodes="-"
+bg_useroffset="-"
+bg_load_threads="-"
+bg_exec_threads="-"
+
+iter=5
+while true; do
+	tmp=`echo $node_conf_entry | cut -d ',' -f $iter`
+	iter=$((iter + 1))
+
+	arg_type=`echo $tmp | cut -d '=' -f 1`
+	if [ "$arg_type" = "" ] ; then
+		break
+	elif [ "$arg_type" = "kvss" ] ; then
+		ram_size_in_mb=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "cond" ] ; then
+		condition=`echo $tmp | cut -d '=' -f 2`
+		condition="$condition"
+	elif [ "$arg_type" = "type" ] ; then
+		bg_type=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "loadthreads" ] ; then
+		bg_load_threads=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "execthreads" ] ; then
+		bg_exec_threads=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "workload" ] ; then
+		bg_workload=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "nodes" ] ; then
+		bg_nodes=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "useroffset" ] ; then
+		bg_useroffset=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "usercount" ] ; then
+		bg_usercount=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "shellcmd" ]; then
+		additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
+	else
+		echo "ERROR: Unknown parameter type $arg_type"
+	fi
+done
+
+if [ "$condition" = "" ]; then
+	condition=$DEFAULT_CONDITION
+fi
+
+print=`echo "BG Peer ($ip $port $ram_size_in_mb  $bg_nodes $bg_useroffset $bg_usercount $bg_type $bg_load_threads $bg_exec_threads $bg_workload $additional_shell_cmds): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
+echo -n "$print"
+
+if [ "$is_remote" = false ]; then
+	echo -n "."
+	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$bg_nodes" "$bg_useroffset" "$bg_usercount" "$bg_type" "$bg_load_threads" "$bg_exec_threads" "$bg_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
+	echo -n "."
+else
+	echo -n "."
+	start_remote_peer "$ip" "$port" "$ram_size_in_mb" "$bg_nodes" "$bg_useroffset" "$bg_usercount" "$bg_type" "$bg_load_threads" "$bg_exec_threads" "$bg_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
+	echo -n "."
+fi
+
+check_peer_startup "$port" "$hostname" "$condition"
+exit 0

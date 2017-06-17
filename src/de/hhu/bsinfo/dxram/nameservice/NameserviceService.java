@@ -39,6 +39,15 @@ public class NameserviceService extends AbstractDXRAMService<NameserviceServiceC
     }
 
     /**
+     * Get the nameservice mode (NAME or ID)
+     *
+     * @return "NAME" or "ID"
+     */
+    public String getNameserviceMode() {
+        return m_nameservice.getConfig().getType();
+    }
+
+    /**
      * Remove the name of a registered DataStructure from lookup.
      *
      * @return the number of entries in name service

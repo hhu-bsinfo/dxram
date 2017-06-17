@@ -54,9 +54,9 @@ start_remote_superpeer()
 	compile_vm_options_string_superpeer "$ip" "$port" "$vm_options" "$debug"
 
 	if [ "$additional_shell_cmds" != "" ]; then
-		ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
+		ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
 	else
-		ssh $hostname -n "cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
+		ssh $hostname -n "cd $DXRAM_PATH && java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
 	fi
 }
 
@@ -87,7 +87,7 @@ start_local_superpeer()
 	fi
 
 	cd "$DXRAM_PATH"
-	java $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS
+	java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS
 	cd "$EXECUTION_DIR"
 }
 

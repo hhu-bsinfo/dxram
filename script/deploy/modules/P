@@ -98,9 +98,9 @@ start_remote_peer()
 	echo "Executing peer on $3 ($ip, $port):"
 
 	if [ "$additional_shell_cmds" != "" ]; then
-		ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $class $arguments"
+		ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $class $arguments"
 	else
-		ssh $hostname -n "cd $DXRAM_PATH && java $VM_OPTS -cp $LIBRARIES $class $arguments"
+		ssh $hostname -n "cd $DXRAM_PATH && java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $class $arguments"
 	fi
 }
 
@@ -140,7 +140,7 @@ start_local_peer()
 	fi
 
 	cd "$DXRAM_PATH"
-	java $VM_OPTS -cp $LIBRARIES $class $arguments
+	java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $class $arguments
 	cd "$EXECUTION_DIR"
 }
 

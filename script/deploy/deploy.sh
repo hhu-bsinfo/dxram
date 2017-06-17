@@ -624,9 +624,9 @@ close()
 			echo "ZooKeeper might stay alive"
 		else
 			if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ]; then
-				pkill -9 -f "de.hhu.bsinfo.dxram.DXRAM"
+				pkill -9 -f "dxramdeployscript"
 			else
-				ssh $hostname -n "pkill -9 -f de.hhu.bsinfo.dxram.DXRAM"
+				ssh $hostname -n "pkill -9 -f dxramdeployscript"
 			fi
 		fi
 	done <<< "$NODES"

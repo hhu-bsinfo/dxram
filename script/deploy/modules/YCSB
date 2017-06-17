@@ -3,7 +3,7 @@
 ######################################################
 # Compile the parameter string for dxram
 # Globals:
-#   YCSP_PARAMS - Created by function ("return value")
+#   YCSB_PARAMS - Created by function ("return value")
 # Arguments:
 #   ip - The IP of the Peer
 #   port - The port of Peer
@@ -23,28 +23,28 @@ compile_ycsb_application_options_string_peer()
 	local insertstart=$6
 	local recordcount=$7
 
-	YCSP_PARAMS=""
-	YCSP_PARAMS="$YCSP_PARAMS -p log4j.configurationFile=config/log4j.xml"
-	YCSP_PARAMS="$YCSP_PARAMS -p dxram.config=config/dxram.json"
-	YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_config.m_engineConfig.m_address.m_ip=$ip"
-	YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_config.m_engineConfig.m_address.m_port=$port"
-	YCSP_PARAMS="$YCSP_PARAMS -p dxram.m_config.m_engineConfig.m_role=Peer"
+	YCSB_PARAMS=""
+	YCSB_PARAMS="$YCSB_PARAMS -p log4j.configurationFile=config/log4j.xml"
+	YCSB_PARAMS="$YCSB_PARAMS -p dxram.config=config/dxram.json"
+	YCSB_PARAMS="$YCSB_PARAMS -p dxram.m_config.m_engineConfig.m_address.m_ip=$ip"
+	YCSB_PARAMS="$YCSB_PARAMS -p dxram.m_config.m_engineConfig.m_address.m_port=$port"
+	YCSB_PARAMS="$YCSB_PARAMS -p dxram.m_config.m_engineConfig.m_role=Peer"
 
-	YCSP_PARAMS="$YCSP_PARAMS -p zookeeper.string=$zookeeper_string"
-	YCSP_PARAMS="$YCSP_PARAMS -p recordcount=$recordcount"
-	YCSP_PARAMS="$YCSP_PARAMS -p status.interval=1"
+	YCSB_PARAMS="$YCSB_PARAMS -p zookeeper.string=$zookeeper_string"
+	YCSB_PARAMS="$YCSB_PARAMS -p recordcount=$recordcount"
+	YCSB_PARAMS="$YCSB_PARAMS -p status.interval=1"
 
 	# parameters only used on storage instance
 	if [ "$ram_size_in_mb" != "-" ]; then
-		YCSP_PARAMS="$YCSP_PARAMS -p dxram.dxram.m_config.m_componentConfigs[MemoryManagerComponentConfig].m_keyValueStoreSize.m_value=$ram_size_in_mb"
-		YCSP_PARAMS="$YCSP_PARAMS -p dxram.dxram.m_config.m_componentConfigs[MemoryManagerComponentConfig].m_keyValueStoreSize.m_unit=mb"
+		YCSB_PARAMS="$YCSB_PARAMS -p dxram.m_config.m_componentConfigs[MemoryManagerComponentConfig].m_keyValueStoreSize.m_value=$ram_size_in_mb"
+		YCSB_PARAMS="$YCSB_PARAMS -p dxram.m_config.m_componentConfigs[MemoryManagerComponentConfig].m_keyValueStoreSize.m_unit=mb"
 	fi
 
 	if [ "$total_storage_nodes" != "-" ]; then
-		YCSP_PARAMS="$YCSP_PARAMS -p dxram.nodes=$total_storage_nodes"
+		YCSB_PARAMS="$YCSB_PARAMS -p dxram.nodes=$total_storage_nodes"
 	fi
 	if [ "$insertstart" != "-" ]; then
-		YCSP_PARAMS="$YCSP_PARAMS -p insertstart=$insertstart"
+		YCSB_PARAMS="$YCSB_PARAMS -p insertstart=$insertstart"
 	fi
 }
 
@@ -84,10 +84,10 @@ start_remote_peer()
 	echo "Executing peer on $3 ($ip, $port):"
 
 	if [ "$additional_shell_cmds" != "" ]; then
-		ssh $hostname -n "$additional_shell_cmds && cd ${DXRAM_PATH} && ./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSP_PARAMS"
+		ssh $hostname -n "$additional_shell_cmds && cd ${DXRAM_PATH} && ./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSB_PARAMS -Ddxramdeployscript"
 	else
 		# we assume the ycsb and dxram folder are merged
-		ssh $hostname -n "cd ${DXRAM_PATH} && ./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSP_PARAMS"
+		ssh $hostname -n "cd ${DXRAM_PATH} && ./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSB_PARAMS -Ddxramdeployscript"
 	fi
 }
 
@@ -129,7 +129,7 @@ start_local_peer()
 
 	# we assume the ycsb and dxram folder are merged
 	cd "${DXRAM_PATH}"
-	./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSP_PARAMS
+	./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSB_PARAMS -Ddxramdeployscript
 	cd "$EXECUTION_DIR"
 }
 
