@@ -62,7 +62,7 @@ class ChangeOperationsRequest {
     @Override
     public boolean equals(final Object p_request) {
         return p_request instanceof ChangeOperationsRequest &&
-                m_connection.getDestinationNodeId() == ((ChangeOperationsRequest) p_request).m_connection.getDestinationNodeId() &&
+                m_connection.getDestinationNodeID() == ((ChangeOperationsRequest) p_request).m_connection.getDestinationNodeID() &&
                 m_operations == ((ChangeOperationsRequest) p_request).m_operations;
     }
 
@@ -70,7 +70,7 @@ class ChangeOperationsRequest {
     public int hashCode() {
         int ret = 1247687943;
 
-        ret = 37 * ret + m_connection.getDestinationNodeId();
+        ret = 37 * ret + m_connection.getDestinationNodeID();
         ret = 37 * ret + m_operations;
 
         return ret;
@@ -78,6 +78,6 @@ class ChangeOperationsRequest {
 
     @Override
     public String toString() {
-        return "[" + m_connection.getDestinationNodeId() + ", " + m_operations + ']';
+        return "[" + m_connection.getDestinationNodeID() + ", " + m_operations + ']';
     }
 }

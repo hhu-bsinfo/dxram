@@ -121,8 +121,8 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
 
         m_connectionCreationLock.unlock();
 
-        connection.setConnected(true, false);
-        connection.setConnected(true, true);
+        connection.setPipeInConnected(true);
+        connection.setPipeOutConnected(true);
 
         return connection;
     }
@@ -130,22 +130,22 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
     @Override
     protected void closeConnection(final AbstractConnection p_connection, final boolean p_removeConnection) {
         // #if LOGGER >= DEBUG
-        LOGGER.debug("Closing connection 0x%X", p_connection.getDestinationNodeId());
+        LOGGER.debug("Closing connection 0x%X", p_connection.getDestinationNodeID());
         // #endif /* LOGGER >= DEBUG */
 
-        p_connection.setConnected(false, false);
-        p_connection.setConnected(false, true);
+        p_connection.setPipeInConnected(false);
+        p_connection.setPipeOutConnected(false);
 
         m_connectionCreationLock.lock();
-        AbstractConnection tmp = m_connections[p_connection.getDestinationNodeId() & 0xFFFF];
+        AbstractConnection tmp = m_connections[p_connection.getDestinationNodeID() & 0xFFFF];
         if (p_connection.equals(tmp)) {
-            m_connections[p_connection.getDestinationNodeId() & 0xFFFF] = null;
+            m_connections[p_connection.getDestinationNodeID() & 0xFFFF] = null;
             m_openConnections--;
         }
         m_connectionCreationLock.unlock();
 
         // Trigger failure handling for remote node over faulty connection
-        m_listener.connectionLost(p_connection.getDestinationNodeId());
+        m_listener.connectionLost(p_connection.getDestinationNodeID());
     }
 
     @Override

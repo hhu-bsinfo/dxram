@@ -234,8 +234,6 @@ public final class NetworkHandler {
                         LOGGER.debug("Connection invalid. Ignoring connection exceptions regarding 0x%X during the next second!", p_message.getDestination());
                         // #endif /* LOGGER >= DEBUG */
                         throw new NetworkDestinationUnreachableException(p_message.getDestination());
-                    } else {
-                        return;
                     }
                 }
             } catch (final NetworkException e) {

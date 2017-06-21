@@ -2,7 +2,6 @@ package de.hhu.bsinfo.net.nio;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 
 import org.apache.logging.log4j.LogManager;
@@ -76,7 +75,7 @@ public class NIOPipeIn extends AbstractPipeIn {
                 buffer.rewind();
 
                 // #if LOGGER >= TRACE
-                LOGGER.trace("Posting receive buffer (limit %d) to connection 0x%X", buffer.limit(), getDestinationNodeId());
+                LOGGER.trace("Posting receive buffer (limit %d) to connection 0x%X", buffer.limit(), getDestinationNodeID());
                 // #endif /* LOGGER >= TRACE */
 
                 // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
@@ -98,7 +97,7 @@ public class NIOPipeIn extends AbstractPipeIn {
     /**
      * Write flow control data
      */
-    public void writeFlowControlBytes() throws IOException {
+    void writeFlowControlBytes() throws IOException {
         int bytes = 0;
         int tries = 0;
 

@@ -13,7 +13,7 @@ public class IBConnection extends AbstractConnection<IBPipeIn, IBPipeOut> {
     IBConnection(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final int p_flowControlWindowSize,
             final MessageCreator p_messageCreator, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver,
             final IBBufferPool p_bufferPool) {
-        super(p_ownNodeId, p_messageCreator);
+        super(p_ownNodeId);
 
         IBFlowControl flowControl = new IBFlowControl(p_destinationNodeId, p_flowControlWindowSize);
         IBPipeIn pipeIn =

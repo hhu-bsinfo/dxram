@@ -96,6 +96,12 @@ final class DefaultMessageHandlerPool {
         }
     }
 
+    /**
+     * Enqueues a batch of new messages for delivering
+     *
+     * @param p_messages
+     *         the messages
+     */
     void newMessages(final AbstractMessage[] p_messages) {
         m_defaultMessagesLock.lock();
         for (AbstractMessage message : p_messages) {

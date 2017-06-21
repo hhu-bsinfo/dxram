@@ -143,7 +143,7 @@ class NIOSelector extends Thread {
                 while (iterator.hasNext()) {
                     SelectionKey key = iterator.next();
                     if (key.isValid() && key.attachment() != null) {
-                        ret += '[' + NodeID.toHexString(((NIOConnection) key.attachment()).getDestinationNodeId()) + ", " + key.interestOps() + "] ";
+                        ret += '[' + NodeID.toHexString(((NIOConnection) key.attachment()).getDestinationNodeID()) + ", " + key.interestOps() + "] ";
                         ret += key.attachment().toString();
                     }
                 }
@@ -248,7 +248,7 @@ class NIOSelector extends Thread {
                             if (System.currentTimeMillis() - connection.getClosingTimestamp() > 2 * m_connectionTimeout) {
                                 // #if LOGGER >= DEBUG
                                 try {
-                                    LOGGER.debug("Closing connection to 0x%X;%s", connection.getDestinationNodeId(),
+                                    LOGGER.debug("Closing connection to 0x%X;%s", connection.getDestinationNodeID(),
                                             connection.getPipeOut().getChannel().getRemoteAddress());
                                 } catch (final IOException ignored) {
                                 }
@@ -429,7 +429,7 @@ class NIOSelector extends Thread {
         connection = (NIOConnection) p_key.attachment();
         if (p_key.isValid()) {
                 if (p_key.isReadable()) {
-                    if (connection == null || !connection.isIncomingOpen()) {
+                    if (connection == null || !connection.isPipeInOpen()) {
                         // Channel was accepted but not used yet -> Read NodeID, create NIOConnection and attach to key
                         try {
                             m_connectionManager.createConnection((SocketChannel) p_key.channel());
@@ -447,7 +447,7 @@ class NIOSelector extends Thread {
                             }
                             if (!successful) {
                                 // #if LOGGER >= DEBUG
-                                LOGGER.debug("Could not read from channel (0x%X)!", connection.getDestinationNodeId());
+                                LOGGER.debug("Could not read from channel (0x%X)!", connection.getDestinationNodeID());
                                 // #endif /* LOGGER >= DEBUG */
 
                                 m_connectionManager.closeConnection(connection, true);
@@ -474,7 +474,7 @@ class NIOSelector extends Thread {
                             complete = connection.getPipeOut().write();
                         } catch (final IOException ignored) {
                             // #if LOGGER >= DEBUG
-                            LOGGER.debug("Could not write to channel (0x%X)!", connection.getDestinationNodeId());
+                            LOGGER.debug("Could not write to channel (0x%X)!", connection.getDestinationNodeID());
                             // #endif /* LOGGER >= DEBUG */
 
                             m_connectionManager.closeConnection(connection, true);

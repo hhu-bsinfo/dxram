@@ -42,7 +42,7 @@ public class IBPipeIn extends AbstractPipeIn {
         p_buffer.rewind();
 
         // #if LOGGER >= TRACE
-        LOGGER.trace("Posting receive buffer (limit %d) to connection 0x%X", p_buffer.limit(), getDestinationNodeId());
+        LOGGER.trace("Posting receive buffer (limit %d) to connection 0x%X", p_buffer.limit(), getDestinationNodeID());
         // #endif /* LOGGER >= TRACE */
 
         // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading

@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 public abstract class AbstractFlowControl {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractFlowControl.class.getSimpleName());
 
-    private final short m_destinationNodeId;
+    private final short m_destinationNodeID;
 
     private final int m_flowControlWindowSize;
     private final ReentrantLock m_flowControlCondLock;
@@ -22,15 +22,15 @@ public abstract class AbstractFlowControl {
     private int m_unconfirmedBytes;
     private int m_receivedBytes;
 
-    protected AbstractFlowControl(final short p_destinationNodeId, final int p_flowControlWindowSize) {
-        m_destinationNodeId = p_destinationNodeId;
+    protected AbstractFlowControl(final short p_destinationNodeID, final int p_flowControlWindowSize) {
+        m_destinationNodeID = p_destinationNodeID;
         m_flowControlWindowSize = p_flowControlWindowSize;
         m_flowControlCondLock = new ReentrantLock(false);
         m_flowControlCond = m_flowControlCondLock.newCondition();
     }
 
-    public short getDestinationNodeId() {
-        return m_destinationNodeId;
+    protected short getDestinationNodeId() {
+        return m_destinationNodeID;
     }
 
     public boolean isCongested() {
@@ -46,7 +46,7 @@ public abstract class AbstractFlowControl {
     public abstract void flowControlWrite() throws NetworkException;
 
     // call when data was written to a connection
-    public void dataSent(final int p_writtenBytes) {
+    void dataSent(final int p_writtenBytes) {
         // #if LOGGER >= TRACE
         LOGGER.trace("executeFlowControlDataWritten: %d", p_writtenBytes);
         // #endif /* LOGGER >= TRACE */
@@ -56,7 +56,7 @@ public abstract class AbstractFlowControl {
             try {
                 if (!m_flowControlCond.await(1000, TimeUnit.MILLISECONDS)) {
                     // #if LOGGER >= WARN
-                    LOGGER.warn("Flow control message is overdue for node: 0x%X", m_destinationNodeId);
+                    LOGGER.warn("Flow control message is overdue for node: 0x%X", m_destinationNodeID);
                     // #endif /* LOGGER >= WARN */
                 }
             } catch (final InterruptedException e) { /* ignore */ }
@@ -66,7 +66,7 @@ public abstract class AbstractFlowControl {
     }
 
     // call when data was received on a connection
-    public void dataReceived(final int p_receivedBytes) {
+    void dataReceived(final int p_receivedBytes) {
         // #if LOGGER >= TRACE
         LOGGER.trace("executeFlowControlDataReceived: %d", p_receivedBytes);
         // #endif /* LOGGER >= TRACE */

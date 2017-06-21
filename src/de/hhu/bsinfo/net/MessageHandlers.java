@@ -154,7 +154,7 @@ final class MessageHandlers implements DataReceiver, MessageReceiverStore {
 
     @Override
     public MessageReceiver getReceiver(final byte p_type, final byte p_subtype) {
-        long time;
+        long deadline;
         MessageReceiver messageReceiver = m_receivers[p_type][p_subtype];
 
         // Try again in a loop, if receivers were not registered. Stop if request timeout is reached as answering later has no effect
@@ -162,8 +162,8 @@ final class MessageHandlers implements DataReceiver, MessageReceiverStore {
             // #if LOGGER >= WARN
             LOGGER.warn("Message receiver null for %d, %d! Waiting...", p_type, p_subtype);
             // #endif /* LOGGER >= WARN */
-            time = System.currentTimeMillis();
-            while (messageReceiver == null && System.currentTimeMillis() < time + m_requestTimeOut) {
+            deadline = System.currentTimeMillis() + m_requestTimeOut;
+            while (messageReceiver == null && System.currentTimeMillis() < deadline) {
                 m_receiversLock.lock();
                 messageReceiver = m_receivers[p_type][p_subtype];
                 m_receiversLock.unlock();

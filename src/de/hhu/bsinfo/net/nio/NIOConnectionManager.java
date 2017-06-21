@@ -89,7 +89,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
      * @param p_destination
      *         the destination
      * @return a new connection
-     * @throws IOException
+     * @throws NetworkException
      *         if the connection could not be created
      */
     @Override
@@ -97,25 +97,23 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         NIOConnection ret;
         ReentrantLock condLock;
         Condition cond;
-        long timeStart;
-        long timeNow;
+        long deadline;
 
         condLock = new ReentrantLock(false);
         cond = condLock.newCondition();
 
-        if (p_existingConnection == null) {
-
+        if (p_existingConnection != null) {
+            // There is a connection already, but with incoming channel, only -> open outgoing channel
+            ret = (NIOConnection) p_existingConnection;
+        } else {
             ret = new NIOConnection(m_ownNodeId, p_destination, m_bufferSize, m_flowControlWindowSize, m_messageCreator, m_messageDirectory, m_requestMap,
                     m_dataReceiver, m_bufferPool, m_nioSelector, m_nodeMap, condLock, cond);
-
-        } else {
-            ret = (NIOConnection) p_existingConnection;
         }
 
         ret.getPipeOut().createOutgoingChannel(p_destination);
         ret.connect();
 
-        timeStart = System.currentTimeMillis();
+        deadline = System.currentTimeMillis() + m_connectionTimeout;
         condLock.lock();
         while (!ret.getPipeOut().isConnected()) {
             if (ret.isConnectionCreationAborted()) {
@@ -123,8 +121,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
                 return null;
             }
 
-            timeNow = System.currentTimeMillis();
-            if (timeNow - timeStart > m_connectionTimeout) {
+            if (System.currentTimeMillis() > deadline) {
                 // #if LOGGER >= DEBUG
                 LOGGER.debug("Connection creation time-out. Interval %d ms might be to small", m_connectionTimeout);
                 // #endif /* LOGGER >= DEBUG */
@@ -159,7 +156,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
                 connection.getPipeOut().getChannel().close();
             } catch (final IOException e) {
                 // #if LOGGER >= ERROR
-                LOGGER.error("Could not close connection to %s!", p_connection.getDestinationNodeId());
+                LOGGER.error("Could not close connection to %s!", p_connection.getDestinationNodeID());
                 // #endif /* LOGGER >= ERROR */
             }
         }
@@ -174,13 +171,13 @@ public class NIOConnectionManager extends AbstractConnectionManager {
                 connection.getPipeIn().getChannel().close();
             } catch (final IOException e) {
                 // #if LOGGER >= ERROR
-                LOGGER.error("Could not close connection to %s!", p_connection.getDestinationNodeId());
+                LOGGER.error("Could not close connection to %s!", p_connection.getDestinationNodeID());
                 // #endif /* LOGGER >= ERROR */
             }
         }
 
-        connection.setConnected(false, true);
-        connection.setConnected(false, false);
+        connection.setPipeOutConnected(false);
+        connection.setPipeInConnected(false);
 
         if (p_removeConnection) {
             m_connectionCreatorHelperThread.pushJob(new ClosureJob(p_connection));
@@ -208,7 +205,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
             if (remoteNodeID != NodeID.INVALID_ID) {
                 m_connectionCreatorHelperThread.pushJob(new CreationJob(remoteNodeID, p_channel));
             } else {
-                throw new IOException();
+                throw new IOException("Invalid NodeID");
             }
         } catch (final IOException e) {
             // #if LOGGER >= ERROR
@@ -406,15 +403,15 @@ public class NIOConnectionManager extends AbstractConnectionManager {
                     connection = closeJob.getConnection();
 
                     m_connectionCreationLock.lock();
-                    AbstractConnection tmp = m_connections[connection.getDestinationNodeId() & 0xFFFF];
+                    AbstractConnection tmp = m_connections[connection.getDestinationNodeID() & 0xFFFF];
                     if (connection.equals(tmp)) {
-                        m_connections[connection.getDestinationNodeId() & 0xFFFF] = null;
+                        m_connections[connection.getDestinationNodeID() & 0xFFFF] = null;
                         m_openConnections--;
                     }
                     m_connectionCreationLock.unlock();
 
                     // Trigger failure handling for remote node over faulty connection
-                    m_listener.connectionLost(connection.getDestinationNodeId());
+                    m_listener.connectionLost(connection.getDestinationNodeID());
                 }
             }
         }
@@ -451,7 +448,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
 
             // Register connection as attachment
             m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(ret, NIOSelector.READ));
-            ret.setConnected(true, false);
+            ret.setPipeInConnected(true);
 
             return ret;
         }
@@ -461,7 +458,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
 
             // Register connection as attachment
             m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest((NIOConnection) p_connection, NIOSelector.READ));
-            p_connection.setConnected(true, false);
+            p_connection.setPipeInConnected(true);
         }
     }
 }

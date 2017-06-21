@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * Created by nothaas on 6/12/17.
  */
-public final class BufferPool {
+final class BufferPool {
     private static final Logger LOGGER = LogManager.getFormatterLogger(BufferPool.class.getSimpleName());
 
     private static final int LARGE_BUFFER_POOL_SIZE = 16;
@@ -27,7 +27,7 @@ public final class BufferPool {
     private final ArrayList<ByteBuffer> m_smallBufferPool;
     private final ReentrantLock m_bufferPoolLock;
 
-    public BufferPool(final int p_osBufferSize) {
+    BufferPool(final int p_osBufferSize) {
         m_osBufferSize = p_osBufferSize;
 
         m_largeBufferPool = new ArrayList<ByteBuffer>();
@@ -45,7 +45,7 @@ public final class BufferPool {
         m_bufferPoolLock = new ReentrantLock(false);
     }
 
-    public int getOSBufferSize() {
+    int getOSBufferSize() {
         return m_osBufferSize;
     }
 
@@ -76,7 +76,7 @@ public final class BufferPool {
      * @param p_byteBuffer
      *         the pooled buffer
      */
-    public void returnBuffer(final ByteBuffer p_byteBuffer) {
+    void returnBuffer(final ByteBuffer p_byteBuffer) {
         m_bufferPoolLock.lock();
         p_byteBuffer.clear();
         if (p_byteBuffer.capacity() == m_osBufferSize / LARGE_BUFFER_POOL_FACTOR) {

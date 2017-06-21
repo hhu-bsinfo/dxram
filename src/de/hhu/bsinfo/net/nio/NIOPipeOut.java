@@ -27,7 +27,7 @@ public class NIOPipeOut extends AbstractPipeOut {
     private final NodeMap m_nodeMap;
     private final ByteBuffer m_flowControlBytes;
 
-    public NIOPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl,
+    NIOPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl,
             final NIOSelector p_nioSelector, final NodeMap p_nodeMap, final NIOConnection p_parentConnection) {
         super(p_ownNodeId, p_destinationNodeId, p_bufferSize, p_flowControl);
 
@@ -39,11 +39,11 @@ public class NIOPipeOut extends AbstractPipeOut {
         m_flowControlBytes = ByteBuffer.allocateDirect(Integer.BYTES);
     }
 
-    public SocketChannel getChannel() {
+    SocketChannel getChannel() {
         return m_outgoingChannel;
     }
 
-    public void createOutgoingChannel(final short p_nodeID) throws NetworkException {
+    void createOutgoingChannel(final short p_nodeID) throws NetworkException {
         try {
             m_outgoingChannel = SocketChannel.open();
             m_outgoingChannel.configureBlocking(false);
@@ -59,7 +59,7 @@ public class NIOPipeOut extends AbstractPipeOut {
             }
 
             m_outgoingChannel.connect(m_nodeMap.getAddress(p_nodeID));
-        } catch (final IOException e) {
+        } catch (final IOException ignored) {
             throw new NetworkException("Creating outgoing channel failed");
         }
     }
@@ -102,7 +102,7 @@ public class NIOPipeOut extends AbstractPipeOut {
     /**
      * Read flow control data
      */
-    public void readFlowControlBytes() throws IOException {
+    void readFlowControlBytes() throws IOException {
         int readBytes;
         int readAllBytes;
 

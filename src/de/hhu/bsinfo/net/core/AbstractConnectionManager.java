@@ -13,7 +13,6 @@
 
 package de.hhu.bsinfo.net.core;
 
-import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -79,7 +78,7 @@ public abstract class AbstractConnectionManager {
      * @param p_destination
      *         the destination
      * @return the connection
-     * @throws IOException
+     * @throws NetworkException
      *         if the connection could not be get
      */
     public AbstractConnection getConnection(final short p_destination) throws NetworkException {
@@ -110,7 +109,7 @@ public abstract class AbstractConnectionManager {
                     m_openConnections++;
                 } else {
                     // #if LOGGER >= ERROR
-                    LOGGER.warn("Connection creation was aborted. No listener was registered.");
+                    LOGGER.warn("Connection creation was aborted!");
                     // #endif /* LOGGER >= ERROR */
                 }
             }
@@ -137,7 +136,7 @@ public abstract class AbstractConnectionManager {
      * @param p_destination
      *         the destination
      * @return a new connection
-     * @throws IOException
+     * @throws NetworkException
      *         if the connection could not be created
      */
     protected abstract AbstractConnection createConnection(final short p_destination, final AbstractConnection p_existingConnection) throws NetworkException;
@@ -153,14 +152,14 @@ public abstract class AbstractConnectionManager {
     /**
      * Closes all connections
      */
-    protected void closeAllConnections() {
+    private void closeAllConnections() {
         AbstractConnection connection = null;
 
         m_connectionCreationLock.lock();
         for (int i = 0; i < 65536; i++) {
             if (m_connections[i] != null) {
                 connection = m_connections[i & 0xFFFF];
-                m_connections[connection.getDestinationNodeId() & 0xFFFF] = null;
+                m_connections[connection.getDestinationNodeID() & 0xFFFF] = null;
 
                 connection.close(false);
             }

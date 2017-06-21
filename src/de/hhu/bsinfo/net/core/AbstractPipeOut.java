@@ -12,8 +12,8 @@ import org.apache.logging.log4j.Logger;
 public abstract class AbstractPipeOut {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeOut.class.getSimpleName());
 
-    private final short m_ownNodeId;
-    private final short m_destinationNodeId;
+    private final short m_ownNodeID;
+    private final short m_destinationNodeID;
     private volatile boolean m_isConnected;
     private final int m_bufferSize;
     private final AbstractFlowControl m_flowControl;
@@ -24,9 +24,9 @@ public abstract class AbstractPipeOut {
     // TODO needs to be atomic now because lock is missing?
     private long m_sentMessages;
 
-    public AbstractPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl) {
-        m_ownNodeId = p_ownNodeId;
-        m_destinationNodeId = p_destinationNodeId;
+    protected AbstractPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl) {
+        m_ownNodeID = p_ownNodeId;
+        m_destinationNodeID = p_destinationNodeId;
         m_bufferSize = p_bufferSize;
         m_flowControl = p_flowControl;
 
@@ -37,15 +37,15 @@ public abstract class AbstractPipeOut {
         m_sentMessages = 0;
     }
 
-    public short getOwnNodeId() {
-        return m_ownNodeId;
+    short getOwnNodeID() {
+        return m_ownNodeID;
     }
 
-    public short getDestinationNodeId() {
-        return m_destinationNodeId;
+    public short getDestinationNodeID() {
+        return m_destinationNodeID;
     }
 
-    public int getBufferSize() {
+    protected int getBufferSize() {
         return m_bufferSize;
     }
 
@@ -61,7 +61,7 @@ public abstract class AbstractPipeOut {
         return m_sentMessages;
     }
 
-    public AbstractFlowControl getFlowControl() {
+    protected AbstractFlowControl getFlowControl() {
         return m_flowControl;
     }
 
@@ -69,9 +69,9 @@ public abstract class AbstractPipeOut {
         return m_outgoing.isEmpty();
     }
 
-    public void postMessage(final AbstractMessage p_message) throws NetworkException {
+    void postMessage(final AbstractMessage p_message) throws NetworkException {
         // #if LOGGER >= TRACE
-        LOGGER.trace("Writing message %s to pipe out of dest 0x%X", p_message, m_destinationNodeId);
+        LOGGER.trace("Writing message %s to pipe out of dest 0x%X", p_message, m_destinationNodeID);
         // #endif /* LOGGER >= TRACE */
 
         m_flowControl.dataSent(p_message.getPayloadLength() + AbstractMessage.HEADER_SIZE);
@@ -101,7 +101,7 @@ public abstract class AbstractPipeOut {
         bufferPosted();
     }
 
-    public void postBuffer(final AbstractMessage p_message, final int p_messageSize) throws NetworkException {
+    private void postBuffer(final AbstractMessage p_message, final int p_messageSize) throws NetworkException {
         m_outgoing.pushAndAggregateBuffers(p_message, p_messageSize);
         bufferPosted();
     }

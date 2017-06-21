@@ -41,8 +41,6 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
 
     private NIOSelector m_nioSelector;
 
-    private MessageCreator m_messageCreator;
-
     private ReentrantLock m_connectionCondLock;
     private Condition m_connectionCond;
 
@@ -51,7 +49,7 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
     NIOConnection(final short p_ownNodeId, final short p_destination, final int p_bufferSize, final int p_flowControlWindowSize,
             final MessageCreator p_messageCreator, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver,
             final BufferPool p_bufferPool, final NIOSelector p_nioSelector, final NodeMap p_nodeMap, final ReentrantLock p_lock, final Condition p_cond) {
-        super(p_ownNodeId, p_messageCreator);
+        super(p_ownNodeId);
 
         NIOFlowControl flowControl = new NIOFlowControl(p_destination, p_flowControlWindowSize, p_nioSelector, this);
         NIOPipeIn pipeIn =
@@ -60,7 +58,6 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
 
         setPipes(pipeIn, pipeOut);
 
-        m_messageCreator = p_messageCreator;
         m_nioSelector = p_nioSelector;
 
         m_connectionCondLock = p_lock;
@@ -70,7 +67,7 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
     NIOConnection(final short p_ownNodeId, final short p_destination, final int p_bufferSize, final int p_flowControlWindowSize,
             final MessageCreator p_messageCreator, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver,
             final BufferPool p_bufferPool, final NIOSelector p_nioSelector, final NodeMap p_nodeMap) {
-        super(p_ownNodeId, p_messageCreator);
+        super(p_ownNodeId);
 
         NIOFlowControl flowControl = new NIOFlowControl(p_destination, p_flowControlWindowSize, p_nioSelector, this);
         NIOPipeIn pipeIn =
@@ -79,7 +76,6 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
 
         setPipes(pipeIn, pipeOut);
 
-        m_messageCreator = p_messageCreator;
         m_nioSelector = p_nioSelector;
 
         m_connectionCondLock = new ReentrantLock(false);
@@ -162,7 +158,7 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
     /**
      * Aborts the connection creation. Is called by selector thread.
      */
-    void abortConnectionCreation() {
+    private void abortConnectionCreation() {
         m_connectionCreationAborted = true;
     }
 
@@ -171,7 +167,7 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
      *
      * @param p_key
      *         the selection key
-     * @throws IOException
+     * @throws NetworkException
      *         if the connection could not be accessed
      */
 
@@ -180,7 +176,7 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
 
         m_connectionCondLock.lock();
         temp = ByteBuffer.allocateDirect(2);
-        temp.putShort(getOwnNodeId());
+        temp.putShort(getOwnNodeID());
         temp.flip();
 
         // Register first write access containing the NodeID
@@ -195,7 +191,7 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
             return;
         }
 
-        setConnected(true, true);
+        setPipeOutConnected(true);
 
         m_connectionCond.signalAll();
         m_connectionCondLock.unlock();

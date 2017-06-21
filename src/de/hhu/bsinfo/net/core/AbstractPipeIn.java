@@ -32,7 +32,7 @@ public abstract class AbstractPipeIn {
     private final AbstractMessage[] m_normalMessages = new AbstractMessage[25];
     private final AbstractMessage[] m_exclusiveMessages = new AbstractMessage[25];
 
-    public AbstractPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
+    protected AbstractPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
             final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver) {
         m_ownNodeId = p_ownNodeId;
         m_destinationNodeId = p_destinationNodeId;
@@ -45,11 +45,11 @@ public abstract class AbstractPipeIn {
         m_streamInterpreter = new ByteStreamInterpreter();
     }
 
-    public short getOwnNodeId() {
+    short getOwnNodeID() {
         return m_ownNodeId;
     }
 
-    public short getDestinationNodeId() {
+    public short getDestinationNodeID() {
         return m_destinationNodeId;
     }
 
@@ -65,7 +65,7 @@ public abstract class AbstractPipeIn {
         return m_receivedMessages;
     }
 
-    public AbstractFlowControl getFlowControl() {
+    protected AbstractFlowControl getFlowControl() {
         return m_flowControl;
     }
 
@@ -79,7 +79,7 @@ public abstract class AbstractPipeIn {
      * @param p_buffer
      *         the new buffer
      */
-    public void processBuffer(final ByteBuffer p_buffer) {
+    void processBuffer(final ByteBuffer p_buffer) {
         int counterNormal = 0;
         int counterExclusive = 0;
         AbstractMessage currentMessage;
@@ -145,16 +145,6 @@ public abstract class AbstractPipeIn {
      *         the new messages
      */
     private void deliverMessages(final AbstractMessage[] p_messages) {
-
-        //        if (m_listener == null) {
-        //            // #if LOGGER >= ERROR
-        //            LOGGER.error("No listener registered. Waiting...");
-        //            // #endif /* LOGGER >= ERROR */
-        //
-        //            while (m_listener == null) {
-        //                Thread.yield();
-        //            }
-        //        }
         m_listener.newMessages(p_messages);
     }
 

@@ -28,47 +28,24 @@ import org.apache.logging.log4j.Logger;
 public abstract class AbstractConnection<PipeIn extends AbstractPipeIn, PipeOut extends AbstractPipeOut> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractConnection.class.getSimpleName());
 
-    private final short m_ownNodeId;
+    private final short m_ownNodeID;
     private PipeIn m_pipeIn;
     private PipeOut m_pipeOut;
-    private final MessageCreator m_messageCreator;
 
     private long m_closingTimestamp;
 
-    protected AbstractConnection(final short p_ownNodeId, final MessageCreator p_messageCreator) {
-        m_ownNodeId = p_ownNodeId;
-        m_messageCreator = p_messageCreator;
+    protected AbstractConnection(final short p_ownNodeId) {
+        m_ownNodeID = p_ownNodeId;
 
         m_closingTimestamp = -1;
     }
 
-    public short getOwnNodeId() {
-        return m_ownNodeId;
+    protected short getOwnNodeID() {
+        return m_ownNodeID;
     }
 
-    public final short getDestinationNodeId() {
-        return m_pipeIn.getDestinationNodeId();
-    }
-
-    public final boolean isIncomingQueueFull() {
-        return m_messageCreator.isFull();
-    }
-
-    public final boolean isCongested() {
-        // pipe in and out are expected to have the same flow control objects
-        return m_pipeIn.getFlowControl().isCongested() || m_messageCreator.isFull();
-    }
-
-    public final void returnProcessedBuffer(final ByteBuffer p_buffer) {
-        // #if LOGGER >= TRACE
-        LOGGER.trace("Returning processed buffer, size %d", p_buffer.capacity());
-        // #endif /* LOGGER >= TRACE */
-
-        m_pipeIn.returnProcessedBuffer(p_buffer);
-    }
-
-    public final void postMessage(final AbstractMessage p_message) throws NetworkException {
-        m_pipeOut.postMessage(p_message);
+    public final short getDestinationNodeID() {
+        return m_pipeIn.getDestinationNodeID();
     }
 
     public final PipeIn getPipeIn() {
@@ -79,26 +56,32 @@ public abstract class AbstractConnection<PipeIn extends AbstractPipeIn, PipeOut 
         return m_pipeOut;
     }
 
-    public boolean isOutgoingOpen() {
+    public boolean isPipeOutOpen() {
         return m_pipeOut.isOpen();
     }
 
-    public boolean isIncomingOpen() {
+    public boolean isPipeInOpen() {
         return m_pipeIn.isOpen();
     }
 
     /**
-     * Marks the connection as (not) connected
+     * Marks the outgoing connection as (not) connected
      *
      * @param p_connected
      *         if true the connection is marked as connected, otherwise the connections marked as not connected
      */
-    public final void setConnected(final boolean p_connected, final boolean p_outgoing) {
-        if (p_outgoing) {
-            m_pipeOut.setConnected(p_connected);
-        } else {
-            m_pipeIn.setConnected(p_connected);
-        }
+    public final void setPipeOutConnected(final boolean p_connected) {
+        m_pipeOut.setConnected(p_connected);
+    }
+
+    /**
+     * Marks the  incoming connection as (not) connected
+     *
+     * @param p_connected
+     *         if true the connection is marked as connected, otherwise the connections marked as not connected
+     */
+    public final void setPipeInConnected(final boolean p_connected) {
+        m_pipeIn.setConnected(p_connected);
     }
 
     /**
@@ -125,11 +108,11 @@ public abstract class AbstractConnection<PipeIn extends AbstractPipeIn, PipeOut 
     }
 
     protected final void setPipes(final PipeIn p_pipeIn, final PipeOut p_pipeOut) {
-        if (p_pipeIn.getOwnNodeId() != p_pipeOut.getOwnNodeId()) {
+        if (p_pipeIn.getOwnNodeID() != p_pipeOut.getOwnNodeID()) {
             throw new IllegalStateException("Pipe in and pipe out own node ids don't match");
         }
 
-        if (p_pipeIn.getDestinationNodeId() != p_pipeOut.getDestinationNodeId()) {
+        if (p_pipeIn.getDestinationNodeID() != p_pipeOut.getDestinationNodeID()) {
             throw new IllegalStateException("Pipe in and pipe out destination node ids don't match");
         }
 
@@ -139,6 +122,18 @@ public abstract class AbstractConnection<PipeIn extends AbstractPipeIn, PipeOut 
 
         m_pipeIn = p_pipeIn;
         m_pipeOut = p_pipeOut;
+    }
+
+    final void returnProcessedBuffer(final ByteBuffer p_buffer) {
+        // #if LOGGER >= TRACE
+        LOGGER.trace("Returning processed buffer, size %d", p_buffer.capacity());
+        // #endif /* LOGGER >= TRACE */
+
+        m_pipeIn.returnProcessedBuffer(p_buffer);
+    }
+
+    public final void postMessage(final AbstractMessage p_message) throws NetworkException {
+        m_pipeOut.postMessage(p_message);
     }
 
     /**
