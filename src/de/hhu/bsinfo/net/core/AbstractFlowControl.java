@@ -45,8 +45,8 @@ public abstract class AbstractFlowControl {
      */
     public abstract void flowControlWrite() throws NetworkException;
 
-    // call when data was written to a connection
-    void dataSent(final int p_writtenBytes) {
+    // call when data has to be written to a connection
+    void dataToSend(final int p_writtenBytes) {
         // #if LOGGER >= TRACE
         LOGGER.trace("executeFlowControlDataWritten: %d", p_writtenBytes);
         // #endif /* LOGGER >= TRACE */

@@ -82,7 +82,13 @@ class ExclusiveMessageHandler extends Thread {
      *         the message
      */
     void newMessage(final AbstractMessage p_message) {
+        boolean wakeup = false;
+
         m_exclusiveMessagesLock.lock();
+        if (m_exclusiveMessages.isEmpty()) {
+            wakeup = true;
+        }
+
         while (!m_exclusiveMessages.pushMessage(p_message)) {
             m_exclusiveMessagesLock.unlock();
             LockSupport.unpark(this);
@@ -90,11 +96,20 @@ class ExclusiveMessageHandler extends Thread {
             m_exclusiveMessagesLock.lock();
         }
         m_exclusiveMessagesLock.unlock();
-        LockSupport.unpark(this);
+
+        if (wakeup) {
+            LockSupport.unpark(this);
+        }
     }
 
     void newMessages(final AbstractMessage[] p_messages) {
+        boolean wakeup = false;
+
         m_exclusiveMessagesLock.lock();
+        if (m_exclusiveMessages.isEmpty()) {
+            wakeup = true;
+        }
+
         for (AbstractMessage message : p_messages) {
             if (message == null) {
                 break;
@@ -108,6 +123,9 @@ class ExclusiveMessageHandler extends Thread {
             }
         }
         m_exclusiveMessagesLock.unlock();
-        LockSupport.unpark(this);
+
+        if (wakeup) {
+            LockSupport.unpark(this);
+        }
     }
 }

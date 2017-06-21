@@ -149,6 +149,7 @@ public class MessageCreator extends Thread {
      */
     public boolean pushJob(final AbstractConnection p_connection, final ByteBuffer p_buffer) {
         boolean locked = false;
+        boolean wakeup = false;
 
         if (m_posFront != m_posBack) {
             m_lock.lock();
@@ -164,6 +165,10 @@ public class MessageCreator extends Thread {
             return false;
         }
 
+        if (m_currentBytes == 0) {
+            wakeup = true;
+        }
+
         m_buffer[m_posBack % m_size] = p_connection;
         m_buffer[(m_posBack + 1) % m_size] = p_buffer;
         m_currentBytes += p_buffer.remaining();
@@ -172,7 +177,10 @@ public class MessageCreator extends Thread {
         if (locked) {
             m_lock.unlock();
         }
-        LockSupport.unpark(this);
+
+        if (wakeup) {
+            LockSupport.unpark(this);
+        }
 
         return true;
     }

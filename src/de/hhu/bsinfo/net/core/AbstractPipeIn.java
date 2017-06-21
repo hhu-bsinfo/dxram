@@ -16,8 +16,8 @@ import de.hhu.bsinfo.utils.NodeID;
 public abstract class AbstractPipeIn {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeIn.class.getSimpleName());
 
-    private final short m_ownNodeId;
-    private final short m_destinationNodeId;
+    private final short m_ownNodeID;
+    private final short m_destinationNodeID;
     private volatile boolean m_isConnected;
     private final AbstractFlowControl m_flowControl;
 
@@ -34,8 +34,8 @@ public abstract class AbstractPipeIn {
 
     protected AbstractPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
             final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver) {
-        m_ownNodeId = p_ownNodeId;
-        m_destinationNodeId = p_destinationNodeId;
+        m_ownNodeID = p_ownNodeId;
+        m_destinationNodeID = p_destinationNodeId;
         m_flowControl = p_flowControl;
 
         m_listener = p_dataReceiver;
@@ -46,11 +46,11 @@ public abstract class AbstractPipeIn {
     }
 
     short getOwnNodeID() {
-        return m_ownNodeId;
+        return m_ownNodeID;
     }
 
     public short getDestinationNodeID() {
-        return m_destinationNodeId;
+        return m_destinationNodeID;
     }
 
     public boolean isConnected() {
@@ -90,12 +90,11 @@ public abstract class AbstractPipeIn {
             m_streamInterpreter.update(p_buffer);
 
             if (m_streamInterpreter.isMessageComplete()) {
-                currentMessage =
-                        createMessage(m_streamInterpreter.getMessageBuffer(), m_streamInterpreter.getPayloadSize(), m_streamInterpreter.bufferWasCopied());
+                currentMessage = createMessage(m_streamInterpreter.getMessageBuffer(), m_streamInterpreter.getPayloadSize(), m_streamInterpreter.bufferWasCopied());
 
                 if (currentMessage != null) {
-                    currentMessage.setDestination(m_ownNodeId);
-                    currentMessage.setSource(m_destinationNodeId);
+                    currentMessage.setDestination(m_ownNodeID);
+                    currentMessage.setSource(m_destinationNodeID);
 
                     if (currentMessage.isResponse()) {
                         m_requestMap.fulfill((AbstractResponse) currentMessage);
@@ -134,7 +133,7 @@ public abstract class AbstractPipeIn {
 
     @Override
     public String toString() {
-        return "PipeIn[m_ownNodeId " + NodeID.toHexString(m_ownNodeId) + ", m_destinationNodeId " + NodeID.toHexString(m_destinationNodeId) +
+        return "PipeIn[m_ownNodeID " + NodeID.toHexString(m_ownNodeID) + ", m_destinationNodeID " + NodeID.toHexString(m_destinationNodeID) +
                 ", m_flowControl " + m_flowControl + ", m_receivedMessages " + m_receivedMessages + ']';
     }
 

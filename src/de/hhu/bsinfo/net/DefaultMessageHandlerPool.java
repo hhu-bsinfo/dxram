@@ -78,9 +78,15 @@ final class DefaultMessageHandlerPool {
      *         the message
      */
     void newMessage(final AbstractMessage p_message) {
+        boolean wakeup = false;
+
         // Ignore network test messages (e.g. ping after response delay)
         if (p_message.getType() != 0 || p_message.getSubtype() != 0) {
             m_defaultMessagesLock.lock();
+            if (m_defaultMessages.isEmpty()) {
+                wakeup = true;
+            }
+
             while (!m_defaultMessages.pushMessage(p_message)) {
                 m_defaultMessagesLock.unlock();
                 for (Thread thread : m_threads) {
@@ -90,8 +96,10 @@ final class DefaultMessageHandlerPool {
                 m_defaultMessagesLock.lock();
             }
             m_defaultMessagesLock.unlock();
-            for (Thread thread : m_threads) {
-                LockSupport.unpark(thread);
+            if (wakeup) {
+                for (Thread thread : m_threads) {
+                    LockSupport.unpark(thread);
+                }
             }
         }
     }
@@ -103,7 +111,13 @@ final class DefaultMessageHandlerPool {
      *         the messages
      */
     void newMessages(final AbstractMessage[] p_messages) {
+        boolean wakeup = false;
+
         m_defaultMessagesLock.lock();
+        if (m_defaultMessages.isEmpty()) {
+            wakeup = true;
+        }
+
         for (AbstractMessage message : p_messages) {
             if (message == null) {
                 break;
@@ -122,8 +136,11 @@ final class DefaultMessageHandlerPool {
             }
         }
         m_defaultMessagesLock.unlock();
-        for (Thread thread : m_threads) {
-            LockSupport.unpark(thread);
+
+        if (wakeup) {
+            for (Thread thread : m_threads) {
+                LockSupport.unpark(thread);
+            }
         }
     }
 }

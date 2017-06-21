@@ -74,10 +74,9 @@ public abstract class AbstractPipeOut {
         LOGGER.trace("Writing message %s to pipe out of dest 0x%X", p_message, m_destinationNodeID);
         // #endif /* LOGGER >= TRACE */
 
-        m_flowControl.dataSent(p_message.getPayloadLength() + AbstractMessage.HEADER_SIZE);
-        m_sentMessages++;
-
         int messageSize = p_message.getTotalSize();
+        m_flowControl.dataToSend(messageSize);
+        m_sentMessages++;
 
         if (messageSize > m_bufferSize) {
             ByteBuffer data = p_message.getBuffer();

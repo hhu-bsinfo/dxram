@@ -84,6 +84,8 @@ public class NIOPipeIn extends AbstractPipeIn {
                     LOGGER.trace("Network-Selector: Job queue is full!");
                     // #endif /* LOGGER == TRACE */
 
+                    System.out.println("Network-Selector: Job queue is full!");
+
                     Thread.yield();
                 }
 
