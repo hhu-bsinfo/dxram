@@ -296,6 +296,10 @@ public class OverlaySuperpeer implements MessageReceiver {
      */
     @Override
     public void onIncomingMessage(final AbstractMessage p_message) {
+        // #if LOGGER == TRACE
+        LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
+        // #endif /* LOGGER == TRACE */
+
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
@@ -388,6 +392,10 @@ public class OverlaySuperpeer implements MessageReceiver {
                 }
             }
         }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("Exiting incomingMessage");
+        // #endif /* LOGGER == TRACE */
     }
 
     /**
@@ -2601,7 +2609,6 @@ public class OverlaySuperpeer implements MessageReceiver {
                 SuperpeerStorageStatusRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE,
                 SuperpeerStorageStatusResponse.class);
-
 
         m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST,
                 RecoverBackupRangeRequest.class);
