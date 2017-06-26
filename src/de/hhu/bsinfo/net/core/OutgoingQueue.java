@@ -53,7 +53,8 @@ public final class OutgoingQueue {
 
         m_bufferPool = new ByteBuffer[BUFFER_POOL_SIZE];
         for (int i = 0; i < BUFFER_POOL_SIZE; i++) {
-            m_bufferPool[i] = ByteBuffer.allocate(p_osBufferSize);
+            // TODO infiniband requires a direct buffer here. check and verify nio performance
+            m_bufferPool[i] = ByteBuffer.allocateDirect(p_osBufferSize);
         }
         m_bufferPoolIndex = BUFFER_POOL_SIZE - 1;
 
@@ -238,7 +239,8 @@ public final class OutgoingQueue {
      * @param p_message
      *         the outgoing message
      * @return whether the queue was empty or not
-     * @throws NetworkException if message could not be serialized
+     * @throws NetworkException
+     *         if message could not be serialized
      */
     boolean pushAndAggregateBuffers(AbstractMessage p_message, final int p_messageSize) throws NetworkException {
         boolean ret;
@@ -338,14 +340,15 @@ public final class OutgoingQueue {
      * Serializes a message and appends it to the array.
      *
      * @param p_message
-     *     the message
-     * @throws NetworkException if message could not be serialized
+     *         the message
+     * @throws NetworkException
+     *         if message could not be serialized
      * @lock must be locked
      */
     private void push(final AbstractMessage p_message, final int p_messageSize) throws NetworkException {
-            m_buffer[m_posBack % BUFFER_POOL_SIZE] = p_message.getBuffer();
-            m_posBack++;
+        m_buffer[m_posBack % BUFFER_POOL_SIZE] = p_message.getBuffer();
+        m_posBack++;
 
-            m_currentBytes += p_messageSize;
+        m_currentBytes += p_messageSize;
     }
 }

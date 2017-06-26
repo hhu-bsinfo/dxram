@@ -186,7 +186,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
     }
 
     @Override
-    public void receivedBuffer(final short p_sourceNodeId, ByteBuffer p_buffer, final int p_length) {
+    public void receivedBuffer(final short p_sourceNodeId, final ByteBuffer p_buffer, final int p_length) {
         // #if LOGGER >= TRACE
         LOGGER.trace("Received buffer (%d) from 0x%X", p_length, p_sourceNodeId);
         // #endif /* LOGGER >= TRACE */
@@ -200,9 +200,6 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
             // #endif /* LOGGER >= ERROR */
             return;
         }
-
-        p_buffer.limit(p_length);
-        p_buffer.rewind();
 
         connection.getPipeIn().processReceivedBuffer(p_buffer, p_length);
     }

@@ -142,7 +142,7 @@ final class MessageHandlers implements DataReceiver, MessageReceiverStore {
     @Override
     public void newMessages(final AbstractMessage[] p_messages) {
         // #if LOGGER == TRACE
-        LOGGER.trace("Received new messages");
+        LOGGER.trace("Received new messages (%d): %s ...", p_messages.length, p_messages[0]);
         // #endif /* LOGGER == TRACE */
 
         if (!p_messages[0].isExclusive()) {
