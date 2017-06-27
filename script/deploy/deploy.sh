@@ -78,6 +78,10 @@ check_programs()
 			exit
 		fi
 	fi
+	if [ ! hash zkServer.sh 2>/dev/null ]; then
+	    echo "Please install zookeeper or set ZOOKEEPER_PATH. Existing..."
+	    exit;
+	fi
 }
 
 ######################################################
@@ -150,8 +154,8 @@ determine_configurable_paths()
 ######################################################
 clean_up()
 {
-	mkdir $DEPLOY_TMP_DIR
-	mkdir $LOG_DIR
+	mkdir -p $DEPLOY_TMP_DIR
+	mkdir -p $LOG_DIR
 
 	# Set a symlink to the current tmp folder
 	ln -sfn $DEPLOY_TMP_DIR ${EXECUTION_DIR}/deploy_tmp
@@ -398,7 +402,7 @@ start_remote_zookeeper()
 	local port=$2
 	local hostname=$3
 
-	ssh $hostname -n "cd $ZOOKEEPER_PATH && sed -i -e \"s/clientPort=[0-9]*/clientPort=$port/g\" \"conf/zoo.cfg\" && rm -f conf/zoo.cfg-e && bin/zkServer.sh start"
+	ssh $hostname -n "cd $ZOOKEEPER_PATH && export PATH=$ZOOKEEPER_PATH/bin:$PATH && sed -i -e \"s/clientPort=[0-9]*/clientPort=$port/g\" \"conf/zoo.cfg\" && rm -f conf/zoo.cfg-e && zkServer.sh start conf/zoo.cfg"
 }
 
 ######################################################
@@ -413,11 +417,12 @@ start_local_zookeeper()
 {
 	local port=$1
 	cd $ZOOKEEPER_PATH
+	export PATH=$ZOOKEEPER_PATH/bin:$PATH
 	sed -i -e "s/clientPort=[0-9]*/clientPort=$port/g" conf/zoo.cfg
 	# delete backup config file created by sed -e
 	rm -f conf/zoo.cfg-e
 
-	"bin/zkServer.sh" start
+	"zkServer.sh" start conf/zoo.cfg
 	cd "$EXECUTION_DIR"
 }
 
@@ -449,16 +454,19 @@ check_zookeeper_startup()
 		local fail_pid=`cat "$logfile" 2> /dev/null | grep "FAILED TO WRITE PID"`
 		local fail_started=`cat "$logfile" 2> /dev/null | grep "SERVER DID NOT START"`
 
+		if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ]; then
+			export PATH=$ZOOKEEPER_PATH/bin:$PATH
+		fi
 		if [ "$success_started" != "" -o "$success_running" != "" ]; then
 			echo "ZooKeeper ($ip $port) started"
 
 			if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ]; then
 				# Remove all dxram related entries
 				cd "$ZOOKEEPER_PATH"
-				echo "rmr /dxram" | "bin/zkCli.sh" > "${LOG_DIR}/${hostname}_${port}_zookeeper_client" 2>&1
+				echo "rmr /dxram" | "zkCli.sh" > "${LOG_DIR}/${hostname}_${port}_zookeeper_client" 2>&1
 				cd "$EXECUTION_DIR"
 			else
-				ssh $hostname -n "echo \"rmr /dxram\" | ${ZOOKEEPER_PATH}/bin/zkCli.sh" > "${LOG_DIR}/${hostname}_${port}_zookeeper_client" 2>&1
+				ssh $hostname -n "export PATH=$ZOOKEEPER_PATH/bin:$PATH; echo \"rmr /dxram\" | zkCli.sh" > "${LOG_DIR}/${hostname}_${port}_zookeeper_client" 2>&1
 			fi
 
 			while true ; do
@@ -698,7 +706,7 @@ readonly NODE_FILE_DIR="$(cd "$(dirname "$1")"; pwd)"
 readonly EXECUTION_DIR="`pwd`"
 readonly DEPLOY_SCRIPT_DIR=$(dirname "$0")
 determine_configurable_paths
-readonly DEPLOY_TMP_DIR="${EXECUTION_DIR}/deploy_tmp_"$(date +%s)
+readonly DEPLOY_TMP_DIR="${EXECUTION_DIR}/deploy_log/"$(date +%s)
 readonly LOG_DIR="${DEPLOY_TMP_DIR}/logs"
 readonly CONFIG_FILE="${DXRAM_PATH}/config/dxram.json"
 echo -e "\n\n"
