@@ -94,6 +94,7 @@ public class TestJNIIbnet implements JNIIbnet.Callbacks {
 
         while (true) {
             m_bandwidth.enterSend();
+            // TODO make flow control window setable
             while (m_flowControlUnconfirmed.get() > 1024 * 1024) {
                 Thread.yield();
             }
@@ -141,7 +142,13 @@ public class TestJNIIbnet implements JNIIbnet.Callbacks {
 
     @Override
     public ByteBuffer getReceiveBuffer(int p_size) {
-        return m_bufferPool.getBuffer();
+        ByteBuffer buffer = m_bufferPool.getBuffer();
+
+        if (buffer == null) {
+            System.out.println("ERROR out of buffers");
+        }
+
+        return buffer;
     }
 
     @Override
@@ -161,7 +168,11 @@ public class TestJNIIbnet implements JNIIbnet.Callbacks {
     public void receivedFlowControlData(short p_sourceNodeId, int p_bytes) {
         //System.out.printf("Received flow control: %X %d\n", p_sourceNodeId, p_bytes);
 
-        m_flowControlUnconfirmed.addAndGet(-p_bytes);
+        if (p_sourceNodeId == m_remoteNodeId) {
+            m_flowControlUnconfirmed.addAndGet(-p_bytes);
+        } else {
+            System.out.printf("ERROR received unexpected flow control data from node 0x%X\n", p_sourceNodeId);
+        }
     }
 
     private class BandwidthThread extends Thread {
@@ -207,6 +218,10 @@ public class TestJNIIbnet implements JNIIbnet.Callbacks {
                 System.out.printf("Throughput send: %f mb/sec\n", (sendCur - sendPrev) / 1024.0 / 1024.0);
                 System.out.printf("Throughput recv: %f mb/sec\n", (recvCur - recvPrev) / 1024.0 / 1024.0);
                 System.out.printf("Send time %f us\n", m_sendTime.get() / 1000.0 / m_sendCount.get());
+
+                Runtime runtime = Runtime.getRuntime();
+
+                System.out.printf("Runtime used memory: %f\n", (runtime.totalMemory() - runtime.freeMemory()) / 1024.0 / 1024.0);
 
                 sendPrev = sendCur;
                 recvPrev = recvCur;
