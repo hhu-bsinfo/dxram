@@ -24,6 +24,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -303,6 +304,8 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
                     return false;
                 }
             }
+        } else {
+            DXRAMJNIManager.loadJNIModule("JNIIbnet");
         }
 
         NetworkSystemConfig config;
