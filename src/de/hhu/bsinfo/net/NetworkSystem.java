@@ -39,8 +39,8 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Marc Ewert, marc.ewert@hhu.de, 14.08.2014
  * @author Kevin Beineke, kevin.beineke@hhu.de, 20.11.2015
  */
-public final class NetworkHandler {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkHandler.class.getSimpleName());
+public final class NetworkSystem {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkSystem.class.getSimpleName());
 
     private final short m_ownNodeId;
 
@@ -56,7 +56,7 @@ public final class NetworkHandler {
     private final AbstractConnectionManager m_connectionManager;
 
     // TODO doc
-    public NetworkHandler(final short p_ownNodeId, final int p_maxConnections, final int p_bufferSize, final int p_flowControlWindowSize,
+    public NetworkSystem(final short p_ownNodeId, final int p_maxConnections, final int p_bufferSize, final int p_flowControlWindowSize,
             final int p_numMessageHandlerThreads, final int p_requestMapSize, final int p_requestTimeOut, final int p_connectionTimeout,
             final NodeMap p_nodeMap, final boolean p_infiniband) {
         m_ownNodeId = p_ownNodeId;
