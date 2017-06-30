@@ -193,6 +193,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long address;
         long chunkID;
 
+        // #if LOGGER == TRACE
+        LOGGER.trace("ENTER createIndex p_size %d", p_size);
+        // #endif /* LOGGER == TRACE */
+
         try {
             if (m_cidTable.get(0) != 0) {
                 // delete old entry
@@ -223,6 +227,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
+        // #if LOGGER == TRACE
+        LOGGER.trace("EXIT createIndex p_size %d", p_size);
+        // #endif /* LOGGER == TRACE */
+
         return chunkID;
     }
 
@@ -240,6 +248,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
         long address;
         long chunkID;
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("ENTER create p_chunkId 0x%X, p_size %d", p_chunkId, p_size);
+        // #endif /* LOGGER == TRACE */
 
         try {
             // #ifdef STATISTICS
@@ -277,6 +289,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
+        // #if LOGGER == TRACE
+        LOGGER.trace("EXIT create p_chunkId 0x%X, p_size %d", p_chunkId, p_size);
+        // #endif /* LOGGER == TRACE */
+
         return chunkID;
     }
 
@@ -303,6 +319,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
     public long[] createMultiSizes(final boolean p_consecutive, final int... p_sizes) {
         long[] addresses;
         long[] lids;
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("ENTER createMultiSizes p_consecutive %d, p_sizes %d", p_consecutive, p_sizes.length);
+        // #endif /* LOGGER == TRACE */
 
         try {
             // #ifdef STATISTICS
@@ -356,6 +376,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             handleMemDumpOnError(e, false);
             throw e;
         }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("EXIT createMultiSizes p_consecutive %d, p_sizes %d", p_consecutive, p_sizes.length);
+        // #endif /* LOGGER == TRACE */
 
         return lids;
     }
@@ -420,6 +444,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long[] addresses;
         long[] lids;
 
+        // #if LOGGER == TRACE
+        LOGGER.trace("ENTER createMultiSizes p_size %d, p_count %d, p_consecutive %d", p_size, p_count, p_consecutive);
+        // #endif /* LOGGER == TRACE */
+
         try {
             // #ifdef STATISTICS
             SOP_MULTI_CREATE.enter();
@@ -474,6 +502,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
+        // #if LOGGER == TRACE
+        LOGGER.trace("EXIT createMultiSizes p_size %d, p_count %d, p_consecutive %d", p_size, p_count, p_consecutive);
+        // #endif /* LOGGER == TRACE */
+
         return lids;
     }
 
@@ -491,6 +523,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long address;
         long chunkID;
         long lid;
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("ENTER create p_size %d", p_size);
+        // #endif /* LOGGER == TRACE */
 
         try {
             // #ifdef STATISTICS
@@ -536,6 +572,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
+        // #if LOGGER == TRACE
+        LOGGER.trace("EXIT create p_size %d", p_size);
+        // #endif /* LOGGER == TRACE */
+
         return chunkID;
     }
 
@@ -551,35 +591,43 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long address;
         boolean ret = true;
 
+        // #if LOGGER == TRACE
+        LOGGER.trace("ENTER get p_dataStructure 0x%X", p_dataStructure.getID());
+        // #endif /* LOGGER == TRACE */
+
         try {
             if (p_dataStructure.getID() == ChunkID.INVALID_ID) {
                 p_dataStructure.setState(ChunkState.INVALID_ID);
-                return false;
-            }
-
-            // #ifdef STATISTICS
-            SOP_GET.enter();
-            // #endif /* STATISTICS */
-
-            address = m_cidTable.get(p_dataStructure.getID());
-            if (address > 0) {
-                // pool the im/exporters
-                SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
-                importer.importObject(p_dataStructure);
-
-                p_dataStructure.setState(ChunkState.OK);
-            } else {
                 ret = false;
-                p_dataStructure.setState(ChunkState.DOES_NOT_EXIST);
-            }
+            } else {
+                // #ifdef STATISTICS
+                SOP_GET.enter();
+                // #endif /* STATISTICS */
 
-            // #ifdef STATISTICS
-            SOP_GET.leave();
-            // #endif /* STATISTICS */
+                address = m_cidTable.get(p_dataStructure.getID());
+                if (address > 0) {
+                    // pool the im/exporters
+                    SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
+                    importer.importObject(p_dataStructure);
+
+                    p_dataStructure.setState(ChunkState.OK);
+                } else {
+                    ret = false;
+                    p_dataStructure.setState(ChunkState.DOES_NOT_EXIST);
+                }
+
+                // #ifdef STATISTICS
+                SOP_GET.leave();
+                // #endif /* STATISTICS */
+            }
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, true);
             throw e;
         }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("EXIT get p_dataStructure 0x%X", p_dataStructure.getID());
+        // #endif /* LOGGER == TRACE */
 
         return ret;
     }
@@ -596,37 +644,45 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         byte[] ret;
         long address;
 
+        // #if LOGGER == TRACE
+        LOGGER.trace("ENTER get p_chunkID 0x%X", p_chunkID);
+        // #endif /* LOGGER == TRACE */
+
         try {
             if (p_chunkID == ChunkID.INVALID_ID) {
-                return null;
-            }
-
-            // #ifdef STATISTICS
-            SOP_GET.enter();
-            // #endif /* STATISTICS */
-
-            address = m_cidTable.get(p_chunkID);
-            if (address > 0) {
-                int chunkSize = m_rawMemory.getSizeBlock(address);
-                ret = new byte[chunkSize];
-
-                // pool the im/exporters
-                SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
-                int retSize = importer.readBytes(ret);
-                if (retSize != chunkSize) {
-                    throw new DXRAMRuntimeException("Unknown error, importer size " + retSize + " != chunk size " + chunkSize);
-                }
-            } else {
                 ret = null;
-            }
+            } else {
+                // #ifdef STATISTICS
+                SOP_GET.enter();
+                // #endif /* STATISTICS */
 
-            // #ifdef STATISTICS
-            SOP_GET.leave();
-            // #endif /* STATISTICS */
+                address = m_cidTable.get(p_chunkID);
+                if (address > 0) {
+                    int chunkSize = m_rawMemory.getSizeBlock(address);
+                    ret = new byte[chunkSize];
+
+                    // pool the im/exporters
+                    SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
+                    int retSize = importer.readBytes(ret);
+                    if (retSize != chunkSize) {
+                        throw new DXRAMRuntimeException("Unknown error, importer size " + retSize + " != chunk size " + chunkSize);
+                    }
+                } else {
+                    ret = null;
+                }
+
+                // #ifdef STATISTICS
+                SOP_GET.leave();
+                // #endif /* STATISTICS */
+            }
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, true);
             throw e;
         }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("EXIT get p_chunkID 0x%X", p_chunkID);
+        // #endif /* LOGGER == TRACE */
 
         return ret;
     }
@@ -645,35 +701,43 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long address;
         boolean ret = true;
 
+        // #if LOGGER == TRACE
+        LOGGER.trace("ENTER put p_dataStructure 0x%X", p_dataStructure.getID());
+        // #endif /* LOGGER == TRACE */
+
         try {
             if (p_dataStructure.getID() == ChunkID.INVALID_ID) {
                 p_dataStructure.setState(ChunkState.INVALID_ID);
-                return false;
-            }
-
-            // #ifdef STATISTICS
-            SOP_PUT.enter();
-            // #endif /* STATISTICS */
-
-            address = m_cidTable.get(p_dataStructure.getID());
-            if (address > 0) {
-                // pool the im/exporters
-                SmallObjectHeapDataStructureImExporter exporter = getImExporter(address);
-                exporter.exportObject(p_dataStructure);
-
-                p_dataStructure.setState(ChunkState.OK);
-            } else {
                 ret = false;
-                p_dataStructure.setState(ChunkState.DOES_NOT_EXIST);
-            }
+            } else {
+                // #ifdef STATISTICS
+                SOP_PUT.enter();
+                // #endif /* STATISTICS */
 
-            // #ifdef STATISTICS
-            SOP_PUT.leave();
-            // #endif /* STATISTICS */
+                address = m_cidTable.get(p_dataStructure.getID());
+                if (address > 0) {
+                    // pool the im/exporters
+                    SmallObjectHeapDataStructureImExporter exporter = getImExporter(address);
+                    exporter.exportObject(p_dataStructure);
+
+                    p_dataStructure.setState(ChunkState.OK);
+                } else {
+                    ret = false;
+                    p_dataStructure.setState(ChunkState.DOES_NOT_EXIST);
+                }
+
+                // #ifdef STATISTICS
+                SOP_PUT.leave();
+                // #endif /* STATISTICS */
+            }
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, true);
             throw e;
         }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("EXIT put p_dataStructure 0x%X", p_dataStructure.getID());
+        // #endif /* LOGGER == TRACE */
 
         return ret;
     }
@@ -714,29 +778,37 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long address;
         boolean ret = true;
 
+        // #if LOGGER == TRACE
+        LOGGER.trace("ENTER put p_chunkID 0x%X, p_offset %d, p_length %d", p_chunkID, p_offset, p_length);
+        // #endif /* LOGGER == TRACE */
+
         try {
             if (p_chunkID == ChunkID.INVALID_ID) {
-                return false;
-            }
-
-            // #ifdef STATISTICS
-            SOP_PUT.enter();
-            // #endif /* STATISTICS */
-
-            address = m_cidTable.get(p_chunkID);
-            if (address > 0) {
-                m_rawMemory.writeBytes(address, 0, p_data, p_offset, p_length);
-            } else {
                 ret = false;
-            }
+            } else {
+                // #ifdef STATISTICS
+                SOP_PUT.enter();
+                // #endif /* STATISTICS */
 
-            // #ifdef STATISTICS
-            SOP_PUT.leave();
-            // #endif /* STATISTICS */
+                address = m_cidTable.get(p_chunkID);
+                if (address > 0) {
+                    m_rawMemory.writeBytes(address, 0, p_data, p_offset, p_length);
+                } else {
+                    ret = false;
+                }
+
+                // #ifdef STATISTICS
+                SOP_PUT.leave();
+                // #endif /* STATISTICS */
+            }
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, true);
             throw e;
         }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("EXIT put p_chunkID 0x%X, p_offset %d, p_length %d", p_chunkID, p_offset, p_length);
+        // #endif /* LOGGER == TRACE */
 
         return ret;
     }
@@ -756,46 +828,54 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         int ret = -1;
         long addressDeletedChunk;
 
+        // #if LOGGER == TRACE
+        LOGGER.trace("ENTER remove p_chunkID 0x%X, p_wasMigrated %d", p_chunkID, p_wasMigrated);
+        // #endif /* LOGGER == TRACE */
+
         try {
             if (p_chunkID == ChunkID.INVALID_ID) {
-                return -1;
-            }
+                ret = -1;
+            } else {
+                // #ifdef STATISTICS
+                SOP_REMOVE.enter();
+                // #endif /* STATISTICS */
 
-            // #ifdef STATISTICS
-            SOP_REMOVE.enter();
-            // #endif /* STATISTICS */
+                // Get and delete the address from the CIDTable, mark as zombie first
+                addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
+                if (addressDeletedChunk > 0) {
 
-            // Get and delete the address from the CIDTable, mark as zombie first
-            addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
-            if (addressDeletedChunk > 0) {
-
-                if (p_wasMigrated) {
-                    // deleted and previously migrated chunks don't end up in the LID store
-                    m_cidTable.delete(p_chunkID, false);
-                } else {
-                    // more space for another zombie for reuse in LID store?
-                    if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
-                        // kill zombie entry
+                    if (p_wasMigrated) {
+                        // deleted and previously migrated chunks don't end up in the LID store
                         m_cidTable.delete(p_chunkID, false);
                     } else {
-                        // no space for zombie in LID store, keep him "alive" in table
+                        // more space for another zombie for reuse in LID store?
+                        if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
+                            // kill zombie entry
+                            m_cidTable.delete(p_chunkID, false);
+                        } else {
+                            // no space for zombie in LID store, keep him "alive" in table
+                        }
                     }
+                    ret = m_rawMemory.getSizeBlock(addressDeletedChunk);
+                    // #ifdef STATISTICS
+                    SOP_FREE.enter(ret);
+                    // #endif /* STATISTICS */
+                    m_rawMemory.free(addressDeletedChunk);
+                    // #ifdef STATISTICS
+                    SOP_FREE.leave();
+                    // #endif /* STATISTICS */
+                    m_numActiveChunks--;
+                    m_totalActiveChunkMemory -= ret;
                 }
-                ret = m_rawMemory.getSizeBlock(addressDeletedChunk);
-                // #ifdef STATISTICS
-                SOP_FREE.enter(ret);
-                // #endif /* STATISTICS */
-                m_rawMemory.free(addressDeletedChunk);
-                // #ifdef STATISTICS
-                SOP_FREE.leave();
-                // #endif /* STATISTICS */
-                m_numActiveChunks--;
-                m_totalActiveChunkMemory -= ret;
             }
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, false);
             throw e;
         }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("EXIT remove p_chunkID 0x%X, p_wasMigrated %d", p_chunkID, p_wasMigrated);
+        // #endif /* LOGGER == TRACE */
 
         return ret;
     }
@@ -817,6 +897,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      */
     public void createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
         long[] addresses;
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("ENTER createAndPutRecovered, count %d", p_chunkIDs.length);
+        // #endif /* LOGGER == TRACE */
 
         try {
             // #ifdef STATISTICS
@@ -853,6 +937,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             handleMemDumpOnError(e, false);
             throw e;
         }
+
+        // #if LOGGER == TRACE
+        LOGGER.trace("EXIT createAndPutRecovered, count %d", p_chunkIDs.length);
+        // #endif /* LOGGER == TRACE */
     }
 
     /**
