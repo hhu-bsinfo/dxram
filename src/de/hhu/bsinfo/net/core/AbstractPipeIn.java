@@ -190,10 +190,15 @@ public abstract class AbstractPipeIn {
                 response.setCorrespondingRequest(request);
             }
 
+            // #if LOGGER >= TRACE
+            LOGGER.trace("createMessage, before readPayload: p_buffer " + p_buffer + ", p_payloadSize " + p_payloadSize + ", p_wasCopied " + p_wasCopied);
+            // #endif /* LOGGER >= TRACE */
+
             try {
                 message.readPayload(p_buffer, p_payloadSize, p_wasCopied);
             } catch (final BufferUnderflowException e) {
-                throw new IOException("Read beyond message buffer", e);
+                throw new IOException("Read beyond message buffer: p_buffer " + p_buffer + ", p_payloadSize " + p_payloadSize + ", p_wasCopied " + p_wasCopied,
+                        e);
             }
 
             readBytes += p_buffer.position() - initialBufferPosition;

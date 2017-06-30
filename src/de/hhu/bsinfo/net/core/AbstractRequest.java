@@ -15,6 +15,9 @@ package de.hhu.bsinfo.net.core;
 
 import java.util.concurrent.locks.LockSupport;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.net.NetworkResponseCancelledException;
 import de.hhu.bsinfo.net.NetworkResponseDelayedException;
 
@@ -24,6 +27,7 @@ import de.hhu.bsinfo.net.NetworkResponseDelayedException;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  */
 public abstract class AbstractRequest extends AbstractMessage {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractRequest.class.getSimpleName());
 
     // Attributes
     private volatile boolean m_fulfilled;
@@ -166,8 +170,6 @@ public abstract class AbstractRequest extends AbstractMessage {
         return ret;
     }
 
-    // Methods
-
     /**
      * Wait until the Request is fulfilled or aborted
      *
@@ -177,15 +179,24 @@ public abstract class AbstractRequest extends AbstractMessage {
     public final void waitForResponse(final int p_timeoutMs) throws NetworkException {
         m_waitingThread = Thread.currentThread();
 
-        long deadline = System.currentTimeMillis() + p_timeoutMs;
+        long cur = System.nanoTime();
+        long deadline = cur + p_timeoutMs * 1000;
         while (!m_fulfilled) {
 
             if (m_aborted) {
+                // #if LOGGER >= TRACE
+                LOGGER.trace("Response for request %s , aborted, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0);
+                // #endif /* LOGGER >= TRACE */
+
                 throw new NetworkResponseCancelledException(getDestination());
             }
 
             if (!m_ignoreTimeout) {
-                if (System.currentTimeMillis() > deadline) {
+                if (System.nanoTime() > deadline) {
+                    // #if LOGGER >= TRACE
+                    LOGGER.trace("Response for request %s , delayed, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0);
+                    // #endif /* LOGGER >= TRACE */
+
                     throw new NetworkResponseDelayedException(getDestination());
                 }
                 LockSupport.parkUntil(deadline);
@@ -193,6 +204,12 @@ public abstract class AbstractRequest extends AbstractMessage {
                 LockSupport.park();
             }
         }
+
+        // TODO statistics for req/resp latency?
+
+        // #if LOGGER >= TRACE
+        LOGGER.trace("Request %s fulfilled, response %s, latency %f ms", toString(), m_response, (System.nanoTime() - cur) / 1000.0);
+        // #endif /* LOGGER >= TRACE */
     }
 
     /**
