@@ -57,10 +57,11 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         m_nodeConnected = new boolean[NodeID.MAX_ID];
 
         // TODO configuration value -> jni libraries
+        // TODO check if library loaded -> error/fail if missing
         System.load(System.getProperty("user.dir") + "/jni/libJNIIbnet.so");
 
         // TODO expose further infiniband only config values
-        if (!JNIIbnet.init(p_ownNodeId, 10, 10, p_bufferSize, 10, 10, 1000, 1, 1, 1000, this)) {
+        if (!JNIIbnet.init(p_ownNodeId, 10, 10, p_bufferSize, 10, 10, 1000, 1, 1, 1000, this, false, true)) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("Initializing ibnet failed, check ibnet logs");
             // #endif /* LOGGER >= DEBUG */

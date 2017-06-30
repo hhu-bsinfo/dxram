@@ -27,7 +27,7 @@ public final class JNIIbnet {
         void nodeDisconnected(final short p_nodeId);
 
         // get a buffer for the receive call (from a pool)
-        // note: returning byte buffer must be a direct buffer
+        // note: returning byte buffer must be a direct buffer and non null
         ByteBuffer getReceiveBuffer(final int p_size);
 
         // note: byte buffer must be allocated as direct buffer
@@ -42,7 +42,8 @@ public final class JNIIbnet {
 
     public static native boolean init(final short p_ownNodeId, final int p_maxRecvReqs, final int p_maxSendReqs, final int p_inOutBufferSize,
             final int p_flowControlMaxRecvReqs, final int p_flowControlMaxSendReqs, final int p_outgoingJobPoolSize, final int p_sendThreads,
-            final int p_recvThreads, final int p_maxNumConnections, final Callbacks p_callbacks);
+            final int p_recvThreads, final int p_maxNumConnections, final Callbacks p_callbacks, final boolean p_enableSignalHandler,
+            final boolean p_enableDebugThread);
 
     public static native boolean shutdown();
 

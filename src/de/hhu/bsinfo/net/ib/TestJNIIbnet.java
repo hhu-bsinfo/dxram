@@ -56,7 +56,7 @@ public class TestJNIIbnet implements JNIIbnet.Callbacks {
         m_bandwidth.start();
 
         if (!JNIIbnet.init(m_nodeId, m_maxRecvReqs, m_maxSendReqs, m_inOutBufferSize, m_flowControlMaxRecvReqs, m_flowControlMaxSendReqs, m_outgoingJobPoolSize,
-                m_sendThreads, m_recvThreads, m_maxNumConnections, this)) {
+                m_sendThreads, m_recvThreads, m_maxNumConnections, this, false, true)) {
             System.out.println("Initializing JNIIbnet failed");
             return;
         }
