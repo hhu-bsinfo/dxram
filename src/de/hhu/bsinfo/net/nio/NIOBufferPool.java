@@ -10,8 +10,8 @@ import org.apache.logging.log4j.Logger;
 /**
  * Created by nothaas on 6/12/17.
  */
-final class BufferPool {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(BufferPool.class.getSimpleName());
+public final class NIOBufferPool {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(NIOBufferPool.class.getSimpleName());
 
     private static final int LARGE_BUFFER_POOL_SIZE = 16;
     private static final int MEDIUM_BUFFER_POOL_SIZE = 16;
@@ -27,7 +27,7 @@ final class BufferPool {
     private final ArrayList<ByteBuffer> m_smallBufferPool;
     private final ReentrantLock m_bufferPoolLock;
 
-    BufferPool(final int p_osBufferSize) {
+    public NIOBufferPool(final int p_osBufferSize) {
         m_osBufferSize = p_osBufferSize;
 
         m_largeBufferPool = new ArrayList<ByteBuffer>();

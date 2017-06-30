@@ -48,7 +48,7 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
 
     NIOConnection(final short p_ownNodeId, final short p_destination, final int p_bufferSize, final int p_flowControlWindowSize,
             final MessageCreator p_messageCreator, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver,
-            final BufferPool p_bufferPool, final NIOSelector p_nioSelector, final NodeMap p_nodeMap, final ReentrantLock p_lock, final Condition p_cond) {
+            final NIOBufferPool p_bufferPool, final NIOSelector p_nioSelector, final NodeMap p_nodeMap, final ReentrantLock p_lock, final Condition p_cond) {
         super(p_ownNodeId);
 
         NIOFlowControl flowControl = new NIOFlowControl(p_destination, p_flowControlWindowSize, p_nioSelector, this);
@@ -66,7 +66,7 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
 
     NIOConnection(final short p_ownNodeId, final short p_destination, final int p_bufferSize, final int p_flowControlWindowSize,
             final MessageCreator p_messageCreator, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver,
-            final BufferPool p_bufferPool, final NIOSelector p_nioSelector, final NodeMap p_nodeMap) {
+            final NIOBufferPool p_bufferPool, final NIOSelector p_nioSelector, final NodeMap p_nodeMap) {
         super(p_ownNodeId);
 
         NIOFlowControl flowControl = new NIOFlowControl(p_destination, p_flowControlWindowSize, p_nioSelector, this);

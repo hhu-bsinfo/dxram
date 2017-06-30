@@ -70,6 +70,6 @@ public class IBBufferPool {
 
     @Override
     public String toString() {
-        return "BufferPool[m_pos " + m_pos + ']';
+        return "NIOBufferPool[m_pos " + m_pos + ']';
     }
 }

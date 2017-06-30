@@ -21,14 +21,14 @@ public class NIOPipeIn extends AbstractPipeIn {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeIn.class.getSimpleName());
 
     private SocketChannel m_incomingChannel;
-    private final BufferPool m_bufferPool;
+    private final NIOBufferPool m_bufferPool;
     private final MessageCreator m_messageCreator;
     private final ByteBuffer m_flowControlBytes;
 
     private final NIOConnection m_parentConnection;
 
     public NIOPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
-            final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver, final BufferPool p_bufferPool,
+            final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver, final NIOBufferPool p_bufferPool,
             final MessageCreator p_messageCreator, final NIOConnection p_parentConnection) {
         super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_messageDirectory, p_requestMap, p_dataReceiver);
 

@@ -35,7 +35,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
     private final DataReceiver m_dataReceiver;
 
     private final NIOSelector m_nioSelector;
-    private final BufferPool m_bufferPool;
+    private final NIOBufferPool m_bufferPool;
     private final NodeMap m_nodeMap;
     private final ConnectionCreatorHelperThread m_connectionCreatorHelperThread;
 
@@ -55,7 +55,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         LOGGER.info("Starting NIOSelector...");
         // #endif /* LOGGER >= INFO */
 
-        m_bufferPool = new BufferPool(m_config.getBufferSize());
+        m_bufferPool = new NIOBufferPool(m_config.getBufferSize());
 
         m_nioSelector =
                 new NIOSelector(this, p_nodeMap.getAddress(p_nodeMap.getOwnNodeID()).getPort(), m_config.getConnectionTimeout(), m_config.getBufferSize());
