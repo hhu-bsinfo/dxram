@@ -33,12 +33,15 @@ import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.net.messages.NetworkMessages;
 import de.hhu.bsinfo.net.MessageReceiver;
 import de.hhu.bsinfo.net.NetworkDestinationUnreachableException;
-import de.hhu.bsinfo.net.NetworkSystem;
 import de.hhu.bsinfo.net.NetworkResponseDelayedException;
+import de.hhu.bsinfo.net.NetworkSystem;
+import de.hhu.bsinfo.net.NetworkSystemConfig;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 import de.hhu.bsinfo.net.core.ConnectionManagerListener;
 import de.hhu.bsinfo.net.core.NetworkException;
+import de.hhu.bsinfo.net.ib.IBConnectionManagerConfig;
+import de.hhu.bsinfo.net.nio.NIOConnectionManagerConfig;
 
 /**
  * Access to the network interface to send messages or requests
@@ -302,10 +305,29 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
             }
         }
 
-        m_networkSystem = new NetworkSystem(m_boot.getNodeID(), getConfig().getMaxConnections(), (int) getConfig().getBufferSize().getBytes(),
-                (int) getConfig().getFlowControlWindowSize().getBytes(), getConfig().getNumMessageHandlerThreads(), getConfig().getRequestMapEntryCount(),
-                (int) getConfig().getRequestTimeout().getMs(), (int) getConfig().getConnectionTimeout().getMs(), new NodeMappings(m_boot),
-                getConfig().isInfiniband());
+        NetworkSystemConfig config;
+
+        if (!getConfig().isInfiniband()) {
+            config =
+                    NIOConnectionManagerConfig.builder().setOwnNodeId(m_boot.getNodeID()).setNumMessageHandlerThreads(getConfig().getNumMessageHandlerThreads())
+                            .setRequestTimeOut((int) getConfig().getRequestTimeout().getMs()).setBufferSize((int) getConfig().getBufferSize().getBytes())
+                            .setRequestMapSize(getConfig().getRequestMapEntryCount()).setMaxConnections(getConfig().getMaxConnections())
+                            .setFlowControlWindow((int) getConfig().getFlowControlWindowSize().getBytes())
+                            .setConnectionTimeout((int) getConfig().getConnectionTimeout().getMs()).build();
+        } else {
+            config = IBConnectionManagerConfig.builder().setOwnNodeId(m_boot.getNodeID()).setNumMessageHandlerThreads(getConfig().getNumMessageHandlerThreads())
+                    .setRequestTimeOut((int) getConfig().getRequestTimeout().getMs()).setBufferSize((int) getConfig().getBufferSize().getBytes())
+                    .setRequestMapSize(getConfig().getRequestMapEntryCount()).setMaxConnections(getConfig().getMaxConnections())
+                    .setFlowControlWindow((int) getConfig().getFlowControlWindowSize().getBytes())
+                    .setConnectionTimeout((int) getConfig().getConnectionTimeout().getMs()).setBufferPoolSize(getConfig().getIbBufferPoolSize())
+                    .setMaxRecvReqs(getConfig().getIbMaxRecvReqs()).setMaxSendReqs(getConfig().getIbMaxSendReqs())
+                    .setFlowControlMaxRecvReqs(getConfig().getIbFlowControlMaxRecvReqs()).setFlowControlMaxSendReqs(getConfig().getIbFlowControlMaxSendReqs())
+                    .setOutgoingJobPoolSize(getConfig().getIbOutgoingJobPoolSize()).setSendThreads(getConfig().getIbSendThreads())
+                    .setRecvThreads(getConfig().getIbRecvThreads()).setEnableSignalHandler(getConfig().getIbEnableSignalHandler())
+                    .setEnableDebugThread(getConfig().getIbEnableDebugThread()).build();
+        }
+
+        m_networkSystem = new NetworkSystem(config, new NodeMappings(m_boot));
 
         m_networkSystem.setConnectionManagerListener(this);
         m_networkSystem.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);

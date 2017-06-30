@@ -16,6 +16,8 @@ package de.hhu.bsinfo.net;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongArray;
 
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,7 +31,9 @@ import de.hhu.bsinfo.net.core.MessageDirectory;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.net.core.RequestMap;
 import de.hhu.bsinfo.net.ib.IBConnectionManager;
+import de.hhu.bsinfo.net.ib.IBConnectionManagerConfig;
 import de.hhu.bsinfo.net.nio.NIOConnectionManager;
+import de.hhu.bsinfo.net.nio.NIOConnectionManagerConfig;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -42,7 +46,7 @@ import de.hhu.bsinfo.utils.NodeID;
 public final class NetworkSystem {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkSystem.class.getSimpleName());
 
-    private final short m_ownNodeId;
+    private final NetworkSystemConfig m_config;
 
     private final MessageHandlers m_messageHandlers;
     private final MessageDirectory m_messageDirectory;
@@ -56,33 +60,32 @@ public final class NetworkSystem {
     private final AbstractConnectionManager m_connectionManager;
 
     // TODO doc
-    public NetworkSystem(final short p_ownNodeId, final int p_maxConnections, final int p_bufferSize, final int p_flowControlWindowSize,
-            final int p_numMessageHandlerThreads, final int p_requestMapSize, final int p_requestTimeOut, final int p_connectionTimeout,
-            final NodeMap p_nodeMap, final boolean p_infiniband) {
-        m_ownNodeId = p_ownNodeId;
+    public NetworkSystem(final NetworkSystemConfig p_config, final NodeMap p_nodeMap) {
+        m_config = p_config;
 
-        m_messageHandlers = new MessageHandlers(p_numMessageHandlerThreads, p_requestTimeOut);
-        m_messageDirectory = new MessageDirectory(p_requestTimeOut);
+        m_messageHandlers = new MessageHandlers(m_config.getNumMessageHandlerThreads(), m_config.getRequestTimeOut());
+        m_messageDirectory = new MessageDirectory(m_config.getRequestTimeOut());
 
         // #if LOGGER >= INFO
         LOGGER.info("Network: MessageCreator");
         // #endif /* LOGGER >= INFO */
-        m_messageCreator = new MessageCreator(p_bufferSize);
+        m_messageCreator = new MessageCreator(m_config.getBufferSize());
         m_messageCreator.setName("Network: MessageCreator");
         m_messageCreator.start();
 
         m_lastFailures = new AtomicLongArray(65536);
 
-        m_requestMap = new RequestMap(p_requestMapSize);
-        m_timeOut = p_requestTimeOut;
+        m_requestMap = new RequestMap(m_config.getRequestMapSize());
+        m_timeOut = m_config.getRequestTimeOut();
 
-        if (!p_infiniband) {
-            m_connectionManager = new NIOConnectionManager(p_ownNodeId, p_maxConnections, p_bufferSize, p_flowControlWindowSize, p_connectionTimeout, p_nodeMap,
-                    m_messageDirectory, m_requestMap, m_messageCreator, m_messageHandlers);
+        if (p_config instanceof NIOConnectionManagerConfig) {
+            m_connectionManager = new NIOConnectionManager((NIOConnectionManagerConfig) m_config, p_nodeMap, m_messageDirectory, m_requestMap, m_messageCreator,
+                    m_messageHandlers);
+        } else if (p_config instanceof IBConnectionManagerConfig) {
+            m_connectionManager = new IBConnectionManager((IBConnectionManagerConfig) m_config, p_nodeMap, m_messageDirectory, m_requestMap, m_messageCreator,
+                    m_messageHandlers);
         } else {
-            m_connectionManager =
-                    new IBConnectionManager(p_ownNodeId, p_maxConnections, p_bufferSize, p_flowControlWindowSize, p_nodeMap, m_messageDirectory, m_requestMap,
-                            m_messageCreator, m_messageHandlers);
+            throw new NotImplementedException();
         }
     }
 
@@ -209,7 +212,7 @@ public final class NetworkSystem {
         LOGGER.trace("Entering sendMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */
 
-        if (p_message.getDestination() == m_ownNodeId) {
+        if (p_message.getDestination() == m_config.getOwnNodeId()) {
             // #if LOGGER >= ERROR
             LOGGER.error("Invalid destination 0x%X. No loopback allowed.", p_message.getDestination());
             // #endif /* LOGGER >= ERROR */

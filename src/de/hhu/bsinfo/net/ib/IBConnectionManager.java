@@ -24,9 +24,7 @@ import de.hhu.bsinfo.utils.NodeID;
 public class IBConnectionManager extends AbstractConnectionManager implements JNIIbnet.Callbacks {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBConnectionManager.class.getSimpleName());
 
-    private final short m_ownNodeId;
-    private final int m_bufferSize;
-    private final int m_flowControlWindowSize;
+    private final IBConnectionManagerConfig m_config;
 
     private final MessageDirectory m_messageDirectory;
     private final RequestMap m_requestMap;
@@ -37,31 +35,24 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
 
     private final boolean[] m_nodeConnected;
 
-    public IBConnectionManager(final short p_ownNodeId, final int p_maxConnections, final int p_bufferSize, final int p_flowControlWindowSize,
-            final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final MessageCreator p_messageCreator,
-            final DataReceiver p_dataReciever) {
-        super(p_maxConnections);
+    public IBConnectionManager(final IBConnectionManagerConfig p_config, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
+            final RequestMap p_requestMap, final MessageCreator p_messageCreator, final DataReceiver p_dataReciever) {
+        super(p_config);
 
-        m_ownNodeId = p_ownNodeId;
-        m_bufferSize = p_bufferSize;
-        m_flowControlWindowSize = p_flowControlWindowSize;
+        m_config = p_config;
 
         m_messageDirectory = p_messageDirectory;
         m_requestMap = p_requestMap;
         m_messageCreator = p_messageCreator;
         m_dataReceiver = p_dataReciever;
 
-        // TODO configurable pool size
-        m_bufferPool = new IBBufferPool(p_bufferSize, 100);
+        m_bufferPool = new IBBufferPool(m_config.getBufferSize(), m_config.getBufferPoolSize());
 
         m_nodeConnected = new boolean[NodeID.MAX_ID];
 
-        // TODO configuration value -> jni libraries
-        // TODO check if library loaded -> error/fail if missing
-        System.load(System.getProperty("user.dir") + "/jni/libJNIIbnet.so");
-
-        // TODO expose further infiniband only config values
-        if (!JNIIbnet.init(p_ownNodeId, 10, 10, p_bufferSize, 10, 10, 1000, 1, 1, 1000, this, false, true)) {
+        if (!JNIIbnet.init(m_config.getOwnNodeId(), m_config.getMaxRecvReqs(), m_config.getMaxSendReqs(), m_config.getBufferSize(),
+                m_config.getFlowControlMaxRecvReqs(), m_config.getFlowControlMaxSendReqs(), m_config.getOutgoingJobPoolSize(), m_config.getSendThreads(),
+                m_config.getRecvThreads(), m_config.getMaxConnections(), this, m_config.getEnableSignalHandler(), m_config.getEnableDebugThread())) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("Initializing ibnet failed, check ibnet logs");
             // #endif /* LOGGER >= DEBUG */
@@ -71,7 +62,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
 
         // TODO ugly (temporary) workaround
         for (int i = 0; i < NodeID.MAX_ID; i++) {
-            if (i == (m_ownNodeId & 0xFFFF)) {
+            if (i == (m_config.getOwnNodeId() & 0xFFFF)) {
                 continue;
             }
 
@@ -107,15 +98,15 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         }
 
         m_connectionCreationLock.lock();
-        if (m_openConnections == m_maxConnections) {
+        if (m_openConnections == m_config.getMaxConnections()) {
             dismissRandomConnection();
         }
 
         connection = (IBConnection) m_connections[p_destination & 0xFFFF];
 
         if (connection == null) {
-            connection = new IBConnection(m_ownNodeId, p_destination, m_bufferSize, m_flowControlWindowSize, m_messageCreator, m_messageDirectory, m_requestMap,
-                    m_dataReceiver, m_bufferPool);
+            connection = new IBConnection(m_config.getOwnNodeId(), p_destination, m_config.getBufferSize(), m_config.getFlowControlWindow(), m_messageCreator,
+                    m_messageDirectory, m_requestMap, m_dataReceiver, m_bufferPool);
             m_connections[p_destination & 0xFFFF] = connection;
             m_openConnections++;
         }
