@@ -64,7 +64,7 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public final class DXRAM {
-    public static final DXRAMVersion VERSION = DXRAMVersion.builder().setMajor(0).setMinor(2).setRevision(0).build();
+    public static final DXRAMVersion VERSION = DXRAMVersion.builder().setMajor(0).setMinor(3).setRevision(0).build();
     private static final String STARTUP_DONE_STR = "!---ooo---!";
 
     private DXRAMEngine m_engine;
