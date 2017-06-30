@@ -230,6 +230,31 @@ public class NetworkTask implements Task, MessageReceiver {
         timeInS = (m_receiveTimeEnd.get() - m_receiveTimeStart.get()) / 1000.0 / 1000.0 / 1000.0;
         System.out.printf("Throughput Rx: %f MB/s\n", sizeInMB / timeInS);
 
+        if (m_isMessage) {
+            long worstTime = 0;
+            long bestTime = Long.MAX_VALUE;
+            long avgTime = 0;
+
+            for (int i = 0; i < m_threadCnt; i++) {
+                long t = time[i].getAvarageOfAccumulated();
+
+                if (t > worstTime) {
+                    worstTime = t;
+                }
+
+                if (t < bestTime) {
+                    bestTime = t;
+                }
+
+                avgTime += t;
+            }
+
+            avgTime /= m_threadCnt;
+
+            System.out.printf("Request-Response latency, best %f ms, worst %f ms, avg. %f ms", worstTime / 1000.0 / 1000.0, bestTime / 1000.0 / 1000.0,
+                    avgTime / 1000.0 / 1000.0);
+        }
+
         unregisterReceiver();
 
         return 0;
