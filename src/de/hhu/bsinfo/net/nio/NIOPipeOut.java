@@ -2,17 +2,15 @@ package de.hhu.bsinfo.net.nio;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SocketChannel;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.net.NodeMap;
 import de.hhu.bsinfo.net.core.AbstractFlowControl;
 import de.hhu.bsinfo.net.core.AbstractPipeOut;
 import de.hhu.bsinfo.net.core.NetworkException;
-import de.hhu.bsinfo.net.NodeMap;
 
 /**
  * Created by nothaas on 6/9/17.
@@ -29,7 +27,7 @@ public class NIOPipeOut extends AbstractPipeOut {
 
     NIOPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl,
             final NIOSelector p_nioSelector, final NodeMap p_nodeMap, final NIOConnection p_parentConnection) {
-        super(p_ownNodeId, p_destinationNodeId, p_bufferSize, p_flowControl);
+        super(p_ownNodeId, p_destinationNodeId, p_bufferSize, p_flowControl, false);
 
         m_outgoingChannel = null;
         m_writeOperation = new ChangeOperationsRequest(p_parentConnection, NIOSelector.WRITE);

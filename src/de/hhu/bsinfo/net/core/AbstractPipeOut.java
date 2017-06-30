@@ -24,13 +24,15 @@ public abstract class AbstractPipeOut {
     // TODO needs to be atomic now because lock is missing?
     private long m_sentMessages;
 
-    protected AbstractPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl) {
+    public AbstractPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl,
+            final boolean p_directBuffer) {
         m_ownNodeID = p_ownNodeId;
         m_destinationNodeID = p_destinationNodeId;
+
         m_bufferSize = p_bufferSize;
         m_flowControl = p_flowControl;
 
-        m_outgoing = new OutgoingQueue(m_bufferSize);
+        m_outgoing = new OutgoingQueue(m_bufferSize, p_directBuffer);
 
         m_sliceLock = new ReentrantLock(false);
 
@@ -69,7 +71,7 @@ public abstract class AbstractPipeOut {
         return m_outgoing.isEmpty();
     }
 
-    void postMessage(final AbstractMessage p_message) throws NetworkException {
+    public void postMessage(final AbstractMessage p_message, final boolean p_directBuffer) throws NetworkException {
         // #if LOGGER >= TRACE
         LOGGER.trace("Writing message %s to pipe out of dest 0x%X", p_message, m_destinationNodeID);
         // #endif /* LOGGER >= TRACE */
@@ -79,7 +81,7 @@ public abstract class AbstractPipeOut {
         m_sentMessages++;
 
         if (messageSize > m_bufferSize) {
-            ByteBuffer data = p_message.getBuffer();
+            ByteBuffer data = p_message.getBuffer(p_directBuffer);
             m_sliceLock.lock();
             int size = data.limit();
             int currentSize = 0;

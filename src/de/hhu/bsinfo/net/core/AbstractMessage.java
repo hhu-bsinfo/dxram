@@ -335,13 +335,18 @@ public abstract class AbstractMessage {
      * @throws NetworkException
      *         if message buffer is too small
      */
-    protected final ByteBuffer getBuffer() throws NetworkException {
+    protected final ByteBuffer getBuffer(final boolean p_direct) throws NetworkException {
         int payloadSize;
         ByteBuffer buffer;
 
         payloadSize = getPayloadLength();
-        // TODO infiniband requires a direct buffer here. check and verify nio performance
-        buffer = ByteBuffer.allocateDirect(HEADER_SIZE + payloadSize);
+
+        if (p_direct) {
+            buffer = ByteBuffer.allocateDirect(HEADER_SIZE + payloadSize);
+        } else {
+            buffer = ByteBuffer.allocate(HEADER_SIZE + payloadSize);
+        }
+
         buffer = fillBuffer(buffer, payloadSize);
         buffer.flip();
 

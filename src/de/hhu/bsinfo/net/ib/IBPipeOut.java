@@ -15,7 +15,7 @@ public class IBPipeOut extends AbstractPipeOut {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeOut.class.getSimpleName());
 
     public IBPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl) {
-        super(p_ownNodeId, p_destinationNodeId, p_bufferSize, p_flowControl);
+        super(p_ownNodeId, p_destinationNodeId, p_bufferSize, p_flowControl, true);
     }
 
     @Override
@@ -47,6 +47,8 @@ public class IBPipeOut extends AbstractPipeOut {
                 LOGGER.error("Posting buffer (%d) to 0x%X failed", buffer.remaining(), getDestinationNodeID());
                 // #endif /* LOGGER == ERROR */
             }
+
+            getOutgoingQueue().returnBuffer(buffer);
         }
     }
 }

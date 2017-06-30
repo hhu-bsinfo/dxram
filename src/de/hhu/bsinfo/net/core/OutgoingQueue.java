@@ -30,6 +30,7 @@ public final class OutgoingQueue {
     private final ByteBuffer[] m_buffer;
     private int m_maxBytes;
     private int m_osBufferSize;
+    private boolean m_directBuffer;
 
     private volatile int m_currentBytes;
     private volatile int m_posFront;
@@ -44,8 +45,9 @@ public final class OutgoingQueue {
      * @param p_osBufferSize
      *         the outgoing buffer size
      */
-    public OutgoingQueue(final int p_osBufferSize) {
+    public OutgoingQueue(final int p_osBufferSize, final boolean p_directBuffers) {
         m_osBufferSize = p_osBufferSize;
+        m_directBuffer = p_directBuffers;
 
         m_buffer = new ByteBuffer[BUFFER_POOL_SIZE];
         m_maxBytes = 2 * p_osBufferSize;
@@ -53,8 +55,11 @@ public final class OutgoingQueue {
 
         m_bufferPool = new ByteBuffer[BUFFER_POOL_SIZE];
         for (int i = 0; i < BUFFER_POOL_SIZE; i++) {
-            // TODO infiniband requires a direct buffer here. check and verify nio performance
-            m_bufferPool[i] = ByteBuffer.allocateDirect(p_osBufferSize);
+            if (p_directBuffers) {
+                m_bufferPool[i] = ByteBuffer.allocateDirect(p_osBufferSize);
+            } else {
+                m_bufferPool[i] = ByteBuffer.allocate(p_osBufferSize);
+            }
         }
         m_bufferPoolIndex = BUFFER_POOL_SIZE - 1;
 
@@ -346,7 +351,7 @@ public final class OutgoingQueue {
      * @lock must be locked
      */
     private void push(final AbstractMessage p_message, final int p_messageSize) throws NetworkException {
-        m_buffer[m_posBack % BUFFER_POOL_SIZE] = p_message.getBuffer();
+        m_buffer[m_posBack % BUFFER_POOL_SIZE] = p_message.getBuffer(m_directBuffer);
         m_posBack++;
 
         m_currentBytes += p_messageSize;
