@@ -28,6 +28,8 @@ public final class Stopwatch {
     private long m_endTime = 0;
     private long m_accu = 0;
     private long m_counter = 0;
+    private long m_best = Long.MAX_VALUE;
+    private long m_worst = 0;
 
     // Constructors
 
@@ -52,22 +54,43 @@ public final class Stopwatch {
      */
     public void stop() {
         m_endTime = System.nanoTime();
+
+        long tmp = m_endTime - m_startTime;
+
+        if (tmp < m_best) {
+            m_best = tmp;
+        }
+
+        if (tmp > m_worst) {
+            m_worst = tmp;
+        }
     }
 
     /**
      * Stop the watch and accumulate the resulting time
-     * for avarage time calculation.
+     * for average time calculation.
      */
     public void stopAndAccumulate() {
         m_endTime = System.nanoTime();
-        m_accu += m_endTime - m_startTime;
+
+        long tmp = m_endTime - m_startTime;
+
+        m_accu += tmp;
         m_counter++;
+
+        if (tmp < m_best) {
+            m_best = tmp;
+        }
+
+        if (tmp > m_worst) {
+            m_worst = tmp;
+        }
     }
 
     /**
      * Get the average of accumulated times.
      *
-     * @return Avarage of accumulated times in ns.
+     * @return Average of accumulated times in ns.
      */
     public long getAvarageOfAccumulated() {
         return m_accu / m_counter;
@@ -80,6 +103,24 @@ public final class Stopwatch {
      */
     public long getTime() {
         return m_endTime - m_startTime;
+    }
+
+    /**
+     * Get the best time of all stopped times
+     *
+     * @return Best time in ns
+     */
+    public long getBestTime() {
+        return m_best;
+    }
+
+    /**
+     * Get the worst time of all stopped times
+     *
+     * @return Worst time in ns
+     */
+    public long getWorstTime() {
+        return m_worst;
     }
 
     /**
@@ -122,9 +163,9 @@ public final class Stopwatch {
      * Prints the current time
      *
      * @param p_header
-     *     Header to add to the time to print.
+     *         Header to add to the time to print.
      * @param p_printReadable
-     *     True to print a readable version (split into minutes, seconds etc).
+     *         True to print a readable version (split into minutes, seconds etc).
      */
     public void print(final String p_header, final boolean p_printReadable) {
         long time;
@@ -160,7 +201,7 @@ public final class Stopwatch {
 
         if (p_printReadable) {
             System.out.println(
-                '[' + p_header + "]: " + hours + "h " + minutes + "m " + seconds + "s " + milliseconds + "ms " + microseconds + "µs " + nanoseconds + "ns");
+                    '[' + p_header + "]: " + hours + "h " + minutes + "m " + seconds + "s " + milliseconds + "ms " + microseconds + "µs " + nanoseconds + "ns");
         } else {
             System.out.println('[' + p_header + "]: " + (m_endTime - m_startTime));
         }
