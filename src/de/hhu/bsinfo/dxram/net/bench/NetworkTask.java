@@ -160,8 +160,8 @@ public class NetworkTask implements Task, MessageReceiver {
                                         m_networkService.sendMessage(messages[k]);
                                         time[threadIdx].stopAndAccumulate();
                                     } else {
-                                        time[threadIdx].start();
                                         NetworkTestRequest request = new NetworkTestRequest(slaveNodeIds[k]);
+                                        time[threadIdx].start();
                                         m_networkService.sendSync(request);
                                         time[threadIdx].stopAndAccumulate();
                                     }
@@ -226,34 +226,30 @@ public class NetworkTask implements Task, MessageReceiver {
             Thread.yield();
         }
 
-        // calculate receive througput
+        // calculate receive throughput
         timeInS = (m_receiveTimeEnd.get() - m_receiveTimeStart.get()) / 1000.0 / 1000.0 / 1000.0;
         System.out.printf("Throughput Rx: %f MB/s\n", sizeInMB / timeInS);
 
-        if (m_isMessage) {
-            long worstTime = 0;
-            long bestTime = Long.MAX_VALUE;
-            long avgTime = 0;
+        long worstTime = 0;
+        long bestTime = Long.MAX_VALUE;
+        long avgTime = 0;
 
-            for (int i = 0; i < m_threadCnt; i++) {
-                long t = time[i].getAvarageOfAccumulated();
-
-                if (t > worstTime) {
-                    worstTime = t;
-                }
-
-                if (t < bestTime) {
-                    bestTime = t;
-                }
-
-                avgTime += t;
+        for (int i = 0; i < m_threadCnt; i++) {
+            if (time[i].getWorstTime() > worstTime) {
+                worstTime = time[i].getWorstTime();
             }
 
-            avgTime /= m_threadCnt;
+            if (time[i].getBestTime() < bestTime) {
+                bestTime = time[i].getBestTime();
+            }
 
-            System.out.printf("Request-Response latency, best %f ms, worst %f ms, avg. %f ms", worstTime / 1000.0 / 1000.0, bestTime / 1000.0 / 1000.0,
-                    avgTime / 1000.0 / 1000.0);
+            avgTime += time[i].getAvarageOfAccumulated();
         }
+
+        avgTime /= m_threadCnt;
+
+        System.out.printf("Request-Response/Message latency, best %f ms, worst %f ms, avg. %f ms\n", bestTime / 1000.0 / 1000.0, worstTime / 1000.0 / 1000.0,
+                avgTime / 1000.0 / 1000.0);
 
         unregisterReceiver();
 
