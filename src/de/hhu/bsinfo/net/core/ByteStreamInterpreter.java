@@ -28,6 +28,7 @@ final class ByteStreamInterpreter {
     private ByteBuffer m_messageBytes;
 
     private int m_payloadSize;
+    private final boolean m_useDirectBuffer;
 
     private Step m_step;
     private boolean m_wasCopied;
@@ -37,7 +38,8 @@ final class ByteStreamInterpreter {
     /**
      * Creates an instance of MessageCreator
      */
-    ByteStreamInterpreter() {
+    ByteStreamInterpreter(final boolean p_useDirectBuffer) {
+        m_useDirectBuffer = p_useDirectBuffer;
         m_headerBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE);
         m_payloadSize = 0;
         clear();
@@ -134,13 +136,15 @@ final class ByteStreamInterpreter {
             } else {
                 if (m_headerBytes.position() != 0) {
                     // Header is split and the remaining bytes are in this buffer
-                    m_headerBytes.put(p_buffer.array(), p_buffer.position(), remaining);
-                    p_buffer.position(p_buffer.position() + remaining);
-
-                        /*int limit = p_buffer.limit();
+                    if (!m_useDirectBuffer) {
+                        m_headerBytes.put(p_buffer.array(), p_buffer.position(), remaining);
+                        p_buffer.position(p_buffer.position() + remaining);
+                    } else {
+                        int limit = p_buffer.limit();
                         p_buffer.limit(p_buffer.position() + remaining);
                         m_headerBytes.put(p_buffer);
-                        p_buffer.limit(limit);*/
+                        p_buffer.limit(limit);
+                    }
 
                     // Header complete
 
@@ -149,11 +153,14 @@ final class ByteStreamInterpreter {
 
                     // Create message buffer and copy header into (without payload size)
                     m_messageBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + m_payloadSize);
-                    m_messageBytes.put(m_headerBytes.array(), 0, AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
 
-                        /*m_headerBytes.position(0);
-                        m_headerBytes.limit(m_headerBytes.capacity() - AbstractMessage.PAYLOAD_SIZE_LENGTH);
-                        m_messageBytes.put(m_headerBytes);*/
+                    if (!m_useDirectBuffer) {
+                        m_messageBytes.put(m_headerBytes.array(), 0, AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+                    } else {
+                        m_headerBytes.position(0);
+                        m_headerBytes.limit(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+                        m_messageBytes.put(m_headerBytes);
+                    }
 
                     if (m_payloadSize == 0) {
                         // There is no payload -> message complete
@@ -178,15 +185,17 @@ final class ByteStreamInterpreter {
                         m_wasCopied = true;
 
                         m_messageBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + m_payloadSize);
-                        m_messageBytes.put(p_buffer.array(), p_buffer.position(), AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
-                        p_buffer.position(p_buffer.position() + remaining);
 
-                            /*int limit = p_buffer.limit();
-                            p_buffer.position(currentPosition);
-                            p_buffer.limit(currentPosition + AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+                        if (!m_useDirectBuffer) {
+                            m_messageBytes.put(p_buffer.array(), p_buffer.position(), AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+                            p_buffer.position(p_buffer.position() + remaining);
+                        } else {
+                            int limit = p_buffer.limit();
+                            p_buffer.limit(p_buffer.position() + AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
                             m_messageBytes.put(p_buffer);
                             p_buffer.limit(limit);
-                            p_buffer.getInt();*/
+                            p_buffer.getInt();
+                        }
 
                         // Payload must be read next
                         m_step = Step.READ_PAYLOAD;
@@ -214,13 +223,15 @@ final class ByteStreamInterpreter {
             if (p_buffer.remaining() < remaining) {
                 m_messageBytes.put(p_buffer);
             } else {
-                m_messageBytes.put(p_buffer.array(), p_buffer.position(), remaining);
-                p_buffer.position(p_buffer.position() + remaining);
-
-                    /*int limit = p_buffer.limit();
+                if (!m_useDirectBuffer) {
+                    m_messageBytes.put(p_buffer.array(), p_buffer.position(), remaining);
+                    p_buffer.position(p_buffer.position() + remaining);
+                } else {
+                    int limit = p_buffer.limit();
                     p_buffer.limit(p_buffer.position() + remaining);
                     m_messageBytes.put(p_buffer);
-                    p_buffer.limit(limit);*/
+                    p_buffer.limit(limit);
+                }
 
                 m_step = Step.DONE;
                 m_messageBytes.flip();

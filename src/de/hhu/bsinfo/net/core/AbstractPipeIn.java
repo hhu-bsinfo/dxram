@@ -33,7 +33,7 @@ public abstract class AbstractPipeIn {
     private final AbstractMessage[] m_exclusiveMessages = new AbstractMessage[25];
 
     protected AbstractPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
-            final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver) {
+            final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver, final boolean p_useDirectBuffer) {
         m_ownNodeID = p_ownNodeId;
         m_destinationNodeID = p_destinationNodeId;
         m_flowControl = p_flowControl;
@@ -42,7 +42,7 @@ public abstract class AbstractPipeIn {
         m_messageDirectory = p_messageDirectory;
         m_requestMap = p_requestMap;
 
-        m_streamInterpreter = new ByteStreamInterpreter();
+        m_streamInterpreter = new ByteStreamInterpreter(p_useDirectBuffer);
     }
 
     short getOwnNodeID() {
@@ -90,7 +90,8 @@ public abstract class AbstractPipeIn {
             m_streamInterpreter.update(p_buffer);
 
             if (m_streamInterpreter.isMessageComplete()) {
-                currentMessage = createMessage(m_streamInterpreter.getMessageBuffer(), m_streamInterpreter.getPayloadSize(), m_streamInterpreter.bufferWasCopied());
+                currentMessage =
+                        createMessage(m_streamInterpreter.getMessageBuffer(), m_streamInterpreter.getPayloadSize(), m_streamInterpreter.bufferWasCopied());
 
                 if (currentMessage != null) {
                     currentMessage.setDestination(m_ownNodeID);

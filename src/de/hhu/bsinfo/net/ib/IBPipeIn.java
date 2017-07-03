@@ -26,7 +26,7 @@ public class IBPipeIn extends AbstractPipeIn {
     public IBPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
             final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver, final IBBufferPool p_bufferPool,
             final MessageCreator p_messageCreator, final IBConnection p_parentConnection) {
-        super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_messageDirectory, p_requestMap, p_dataReceiver);
+        super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_messageDirectory, p_requestMap, p_dataReceiver, true);
 
         m_bufferPool = p_bufferPool;
         m_messageCreator = p_messageCreator;

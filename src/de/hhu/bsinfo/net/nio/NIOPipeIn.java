@@ -30,7 +30,7 @@ public class NIOPipeIn extends AbstractPipeIn {
     public NIOPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
             final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver, final NIOBufferPool p_bufferPool,
             final MessageCreator p_messageCreator, final NIOConnection p_parentConnection) {
-        super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_messageDirectory, p_requestMap, p_dataReceiver);
+        super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_messageDirectory, p_requestMap, p_dataReceiver, false);
 
         m_incomingChannel = null;
         m_bufferPool = p_bufferPool;
