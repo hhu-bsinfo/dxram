@@ -15,7 +15,10 @@ package de.hhu.bsinfo.dxram.recovery.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.backup.BackupRange;
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 
 /**
  * Response to a RecoverBackupRangeRequest
@@ -25,6 +28,7 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
 public class RecoverBackupRangeResponse extends AbstractResponse {
 
     // Attributes
+    private BackupRange m_newBackupRange;
     private int m_numberOfChunks;
     private long[] m_chunkIDRanges;
 
@@ -36,6 +40,7 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
     public RecoverBackupRangeResponse() {
         super();
 
+        m_newBackupRange = null;
         m_numberOfChunks = 0;
         m_chunkIDRanges = null;
     }
@@ -45,19 +50,32 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
      *
      * @param p_request
      *     the corresponding RecoverBackupRangeRequest
+     * @param p_newBackupRange
+     *     the backup range with updated range ID and new backup peer
      * @param p_numberOfChunks
      *     the number of recovered chunks
      * @param p_chunkIDRanges
      *     all ChunkIDs in ranges
      */
-    public RecoverBackupRangeResponse(final RecoverBackupRangeRequest p_request, final int p_numberOfChunks, final long[] p_chunkIDRanges) {
+    public RecoverBackupRangeResponse(final RecoverBackupRangeRequest p_request, final BackupRange p_newBackupRange, final int p_numberOfChunks,
+            final long[] p_chunkIDRanges) {
         super(p_request, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE);
 
+        m_newBackupRange = p_newBackupRange;
         m_numberOfChunks = p_numberOfChunks;
         m_chunkIDRanges = p_chunkIDRanges;
     }
 
     // Getters
+
+    /**
+     * Returns the new backup range
+     *
+     * @return the new backup range
+     */
+    public final BackupRange getNewBackupRange() {
+        return m_newBackupRange;
+    }
 
     /**
      * Returns the number of recovered chunks
@@ -80,7 +98,7 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
     @Override
     protected final int getPayloadLength() {
         if (m_numberOfChunks > 0) {
-            return 2 * Integer.BYTES + m_chunkIDRanges.length * Long.BYTES;
+            return m_newBackupRange.sizeofObject() + 2 * Integer.BYTES + m_chunkIDRanges.length * Long.BYTES;
         } else {
             return Integer.BYTES;
         }
@@ -96,6 +114,9 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
             for (int i = 0; i < m_chunkIDRanges.length; i++) {
                 p_buffer.putLong(m_chunkIDRanges[i]);
             }
+
+            ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
+            exporter.exportObject(m_newBackupRange);
         }
 
     }
@@ -110,6 +131,10 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
             for (int i = 0; i < size; i++) {
                 m_chunkIDRanges[i] = p_buffer.getLong();
             }
+
+            ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
+            m_newBackupRange = new BackupRange();
+            importer.importObject(m_newBackupRange);
         }
     }
 

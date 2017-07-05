@@ -699,13 +699,16 @@ public class SecondaryLog extends AbstractLog {
             // #endif /* LOGGER >= ERROR */
         }
 
+        t = System.currentTimeMillis();
         if (!largeChunks.isEmpty()) {
-            numberOfRecoveredLargeChunks = p_chunkComponent.putRecoveredChunks(largeChunks.values().toArray(new DSByteBuffer[largeChunks.size()]));
+            numberOfRecoveredLargeChunks = p_chunkComponent.putRecoveredChunks(recoveryMetadata,
+                    largeChunks.values().toArray(new DSByteBuffer[largeChunks.size()]));
         }
+        timeToPut += System.currentTimeMillis() - t;
 
         // #if LOGGER >= INFO
         LOGGER.info("Recovery of backup range finished: ");
-        LOGGER.info("\t Recovered %d chunks in %d ms", recoveryMetadata.getNumberOfChunks() + numberOfRecoveredLargeChunks, System.currentTimeMillis() - time);
+        LOGGER.info("\t Recovered %d chunks (large: %d) in %d ms", recoveryMetadata.getNumberOfChunks(), numberOfRecoveredLargeChunks, System.currentTimeMillis() - time);
         String ranges = "\t ChunkID ranges: ";
         for (long chunkID : recoveryMetadata.getCIDRanges()) {
             ranges += ChunkID.toHexString(chunkID) + ' ';

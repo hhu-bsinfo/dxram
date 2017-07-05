@@ -13,22 +13,32 @@
 
 package de.hhu.bsinfo.dxram.recovery.messages;
 
-/**
- * Encapsulates messages for the RecoveryService
- *
- * @author Kevin Beineke, kevin.beineke@hhu.de, 03.06.2013
- */
-public final class RecoveryMessages {
+import de.hhu.bsinfo.net.core.AbstractResponse;
 
-    // Constants
-    public static final byte SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST = 1;
-    public static final byte SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE = 2;
-    public static final byte SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST = 3;
-    public static final byte SUBTYPE_REPLICATE_BACKUP_RANGE_RESPONSE = 4;
+/**
+ * Response to a ReplicateBackupRangeRequest
+ *
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 30.06.2017
+ */
+public class ReplicateBackupRangeResponse extends AbstractResponse {
+
+    // Constructors
 
     /**
-     * Static class
+     * Creates an instance of ReplicateBackupRangeResponse
      */
-    private RecoveryMessages() {
+    public ReplicateBackupRangeResponse() {
+        super();
     }
+
+    /**
+     * Creates an instance of ReplicateBackupRangeResponse
+     *
+     * @param p_request
+     *     the corresponding ReplicateBackupRangeResponse
+     */
+    public ReplicateBackupRangeResponse(final ReplicateBackupRangeRequest p_request) {
+        super(p_request, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_RESPONSE);
+    }
+
 }

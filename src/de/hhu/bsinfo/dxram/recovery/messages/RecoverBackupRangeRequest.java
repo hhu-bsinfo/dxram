@@ -81,6 +81,15 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
         return m_backupRange;
     }
 
+    /**
+     * Set the backup range
+     * @param p_backupRange
+     *      the backup range
+     */
+    public final void setBackupRange(final BackupRange p_backupRange) {
+        m_backupRange = p_backupRange;
+    }
+
     @Override
     protected final int getPayloadLength() {
         return Short.BYTES + m_backupRange.sizeofObject();

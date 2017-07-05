@@ -15,11 +15,11 @@ package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.backup.RangeID;
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.RangeID;
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 
 /**
  * Message for logging an anonymous chunk on a remote node
@@ -27,11 +27,10 @@ import de.hhu.bsinfo.net.core.AbstractMessage;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 20.04.2016
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.03.2017
  */
-public class LogAnonMessage extends AbstractMessage {
+public class LogBufferMessage extends AbstractMessage {
 
     // Attributes
     private short m_rangeID;
-    private ChunkAnon[] m_chunks;
     private ByteBuffer m_buffer;
 
     private int m_copiedBytes;
@@ -41,11 +40,10 @@ public class LogAnonMessage extends AbstractMessage {
     /**
      * Creates an instance of LogMessage
      */
-    public LogAnonMessage() {
+    public LogBufferMessage() {
         super();
 
         m_rangeID = RangeID.INVALID_ID;
-        m_chunks = null;
         m_buffer = null;
     }
 
@@ -54,16 +52,17 @@ public class LogAnonMessage extends AbstractMessage {
      *
      * @param p_destination
      *     the destination
-     * @param p_chunks
-     *     the chunks to store
      * @param p_rangeID
      *     the RangeID
+     * @param p_buffer
+     *     the chunks to store with ChunkID and payload size prepended
      */
-    public LogAnonMessage(final short p_destination, final short p_rangeID, final ChunkAnon... p_chunks) {
-        super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_ANON_MESSAGE, true);
+    public LogBufferMessage(final short p_destination, final short p_rangeID, final ByteBuffer p_buffer) {
+        super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE, true);
 
         m_rangeID = p_rangeID;
-        m_chunks = p_chunks;
+        m_buffer = p_buffer;
+        m_copiedBytes = m_buffer.limit();
     }
 
     // Getters
@@ -79,16 +78,10 @@ public class LogAnonMessage extends AbstractMessage {
 
     @Override
     protected final int getPayloadLength() {
-        if (m_chunks != null) {
-            int ret = Short.BYTES + Integer.BYTES;
-
-            for (ChunkAnon chunk : m_chunks) {
-                ret += Long.BYTES + chunk.sizeofObject();
-            }
-
-            return ret;
+        if (m_copiedBytes == 0) {
+            return 0;
         } else {
-            return m_copiedBytes;
+            return Short.BYTES + m_copiedBytes;
         }
     }
 
@@ -96,13 +89,7 @@ public class LogAnonMessage extends AbstractMessage {
     @Override
     protected final void writePayload(final ByteBuffer p_buffer) {
         p_buffer.putShort(m_rangeID);
-
-        p_buffer.putInt(m_chunks.length);
-        final ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-        for (ChunkAnon chunk : m_chunks) {
-            p_buffer.putLong(chunk.getID());
-            exporter.exportObject(chunk);
-        }
+        p_buffer.put(m_buffer);
     }
 
     @Override

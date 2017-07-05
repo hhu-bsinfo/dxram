@@ -13,20 +13,24 @@
 
 package de.hhu.bsinfo.dxram.chunk;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
+import de.hhu.bsinfo.dxram.log.messages.LogBufferMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.net.core.NetworkException;
 
 /**
@@ -93,8 +97,6 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
      */
     public int replicateBackupRange(final short p_backupPeer, final long[] p_chunkIDRanges, final int p_numberOfChunks, final short p_rangeID) {
         int counter = 0;
-        byte[] data;
-        DataStructure[] chunks;
 
         // Initialize backup range on backup peer
         InitBackupRangeRequest request = new InitBackupRangeRequest(p_backupPeer, p_rangeID);
@@ -111,25 +113,39 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
         // TODO: Replicates all created chunks including chunks that have not been put
 
         // Gather all chunks of backup range
-        chunks = new DataStructure[p_numberOfChunks];
+        byte[] chunkArray = new byte[32 * 1024 * 1024];
+        ByteBuffer chunkBuffer = ByteBuffer.wrap(chunkArray);
         m_memoryManager.lockAccess();
         for (int i = 0; i < p_chunkIDRanges.length; i += 2) {
             for (long currentChunkID = p_chunkIDRanges[i]; currentChunkID <= p_chunkIDRanges[i + 1]; currentChunkID++) {
-                data = m_memoryManager.get(currentChunkID);
-                if (data != null) {
-                    DataStructure currentChunk = new DSByteArray(currentChunkID, data);
-                    chunks[counter++] = currentChunk;
+                // Store payload behind ChunkID and size
+                int bytes = m_memoryManager.get(currentChunkID, chunkArray, chunkBuffer.position() + Long.BYTES + Integer.BYTES, chunkArray.length);
+                if (bytes == 0) {
+                    // Chunk does not fit in current buffer -> send buffer and repeat
+                    chunkBuffer.flip();
+                    try {
+                        m_network.sendMessage(new LogBufferMessage(p_backupPeer, p_rangeID, chunkBuffer));
+                    } catch (final NetworkException ignore) {
+
+                    }
+                    chunkBuffer.clear();
+                    bytes = m_memoryManager.get(currentChunkID, chunkArray, chunkBuffer.position() + Long.BYTES + Integer.BYTES, chunkArray.length);
                 }
+
+                if (bytes == -1) {
+                    // #if LOGGER == ERROR
+                    LOGGER.error("Could not replicate 0x%X", currentChunkID);
+                    // #endif /* LOGGER == ERROR */
+                    continue;
+                }
+
+                chunkBuffer.putLong(currentChunkID);
+                chunkBuffer.putInt(bytes);
+                chunkBuffer.position(chunkBuffer.position() + bytes);
+                counter++;
             }
         }
         m_memoryManager.unlockAccess();
-
-        // Send all chunks to backup peer
-        try {
-            m_network.sendMessage(new LogMessage(p_backupPeer, p_rangeID, chunks));
-        } catch (final NetworkException ignore) {
-
-        }
 
         return counter;
     }
@@ -181,25 +197,23 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
     /**
      * Put a recovered chunks into local memory.
      *
+     * @param p_metadata
+     *         the recovery metadata to update
      * @param p_chunks
      *         Chunks to put.
      * @return the number of created and put Chunks
      */
-    public int putRecoveredChunks(final DataStructure[] p_chunks) {
-        int ret = 0;
+    public int putRecoveredChunks(final RecoveryMetadata p_metadata, final DataStructure[] p_chunks) {
+        int ret;
+        int size;
 
         m_memoryManager.lockManage();
-        m_memoryManager.createMulti(p_chunks);
-        for (DataStructure chunk : p_chunks) {
-            if (m_memoryManager.put(chunk)) {
-                ret++;
-            }
-
-            // #if LOGGER == TRACE
-            LOGGER.trace("Stored recovered chunk 0x%X locally", chunk.getID());
-            // #endif /* LOGGER == TRACE */
-        }
+        size = m_memoryManager.createAndPutRecovered(p_chunks);
         m_memoryManager.unlockManage();
+
+        ret = p_chunks.length;
+
+        p_metadata.add(ret, size);
 
         return ret;
     }

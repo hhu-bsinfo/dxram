@@ -56,7 +56,7 @@ public abstract class AbstractFlowControl {
             try {
                 if (!m_flowControlCond.await(1000, TimeUnit.MILLISECONDS)) {
                     // #if LOGGER >= WARN
-                    LOGGER.warn("Flow control message is overdue for node: 0x%X", m_destinationNodeID);
+                    LOGGER.warn("Flow control message is overdue for node: 0x%X, unconfirmed bytes: %d", m_destinationNodeID, m_unconfirmedBytes);
                     // #endif /* LOGGER >= WARN */
                 }
             } catch (final InterruptedException e) { /* ignore */ }

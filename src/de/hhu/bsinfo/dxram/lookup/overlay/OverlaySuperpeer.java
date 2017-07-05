@@ -113,6 +113,8 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
+import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeRequest;
+import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeResponse;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.net.MessageReceiver;
 import de.hhu.bsinfo.net.core.AbstractMessage;
@@ -819,6 +821,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         BackupRange[] backupRanges;
         short[] backupPeers;
         RecoverBackupRangeRequest[] requests;
+        RecoverBackupRangeRequest[] processedRequests = null;
 
         // #if LOGGER >= INFO
         LOGGER.info("Starting failure handling for failed node 0x%X", p_failedNode);
@@ -891,6 +894,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 
                 m_metadata.setState(p_failedNode, PeerState.IN_RECOVERY);
 
+
+                int waitingTimerPerBackupRange = 3000;
+
                 // Send all recovery requests
                 counter = 0;
                 RecoverBackupRangeRequest request;
@@ -902,6 +908,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
                 if (backupRanges != null) {
                     requests = new RecoverBackupRangeRequest[backupRanges.length];
+                    processedRequests = new RecoverBackupRangeRequest[backupRanges.length];
                     for (BackupRange backupRange : backupRanges) {
                         backupPeers = backupRange.getBackupPeers();
 
@@ -928,7 +935,6 @@ public class OverlaySuperpeer implements MessageReceiver {
                     }
 
                     // Collect and evaluate responses
-                    int waitingTimerPerBackupRange = 3000;
                     long timeStart = System.currentTimeMillis();
                     boolean finished = false;
                     while (!finished) {
@@ -948,6 +954,8 @@ public class OverlaySuperpeer implements MessageReceiver {
                                         updateMetadata(currentRequest.getBackupRange().getRangeID(), response.getSource(), chunkIDRanges);
                                     }
                                     requests[i] = null;
+                                    processedRequests[i] = currentRequest;
+                                    currentRequest.setBackupRange(response.getNewBackupRange());
                                 } else {
                                     if (System.currentTimeMillis() >
                                             numberOfRangesPerPeer[currentRequest.getDestination() & 0xFFFF] * waitingTimerPerBackupRange + timeStart) {
@@ -979,6 +987,10 @@ public class OverlaySuperpeer implements MessageReceiver {
 
                                                         // Update metadata in superpeer overlay
                                                         updateMetadata(currentRequest.getBackupRange().getRangeID(), response.getSource(), chunkIDRanges);
+
+                                                        requests[i] = null;
+                                                        processedRequests[i] = currentRequest;
+                                                        currentRequest.setBackupRange(response.getNewBackupRange());
                                                         break;
                                                     }
                                                 } catch (final NetworkException ignored) {
@@ -1006,6 +1018,70 @@ public class OverlaySuperpeer implements MessageReceiver {
 
                 // #if LOGGER >= INFO
                 LOGGER.info("Recovery of failed node 0x%X complete", p_failedNode);
+                // #endif /* LOGGER >= INFO */
+
+                // #if LOGGER >= INFO
+                LOGGER.info("Starting replication for recovered backup ranges of failed node 0x%X", p_failedNode);
+                // #endif /* LOGGER >= INFO */
+
+                waitingTimerPerBackupRange = 5000;
+
+                if (backupRanges != null) {
+                    ReplicateBackupRangeRequest[] replicationRequests = new ReplicateBackupRangeRequest[backupRanges.length];
+
+                    counter = 0;
+                    for (RecoverBackupRangeRequest processedRequest : processedRequests) {
+                        if (processedRequest != null) {
+                            // #if LOGGER >= INFO
+                            LOGGER.info("Initiating replication on peer 0x%X (is now range %s)", processedRequest.getDestination(), processedRequest);
+                            // #endif /* LOGGER >= INFO */
+                            ReplicateBackupRangeRequest replicationRequest =
+                                    new ReplicateBackupRangeRequest(processedRequest.getDestination(), processedRequest.getBackupRange().getRangeID());
+                            try {
+                                // Do not wait for response to enable parallel recovery
+                                m_network.sendSync(replicationRequest, false);
+                                replicationRequests[counter++] = replicationRequest;
+                            } catch (final NetworkException ignored) {
+                                // Try next backup peer
+                            }
+                        }
+                    }
+
+                    long timeStart = System.currentTimeMillis();
+                    boolean finished = false;
+                    while (!finished) {
+                        finished = true;
+                        for (int i = 0; i < replicationRequests.length; i++) {
+                            ReplicateBackupRangeRequest currentRequest = replicationRequests[i];
+                            if (currentRequest != null) {
+                                ReplicateBackupRangeResponse replicationResponse = currentRequest.getResponse(ReplicateBackupRangeResponse.class);
+                                if (replicationResponse != null) {
+                                    // #if LOGGER >= INFO
+                                    LOGGER.info("Finished replication of backup range %d on peer 0x%X", currentRequest.getRangeID(),
+                                            currentRequest.getDestination());
+                                    // #endif /* LOGGER >= INFO */
+
+                                    replicationRequests[i] = null;
+                                } else {
+                                    if (System.currentTimeMillis() >
+                                            numberOfRangesPerPeer[currentRequest.getDestination() & 0xFFFF] * waitingTimerPerBackupRange + timeStart) {
+                                        // #if LOGGER >= ERROR
+                                        LOGGER.error("Replication of backup range %d on peer 0x%X failed. Reliability might be compromised!",
+                                                currentRequest.getRangeID(), currentRequest.getDestination());
+                                        // #endif /* LOGGER >= ERROR */
+                                        replicationRequests[i] = null;
+                                    } else {
+                                        finished = false;
+                                    }
+                                }
+                            }
+                        }
+                        Thread.yield();
+                    }
+                }
+
+                // #if LOGGER >= INFO
+                LOGGER.info("Replication of failed node 0x%X complete", p_failedNode);
                 // #endif /* LOGGER >= INFO */
             } else {
                 m_metadata.setState(p_failedNode, PeerState.LOST);
@@ -2614,6 +2690,10 @@ public class OverlaySuperpeer implements MessageReceiver {
                 RecoverBackupRangeRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE,
                 RecoverBackupRangeResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST,
+                ReplicateBackupRangeRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_RESPONSE,
+                ReplicateBackupRangeResponse.class);
     }
 
     /**

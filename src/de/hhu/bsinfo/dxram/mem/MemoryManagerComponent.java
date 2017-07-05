@@ -688,6 +688,57 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
     }
 
     /**
+     * Get the binary data of a chunk when the chunk size is unknown.
+     * This is an access call and has to be locked using lockAccess().
+     *
+     * @param p_chunkID
+     *         Read the chunk data of the specified ID
+     *
+     * @return the number of read bytes
+     */
+    public int get(final long p_chunkID, final byte[] p_buffer, final int p_offset, final int p_bufferSize) {
+        int ret;
+        long address;
+
+        try {
+            if (p_chunkID == ChunkID.INVALID_ID) {
+                return -1;
+            }
+
+            // #ifdef STATISTICS
+            SOP_GET.enter();
+            // #endif /* STATISTICS */
+
+            address = m_cidTable.get(p_chunkID);
+            if (address > 0) {
+                int chunkSize = m_rawMemory.getSizeBlock(address);
+
+                if (p_offset + chunkSize > p_bufferSize) {
+                    ret = 0;
+                } else {
+                    // pool the im/exporters
+                    SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
+                    ret = importer.readBytes(p_buffer, p_offset, chunkSize);
+                    if (ret != chunkSize) {
+                        throw new DXRAMRuntimeException("Unknown error, importer size " + ret + " != chunk size " + chunkSize);
+                    }
+                }
+            } else {
+                ret = -1;
+            }
+
+            // #ifdef STATISTICS
+            SOP_GET.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e, true);
+            throw e;
+        }
+
+        return ret;
+    }
+
+    /**
      * Put data of the a data structure/chunk to the memory
      * This is an access call and has to be locked using lockAccess().
      * Note: lockAccess() does NOT take care of data races of the data to write.
@@ -941,6 +992,64 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         // #if LOGGER == TRACE
         LOGGER.trace("EXIT createAndPutRecovered, count %d", p_chunkIDs.length);
         // #endif /* LOGGER == TRACE */
+    }
+
+    /**
+     * Special create and put call optimized for recovery
+     * This is a management call and has to be locked using lockManage().
+     *
+     * @param p_dataStructures
+     *         All data structure to create and put
+     * @return number of written bytes
+     */
+    public int createAndPutRecovered(final DataStructure... p_dataStructures) {
+        int ret = 0;
+        long[] addresses;
+        int[] sizes = new int[p_dataStructures.length];
+
+        for (int i = 0; i < p_dataStructures.length; i++) {
+            sizes[i] = p_dataStructures[i].sizeofObject();
+        }
+
+        try {
+            // #ifdef STATISTICS
+            SOP_CREATE_PUT_RECOVERED.enter(p_dataStructures.length);
+            // #endif /* STATISTICS */
+
+            // #ifdef STATISTICS
+            SOP_MULTI_MALLOC.enter(p_dataStructures.length);
+            // #endif /* STATISTICS */
+            addresses = m_rawMemory.multiMallocSizes(sizes);
+            // #ifdef STATISTICS
+            SOP_MULTI_MALLOC.leave();
+            // #endif /* STATISTICS */
+            if (addresses != null) {
+
+                for (int i = 0; i < addresses.length; i++) {
+                    SmallObjectHeapDataStructureImExporter exporter = getImExporter(addresses[i]);
+                    exporter.exportObject(p_dataStructures[i]);
+                    ret += sizes[i];
+                    m_totalActiveChunkMemory += sizes[i];
+                }
+
+                m_numActiveChunks += addresses.length;
+
+                for (int i = 0; i < addresses.length; i++) {
+                    m_cidTable.set(p_dataStructures[i].getID(), addresses[i]);
+                }
+            } else {
+                throw new OutOfKeyValueStoreMemoryException(getStatus());
+            }
+
+            // #ifdef STATISTICS
+            SOP_CREATE_PUT_RECOVERED.leave();
+            // #endif /* STATISTICS */
+        } catch (final MemoryRuntimeException e) {
+            handleMemDumpOnError(e, false);
+            throw e;
+        }
+
+        return ret;
     }
 
     /**

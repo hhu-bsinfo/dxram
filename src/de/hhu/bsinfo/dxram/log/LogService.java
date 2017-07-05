@@ -25,6 +25,7 @@ import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeResponse;
 import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeResponse;
 import de.hhu.bsinfo.dxram.log.messages.LogAnonMessage;
+import de.hhu.bsinfo.dxram.log.messages.LogBufferMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
@@ -93,7 +94,10 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
                         incomingLogMessage((LogMessage) p_message);
                         break;
                     case LogMessages.SUBTYPE_LOG_ANON_MESSAGE:
-                        incomingLogBufferMessage((LogAnonMessage) p_message);
+                        incomingLogAnonMessage((LogAnonMessage) p_message);
+                        break;
+                    case LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE:
+                        incomingLogBufferMessage((LogBufferMessage) p_message);
                         break;
                     case LogMessages.SUBTYPE_REMOVE_MESSAGE:
                         incomingRemoveMessage((RemoveMessage) p_message);
@@ -179,7 +183,17 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      * @param p_message
      *         the LogAnonMessage
      */
-    private void incomingLogBufferMessage(final LogAnonMessage p_message) {
+    private void incomingLogAnonMessage(final LogAnonMessage p_message) {
+        m_log.incomingLogChunks(p_message.getMessageBuffer(), p_message.getSource());
+    }
+
+    /**
+     * Handles an incoming LogBufferMessage
+     *
+     * @param p_message
+     *         the LogBufferMessage
+     */
+    private void incomingLogBufferMessage(final LogBufferMessage p_message) {
         m_log.incomingLogChunks(p_message.getMessageBuffer(), p_message.getSource());
     }
 
@@ -243,7 +257,8 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      */
     private void registerNetworkMessages() {
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, LogMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_ANON_MESSAGE, LogMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_ANON_MESSAGE, LogAnonMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE, LogBufferMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST, GetUtilizationRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE, GetUtilizationResponse.class);
@@ -255,6 +270,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
     private void registerNetworkMessageListener() {
         m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, this);
         m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_ANON_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE, this);
         m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, this);
         m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_BACKUP_RANGE_REQUEST, this);
         m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST, this);

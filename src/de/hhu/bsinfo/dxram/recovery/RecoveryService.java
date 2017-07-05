@@ -14,11 +14,13 @@
 package de.hhu.bsinfo.dxram.recovery;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -32,6 +34,8 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
+import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeRequest;
+import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeResponse;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.net.MessageReceiver;
 import de.hhu.bsinfo.net.core.AbstractMessage;
@@ -56,6 +60,9 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
     private String m_backupDirectory;
     private ReentrantLock m_recoveryLock;
 
+    private ArrayList<FinishedRecovery> m_finishedRecoveries;
+    private ReentrantLock m_replicationLock;
+
     /**
      * Constructor
      */
@@ -70,6 +77,9 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                 switch (p_message.getSubtype()) {
                     case RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST:
                         incomingRecoverBackupRangeRequest((RecoverBackupRangeRequest) p_message);
+                        break;
+                    case RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST:
+                        incomingReplicateBackupRangeRequest((ReplicateBackupRangeRequest) p_message);
                         break;
                     default:
                         break;
@@ -112,6 +122,9 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
 
         m_recoveryLock = new ReentrantLock(false);
 
+        m_finishedRecoveries = new ArrayList<>();
+        m_replicationLock = new ReentrantLock(false);
+
         return true;
     }
 
@@ -128,7 +141,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
      */
     private void recoverLocallyFromFile(final short p_owner) {
 
-        // FIXME:
+        // FIXME: Very old, not functional code
 
         HarddriveAccessMode mode = HarddriveAccessMode.convert(m_log.getConfig().getHarddriveAccess());
         if (mode != HarddriveAccessMode.RAW_DEVICE) {
@@ -162,7 +175,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                             // #endif /* LOGGER >= INFO */
 
                             // Store recovered Chunks
-                            m_chunkBackup.putRecoveredChunks(chunks);
+                            //m_chunkBackup.putRecoveredChunks(chunks);
 
                             if (fileName.contains("M")) {
                                 // Inform superpeers about new location of migrated Chunks (non-migrated Chunks are
@@ -211,7 +224,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                         // #endif /* LOGGER >= INFO */
 
                         // Store recovered Chunks
-                        m_chunkBackup.putRecoveredChunks(chunks);
+                        //m_chunkBackup.putRecoveredChunks(chunks);
 
                         if (fileName.contains("M")) {
                             // Inform superpeers about new location of migrated Chunks (non-migrated Chunks are
@@ -232,7 +245,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
     }
 
     /**
-     * Recovers all Chunks of given backup range
+     * Replicates all Chunks of given backup range
      *
      * @param p_owner
      *         the NodeID of the node whose Chunks have to be restored
@@ -257,7 +270,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
     }
 
     /**
-     * Handles an incoming GetChunkIDRequest
+     * Handles an incoming RecoverBackupRangeRequest
      *
      * @param p_request
      *         the RecoverBackupRangeRequest
@@ -326,7 +339,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
 
             if (recoveryMetadata == null) {
                 try {
-                    m_network.sendMessage(new RecoverBackupRangeResponse(p_request, 0, null));
+                    m_network.sendMessage(new RecoverBackupRangeResponse(p_request, null, 0, null));
                 } catch (final NetworkException ignored) {
                     // #if LOGGER >= ERROR
                     LOGGER.error("RecoverBackupRangeResponse could not be sent!");
@@ -336,20 +349,68 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                 // Initialize backup ranges in backup, lookup and log modules by joining recovered chunks with migrated chunks
                 replacementBackupPeer = m_backup.registerRecoveredChunks(recoveryMetadata, backupRange, p_request.getOwner());
 
-                // Send replicas to backup peers
-                if (replacementBackupPeer != NodeID.INVALID_ID) {
-                    m_chunkBackup.replicateBackupRange(replacementBackupPeer, recoveryMetadata.getCIDRanges(), recoveryMetadata.getNumberOfChunks(),
-                            backupRange.getRangeID());
-                }
+
+                // Store recovery metadata for replication of recovered backup range to be handled by another thread after initialization by superpeer
+                m_replicationLock.lock();
+                m_finishedRecoveries.add(new FinishedRecovery(replacementBackupPeer, recoveryMetadata.getCIDRanges(), recoveryMetadata.getNumberOfChunks(),
+                        backupRange.getRangeID()));
+
+                m_replicationLock.unlock();
 
                 try {
-                    m_network.sendMessage(new RecoverBackupRangeResponse(p_request, recoveryMetadata.getNumberOfChunks(), recoveryMetadata.getCIDRanges()));
+                    m_network.sendMessage(new RecoverBackupRangeResponse(p_request, backupRange, recoveryMetadata.getNumberOfChunks(),
+                            recoveryMetadata.getCIDRanges()));
                 } catch (final NetworkException ignored) {
 
                 }
             }
         };
         new Thread(task).start();
+    }
+
+
+    /**
+     * Recovers all Chunks of given backup range
+     *
+     * @param p_rangeID
+     *         the backup range ID
+     */
+    private void replicateBackupRange(final short p_rangeID) {
+        FinishedRecovery finishedRecovery = null;
+
+        m_replicationLock.lock();
+        for (FinishedRecovery recovery : m_finishedRecoveries) {
+            if (recovery.getRangeID() == p_rangeID) {
+                finishedRecovery = recovery;
+                break;
+            }
+        }
+        m_replicationLock.unlock();
+
+        if (finishedRecovery != null) {
+            // Send replicas to backup peers
+            if (finishedRecovery.getReplacementBackupPeer() != NodeID.INVALID_ID) {
+                m_chunkBackup.replicateBackupRange(finishedRecovery.getReplacementBackupPeer(), finishedRecovery.getCIDRanges(),
+                        finishedRecovery.getNumberOfChunks(), finishedRecovery.getRangeID());
+            }
+        }
+    }
+
+
+    /**
+     * Handles an incoming ReplicateBackupRangeRequest
+     *
+     * @param p_request
+     *         the ReplicateBackupRangeRequest
+     */
+    private void incomingReplicateBackupRangeRequest(final ReplicateBackupRangeRequest p_request) {
+        replicateBackupRange(p_request.getRangeID());
+
+        try {
+            m_network.sendMessage(new ReplicateBackupRangeResponse(p_request));
+        } catch (final NetworkException ignored) {
+
+        }
     }
 
     // -----------------------------------------------------------------------------------
@@ -362,6 +423,10 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                 RecoverBackupRangeRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE,
                 RecoverBackupRangeResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST,
+                ReplicateBackupRangeRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_RESPONSE,
+                ReplicateBackupRangeResponse.class);
     }
 
     /**
@@ -369,6 +434,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
      */
     private void registerNetworkMessageListener() {
         m_network.register(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST, this);
     }
 
 }

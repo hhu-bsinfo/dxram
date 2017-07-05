@@ -45,7 +45,7 @@ public class RecoveryMetadata {
     }
 
     /**
-     * Registers chunk
+     * Registers chunk (very expensive)
      *
      * @param p_size
      *     the size of the chunk (header + payload)

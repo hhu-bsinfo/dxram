@@ -51,7 +51,7 @@ import de.hhu.bsinfo.utils.NodeID;
  */
 public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfig> implements EventListener<AbstractEvent> {
 
-    private static final boolean REREPLICATION_ACTIVE = false;
+    private static final boolean REREPLICATION_ACTIVE = true;
 
     // component dependencies
     private AbstractBootComponent m_boot;

@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.AbstractPrimLogEntryHeader;
@@ -902,7 +903,71 @@ public class PrimaryWriteBuffer {
                     // Current entry does not fit in any segment, because there is some fragmentation -> Add a segment
                     m_segments = Arrays.copyOf(m_segments, ++m_numberOfSegments);
                     m_writtenBytesPerSegment = Arrays.copyOf(m_writtenBytesPerSegment, m_numberOfSegments);
-                    m_segments[m_currentSegment] = new byte[m_logSegmentSize];
+
+                    if (m_poolBuffers) {
+                        if (futureLogEntrySize > m_logSegmentSize / 8) {
+                            if (!m_segmentPoolLarge.isEmpty()) {
+                                m_segments[index] = m_segmentPoolLarge.remove(m_segmentPoolLarge.size() - 1);
+                            } else {
+                                m_segments[index] = new byte[Math.min(futureLogEntrySize, m_logSegmentSize)];
+                            }
+                        } else if (futureLogEntrySize > m_logSegmentSize / 16) {
+                            if (!m_segmentPoolMedium.isEmpty()) {
+                                m_segments[index] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
+                            } else {
+                                m_segments[index] = new byte[futureLogEntrySize];
+                            }
+                        } else {
+                            if (!m_segmentPoolSmall.isEmpty()) {
+                                m_segments[index] = m_segmentPoolSmall.remove(m_segmentPoolSmall.size() - 1);
+                            } else if (!m_segmentPoolMedium.isEmpty()) {
+                                m_segments[index] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
+                            } else {
+                                m_segments[index] = new byte[futureLogEntrySize];
+                            }
+                        }
+                    } else {
+                        m_segments[index] = new byte[Math.min(futureLogEntrySize, m_logSegmentSize)];
+                    }
+                } else if (futureLogEntrySize > m_segments[index].length) {
+                    // Current entry does not fit in next buffer -> take/create a larger buffer
+                    if (m_poolBuffers) {
+                        // Return byte array to segment pool
+                        if (m_segments[index].length == m_logSegmentSize / 8) {
+                            // Return buffer
+                            if (m_segmentPoolMedium.size() < 16) {
+                                m_segmentPoolMedium.add(m_segments[index]);
+                            }
+                            if (!m_segmentPoolLarge.isEmpty()) {
+                                // Take a larger buffer
+                                m_segments[index] = m_segmentPoolLarge.remove(m_segmentPoolLarge.size() - 1);
+                            } else {
+                                // All larger buffers unavailable -> create a new one
+                                m_segments[index] = new byte[futureLogEntrySize];
+                            }
+                        } else if (m_segments[index].length == m_logSegmentSize / 16) {
+                            if (m_segmentPoolSmall.size() < 32) {
+                                m_segmentPoolSmall.add(m_segments[index]);
+                            }
+                            if (futureLogEntrySize <= m_logSegmentSize / 8) {
+                                if (!m_segmentPoolMedium.isEmpty()) {
+                                    m_segments[index] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
+                                } else {
+                                    m_segments[index] = new byte[futureLogEntrySize];
+                                }
+                            } else {
+                                if (!m_segmentPoolLarge.isEmpty()) {
+                                    m_segments[index] = m_segmentPoolLarge.remove(m_segmentPoolLarge.size() - 1);
+                                } else {
+                                    m_segments[index] = new byte[futureLogEntrySize];
+                                }
+                            }
+                        } else {
+                            m_segments[index] = new byte[futureLogEntrySize];
+                        }
+                    } else {
+                        m_segments[index] = new byte[futureLogEntrySize];
+                    }
                 }
             }
 

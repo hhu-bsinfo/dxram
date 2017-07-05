@@ -225,7 +225,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * @param p_rangeID
      *      the RangeID
      */
-    void setRangeID(final short p_rangeID) {
+    public void setRangeID(final short p_rangeID) {
         m_rangeID = p_rangeID;
     }
 
@@ -334,7 +334,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * @param p_newPeer
      *     the new backup peer
      */
-    void replaceBackupPeer(final short p_oldPeer, final short p_newPeer) {
+    public void replaceBackupPeer(final short p_oldPeer, final short p_newPeer) {
         int addIndex = m_backupPeers.length - 1;
 
         for (int i = 0; i < m_backupPeers.length; i++) {
