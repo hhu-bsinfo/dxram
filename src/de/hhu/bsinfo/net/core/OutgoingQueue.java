@@ -151,8 +151,14 @@ public final class OutgoingQueue {
     }
 
     public void returnBuffer(ByteBuffer p_buffer) {
+        // buffer is part of buffer pool or has the same size
+        if (p_buffer.capacity() != m_osBufferSize) {
+            return;
+        }
+
         p_buffer.clear();
         synchronized (m_bufferPool) {
+            // ensure to not flood the pool
             if (m_bufferPoolIndex < BUFFER_POOL_SIZE - 1) {
                 m_bufferPool[++m_bufferPoolIndex] = p_buffer;
             }
@@ -219,9 +225,7 @@ public final class OutgoingQueue {
                     ByteBuffer buffer = m_buffer[(m_posBack - counter) % BUFFER_POOL_SIZE];
                     buf.put(buffer);
 
-                    if (buffer.capacity() == m_osBufferSize) {
-                        returnBuffer(buffer);
-                    }
+                    returnBuffer(buffer);
                     counter--;
                 }
                 m_currentBytes += p_buffer.remaining();
@@ -300,9 +304,7 @@ public final class OutgoingQueue {
                     ByteBuffer buffer = m_buffer[(m_posBack - counter) % BUFFER_POOL_SIZE];
                     buf.put(buffer);
 
-                    if (buffer.capacity() == m_osBufferSize) {
-                        returnBuffer(buffer);
-                    }
+                    returnBuffer(buffer);
                     counter--;
                 }
                 m_currentBytes += p_messageSize;

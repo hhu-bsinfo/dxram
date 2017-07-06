@@ -88,9 +88,7 @@ public class NIOPipeOut extends AbstractPipeOut {
             }
             // ThroughputStatistic.getInstance().outgoingExtern(writtenBytes - length);
             if (ret) {
-                if (buffer.capacity() == getBufferSize()) {
-                    getOutgoingQueue().returnBuffer(buffer);
-                }
+                getOutgoingQueue().returnBuffer(buffer);
             }
         }
 
