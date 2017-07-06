@@ -45,7 +45,7 @@ public abstract class AbstractMessage {
 
     // Attributes
     // (!) MessageID occupies only 3 byte in message header
-    int m_messageID;
+    int m_messageID = INVALID_MESSAGE_ID;
     private short m_source;
     private short m_destination;
     // Message type: message and requests -> 0, responses -> 1; used to avoid instanceof in message processing
@@ -56,6 +56,8 @@ public abstract class AbstractMessage {
     private boolean m_exclusivity;
     // status code for all messages to indicate success, errors etc.
     private byte m_statusCode;
+
+    private int m_oldMessageID = INVALID_MESSAGE_ID;
 
     // Constructors
 
@@ -192,6 +194,10 @@ public abstract class AbstractMessage {
         messageType = (byte) (tmp >> 4);
         exclusivity = (tmp & 0xFF) == 1;
         statusCode = p_buffer.get();
+
+        if (type == Messages.NETWORK_MESSAGES_TYPE && subtype == Messages.SUBTYPE_INVALID_MESSAGE) {
+            throw new NetworkException("Invalid message type 0, subtype 0, most likely corrupted message/buffer");
+        }
 
         try {
             ret = p_messageDirectory.getInstance(type, subtype);
@@ -430,6 +436,11 @@ public abstract class AbstractMessage {
      */
     private ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) throws NetworkException {
         try {
+            // Message reused (probably pooled)
+            if (m_messageID == m_oldMessageID) {
+                m_messageID = getNextMessageID();
+            }
+
             // Put 3 byte message ID
             p_buffer.put((byte) (m_messageID >>> 16));
             p_buffer.put((byte) (m_messageID >>> 8));
@@ -452,6 +463,8 @@ public abstract class AbstractMessage {
             throw new NetworkException(
                     "Did not create message " + this + ", because message contents are smaller than expected payload size: " + pos + " < " + payloadSize);
         }
+
+        m_oldMessageID = m_messageID;
 
         return p_buffer;
     }
