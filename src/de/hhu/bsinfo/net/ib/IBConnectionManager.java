@@ -74,12 +74,6 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
                 JNIIbnet.addNode(val);
             }
         }
-
-        // give the ibnet system a moment to catch up with new nodes
-        try {
-            Thread.sleep(3000);
-        } catch (final InterruptedException ignored) {
-        }
     }
 
     @Override
