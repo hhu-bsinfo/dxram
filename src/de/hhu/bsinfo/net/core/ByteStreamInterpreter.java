@@ -132,6 +132,7 @@ final class ByteStreamInterpreter {
                 // Header is split -> copy header and payload incrementally in a new byte buffer
                 m_wasCopied = true;
                 m_headerBytes.put(p_buffer);
+
                 // Header partially filled
             } else {
                 if (m_headerBytes.position() != 0) {
@@ -175,6 +176,7 @@ final class ByteStreamInterpreter {
 
                     // Read payload size
                     m_payloadSize = p_buffer.getInt(currentPosition + AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+
                     if (currentPosition + m_payloadSize + AbstractMessage.HEADER_SIZE <= p_buffer.limit()) {
                         // Complete message is in this buffer -> avoid copying by using this buffer for de-serialization
                         m_messageBytes = p_buffer;
@@ -194,7 +196,6 @@ final class ByteStreamInterpreter {
                             p_buffer.limit(p_buffer.position() + AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
                             m_messageBytes.put(p_buffer);
                             p_buffer.limit(limit);
-                            p_buffer.getInt();
                         }
 
                         // Payload must be read next
