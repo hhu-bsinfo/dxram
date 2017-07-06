@@ -50,6 +50,10 @@ public class IBBufferPool {
 
         m_lock.unlock();
 
+        // reset buffer
+        buffer.position(0);
+        buffer.limit(0);
+
         return buffer;
     }
 

@@ -77,7 +77,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
 
         // give the ibnet system a moment to catch up with new nodes
         try {
-            Thread.sleep(2000);
+            Thread.sleep(3000);
         } catch (final InterruptedException ignored) {
         }
     }
@@ -146,7 +146,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         LOGGER.debug("Node discovered 0x%X", p_nodeId);
         // #endif /* LOGGER >= DEBUG */
 
-        m_nodeConnected[p_nodeId] = true;
+        m_nodeConnected[p_nodeId & 0xFFFF] = true;
     }
 
     @Override
@@ -155,7 +155,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         LOGGER.debug("Node invalidated 0x%X", p_nodeId);
         // #endif /* LOGGER >= DEBUG */
 
-        m_nodeConnected[p_nodeId] = false;
+        m_nodeConnected[p_nodeId & 0xFFFF] = false;
     }
 
     @Override

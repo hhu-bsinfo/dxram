@@ -48,7 +48,7 @@ public class IBPipeIn extends AbstractPipeIn {
         // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
         while (!m_messageCreator.pushJob(m_parentConnection, p_buffer)) {
             // #if LOGGER == TRACE
-            LOGGER.trace("Network-Selector: Job queue is full!");
+            LOGGER.trace("Message creator: Job queue is full!");
             // #endif /* LOGGER == TRACE */
 
             Thread.yield();
