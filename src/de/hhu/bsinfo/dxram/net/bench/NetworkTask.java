@@ -33,7 +33,6 @@ import de.hhu.bsinfo.dxram.net.messages.NetworkTestResponse;
 import de.hhu.bsinfo.net.MessageReceiver;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.NetworkException;
-import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
@@ -104,10 +103,7 @@ public class NetworkTask implements Task, MessageReceiver {
         long[] messagesPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_messageCnt, m_threadCnt);
 
         Thread[] threads = new Thread[m_threadCnt];
-        Stopwatch[] time = new Stopwatch[m_threadCnt];
-        for (int i = 0; i < time.length; i++) {
-            time[i] = new Stopwatch();
-        }
+        LatencyStatistics latencyStatistics = new LatencyStatistics(m_threadCnt);
 
         System.out
                 .printf("Network benchmark, pattern %d, message count %d, message size %d byte, isMessages %b with %d thread(s)...\n", m_pattern, m_messageCnt,
@@ -131,14 +127,14 @@ public class NetworkTask implements Task, MessageReceiver {
                         for (int j = 0; j < messagesToSend; j++) {
                             try {
                                 if (m_isMessage) {
-                                    time[threadIdx].start();
+                                    latencyStatistics.enter(threadIdx);
                                     m_networkService.sendMessage(messages[sendNodeIdIdx]);
-                                    time[threadIdx].stopAndAccumulate();
+                                    latencyStatistics.exit(threadIdx);
                                 } else {
-                                    time[threadIdx].start();
+                                    latencyStatistics.enter(threadIdx);
                                     NetworkTestRequest request = new NetworkTestRequest(slaveNodeIds[sendNodeIdIdx]);
                                     m_networkService.sendSync(request);
-                                    time[threadIdx].stopAndAccumulate();
+                                    latencyStatistics.exit(threadIdx);
                                 }
                             } catch (final NetworkException e) {
                                 LOGGER.error("Sending message failed", e);
@@ -156,14 +152,14 @@ public class NetworkTask implements Task, MessageReceiver {
 
                                 try {
                                     if (m_isMessage) {
-                                        time[threadIdx].start();
+                                        latencyStatistics.enter(threadIdx);
                                         m_networkService.sendMessage(messages[k]);
-                                        time[threadIdx].stopAndAccumulate();
+                                        latencyStatistics.exit(threadIdx);
                                     } else {
                                         NetworkTestRequest request = new NetworkTestRequest(slaveNodeIds[k]);
-                                        time[threadIdx].start();
+                                        latencyStatistics.enter(threadIdx);
                                         m_networkService.sendSync(request);
-                                        time[threadIdx].stopAndAccumulate();
+                                        latencyStatistics.exit(threadIdx);
                                     }
                                 } catch (final NetworkException e) {
                                     LOGGER.error("Sending message failed", e);
@@ -198,14 +194,14 @@ public class NetworkTask implements Task, MessageReceiver {
 
         System.out.print("Times per thread:");
         for (int i = 0; i < m_threadCnt; i++) {
-            System.out.printf("\nThread-%d: %f sec", i, time[i].getAccumulatedTimeAsUnit().getSecDouble());
+            System.out.printf("\nThread-%d: %f sec", i, latencyStatistics.getTotalTime(i).getSecDouble());
         }
         System.out.println();
 
         // total time is measured by the slowest thread
         long totalTime = 0;
         for (int i = 0; i < m_threadCnt; i++) {
-            long t = time[i].getAccumulatedTime();
+            long t = latencyStatistics.getTotalTime(i).getNs();
             if (t > totalTime) {
                 totalTime = t;
             }
@@ -230,26 +226,7 @@ public class NetworkTask implements Task, MessageReceiver {
         timeInS = (m_receiveTimeEnd.get() - m_receiveTimeStart.get()) / 1000.0 / 1000.0 / 1000.0;
         System.out.printf("Throughput Rx: %f MB/s\n", sizeInMB / timeInS);
 
-        long worstTime = 0;
-        long bestTime = Long.MAX_VALUE;
-        long avgTime = 0;
-
-        for (int i = 0; i < m_threadCnt; i++) {
-            if (time[i].getWorstTime() > worstTime) {
-                worstTime = time[i].getWorstTime();
-            }
-
-            if (time[i].getBestTime() < bestTime) {
-                bestTime = time[i].getBestTime();
-            }
-
-            avgTime += time[i].getAvarageOfAccumulated();
-        }
-
-        avgTime /= m_threadCnt;
-
-        System.out.printf("Request-Response/Message latency, best %f ms, worst %f ms, avg. %f ms\n", bestTime / 1000.0 / 1000.0, worstTime / 1000.0 / 1000.0,
-                avgTime / 1000.0 / 1000.0);
+        System.out.println("Request-Response/Message latencies:\n" + latencyStatistics);
 
         unregisterReceiver();
 

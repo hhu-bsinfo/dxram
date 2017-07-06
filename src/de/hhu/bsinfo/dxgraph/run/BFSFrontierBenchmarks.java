@@ -35,9 +35,6 @@ import de.hhu.bsinfo.utils.eval.Stopwatch;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
  */
 public final class BFSFrontierBenchmarks {
-
-    private static final boolean MS_PRINT_READABLE_TIME = false;
-
     private EvaluationTables m_tables;
 
     /**
@@ -51,7 +48,7 @@ public final class BFSFrontierBenchmarks {
      * Java main entry point.
      *
      * @param p_args
-     *     Main arguments.
+     *         Main arguments.
      */
     public static void main(final String[] p_args) {
         BFSFrontierBenchmarks benchmark = new BFSFrontierBenchmarks();
@@ -80,7 +77,7 @@ public final class BFSFrontierBenchmarks {
      * Execute a full evaluation with a range of parameters.
      *
      * @param p_threads
-     *     Number of threads for multi threaded part.
+     *         Number of threads for multi threaded part.
      */
     @SuppressWarnings("unused")
     private void mainEval(final int p_threads) {
@@ -104,12 +101,12 @@ public final class BFSFrontierBenchmarks {
      * Execute a single evaluation pass.
      *
      * @param p_itemCount
-     *     Number of max items for a frontier.
+     *         Number of max items for a frontier.
      * @param p_threads
-     *     Number of threads to use for multi threaded section.
+     *         Number of threads to use for multi threaded section.
      * @param p_randDistFillRate
-     *     Distribution/Fill rate of of items in a frontier. 0.8 means that a frontier
-     *     will be filled with 80% of p_itemCount elements.
+     *         Distribution/Fill rate of of items in a frontier. 0.8 means that a frontier
+     *         will be filled with 80% of p_itemCount elements.
      */
     private void main(final int p_itemCount, final int p_threads, final float p_randDistFillRate) {
         System.out.println("=======================================================================");
@@ -173,7 +170,7 @@ public final class BFSFrontierBenchmarks {
      * Prepare the data structures to be tested on the single test pass.
      *
      * @param p_itemCount
-     *     Number of max items for a frontier.
+     *         Number of max items for a frontier.
      * @return List of frontier lists to be executed on the single thread pass.
      */
     private ArrayList<FrontierList> prepareTestsSingleThreaded(final long p_itemCount) {
@@ -195,7 +192,7 @@ public final class BFSFrontierBenchmarks {
      * Prepare the data structures to be tested on the multi thread test pass.
      *
      * @param p_itemCount
-     *     Number of max items for a frontier.
+     *         Number of max items for a frontier.
      * @return List of frontier lists to be executed on the multi thread pass.
      */
     private ArrayList<FrontierList> prepareTestsMultiThreaded(final long p_itemCount) {
@@ -210,13 +207,13 @@ public final class BFSFrontierBenchmarks {
      * Execute the test of one data structure single threaded.
      *
      * @param p_frontierList
-     *     Frontier list to test/benchmark.
+     *         Frontier list to test/benchmark.
      * @param p_testData
-     *     Test data to be used.
+     *         Test data to be used.
      * @param p_table
-     *     Name of the table to put the recorded data into.
+     *         Name of the table to put the recorded data into.
      * @param p_column
-     *     Name of the column in the table to put recorded data into.
+     *         Name of the column in the table to put recorded data into.
      * @return Test vector to verify if test data was successfully written and read back.
      */
     private long executeTestSingleThreaded(final FrontierList p_frontierList, final long[] p_testData, final String p_table, final String p_column) {
@@ -230,7 +227,7 @@ public final class BFSFrontierBenchmarks {
             }
             stopWatch.stop();
             m_tables.set(p_table + "/pushBack", p_frontierList.getClass().getSimpleName(), p_column, stopWatch.getTimeStr());
-            stopWatch.print(p_frontierList.getClass().getSimpleName() + " pushBack", MS_PRINT_READABLE_TIME);
+            stopWatch.print(p_frontierList.getClass().getSimpleName() + " pushBack");
         }
         System.out.println("Data pushed, ratio added items/total items: " + p_frontierList.size() / (float) p_testData.length);
 
@@ -243,7 +240,7 @@ public final class BFSFrontierBenchmarks {
             }
             stopWatch.stop();
             m_tables.set(p_table + "/popFront", p_frontierList.getClass().getSimpleName(), p_column, stopWatch.getTimeStr());
-            stopWatch.print(p_frontierList.getClass().getSimpleName() + " popFront", MS_PRINT_READABLE_TIME);
+            stopWatch.print(p_frontierList.getClass().getSimpleName() + " popFront");
         }
 
         return vals;
@@ -253,19 +250,19 @@ public final class BFSFrontierBenchmarks {
      * Execute the test of one data structure multi threaded.
      *
      * @param p_frontierList
-     *     Frontier list to test/benchmark.
+     *         Frontier list to test/benchmark.
      * @param p_threadCount
-     *     Number of threads to start
+     *         Number of threads to start
      * @param p_testData
-     *     Test data to be used.
+     *         Test data to be used.
      * @param p_table
-     *     Name of the table to put the recorded data into.
+     *         Name of the table to put the recorded data into.
      * @param p_column
-     *     Name of the column in the table to put recorded data into.
+     *         Name of the column in the table to put recorded data into.
      * @return Test vector to verify if test data was successfully written and read back.
      */
     private long executeTestMultiThreaded(final FrontierList p_frontierList, final int p_threadCount, final long[] p_testData, final String p_table,
-        final String p_column) {
+            final String p_column) {
         Stopwatch stopWatch = new Stopwatch();
 
         System.out.println("Pushing back data...");
@@ -300,7 +297,7 @@ public final class BFSFrontierBenchmarks {
             }
             stopWatch.stop();
             m_tables.set(p_table + "/pushBack", p_frontierList.getClass().getSimpleName(), p_column, stopWatch.getTimeStr());
-            stopWatch.print(p_frontierList.getClass().getSimpleName() + " pushBack", MS_PRINT_READABLE_TIME);
+            stopWatch.print(p_frontierList.getClass().getSimpleName() + " pushBack");
         }
         System.out.println("Data pushed, ratio added items/total items: " + p_frontierList.size() / (float) p_testData.length);
 
@@ -329,7 +326,7 @@ public final class BFSFrontierBenchmarks {
             }
             stopWatch.stop();
             m_tables.set(p_table + "/popFront", p_frontierList.getClass().getSimpleName(), p_column, stopWatch.getTimeStr());
-            stopWatch.print(p_frontierList.getClass().getSimpleName() + " popFront", MS_PRINT_READABLE_TIME);
+            stopWatch.print(p_frontierList.getClass().getSimpleName() + " popFront");
         }
 
         return val;
@@ -339,15 +336,15 @@ public final class BFSFrontierBenchmarks {
      * Do a full single thread pass with given parameters on all prepared frontiers.
      *
      * @param p_itemCount
-     *     Max number of items for a single frontier.
+     *         Max number of items for a single frontier.
      * @param p_testData
-     *     Test data to be used.
+     *         Test data to be used.
      * @param p_testVector
-     *     Test vector of the test data for verification.
+     *         Test vector of the test data for verification.
      * @param p_table
-     *     Name of the table to put the recorded data into.
+     *         Name of the table to put the recorded data into.
      * @param p_column
-     *     Name of the column in the table to put recorded data into.
+     *         Name of the column in the table to put recorded data into.
      * @return True if execution was successful and validation ok, false otherwise.
      */
     private boolean doSingleThreaded(final int p_itemCount, final long[] p_testData, final long p_testVector, final String p_table, final String p_column) {
@@ -374,22 +371,22 @@ public final class BFSFrontierBenchmarks {
      * Do a full multi thread pass with given parameters on all prepared frontiers.
      *
      * @param p_itemCount
-     *     Max number of items for a single frontier.
+     *         Max number of items for a single frontier.
      * @param p_threadCount
-     *     Number of threads to start
+     *         Number of threads to start
      * @param p_testData
-     *     Test data to be used.
+     *         Test data to be used.
      * @param p_testVector
-     *     Test vector of the test data for verification.
+     *         Test vector of the test data for verification.
      * @param p_table
-     *     Name of the table to put the recorded data into.
+     *         Name of the table to put the recorded data into.
      * @param p_column
-     *     Name of the column in the table to put recorded data into.
+     *         Name of the column in the table to put recorded data into.
      * @return True if execution was successful and validation ok, false otherwise.
      */
     @SuppressWarnings("unused")
     private boolean doMultiThreaded(final int p_itemCount, final int p_threadCount, final long[] p_testData, final long p_testVector, final String p_table,
-        final String p_column) {
+            final String p_column) {
         System.out.println("---------------------------------------------------");
         System.out.println("Multi threaded tests, threads: " + p_threadCount);
         ArrayList<FrontierList> frontiersToTest = prepareTestsMultiThreaded(p_itemCount);
@@ -412,9 +409,9 @@ public final class BFSFrontierBenchmarks {
      * Create the test data with given parameters.
      *
      * @param p_totalItemCount
-     *     Max number of items for the test data.
+     *         Max number of items for the test data.
      * @param p_randDistFillRate
-     *     Distribution/Fill rate for the test data.
+     *         Distribution/Fill rate for the test data.
      * @return Array with shuffled test data.
      */
     private long[] createTestData(final int p_totalItemCount, final float p_randDistFillRate) {
@@ -453,7 +450,7 @@ public final class BFSFrontierBenchmarks {
      * Shuffle the contents of an array.
      *
      * @param p_array
-     *     Array with contents to shuffle.
+     *         Array with contents to shuffle.
      */
     private static void shuffleArray(final long[] p_array) {
         Random rnd = new Random();
@@ -470,7 +467,7 @@ public final class BFSFrontierBenchmarks {
      * Create the test vector for verification.
      *
      * @param p_testData
-     *     Test data to create the test vector of.
+     *         Test data to create the test vector of.
      * @return Test vector.
      */
     private long createTestVector(final long[] p_testData) {

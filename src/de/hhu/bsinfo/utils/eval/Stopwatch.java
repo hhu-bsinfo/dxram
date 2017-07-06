@@ -69,8 +69,10 @@ public final class Stopwatch {
     /**
      * Stop the watch and accumulate the resulting time
      * for average time calculation.
+     *
+     * @return Stopped time in ns
      */
-    public void stopAndAccumulate() {
+    public long stopAndAccumulate() {
         m_endTime = System.nanoTime();
 
         long tmp = m_endTime - m_startTime;
@@ -85,6 +87,8 @@ public final class Stopwatch {
         if (tmp > m_worst) {
             m_worst = tmp;
         }
+
+        return tmp;
     }
 
     /**
@@ -97,12 +101,30 @@ public final class Stopwatch {
     }
 
     /**
+     * Get the average of the accumulated time as a TimeUnit
+     *
+     * @return TimeUnit of the average of accumulated times
+     */
+    public TimeUnit getAverageOfAccumulatedTimeAsUnit() {
+        return new TimeUnit(m_endTime - m_startTime, TimeUnit.NS);
+    }
+
+    /**
      * Get the stopped time.
      *
      * @return Stopped time in ns.
      */
     public long getTime() {
         return m_endTime - m_startTime;
+    }
+
+    /**
+     * Get the recently stopped time
+     *
+     * @return TimeUnit of the recently stopped time
+     */
+    public TimeUnit getTimeAsUnit() {
+        return new TimeUnit(m_endTime - m_startTime, TimeUnit.NS);
     }
 
     /**
@@ -115,6 +137,15 @@ public final class Stopwatch {
     }
 
     /**
+     * Get the best time of all stopped times as a TimeUnit
+     *
+     * @return Best time as TimeUnit
+     */
+    public TimeUnit getBestTimeAsUnit() {
+        return new TimeUnit(m_best, TimeUnit.NS);
+    }
+
+    /**
      * Get the worst time of all stopped times
      *
      * @return Worst time in ns
@@ -124,12 +155,12 @@ public final class Stopwatch {
     }
 
     /**
-     * Get the recently stopped time
+     * Get the worst time of all stopped times as a TimeUnit
      *
-     * @return TimeUnit of the recently stopped time
+     * @return Worst time as TimeUnit
      */
-    public TimeUnit getTimeAsUnit() {
-        return new TimeUnit(m_endTime - m_startTime, TimeUnit.NS);
+    public TimeUnit getWorstTimeAsUnit() {
+        return new TimeUnit(m_worst, TimeUnit.NS);
     }
 
     /**
@@ -164,17 +195,14 @@ public final class Stopwatch {
      *
      * @param p_header
      *         Header to add to the time to print.
-     * @param p_printReadable
-     *         True to print a readable version (split into minutes, seconds etc).
      */
-    public void print(final String p_header, final boolean p_printReadable) {
+    public void print(final String p_header) {
+        System.out.printf("[%s] %s\n", p_header, toString());
+    }
+
+    @Override
+    public String toString() {
         long time;
-        long nanoseconds;
-        long microseconds;
-        long milliseconds;
-        long seconds;
-        long minutes;
-        long hours;
 
         if (m_endTime == -1) {
             m_endTime = System.nanoTime();
@@ -182,28 +210,8 @@ public final class Stopwatch {
 
         time = m_endTime - m_startTime;
 
-        nanoseconds = time % 1000;
-        time /= 1000;
+        TimeUnit timeUnit = new TimeUnit(time, TimeUnit.NS);
 
-        microseconds = time % 1000;
-        time /= 1000;
-
-        milliseconds = time % 1000;
-        time /= 1000;
-
-        seconds = time % 60;
-        time /= 60;
-
-        minutes = time % 60;
-        time /= 60;
-
-        hours = time;
-
-        if (p_printReadable) {
-            System.out.println(
-                    '[' + p_header + "]: " + hours + "h " + minutes + "m " + seconds + "s " + milliseconds + "ms " + microseconds + "µs " + nanoseconds + "ns");
-        } else {
-            System.out.println('[' + p_header + "]: " + (m_endTime - m_startTime));
-        }
+        return timeUnit.toString();
     }
 }
