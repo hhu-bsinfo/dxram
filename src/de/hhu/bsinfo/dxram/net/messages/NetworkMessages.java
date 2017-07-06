@@ -19,10 +19,9 @@ package de.hhu.bsinfo.dxram.net.messages;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 18.10.2016
  */
 public final class NetworkMessages {
-    public static final byte SUBTYPE_DEFAULT_MESSAGE = 0;
-    public static final byte SUBTYPE_TEST_MESSAGE = 1;
-    public static final byte SUBTYPE_TEST_REQUEST = 2;
-    public static final byte SUBTYPE_TEST_RESPONSE = 3;
+    public static final byte SUBTYPE_TEST_MESSAGE = 0;
+    public static final byte SUBTYPE_TEST_REQUEST = 1;
+    public static final byte SUBTYPE_TEST_RESPONSE = 2;
 
     /**
      * Hidden constructor

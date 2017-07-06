@@ -11,12 +11,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.net.messages;
+package de.hhu.bsinfo.net.core;
 
 import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
 
 /**
  * This is a default message which is never processed on the receiver.
@@ -36,10 +33,10 @@ public class DefaultMessage extends AbstractMessage {
      * Creates an instance of DefaultMessage
      *
      * @param p_destination
-     *     the destination nodeID
+     *         the destination nodeID
      */
     public DefaultMessage(final short p_destination) {
-        super(p_destination, DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEFAULT_MESSAGE);
+        super(p_destination, Messages.NETWORK_MESSAGES_TYPE, Messages.SUBTYPE_DEFAULT_MESSAGE);
     }
 
     @Override

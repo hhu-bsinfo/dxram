@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Messages;
 
 /**
  * Distributes incoming default messages
@@ -81,7 +82,7 @@ final class DefaultMessageHandlerPool {
         boolean wakeup = false;
 
         // Ignore network test messages (e.g. ping after response delay)
-        if (p_message.getType() != 0 || p_message.getSubtype() != 0) {
+        if (!(p_message.getType() == Messages.NETWORK_MESSAGES_TYPE && p_message.getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
             m_defaultMessagesLock.lock();
             if (m_defaultMessages.isEmpty()) {
                 wakeup = true;
@@ -124,7 +125,7 @@ final class DefaultMessageHandlerPool {
             }
 
             // Ignore network test messages (e.g. ping after response delay)
-            if (message.getType() != 0 || message.getSubtype() != 0) {
+            if (!(message.getType() == Messages.NETWORK_MESSAGES_TYPE && message.getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
                 while (!m_defaultMessages.pushMessage(message)) {
                     m_defaultMessagesLock.unlock();
                     for (Thread thread : m_threads) {

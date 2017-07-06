@@ -19,7 +19,7 @@ package de.hhu.bsinfo.dxram;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 19.10.2016
  */
 public final class DXRAMMessageTypes {
-    public static final byte NETWORK_MESSAGES_TYPE = 0;
+    // 0 is reserved in net subsystem
     public static final byte BOOT_MESSAGES_TYPE = 1;
     public static final byte LOOKUP_MESSAGES_TYPE = 2;
     public static final byte CHUNK_MESSAGES_TYPE = 3;
@@ -32,6 +32,7 @@ public final class DXRAMMessageTypes {
     public static final byte LOGGER_MESSAGES_TYPE = 10;
     public static final byte JOB_MESSAGES_TYPE = 11;
     public static final byte MASTERSLAVE_MESSAGES_TYPE = 12;
+    public static final byte NETWORK_MESSAGES_TYPE = 13;
 
     /**
      * Static class

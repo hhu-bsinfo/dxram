@@ -26,8 +26,10 @@ import de.hhu.bsinfo.net.core.AbstractConnectionManager;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 import de.hhu.bsinfo.net.core.ConnectionManagerListener;
+import de.hhu.bsinfo.net.core.DefaultMessage;
 import de.hhu.bsinfo.net.core.MessageCreator;
 import de.hhu.bsinfo.net.core.MessageDirectory;
+import de.hhu.bsinfo.net.core.Messages;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.net.core.RequestMap;
 import de.hhu.bsinfo.net.ib.IBConnectionManager;
@@ -66,6 +68,8 @@ public final class NetworkSystem {
 
         m_messageHandlers = new MessageHandlers(m_config.getNumMessageHandlerThreads(), m_config.getRequestTimeOut());
         m_messageDirectory = new MessageDirectory(m_config.getRequestTimeOut());
+
+        m_messageDirectory.register(Messages.NETWORK_MESSAGES_TYPE, Messages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
 
         // #if LOGGER >= INFO
         LOGGER.info("Network: MessageCreator");
@@ -121,6 +125,14 @@ public final class NetworkSystem {
      */
     public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
         boolean ret;
+
+        if (p_type == Messages.NETWORK_MESSAGES_TYPE) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Registering network message %s for type %s and subtype %s failed, type 0 is used for internal messages and not allowed",
+                    p_class.getSimpleName(), p_type, p_subtype);
+            // #endif /* LOGGER >= ERROR */
+            return;
+        }
 
         ret = m_messageDirectory.register(p_type, p_subtype, p_class);
 

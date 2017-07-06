@@ -19,7 +19,6 @@ import java.net.SocketException;
 import java.util.Enumeration;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -30,8 +29,6 @@ import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
-import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
-import de.hhu.bsinfo.dxram.net.messages.NetworkMessages;
 import de.hhu.bsinfo.net.MessageReceiver;
 import de.hhu.bsinfo.net.NetworkDestinationUnreachableException;
 import de.hhu.bsinfo.net.NetworkResponseDelayedException;
@@ -333,7 +330,6 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
         m_networkSystem = new NetworkSystem(config, new NodeMappings(m_boot));
 
         m_networkSystem.setConnectionManagerListener(this);
-        m_networkSystem.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
 
         m_event.registerListener(this, NodeFailureEvent.class);
 
