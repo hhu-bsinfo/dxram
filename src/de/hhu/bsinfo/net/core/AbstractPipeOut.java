@@ -80,7 +80,8 @@ public abstract class AbstractPipeOut {
         m_flowControl.dataToSend(messageSize);
         m_sentMessages++;
 
-        if (messageSize > m_bufferSize) {
+        // TODO FIXME revert later when bug fixed
+        if (messageSize > 0 /* m_bufferSize */) {
             ByteBuffer data = p_message.getBuffer(p_directBuffer);
             m_sliceLock.lock();
             int size = data.limit();
