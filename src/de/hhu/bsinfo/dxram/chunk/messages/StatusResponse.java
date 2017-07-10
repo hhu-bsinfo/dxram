@@ -13,10 +13,9 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -41,9 +40,9 @@ public class StatusResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *     the corresponding StatusRequest
+     *         the corresponding StatusRequest
      * @param p_status
-     *     the requested Status
+     *         the requested Status
      */
     public StatusResponse(final StatusRequest p_request, final MemoryManagerComponent.Status p_status) {
         super(p_request, ChunkMessages.SUBTYPE_STATUS_RESPONSE);
@@ -66,15 +65,13 @@ public class StatusResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-        exporter.exportObject(m_status);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.exportObject(m_status);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
         m_status = new MemoryManagerComponent.Status();
-        importer.importObject(m_status);
+        p_importer.importObject(m_status);
     }
 }

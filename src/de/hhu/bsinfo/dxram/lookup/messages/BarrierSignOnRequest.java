@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -40,11 +40,11 @@ public class BarrierSignOnRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_barrierId
-     *     Id of the barrier to sign on
+     *         Id of the barrier to sign on
      * @param p_customData
-     *     Custom data to pass along with the sign on
+     *         Custom data to pass along with the sign on
      */
     public BarrierSignOnRequest(final short p_destination, final int p_barrierId, final long p_customData) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST);
@@ -77,14 +77,14 @@ public class BarrierSignOnRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_barrierId);
-        p_buffer.putLong(m_customData);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_barrierId);
+        p_exporter.writeLong(m_customData);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_barrierId = p_buffer.getInt();
-        m_customData = p_buffer.getLong();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_barrierId = p_importer.readInt();
+        m_customData = p_importer.readLong();
     }
 }

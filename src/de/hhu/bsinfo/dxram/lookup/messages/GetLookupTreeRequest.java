@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -41,9 +41,9 @@ public class GetLookupTreeRequest extends AbstractRequest {
      * Creates an instance of GetLookupTreeRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_nidToGetTreeFrom
-     *     the NodeID
+     *         the NodeID
      */
     public GetLookupTreeRequest(final short p_destination, final short p_nidToGetTreeFrom) {
 
@@ -69,17 +69,13 @@ public class GetLookupTreeRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-
-        p_buffer.putShort(m_nidToGetTreeFrom);
-
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_nidToGetTreeFrom);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-
-        m_nidToGetTreeFrom = p_buffer.getShort();
-
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_nidToGetTreeFrom = p_importer.readShort();
     }
 
 }

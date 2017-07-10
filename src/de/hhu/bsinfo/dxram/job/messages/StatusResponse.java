@@ -13,14 +13,14 @@
 
 package de.hhu.bsinfo.dxram.job.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.job.JobService;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
  * Response to the status request to get information about remote job systems.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class StatusResponse extends AbstractResponse {
@@ -37,10 +37,11 @@ public class StatusResponse extends AbstractResponse {
     /**
      * Creates an instance of StatusResponse.
      * This constructor is used when sending this message.
+     *
      * @param p_request
-     *            the corresponding StatusRequest
+     *         the corresponding StatusRequest
      * @param p_status
-     *            the requested Status
+     *         the requested Status
      */
     public StatusResponse(final StatusRequest p_request, final JobService.Status p_status) {
         super(p_request, JobMessages.SUBTYPE_STATUS_RESPONSE);
@@ -50,6 +51,7 @@ public class StatusResponse extends AbstractResponse {
 
     /**
      * Get the job service status.
+     *
      * @return Job service status.
      */
     public final JobService.Status getStatus() {
@@ -57,15 +59,13 @@ public class StatusResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-        exporter.exportObject(m_status);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.exportObject(m_status);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
-        importer.importObject(m_status);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        p_importer.importObject(m_status);
     }
 
     @Override

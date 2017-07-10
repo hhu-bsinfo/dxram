@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxram.log.messages;
 
-import java.nio.ByteBuffer;
-
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -42,9 +42,9 @@ public class InitRecoveredBackupRangeResponse extends AbstractResponse {
      * Creates an instance of InitBackupRangeResponse
      *
      * @param p_request
-     *     the request
+     *         the request
      * @param p_success
-     *     true if remove was successful
+     *         true if remove was successful
      */
     public InitRecoveredBackupRangeResponse(final InitRecoveredBackupRangeRequest p_request, final boolean p_success) {
         super(p_request, LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_RESPONSE);
@@ -70,18 +70,13 @@ public class InitRecoveredBackupRangeResponse extends AbstractResponse {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        if (m_success) {
-            p_buffer.put((byte) 1);
-        } else {
-            p_buffer.put((byte) 0);
-        }
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeBoolean(m_success);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        final byte b = p_buffer.get();
-        m_success = b == 1;
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_success = p_importer.readBoolean();
     }
 
 }

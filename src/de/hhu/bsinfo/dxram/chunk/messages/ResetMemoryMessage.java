@@ -13,8 +13,6 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 
@@ -41,22 +39,6 @@ public class ResetMemoryMessage extends AbstractMessage {
      */
     public ResetMemoryMessage(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_RESET_MEMORY_MESSAGE);
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        return 0;
-    }
-
-    // Methods
-    @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-
-    }
-
-    @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-
     }
 
 }

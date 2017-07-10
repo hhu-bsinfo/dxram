@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -46,11 +46,11 @@ public class JoinRequest extends AbstractRequest {
      * Creates an instance of JoinRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_newNode
-     *     the NodeID of the new node
+     *         the NodeID of the new node
      * @param p_nodeIsSuperpeer
-     *     wether the new node is a superpeer or not
+     *         wether the new node is a superpeer or not
      */
     public JoinRequest(final short p_destination, final short p_newNode, final boolean p_nodeIsSuperpeer) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_JOIN_REQUEST);
@@ -88,24 +88,15 @@ public class JoinRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_newNode);
-
-        if (m_nodeIsSuperpeer) {
-            p_buffer.put((byte) 1);
-        } else {
-            p_buffer.put((byte) 0);
-        }
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_newNode);
+        p_exporter.writeBoolean(m_nodeIsSuperpeer);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_newNode = p_buffer.getShort();
-
-        final byte b = p_buffer.get();
-        if (b == 1) {
-            m_nodeIsSuperpeer = true;
-        }
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_newNode = p_importer.readShort();
+        m_nodeIsSuperpeer = p_importer.readBoolean();
     }
 
 }

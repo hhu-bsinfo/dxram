@@ -13,11 +13,11 @@
 
 package de.hhu.bsinfo.dxram.job.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.job.JobID;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.job.JobID;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Message indicating a job event was triggered on another node
@@ -40,11 +40,11 @@ public class JobEventTriggeredMessage extends AbstractMessage {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_jobId
-     *     Id of the job
+     *         Id of the job
      * @param p_eventId
-     *     Event id
+     *         Event id
      */
     public JobEventTriggeredMessage(final short p_destination, final long p_jobId, final byte p_eventId) {
         super(p_destination, DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE);
@@ -72,13 +72,13 @@ public class JobEventTriggeredMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putLong(m_jobId);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeLong(m_jobId);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_jobId = p_buffer.getLong();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_jobId = p_importer.readLong();
     }
 
     @Override

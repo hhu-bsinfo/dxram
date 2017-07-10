@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -38,11 +38,11 @@ public class BarrierFreeRequest extends AbstractRequest {
      * Creates an instance of BarrierFreeRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_barrierId
-     *     Id of the barrier to free
+     *         Id of the barrier to free
      * @param p_isReplicate
-     *     wether it is a replicate or not
+     *         wether it is a replicate or not
      */
     public BarrierFreeRequest(final short p_destination, final int p_barrierId, final boolean p_isReplicate) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST);
@@ -75,14 +75,14 @@ public class BarrierFreeRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_barrierId);
-        p_buffer.put((byte) (m_isReplicate ? 1 : 0));
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_barrierId);
+        p_exporter.writeBoolean(m_isReplicate);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_barrierId = p_buffer.getInt();
-        m_isReplicate = p_buffer.get() == (byte) 1;
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_barrierId = p_importer.readInt();
+        m_isReplicate = p_importer.readBoolean();
     }
 }

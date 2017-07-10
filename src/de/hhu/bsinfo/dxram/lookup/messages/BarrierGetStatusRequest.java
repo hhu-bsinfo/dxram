@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -39,9 +39,9 @@ public class BarrierGetStatusRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_barrierId
-     *     Id of the barrier to get the status of
+     *         Id of the barrier to get the status of
      */
     public BarrierGetStatusRequest(final short p_destination, final int p_barrierId) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_STATUS_REQUEST);
@@ -64,12 +64,12 @@ public class BarrierGetStatusRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_barrierId);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_barrierId);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_barrierId = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_barrierId = p_importer.readInt();
     }
 }

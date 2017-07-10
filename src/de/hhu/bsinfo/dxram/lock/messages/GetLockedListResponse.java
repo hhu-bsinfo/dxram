@@ -13,11 +13,11 @@
 
 package de.hhu.bsinfo.dxram.lock.messages;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.lock.LockedChunkEntry;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -40,9 +40,9 @@ public class GetLockedListResponse extends AbstractResponse {
      * Creates an instance of LockResponse as a sender.
      *
      * @param p_request
-     *     Corresponding request to this response.
+     *         Corresponding request to this response.
      * @param p_lockedList
-     *     List of locked chunks to send
+     *         List of locked chunks to send
      */
     public GetLockedListResponse(final GetLockedListRequest p_request, final ArrayList<LockedChunkEntry> p_lockedList) {
         super(p_request, LockMessages.SUBTYPE_GET_LOCKED_LIST_RESPONSE);
@@ -65,25 +65,21 @@ public class GetLockedListResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter imExporter = new ByteBufferImExporter(p_buffer);
-
-        p_buffer.putInt(m_list.size());
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_list.size());
         for (LockedChunkEntry entry : m_list) {
-            imExporter.exportObject(entry);
+            p_exporter.exportObject(entry);
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter imExporter = new ByteBufferImExporter(p_buffer);
-
-        int size = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        int size = p_importer.readInt();
         m_list = new ArrayList<LockedChunkEntry>(size);
 
         for (int i = 0; i < size; i++) {
             LockedChunkEntry entry = new LockedChunkEntry();
-            imExporter.importObject(entry);
+            p_importer.importObject(entry);
             m_list.add(entry);
         }
     }

@@ -13,11 +13,10 @@
 
 package de.hhu.bsinfo.dxram.recovery.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.BackupRange;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -48,11 +47,11 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
      * Creates an instance of RecoverBackupRangeRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_owner
-     *     the NodeID of the owner
+     *         the NodeID of the owner
      * @param p_backupRange
-     *     the backup range to recover
+     *         the backup range to recover
      */
     public RecoverBackupRangeRequest(final short p_destination, final short p_owner, final BackupRange p_backupRange) {
         super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, true);
@@ -83,8 +82,9 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
 
     /**
      * Set the backup range
+     *
      * @param p_backupRange
-     *      the backup range
+     *         the backup range
      */
     public final void setBackupRange(final BackupRange p_backupRange) {
         m_backupRange = p_backupRange;
@@ -97,20 +97,17 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-        exporter.exportObject(m_backupRange);
-
-        p_buffer.putShort(m_owner);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.exportObject(m_backupRange);
+        p_exporter.writeShort(m_owner);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
         m_backupRange = new BackupRange();
-        importer.importObject(m_backupRange);
+        p_importer.importObject(m_backupRange);
 
-        m_owner = p_buffer.getShort();
+        m_owner = p_importer.readShort();
     }
 
 }

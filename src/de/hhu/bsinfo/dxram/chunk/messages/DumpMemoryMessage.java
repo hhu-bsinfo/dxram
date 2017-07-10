@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Message to dump the chunk memory
@@ -39,9 +39,9 @@ public class DumpMemoryMessage extends AbstractMessage {
      * Creates an instance of DumpMemoryMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_fileName
-     *     Output file to dump the memory to
+     *         Output file to dump the memory to
      */
     public DumpMemoryMessage(final short p_destination, final String p_fileName) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_DUMP_MEMORY_MESSAGE);
@@ -65,17 +65,13 @@ public class DumpMemoryMessage extends AbstractMessage {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        byte[] arr = m_fileName.getBytes();
-        p_buffer.putInt(arr.length);
-        p_buffer.put(arr);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeString(m_fileName);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        byte[] arr = new byte[p_buffer.getInt()];
-        p_buffer.get(arr);
-        m_fileName = new String(arr);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_fileName = p_importer.readString();
     }
 
 }

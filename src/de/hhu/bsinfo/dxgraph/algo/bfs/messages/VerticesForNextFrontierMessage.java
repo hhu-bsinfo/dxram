@@ -13,13 +13,14 @@
 
 package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Message to send non local vertices for BFS to the node owning them for processing.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 13.05.2016
  */
 public class VerticesForNextFrontierMessage extends AbstractMessage {
@@ -43,10 +44,11 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
     /**
      * Creates an instance of VerticesForNextFrontierRequest
+     *
      * @param p_destination
-     *            the destination
+     *         the destination
      * @param p_batchSize
-     *            size of the buffer to store the vertex ids to send.
+     *         size of the buffer to store the vertex ids to send.
      */
     public VerticesForNextFrontierMessage(final short p_destination, final int p_batchSize) {
         super(p_destination, DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE);
@@ -68,6 +70,7 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
     /**
      * Get max size of this vertex batch.
+     *
      * @return Max number of vertices possible for this batch.
      */
     public int getBatchSize() {
@@ -76,6 +79,7 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
     /**
      * Get the actual number of vertices in this batch.
+     *
      * @return Number of vertices in this batch.
      */
     public int getNumVerticesInBatch() {
@@ -87,6 +91,7 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
      * If neighbors are included, this message is sent from a node
      * running bottom up mode, thus needing different treatment than
      * a message with vertices only (top down mode).
+     *
      * @return Number of neighbors in batch
      */
     public int getNumNeighborsInBatch() {
@@ -95,8 +100,9 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
     /**
      * Add a vertex to the batch
+     *
      * @param p_vertex
-     *            VertexSimple to add
+     *         VertexSimple to add
      * @return True if adding successful, false if batch is full
      */
     public boolean addVertex(final long p_vertex) {
@@ -111,8 +117,9 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
     /**
      * Add a neighbor to the batch (optional to vertices)
+     *
      * @param p_neighbor
-     *            Neighbor to add
+     *         Neighbor to add
      * @return True if successful, false if batch is full
      */
     public boolean addNeighbor(final long p_neighbor) {
@@ -127,6 +134,7 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
     /**
      * Get the next vertex in the batch. An internal counter is incremented.
+     *
      * @return Valid vertex id if successful, -1 if batch is empty.
      */
     public long getVertex() {
@@ -139,6 +147,7 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
     /**
      * Get the next neighbor in the batch. An internal counter is incremented.
+     *
      * @return Valid neighbor id if successful, -1 if batch is empty
      */
     public long getNeighbor() {
@@ -150,28 +159,28 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_numOfVertices);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_numOfVertices);
         for (int i = 0; i < m_numOfVertices; i++) {
-            p_buffer.putLong(m_vertexIDs[i]);
+            p_exporter.writeLong(m_vertexIDs[i]);
         }
-        p_buffer.putInt(m_numOfNeighbors);
+        p_exporter.writeInt(m_numOfNeighbors);
         for (int i = 0; i < m_numOfNeighbors; i++) {
-            p_buffer.putLong(m_neighborIDs[i]);
+            p_exporter.writeLong(m_neighborIDs[i]);
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_numOfVertices = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_numOfVertices = p_importer.readInt();
         m_vertexIDs = new long[m_numOfVertices];
         for (int i = 0; i < m_numOfVertices; i++) {
-            m_vertexIDs[i] = p_buffer.getLong();
+            m_vertexIDs[i] = p_importer.readLong();
         }
-        m_numOfNeighbors = p_buffer.getInt();
+        m_numOfNeighbors = p_importer.readInt();
         m_neighborIDs = new long[m_numOfNeighbors];
         for (int i = 0; i < m_numOfNeighbors; i++) {
-            m_neighborIDs[i] = p_buffer.getLong();
+            m_neighborIDs[i] = p_importer.readLong();
         }
     }
 

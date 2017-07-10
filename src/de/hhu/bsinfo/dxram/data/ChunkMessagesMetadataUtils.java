@@ -13,7 +13,8 @@
 
 package de.hhu.bsinfo.dxram.data;
 
-import java.nio.ByteBuffer;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Utils class with helpers for sending chunk related messages.
@@ -51,9 +52,9 @@ public final class ChunkMessagesMetadataUtils {
      * This will not modify any other existing flags.
      *
      * @param p_statusCode
-     *     Status code to set the number of items for.
+     *         Status code to set the number of items for.
      * @param p_numItems
-     *     Number of items to send and indicate in the status byte.
+     *         Number of items to send and indicate in the status byte.
      * @return New status byte with modified flags for the specified number of items.
      */
     public static byte setNumberOfItemsToSend(final byte p_statusCode, final int p_numItems) {
@@ -88,7 +89,7 @@ public final class ChunkMessagesMetadataUtils {
      * Get the size of the additional length field in the message payload from the status code.
      *
      * @param p_statusCode
-     *     Status code to get the information from.
+     *         Status code to get the information from.
      * @return Size in bytes of the additional length field in the message payload or 0, if the total number of items is stored with the status code.
      */
     public static int getSizeOfAdditionalLengthField(final byte p_statusCode) {
@@ -108,13 +109,13 @@ public final class ChunkMessagesMetadataUtils {
      * at the correct position for the field to write.
      *
      * @param p_status
-     *     Status byte of the message.
-     * @param p_buffer
-     *     Payload buffer.
+     *         Status byte of the message.
+     * @param p_exporter
+     *         Payload exporter.
      * @param p_numItems
-     *     Number of items to send with this message.
+     *         Number of items to send with this message.
      */
-    public static void setNumberOfItemsInMessageBuffer(final byte p_status, final ByteBuffer p_buffer, final int p_numItems) {
+    public static void setNumberOfItemsInMessageBuffer(final byte p_status, final AbstractMessageExporter p_exporter, final int p_numItems) {
         int sizeAdditionalLengthField = getSizeOfAdditionalLengthField(p_status);
 
         switch (sizeAdditionalLengthField) {
@@ -122,17 +123,17 @@ public final class ChunkMessagesMetadataUtils {
                 // length already set with status byte
                 break;
             case 1:
-                p_buffer.put((byte) (p_numItems & 0xFF));
+                p_exporter.writeByte((byte) (p_numItems & 0xFF));
                 break;
             case 2:
-                p_buffer.putShort((short) (p_numItems & 0xFFFF));
+                p_exporter.writeShort((short) (p_numItems & 0xFFFF));
                 break;
             case 3:
-                p_buffer.putShort((short) (p_numItems >> 8 & 0xFFFF));
-                p_buffer.put((byte) (p_numItems & 0xFF));
+                p_exporter.writeShort((short) (p_numItems >> 8 & 0xFFFF));
+                p_exporter.writeByte((byte) (p_numItems & 0xFF));
                 break;
             case 4:
-                p_buffer.putInt(p_numItems);
+                p_exporter.writeInt(p_numItems);
                 break;
             default:
                 assert false;
@@ -145,13 +146,13 @@ public final class ChunkMessagesMetadataUtils {
      * position for the length field to be read correctly and will be advanced after reading.
      *
      * @param p_status
-     *     Status byte of the message.
-     * @param p_buffer
-     *     Payload buffer.
+     *         Status byte of the message.
+     * @param p_importer
+     *         Payload importer.
      * @return Number of items in the message of the provided payload buffer, either taken from the status byte or the
      * buffer (depending on the status flags set).
      */
-    public static int getNumberOfItemsFromMessageBuffer(final byte p_status, final ByteBuffer p_buffer) {
+    public static int getNumberOfItemsFromMessageBuffer(final byte p_status, final AbstractMessageImporter p_importer) {
         int sizeAdditionalLengthField = getSizeOfAdditionalLengthField(p_status);
         int numChunks = 0;
 
@@ -160,16 +161,16 @@ public final class ChunkMessagesMetadataUtils {
                 numChunks = getNumberOfItemsSent(p_status);
                 break;
             case 1:
-                numChunks = p_buffer.get() & 0xFF;
+                numChunks = p_importer.readByte() & 0xFF;
                 break;
             case 2:
-                numChunks = p_buffer.getShort() & 0xFFFF;
+                numChunks = p_importer.readShort() & 0xFFFF;
                 break;
             case 3:
-                numChunks = (p_buffer.getShort() & 0xFFFF) << 8 | p_buffer.get() & 0xFF;
+                numChunks = (p_importer.readShort() & 0xFFFF) << 8 | p_importer.readByte() & 0xFF;
                 break;
             case 4:
-                numChunks = p_buffer.getInt();
+                numChunks = p_importer.readInt();
                 break;
             default:
                 assert false;
@@ -183,9 +184,9 @@ public final class ChunkMessagesMetadataUtils {
      * Set the read lock flag within the status code. Other flags than the lock flags are not altered.
      *
      * @param p_statusCode
-     *     Status code to modify.
+     *         Status code to modify.
      * @param p_set
-     *     True to set the read lock flag, false to fully clear the lock acquire flag.
+     *         True to set the read lock flag, false to fully clear the lock acquire flag.
      * @return Modified status code.
      */
     public static byte setReadLockFlag(final byte p_statusCode, final boolean p_set) {
@@ -205,9 +206,9 @@ public final class ChunkMessagesMetadataUtils {
      * Set the write lock flag within the status code. Other flags than the lock flags are not altered.
      *
      * @param p_statusCode
-     *     Status code to modify.
+     *         Status code to modify.
      * @param p_set
-     *     True to set the write lock flag, false to fully clear the lock acquire flag.
+     *         True to set the write lock flag, false to fully clear the lock acquire flag.
      * @return Modified status code.
      */
     public static byte setWriteLockFlag(final byte p_statusCode, final boolean p_set) {
@@ -227,7 +228,7 @@ public final class ChunkMessagesMetadataUtils {
      * Check if the lock acquire flag is set within the status code.
      *
      * @param p_statusCode
-     *     Status code to check.
+     *         Status code to check.
      * @return True if lock acquire flag is set, false otherwise.
      */
     public static boolean isLockAcquireFlagSet(final byte p_statusCode) {
@@ -238,7 +239,7 @@ public final class ChunkMessagesMetadataUtils {
      * Check if the read lock flag is set within the status code.
      *
      * @param p_statusCode
-     *     Status code to get the flags from.
+     *         Status code to get the flags from.
      * @return True if read lock flag is set, false if either write lock set or lock acquire cleared.
      */
     public static boolean isReadLockFlagSet(final byte p_statusCode) {
@@ -249,7 +250,7 @@ public final class ChunkMessagesMetadataUtils {
      * Check if the write lock flag is set within the status code.
      *
      * @param p_statusCode
-     *     Status code to get the flags from.
+     *         Status code to get the flags from.
      * @return True if write lock flag is set, false if either read lock set or lock acquire cleared.
      */
     public static boolean isWriteLockFlagSet(final byte p_statusCode) {
@@ -260,7 +261,7 @@ public final class ChunkMessagesMetadataUtils {
      * Clear the lock acquire flag on the status code.
      *
      * @param p_statusCode
-     *     Status code to modify.
+     *         Status code to modify.
      * @return Modified status code with lock flag cleared.
      */
     public static byte clearLockFlag(final byte p_statusCode) {
@@ -271,7 +272,7 @@ public final class ChunkMessagesMetadataUtils {
      * Extract the number of items sent from the provided status code.
      *
      * @param p_statusCode
-     *     Status code from a message (see class header description for structure).
+     *         Status code from a message (see class header description for structure).
      * @return 0-32 items sent or -1 if the status code does not contain the number of items anymore (> 32).
      */
     private static int getNumberOfItemsSent(final byte p_statusCode) {

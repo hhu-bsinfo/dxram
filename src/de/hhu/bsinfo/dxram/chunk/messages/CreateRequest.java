@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -40,9 +40,9 @@ public class CreateRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_sizes
-     *     Sizes of the chunks to create.
+     *         Sizes of the chunks to create.
      */
     public CreateRequest(final short p_destination, final int... p_sizes) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST);
@@ -67,21 +67,16 @@ public class CreateRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_sizes.length);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_sizes.length);
 
-        for (int size : m_sizes) {
-            p_buffer.putInt(size);
-        }
+        p_exporter.writeIntArray(m_sizes);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        int numSizes = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        int numSizes = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
 
-        m_sizes = new int[numSizes];
-        for (int i = 0; i < m_sizes.length; i++) {
-            m_sizes[i] = p_buffer.getInt();
-        }
+        m_sizes = p_importer.readIntArray();
     }
 }

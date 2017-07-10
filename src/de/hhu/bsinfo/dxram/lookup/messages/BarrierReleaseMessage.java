@@ -13,12 +13,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
-import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Message to release the signed on instances from the barrier.
@@ -42,11 +41,11 @@ public class BarrierReleaseMessage extends AbstractMessage {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_barrierId
-     *     Id of the barrier that got released
+     *         Id of the barrier that got released
      * @param p_barrierStatus
-     *     Results of the barrier sign on process
+     *         Results of the barrier sign on process
      */
     public BarrierReleaseMessage(final short p_destination, final int p_barrierId, final BarrierStatus p_barrierStatus) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE);
@@ -79,19 +78,15 @@ public class BarrierReleaseMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-
-        p_buffer.putInt(m_barrierId);
-        exporter.exportObject(m_results);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_barrierId);
+        p_exporter.exportObject(m_results);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
-
-        m_barrierId = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_barrierId = p_importer.readInt();
         m_results = new BarrierStatus();
-        importer.importObject(m_results);
+        p_importer.importObject(m_results);
     }
 }

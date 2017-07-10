@@ -79,7 +79,7 @@ public abstract class AbstractPipeIn {
      * @param p_buffer
      *         the new buffer
      */
-    void processBuffer(final ByteBuffer p_buffer) {
+    void processBuffer(final ByteBuffer p_buffer, AbstractMessageImporter p_importer) {
         int counterNormal = 0;
         int counterExclusive = 0;
         AbstractMessage currentMessage;
@@ -91,7 +91,8 @@ public abstract class AbstractPipeIn {
 
             if (m_streamInterpreter.isMessageComplete()) {
                 currentMessage =
-                        createMessage(m_streamInterpreter.getMessageBuffer(), m_streamInterpreter.getPayloadSize(), m_streamInterpreter.bufferWasCopied());
+                        createMessage(m_streamInterpreter.getMessageBuffer(), m_streamInterpreter.getPayloadSize(), m_streamInterpreter.bufferWasCopied(),
+                                p_importer);
 
                 if (currentMessage != null) {
                     currentMessage.setDestination(m_ownNodeID);
@@ -155,7 +156,8 @@ public abstract class AbstractPipeIn {
      *         buffer containing a message
      * @return message
      */
-    private AbstractMessage createMessage(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
+    private AbstractMessage createMessage(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied,
+            final AbstractMessageImporter p_importer) {
         int readBytes = 0;
         int initialBufferPosition = p_buffer.position();
         AbstractMessage message = null;
@@ -191,12 +193,11 @@ public abstract class AbstractPipeIn {
                 response.setCorrespondingRequest(request);
             }
 
-            // #if LOGGER >= TRACE
-            LOGGER.trace("createMessage, before readPayload: p_buffer " + p_buffer + ", p_payloadSize " + p_payloadSize + ", p_wasCopied " + p_wasCopied);
-            // #endif /* LOGGER >= TRACE */
-
             try {
-                message.readPayload(p_buffer, p_payloadSize, p_wasCopied);
+                p_importer.setBuffer(p_buffer.array());
+                p_importer.setPosition(p_buffer.position());
+                message.readPayload(p_importer, p_buffer, p_payloadSize, p_wasCopied);
+                p_buffer.position(p_importer.getPosition());
             } catch (final BufferUnderflowException e) {
                 throw new IOException("Read beyond message buffer: p_buffer " + p_buffer + ", p_payloadSize " + p_payloadSize + ", p_wasCopied " + p_wasCopied,
                         e);

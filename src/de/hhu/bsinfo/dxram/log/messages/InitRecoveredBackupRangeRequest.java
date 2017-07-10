@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.log.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -46,11 +46,11 @@ public class InitRecoveredBackupRangeRequest extends AbstractRequest {
      * Creates an instance of InitBackupRangeRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @param p_isNewBackupRange
-     *     whether this is a new backup range or a transferable
+     *         whether this is a new backup range or a transferable
      */
     public InitRecoveredBackupRangeRequest(final short p_destination, final short p_rangeID, final short p_originalRangeID, final short p_originalOwner,
             final boolean p_isNewBackupRange) {
@@ -107,18 +107,18 @@ public class InitRecoveredBackupRangeRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_rangeID);
-        p_buffer.putShort(m_originalRangeID);
-        p_buffer.putShort(m_originalOwner);
-        p_buffer.put((byte) (m_isNewBackupRange ? 1 : 0));
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_rangeID);
+        p_exporter.writeShort(m_originalRangeID);
+        p_exporter.writeShort(m_originalOwner);
+        p_exporter.writeBoolean(m_isNewBackupRange);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_rangeID = p_buffer.getShort();
-        m_originalRangeID = p_buffer.getShort();
-        m_originalOwner = p_buffer.getShort();
-        m_isNewBackupRange = p_buffer.get() == 1;
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_rangeID = p_importer.readShort();
+        m_originalRangeID = p_importer.readShort();
+        m_originalOwner = p_importer.readShort();
+        m_isNewBackupRange = p_importer.readBoolean();
     }
 }

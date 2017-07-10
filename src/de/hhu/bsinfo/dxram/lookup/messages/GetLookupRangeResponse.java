@@ -13,10 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -44,9 +43,9 @@ public class GetLookupRangeResponse extends AbstractResponse {
      * Creates an instance of LookupResponse
      *
      * @param p_request
-     *     the corresponding LookupRequest
+     *         the corresponding LookupRequest
      * @param p_lookupRange
-     *     the primary peer, backup peers and range
+     *         the primary peer, backup peers and range
      */
     public GetLookupRangeResponse(final GetLookupRangeRequest p_request, final LookupRange p_lookupRange) {
         super(p_request, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_RESPONSE);
@@ -72,18 +71,14 @@ public class GetLookupRangeResponse extends AbstractResponse {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        final ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-
-        exporter.exportObject(m_lookupRange);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.exportObject(m_lookupRange);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        final ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
-
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
         m_lookupRange = new LookupRange();
-        importer.importObject(m_lookupRange);
+        p_importer.importObject(m_lookupRange);
     }
 
 }

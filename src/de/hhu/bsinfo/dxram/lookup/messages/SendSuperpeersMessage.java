@@ -13,11 +13,12 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Send Superpeers Message
@@ -44,9 +45,9 @@ public class SendSuperpeersMessage extends AbstractMessage {
      * Creates an instance of SendSuperpeersMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_superpeers
-     *     the superpeers
+     *         the superpeers
      */
     public SendSuperpeersMessage(final short p_destination, final ArrayList<Short> p_superpeers) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE);
@@ -81,25 +82,25 @@ public class SendSuperpeersMessage extends AbstractMessage {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_superpeers == null || m_superpeers.isEmpty()) {
-            p_buffer.putInt(0);
+            p_exporter.writeInt(0);
         } else {
-            p_buffer.putInt(m_superpeers.size());
+            p_exporter.writeInt(m_superpeers.size());
             for (short superpeer : m_superpeers) {
-                p_buffer.putShort(superpeer);
+                p_exporter.writeShort(superpeer);
             }
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
         int length;
 
         m_superpeers = new ArrayList<Short>();
-        length = p_buffer.getInt();
+        length = p_importer.readInt();
         for (int i = 0; i < length; i++) {
-            m_superpeers.add(p_buffer.getShort());
+            m_superpeers.add(p_importer.readShort());
         }
     }
 

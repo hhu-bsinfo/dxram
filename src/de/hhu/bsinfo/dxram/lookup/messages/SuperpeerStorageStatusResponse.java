@@ -13,10 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -38,9 +37,9 @@ public class SuperpeerStorageStatusResponse extends AbstractResponse {
      * Creates an instance of SuperpeerStorageCreateRequest
      *
      * @param p_request
-     *     Request to respond to
+     *         Request to respond to
      * @param p_status
-     *     Status to send with the response
+     *         Status to send with the response
      */
     public SuperpeerStorageStatusResponse(final SuperpeerStorageStatusRequest p_request, final SuperpeerStorage.Status p_status) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE);
@@ -63,15 +62,13 @@ public class SuperpeerStorageStatusResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-        exporter.exportObject(m_status);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.exportObject(m_status);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
         m_status = new SuperpeerStorage.Status();
-        importer.importObject(m_status);
+        p_importer.importObject(m_status);
     }
 }

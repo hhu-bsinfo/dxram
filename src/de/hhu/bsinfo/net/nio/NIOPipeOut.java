@@ -71,10 +71,27 @@ public class NIOPipeOut extends AbstractPipeOut {
      */
     public boolean write() throws IOException {
         boolean ret = true;
+        int writtenBytes = 0;
         int bytes;
         ByteBuffer buffer;
 
         buffer = getOutgoingQueue().popFront();
+        if (buffer != null) {
+            while (buffer.remaining() > 0) {
+
+                bytes = m_outgoingChannel.write(buffer);
+                if (bytes == 0) {
+                    // Read-buffer on the other side is full. Abort writing and schedule buffer for next write
+                    ret = false;
+                    break;
+                }
+                writtenBytes += bytes;
+            }
+            // ThroughputStatistic.getInstance().outgoingExtern(writtenBytes - length);
+            getOutgoingQueue().shiftFront(writtenBytes);
+        }
+
+        /*buffer = getOutgoingQueue().popFront();
         if (buffer != null) {
             while (buffer.remaining() > 0) {
 
@@ -90,7 +107,7 @@ public class NIOPipeOut extends AbstractPipeOut {
             if (ret) {
                 getOutgoingQueue().returnBuffer(buffer);
             }
-        }
+        }*/
 
         return ret;
     }

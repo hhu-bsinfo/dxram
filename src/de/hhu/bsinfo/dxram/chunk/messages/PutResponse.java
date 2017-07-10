@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -41,9 +41,9 @@ public class PutResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *     the request
+     *         the request
      * @param p_statusCodes
-     *     Status code for every single chunk put.
+     *         Status code for every single chunk put.
      */
     public PutResponse(final PutRequest p_request, final byte... p_statusCodes) {
         super(p_request, ChunkMessages.SUBTYPE_PUT_RESPONSE);
@@ -68,19 +68,19 @@ public class PutResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkStatusCodes.length);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_chunkStatusCodes.length);
 
-        p_buffer.put(m_chunkStatusCodes);
+        p_exporter.writeBytes(m_chunkStatusCodes);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
 
         m_chunkStatusCodes = new byte[numChunks];
 
-        p_buffer.get(m_chunkStatusCodes);
+        p_importer.readBytes(m_chunkStatusCodes);
     }
 
 }

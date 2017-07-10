@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -39,13 +39,13 @@ public class BarrierChangeSizeRequest extends AbstractRequest {
      * Creates an instance of BarrierChangeSizeRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_barrierId
-     *     size of the barrier
+     *         size of the barrier
      * @param p_size
-     *     id of the barrier
+     *         id of the barrier
      * @param p_isReplicate
-     *     wether it is a replicate or not
+     *         wether it is a replicate or not
      */
     public BarrierChangeSizeRequest(final short p_destination, final int p_barrierId, final int p_size, final boolean p_isReplicate) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST);
@@ -88,16 +88,16 @@ public class BarrierChangeSizeRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_barrierId);
-        p_buffer.putInt(m_size);
-        p_buffer.put((byte) (m_isReplicate ? 1 : 0));
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_barrierId);
+        p_exporter.writeInt(m_size);
+        p_exporter.writeBoolean(m_isReplicate);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_barrierId = p_buffer.getInt();
-        m_size = p_buffer.getInt();
-        m_isReplicate = p_buffer.get() == (byte) 1;
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_barrierId = p_importer.readInt();
+        m_size = p_importer.readInt();
+        m_isReplicate = p_importer.readBoolean();
     }
 }

@@ -13,11 +13,10 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
-import de.hhu.bsinfo.dxram.ms.TaskScript;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.ms.TaskScript;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -42,9 +41,9 @@ public class SubmitTaskRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_taskScript
-     *     TaskScript to submit to the remote master node.
+     *         TaskScript to submit to the remote master node.
      */
     public SubmitTaskRequest(final short p_destination, final TaskScript p_taskScript) {
         super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST);
@@ -61,18 +60,14 @@ public class SubmitTaskRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-
-        exporter.exportObject(m_taskScript);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.exportObject(m_taskScript);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
-
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
         m_taskScript = new TaskScript();
-        importer.importObject(m_taskScript);
+        p_importer.importObject(m_taskScript);
     }
 
     @Override

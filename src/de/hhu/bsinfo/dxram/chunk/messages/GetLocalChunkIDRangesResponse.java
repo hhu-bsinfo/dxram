@@ -13,10 +13,9 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -40,9 +39,9 @@ public class GetLocalChunkIDRangesResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *     the corresponding StatusRequest
+     *         the corresponding StatusRequest
      * @param p_chunkIDRanges
-     *     Chunk id ranges to send
+     *         Chunk id ranges to send
      */
     public GetLocalChunkIDRangesResponse(final GetLocalChunkIDRangesRequest p_request, ChunkIDRanges p_chunkIDRanges) {
         super(p_request, ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_RESPONSE);
@@ -65,16 +64,12 @@ public class GetLocalChunkIDRangesResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter imExporter = new ByteBufferImExporter(p_buffer);
-
-        imExporter.exportObject(m_chunkIDRanges);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.exportObject(m_chunkIDRanges);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter imExporter = new ByteBufferImExporter(p_buffer);
-
-        imExporter.importObject(m_chunkIDRanges);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        p_importer.importObject(m_chunkIDRanges);
     }
 }

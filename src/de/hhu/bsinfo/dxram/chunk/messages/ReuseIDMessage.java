@@ -13,11 +13,11 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.ArrayListLong;
 
 /**
@@ -78,31 +78,31 @@ public class ReuseIDMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
 
         if (m_chunkIDsOut != null) {
-            ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkIDsOut.getSize());
+            ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_chunkIDsOut.getSize());
 
             for (int i = 0; i < m_chunkIDsOut.getSize(); i++) {
-                p_buffer.putLong(m_chunkIDsOut.get(i));
+                p_exporter.writeLong(m_chunkIDsOut.get(i));
             }
         } else {
-            ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkIDs.length);
+            ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_chunkIDs.length);
 
             for (long chunkId : m_chunkIDs) {
-                p_buffer.putLong(chunkId);
+                p_exporter.writeLong(chunkId);
             }
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
 
         m_chunkIDs = new long[numChunks];
 
         for (int i = 0; i < numChunks; i++) {
-            m_chunkIDs[i] = p_buffer.getLong();
+            m_chunkIDs[i] = p_importer.readLong();
         }
     }
 

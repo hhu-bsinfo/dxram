@@ -13,13 +13,12 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -47,11 +46,11 @@ public class PutAnonRequest extends AbstractRequest {
      * Creates an instance of PutAnonRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_unlockOperation
-     *     if true a potential lock will be released
+     *         if true a potential lock will be released
      * @param p_chunks
-     *     Chunk buffers with the data to put.
+     *         Chunk buffers with the data to put.
      */
     public PutAnonRequest(final short p_destination, final ChunkLockOperation p_unlockOperation, final ChunkAnon... p_chunks) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_ANON_REQUEST);
@@ -133,29 +132,26 @@ public class PutAnonRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunks.length);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_chunks.length);
 
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
         for (ChunkAnon chunk : m_chunks) {
-            p_buffer.putLong(chunk.getID());
+            p_exporter.writeLong(chunk.getID());
             // the Chunk will write the size of its buffer as well
-            exporter.exportObject(chunk);
+            p_exporter.exportObject(chunk);
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
 
         m_chunkIDs = new long[numChunks];
         m_data = new byte[numChunks][];
 
         for (int i = 0; i < m_chunkIDs.length; i++) {
-            m_chunkIDs[i] = p_buffer.getLong();
-            m_data[i] = new byte[p_buffer.getInt()];
-
-            p_buffer.get(m_data[i]);
+            m_chunkIDs[i] = p_importer.readLong();
+            m_data[i] = p_importer.readByteArray();
         }
     }
 }

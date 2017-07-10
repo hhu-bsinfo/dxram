@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -39,9 +39,9 @@ public class GetNameserviceEntriesResponse extends AbstractResponse {
      * Creates an instance of GetNameserviceEntriesResponse
      *
      * @param p_request
-     *     the request
+     *         the request
      * @param p_entries
-     *     the count
+     *         the count
      */
     public GetNameserviceEntriesResponse(final GetNameserviceEntriesRequest p_request, final byte[] p_entries) {
         super(p_request, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_RESPONSE);
@@ -67,24 +67,13 @@ public class GetNameserviceEntriesResponse extends AbstractResponse {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        if (m_entries.length == 0) {
-            p_buffer.putInt(0);
-        } else {
-            p_buffer.putInt(m_entries.length);
-            p_buffer.put(m_entries);
-        }
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeBytes(m_entries);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        int length = p_buffer.getInt();
-        if (length != 0) {
-            m_entries = new byte[length];
-            p_buffer.get(m_entries);
-        } else {
-            m_entries = new byte[0];
-        }
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_entries = p_importer.readByteArray();
     }
 
 }

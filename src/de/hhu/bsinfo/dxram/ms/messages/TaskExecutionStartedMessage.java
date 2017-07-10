@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Notify all remote listeners about a task that started execution.
@@ -39,9 +39,9 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_taskPayloadId
-     *     Id of the task that started execution.
+     *         Id of the task that started execution.
      */
     public TaskExecutionStartedMessage(final short p_destination, final int p_taskPayloadId) {
         super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE);
@@ -59,13 +59,13 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_taskPayloadId);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_taskPayloadId);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_taskPayloadId = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_taskPayloadId = p_importer.readInt();
     }
 
     @Override

@@ -13,11 +13,11 @@
 
 package de.hhu.bsinfo.dxram.lock.messages;
 
-import java.nio.ByteBuffer;
-
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -41,11 +41,11 @@ public class LockRequest extends AbstractRequest {
      * Creates an instance of LockRequest as a sender
      *
      * @param p_destination
-     *     the destination node ID.
+     *         the destination node ID.
      * @param p_writeLock
-     *     True for write lock, false for read lock.
+     *         True for write lock, false for read lock.
      * @param p_chunkID
-     *     ChunkIDs to lock
+     *         ChunkIDs to lock
      */
     public LockRequest(final short p_destination, final boolean p_writeLock, final long p_chunkID) {
         super(p_destination, DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST);
@@ -89,13 +89,13 @@ public class LockRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putLong(m_chunkID);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeLong(m_chunkID);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_chunkID = p_buffer.getLong();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_chunkID = p_importer.readLong();
     }
 
 }

@@ -52,7 +52,7 @@ public final class TaskScript implements Importable, Exportable {
      * Constructor
      *
      * @param p_tasks
-     *     List of tasks forming the script
+     *         List of tasks forming the script
      */
     public TaskScript(final TaskScriptNode... p_tasks) {
         m_tasks = p_tasks;
@@ -62,11 +62,11 @@ public final class TaskScript implements Importable, Exportable {
      * Constructor
      *
      * @param p_minSlaves
-     *     Minimum number of slaves required to run this task script
+     *         Minimum number of slaves required to run this task script
      * @param p_maxSlaves
-     *     Max number of slaves for this task script
+     *         Max number of slaves for this task script
      * @param p_tasks
-     *     List of tasks forming the script
+     *         List of tasks forming the script
      */
     public TaskScript(final short p_minSlaves, final short p_maxSlaves, final TaskScriptNode... p_tasks) {
         m_minSlaves = p_minSlaves;
@@ -78,13 +78,13 @@ public final class TaskScript implements Importable, Exportable {
      * Constructor
      *
      * @param p_minSlaves
-     *     Minimum number of slaves required to run this task script
+     *         Minimum number of slaves required to run this task script
      * @param p_maxSlaves
-     *     Max number of slaves for this task script
+     *         Max number of slaves for this task script
      * @param p_name
-     *     Name for the task script (for debugging only)
+     *         Name for the task script (for debugging only)
      * @param p_tasks
-     *     List of tasks forming the script
+     *         List of tasks forming the script
      */
     public TaskScript(final short p_minSlaves, final short p_maxSlaves, final String p_name, final TaskScriptNode... p_tasks) {
         m_minSlaves = p_minSlaves;

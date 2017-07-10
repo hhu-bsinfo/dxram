@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -43,9 +43,9 @@ public class AskAboutSuccessorResponse extends AbstractResponse {
      * Creates an instance of AskAboutSuccessorResponse
      *
      * @param p_request
-     *     the corresponding AskAboutSuccessorRequest
+     *         the corresponding AskAboutSuccessorRequest
      * @param p_predecessor
-     *     the predecessor
+     *         the predecessor
      */
     public AskAboutSuccessorResponse(final AskAboutSuccessorRequest p_request, final short p_predecessor) {
         super(p_request, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE);
@@ -73,13 +73,13 @@ public class AskAboutSuccessorResponse extends AbstractResponse {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_successor);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_successor);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_successor = p_buffer.getShort();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_successor = p_importer.readShort();
     }
 
 }

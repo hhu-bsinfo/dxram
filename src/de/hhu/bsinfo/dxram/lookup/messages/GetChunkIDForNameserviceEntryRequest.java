@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -43,9 +43,9 @@ public class GetChunkIDForNameserviceEntryRequest extends AbstractRequest {
      * Creates an instance of GetChunkIDRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_id
-     *     the id
+     *         the id
      */
     public GetChunkIDForNameserviceEntryRequest(final short p_destination, final int p_id) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST);
@@ -71,13 +71,13 @@ public class GetChunkIDForNameserviceEntryRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_id);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_id);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_id = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_id = p_importer.readInt();
     }
 
 }

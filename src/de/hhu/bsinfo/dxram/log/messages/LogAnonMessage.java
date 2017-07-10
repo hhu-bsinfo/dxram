@@ -15,11 +15,12 @@ package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.backup.RangeID;
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.RangeID;
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Message for logging an anonymous chunk on a remote node
@@ -53,11 +54,11 @@ public class LogAnonMessage extends AbstractMessage {
      * Creates an instance of LogMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_chunks
-     *     the chunks to store
+     *         the chunks to store
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      */
     public LogAnonMessage(final short p_destination, final short p_rangeID, final ChunkAnon... p_chunks) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_ANON_MESSAGE, true);
@@ -94,19 +95,18 @@ public class LogAnonMessage extends AbstractMessage {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_rangeID);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_rangeID);
 
-        p_buffer.putInt(m_chunks.length);
-        final ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
+        p_exporter.writeInt(m_chunks.length);
         for (ChunkAnon chunk : m_chunks) {
-            p_buffer.putLong(chunk.getID());
-            exporter.exportObject(chunk);
+            p_exporter.writeLong(chunk.getID());
+            p_exporter.exportObject(chunk);
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
+    protected final void readPayload(final AbstractMessageImporter p_importer, final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
         if (p_wasCopied) {
             // De-serialize later
             m_buffer = p_buffer;

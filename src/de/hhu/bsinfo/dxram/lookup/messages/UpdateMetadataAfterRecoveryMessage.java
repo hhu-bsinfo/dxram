@@ -13,11 +13,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -51,18 +51,18 @@ public class UpdateMetadataAfterRecoveryMessage extends AbstractMessage {
      * Creates an instance of UpdateMetadataAfterRecoveryMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @param p_creator
-     *     the creator of all chunks
+     *         the creator of all chunks
      * @param p_restorer
-     *     the recovery peer
+     *         the recovery peer
      * @param p_chunkIDRanges
-     *     all recovered ChunkIDs in ranges
+     *         all recovered ChunkIDs in ranges
      */
     public UpdateMetadataAfterRecoveryMessage(final short p_destination, final short p_rangeID, final short p_creator, final short p_restorer,
-        final long[] p_chunkIDRanges) {
+            final long[] p_chunkIDRanges) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_UPDATE_METADATA_AFTER_RECOVERY_MESSAGE);
 
         m_rangeID = p_rangeID;
@@ -116,28 +116,19 @@ public class UpdateMetadataAfterRecoveryMessage extends AbstractMessage {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_rangeID);
-        p_buffer.putShort(m_creator);
-        p_buffer.putShort(m_restorer);
-
-        p_buffer.putInt(m_chunkIDRanges.length);
-        for (long chunkID : m_chunkIDRanges) {
-            p_buffer.putLong(chunkID);
-        }
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_rangeID);
+        p_exporter.writeShort(m_creator);
+        p_exporter.writeShort(m_restorer);
+        p_exporter.writeLongArray(m_chunkIDRanges);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_rangeID = p_buffer.getShort();
-        m_creator = p_buffer.getShort();
-        m_restorer = p_buffer.getShort();
-
-        int size = p_buffer.getInt();
-        m_chunkIDRanges = new long[size];
-        for (int i = 0; i < size; i++) {
-            m_chunkIDRanges[i] = p_buffer.getLong();
-        }
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_rangeID = p_importer.readShort();
+        m_creator = p_importer.readShort();
+        m_restorer = p_importer.readShort();
+        m_chunkIDRanges = p_importer.readLongArray();
     }
 
 }

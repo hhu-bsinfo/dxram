@@ -13,10 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -45,9 +44,9 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
      * not exist, no data and a length of 0 indicates this situation.
      *
      * @param p_request
-     *     the corresponding GetRequest
+     *         the corresponding GetRequest
      * @param p_dataStructure
-     *     Data structure filled with the read data from memory
+     *         Data structure filled with the read data from memory
      */
     public SuperpeerStorageGetResponse(final SuperpeerStorageGetRequest p_request, final DataStructure p_dataStructure) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE);
@@ -61,21 +60,18 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
         // read the data to be sent to the remote from the chunk set for this message
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-        exporter.exportObject(m_dataStructure);
+        p_exporter.exportObject(m_dataStructure);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
         // read the payload from the buffer and write it directly into
         // the data structure provided by the request to avoid further copying of data
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
         SuperpeerStorageGetRequest request = (SuperpeerStorageGetRequest) getCorrespondingRequest();
 
         m_dataStructure = request.getDataStructure();
-
-        importer.importObject(m_dataStructure);
+        p_importer.importObject(m_dataStructure);
     }
 }

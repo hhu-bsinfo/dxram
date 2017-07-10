@@ -13,13 +13,14 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
  * Response of the master to a join request by a slave.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
 public class SlaveJoinResponse extends AbstractResponse {
@@ -36,10 +37,11 @@ public class SlaveJoinResponse extends AbstractResponse {
     /**
      * Creates an instance of SlaveJoinResponse.
      * This constructor is used when sending this message.
+     *
      * @param p_request
-     *            request to respond to.
+     *         request to respond to.
      * @param p_executionBarrierId
-     *            The id of the barrier to sync for execution of a task
+     *         The id of the barrier to sync for execution of a task
      */
     public SlaveJoinResponse(final SlaveJoinRequest p_request, final int p_executionBarrierId) {
         super(p_request, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE);
@@ -49,6 +51,7 @@ public class SlaveJoinResponse extends AbstractResponse {
 
     /**
      * Get the barrier id used for the execution barrier to sync slaves to the master.
+     *
      * @return Execution barrier id.
      */
     public int getExecutionBarrierId() {
@@ -56,13 +59,13 @@ public class SlaveJoinResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_executionBarrierId);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_executionBarrierId);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_executionBarrierId = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_executionBarrierId = p_importer.readInt();
     }
 
     @Override

@@ -13,11 +13,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.utils.ArrayListLong;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.utils.ArrayListLong;
 
 /**
  * Remove Request
@@ -47,11 +47,11 @@ public class RemoveChunkIDsRequest extends AbstractRequest {
      * Creates an instance of RemoveRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_chunkIDs
-     *     the ChunkIDs that have to be removed
+     *         the ChunkIDs that have to be removed
      * @param p_isBackup
-     *     whether this is a backup message or not
+     *         whether this is a backup message or not
      */
     public RemoveChunkIDsRequest(final short p_destination, final ArrayListLong p_chunkIDs, final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST);
@@ -94,27 +94,15 @@ public class RemoveChunkIDsRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_chunkIDsOut.getSize());
-        p_buffer.asLongBuffer().put(m_chunkIDsOut.getArray(), 0, m_chunkIDsOut.getSize());
-        p_buffer.position(p_buffer.position() + m_chunkIDsOut.getSize() * Long.BYTES);
-        if (m_isBackup) {
-            p_buffer.put((byte) 1);
-        } else {
-            p_buffer.put((byte) 0);
-        }
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.exportObject(m_chunkIDsOut);
+        p_exporter.writeBoolean(m_isBackup);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_chunkIDs = new long[p_buffer.getInt()];
-        p_buffer.asLongBuffer().get(m_chunkIDs);
-        p_buffer.position(p_buffer.position() + m_chunkIDs.length * Long.BYTES);
-
-        final byte b = p_buffer.get();
-        if (b == 1) {
-            m_isBackup = true;
-        }
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_chunkIDs = p_importer.readLongArray();
+        m_isBackup = p_importer.readBoolean();
     }
 
 }

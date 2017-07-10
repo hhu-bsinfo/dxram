@@ -25,7 +25,8 @@ public class IBPipeOut extends AbstractPipeOut {
 
     @Override
     protected void bufferPosted() {
-        ByteBuffer buffer;
+        // TODO
+        /*ByteBuffer buffer;
 
         while (true) {
             buffer = getOutgoingQueue().popFront();
@@ -42,7 +43,7 @@ public class IBPipeOut extends AbstractPipeOut {
             LOGGER.trace("Posting buffer %s to 0x%X", buffer, getDestinationNodeID());
             // #endif /* LOGGER == TRACE */
 
-            if (buffer.position() != 0) {
+            /*if (buffer.position() != 0) {
                 throw new IllegalStateException();
             }
 
@@ -50,9 +51,9 @@ public class IBPipeOut extends AbstractPipeOut {
                 // #if LOGGER == ERROR
                 LOGGER.error("Posting buffer (%d) to 0x%X failed", buffer.remaining(), getDestinationNodeID());
                 // #endif /* LOGGER == ERROR */
-            }
+            /*}
 
             getOutgoingQueue().returnBuffer(buffer);
-        }
+        }*/
     }
 }

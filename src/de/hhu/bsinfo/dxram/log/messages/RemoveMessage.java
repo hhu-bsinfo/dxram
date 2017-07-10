@@ -15,10 +15,12 @@ package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.utils.ArrayListLong;
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.utils.ArrayListLong;
 
 /**
  * Message for removing a Chunk on a remote node
@@ -51,9 +53,9 @@ public class RemoveMessage extends AbstractMessage {
      * Creates an instance of RemoveMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_chunkIDs
-     *     the ChunkIDs of the Chunks to remove
+     *         the ChunkIDs of the Chunks to remove
      */
     public RemoveMessage(final short p_destination, final ArrayListLong p_chunkIDs) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
@@ -66,9 +68,9 @@ public class RemoveMessage extends AbstractMessage {
      * Creates an instance of RemoveMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_chunkIDs
-     *     the ChunkIDs of the Chunks to remove
+     *         the ChunkIDs of the Chunks to remove
      */
     public RemoveMessage(final short p_destination, final long[] p_chunkIDs) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
@@ -81,11 +83,11 @@ public class RemoveMessage extends AbstractMessage {
      * Creates an instance of RemoveMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_chunkIDs
-     *     the ChunkIDs of the Chunks to remove
+     *         the ChunkIDs of the Chunks to remove
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      */
     public RemoveMessage(final short p_destination, final ArrayListLong p_chunkIDs, final short p_rangeID) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
@@ -116,15 +118,13 @@ public class RemoveMessage extends AbstractMessage {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_rangeID);
-        p_buffer.putInt(m_chunkIDs.getSize());
-        p_buffer.asLongBuffer().put(m_chunkIDs.getArray(), 0, m_chunkIDs.getSize());
-        p_buffer.position(p_buffer.position() + m_chunkIDs.getSize() * Long.BYTES);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_rangeID);
+        p_exporter.exportObject(m_chunkIDs);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
+    protected final void readPayload(final AbstractMessageImporter p_importer, final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
         if (p_wasCopied) {
             // De-serialize later
             m_buffer = p_buffer;

@@ -17,9 +17,9 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.net.core.AbstractMessage;
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Message for logging an anonymous chunk on a remote node
@@ -51,11 +51,11 @@ public class LogBufferMessage extends AbstractMessage {
      * Creates an instance of LogMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @param p_buffer
-     *     the chunks to store with ChunkID and payload size prepended
+     *         the chunks to store with ChunkID and payload size prepended
      */
     public LogBufferMessage(final short p_destination, final short p_rangeID, final ByteBuffer p_buffer) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE, true);
@@ -87,13 +87,13 @@ public class LogBufferMessage extends AbstractMessage {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_rangeID);
-        p_buffer.put(m_buffer);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_rangeID);
+        p_exporter.writeBytes(m_buffer.array());
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
+    protected final void readPayload(final AbstractMessageImporter p_importer, final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
         if (p_wasCopied) {
             // De-serialize later
             m_buffer = p_buffer;

@@ -13,11 +13,11 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import java.nio.ByteBuffer;
-
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -48,9 +48,9 @@ public class GetRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_chunks
-     *     Chunks with the ID of the chunk data to get.
+     *         Chunks with the ID of the chunk data to get.
      */
     public GetRequest(final short p_destination, final DataStructure... p_chunks) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
@@ -91,21 +91,21 @@ public class GetRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunks.length);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_chunks.length);
 
         for (DataStructure chunk : m_chunks) {
-            p_buffer.putLong(chunk.getID());
+            p_exporter.writeLong(chunk.getID());
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
 
         m_chunkIDs = new long[numChunks];
         for (int i = 0; i < m_chunkIDs.length; i++) {
-            m_chunkIDs[i] = p_buffer.getLong();
+            m_chunkIDs[i] = p_importer.readLong();
         }
     }
 }

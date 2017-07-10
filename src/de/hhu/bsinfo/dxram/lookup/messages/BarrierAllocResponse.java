@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -37,9 +37,9 @@ public class BarrierAllocResponse extends AbstractResponse {
      * Creates an instance of BarrierAllocResponse
      *
      * @param p_request
-     *     the corresponding BarrierAllocRequest
+     *         the corresponding BarrierAllocRequest
      * @param p_barrierId
-     *     Id of the created barrier
+     *         Id of the created barrier
      */
     public BarrierAllocResponse(final BarrierAllocRequest p_request, final int p_barrierId) {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_ALLOC_RESPONSE);
@@ -62,12 +62,12 @@ public class BarrierAllocResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_barrierId);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_barrierId);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_barrierId = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_barrierId = p_importer.readInt();
     }
 }

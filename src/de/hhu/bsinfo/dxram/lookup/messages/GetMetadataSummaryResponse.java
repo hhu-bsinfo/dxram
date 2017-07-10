@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -40,9 +40,9 @@ public class GetMetadataSummaryResponse extends AbstractResponse {
      * Creates an instance of SendBackupsMessage
      *
      * @param p_request
-     *     the corresponding GetMetadataSummaryRequest
+     *         the corresponding GetMetadataSummaryRequest
      * @param p_summary
-     *     the metadata summary
+     *         the metadata summary
      */
     public GetMetadataSummaryResponse(final GetMetadataSummaryRequest p_request, final String p_summary) {
         super(p_request, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_RESPONSE);
@@ -68,20 +68,13 @@ public class GetMetadataSummaryResponse extends AbstractResponse {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_summary.getBytes().length);
-        p_buffer.put(m_summary.getBytes());
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeString(m_summary);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        int length;
-        byte[] data;
-
-        length = p_buffer.getInt();
-        data = new byte[length];
-        p_buffer.get(data);
-        m_summary = new String(data);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_summary = p_importer.readString();
     }
 
 }

@@ -13,8 +13,6 @@
 
 package de.hhu.bsinfo.net.core;
 
-import java.nio.ByteBuffer;
-
 /**
  * This is a default message which is never processed on the receiver.
  *
@@ -37,20 +35,6 @@ public class DefaultMessage extends AbstractMessage {
      */
     public DefaultMessage(final short p_destination) {
         super(p_destination, Messages.NETWORK_MESSAGES_TYPE, Messages.SUBTYPE_DEFAULT_MESSAGE);
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        return 0;
-    }
-
-    // Methods
-    @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-    }
-
-    @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
     }
 
 }

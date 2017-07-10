@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.failure.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -44,9 +44,9 @@ public class FailureRequest extends AbstractRequest {
      * Creates an instance of FailureRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_failedNode
-     *     the NodeID of the failed node
+     *         the NodeID of the failed node
      */
     public FailureRequest(final short p_destination, final short p_failedNode) {
         super(p_destination, DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST);
@@ -72,12 +72,12 @@ public class FailureRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_failedNode);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_failedNode);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_failedNode = p_buffer.getShort();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_failedNode = p_importer.readShort();
     }
 }

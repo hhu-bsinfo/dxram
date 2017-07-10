@@ -13,12 +13,10 @@
 
 package de.hhu.bsinfo.dxram.recovery.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.backup.RangeID;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 
 /**
  * Response to a RecoverBackupRangeRequest
@@ -49,13 +47,13 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
      * Creates an instance of RecoverBackupRangeResponse
      *
      * @param p_request
-     *     the corresponding RecoverBackupRangeRequest
+     *         the corresponding RecoverBackupRangeRequest
      * @param p_newBackupRange
-     *     the backup range with updated range ID and new backup peer
+     *         the backup range with updated range ID and new backup peer
      * @param p_numberOfChunks
-     *     the number of recovered chunks
+     *         the number of recovered chunks
      * @param p_chunkIDRanges
-     *     all ChunkIDs in ranges
+     *         all ChunkIDs in ranges
      */
     public RecoverBackupRangeResponse(final RecoverBackupRangeRequest p_request, final BackupRange p_newBackupRange, final int p_numberOfChunks,
             final long[] p_chunkIDRanges) {
@@ -106,35 +104,24 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_numberOfChunks);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_numberOfChunks);
 
         if (m_numberOfChunks > 0) {
-            p_buffer.putInt(m_chunkIDRanges.length);
-            for (int i = 0; i < m_chunkIDRanges.length; i++) {
-                p_buffer.putLong(m_chunkIDRanges[i]);
-            }
-
-            ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-            exporter.exportObject(m_newBackupRange);
+            p_exporter.writeLongArray(m_chunkIDRanges);
+            p_exporter.exportObject(m_newBackupRange);
         }
 
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_numberOfChunks = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_numberOfChunks = p_importer.readInt();
 
         if (m_numberOfChunks > 0) {
-            int size = p_buffer.getInt();
-            m_chunkIDRanges = new long[size];
-            for (int i = 0; i < size; i++) {
-                m_chunkIDRanges[i] = p_buffer.getLong();
-            }
-
-            ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
+            m_chunkIDRanges = p_importer.readLongArray();
             m_newBackupRange = new BackupRange();
-            importer.importObject(m_newBackupRange);
+            p_importer.importObject(m_newBackupRange);
         }
     }
 

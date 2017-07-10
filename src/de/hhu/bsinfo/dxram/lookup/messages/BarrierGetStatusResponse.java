@@ -13,10 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -41,9 +40,9 @@ public class BarrierGetStatusResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *     The request for the response
+     *         The request for the response
      * @param p_barrierStatus
-     *     Status of the barrier
+     *         Status of the barrier
      */
     public BarrierGetStatusResponse(final BarrierGetStatusRequest p_request, final BarrierStatus p_barrierStatus) {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_STATUS_RESPONSE);
@@ -76,19 +75,15 @@ public class BarrierGetStatusResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-
-        p_buffer.putInt(m_barrierId);
-        exporter.exportObject(m_barrierStatus);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_barrierId);
+        p_exporter.exportObject(m_barrierStatus);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
-
-        m_barrierId = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_barrierId = p_importer.readInt();
         m_barrierStatus = new BarrierStatus();
-        importer.importObject(m_barrierStatus);
+        p_importer.importObject(m_barrierStatus);
     }
 }

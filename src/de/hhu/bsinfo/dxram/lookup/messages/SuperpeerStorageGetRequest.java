@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -45,9 +45,9 @@ public class SuperpeerStorageGetRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_dataStructure
-     *     Data structure with the ID of the chunk to get.
+     *         Data structure with the ID of the chunk to get.
      */
     public SuperpeerStorageGetRequest(final short p_destination, final DataStructure p_dataStructure) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST);
@@ -81,12 +81,12 @@ public class SuperpeerStorageGetRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt((int) m_dataStructure.getID());
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt((int) m_dataStructure.getID());
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_storageID = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_storageID = p_importer.readInt();
     }
 }

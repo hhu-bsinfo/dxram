@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -44,9 +44,9 @@ public class NotifyAboutNewSuccessorMessage extends AbstractMessage {
      * Creates an instance of NotifyAboutNewSuccessorMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_newSuccessor
-     *     the new successor
+     *         the new successor
      */
     public NotifyAboutNewSuccessorMessage(final short p_destination, final short p_newSuccessor) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE);
@@ -74,13 +74,13 @@ public class NotifyAboutNewSuccessorMessage extends AbstractMessage {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_newSuccessor);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_newSuccessor);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_newSuccessor = p_buffer.getShort();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_newSuccessor = p_importer.readShort();
     }
 
 }

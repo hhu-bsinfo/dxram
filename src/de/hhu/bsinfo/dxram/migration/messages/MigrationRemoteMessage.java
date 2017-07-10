@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.migration.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Sends a Migration Message which requests a remote migration request
@@ -42,11 +42,11 @@ public class MigrationRemoteMessage extends AbstractMessage {
      * Creates an instance of MigrationRemoteMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_cid
-     *     the ChunkID
+     *         the ChunkID
      * @param p_target
-     *     the target peer to get the chunk
+     *         the target peer to get the chunk
      */
     public MigrationRemoteMessage(final short p_destination, final long p_cid, final short p_target) {
         super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE);
@@ -82,18 +82,18 @@ public class MigrationRemoteMessage extends AbstractMessage {
 
     // Network Data Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
 
-        p_buffer.putLong(m_chunkID);
-        p_buffer.putShort(m_target);
+        p_exporter.writeLong(m_chunkID);
+        p_exporter.writeShort(m_target);
 
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
 
-        m_chunkID = p_buffer.getLong();
-        m_target = p_buffer.getShort();
+        m_chunkID = p_importer.readLong();
+        m_target = p_importer.readShort();
 
     }
 }

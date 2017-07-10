@@ -13,8 +13,6 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
@@ -38,24 +36,10 @@ public class GetMetadataSummaryRequest extends AbstractRequest {
      * Creates an instance of LogMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      */
     public GetMetadataSummaryRequest(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST);
-    }
-
-    @Override
-    protected final int getPayloadLength() {
-        return 0;
-    }
-
-    // Methods
-    @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-    }
-
-    @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
     }
 
 }

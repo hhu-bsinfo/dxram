@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -42,9 +42,9 @@ public class CreateResponse extends AbstractResponse {
      * not exist, no data and a length of 0 indicates this situation.
      *
      * @param p_request
-     *     the corresponding GetRequest
+     *         the corresponding GetRequest
      * @param p_chunkIDs
-     *     The chunk IDs requested
+     *         The chunk IDs requested
      */
     public CreateResponse(final CreateRequest p_request, final long... p_chunkIDs) {
         super(p_request, ChunkMessages.SUBTYPE_CREATE_RESPONSE);
@@ -63,23 +63,17 @@ public class CreateResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkIDs.length);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_chunkIDs.length);
 
-        for (long chunkID : m_chunkIDs) {
-            p_buffer.putLong(chunkID);
-        }
+        p_exporter.writeLongArray(m_chunkIDs);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
 
-        m_chunkIDs = new long[numChunks];
-
-        for (int i = 0; i < m_chunkIDs.length; i++) {
-            m_chunkIDs[i] = p_buffer.getLong();
-        }
+        m_chunkIDs = p_importer.readLongArray();
     }
 
     @Override

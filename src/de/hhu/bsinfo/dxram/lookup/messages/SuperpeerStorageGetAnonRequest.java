@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -45,9 +45,9 @@ public class SuperpeerStorageGetAnonRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_chunk
-     *     Anonymous chunk with the ID of the chunk to get.
+     *         Anonymous chunk with the ID of the chunk to get.
      */
     public SuperpeerStorageGetAnonRequest(final short p_destination, final ChunkAnon p_chunk) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_REQUEST);
@@ -81,12 +81,12 @@ public class SuperpeerStorageGetAnonRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt((int) m_chunk.getID());
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt((int) m_chunk.getID());
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_storageID = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_storageID = p_importer.readInt();
     }
 }

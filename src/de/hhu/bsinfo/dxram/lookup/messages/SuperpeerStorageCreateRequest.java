@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -39,13 +39,13 @@ public class SuperpeerStorageCreateRequest extends AbstractRequest {
      * Creates an instance of SuperpeerStorageCreateRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_storageId
-     *     Identifier for the chunk.
+     *         Identifier for the chunk.
      * @param p_size
-     *     Size in bytes of the data to store
+     *         Size in bytes of the data to store
      * @param p_replicate
-     *     True if this message is a replication to other superpeer message, false if normal message
+     *         True if this message is a replication to other superpeer message, false if normal message
      */
     public SuperpeerStorageCreateRequest(final short p_destination, final int p_storageId, final int p_size, final boolean p_replicate) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST);
@@ -88,16 +88,16 @@ public class SuperpeerStorageCreateRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_storageId);
-        p_buffer.putInt(m_size);
-        p_buffer.put((byte) (m_replicate ? 1 : 0));
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_storageId);
+        p_exporter.writeInt(m_size);
+        p_exporter.writeBoolean(m_replicate);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_storageId = p_buffer.getInt();
-        m_size = p_buffer.getInt();
-        m_replicate = p_buffer.get() != 0;
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_storageId = p_importer.readInt();
+        m_size = p_importer.readInt();
+        m_replicate = p_importer.readBoolean();
     }
 }

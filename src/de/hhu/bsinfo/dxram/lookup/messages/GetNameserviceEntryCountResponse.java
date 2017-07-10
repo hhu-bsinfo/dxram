@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -42,9 +42,9 @@ public class GetNameserviceEntryCountResponse extends AbstractResponse {
      * Creates an instance of GetMappingCountResponse
      *
      * @param p_request
-     *     the request
+     *         the request
      * @param p_count
-     *     the count
+     *         the count
      */
     public GetNameserviceEntryCountResponse(final GetNameserviceEntryCountRequest p_request, final int p_count) {
         super(p_request, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE);
@@ -70,13 +70,13 @@ public class GetNameserviceEntryCountResponse extends AbstractResponse {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_count);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_count);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_count = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_count = p_importer.readInt();
     }
 
 }

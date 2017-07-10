@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Notify remote listeners that execution of a submitted task has finished.
@@ -40,11 +40,11 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_taskPayloadId
-     *     Payload id of the task that finished
+     *         Payload id of the task that finished
      * @param p_executionReturnCodes
-     *     Return codes of all slaves that executed the task (Indexable by slave id).
+     *         Return codes of all slaves that executed the task (Indexable by slave id).
      */
     public TaskExecutionFinishedMessage(final short p_destination, final int p_taskPayloadId, final int[] p_executionReturnCodes) {
         super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE);
@@ -72,22 +72,15 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_taskPayloadId);
-        p_buffer.putInt(m_executionReturnCodes.length);
-        for (int executionReturnCode : m_executionReturnCodes) {
-            p_buffer.putInt(executionReturnCode);
-        }
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_taskPayloadId);
+        p_exporter.writeIntArray(m_executionReturnCodes);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_taskPayloadId = p_buffer.getInt();
-        int size = p_buffer.getInt();
-        m_executionReturnCodes = new int[size];
-        for (int i = 0; i < size; i++) {
-            m_executionReturnCodes[i] = p_buffer.getInt();
-        }
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_taskPayloadId = p_importer.readInt();
+        m_executionReturnCodes = p_importer.readIntArray();
     }
 
     @Override

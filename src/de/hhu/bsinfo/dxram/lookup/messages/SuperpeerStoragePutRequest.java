@@ -13,13 +13,12 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -51,11 +50,11 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
      * Creates an instance of SuperpeerStoragePutRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_dataStructure
-     *     Data structure with the data to put.
+     *         Data structure with the data to put.
      * @param p_replicate
-     *     True if this message is a replication to other superpeer message, false if normal message
+     *         True if this message is a replication to other superpeer message, false if normal message
      */
     public SuperpeerStoragePutRequest(final short p_destination, final DataStructure p_dataStructure, final boolean p_replicate) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST);
@@ -97,22 +96,19 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
         int size = m_dataStructure.sizeofObject();
 
-        p_buffer.putLong(m_dataStructure.getID());
-        p_buffer.putInt(size);
-        exporter.exportObject(m_dataStructure);
-        p_buffer.put((byte) (m_isReplicate ? 1 : 0));
+        p_exporter.writeLong(m_dataStructure.getID());
+        p_exporter.writeInt(size);
+        p_exporter.exportObject(m_dataStructure);
+        p_exporter.writeBoolean(m_isReplicate);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
-
-        m_chunk = new DSByteArray(p_buffer.getLong(), p_buffer.getInt());
-        importer.importObject(m_chunk);
-        m_isReplicate = p_buffer.get() != 0;
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_chunk = new DSByteArray(p_importer.readLong(), p_importer.readInt());
+        p_importer.importObject(m_chunk);
+        m_isReplicate = p_importer.readBoolean();
     }
 }

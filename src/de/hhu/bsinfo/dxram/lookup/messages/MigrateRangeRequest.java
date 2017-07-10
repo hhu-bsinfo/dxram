@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -51,15 +51,15 @@ public class MigrateRangeRequest extends AbstractRequest {
      * Creates an instance of MigrateRangeRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_startChunkID
-     *     the first object that has to be migrated
+     *         the first object that has to be migrated
      * @param p_endChunkID
-     *     the last object that has to be migrated
+     *         the last object that has to be migrated
      * @param p_nodeID
-     *     the peer where the object has to be migrated
+     *         the peer where the object has to be migrated
      * @param p_isBackup
-     *     whether this is a backup message or not
+     *         whether this is a backup message or not
      */
     public MigrateRangeRequest(final short p_destination, final long p_startChunkID, final long p_endChunkID, final short p_nodeID, final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST);
@@ -115,27 +115,19 @@ public class MigrateRangeRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putLong(m_startChunkID);
-        p_buffer.putLong(m_endChunkID);
-        p_buffer.putShort(m_nodeID);
-        if (m_isBackup) {
-            p_buffer.put((byte) 1);
-        } else {
-            p_buffer.put((byte) 0);
-        }
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeLong(m_startChunkID);
+        p_exporter.writeLong(m_endChunkID);
+        p_exporter.writeShort(m_nodeID);
+        p_exporter.writeBoolean(m_isBackup);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_startChunkID = p_buffer.getLong();
-        m_endChunkID = p_buffer.getLong();
-        m_nodeID = p_buffer.getShort();
-
-        final byte b = p_buffer.get();
-        if (b == 1) {
-            m_isBackup = true;
-        }
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_startChunkID = p_importer.readLong();
+        m_endChunkID = p_importer.readLong();
+        m_nodeID = p_importer.readShort();
+        m_isBackup = p_importer.readBoolean();
     }
 
 }

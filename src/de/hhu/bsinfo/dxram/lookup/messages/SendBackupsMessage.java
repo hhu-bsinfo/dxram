@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Send Backups Message
@@ -43,9 +43,9 @@ public class SendBackupsMessage extends AbstractMessage {
      * Creates an instance of SendBackupsMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_metadata
-     *     the metadata
+     *         the metadata
      */
     public SendBackupsMessage(final short p_destination, final byte[] p_metadata) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE);
@@ -78,24 +78,17 @@ public class SendBackupsMessage extends AbstractMessage {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_metadata == null || m_metadata.length == 0) {
-            p_buffer.putInt(0);
+            p_exporter.writeInt(0);
         } else {
-            p_buffer.putInt(m_metadata.length);
-            p_buffer.put(m_metadata);
+            p_exporter.writeByteArray(m_metadata);
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        int length;
-
-        length = p_buffer.getInt();
-        if (length != 0) {
-            m_metadata = new byte[length];
-            p_buffer.get(m_metadata);
-        }
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_metadata = p_importer.readByteArray();
     }
 
 }

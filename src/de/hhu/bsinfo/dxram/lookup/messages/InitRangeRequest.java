@@ -13,11 +13,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.BackupRange;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -49,13 +48,13 @@ public class InitRangeRequest extends AbstractRequest {
      * Creates an instance of InitRangeRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_rangeOwner
-     *     the peer that created the new backup range
+     *         the peer that created the new backup range
      * @param p_backupRange
-     *     the backup range to initialize
+     *         the backup range to initialize
      * @param p_isBackup
-     *     whether this is a backup message or not
+     *         whether this is a backup message or not
      */
     public InitRangeRequest(final short p_destination, final short p_rangeOwner, final BackupRange p_backupRange, final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST);
@@ -101,33 +100,18 @@ public class InitRangeRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-
-        p_buffer.putShort(m_rangeOwner);
-
-        m_backupRange.exportObject(exporter);
-
-        if (m_isBackup) {
-            p_buffer.put((byte) 1);
-        } else {
-            p_buffer.put((byte) 0);
-        }
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_rangeOwner);
+        p_exporter.exportObject(m_backupRange);
+        p_exporter.writeBoolean(m_isBackup);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
-
-        m_rangeOwner = p_buffer.getShort();
-
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_rangeOwner = p_importer.readShort();
         m_backupRange = new BackupRange();
-        importer.importObject(m_backupRange);
-
-        final byte b = p_buffer.get();
-        if (b == 1) {
-            m_isBackup = true;
-        }
+        p_importer.importObject(m_backupRange);
+        m_isBackup = p_importer.readBoolean();
     }
 
 }

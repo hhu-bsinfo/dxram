@@ -17,7 +17,7 @@ public abstract class AbstractPipeOut {
     private volatile boolean m_isConnected;
     private final int m_bufferSize;
     private final AbstractFlowControl m_flowControl;
-    private final OutgoingQueue m_outgoing;
+    private final OutgoingRingBuffer m_outgoing;
 
     private final ReentrantLock m_sliceLock;
 
@@ -32,7 +32,7 @@ public abstract class AbstractPipeOut {
         m_bufferSize = p_bufferSize;
         m_flowControl = p_flowControl;
 
-        m_outgoing = new OutgoingQueue(m_bufferSize, p_directBuffer);
+        m_outgoing = new OutgoingRingBuffer(m_bufferSize, p_directBuffer);
 
         m_sliceLock = new ReentrantLock(false);
 
@@ -76,12 +76,12 @@ public abstract class AbstractPipeOut {
         LOGGER.trace("Writing message %s to pipe out of dest 0x%X", p_message, m_destinationNodeID);
         // #endif /* LOGGER >= TRACE */
 
-        int messageSize = p_message.getTotalSize();
-        m_flowControl.dataToSend(messageSize);
+        int messageTotalSize = p_message.getTotalSize();
+        m_flowControl.dataToSend(messageTotalSize);
         m_sentMessages++;
 
-        // TODO FIXME revert later when bug fixed
-        if (messageSize > 0 /* m_bufferSize */) {
+        // TODO: Large messages
+        /*if (messageTotalSize > m_bufferSize) {
             ByteBuffer data = p_message.getBuffer(p_directBuffer);
             m_sliceLock.lock();
             int size = data.limit();
@@ -93,18 +93,19 @@ public abstract class AbstractPipeOut {
                 data.position(currentSize);
             }
             m_sliceLock.unlock();
-        } else {
-            postBuffer(p_message, messageSize);
-        }
+        } else {*/
+            postBuffer(p_message, messageTotalSize);
+        //}
     }
 
     public void postBuffer(final ByteBuffer p_buffer) throws NetworkException {
-        m_outgoing.pushAndAggregateBuffers(p_buffer);
+        System.out.println("Warning: Large messages currently not supported!");
+        m_outgoing.pushNodeID(p_buffer);
         bufferPosted();
     }
 
     private void postBuffer(final AbstractMessage p_message, final int p_messageSize) throws NetworkException {
-        m_outgoing.pushAndAggregateBuffers(p_message, p_messageSize);
+        m_outgoing.pushMessage(p_message, p_messageSize);
         bufferPosted();
     }
 
@@ -112,7 +113,7 @@ public abstract class AbstractPipeOut {
 
     protected abstract void bufferPosted();
 
-    protected OutgoingQueue getOutgoingQueue() {
+    protected OutgoingRingBuffer getOutgoingQueue() {
         return m_outgoing;
     }
 }

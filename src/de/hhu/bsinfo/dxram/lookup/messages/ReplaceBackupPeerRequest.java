@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.RangeID;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -51,18 +51,18 @@ public class ReplaceBackupPeerRequest extends AbstractRequest {
      * Creates an instance of ReplaceBackupPeerRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @param p_failedBackupPeer
-     *     the failed backup peer
+     *         the failed backup peer
      * @param p_newBackupPeer
-     *     the replacement
+     *         the replacement
      * @param p_isBackup
-     *     whether this is a backup or not
+     *         whether this is a backup or not
      */
     public ReplaceBackupPeerRequest(final short p_destination, final short p_rangeID, final short p_failedBackupPeer, final short p_newBackupPeer,
-        final boolean p_isBackup) {
+            final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REPLACE_BACKUP_PEER_REQUEST);
 
         m_rangeID = p_rangeID;
@@ -116,19 +116,19 @@ public class ReplaceBackupPeerRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_rangeID);
-        p_buffer.putShort(m_failedBackupPeer);
-        p_buffer.putShort(m_newBackupPeer);
-        p_buffer.put((byte) (m_isBackup ? 1 : 0));
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_rangeID);
+        p_exporter.writeShort(m_failedBackupPeer);
+        p_exporter.writeShort(m_newBackupPeer);
+        p_exporter.writeBoolean(m_isBackup);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_rangeID = p_buffer.getShort();
-        m_failedBackupPeer = p_buffer.getShort();
-        m_newBackupPeer = p_buffer.getShort();
-        m_isBackup = p_buffer.get() == 1;
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_rangeID = p_importer.readShort();
+        m_failedBackupPeer = p_importer.readShort();
+        m_newBackupPeer = p_importer.readShort();
+        m_isBackup = p_importer.readBoolean();
     }
 
 }

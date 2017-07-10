@@ -13,15 +13,15 @@
 
 package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Message to send bfs result to other node(s).
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 19.05.2016
  */
 public class BFSResultMessage extends AbstractMessage {
@@ -37,10 +37,11 @@ public class BFSResultMessage extends AbstractMessage {
 
     /**
      * Creates an instance of BFSResultMessage
+     *
      * @param p_destination
-     *            the destination
+     *         the destination
      * @param p_bfsResult
-     *            Results of a bfs iteration
+     *         Results of a bfs iteration
      */
     public BFSResultMessage(final short p_destination, final BFSResult p_bfsResult) {
         super(p_destination, DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE);
@@ -50,6 +51,7 @@ public class BFSResultMessage extends AbstractMessage {
 
     /**
      * Get the bfs result attached to this message.
+     *
      * @return BFS result.
      */
     public BFSResult getBFSResult() {
@@ -57,18 +59,14 @@ public class BFSResultMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-
-        exporter.exportObject(m_bfsResult);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.exportObject(m_bfsResult);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
         m_bfsResult = new BFSResult();
-        exporter.importObject(m_bfsResult);
+        p_importer.importObject(m_bfsResult);
     }
 
     @Override

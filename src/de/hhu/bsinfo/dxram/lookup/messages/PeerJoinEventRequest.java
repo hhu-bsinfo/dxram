@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -41,9 +41,9 @@ public class PeerJoinEventRequest extends AbstractRequest {
      * Creates an instance of PeerJoinEventRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_nodeID
-     *     the NodeID of the joined peer
+     *         the NodeID of the joined peer
      */
     public PeerJoinEventRequest(final short p_destination, final short p_nodeID) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PEER_JOIN_EVENT_REQUEST);
@@ -69,13 +69,13 @@ public class PeerJoinEventRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_nodeID);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_nodeID);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_nodeID = p_buffer.getShort();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_nodeID = p_importer.readShort();
     }
 
 }

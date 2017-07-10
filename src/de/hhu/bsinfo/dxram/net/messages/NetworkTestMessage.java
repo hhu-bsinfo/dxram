@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.net.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Network message for running tests/benchmarks.
@@ -40,9 +40,9 @@ public class NetworkTestMessage extends AbstractMessage {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_messageSize
-     *     Size of byte array.
+     *         Size of byte array.
      */
     public NetworkTestMessage(final short p_destination, final int p_messageSize) {
         super(p_destination, DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE);
@@ -51,16 +51,13 @@ public class NetworkTestMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_data.length);
-        p_buffer.put(m_data);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeByteArray(m_data);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        int length = p_buffer.getInt();
-        m_data = new byte[length];
-        p_buffer.get(m_data, 0, length);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_data = p_importer.readByteArray();
     }
 
     @Override

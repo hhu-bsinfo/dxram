@@ -13,14 +13,14 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService.StatusMaster;
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
  * Response to the request to get the status of a master compute node.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
 public class GetMasterStatusResponse extends AbstractResponse {
@@ -37,10 +37,11 @@ public class GetMasterStatusResponse extends AbstractResponse {
     /**
      * Creates an instance of GetMasterStatusResponse.
      * This constructor is used when sending this message.
+     *
      * @param p_request
-     *            request to respond to.
+     *         request to respond to.
      * @param p_statusMaster
-     *            Status data of the master to send back
+     *         Status data of the master to send back
      */
     public GetMasterStatusResponse(final GetMasterStatusRequest p_request, final StatusMaster p_statusMaster) {
         super(p_request, MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_RESPONSE);
@@ -50,6 +51,7 @@ public class GetMasterStatusResponse extends AbstractResponse {
 
     /**
      * Current status of the master.
+     *
      * @return Status of the master.
      */
     public StatusMaster getStatusMaster() {
@@ -57,21 +59,17 @@ public class GetMasterStatusResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_statusMaster != null) {
-            exporter.exportObject(m_statusMaster);
+            p_exporter.exportObject(m_statusMaster);
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
-
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
         if (getStatusCode() == 0) {
             m_statusMaster = new StatusMaster();
-            importer.importObject(m_statusMaster);
+            p_importer.importObject(m_statusMaster);
         }
     }
 

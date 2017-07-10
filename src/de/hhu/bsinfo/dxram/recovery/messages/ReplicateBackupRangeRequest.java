@@ -13,14 +13,11 @@
 
 package de.hhu.bsinfo.dxram.recovery.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.backup.RangeID;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
-import de.hhu.bsinfo.utils.NodeID;
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 
 /**
  * Replicate Backup Range Message
@@ -47,9 +44,9 @@ public class ReplicateBackupRangeRequest extends AbstractRequest {
      * Creates an instance of RecoverBackupRangeRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_rangeID
-     *      the range ID
+     *         the range ID
      */
     public ReplicateBackupRangeRequest(final short p_destination, final short p_rangeID) {
         super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST);
@@ -75,13 +72,13 @@ public class ReplicateBackupRangeRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_rangeID);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_rangeID);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_rangeID = p_buffer.getShort();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_rangeID = p_importer.readShort();
     }
 
 }

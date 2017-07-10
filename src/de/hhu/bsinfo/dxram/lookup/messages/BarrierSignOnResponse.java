@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -38,9 +38,9 @@ public class BarrierSignOnResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *     the request to respond to.
+     *         the request to respond to.
      * @param p_status
-     *     Status code of the sign on
+     *         Status code of the sign on
      */
     public BarrierSignOnResponse(final BarrierSignOnRequest p_request, final byte p_status) {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_RESPONSE);
@@ -64,12 +64,12 @@ public class BarrierSignOnResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_barrierIdentifier);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_barrierIdentifier);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_barrierIdentifier = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_barrierIdentifier = p_importer.readInt();
     }
 }

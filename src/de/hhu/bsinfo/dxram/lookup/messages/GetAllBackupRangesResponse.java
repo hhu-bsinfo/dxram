@@ -13,11 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -45,9 +43,9 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
      * Creates an instance of GetBackupRangesResponse
      *
      * @param p_request
-     *     the corresponding GetBackupRangesRequest
+     *         the corresponding GetBackupRangesRequest
      * @param p_backupRanges
-     *     all backup ranges for requested NodeID
+     *         all backup ranges for requested NodeID
      */
     public GetAllBackupRangesResponse(final GetAllBackupRangesRequest p_request, final BackupRange[] p_backupRanges) {
         super(p_request, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE);
@@ -79,30 +77,27 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        final ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_backupRanges == null) {
-            p_buffer.putInt(0);
+            p_exporter.writeInt(0);
         } else {
-            p_buffer.putInt(m_backupRanges.length);
+            p_exporter.writeInt(m_backupRanges.length);
             for (BackupRange backupRange : m_backupRanges) {
-                exporter.exportObject(backupRange);
+                p_exporter.exportObject(backupRange);
             }
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        final ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
         int size;
 
-        size = p_buffer.getInt();
+        size = p_importer.readInt();
         if (size > 0) {
             m_backupRanges = new BackupRange[size];
             for (int i = 0; i < m_backupRanges.length; i++) {
                 m_backupRanges[i] = new BackupRange();
-                importer.importObject(m_backupRanges[i]);
+                p_importer.importObject(m_backupRanges[i]);
             }
         }
     }

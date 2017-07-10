@@ -13,11 +13,11 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Message to send signal codes from master to slave or vice versa
@@ -41,9 +41,9 @@ public class SignalMessage extends AbstractMessage {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_signal
-     *     signal to send
+     *         signal to send
      */
     public SignalMessage(final short p_destination, final Signal p_signal) {
         super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE);
@@ -61,13 +61,13 @@ public class SignalMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_signal.ordinal());
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_signal.ordinal());
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_signal = Signal.values()[p_buffer.getInt()];
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_signal = Signal.values()[p_importer.readInt()];
     }
 
     @Override

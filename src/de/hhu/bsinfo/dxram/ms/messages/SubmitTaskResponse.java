@@ -13,12 +13,13 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import java.nio.ByteBuffer;
-
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
  * Response by the remote master to the submitted task.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
 public class SubmitTaskResponse extends AbstractResponse {
@@ -36,12 +37,13 @@ public class SubmitTaskResponse extends AbstractResponse {
     /**
      * Creates an instance of SubmitTaskResponse.
      * This constructor is used when sending this message.
+     *
      * @param p_request
-     *            request to respond to.
+     *         request to respond to.
      * @param p_assignedComputeGroupId
-     *            The compute group this task was assigned to.
+     *         The compute group this task was assigned to.
      * @param p_assignedPayloadId
-     *            The payload id assigned by the master of the compute group.
+     *         The payload id assigned by the master of the compute group.
      */
     public SubmitTaskResponse(final SubmitTaskRequest p_request, final short p_assignedComputeGroupId, final int p_assignedPayloadId) {
         super(p_request, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_RESPONSE);
@@ -52,6 +54,7 @@ public class SubmitTaskResponse extends AbstractResponse {
 
     /**
      * Get the compute group id of the compute group the task was assigned to.
+     *
      * @return Compute group id.
      */
     public short getAssignedComputeGroupId() {
@@ -60,6 +63,7 @@ public class SubmitTaskResponse extends AbstractResponse {
 
     /**
      * Get the payload id that got assigned to the task by the master of the group.
+     *
      * @return Payload id.
      */
     public int getAssignedPayloadId() {
@@ -67,15 +71,15 @@ public class SubmitTaskResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_assignedComputeGroupId);
-        p_buffer.putInt(m_assignedPayloadId);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_assignedComputeGroupId);
+        p_exporter.writeInt(m_assignedPayloadId);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_assignedComputeGroupId = p_buffer.getShort();
-        m_assignedPayloadId = p_buffer.getInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_assignedComputeGroupId = p_importer.readShort();
+        m_assignedPayloadId = p_importer.readInt();
     }
 
     @Override

@@ -335,31 +335,6 @@ public abstract class AbstractMessage {
     }
 
     /**
-     * Get a ByteBuffer with the Message as content
-     *
-     * @return a ByteBuffer with the Message as content
-     * @throws NetworkException
-     *         if message buffer is too small
-     */
-    protected final ByteBuffer getBuffer(final boolean p_direct) throws NetworkException {
-        int payloadSize;
-        ByteBuffer buffer;
-
-        payloadSize = getPayloadLength();
-
-        if (p_direct) {
-            buffer = ByteBuffer.allocateDirect(HEADER_SIZE + payloadSize);
-        } else {
-            buffer = ByteBuffer.allocate(HEADER_SIZE + payloadSize);
-        }
-
-        buffer = fillBuffer(buffer, payloadSize);
-        buffer.flip();
-
-        return buffer;
-    }
-
-    /**
      * Serialize the message into given byte buffer
      *
      * @param p_buffer
@@ -369,40 +344,38 @@ public abstract class AbstractMessage {
      * @throws NetworkException
      *         if message could not be serialized
      */
-    protected final void serialize(final ByteBuffer p_buffer, final int p_messageSize) throws NetworkException {
-        fillBuffer(p_buffer, p_messageSize - HEADER_SIZE);
+    protected final void serialize(final byte[] p_buffer, final int p_offset, final int p_messageSize, final boolean p_hasOverflow) throws NetworkException {
+        fillBuffer(p_buffer, p_offset, p_messageSize - HEADER_SIZE, p_hasOverflow);
     }
 
     /**
      * Reads the message payload from the byte buffer
      *
-     * @param p_buffer
-     *         the byte buffer
+     * @param p_importer
+     *         the importer
      */
-    protected void readPayload(final ByteBuffer p_buffer) {
+    protected void readPayload(final AbstractMessageImporter p_importer) {
     }
 
     /**
      * Reads the message payload from the byte buffer; used for logging to copy directly into primary write buffer if possible
      *
-     * @param p_buffer
-     *         the byte buffer
-     * @param p_payloadSize
-     *         the payload size
+     * @param p_importer
+     *         the importer
      * @param p_wasCopied
      *         true, if message was copied in a new byte buffer
      */
-    protected void readPayload(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
-        readPayload(p_buffer);
+    protected void readPayload(final AbstractMessageImporter p_importer, final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
+        readPayload(p_importer);
     }
 
     /**
      * Writes the message payload into the buffer
      *
-     * @param p_buffer
+     * @param p_exporter
      *         the buffer
      */
-    protected void writePayload(final ByteBuffer p_buffer) {
+    protected void writePayload(final AbstractMessageExporter p_exporter) {
     }
 
     /**
@@ -430,11 +403,15 @@ public abstract class AbstractMessage {
      *         a given ByteBuffer
      * @param p_payloadSize
      *         the payload size
-     * @return filled ByteBuffer
      * @throws NetworkException
      *         if message buffer is too small
      */
-    private ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) throws NetworkException {
+    private void fillBuffer(final byte[] p_buffer, final int p_offset, final int p_payloadSize, final boolean p_hasOverflow) throws NetworkException {
+
+        AbstractMessageExporter exporter = ImExporterPool.getInstance().getExporter(p_hasOverflow);
+        exporter.setBuffer(p_buffer);
+        exporter.setPosition(p_offset);
+
         try {
             // Message reused (probably pooled)
             if (m_messageID == m_oldMessageID) {
@@ -442,31 +419,30 @@ public abstract class AbstractMessage {
             }
 
             // Put 3 byte message ID
-            p_buffer.put((byte) (m_messageID >>> 16));
-            p_buffer.put((byte) (m_messageID >>> 8));
-            p_buffer.put((byte) m_messageID);
+            exporter.writeByte((byte) (m_messageID >>> 16));
+            exporter.writeByte((byte) (m_messageID >>> 8));
+            exporter.writeByte((byte) m_messageID);
 
-            p_buffer.put(m_type);
-            p_buffer.put(m_subtype);
-            p_buffer.put((byte) ((m_messageType << 4) + (m_exclusivity ? 1 : 0)));
-            p_buffer.put(m_statusCode);
-            p_buffer.putInt(p_payloadSize);
+            exporter.writeByte(m_type);
+            exporter.writeByte(m_subtype);
+            exporter.writeByte((byte) ((m_messageType << 4) + (m_exclusivity ? 1 : 0)));
+            exporter.writeByte(m_statusCode);
+            exporter.writeInt(p_payloadSize);
 
-            writePayload(p_buffer);
+            writePayload(exporter);
         } catch (final BufferOverflowException e) {
             throw new NetworkException("Could not create message " + this + ", because message buffer is too small, payload size " + p_payloadSize, e);
         }
 
-        int pos = p_buffer.position();
-        int payloadSize = getPayloadLength() + HEADER_SIZE;
-        if (pos < payloadSize) {
+        int numberOfWrittenBytes = exporter.getNumberOfWrittenBytes();
+        int messageSize = p_payloadSize + HEADER_SIZE;
+        if (numberOfWrittenBytes < messageSize) {
             throw new NetworkException(
-                    "Did not create message " + this + ", because message contents are smaller than expected payload size: " + pos + " < " + payloadSize);
+                    "Did not create message " + this + ", because message contents are smaller than expected payload size: " + numberOfWrittenBytes + " < " +
+                            messageSize);
         }
 
         m_oldMessageID = m_messageID;
-
-        return p_buffer;
     }
 
 }

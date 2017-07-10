@@ -13,14 +13,15 @@
 
 package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Message broadcasted by one bfs peer to all other participating peers when
  * the current peer has finished his iteration.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 19.05.2016
  */
 public class BFSLevelFinishedMessage extends AbstractMessage {
@@ -39,8 +40,9 @@ public class BFSLevelFinishedMessage extends AbstractMessage {
 
     /**
      * Creates an instance of BFSLevelFinishedMessage
+     *
      * @param p_destination
-     *            the destination
+     *         the destination
      */
     public BFSLevelFinishedMessage(final short p_destination, final int p_token, final long p_sentMsgCount, final long p_receivedMsgCount) {
         super(p_destination, DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE);
@@ -63,17 +65,17 @@ public class BFSLevelFinishedMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putInt(m_token);
-        p_buffer.putLong(m_sentMsgCount);
-        p_buffer.putLong(m_receivedMsgCount);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_token);
+        p_exporter.writeLong(m_sentMsgCount);
+        p_exporter.writeLong(m_receivedMsgCount);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_token = p_buffer.getInt();
-        m_sentMsgCount = p_buffer.getLong();
-        m_receivedMsgCount = p_buffer.getLong();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_token = p_importer.readInt();
+        m_sentMsgCount = p_importer.readLong();
+        m_receivedMsgCount = p_importer.readLong();
     }
 
     @Override

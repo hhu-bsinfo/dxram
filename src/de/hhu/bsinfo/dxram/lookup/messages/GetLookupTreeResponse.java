@@ -13,10 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -44,9 +43,9 @@ public class GetLookupTreeResponse extends AbstractResponse {
      * Creates an instance of GetLookupTreeResponse
      *
      * @param p_request
-     *     the GetLookupTreeRequest
+     *         the GetLookupTreeRequest
      * @param p_trees
-     *     the CIDTrees
+     *         the CIDTrees
      */
     public GetLookupTreeResponse(final GetLookupTreeRequest p_request, final LookupTree p_trees) {
         super(p_request, LookupMessages.SUBTYPE_GET_LOOKUP_TREE_RESPONSE);
@@ -76,24 +75,20 @@ public class GetLookupTreeResponse extends AbstractResponse {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        final ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_tree == null) {
-            exporter.writeByte((byte) 0);
+            p_exporter.writeByte((byte) 0);
         } else {
-            exporter.writeByte((byte) 1);
-            exporter.exportObject(m_tree);
+            p_exporter.writeByte((byte) 1);
+            p_exporter.exportObject(m_tree);
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        final ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
-
-        if (importer.readByte() == 1) {
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        if (p_importer.readByte() == 1) {
             m_tree = new LookupTree();
-            importer.importObject(m_tree);
+            p_importer.importObject(m_tree);
         }
     }
 

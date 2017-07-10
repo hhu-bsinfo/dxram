@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -44,9 +44,9 @@ public class GetLookupRangeRequest extends AbstractRequest {
      * Creates an instance of LookupRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_chunkID
-     *     the ChunkID of the requested object
+     *         the ChunkID of the requested object
      */
     public GetLookupRangeRequest(final short p_destination, final long p_chunkID) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST);
@@ -74,13 +74,13 @@ public class GetLookupRangeRequest extends AbstractRequest {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putLong(m_chunkID);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeLong(m_chunkID);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        m_chunkID = p_buffer.getLong();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_chunkID = p_importer.readLong();
     }
 
 }

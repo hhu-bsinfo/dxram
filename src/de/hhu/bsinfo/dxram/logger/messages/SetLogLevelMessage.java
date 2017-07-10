@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.logger.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Set the log level of a remote node
@@ -38,9 +38,9 @@ public class SetLogLevelMessage extends AbstractMessage {
      * Creates an instance of UnlockRequest as a sender
      *
      * @param p_destination
-     *     the destination node ID.
+     *         the destination node ID.
      * @param p_logLevel
-     *     Log level to set on remote node
+     *         Log level to set on remote node
      */
     public SetLogLevelMessage(final short p_destination, final String p_logLevel) {
         super(p_destination, DXRAMMessageTypes.LOGGER_MESSAGES_TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE);
@@ -64,19 +64,13 @@ public class SetLogLevelMessage extends AbstractMessage {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        byte[] array = m_logLevel.getBytes();
-
-        p_buffer.putInt(array.length);
-        p_buffer.put(array);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeString(m_logLevel);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-
-        byte[] array = new byte[p_buffer.getInt()];
-        p_buffer.get(array);
-        m_logLevel = new String(array);
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_logLevel = p_importer.readString();
     }
 
 }

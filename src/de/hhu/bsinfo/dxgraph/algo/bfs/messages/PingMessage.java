@@ -30,8 +30,9 @@ public class PingMessage extends AbstractMessage {
 
     /**
      * Creates an instance of VerticesForNextFrontierRequest
+     *
      * @param p_destination
-     *            the destination
+     *         the destination
      */
     public PingMessage(final short p_destination) {
         super(p_destination, DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_PING_MESSAGE);

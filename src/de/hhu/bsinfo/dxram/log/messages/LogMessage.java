@@ -15,11 +15,12 @@ package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.backup.RangeID;
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.RangeID;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
 /**
  * Message for logging a Chunk on a remote node
@@ -52,11 +53,11 @@ public class LogMessage extends AbstractMessage {
      * Creates an instance of LogMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      * @param p_dataStructures
-     *     the data structures to store
+     *         the data structures to store
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      */
     public LogMessage(final short p_destination, final short p_rangeID, final DataStructure... p_dataStructures) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
@@ -93,22 +94,21 @@ public class LogMessage extends AbstractMessage {
 
     // Methods
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        p_buffer.putShort(m_rangeID);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeShort(m_rangeID);
 
-        p_buffer.putInt(m_dataStructures.length);
-        final ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
+        p_exporter.writeInt(m_dataStructures.length);
         for (DataStructure dataStructure : m_dataStructures) {
             final int size = dataStructure.sizeofObject();
 
-            p_buffer.putLong(dataStructure.getID());
-            p_buffer.putInt(size);
-            exporter.exportObject(dataStructure);
+            p_exporter.writeLong(dataStructure.getID());
+            p_exporter.writeInt(size);
+            p_exporter.exportObject(dataStructure);
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
+    protected final void readPayload(final AbstractMessageImporter p_importer, final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
         if (p_wasCopied) {
             // De-serialize later
             m_buffer = p_buffer;

@@ -13,10 +13,9 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.data.ChunkState;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
@@ -44,9 +43,9 @@ public class SuperpeerStorageGetAnonResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *     the corresponding GetRequest
+     *         the corresponding GetRequest
      * @param p_data
-     *     Data read from memory
+     *         Data read from memory
      */
     public SuperpeerStorageGetAnonResponse(final SuperpeerStorageGetAnonRequest p_request, final byte[] p_data) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_RESPONSE);
@@ -65,26 +64,24 @@ public class SuperpeerStorageGetAnonResponse extends AbstractResponse {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_data == null) {
             // indicate no data available
-            p_buffer.put((byte) 0);
+            p_exporter.writeByte((byte) 0);
         } else {
-            p_buffer.put((byte) 1);
-            p_buffer.putInt(m_data.length);
-            p_buffer.put(m_data);
+            p_exporter.writeByte((byte) 0);
+            p_exporter.writeByteArray(m_data);
         }
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
         // read the payload from the buffer and write it directly into
         // the data structure provided by the request to avoid further copying of data
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
         SuperpeerStorageGetAnonRequest request = (SuperpeerStorageGetAnonRequest) getCorrespondingRequest();
 
-        if (p_buffer.get() == 1) {
-            importer.importObject(request.getDataStructure());
+        if (p_importer.readByte() == 1) {
+            p_importer.importObject(request.getDataStructure());
             request.getDataStructure().setState(ChunkState.OK);
         } else {
             request.getDataStructure().setState(ChunkState.DOES_NOT_EXIST);

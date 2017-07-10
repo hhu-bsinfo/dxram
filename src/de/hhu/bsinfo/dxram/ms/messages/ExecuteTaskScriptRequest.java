@@ -13,12 +13,11 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.utils.serialization.ByteBufferImExporter;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.ms.TaskContextData;
 import de.hhu.bsinfo.dxram.ms.TaskScript;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 
 /**
@@ -45,11 +44,11 @@ public class ExecuteTaskScriptRequest extends AbstractRequest {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      * @param p_barrierIdentifier
-     *     Barrier identifier for synchronization after done executing.
+     *         Barrier identifier for synchronization after done executing.
      * @param p_script
-     *     TaskScript to execute.
+     *         TaskScript to execute.
      */
     public ExecuteTaskScriptRequest(final short p_destination, final int p_barrierIdentifier, final TaskContextData p_ctxData, final TaskScript p_script) {
         super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST);
@@ -86,23 +85,19 @@ public class ExecuteTaskScriptRequest extends AbstractRequest {
     }
 
     @Override
-    protected final void writePayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter exporter = new ByteBufferImExporter(p_buffer);
-
-        exporter.writeInt(m_barrierIdentifier);
-        exporter.exportObject(m_ctxData);
-        exporter.exportObject(m_script);
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeInt(m_barrierIdentifier);
+        p_exporter.exportObject(m_ctxData);
+        p_exporter.exportObject(m_script);
     }
 
     @Override
-    protected final void readPayload(final ByteBuffer p_buffer) {
-        ByteBufferImExporter importer = new ByteBufferImExporter(p_buffer);
-
-        m_barrierIdentifier = importer.readInt();
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_barrierIdentifier = p_importer.readInt();
         m_ctxData = new TaskContextData();
-        importer.importObject(m_ctxData);
+        p_importer.importObject(m_ctxData);
         m_script = new TaskScript();
-        importer.importObject(m_script);
+        p_importer.importObject(m_script);
     }
 
     @Override
