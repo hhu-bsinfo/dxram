@@ -14,7 +14,6 @@
 package de.hhu.bsinfo.dxgraph.load;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
@@ -22,14 +21,14 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.ms.Signal;
-import de.hhu.bsinfo.dxram.ms.Task;
-import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRoots;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRootsBinaryFile;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.ms.Signal;
+import de.hhu.bsinfo.dxram.ms.Task;
+import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -60,7 +59,7 @@ public class GraphLoadBFSRootListTask implements Task {
      * Constructor
      *
      * @param p_path
-     *     Path containing a root list to load
+     *         Path containing a root list to load
      */
     public GraphLoadBFSRootListTask(final String p_path) {
         m_path = p_path;
@@ -70,7 +69,7 @@ public class GraphLoadBFSRootListTask implements Task {
      * Set the path where one or multiple partition index files are stored.
      *
      * @param p_path
-     *     Path where the files are located
+     *         Path where the files are located
      */
     public void setLoadPath(final String p_path) {
         m_path = p_path;
@@ -94,7 +93,7 @@ public class GraphLoadBFSRootListTask implements Task {
 
             // look for the graph partitioned index of the current compute group
             long chunkIdPartitionIndex =
-                nameserviceService.getChunkID(GraphLoadPartitionIndexTask.MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId(), 5000);
+                    nameserviceService.getChunkID(GraphLoadPartitionIndexTask.MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId(), 5000);
             if (chunkIdPartitionIndex == ChunkID.INVALID_ID) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Could not find partition index for current compute group %d", p_ctx.getCtxData().getComputeGroupId());
@@ -151,7 +150,7 @@ public class GraphLoadBFSRootListTask implements Task {
 
             // #if LOGGER >= INFO
             LOGGER.info("Successfully loaded and stored root list, nameservice entry name %s:\n%s", MS_BFS_ROOTS + p_ctx.getCtxData().getComputeGroupId(),
-                rootList);
+                    rootList);
             // #endif /* LOGGER >= INFO */
         }
 
@@ -170,16 +169,12 @@ public class GraphLoadBFSRootListTask implements Task {
 
     @Override
     public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeInt(m_path.length());
-        p_exporter.writeBytes(m_path.getBytes(StandardCharsets.US_ASCII));
+        p_exporter.writeString(m_path);
     }
 
     @Override
     public void importObject(final Importer p_importer) {
-        int strLength = p_importer.readInt();
-        byte[] tmp = new byte[strLength];
-        p_importer.readBytes(tmp);
-        m_path = new String(tmp, StandardCharsets.US_ASCII);
+        m_path = p_importer.readString(m_path);
     }
 
     @Override
@@ -191,7 +186,7 @@ public class GraphLoadBFSRootListTask implements Task {
      * Setup a root node list instance.
      *
      * @param p_path
-     *     Path with the root list.
+     *         Path with the root list.
      * @return OrderedEdgeListRoots instance giving access to the list found for this slave or null on error.
      */
     private OrderedEdgeListRoots setupOrderedEdgeListRoots(final String p_path) {
@@ -251,9 +246,9 @@ public class GraphLoadBFSRootListTask implements Task {
      * Load the root list.
      *
      * @param p_orderedEdgeRootList
-     *     Root list to load.
+     *         Root list to load.
      * @param p_graphPartitionIndex
-     *     Index of all partitions to rebase vertex ids of all roots.
+     *         Index of all partitions to rebase vertex ids of all roots.
      * @return Root list instance on success, null on error.
      */
     private GraphRootList loadRootList(final OrderedEdgeListRoots p_orderedEdgeRootList, final GraphPartitionIndex p_graphPartitionIndex) {

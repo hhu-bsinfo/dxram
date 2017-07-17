@@ -18,6 +18,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
 import de.hhu.bsinfo.utils.ArrayListLong;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Remove Request
@@ -86,9 +87,9 @@ public class RemoveChunkIDsRequest extends AbstractRequest {
     protected final int getPayloadLength() {
 
         if (m_chunkIDsOut != null) {
-            return Integer.BYTES + Long.BYTES * m_chunkIDsOut.getSize() + Byte.BYTES;
+            return m_chunkIDsOut.sizeofObject() + Byte.BYTES;
         } else {
-            return Integer.BYTES + Long.BYTES * m_chunkIDs.length + Byte.BYTES;
+            return ObjectSizeUtil.sizeofLongArray(m_chunkIDs) + Byte.BYTES;
         }
     }
 
@@ -101,8 +102,8 @@ public class RemoveChunkIDsRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_chunkIDs = p_importer.readLongArray();
-        m_isBackup = p_importer.readBoolean();
+        m_chunkIDs = p_importer.readLongArray(m_chunkIDs);
+        m_isBackup = p_importer.readBoolean(m_isBackup);
     }
 
 }

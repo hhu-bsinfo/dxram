@@ -19,6 +19,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Basic vertex object that can be extended with further data if desired.
@@ -43,7 +44,7 @@ public class Vertex extends DataStructure {
      * Constructor
      *
      * @param p_id
-     *     Chunk id to assign.
+     *         Chunk id to assign.
      */
     public Vertex(final long p_id) {
         super(p_id);
@@ -67,7 +68,7 @@ public class Vertex extends DataStructure {
      * neighbor vertices.
      *
      * @param p_edgeObjects
-     *     True if refering to edge objects, false to vertex objects.
+     *         True if refering to edge objects, false to vertex objects.
      */
     public void setNeighborsAreEdgeObjects(final boolean p_edgeObjects) {
         m_neighborsAreEdgeObjects = p_edgeObjects;
@@ -86,7 +87,7 @@ public class Vertex extends DataStructure {
      * Set this vertex locked.
      *
      * @param p_locked
-     *     True for locked, false unlocked.
+     *         True for locked, false unlocked.
      */
     public void setLocked(boolean p_locked) {
         m_locked = p_locked;
@@ -98,7 +99,7 @@ public class Vertex extends DataStructure {
      * add the new neighbour at the end.
      *
      * @param p_neighbour
-     *     Neighbour vertex Id to add.
+     *         Neighbour vertex Id to add.
      */
     public void addNeighbour(final long p_neighbour) {
         setNeighbourCount(m_neighborIDs.length + 1);
@@ -127,7 +128,7 @@ public class Vertex extends DataStructure {
      * Resize the neighbour array.
      *
      * @param p_count
-     *     Number of neighbours to resize to.
+     *         Number of neighbours to resize to.
      */
     public void setNeighbourCount(final int p_count) {
         if (p_count != m_neighborIDs.length) {
@@ -139,13 +140,22 @@ public class Vertex extends DataStructure {
     // -----------------------------------------------------------------------------
 
     @Override
+    public void exportObject(final Exporter p_exporter) {
+        p_exporter.writeLongArray(m_neighborIDs);
+
+        byte flags = 0;
+        flags |= m_neighborsAreEdgeObjects ? 1 : 0;
+        flags |= m_locked ? 1 << 1 : 0;
+        p_exporter.writeByte(flags);
+    }
+
+    @Override
     public void importObject(final Importer p_importer) {
-        byte flags = p_importer.readByte();
+        m_neighborIDs = p_importer.readLongArray(m_neighborIDs);
+
+        byte flags = p_importer.readByte((byte) 0);
         m_neighborsAreEdgeObjects = (flags & 1 << 1) > 0;
         m_locked = (flags & 1 << 2) > 0;
-
-        m_neighborIDs = new long[p_importer.readInt()];
-        p_importer.readLongs(m_neighborIDs);
     }
 
     @Override
@@ -153,26 +163,13 @@ public class Vertex extends DataStructure {
         int size = 0;
 
         size += Byte.BYTES;
-        size += m_neighborIDs.length * Long.BYTES;
+        size += ObjectSizeUtil.sizeofLongArray(m_neighborIDs);
         return size;
-    }
-
-    @Override
-    public void exportObject(final Exporter p_exporter) {
-
-        byte flags = 0;
-        flags |= m_neighborsAreEdgeObjects ? 1 : 0;
-        flags |= m_locked ? 1 << 1 : 0;
-
-        p_exporter.writeByte(flags);
-
-        p_exporter.writeInt(m_neighborIDs.length);
-        p_exporter.writeLongs(m_neighborIDs, 0, m_neighborIDs.length);
     }
 
     @Override
     public String toString() {
         return "Vertex[m_id " + Long.toHexString(getID()) + ", m_neighborsAreEdgeObjects " + m_neighborsAreEdgeObjects + ", m_locked " + m_locked +
-            ", m_neighborsCount " + m_neighborIDs.length + "]: ";
+                ", m_neighborsCount " + m_neighborIDs.length + "]: ";
     }
 }

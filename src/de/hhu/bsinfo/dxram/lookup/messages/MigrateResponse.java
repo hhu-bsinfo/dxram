@@ -76,7 +76,7 @@ public class MigrateResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_success = p_importer.readBoolean();
+        m_success = p_importer.readBoolean(m_success);
     }
 
 }

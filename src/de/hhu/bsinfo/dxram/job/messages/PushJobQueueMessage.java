@@ -82,8 +82,11 @@ public class PushJobQueueMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_callbackJobEventBitMask = p_importer.readByte();
-        m_job = AbstractJob.createInstance(p_importer.readShort());
+        m_callbackJobEventBitMask = p_importer.readByte(m_callbackJobEventBitMask);
+        short type = p_importer.readByte((byte) 0);
+        if (m_job == null) {
+            m_job = AbstractJob.createInstance(type);
+        }
         p_importer.importObject(m_job);
     }
 

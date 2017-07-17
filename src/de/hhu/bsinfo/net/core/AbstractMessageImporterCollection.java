@@ -13,35 +13,21 @@
 
 package de.hhu.bsinfo.net.core;
 
-import de.hhu.bsinfo.utils.serialization.Importer;
-
 /**
  * Implementation of an Importer/Exporter for ByteBuffers.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public abstract class AbstractMessageImporter implements Importer {
+public abstract class AbstractMessageImporterCollection {
 
     /**
      * Constructor
      */
-    protected AbstractMessageImporter() {
+    protected AbstractMessageImporterCollection() {
     }
 
-    protected abstract int getPosition();
+    protected abstract AbstractMessageImporter getImporter(boolean p_hasOverflow);
 
-    public abstract int getNumberOfReadBytes();
-
-    public abstract byte[] getLeftover();
-
-    public abstract byte[] getCompactedNumber();
-
-    protected abstract void setBuffer(byte[] p_buffer, int p_position, int p_limit);
-
-    public abstract void setNumberOfReadBytes(int p_numberOfReadBytes);
-
-    public abstract void setLeftover(byte[] p_leftover);
-
-    public abstract void setCompactedNumber(byte[] p_compactedNumber);
+    protected abstract void returnImporter(AbstractMessageImporter p_importer, boolean p_finished);
 
 }

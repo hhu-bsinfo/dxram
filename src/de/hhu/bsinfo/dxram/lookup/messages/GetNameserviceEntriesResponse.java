@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Response to a GetMappingCountRequest
@@ -62,7 +63,7 @@ public class GetNameserviceEntriesResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + m_entries.length;
+        return ObjectSizeUtil.sizeofByteArray(m_entries);
     }
 
     // Methods
@@ -73,7 +74,7 @@ public class GetNameserviceEntriesResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_entries = p_importer.readByteArray();
+        m_entries = p_importer.readByteArray(m_entries);
     }
 
 }

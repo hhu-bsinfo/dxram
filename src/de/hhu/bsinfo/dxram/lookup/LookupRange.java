@@ -47,11 +47,11 @@ public final class LookupRange implements Importable, Exportable {
      * Creates an instance of LookupRange
      *
      * @param p_primaryPeer
-     *     the primary peer
+     *         the primary peer
      * @param p_range
-     *     the range's beginning and ending
+     *         the range's beginning and ending
      * @param p_lookupState
-     *     the state
+     *         the state
      */
     public LookupRange(final short p_primaryPeer, final long[] p_range, final LookupState p_lookupState) {
         super();
@@ -65,7 +65,7 @@ public final class LookupRange implements Importable, Exportable {
      * Creates an instance of LookupRange
      *
      * @param p_lookupState
-     *     the state
+     *         the state
      */
     public LookupRange(final LookupState p_lookupState) {
         super();
@@ -86,7 +86,7 @@ public final class LookupRange implements Importable, Exportable {
      * Set primary peer
      *
      * @param p_primaryPeer
-     *     the primary peer
+     *         the primary peer
      */
     public void setPrimaryPeer(final short p_primaryPeer) {
         m_primaryPeer = p_primaryPeer;
@@ -103,8 +103,9 @@ public final class LookupRange implements Importable, Exportable {
 
     /**
      * Set the state
+     *
      * @param p_state
-     *      the status
+     *         the status
      */
     public void setState(final LookupState p_state) {
         m_state = p_state;
@@ -112,6 +113,7 @@ public final class LookupRange implements Importable, Exportable {
 
     /**
      * Get the state of lookup operation
+     *
      * @return OK, DOES_NOT_EXIST, DATA_TEMPORARY_UNAVAILABLE or DATA_LOST
      */
     public LookupState getState() {
@@ -122,16 +124,24 @@ public final class LookupRange implements Importable, Exportable {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_primaryPeer = p_importer.readShort();
-        m_range = new long[] {p_importer.readLong(), p_importer.readLong()};
-        switch (p_importer.readByte()) {
-            case 0:  m_state = LookupState.OK;
+        m_primaryPeer = p_importer.readShort(m_primaryPeer);
+        if (m_range == null) {
+            m_range = new long[2];
+        }
+        m_range[0] = p_importer.readLong(m_range[0]);
+        m_range[1] = p_importer.readLong(m_range[1]);
+        switch (p_importer.readByte((byte) 0) /* last byte cannot be skipped */) {
+            case 0:
+                m_state = LookupState.OK;
                 break;
-            case 1:  m_state = LookupState.DOES_NOT_EXIST;
+            case 1:
+                m_state = LookupState.DOES_NOT_EXIST;
                 break;
-            case 2:  m_state = LookupState.DATA_TEMPORARY_UNAVAILABLE;
+            case 2:
+                m_state = LookupState.DATA_TEMPORARY_UNAVAILABLE;
                 break;
-            case 3:  m_state = LookupState.DATA_LOST;
+            case 3:
+                m_state = LookupState.DATA_LOST;
                 break;
             default:
                 break;
@@ -144,13 +154,17 @@ public final class LookupRange implements Importable, Exportable {
         p_exporter.writeLong(getStartID());
         p_exporter.writeLong(getEndID());
         switch (m_state) {
-            case OK:  p_exporter.writeByte((byte) 0);
+            case OK:
+                p_exporter.writeByte((byte) 0);
                 break;
-            case DOES_NOT_EXIST:  p_exporter.writeByte((byte) 1);
+            case DOES_NOT_EXIST:
+                p_exporter.writeByte((byte) 1);
                 break;
-            case DATA_TEMPORARY_UNAVAILABLE:  p_exporter.writeByte((byte) 2);
+            case DATA_TEMPORARY_UNAVAILABLE:
+                p_exporter.writeByte((byte) 2);
                 break;
-            case DATA_LOST:  p_exporter.writeByte((byte) 3);
+            case DATA_LOST:
+                p_exporter.writeByte((byte) 3);
                 break;
             default:
                 break;

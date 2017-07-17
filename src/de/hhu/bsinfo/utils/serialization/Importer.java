@@ -43,7 +43,7 @@ public interface Importer {
      *
      * @return Boolean read.
      */
-    boolean readBoolean();
+    boolean readBoolean(boolean p_bool);
 
     /**
      * Read a single byte from the target.
@@ -52,7 +52,7 @@ public interface Importer {
      *
      * @return Byte read.
      */
-    byte readByte();
+    byte readByte(byte p_byte);
 
     /**
      * Read a short from the target.
@@ -61,7 +61,7 @@ public interface Importer {
      *
      * @return Value read.
      */
-    short readShort();
+    short readShort(short p_short);
 
     /**
      * Read an int from the target.
@@ -70,7 +70,7 @@ public interface Importer {
      *
      * @return Value read.
      */
-    int readInt();
+    int readInt(int p_int);
 
     /**
      * Read a long from the target.
@@ -79,7 +79,7 @@ public interface Importer {
      *
      * @return Value read.
      */
-    long readLong();
+    long readLong(long p_long);
 
     /**
      * Read a float from the target.
@@ -88,7 +88,7 @@ public interface Importer {
      *
      * @return Value read.
      */
-    float readFloat();
+    float readFloat(float p_float);
 
     /**
      * Read a double from the target.
@@ -97,7 +97,16 @@ public interface Importer {
      *
      * @return Value read.
      */
-    double readDouble();
+    double readDouble(double p_double);
+
+    /**
+     * Read a compact number from the target. A compact number might be 1, 2, 3 or 4 bytes.
+     * Use this call in your importable object in the
+     * import call to read data from the target.
+     *
+     * @return Value read.
+     */
+    int readCompactNumber(int p_int);
 
     /**
      * Read a String from the target.
@@ -106,7 +115,7 @@ public interface Importer {
      *
      * @return String read.
      */
-    String readString();
+    String readString(String p_string);
 
     /**
      * Read data into a byte array from target.
@@ -219,7 +228,7 @@ public interface Importer {
      *
      * @return New array with data read.
      */
-    byte[] readByteArray();
+    byte[] readByteArray(byte[] p_array);
 
     /**
      * Read a short array from the target.
@@ -228,7 +237,7 @@ public interface Importer {
      *
      * @return New array with data read.
      */
-    short[] readShortArray();
+    short[] readShortArray(short[] p_array);
 
     /**
      * Read an int array from the target.
@@ -237,7 +246,7 @@ public interface Importer {
      *
      * @return New array with data read.
      */
-    int[] readIntArray();
+    int[] readIntArray(int[] p_array);
 
     /**
      * Read a long array from the target.
@@ -246,7 +255,7 @@ public interface Importer {
      *
      * @return New array with data read.
      */
-    long[] readLongArray();
+    long[] readLongArray(long[] p_array);
 
     /**
      * Read a string array from the target.
@@ -255,5 +264,6 @@ public interface Importer {
      *
      * @return New array with data read.
      */
-    String[] readStringArray();
+    String[] readStringArray(String[] p_array);
+
 }

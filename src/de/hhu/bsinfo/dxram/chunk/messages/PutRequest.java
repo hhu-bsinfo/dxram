@@ -15,11 +15,11 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Request for updating a Chunk on a remote node
@@ -31,6 +31,8 @@ public class PutRequest extends AbstractRequest {
 
     // DataStructures used when sending the put request.
     private DataStructure[] m_dataStructures;
+
+    private byte m_lockCode;
 
     // Variables used when receiving the request
     private long[] m_chunkIDs;
@@ -58,23 +60,19 @@ public class PutRequest extends AbstractRequest {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_REQUEST);
 
         m_dataStructures = p_dataStructures;
-
-        byte tmpCode = getStatusCode();
         switch (p_unlockOperation) {
             case NO_LOCK_OPERATION:
+                m_lockCode = 0;
                 break;
             case READ_LOCK:
-                ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
+                m_lockCode = 1;
                 break;
             case WRITE_LOCK:
-                ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
+                m_lockCode = 2;
                 break;
             default:
-                assert false;
                 break;
         }
-
-        setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));
     }
 
     /**
@@ -101,22 +99,21 @@ public class PutRequest extends AbstractRequest {
      * @return Unlock operation.
      */
     public ChunkLockOperation getUnlockOperation() {
-        if (ChunkMessagesMetadataUtils.isLockAcquireFlagSet(getStatusCode())) {
-            if (ChunkMessagesMetadataUtils.isReadLockFlagSet(getStatusCode())) {
-                return ChunkLockOperation.READ_LOCK;
-            } else {
-                return ChunkLockOperation.WRITE_LOCK;
-            }
-        } else {
+        if (m_lockCode == 0) {
             return ChunkLockOperation.NO_LOCK_OPERATION;
+        } else if (m_lockCode == 1) {
+            return ChunkLockOperation.READ_LOCK;
+        } else {
+            return ChunkLockOperation.WRITE_LOCK;
         }
     }
 
     @Override
     protected final int getPayloadLength() {
-        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+        int size = Byte.BYTES;
 
         if (m_dataStructures != null) {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_dataStructures.length);
             size += m_dataStructures.length * Long.BYTES;
             size += m_dataStructures.length * Integer.BYTES;
 
@@ -124,11 +121,12 @@ public class PutRequest extends AbstractRequest {
                 size += dataStructure.sizeofObject();
             }
         } else {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length);
             size += m_chunkIDs.length * Long.BYTES;
             size += m_chunkIDs.length * Integer.BYTES;
 
-            for (byte[] byteArray : m_data) {
-                size += byteArray.length;
+            for (int i = 0; i < m_data.length; i++) {
+                size += ObjectSizeUtil.sizeofByteArray(m_data[i]);
             }
         }
 
@@ -138,8 +136,9 @@ public class PutRequest extends AbstractRequest {
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_dataStructures.length);
+        p_exporter.writeByte(m_lockCode);
 
+        p_exporter.writeCompactNumber(m_dataStructures.length);
         for (DataStructure dataStructure : m_dataStructures) {
             int size = dataStructure.sizeofObject();
 
@@ -151,14 +150,18 @@ public class PutRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
+        m_lockCode = p_importer.readByte(m_lockCode);
 
-        m_chunkIDs = new long[numChunks];
-        m_data = new byte[numChunks][];
+        int length = p_importer.readCompactNumber(0);
+        if (m_chunkIDs == null) {
+            // Do not overwrite existing arrays
+            m_chunkIDs = new long[length];
+            m_data = new byte[length][];
+        }
 
-        for (int i = 0; i < numChunks; i++) {
-            m_chunkIDs[i] = p_importer.readLong();
-            m_data[i] = p_importer.readByteArray();
+        for (int i = 0; i < m_chunkIDs.length; i++) {
+            m_chunkIDs[i] = p_importer.readLong(m_chunkIDs[i]);
+            m_data[i] = p_importer.readByteArray(m_data[i]);
         }
     }
 }

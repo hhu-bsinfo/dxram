@@ -18,6 +18,7 @@ import java.util.Arrays;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * List of root vertex ids used as entry points for various graph algorithms.
@@ -37,7 +38,7 @@ public class GraphRootList extends DataStructure {
      * Constructor
      *
      * @param p_id
-     *     Chunk id to assign.
+     *         Chunk id to assign.
      */
     public GraphRootList(final long p_id) {
         super(p_id);
@@ -47,9 +48,9 @@ public class GraphRootList extends DataStructure {
      * Constructor
      *
      * @param p_id
-     *     Chunk id to assign.
+     *         Chunk id to assign.
      * @param p_roots
-     *     Initial root list to assign,
+     *         Initial root list to assign,
      */
     public GraphRootList(final long p_id, final long[] p_roots) {
         super(p_id);
@@ -61,9 +62,9 @@ public class GraphRootList extends DataStructure {
      * Constructor
      *
      * @param p_id
-     *     Chunk id to assign.
+     *         Chunk id to assign.
      * @param p_numRoots
-     *     Pre-allocate space for a number of roots.
+     *         Pre-allocate space for a number of roots.
      */
     public GraphRootList(final long p_id, final int p_numRoots) {
         super(p_id);
@@ -84,7 +85,7 @@ public class GraphRootList extends DataStructure {
      * Resize the static allocated root list.
      *
      * @param p_count
-     *     Number of roots to resize the list to.
+     *         Number of roots to resize the list to.
      */
     public void setRootCount(final int p_count) {
         if (p_count != m_roots.length) {
@@ -96,24 +97,18 @@ public class GraphRootList extends DataStructure {
     // -----------------------------------------------------------------------------
 
     @Override
-    public void importObject(final Importer p_importer) {
-        int numRoots;
+    public void exportObject(final Exporter p_exporter) {
+        p_exporter.writeLongArray(m_roots);
+    }
 
-        numRoots = p_importer.readInt();
-        m_roots = new long[numRoots];
-        p_importer.readLongs(m_roots);
+    @Override
+    public void importObject(final Importer p_importer) {
+        m_roots = p_importer.readLongArray(m_roots);
     }
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES + Long.BYTES * m_roots.length;
-    }
-
-    @Override
-    public void exportObject(final Exporter p_exporter) {
-
-        p_exporter.writeInt(m_roots.length);
-        p_exporter.writeLongs(m_roots);
+        return ObjectSizeUtil.sizeofLongArray(m_roots);
     }
 
     @Override

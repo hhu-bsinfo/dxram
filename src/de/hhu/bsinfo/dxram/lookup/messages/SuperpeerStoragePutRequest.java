@@ -14,7 +14,6 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
@@ -37,6 +36,8 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
     private DSByteArray m_chunk;
 
     private boolean m_isReplicate;
+
+    private long m_chunkID; // Used for serialization, only
 
     /**
      * Creates an instance of SuperpeerStoragePutRequest.
@@ -83,7 +84,7 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 
     @Override
     protected final int getPayloadLength() {
-        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+        int size = 0;
 
         if (m_dataStructure != null) {
             size += Long.BYTES + Integer.BYTES + m_dataStructure.sizeofObject() + Byte.BYTES;
@@ -107,8 +108,12 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_chunk = new DSByteArray(p_importer.readLong(), p_importer.readInt());
+        m_chunkID = p_importer.readLong(m_chunkID);
+        int size = p_importer.readInt(0);
+        if (m_chunk == null) {
+            m_chunk = new DSByteArray(m_chunkID, size);
+        }
         p_importer.importObject(m_chunk);
-        m_isReplicate = p_importer.readBoolean();
+        m_isReplicate = p_importer.readBoolean(m_isReplicate);
     }
 }

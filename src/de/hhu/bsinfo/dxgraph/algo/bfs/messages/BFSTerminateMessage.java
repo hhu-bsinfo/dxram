@@ -78,8 +78,8 @@ public class BFSTerminateMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_frontierNextVerices = p_importer.readLong();
-        m_frontierNextEdges = p_importer.readLong();
+        m_frontierNextVerices = p_importer.readLong(m_frontierNextVerices);
+        m_frontierNextEdges = p_importer.readLong(m_frontierNextEdges);
     }
 
     @Override

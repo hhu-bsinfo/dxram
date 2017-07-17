@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Notify remote listeners that execution of a submitted task has finished.
@@ -79,12 +80,12 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_taskPayloadId = p_importer.readInt();
-        m_executionReturnCodes = p_importer.readIntArray();
+        m_taskPayloadId = p_importer.readInt(m_taskPayloadId);
+        m_executionReturnCodes = p_importer.readIntArray(m_executionReturnCodes);
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + Integer.BYTES + Integer.BYTES * m_executionReturnCodes.length;
+        return Integer.BYTES + ObjectSizeUtil.sizeofIntArray(m_executionReturnCodes);
     }
 }

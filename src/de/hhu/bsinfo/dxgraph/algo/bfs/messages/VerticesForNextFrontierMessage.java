@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Message to send non local vertices for BFS to the node owning them for processing.
@@ -161,31 +162,21 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         p_exporter.writeInt(m_numOfVertices);
-        for (int i = 0; i < m_numOfVertices; i++) {
-            p_exporter.writeLong(m_vertexIDs[i]);
-        }
+        p_exporter.writeLongArray(m_vertexIDs);
         p_exporter.writeInt(m_numOfNeighbors);
-        for (int i = 0; i < m_numOfNeighbors; i++) {
-            p_exporter.writeLong(m_neighborIDs[i]);
-        }
+        p_exporter.writeLongArray(m_neighborIDs);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_numOfVertices = p_importer.readInt();
-        m_vertexIDs = new long[m_numOfVertices];
-        for (int i = 0; i < m_numOfVertices; i++) {
-            m_vertexIDs[i] = p_importer.readLong();
-        }
-        m_numOfNeighbors = p_importer.readInt();
-        m_neighborIDs = new long[m_numOfNeighbors];
-        for (int i = 0; i < m_numOfNeighbors; i++) {
-            m_neighborIDs[i] = p_importer.readLong();
-        }
+        m_numOfVertices = p_importer.readInt(m_numOfVertices);
+        m_vertexIDs = p_importer.readLongArray(m_vertexIDs);
+        m_numOfNeighbors = p_importer.readInt(m_numOfNeighbors);
+        m_neighborIDs = p_importer.readLongArray(m_neighborIDs);
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + m_numOfVertices * Long.BYTES + Integer.BYTES + m_numOfNeighbors * Long.BYTES;
+        return Integer.BYTES + ObjectSizeUtil.sizeofLongArray(m_vertexIDs) + Integer.BYTES + ObjectSizeUtil.sizeofLongArray(m_neighborIDs);
     }
 }

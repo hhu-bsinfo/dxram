@@ -357,14 +357,14 @@ public class GraphAlgorithmBFSTask implements Task {
 
     @Override
     public void importObject(Importer p_importer) {
-        m_bfsRootNameserviceEntry = p_importer.readString();
-        m_vertexBatchSize = p_importer.readInt();
-        m_vertexMessageBatchSize = p_importer.readInt();
-        m_numberOfThreadsPerNode = p_importer.readInt();
-        m_markVertices = p_importer.readBoolean();
-        m_beamerMode = p_importer.readBoolean();
-        m_beamerFormulaGraphEdgeDeg = p_importer.readInt();
-        m_abortBFSOnError = p_importer.readBoolean();
+        m_bfsRootNameserviceEntry = p_importer.readString(m_bfsRootNameserviceEntry);
+        m_vertexBatchSize = p_importer.readInt(m_vertexBatchSize);
+        m_vertexMessageBatchSize = p_importer.readInt(m_vertexMessageBatchSize);
+        m_numberOfThreadsPerNode = p_importer.readInt(m_numberOfThreadsPerNode);
+        m_markVertices = p_importer.readBoolean(m_markVertices);
+        m_beamerMode = p_importer.readBoolean(m_beamerMode);
+        m_beamerFormulaGraphEdgeDeg = p_importer.readInt(m_beamerFormulaGraphEdgeDeg);
+        m_abortBFSOnError = p_importer.readBoolean(m_abortBFSOnError);
     }
 
     /**

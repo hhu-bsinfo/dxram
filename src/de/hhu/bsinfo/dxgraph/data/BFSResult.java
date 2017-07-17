@@ -47,21 +47,21 @@ public class BFSResult extends DataStructure {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_rootVertexId = p_importer.readLong();
-        m_graphFullSizeVertices = p_importer.readLong();
-        m_graphFullSizeEdges = p_importer.readLong();
-        m_graphPartitionSizeVertices = p_importer.readLong();
-        m_graphPartitionSizeEdges = p_importer.readLong();
-        m_totalVisitedVertices = p_importer.readLong();
-        m_totalVisitedEdges = p_importer.readLong();
-        m_totalVerticesTraversed = p_importer.readLong();
-        m_totalEdgesTraversed = p_importer.readLong();
-        m_maxTraversedVertsPerSecond = p_importer.readLong();
-        m_maxTraversedEdgesPerSecond = p_importer.readLong();
-        m_avgTraversedVertsPerSecond = p_importer.readLong();
-        m_avgTraversedEdgesPerSecond = p_importer.readLong();
-        m_totalTimeMs = p_importer.readLong();
-        m_totalBFSDepth = p_importer.readInt();
+        m_rootVertexId = p_importer.readLong(m_rootVertexId);
+        m_graphFullSizeVertices = p_importer.readLong(m_graphFullSizeVertices);
+        m_graphFullSizeEdges = p_importer.readLong(m_graphFullSizeEdges);
+        m_graphPartitionSizeVertices = p_importer.readLong(m_graphPartitionSizeVertices);
+        m_graphPartitionSizeEdges = p_importer.readLong(m_graphPartitionSizeEdges);
+        m_totalVisitedVertices = p_importer.readLong(m_totalVisitedVertices);
+        m_totalVisitedEdges = p_importer.readLong(m_totalVisitedEdges);
+        m_totalVerticesTraversed = p_importer.readLong(m_totalVerticesTraversed);
+        m_totalEdgesTraversed = p_importer.readLong(m_totalEdgesTraversed);
+        m_maxTraversedVertsPerSecond = p_importer.readLong(m_maxTraversedVertsPerSecond);
+        m_maxTraversedEdgesPerSecond = p_importer.readLong(m_maxTraversedEdgesPerSecond);
+        m_avgTraversedVertsPerSecond = p_importer.readLong(m_avgTraversedVertsPerSecond);
+        m_avgTraversedEdgesPerSecond = p_importer.readLong(m_avgTraversedEdgesPerSecond);
+        m_totalTimeMs = p_importer.readLong(m_totalTimeMs);
+        m_totalBFSDepth = p_importer.readInt(m_totalBFSDepth);
     }
 
     @Override
@@ -91,12 +91,12 @@ public class BFSResult extends DataStructure {
     @Override
     public String toString() {
         return "BFSResult " + ChunkID.toHexString(getID()) + ":\n" + "m_rootVertexId " + ChunkID.toHexString(m_rootVertexId) + '\n' +
-            "m_graphFullSizeVertices " + m_graphFullSizeVertices + '\n' + "m_graphFullSizeEdges " + m_graphFullSizeEdges + '\n' +
-            "m_graphPartitionSizeVertices " + m_graphPartitionSizeVertices + '\n' + "m_graphPartitionSizeEdges " + m_graphPartitionSizeEdges + '\n' +
-            "m_totalVisitedVertices " + m_totalVisitedVertices + '\n' + "m_totalVisitedEdges " + m_totalVisitedEdges + '\n' + "m_totalVerticesTraversed " +
-            m_totalVerticesTraversed + '\n' + "m_totalEdgesTraversed " + m_totalEdgesTraversed + '\n' + "m_maxTraversedVertsPerSecond " +
-            m_maxTraversedVertsPerSecond + '\n' + "m_maxTraversedEdgesPerSecond " + m_maxTraversedEdgesPerSecond + '\n' + "m_avgTraversedVertsPerSecond " +
-            m_avgTraversedVertsPerSecond + '\n' + "m_avgTraversedEdgesPerSecond " + m_avgTraversedEdgesPerSecond + '\n' + "m_totalTimeMs " + m_totalTimeMs +
-            '\n' + "m_totalBFSDepth " + m_totalBFSDepth;
+                "m_graphFullSizeVertices " + m_graphFullSizeVertices + '\n' + "m_graphFullSizeEdges " + m_graphFullSizeEdges + '\n' +
+                "m_graphPartitionSizeVertices " + m_graphPartitionSizeVertices + '\n' + "m_graphPartitionSizeEdges " + m_graphPartitionSizeEdges + '\n' +
+                "m_totalVisitedVertices " + m_totalVisitedVertices + '\n' + "m_totalVisitedEdges " + m_totalVisitedEdges + '\n' + "m_totalVerticesTraversed " +
+                m_totalVerticesTraversed + '\n' + "m_totalEdgesTraversed " + m_totalEdgesTraversed + '\n' + "m_maxTraversedVertsPerSecond " +
+                m_maxTraversedVertsPerSecond + '\n' + "m_maxTraversedEdgesPerSecond " + m_maxTraversedEdgesPerSecond + '\n' + "m_avgTraversedVertsPerSecond " +
+                m_avgTraversedVertsPerSecond + '\n' + "m_avgTraversedEdgesPerSecond " + m_avgTraversedEdgesPerSecond + '\n' + "m_totalTimeMs " + m_totalTimeMs +
+                '\n' + "m_totalBFSDepth " + m_totalBFSDepth;
     }
 }

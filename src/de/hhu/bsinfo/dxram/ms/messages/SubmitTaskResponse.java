@@ -25,6 +25,7 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
 public class SubmitTaskResponse extends AbstractResponse {
     private short m_assignedComputeGroupId;
     private int m_assignedPayloadId;
+    private byte m_status;
 
     /**
      * Creates an instance of SubmitTaskResponse.
@@ -45,11 +46,11 @@ public class SubmitTaskResponse extends AbstractResponse {
      * @param p_assignedPayloadId
      *         The payload id assigned by the master of the compute group.
      */
-    public SubmitTaskResponse(final SubmitTaskRequest p_request, final short p_assignedComputeGroupId, final int p_assignedPayloadId) {
+    public SubmitTaskResponse(final SubmitTaskRequest p_request, final short p_assignedComputeGroupId, final int p_assignedPayloadId, final byte p_status) {
         super(p_request, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_RESPONSE);
-
         m_assignedComputeGroupId = p_assignedComputeGroupId;
         m_assignedPayloadId = p_assignedPayloadId;
+        m_status = p_status;
     }
 
     /**
@@ -70,20 +71,31 @@ public class SubmitTaskResponse extends AbstractResponse {
         return m_assignedPayloadId;
     }
 
+    /**
+     * Get the status
+     *
+     * @return the status
+     */
+    public int getStatus() {
+        return m_status;
+    }
+
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         p_exporter.writeShort(m_assignedComputeGroupId);
         p_exporter.writeInt(m_assignedPayloadId);
+        p_exporter.writeByte(m_status);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_assignedComputeGroupId = p_importer.readShort();
-        m_assignedPayloadId = p_importer.readInt();
+        m_assignedComputeGroupId = p_importer.readShort(m_assignedComputeGroupId);
+        m_assignedPayloadId = p_importer.readInt(m_assignedPayloadId);
+        m_status = p_importer.readByte(m_status);
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Short.BYTES + Integer.BYTES;
+        return Short.BYTES + Integer.BYTES + Byte.BYTES;
     }
 }

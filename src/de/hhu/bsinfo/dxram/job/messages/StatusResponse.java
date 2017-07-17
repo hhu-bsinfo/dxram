@@ -65,6 +65,9 @@ public class StatusResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
+        if (m_status == null) {
+            m_status = new JobService.Status();
+        }
         p_importer.importObject(m_status);
     }
 

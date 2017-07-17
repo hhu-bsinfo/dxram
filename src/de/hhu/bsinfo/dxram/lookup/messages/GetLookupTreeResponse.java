@@ -86,8 +86,10 @@ public class GetLookupTreeResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        if (p_importer.readByte() == 1) {
-            m_tree = new LookupTree();
+        if (p_importer.readByte((byte) 1) == 1 /* Cannot be 0 if we get here again */) {
+            if (m_tree == null) {
+                m_tree = new LookupTree();
+            }
             p_importer.importObject(m_tree);
         }
     }

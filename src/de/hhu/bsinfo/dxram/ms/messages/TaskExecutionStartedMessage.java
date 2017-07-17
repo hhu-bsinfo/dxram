@@ -65,7 +65,7 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_taskPayloadId = p_importer.readInt();
+        m_taskPayloadId = p_importer.readInt(m_taskPayloadId);
     }
 
     @Override

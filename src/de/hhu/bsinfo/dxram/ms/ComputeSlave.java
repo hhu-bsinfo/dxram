@@ -195,7 +195,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             m_network.sendSync(request);
 
             SlaveJoinResponse response = (SlaveJoinResponse) request.getResponse();
-            if (response.getStatusCode() != 0) {
+            if (response.getStatus() != 0) {
                 // master is busy, retry
                 try {
                     Thread.sleep(1000);
@@ -409,18 +409,17 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      *         ExecuteTaskScriptScriptRequest
      */
     private void incomingExecuteTaskScriptRequest(final ExecuteTaskScriptRequest p_message) {
-        ExecuteTaskScriptResponse response = new ExecuteTaskScriptResponse(p_message);
+        ExecuteTaskScriptResponse response;
         TaskScript taskScript = null;
 
         if (m_executeTaskScriptLock.tryLock() && m_state == State.STATE_IDLE) {
             taskScript = p_message.getTaskScript();
-
-            response.setStatusCode((byte) 0);
+            response = new ExecuteTaskScriptResponse(p_message, (byte) 0);
 
             m_executeTaskScriptLock.unlock();
         } else {
             // cannot execute task, invalid state
-            response.setStatusCode((byte) 1);
+            response = new ExecuteTaskScriptResponse(p_message, (byte) 1);
         }
 
         try {

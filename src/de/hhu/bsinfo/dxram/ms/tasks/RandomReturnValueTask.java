@@ -44,9 +44,9 @@ public class RandomReturnValueTask implements Task {
      * Constructor
      *
      * @param p_begin
-     *     Begin of the random range (including)
+     *         Begin of the random range (including)
      * @param p_end
-     *     End of the random range (including)
+     *         End of the random range (including)
      */
     public RandomReturnValueTask(final int p_begin, final int p_end) {
         m_begin = p_begin;
@@ -71,8 +71,8 @@ public class RandomReturnValueTask implements Task {
 
     @Override
     public void importObject(Importer p_importer) {
-        m_begin = p_importer.readInt();
-        m_end = p_importer.readInt();
+        m_begin = p_importer.readInt(m_begin);
+        m_end = p_importer.readInt(m_end);
     }
 
     @Override

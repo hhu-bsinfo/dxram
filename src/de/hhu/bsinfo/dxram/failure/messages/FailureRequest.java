@@ -78,6 +78,6 @@ public class FailureRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_failedNode = p_importer.readShort();
+        m_failedNode = p_importer.readShort(m_failedNode);
     }
 }

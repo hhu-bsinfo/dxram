@@ -82,7 +82,7 @@ public class BarrierAllocRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_size = p_importer.readInt();
-        m_isReplicate = p_importer.readBoolean();
+        m_size = p_importer.readInt(m_size);
+        m_isReplicate = p_importer.readBoolean(m_isReplicate);
     }
 }

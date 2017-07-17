@@ -18,6 +18,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Property implementation for testing.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 09.09.2016
  */
 public class TestProperty extends Property<TestProperty> {
@@ -36,6 +37,7 @@ public class TestProperty extends Property<TestProperty> {
 
     /**
      * Get the value.
+     *
      * @return Value.
      */
     public int getValue() {
@@ -44,8 +46,9 @@ public class TestProperty extends Property<TestProperty> {
 
     /**
      * Set the value.
+     *
      * @param val
-     *            Value.
+     *         Value.
      */
     public void setValue(final int val) {
         m_value = val;
@@ -58,7 +61,7 @@ public class TestProperty extends Property<TestProperty> {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_value = p_importer.readInt();
+        m_value = p_importer.readInt(m_value);
     }
 
     @Override

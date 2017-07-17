@@ -66,7 +66,9 @@ public class SubmitTaskRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_taskScript = new TaskScript();
+        if (m_taskScript == null) {
+            m_taskScript = new TaskScript();
+        }
         p_importer.importObject(m_taskScript);
     }
 

@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.dxram.ms;
 
 import com.google.gson.annotations.Expose;
+
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
@@ -52,7 +53,7 @@ final class TaskAbort implements TaskScriptNode {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_abortMsg = p_importer.readString();
+        m_abortMsg = p_importer.readString(m_abortMsg);
     }
 
     @Override

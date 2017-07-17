@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.dxram.mem;
 
 import de.hhu.bsinfo.soh.SmallObjectHeap;
+import de.hhu.bsinfo.utils.serialization.CompactNumber;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -113,6 +114,12 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public void writeCompactNumber(int p_v) {
+        byte[] number = CompactNumber.compact(p_v);
+        writeBytes(number);
+    }
+
+    @Override
     public void writeString(final String p_str) {
         writeByteArray(p_str.getBytes());
     }
@@ -137,53 +144,68 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
-    public boolean readBoolean() {
+    public boolean readBoolean(final boolean p_bool) {
         byte v = m_heap.readByte(m_allocatedMemoryStartAddress, m_offset);
         m_offset += Byte.BYTES;
         return v == 1;
     }
 
     @Override
-    public byte readByte() {
+    public byte readByte(final byte p_byte) {
         byte v = m_heap.readByte(m_allocatedMemoryStartAddress, m_offset);
         m_offset += Byte.BYTES;
         return v;
     }
 
     @Override
-    public short readShort() {
+    public short readShort(final short p_short) {
         short v = m_heap.readShort(m_allocatedMemoryStartAddress, m_offset);
         m_offset += Short.BYTES;
         return v;
     }
 
     @Override
-    public int readInt() {
+    public int readInt(final int p_int) {
         int v = m_heap.readInt(m_allocatedMemoryStartAddress, m_offset);
         m_offset += Integer.BYTES;
         return v;
     }
 
     @Override
-    public long readLong() {
+    public long readLong(final long p_long) {
         long v = m_heap.readLong(m_allocatedMemoryStartAddress, m_offset);
         m_offset += Long.BYTES;
         return v;
     }
 
     @Override
-    public float readFloat() {
+    public float readFloat(final float p_float) {
         throw new RuntimeException("Not supported.");
     }
 
     @Override
-    public double readDouble() {
+    public double readDouble(final double p_double) {
         throw new RuntimeException("Not supported.");
     }
 
     @Override
-    public String readString() {
-        return new String(readByteArray());
+    public int readCompactNumber(int p_int) {
+        // TODO: Avoid allocation and copying
+        byte[] tmp = new byte[4];
+        int i;
+        for (i = 0; i < Integer.BYTES; i++) {
+            tmp[i] = readByte((byte) 0);
+            if ((tmp[i] & 0x80) == 0) {
+                break;
+            }
+        }
+
+        return CompactNumber.decompact(tmp, 0, i);
+    }
+
+    @Override
+    public String readString(final String p_string) {
+        return new String(readByteArray(null));
     }
 
     @Override
@@ -201,39 +223,39 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
-    public byte[] readByteArray() {
-        byte[] arr = new byte[readInt()];
+    public byte[] readByteArray(final byte[] p_array) {
+        byte[] arr = new byte[readInt(0)];
         readBytes(arr);
         return arr;
     }
 
     @Override
-    public short[] readShortArray() {
-        short[] arr = new short[readInt()];
+    public short[] readShortArray(final short[] p_array) {
+        short[] arr = new short[readInt(0)];
         readShorts(arr);
         return arr;
     }
 
     @Override
-    public int[] readIntArray() {
-        int[] arr = new int[readInt()];
+    public int[] readIntArray(final int[] p_array) {
+        int[] arr = new int[readInt(0)];
         readInts(arr);
         return arr;
     }
 
     @Override
-    public long[] readLongArray() {
-        long[] arr = new long[readInt()];
+    public long[] readLongArray(final long[] p_array) {
+        long[] arr = new long[readInt(0)];
         readLongs(arr);
         return arr;
     }
 
     @Override
-    public String[] readStringArray() {
-        String[] str = new String[readInt()];
+    public String[] readStringArray(final String[] p_array) {
+        String[] str = new String[readInt(0)];
 
         for (int i = 0; i < str.length; i++) {
-            str[i] = readString();
+            str[i] = readString(null);
         }
 
         return str;

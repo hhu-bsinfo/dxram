@@ -85,8 +85,10 @@ public class BarrierReleaseMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_barrierId = p_importer.readInt();
-        m_results = new BarrierStatus();
+        m_barrierId = p_importer.readInt(m_barrierId);
+        if (m_results == null) {
+            m_results = new BarrierStatus();
+        }
         p_importer.importObject(m_results);
     }
 }

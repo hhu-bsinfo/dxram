@@ -108,9 +108,9 @@ public class InsertNameserviceEntriesRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_id = p_importer.readInt();
-        m_chunkID = p_importer.readLong();
-        m_isBackup = p_importer.readBoolean();
+        m_id = p_importer.readInt(m_id);
+        m_chunkID = p_importer.readLong(m_chunkID);
+        m_isBackup = p_importer.readBoolean(m_isBackup);
     }
 
 }

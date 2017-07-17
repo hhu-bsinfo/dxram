@@ -22,9 +22,6 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.ms.Signal;
-import de.hhu.bsinfo.dxram.ms.Task;
-import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.VertexSimple;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeList;
@@ -32,6 +29,9 @@ import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListBinaryFileThreadBuffering;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.ms.Signal;
+import de.hhu.bsinfo.dxram.ms.Task;
+import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -69,13 +69,13 @@ public class GraphLoadOrderedEdgeListTask implements Task {
      * Constructor
      *
      * @param p_path
-     *     Path containing the graph data to load
+     *         Path containing the graph data to load
      * @param p_vertexBatchSize
-     *     Size of a vertex batch for the loading process
+     *         Size of a vertex batch for the loading process
      * @param p_filterDupEdges
-     *     Check for and filter duplicate edges per vertex
+     *         Check for and filter duplicate edges per vertex
      * @param p_filterSelfLoops
-     *     Check for and filter self loops per vertex
+     *         Check for and filter self loops per vertex
      */
     public GraphLoadOrderedEdgeListTask(final String p_path, final int p_vertexBatchSize, final boolean p_filterDupEdges, final boolean p_filterSelfLoops) {
         m_path = p_path;
@@ -88,7 +88,7 @@ public class GraphLoadOrderedEdgeListTask implements Task {
      * Set the number of vertices to buffer with one load call.
      *
      * @param p_batchSize
-     *     Number of vertices to buffer.
+     *         Number of vertices to buffer.
      */
     public void setLoadVertexBatchSize(final int p_batchSize) {
         m_vertexBatchSize = p_batchSize;
@@ -98,7 +98,7 @@ public class GraphLoadOrderedEdgeListTask implements Task {
      * Set the path that contains the graph data.
      *
      * @param p_path
-     *     Path with graph data files.
+     *         Path with graph data files.
      */
     public void setLoadPath(final String p_path) {
         m_path = p_path;
@@ -118,7 +118,7 @@ public class GraphLoadOrderedEdgeListTask implements Task {
 
         // look for the graph partitioned index of the current compute group
         long chunkIdPartitionIndex =
-            nameserviceService.getChunkID(GraphLoadPartitionIndexTask.MS_PART_INDEX_IDENT + m_ctx.getCtxData().getComputeGroupId(), 5000);
+                nameserviceService.getChunkID(GraphLoadPartitionIndexTask.MS_PART_INDEX_IDENT + m_ctx.getCtxData().getComputeGroupId(), 5000);
         if (chunkIdPartitionIndex == ChunkID.INVALID_ID) {
             // #if LOGGER >= ERROR
             LOGGER.error("Could not find partition index for current compute group %d", m_ctx.getCtxData().getComputeGroupId());
@@ -180,19 +180,16 @@ public class GraphLoadOrderedEdgeListTask implements Task {
         p_exporter.writeInt(m_path.length());
         p_exporter.writeBytes(m_path.getBytes(StandardCharsets.US_ASCII));
         p_exporter.writeInt(m_vertexBatchSize);
-        p_exporter.writeByte((byte) (m_filterDupEdges ? 1 : 0));
-        p_exporter.writeByte((byte) (m_filterSelfLoops ? 1 : 0));
+        p_exporter.writeBoolean(m_filterDupEdges);
+        p_exporter.writeBoolean(m_filterSelfLoops);
     }
 
     @Override
     public void importObject(final Importer p_importer) {
-        int strLength = p_importer.readInt();
-        byte[] tmp = new byte[strLength];
-        p_importer.readBytes(tmp);
-        m_path = new String(tmp, StandardCharsets.US_ASCII);
-        m_vertexBatchSize = p_importer.readInt();
-        m_filterDupEdges = p_importer.readByte() > 0;
-        m_filterSelfLoops = p_importer.readByte() > 0;
+        m_path = p_importer.readString(m_path);
+        m_vertexBatchSize = p_importer.readInt(m_vertexBatchSize);
+        m_filterDupEdges = p_importer.readBoolean(m_filterDupEdges);
+        m_filterSelfLoops = p_importer.readBoolean(m_filterSelfLoops);
     }
 
     @Override
@@ -204,9 +201,9 @@ public class GraphLoadOrderedEdgeListTask implements Task {
      * Setup an edge list instance for the current slave node.
      *
      * @param p_path
-     *     Path with indexed graph data partitions.
+     *         Path with indexed graph data partitions.
      * @param p_graphPartitionIndex
-     *     Loaded partition index of the graph
+     *         Loaded partition index of the graph
      * @return OrderedEdgeList instance giving access to the list found for this slave or null on error.
      */
     private OrderedEdgeList setupOrderedEdgeListForCurrentSlave(final String p_path, final GraphPartitionIndex p_graphPartitionIndex) {
@@ -269,8 +266,8 @@ public class GraphLoadOrderedEdgeListTask implements Task {
             }
 
             orderedEdgeList =
-                new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000, startOffset, endOffset, m_filterDupEdges,
-                    m_filterSelfLoops, p_graphPartitionIndex.calcTotalVertexCount(), startVertexId);
+                    new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000, startOffset, endOffset, m_filterDupEdges,
+                            m_filterSelfLoops, p_graphPartitionIndex.calcTotalVertexCount(), startVertexId);
             break;
         }
 
@@ -281,9 +278,9 @@ public class GraphLoadOrderedEdgeListTask implements Task {
      * Load a graph partition (single threaded).
      *
      * @param p_orderedEdgeList
-     *     Graph partition to load.
+     *         Graph partition to load.
      * @param p_graphPartitionIndex
-     *     Index for all partitions to rebase vertex ids to current node.
+     *         Index for all partitions to rebase vertex ids to current node.
      * @return True if loading successful, false on error.
      */
 
@@ -306,7 +303,7 @@ public class GraphLoadOrderedEdgeListTask implements Task {
 
         // #if LOGGER >= INFO
         LOGGER.info("Loading started, target vertex/edge count of partition %d: %d/%d", currentPartitionIndexEntry.getPartitionId(),
-            currentPartitionIndexEntry.getVertexCount(), currentPartitionIndexEntry.getEdgeCount());
+                currentPartitionIndexEntry.getVertexCount(), currentPartitionIndexEntry.getEdgeCount());
         // #endif /* LOGGER >= INFO */
 
         while (true) {
@@ -382,7 +379,7 @@ public class GraphLoadOrderedEdgeListTask implements Task {
             if (currentPartitionIndexEntry.getVertexCount() != totalVerticesLoaded || currentPartitionIndexEntry.getEdgeCount() != totalEdgesLoaded) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Loading failed, vertex/edge count (%d/%d) does not match data in graph partition " + "index (%d/%d)", totalVerticesLoaded,
-                    totalEdgesLoaded, currentPartitionIndexEntry.getVertexCount(), currentPartitionIndexEntry.getEdgeCount());
+                        totalEdgesLoaded, currentPartitionIndexEntry.getVertexCount(), currentPartitionIndexEntry.getEdgeCount());
                 // #endif /* LOGGER >= ERROR */
                 return false;
             }

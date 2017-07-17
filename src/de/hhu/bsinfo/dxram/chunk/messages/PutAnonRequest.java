@@ -16,10 +16,10 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Request for updating a Chunk using an anonymous Chunk on a remote node
@@ -29,6 +29,8 @@ import de.hhu.bsinfo.net.core.AbstractRequest;
 public class PutAnonRequest extends AbstractRequest {
     // chunk used when sending the put request.
     private ChunkAnon[] m_chunks;
+
+    private byte m_lockCode;
 
     // Variables used when receiving the request
     private long[] m_chunkIDs;
@@ -56,23 +58,19 @@ public class PutAnonRequest extends AbstractRequest {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_ANON_REQUEST);
 
         m_chunks = p_chunks;
-
-        byte tmpCode = getStatusCode();
         switch (p_unlockOperation) {
             case NO_LOCK_OPERATION:
+                m_lockCode = 0;
                 break;
             case READ_LOCK:
-                ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
+                m_lockCode = 1;
                 break;
             case WRITE_LOCK:
-                ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
+                m_lockCode = 2;
                 break;
             default:
-                assert false;
                 break;
         }
-
-        setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_chunks.length));
     }
 
     /**
@@ -99,32 +97,32 @@ public class PutAnonRequest extends AbstractRequest {
      * @return Unlock operation.
      */
     public ChunkLockOperation getUnlockOperation() {
-        if (ChunkMessagesMetadataUtils.isLockAcquireFlagSet(getStatusCode())) {
-            if (ChunkMessagesMetadataUtils.isReadLockFlagSet(getStatusCode())) {
-                return ChunkLockOperation.READ_LOCK;
-            } else {
-                return ChunkLockOperation.WRITE_LOCK;
-            }
-        } else {
+        if (m_lockCode == 0) {
             return ChunkLockOperation.NO_LOCK_OPERATION;
+        } else if (m_lockCode == 1) {
+            return ChunkLockOperation.READ_LOCK;
+        } else {
+            return ChunkLockOperation.WRITE_LOCK;
         }
     }
 
     @Override
     protected final int getPayloadLength() {
-        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+        int size = Byte.BYTES;
 
         if (m_chunks != null) {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunks.length);
             size += m_chunks.length * Long.BYTES;
 
             for (ChunkAnon chunk : m_chunks) {
                 size += chunk.sizeofObject();
             }
         } else {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length);
             size += m_chunkIDs.length * Long.BYTES;
 
             for (int i = 0; i < m_data.length; i++) {
-                size += Integer.BYTES + m_data[i].length;
+                size += ObjectSizeUtil.sizeofByteArray(m_data[i]);
             }
         }
 
@@ -133,8 +131,9 @@ public class PutAnonRequest extends AbstractRequest {
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_chunks.length);
+        p_exporter.writeByte(m_lockCode);
 
+        p_exporter.writeCompactNumber(m_chunks.length);
         for (ChunkAnon chunk : m_chunks) {
             p_exporter.writeLong(chunk.getID());
             // the Chunk will write the size of its buffer as well
@@ -144,14 +143,18 @@ public class PutAnonRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
+        m_lockCode = p_importer.readByte(m_lockCode);
 
-        m_chunkIDs = new long[numChunks];
-        m_data = new byte[numChunks][];
+        int length = p_importer.readCompactNumber(0);
+        if (m_chunkIDs == null) {
+            // Do not overwrite existing arrays
+            m_chunkIDs = new long[length];
+            m_data = new byte[length][];
+        }
 
         for (int i = 0; i < m_chunkIDs.length; i++) {
-            m_chunkIDs[i] = p_importer.readLong();
-            m_data[i] = p_importer.readByteArray();
+            m_chunkIDs[i] = p_importer.readLong(m_chunkIDs[i]);
+            m_data[i] = p_importer.readByteArray(m_data[i]);
         }
     }
 }

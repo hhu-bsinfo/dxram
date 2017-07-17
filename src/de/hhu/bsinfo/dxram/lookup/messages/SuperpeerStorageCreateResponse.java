@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -21,6 +23,9 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.2015
  */
 public class SuperpeerStorageCreateResponse extends AbstractResponse {
+
+    private byte m_status;
+
     /**
      * Creates an instance of SuperpeerStoragePutResponse.
      * This constructor is used when receiving this message.
@@ -34,9 +39,34 @@ public class SuperpeerStorageCreateResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *     the request
+     *         the request
      */
-    public SuperpeerStorageCreateResponse(final SuperpeerStorageCreateRequest p_request) {
+    public SuperpeerStorageCreateResponse(final SuperpeerStorageCreateRequest p_request, final byte p_status) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_RESPONSE);
+        m_status = p_status;
+    }
+
+    /**
+     * Get the status
+     *
+     * @return the status
+     */
+    public int getStatus() {
+        return m_status;
+    }
+
+    @Override
+    protected final int getPayloadLength() {
+        return Byte.BYTES;
+    }
+
+    @Override
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeByte(m_status);
+    }
+
+    @Override
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_status = p_importer.readByte(m_status);
     }
 }

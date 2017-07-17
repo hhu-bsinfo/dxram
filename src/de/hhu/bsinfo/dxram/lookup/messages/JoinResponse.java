@@ -19,6 +19,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Response to a JoinRequest
@@ -34,6 +35,9 @@ public class JoinResponse extends AbstractResponse {
     private ArrayList<Short> m_superpeers;
     private ArrayList<Short> m_peers;
     private byte[] m_metadata;
+
+    private int m_superpeersToRead; // Used for serialization, only
+    private int m_peersToRead; // Used for serialization, only
 
     // Constructors
 
@@ -142,24 +146,27 @@ public class JoinResponse extends AbstractResponse {
         int ret;
 
         if (m_newContactSuperpeer == NodeID.INVALID_ID) {
-            ret = Byte.BYTES + Short.BYTES * 2;
+            ret = Short.BYTES * 3;
 
-            ret += Integer.BYTES;
             if (m_superpeers != null && !m_superpeers.isEmpty()) {
-                ret += Short.BYTES * m_superpeers.size();
+                ret += ObjectSizeUtil.sizeofCompactedNumber(m_superpeers.size()) + Short.BYTES * m_superpeers.size();
+            } else {
+                ret += Byte.BYTES;
             }
 
-            ret += Integer.BYTES;
             if (m_peers != null && !m_peers.isEmpty()) {
-                ret += Short.BYTES * m_peers.size();
+                ret += ObjectSizeUtil.sizeofCompactedNumber(m_peers.size()) + Short.BYTES * m_peers.size();
+            } else {
+                ret += Byte.BYTES;
             }
 
-            ret += Integer.BYTES;
             if (m_metadata != null && m_metadata.length > 0) {
-                ret += m_metadata.length;
+                ret += ObjectSizeUtil.sizeofByteArray(m_metadata);
+            } else {
+                ret += Byte.BYTES;
             }
         } else {
-            ret = Byte.BYTES + Short.BYTES;
+            ret = Short.BYTES;
         }
 
         return ret;
@@ -169,62 +176,70 @@ public class JoinResponse extends AbstractResponse {
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_newContactSuperpeer == NodeID.INVALID_ID) {
-            p_exporter.writeByte((byte) 1);
+            p_exporter.writeShort(NodeID.INVALID_ID);
             p_exporter.writeShort(m_predecessor);
             p_exporter.writeShort(m_successor);
 
             if (m_superpeers == null || m_superpeers.isEmpty()) {
-                p_exporter.writeInt(0);
+                p_exporter.writeCompactNumber(0);
             } else {
-                p_exporter.writeInt(m_superpeers.size());
+                p_exporter.writeCompactNumber(m_superpeers.size());
                 for (short superpeer : m_superpeers) {
                     p_exporter.writeShort(superpeer);
                 }
             }
 
             if (m_peers == null || m_peers.isEmpty()) {
-                p_exporter.writeInt(0);
+                p_exporter.writeCompactNumber(0);
             } else {
-                p_exporter.writeInt(m_peers.size());
+                p_exporter.writeCompactNumber(m_peers.size());
                 for (short peer : m_peers) {
                     p_exporter.writeShort(peer);
                 }
             }
 
             if (m_metadata == null || m_metadata.length == 0) {
-                p_exporter.writeInt(0);
+                p_exporter.writeCompactNumber(0);
             } else {
                 p_exporter.writeByteArray(m_metadata);
             }
         } else {
-            p_exporter.writeByte((byte) 0);
             p_exporter.writeShort(m_newContactSuperpeer);
         }
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int length;
+        m_newContactSuperpeer = p_importer.readShort(m_newContactSuperpeer);
+        if (m_newContactSuperpeer == NodeID.INVALID_ID) {
+            m_predecessor = p_importer.readShort(m_predecessor);
+            m_successor = p_importer.readShort(m_successor);
 
-        if (p_importer.readByte() != 0) {
-            m_predecessor = p_importer.readShort();
-            m_successor = p_importer.readShort();
-
-            m_superpeers = new ArrayList<Short>();
-            length = p_importer.readInt();
-            for (int i = 0; i < length; i++) {
-                m_superpeers.add(p_importer.readShort());
+            m_superpeersToRead = p_importer.readCompactNumber(m_superpeersToRead);
+            if (m_superpeers == null) {
+                // Do not overwrite existing array list
+                m_superpeers = new ArrayList<Short>(m_superpeersToRead);
+            }
+            for (int i = 0; i < m_superpeersToRead; i++) {
+                short superpeer = p_importer.readShort((short) 0);
+                if (m_superpeers.size() == i) {
+                    m_superpeers.add(superpeer);
+                }
             }
 
-            m_peers = new ArrayList<Short>();
-            length = p_importer.readInt();
-            for (int i = 0; i < length; i++) {
-                m_peers.add(p_importer.readShort());
+            m_peersToRead = p_importer.readCompactNumber(m_peersToRead);
+            if (m_peers == null) {
+                // Do not overwrite existing array list
+                m_peers = new ArrayList<Short>(m_peersToRead);
+            }
+            for (int i = 0; i < m_peersToRead; i++) {
+                short peer = p_importer.readShort((short) 0);
+                if (m_peers.size() == i) {
+                    m_peers.add(peer);
+                }
             }
 
-            m_metadata = p_importer.readByteArray();
-        } else {
-            m_newContactSuperpeer = p_importer.readShort();
+            m_metadata = p_importer.readByteArray(m_metadata);
         }
     }
 

@@ -25,6 +25,7 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
  */
 public class GetMasterStatusResponse extends AbstractResponse {
     private StatusMaster m_statusMaster;
+    private byte m_status;
 
     /**
      * Creates an instance of GetMasterStatusResponse.
@@ -43,10 +44,10 @@ public class GetMasterStatusResponse extends AbstractResponse {
      * @param p_statusMaster
      *         Status data of the master to send back
      */
-    public GetMasterStatusResponse(final GetMasterStatusRequest p_request, final StatusMaster p_statusMaster) {
+    public GetMasterStatusResponse(final GetMasterStatusRequest p_request, final StatusMaster p_statusMaster, final byte p_status) {
         super(p_request, MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_RESPONSE);
-
         m_statusMaster = p_statusMaster;
+        m_status = p_status;
     }
 
     /**
@@ -58,8 +59,18 @@ public class GetMasterStatusResponse extends AbstractResponse {
         return m_statusMaster;
     }
 
+    /**
+     * Get the status
+     *
+     * @return the status
+     */
+    public int getStatus() {
+        return m_status;
+    }
+
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeByte(m_status);
         if (m_statusMaster != null) {
             p_exporter.exportObject(m_statusMaster);
         }
@@ -67,8 +78,11 @@ public class GetMasterStatusResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        if (getStatusCode() == 0) {
-            m_statusMaster = new StatusMaster();
+        m_status = p_importer.readByte(m_status);
+        if (m_status == 0) {
+            if (m_statusMaster == null) {
+                m_statusMaster = new StatusMaster();
+            }
             p_importer.importObject(m_statusMaster);
         }
     }
@@ -76,9 +90,9 @@ public class GetMasterStatusResponse extends AbstractResponse {
     @Override
     protected final int getPayloadLength() {
         if (m_statusMaster != null) {
-            return m_statusMaster.sizeofObject();
+            return Byte.BYTES + m_statusMaster.sizeofObject();
         } else {
-            return 0;
+            return Byte.BYTES;
         }
     }
 }

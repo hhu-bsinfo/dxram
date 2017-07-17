@@ -75,7 +75,7 @@ public class PeerJoinEventRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_nodeID = p_importer.readShort();
+        m_nodeID = p_importer.readShort(m_nodeID);
     }
 
 }

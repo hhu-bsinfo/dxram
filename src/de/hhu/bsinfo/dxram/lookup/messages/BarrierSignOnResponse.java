@@ -24,6 +24,7 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
  */
 public class BarrierSignOnResponse extends AbstractResponse {
     private int m_barrierIdentifier = -1;
+    private byte m_status;
 
     /**
      * Creates an instance of SlaveSyncBarrierSignOnMessage.
@@ -46,7 +47,7 @@ public class BarrierSignOnResponse extends AbstractResponse {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_RESPONSE);
 
         m_barrierIdentifier = p_request.getBarrierId();
-        setStatusCode(p_status);
+        m_status = p_status;
     }
 
     /**
@@ -58,18 +59,29 @@ public class BarrierSignOnResponse extends AbstractResponse {
         return m_barrierIdentifier;
     }
 
+    /**
+     * Get the status
+     *
+     * @return the status
+     */
+    public byte getStatus() {
+        return m_status;
+    }
+
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES;
+        return Integer.BYTES + Byte.BYTES;
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         p_exporter.writeInt(m_barrierIdentifier);
+        p_exporter.writeByte(m_status);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_barrierIdentifier = p_importer.readInt();
+        m_barrierIdentifier = p_importer.readInt(m_barrierIdentifier);
+        m_status = p_importer.readByte(m_status);
     }
 }

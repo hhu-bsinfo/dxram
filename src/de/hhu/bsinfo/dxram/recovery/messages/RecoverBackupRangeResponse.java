@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Response to a RecoverBackupRangeRequest
@@ -95,17 +96,18 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
+        int ret = ObjectSizeUtil.sizeofCompactedNumber(m_numberOfChunks);
+
         if (m_numberOfChunks > 0) {
-            return m_newBackupRange.sizeofObject() + 2 * Integer.BYTES + m_chunkIDRanges.length * Long.BYTES;
-        } else {
-            return Integer.BYTES;
+            ret += ObjectSizeUtil.sizeofLongArray(m_chunkIDRanges) + m_newBackupRange.sizeofObject();
         }
+        return ret;
     }
 
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeInt(m_numberOfChunks);
+        p_exporter.writeCompactNumber(m_numberOfChunks);
 
         if (m_numberOfChunks > 0) {
             p_exporter.writeLongArray(m_chunkIDRanges);
@@ -116,11 +118,13 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_numberOfChunks = p_importer.readInt();
+        m_numberOfChunks = p_importer.readCompactNumber(m_numberOfChunks);
 
         if (m_numberOfChunks > 0) {
-            m_chunkIDRanges = p_importer.readLongArray();
-            m_newBackupRange = new BackupRange();
+            m_chunkIDRanges = p_importer.readLongArray(m_chunkIDRanges);
+            if (m_newBackupRange == null) {
+                m_newBackupRange = new BackupRange();
+            }
             p_importer.importObject(m_newBackupRange);
         }
     }

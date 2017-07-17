@@ -140,25 +140,30 @@ public final class TaskScript implements Importable, Exportable {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_minSlaves = p_importer.readInt();
-        m_maxSlaves = p_importer.readInt();
-        m_name = p_importer.readString();
-        m_tasks = new TaskScriptNode[p_importer.readInt()];
+        m_minSlaves = p_importer.readInt(m_minSlaves);
+        m_maxSlaves = p_importer.readInt(m_maxSlaves);
+        m_name = p_importer.readString(m_name);
+        int length = p_importer.readInt(0);
+        if (m_tasks.length == 0) {
+            m_tasks = new TaskScriptNode[length];
+        }
 
         for (int i = 0; i < m_tasks.length; i++) {
-            String taskName = p_importer.readString();
+            String taskName = p_importer.readString(null);
 
-            Class<?> clazz;
-            try {
-                clazz = Class.forName(taskName);
-            } catch (final ClassNotFoundException e) {
-                throw new RuntimeException("Cannot find task class " + taskName);
-            }
+            if (taskName != null) {
+                Class<?> clazz;
+                try {
+                    clazz = Class.forName(taskName);
+                } catch (final ClassNotFoundException ignored) {
+                    throw new RuntimeException("Cannot find task class " + taskName);
+                }
 
-            try {
-                m_tasks[i] = (TaskScriptNode) clazz.getConstructor().newInstance();
-            } catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                throw new RuntimeException("Cannot create instance of Task, maybe missing default constructor", e);
+                try {
+                    m_tasks[i] = (TaskScriptNode) clazz.getConstructor().newInstance();
+                } catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                    throw new RuntimeException("Cannot create instance of Task, maybe missing default constructor", e);
+                }
             }
 
             p_importer.importObject(m_tasks[i]);

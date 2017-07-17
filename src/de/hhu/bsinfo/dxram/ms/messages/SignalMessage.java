@@ -67,7 +67,7 @@ public class SignalMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_signal = Signal.values()[p_importer.readInt()];
+        m_signal = Signal.values()[p_importer.readInt(0)];
     }
 
     @Override

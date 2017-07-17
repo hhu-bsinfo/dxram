@@ -84,7 +84,7 @@ public class ChunkDataModifySequentialTask implements Task {
         }
 
         System.out.printf("Modifying (and checking %d) %d chunks sequentially %d times (pattern %d) in batches of %d chunk(s) with %d thread(s)...\n",
-            m_writeContentsAndVerify ? 1 : 0, totalChunkCount, m_iterations, m_pattern, m_chunkBatch, m_numThreads);
+                m_writeContentsAndVerify ? 1 : 0, totalChunkCount, m_iterations, m_pattern, m_chunkBatch, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
@@ -179,9 +179,8 @@ public class ChunkDataModifySequentialTask implements Task {
 
                                         for (int k = 0; k < buffer.length; k++) {
                                             if (buffer[k] != (byte) k) {
-                                                LOGGER
-                                                    .error("Contents of chunk %s are not matching written contents: 0x%X != 0x%X", chunksToVerify[j], buffer[k],
-                                                        k);
+                                                LOGGER.error("Contents of chunk %s are not matching written contents: 0x%X != 0x%X", chunksToVerify[j],
+                                                        buffer[k], k);
                                             }
                                         }
                                     }
@@ -252,11 +251,11 @@ public class ChunkDataModifySequentialTask implements Task {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_numThreads = p_importer.readInt();
-        m_iterations = p_importer.readInt();
-        m_chunkBatch = p_importer.readInt();
-        m_writeContentsAndVerify = p_importer.readBoolean();
-        m_pattern = p_importer.readInt();
+        m_numThreads = p_importer.readInt(m_numThreads);
+        m_iterations = p_importer.readInt(m_iterations);
+        m_chunkBatch = p_importer.readInt(m_chunkBatch);
+        m_writeContentsAndVerify = p_importer.readBoolean(m_writeContentsAndVerify);
+        m_pattern = p_importer.readInt(m_pattern);
     }
 
     @Override

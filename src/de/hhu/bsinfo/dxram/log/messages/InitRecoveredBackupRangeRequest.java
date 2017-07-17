@@ -116,9 +116,9 @@ public class InitRecoveredBackupRangeRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_rangeID = p_importer.readShort();
-        m_originalRangeID = p_importer.readShort();
-        m_originalOwner = p_importer.readShort();
-        m_isNewBackupRange = p_importer.readBoolean();
+        m_rangeID = p_importer.readShort(m_rangeID);
+        m_originalRangeID = p_importer.readShort(m_originalRangeID);
+        m_originalOwner = p_importer.readShort(m_originalOwner);
+        m_isNewBackupRange = p_importer.readBoolean(m_isNewBackupRange);
     }
 }

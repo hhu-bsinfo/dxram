@@ -87,6 +87,6 @@ public class SuperpeerStorageGetAnonRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_storageID = p_importer.readInt();
+        m_storageID = p_importer.readInt(m_storageID);
     }
 }

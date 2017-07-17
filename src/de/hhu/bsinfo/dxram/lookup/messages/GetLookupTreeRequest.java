@@ -63,7 +63,6 @@ public class GetLookupTreeRequest extends AbstractRequest {
 
     @Override
     protected final int getPayloadLength() {
-
         return Short.BYTES;
     }
 
@@ -75,7 +74,7 @@ public class GetLookupTreeRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_nidToGetTreeFrom = p_importer.readShort();
+        m_nidToGetTreeFrom = p_importer.readShort(m_nidToGetTreeFrom);
     }
 
 }

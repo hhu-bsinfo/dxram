@@ -17,8 +17,8 @@ import java.io.Serializable;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
-import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
+import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -46,6 +46,8 @@ public final class LookupTree implements Serializable, Importable, Exportable {
     private short m_creator;
 
     private Entry m_changedEntry;
+
+    private int m_elementsInTree; // Used for serialization, only
 
     // Constructors
 
@@ -340,19 +342,21 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_creator = p_importer.readShort();
-        m_minEntries = p_importer.readShort();
+        m_creator = p_importer.readShort(m_creator);
+        m_minEntries = p_importer.readShort(m_minEntries);
         m_minChildren = (short) (m_minEntries + 1);
         m_maxEntries = (short) (2 * m_minEntries);
         m_maxChildren = (short) (m_maxEntries + 1);
 
-        int elementsInBTree = p_importer.readInt();
-        if (elementsInBTree > 0) {
-            for (int i = 0; i < elementsInBTree; i++) {
-                long lid = p_importer.readLong();
-                short nid = p_importer.readShort();
+        m_elementsInTree = p_importer.readInt(m_elementsInTree);
+        if (m_elementsInTree > 0) {
+            for (int i = 0; i < m_elementsInTree; i++) {
+                long lid = p_importer.readLong(ChunkID.INVALID_ID);
+                short nid = p_importer.readShort(NodeID.INVALID_ID);
 
-                createOrReplaceEntry(lid, nid);
+                if (lid != ChunkID.INVALID_ID) {
+                    createOrReplaceEntry(lid, nid);
+                }
             }
         }
     }

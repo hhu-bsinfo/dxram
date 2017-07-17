@@ -17,14 +17,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.hhu.bsinfo.dxram.job.event.JobEventListener;
-import de.hhu.bsinfo.dxram.job.event.JobEvents;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxram.job.event.JobEventListener;
+import de.hhu.bsinfo.dxram.job.event.JobEvents;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Base class for an job that can be executed by the
@@ -32,6 +33,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * Jobs can either be used internally by DXRAM, pushed through
  * the JobComponent, or externally by the user, pushed through
  * the JobService.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public abstract class AbstractJob implements Importable, Exportable {
@@ -49,9 +51,10 @@ public abstract class AbstractJob implements Importable, Exportable {
 
     /**
      * Constructor
+     *
      * @param p_parameterChunkIDs
-     *            ChunkIDs, which are passed as parameters to the Job on execution.
-     *            The max count is 255, which is plenty enough.
+     *         ChunkIDs, which are passed as parameters to the Job on execution.
+     *         The max count is 255, which is plenty enough.
      */
     public AbstractJob(final long... p_parameterChunkIDs) {
         assert p_parameterChunkIDs.length <= 255;
@@ -73,11 +76,12 @@ public abstract class AbstractJob implements Importable, Exportable {
     /**
      * Create an instance of a Job using a previously registered type ID.
      * This is used for serialization/creating Jobs from serialized data.
+     *
      * @param p_typeID
-     *            Type ID of the job to create.
+     *         Type ID of the job to create.
      * @return Job object.
      * @throws JobRuntimeException
-     *             If creating an instance failed or no Job class is registered for the specified type ID.
+     *         If creating an instance failed or no Job class is registered for the specified type ID.
      */
     public static AbstractJob createInstance(final short p_typeID) {
         AbstractJob job = null;
@@ -98,12 +102,13 @@ public abstract class AbstractJob implements Importable, Exportable {
 
     /**
      * Register a Job with its type ID. Make sure to do this for every Job subclass you create.
+     *
      * @param p_typeID
-     *            Type ID for the Job class.
+     *         Type ID for the Job class.
      * @param p_clazz
-     *            The class to register for the specified ID.
+     *         The class to register for the specified ID.
      * @throws JobRuntimeException
-     *             If another Job class was already registered with the specified type ID.
+     *         If another Job class was already registered with the specified type ID.
      */
     public static void registerType(final short p_typeID, final Class<? extends AbstractJob> p_clazz) {
         Class<? extends AbstractJob> clazz = m_registeredJobTypes.putIfAbsent(p_typeID, p_clazz);
@@ -114,12 +119,14 @@ public abstract class AbstractJob implements Importable, Exportable {
 
     /**
      * Get the type ID of this Job object.
+     *
      * @return Type ID.
      */
     public abstract short getTypeID();
 
     /**
      * Get the ID of this job.
+     *
      * @return ID of job (16 bits NodeID/CreatorID + 48 bits local JobID).
      */
     public long getID() {
@@ -128,8 +135,9 @@ public abstract class AbstractJob implements Importable, Exportable {
 
     /**
      * Execute this job.
+     *
      * @param p_nodeID
-     *            NodeID of the node this job is excecuted on.
+     *         NodeID of the node this job is excecuted on.
      */
     public void execute(final short p_nodeID) {
         execute(p_nodeID, m_parameterChunkIDs);
@@ -143,8 +151,9 @@ public abstract class AbstractJob implements Importable, Exportable {
     /**
      * Register a listener, which receives events specified by the bit mask it
      * returns.
+     *
      * @param p_listener
-     *            Listener to register to listen to job events.
+     *         Listener to register to listen to job events.
      */
     public void registerEventListener(final JobEventListener p_listener) {
         m_eventListeners.add(p_listener);
@@ -154,35 +163,28 @@ public abstract class AbstractJob implements Importable, Exportable {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_id = p_importer.readLong();
-
-        m_parameterChunkIDs = new long[p_importer.readByte() & 0xFF];
-        for (int i = 0; i < m_parameterChunkIDs.length; i++) {
-            m_parameterChunkIDs[i] = p_importer.readLong();
-        }
+        m_id = p_importer.readLong(m_id);
+        m_parameterChunkIDs = p_importer.readLongArray(m_parameterChunkIDs);
     }
 
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeLong(m_id);
-
-        p_exporter.writeByte((byte) (m_parameterChunkIDs.length & 0xFF));
-        for (int i = 0; i < m_parameterChunkIDs.length; i++) {
-            p_exporter.writeLong(m_parameterChunkIDs[i]);
-        }
+        p_exporter.writeLongArray(m_parameterChunkIDs);
     }
 
     @Override
     public int sizeofObject() {
-        return Long.BYTES + Byte.BYTES + Long.BYTES * m_parameterChunkIDs.length;
+        return Long.BYTES + ObjectSizeUtil.sizeofLongArray(m_parameterChunkIDs);
     }
 
     // -------------------------------------------------------------------
 
     /**
      * Set the ID for this job. Has to be done before scheduling it.
+     *
      * @param p_id
-     *            ID to set for this job.
+     *         ID to set for this job.
      */
     void setID(final long p_id) {
         m_id = p_id;
@@ -191,8 +193,9 @@ public abstract class AbstractJob implements Importable, Exportable {
     /**
      * Set the service accessor to allow access to all DXRAM services (refer to DXRAMServiceAcessor class for details
      * and important notes).
+     *
      * @param p_serviceAccessor
-     *            Service accessor to set.
+     *         Service accessor to set.
      */
     void setServiceAccessor(final DXRAMServiceAccessor p_serviceAccessor) {
         m_serviceAccessor = p_serviceAccessor;
@@ -200,8 +203,9 @@ public abstract class AbstractJob implements Importable, Exportable {
 
     /**
      * Called when the job is scheduled for execution by the system.
+     *
      * @param p_sourceNodeId
-     *            Node if of the source calling.
+     *         Node if of the source calling.
      */
     void notifyListenersJobScheduledForExecution(final short p_sourceNodeId) {
         for (JobEventListener listener : m_eventListeners) {
@@ -213,8 +217,9 @@ public abstract class AbstractJob implements Importable, Exportable {
 
     /**
      * Called when the job got assigned to a worker and is in before getting executed.
+     *
      * @param p_sourceNodeId
-     *            Node if of the source calling.
+     *         Node if of the source calling.
      */
     void notifyListenersJobStartsExecution(final short p_sourceNodeId) {
         for (JobEventListener listener : m_eventListeners) {
@@ -226,8 +231,9 @@ public abstract class AbstractJob implements Importable, Exportable {
 
     /**
      * Called when a job has finished execution by a worker.
+     *
      * @param p_sourceNodeId
-     *            Node if of the source calling.
+     *         Node if of the source calling.
      */
     void notifyListenersJobFinishedExecution(final short p_sourceNodeId) {
         for (JobEventListener listener : m_eventListeners) {
@@ -241,10 +247,11 @@ public abstract class AbstractJob implements Importable, Exportable {
 
     /**
      * Implement this function and put your code to be executed with this job here.
+     *
      * @param p_nodeID
-     *            NodeID this job is executed on.
+     *         NodeID this job is executed on.
      * @param p_chunkIDs
-     *            Parameters this job was created with.
+     *         Parameters this job was created with.
      */
     protected abstract void execute(final short p_nodeID, long[] p_chunkIDs);
 
@@ -253,11 +260,12 @@ public abstract class AbstractJob implements Importable, Exportable {
      * These jobs are pushed to the system from outside/the user via JobService.
      * If a job was pushed internally (via the JobComponent) this returns null
      * as we do not allow access to services internally (breaking isolation concept).
+     *
      * @param <T>
-     *            Type of the service to get
+     *         Type of the service to get
      * @param p_class
-     *            Class of the service to get. If the service has different implementations, use the common interface
-     *            or abstract class to get the registered instance.
+     *         Class of the service to get. If the service has different implementations, use the common interface
+     *         or abstract class to get the registered instance.
      * @return Reference to the service if available and enabled, null otherwise.
      */
     protected <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {

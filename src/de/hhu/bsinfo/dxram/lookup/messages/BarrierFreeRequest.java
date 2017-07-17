@@ -82,7 +82,7 @@ public class BarrierFreeRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_barrierId = p_importer.readInt();
-        m_isReplicate = p_importer.readBoolean();
+        m_barrierId = p_importer.readInt(m_barrierId);
+        m_isReplicate = p_importer.readBoolean(m_isReplicate);
     }
 }

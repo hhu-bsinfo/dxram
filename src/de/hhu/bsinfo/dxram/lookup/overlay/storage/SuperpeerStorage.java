@@ -56,9 +56,9 @@ public class SuperpeerStorage extends AbstractMetadata {
      * Constructor
      *
      * @param p_maxNumEntries
-     *     Max num of entries allowed in the storage.
+     *         Max num of entries allowed in the storage.
      * @param p_maxSizeBytes
-     *     Max size of bytes the objects are allowed to consume (all together)
+     *         Max size of bytes the objects are allowed to consume (all together)
      */
     public SuperpeerStorage(final int p_maxNumEntries, final int p_maxSizeBytes) {
         m_maxNumEntries = p_maxNumEntries;
@@ -210,9 +210,9 @@ public class SuperpeerStorage extends AbstractMetadata {
      * Create a new block to store a chunk.
      *
      * @param p_id
-     *     Id to assign to the block
+     *         Id to assign to the block
      * @param p_size
-     *     Size of the block
+     *         Size of the block
      * @return 0 on success, -1 if quota reached, -2 if max num entries reached, -3 if id already in use.
      */
     public int create(final int p_id, final int p_size) {
@@ -239,9 +239,9 @@ public class SuperpeerStorage extends AbstractMetadata {
      * Put data into an allocated block.
      *
      * @param p_id
-     *     Id of the block.
+     *         Id of the block.
      * @param p_data
-     *     Data to put.
+     *         Data to put.
      * @return Number of bytes written to the block or -1 if the block does not exist.
      */
     public int put(final int p_id, final byte[] p_data) {
@@ -266,7 +266,7 @@ public class SuperpeerStorage extends AbstractMetadata {
      * Get data from an allocated block
      *
      * @param p_id
-     *     Id of the block
+     *         Id of the block
      * @return Data read from the memory block or null if id does not point to an allocated block.
      */
     public byte[] get(final int p_id) {
@@ -282,7 +282,7 @@ public class SuperpeerStorage extends AbstractMetadata {
      * Remove a block from the storage (i.e. delete it).
      *
      * @param p_id
-     *     Id of the block to delete.
+     *         Id of the block to delete.
      * @return False if the block does not exist, true on success.
      */
     public boolean remove(final int p_id) {
@@ -306,6 +306,8 @@ public class SuperpeerStorage extends AbstractMetadata {
         private int m_maxStorageSizeBytes;
         private ArrayList<Long> m_storageStatus;
 
+        private int m_size; // Used for serialization, only
+
         /**
          * Creates an instance of Status.
          */
@@ -317,11 +319,11 @@ public class SuperpeerStorage extends AbstractMetadata {
          * Constructor
          *
          * @param p_maxNumItems
-         *     Max number of items allowed in the storage.
+         *         Max number of items allowed in the storage.
          * @param p_maxStorageSizeBytes
-         *     Max storage size in bytes.
+         *         Max storage size in bytes.
          * @param p_storageStatus
-         *     Storage status i.e. List of Ids + size of the blocks allocated.
+         *         Storage status i.e. List of Ids + size of the blocks allocated.
          */
         public Status(final int p_maxNumItems, final int p_maxStorageSizeBytes, final ArrayList<Long> p_storageStatus) {
             m_maxNumItems = p_maxNumItems;
@@ -389,20 +391,24 @@ public class SuperpeerStorage extends AbstractMetadata {
             p_exporter.writeInt(m_maxStorageSizeBytes);
             p_exporter.writeInt(m_storageStatus.size());
             for (Long status : m_storageStatus) {
-                long val = status;
-                p_exporter.writeInt((int) (val >> 32L));
-                p_exporter.writeInt((int) val);
+                p_exporter.writeLong(status);
             }
         }
 
         @Override
         public void importObject(final Importer p_importer) {
-            m_maxNumItems = p_importer.readInt();
-            m_maxStorageSizeBytes = p_importer.readInt();
-            int size = p_importer.readInt();
-            m_storageStatus = new ArrayList<>(size);
-            for (int i = 0; i < size; i++) {
-                m_storageStatus.add((long) p_importer.readInt() << 32L | p_importer.readInt());
+            m_maxNumItems = p_importer.readInt(m_maxNumItems);
+            m_maxStorageSizeBytes = p_importer.readInt(m_maxStorageSizeBytes);
+            m_size = p_importer.readInt(m_size);
+            if (m_storageStatus == null) {
+                // Do not overwrite array list
+                m_storageStatus = new ArrayList<>(m_size);
+            }
+            for (int i = 0; i < m_size; i++) {
+                long l = p_importer.readLong(0);
+                if (m_storageStatus.size() == i) {
+                    m_storageStatus.add(l);
+                }
             }
         }
 

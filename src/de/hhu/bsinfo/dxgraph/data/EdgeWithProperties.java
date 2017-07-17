@@ -33,8 +33,9 @@ public class EdgeWithProperties extends Edge {
 
     /**
      * Constructor
+     *
      * @param p_id
-     *            Chunk ID to assign.
+     *         Chunk ID to assign.
      */
     public EdgeWithProperties(final long p_id) {
         super(p_id);
@@ -46,8 +47,9 @@ public class EdgeWithProperties extends Edge {
      * Add a new property to the currently existing list.
      * This will expand the array by one entry and
      * add the new property at the end.
+     *
      * @param p_property
-     *            Property to add.
+     *         Property to add.
      */
     public void addProperty(final Property p_property) {
         setPropertyCount(m_properties.length + 1);
@@ -56,6 +58,7 @@ public class EdgeWithProperties extends Edge {
 
     /**
      * Get the property array.
+     *
      * @return Property array.
      */
     public Property[] getProperties() {
@@ -64,6 +67,7 @@ public class EdgeWithProperties extends Edge {
 
     /**
      * Get the number of properties of this vertex.
+     *
      * @return Number of properties.
      */
     public int getPropertyCount() {
@@ -72,8 +76,9 @@ public class EdgeWithProperties extends Edge {
 
     /**
      * Resize the property array.
+     *
      * @param p_count
-     *            Number of properties to resize to.
+     *         Number of properties to resize to.
      */
     public void setPropertyCount(final int p_count) {
         if (p_count != m_properties.length) {
@@ -99,9 +104,9 @@ public class EdgeWithProperties extends Edge {
     public void importObject(final Importer p_importer) {
         super.importObject(p_importer);
 
-        m_properties = new Property[p_importer.readInt()];
+        m_properties = new Property[p_importer.readInt(m_properties == null ? 0 : m_properties.length)];
         for (int i = 0; i < m_properties.length; i++) {
-            m_properties[i] = PropertyManager.createInstance(p_importer.readShort());
+            m_properties[i] = PropertyManager.createInstance(p_importer.readShort(m_properties[i] == null ? 0 : m_properties[i].getID()));
             p_importer.importObject(m_properties[i]);
         }
     }

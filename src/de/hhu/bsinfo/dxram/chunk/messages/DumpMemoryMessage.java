@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Message to dump the chunk memory
@@ -60,7 +61,7 @@ public class DumpMemoryMessage extends AbstractMessage {
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + m_fileName.getBytes().length;
+        return ObjectSizeUtil.sizeofString(m_fileName);
     }
 
     // Methods
@@ -71,7 +72,7 @@ public class DumpMemoryMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_fileName = p_importer.readString();
+        m_fileName = p_importer.readString(m_fileName);
     }
 
 }

@@ -34,8 +34,6 @@ public class RemoveMessage extends AbstractMessage {
     private short m_rangeID;
     private ByteBuffer m_buffer;
 
-    private int m_copiedBytes;
-
     // Constructors
 
     /**
@@ -110,9 +108,9 @@ public class RemoveMessage extends AbstractMessage {
     @Override
     protected final int getPayloadLength() {
         if (m_chunkIDs != null) {
-            return Short.BYTES + Integer.BYTES + Long.BYTES * m_chunkIDs.getSize();
+            return Short.BYTES + m_chunkIDs.sizeofObject();
         } else {
-            return m_copiedBytes;
+            return m_buffer.limit();
         }
     }
 
@@ -124,20 +122,11 @@ public class RemoveMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void readPayload(final AbstractMessageImporter p_importer, final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
-        if (p_wasCopied) {
-            // De-serialize later
-            m_buffer = p_buffer;
-            m_copiedBytes = 0;
-        } else {
-            // Message buffer will be re-used -> copy data for later de-serialization
-            m_buffer = ByteBuffer.allocate(p_payloadSize);
-            m_buffer.put(p_buffer.array(), p_buffer.position(), p_payloadSize);
-            p_buffer.position(p_buffer.position() + p_payloadSize);
-            m_buffer.rewind();
-
-            m_copiedBytes = p_payloadSize;
-        }
+    protected final void readPayload(final AbstractMessageImporter p_importer, final int p_payloadSize) {
+        // Just copy all bytes, will be serialized into primary write buffer later
+        byte[] bytes = new byte[p_payloadSize];
+        p_importer.readBytes(bytes);
+        m_buffer = ByteBuffer.wrap(bytes);
     }
 
 }

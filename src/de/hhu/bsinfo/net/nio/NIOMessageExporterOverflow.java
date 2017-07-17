@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.net.nio;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.utils.serialization.CompactNumber;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 
 /**
@@ -21,7 +22,7 @@ import de.hhu.bsinfo.utils.serialization.Exportable;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NIOMessageExporterOverflow extends AbstractMessageExporter {
+class NIOMessageExporterOverflow extends AbstractMessageExporter {
 
     private byte[] m_buffer;
     private int m_currentPosition;
@@ -30,7 +31,7 @@ public class NIOMessageExporterOverflow extends AbstractMessageExporter {
     /**
      * Constructor
      */
-    public NIOMessageExporterOverflow() {
+    NIOMessageExporterOverflow() {
     }
 
     @Override
@@ -57,74 +58,74 @@ public class NIOMessageExporterOverflow extends AbstractMessageExporter {
 
     @Override
     public void writeBoolean(boolean p_v) {
-        if (m_currentPosition != m_buffer.length) {
-            m_buffer[m_currentPosition++] = (byte) (p_v ? 1 : 0);
-        } else {
+        if (m_currentPosition == m_buffer.length) {
             m_buffer[0] = (byte) (p_v ? 1 : 0);
             m_currentPosition = 1;
+        } else {
+            m_buffer[m_currentPosition++] = (byte) (p_v ? 1 : 0);
         }
     }
 
     @Override
     public void writeByte(final byte p_v) {
-        if (m_currentPosition != m_buffer.length) {
-            m_buffer[m_currentPosition++] = p_v;
-        } else {
+        if (m_currentPosition == m_buffer.length) {
             m_buffer[0] = p_v;
             m_currentPosition = 1;
+        } else {
+            m_buffer[m_currentPosition++] = p_v;
         }
     }
 
     @Override
     public void writeShort(final short p_v) {
-        if (m_currentPosition + 2 < m_buffer.length) {
-            for (int i = 0; i < 2; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (1 - i) * 8 & 0xFF);
+        if (m_currentPosition + Short.BYTES < m_buffer.length) {
+            for (int i = 0; i < Short.BYTES; i++) {
+                m_buffer[m_currentPosition++] = (byte) (p_v >> (Short.BYTES - 1 - i) * 8 & 0xFF);
             }
         } else {
             int i;
-            for (i = 0; i < 2 && m_currentPosition < m_buffer.length; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (1 - i) * 8 & 0xFF);
+            for (i = 0; i < Short.BYTES && m_currentPosition < m_buffer.length; i++) {
+                m_buffer[m_currentPosition++] = (byte) (p_v >> (Short.BYTES - 1 - i) * 8 & 0xFF);
             }
             m_currentPosition = 0;
-            for (int j = i; j < 2; j++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (1 - j) * 8 & 0xFF);
+            for (int j = i; j < Short.BYTES; j++) {
+                m_buffer[m_currentPosition++] = (byte) (p_v >> (Short.BYTES - 1 - j) * 8 & 0xFF);
             }
         }
     }
 
     @Override
     public void writeInt(final int p_v) {
-        if (m_currentPosition + 4 < m_buffer.length) {
-            for (int i = 0; i < 4; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (3 - i) * 8 & 0xFF);
+        if (m_currentPosition + Integer.BYTES < m_buffer.length) {
+            for (int i = 0; i < Integer.BYTES; i++) {
+                m_buffer[m_currentPosition++] = (byte) (p_v >> (Integer.BYTES - 1 - i) * 8 & 0xFF);
             }
         } else {
             int i;
-            for (i = 0; i < 4 && m_currentPosition < m_buffer.length; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (3 - i) * 8 & 0xFF);
+            for (i = 0; i < Integer.BYTES && m_currentPosition < m_buffer.length; i++) {
+                m_buffer[m_currentPosition++] = (byte) (p_v >> (Integer.BYTES - 1 - i) * 8 & 0xFF);
             }
             m_currentPosition = 0;
-            for (int j = i; j < 4; j++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (3 - j) * 8 & 0xFF);
+            for (int j = i; j < Integer.BYTES; j++) {
+                m_buffer[m_currentPosition++] = (byte) (p_v >> (Integer.BYTES - 1 - j) * 8 & 0xFF);
             }
         }
     }
 
     @Override
     public void writeLong(final long p_v) {
-        if (m_currentPosition + 8 < m_buffer.length) {
-            for (int i = 0; i < 8; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (7 - i) * 8 & 0xFF);
+        if (m_currentPosition + Long.BYTES < m_buffer.length) {
+            for (int i = 0; i < Long.BYTES; i++) {
+                m_buffer[m_currentPosition++] = (byte) (p_v >> (Long.BYTES - 1 - i) * 8 & 0xFF);
             }
         } else {
             int i;
-            for (i = 0; i < 8 && m_currentPosition < m_buffer.length; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (7 - i) * 8 & 0xFF);
+            for (i = 0; i < Long.BYTES && m_currentPosition < m_buffer.length; i++) {
+                m_buffer[m_currentPosition++] = (byte) (p_v >> (Long.BYTES - 1 - i) * 8 & 0xFF);
             }
             m_currentPosition = 0;
-            for (int j = i; j < 8; j++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (7 - j) * 8 & 0xFF);
+            for (int j = i; j < Long.BYTES; j++) {
+                m_buffer[m_currentPosition++] = (byte) (p_v >> (Long.BYTES - 1 - j) * 8 & 0xFF);
             }
         }
     }
@@ -137,6 +138,12 @@ public class NIOMessageExporterOverflow extends AbstractMessageExporter {
     @Override
     public void writeDouble(final double p_v) {
         writeLong(Double.doubleToRawLongBits(p_v));
+    }
+
+    @Override
+    public void writeCompactNumber(int p_v) {
+        byte[] number = CompactNumber.compact(p_v);
+        writeBytes(number);
     }
 
     @Override
@@ -207,32 +214,31 @@ public class NIOMessageExporterOverflow extends AbstractMessageExporter {
 
     @Override
     public void writeByteArray(final byte[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeBytes(p_array);
     }
 
     @Override
     public void writeShortArray(final short[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeShorts(p_array);
     }
 
     @Override
     public void writeIntArray(final int[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeInts(p_array);
     }
 
     @Override
     public void writeLongArray(final long[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeLongs(p_array);
     }
 
     @Override
     public void writeStringArray(final String[] p_array) {
-        writeInt(p_array.length);
-
+        writeCompactNumber(p_array.length);
         for (int i = 0; i < p_array.length; i++) {
             writeString(p_array[i]);
         }

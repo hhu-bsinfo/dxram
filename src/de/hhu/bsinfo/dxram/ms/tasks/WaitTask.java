@@ -42,7 +42,7 @@ public class WaitTask implements Task {
      * Constructor
      *
      * @param p_timeMs
-     *     Amount of time to wait in ms.
+     *         Amount of time to wait in ms.
      */
     public WaitTask(final int p_timeMs) {
         m_waitMs = p_timeMs;
@@ -71,7 +71,7 @@ public class WaitTask implements Task {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_waitMs = p_importer.readInt();
+        m_waitMs = p_importer.readInt(m_waitMs);
     }
 
     @Override

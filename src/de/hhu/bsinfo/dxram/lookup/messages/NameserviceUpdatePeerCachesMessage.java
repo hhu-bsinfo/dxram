@@ -93,8 +93,8 @@ public class NameserviceUpdatePeerCachesMessage extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_id = p_importer.readInt();
-        m_chunkID = p_importer.readLong();
+        m_id = p_importer.readInt(m_id);
+        m_chunkID = p_importer.readLong(m_chunkID);
     }
 
 }

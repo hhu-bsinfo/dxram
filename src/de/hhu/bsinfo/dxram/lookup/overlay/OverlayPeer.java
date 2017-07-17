@@ -751,7 +751,7 @@ public class OverlayPeer implements MessageReceiver {
         }
 
         BarrierFreeResponse response = (BarrierFreeResponse) message.getResponse();
-        if (response.getStatusCode() == -1) {
+        if (response.getStatus() == -1) {
             // #if LOGGER >= ERROR
             LOGGER.error("Freeing barrier 0x%X on superpeer 0x%X failed: barrier does not exist", p_barrierId, responsibleSuperpeer);
             // #endif /* LOGGER >= ERROR */
@@ -788,12 +788,12 @@ public class OverlayPeer implements MessageReceiver {
 
         BarrierChangeSizeResponse response = (BarrierChangeSizeResponse) request.getResponse();
         // #if LOGGER >= ERROR
-        if (response.getStatusCode() != 0) {
+        if (response.getStatus() != 0) {
             LOGGER.error("Changing size of barrier 0x%X failed", p_barrierId);
         }
         // #endif /* LOGGER >= ERROR */
 
-        return response.getStatusCode() == 0;
+        return response.getStatus() == 0;
     }
 
     /**
@@ -846,7 +846,7 @@ public class OverlayPeer implements MessageReceiver {
         }
 
         BarrierSignOnResponse response = (BarrierSignOnResponse) request.getResponse();
-        if (response.getBarrierId() != p_barrierId || response.getStatusCode() != 0) {
+        if (response.getBarrierId() != p_barrierId || response.getStatus() != 0) {
             // #if LOGGER >= ERROR
             LOGGER.error("Sign on barrier 0x%X failed", p_barrierId);
             // #endif /* LOGGER >= ERROR */
@@ -889,7 +889,7 @@ public class OverlayPeer implements MessageReceiver {
         }
 
         BarrierGetStatusResponse response = (BarrierGetStatusResponse) request.getResponse();
-        if (response.getStatusCode() == -1) {
+        if (response.getStatus() == -1) {
             // #if LOGGER >= ERROR
             LOGGER.error("Getting status request of barrier 0x%X failed: barrier does not exist", p_barrierId);
             // #endif /* LOGGER >= ERROR */
@@ -942,10 +942,10 @@ public class OverlayPeer implements MessageReceiver {
                 }
 
                 SuperpeerStorageCreateResponse response = request.getResponse(SuperpeerStorageCreateResponse.class);
-                if (response.getStatusCode() != 0) {
+                if (response.getStatus() != 0) {
                     // #if LOGGER >= ERROR
                     LOGGER.error("Allocating temporary storage on superpeer 0x%X for 0x%X, size %d failed: %d", response.getSource(), p_storageId, p_size,
-                            response.getStatusCode());
+                            response.getStatus());
                     // #endif /* LOGGER >= ERROR */
                     return false;
                 } else {
@@ -1007,7 +1007,7 @@ public class OverlayPeer implements MessageReceiver {
                 }
 
                 SuperpeerStoragePutResponse response = request.getResponse(SuperpeerStoragePutResponse.class);
-                return response.getStatusCode() == 0;
+                return response.getStatus() == 0;
             }
 
             m_overlayLock.readLock().lock();
@@ -1064,7 +1064,7 @@ public class OverlayPeer implements MessageReceiver {
                 }
 
                 SuperpeerStoragePutAnonResponse response = request.getResponse(SuperpeerStoragePutAnonResponse.class);
-                return response.getStatusCode() == 0;
+                return response.getStatus() == 0;
             }
 
             m_overlayLock.readLock().lock();
@@ -1121,7 +1121,7 @@ public class OverlayPeer implements MessageReceiver {
                 }
 
                 SuperpeerStorageGetResponse response = request.getResponse(SuperpeerStorageGetResponse.class);
-                return response.getStatusCode() == 0;
+                return response.getStatus() == 0;
             }
 
             m_overlayLock.readLock().lock();
@@ -1178,7 +1178,7 @@ public class OverlayPeer implements MessageReceiver {
                 }
 
                 SuperpeerStorageGetAnonResponse response = request.getResponse(SuperpeerStorageGetAnonResponse.class);
-                return response.getStatusCode() == 0;
+                return response.getStatus() == 0;
             }
 
             m_overlayLock.readLock().lock();

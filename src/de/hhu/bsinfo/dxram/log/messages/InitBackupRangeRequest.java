@@ -76,6 +76,6 @@ public class InitBackupRangeRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_rangeID = p_importer.readShort();
+        m_rangeID = p_importer.readShort(m_rangeID);
     }
 }

@@ -79,7 +79,7 @@ public class AskAboutSuccessorResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_successor = p_importer.readShort();
+        m_successor = p_importer.readShort(m_successor);
     }
 
 }

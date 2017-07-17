@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.net.nio;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.utils.serialization.CompactNumber;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 
 /**
@@ -66,22 +67,22 @@ class NIOMessageExporter extends AbstractMessageExporter {
 
     @Override
     public void writeShort(final short p_v) {
-        for (int i = 0; i < 2; i++) {
-            m_buffer[m_currentPosition++] = (byte) (p_v >> (1 - i) * 8 & 0xFF);
+        for (int i = 0; i < Short.BYTES; i++) {
+            m_buffer[m_currentPosition++] = (byte) (p_v >> (Short.BYTES - 1 - i) * 8 & 0xFF);
         }
     }
 
     @Override
     public void writeInt(final int p_v) {
-        for (int i = 0; i < 4; i++) {
-            m_buffer[m_currentPosition++] = (byte) (p_v >> (3 - i) * 8 & 0xFF);
+        for (int i = 0; i < Integer.BYTES; i++) {
+            m_buffer[m_currentPosition++] = (byte) (p_v >> (Integer.BYTES - 1 - i) * 8 & 0xFF);
         }
     }
 
     @Override
     public void writeLong(final long p_v) {
-        for (int i = 0; i < 8; i++) {
-            m_buffer[m_currentPosition++] = (byte) (p_v >> (7 - i) * 8 & 0xFF);
+        for (int i = 0; i < Long.BYTES; i++) {
+            m_buffer[m_currentPosition++] = (byte) (p_v >> (Long.BYTES - 1 - i) * 8 & 0xFF);
         }
     }
 
@@ -93,6 +94,12 @@ class NIOMessageExporter extends AbstractMessageExporter {
     @Override
     public void writeDouble(final double p_v) {
         writeLong(Double.doubleToRawLongBits(p_v));
+    }
+
+    @Override
+    public void writeCompactNumber(int p_v) {
+        byte[] number = CompactNumber.compact(p_v);
+        writeBytes(number);
     }
 
     @Override
@@ -157,32 +164,31 @@ class NIOMessageExporter extends AbstractMessageExporter {
 
     @Override
     public void writeByteArray(final byte[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeBytes(p_array);
     }
 
     @Override
     public void writeShortArray(final short[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeShorts(p_array);
     }
 
     @Override
     public void writeIntArray(final int[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeInts(p_array);
     }
 
     @Override
     public void writeLongArray(final long[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeLongs(p_array);
     }
 
     @Override
     public void writeStringArray(final String[] p_array) {
-        writeInt(p_array.length);
-
+        writeCompactNumber(p_array.length);
         for (int i = 0; i < p_array.length; i++) {
             writeString(p_array[i]);
         }

@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Response to a RemoveRequest
@@ -65,22 +66,18 @@ public class RemoveChunkIDsResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        int ret;
-
-        if (m_backupSuperpeers == null) {
-            ret = Integer.BYTES;
+        if (m_backupSuperpeers != null) {
+            return ObjectSizeUtil.sizeofShortArray(m_backupSuperpeers);
         } else {
-            ret = Integer.BYTES + Short.BYTES * m_backupSuperpeers.length;
+            return Byte.BYTES;
         }
-
-        return ret;
     }
 
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_backupSuperpeers == null) {
-            p_exporter.writeInt(0);
+            p_exporter.writeCompactNumber(0);
         } else {
             p_exporter.writeShortArray(m_backupSuperpeers);
         }
@@ -88,7 +85,7 @@ public class RemoveChunkIDsResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_backupSuperpeers = p_importer.readShortArray();
+        m_backupSuperpeers = p_importer.readShortArray(m_backupSuperpeers);
     }
 
 }

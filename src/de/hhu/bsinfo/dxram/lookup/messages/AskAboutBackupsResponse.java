@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Response to a AskAboutBackupsRequest
@@ -65,21 +66,18 @@ public class AskAboutBackupsResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        int ret;
-
-        ret = Integer.BYTES;
         if (m_missingMetadata != null && m_missingMetadata.length > 0) {
-            ret += m_missingMetadata.length;
+            return ObjectSizeUtil.sizeofByteArray(m_missingMetadata);
+        } else {
+            return Byte.BYTES;
         }
-
-        return ret;
     }
 
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_missingMetadata == null || m_missingMetadata.length == 0) {
-            p_exporter.writeInt(0);
+            p_exporter.writeCompactNumber(0);
         } else {
             p_exporter.writeByteArray(m_missingMetadata);
         }
@@ -87,7 +85,7 @@ public class AskAboutBackupsResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_missingMetadata = p_importer.readByteArray();
+        m_missingMetadata = p_importer.readByteArray(m_missingMetadata);
     }
 
 }

@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Send Backups Message
@@ -66,21 +67,18 @@ public class SendBackupsMessage extends AbstractMessage {
 
     @Override
     protected final int getPayloadLength() {
-        int ret;
-
-        ret = Integer.BYTES;
         if (m_metadata != null && m_metadata.length > 0) {
-            ret += m_metadata.length;
+            return ObjectSizeUtil.sizeofByteArray(m_metadata);
+        } else {
+            return Byte.BYTES;
         }
-
-        return ret;
     }
 
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_metadata == null || m_metadata.length == 0) {
-            p_exporter.writeInt(0);
+            p_exporter.writeCompactNumber(0);
         } else {
             p_exporter.writeByteArray(m_metadata);
         }
@@ -88,7 +86,7 @@ public class SendBackupsMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_metadata = p_importer.readByteArray();
+        m_metadata = p_importer.readByteArray(m_metadata);
     }
 
 }

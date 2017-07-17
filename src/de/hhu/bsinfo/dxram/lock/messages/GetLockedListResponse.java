@@ -29,6 +29,8 @@ public class GetLockedListResponse extends AbstractResponse {
 
     private ArrayList<LockedChunkEntry> m_list;
 
+    private int m_size; // For serialization, only
+
     /**
      * Creates an instance of LockResponse as a receiver.
      */
@@ -61,12 +63,12 @@ public class GetLockedListResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + m_list.size() * LockedChunkEntry.SIZEOF_OBJECT;
+        return Integer.BYTES + m_list.size() * (Long.BYTES + Short.BYTES);
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeInt(m_list.size());
+        p_exporter.writeCompactNumber(m_list.size());
         for (LockedChunkEntry entry : m_list) {
             p_exporter.exportObject(entry);
         }
@@ -74,13 +76,16 @@ public class GetLockedListResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int size = p_importer.readInt();
-        m_list = new ArrayList<LockedChunkEntry>(size);
-
-        for (int i = 0; i < size; i++) {
+        m_size = p_importer.readCompactNumber(m_size);
+        if (m_list == null) {
+            m_list = new ArrayList<LockedChunkEntry>(m_size);
+        }
+        for (int i = 0; i < m_size; i++) {
             LockedChunkEntry entry = new LockedChunkEntry();
             p_importer.importObject(entry);
-            m_list.add(entry);
+            if (m_list.size() == i) {
+                m_list.add(entry);
+            }
         }
     }
 }

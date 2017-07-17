@@ -36,7 +36,7 @@ public final class ChunkAnon implements Importable, Exportable {
      * Used when sending a remote request and waiting for the incoming data to be written to the object
      *
      * @param p_id
-     *     The ID of the chunk
+     *         The ID of the chunk
      */
     public ChunkAnon(final long p_id) {
         m_id = p_id;
@@ -48,10 +48,10 @@ public final class ChunkAnon implements Importable, Exportable {
      * Wrap an external byte array with this object
      *
      * @param p_id
-     *     ID the chunk is assigned to.
+     *         ID the chunk is assigned to.
      * @param p_buffer
-     *     External buffer containing the data for the chunk. Be careful
-     *     with shared references.
+     *         External buffer containing the data for the chunk. Be careful
+     *         with shared references.
      */
     public ChunkAnon(final long p_id, final byte[] p_buffer) {
         m_id = p_id;
@@ -87,7 +87,7 @@ public final class ChunkAnon implements Importable, Exportable {
      * Applications using DXRAM don't have to call this
      *
      * @param p_state
-     *     State to set.
+     *         State to set.
      */
     public void setState(final ChunkState p_state) {
         m_state = p_state;
@@ -129,15 +129,11 @@ public final class ChunkAnon implements Importable, Exportable {
     @Override
     public void importObject(final Importer p_importer) {
         // IMPORTANT: this reads a full byte array WITH length field from the importer!
-        m_data = p_importer.readByteArray();
+        m_data = p_importer.readByteArray(m_data);
     }
 
     @Override
     public int sizeofObject() {
-        if (m_data != null) {
-            return ObjectSizeUtil.sizeofByteArray(m_data);
-        } else {
-            return 0;
-        }
+        return ObjectSizeUtil.sizeofByteArray(m_data);
     }
 }

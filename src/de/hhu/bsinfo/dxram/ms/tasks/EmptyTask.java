@@ -42,7 +42,7 @@ public class EmptyTask implements Task {
      * Constructor
      *
      * @param p_result
-     *     Return code for this task
+     *         Return code for this task
      */
     public EmptyTask(final int p_result) {
         m_result = p_result;
@@ -65,7 +65,7 @@ public class EmptyTask implements Task {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_result = p_importer.readInt();
+        m_result = p_importer.readInt(m_result);
     }
 
     @Override

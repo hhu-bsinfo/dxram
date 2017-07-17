@@ -17,7 +17,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
@@ -25,11 +24,11 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
+import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
-import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
-import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -63,7 +62,7 @@ public class GraphLoadPartitionIndexTask implements Task {
      * Constructor
      *
      * @param p_pathFile
-     *     Partition index file to load
+     *         Partition index file to load
      */
     public GraphLoadPartitionIndexTask(final String p_pathFile) {
         m_pathFile = p_pathFile;
@@ -73,7 +72,7 @@ public class GraphLoadPartitionIndexTask implements Task {
      * Set the path of the partition index file to load.
      *
      * @param p_path
-     *     Path of the file to load.
+     *         Path of the file to load.
      */
     public void setPartitionIndexFilePath(final String p_path) {
         m_pathFile = p_path;
@@ -123,7 +122,7 @@ public class GraphLoadPartitionIndexTask implements Task {
 
             // #if LOGGER >= INFO
             LOGGER.info("Successfully loaded and stored graph partition index, nameservice entry name %s:\n%s",
-                MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId(), graphPartIndex);
+                    MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId(), graphPartIndex);
             // #endif /* LOGGER >= INFO */
         }
 
@@ -142,16 +141,12 @@ public class GraphLoadPartitionIndexTask implements Task {
 
     @Override
     public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeInt(m_pathFile.length());
-        p_exporter.writeBytes(m_pathFile.getBytes(StandardCharsets.US_ASCII));
+        p_exporter.writeString(m_pathFile);
     }
 
     @Override
     public void importObject(final Importer p_importer) {
-        int strLength = p_importer.readInt();
-        byte[] tmp = new byte[strLength];
-        p_importer.readBytes(tmp);
-        m_pathFile = new String(tmp, StandardCharsets.US_ASCII);
+        m_pathFile = p_importer.readString(m_pathFile);
     }
 
     @Override
@@ -163,9 +158,9 @@ public class GraphLoadPartitionIndexTask implements Task {
      * Load the graph partition index from one or multiple graph partition index files from a specific path.
      *
      * @param p_ctx
-     *     TaskScript context.
+     *         TaskScript context.
      * @param p_path
-     *     Path containing the graph partition index file(s).
+     *         Path containing the graph partition index file(s).
      * @return Graph partition index object with partition entries loaded from the files.
      */
     private GraphPartitionIndex loadGraphPartitionIndexFromIndexFiles(final TaskContext p_ctx, final String p_path) {
@@ -188,9 +183,9 @@ public class GraphLoadPartitionIndexTask implements Task {
      * line)
      *
      * @param p_ctx
-     *     TaskScript context.
+     *         TaskScript context.
      * @param p_pathFile
-     *     Path + filename of the index file to read.
+     *         Path + filename of the index file to read.
      * @return List of entries read from the file or null on error.
      */
     private ArrayList<GraphPartitionIndex.Entry> readIndexEntriesFromFile(final TaskContext p_ctx, final String p_pathFile) {
@@ -231,8 +226,8 @@ public class GraphLoadPartitionIndexTask implements Task {
 
             int partitionId = Integer.parseInt(tokens[0]);
             GraphPartitionIndex.Entry entry =
-                new GraphPartitionIndex.Entry(slaves[partitionId], partitionId, Long.parseLong(tokens[1]), Long.parseLong(tokens[2]),
-                    Long.parseLong(tokens[3]));
+                    new GraphPartitionIndex.Entry(slaves[partitionId], partitionId, Long.parseLong(tokens[1]), Long.parseLong(tokens[2]),
+                            Long.parseLong(tokens[3]));
             entries.add(entry);
         }
 

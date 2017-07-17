@@ -43,7 +43,7 @@ public class PrintTask implements Task {
      * Constructor
      *
      * @param p_msg
-     *     Message to print
+     *         Message to print
      */
     public PrintTask(final String p_msg) {
         m_msg = p_msg;
@@ -67,7 +67,7 @@ public class PrintTask implements Task {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_msg = p_importer.readString();
+        m_msg = p_importer.readString(m_msg);
     }
 
     @Override

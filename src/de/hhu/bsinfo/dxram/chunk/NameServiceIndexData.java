@@ -42,7 +42,7 @@ public class NameServiceIndexData extends DataStructure {
      * Chain multiple indices for expansion creating a linked list.
      *
      * @param p_chunkID
-     *     ChunkID of the next data index to chain to this one.
+     *         ChunkID of the next data index to chain to this one.
      */
     public void setNextIndexDataChunk(final long p_chunkID) {
         m_nextIndexDataChunkId = p_chunkID;
@@ -52,9 +52,9 @@ public class NameServiceIndexData extends DataStructure {
      * Insert a new mapping into the index.
      *
      * @param p_key
-     *     Key of the mapping.
+     *         Key of the mapping.
      * @param p_chunkId
-     *     Chunk id to map to the key.
+     *         Chunk id to map to the key.
      * @return True if adding successful, false if index is full.
      */
     public boolean insertMapping(final int p_key, final long p_chunkId) {
@@ -70,12 +70,12 @@ public class NameServiceIndexData extends DataStructure {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_numEntries = p_importer.readShort();
+        m_numEntries = p_importer.readShort(m_numEntries);
         for (int i = 0; i < MS_NUM_INDICES; i++) {
-            m_keys[i] = p_importer.readInt();
-            m_chunkIDs[i] = p_importer.readLong();
+            m_keys[i] = p_importer.readInt(m_keys[i]);
+            m_chunkIDs[i] = p_importer.readLong(m_chunkIDs[i]);
         }
-        m_nextIndexDataChunkId = p_importer.readLong();
+        m_nextIndexDataChunkId = p_importer.readLong(m_nextIndexDataChunkId);
     }
 
     @Override
@@ -90,6 +90,6 @@ public class NameServiceIndexData extends DataStructure {
 
     @Override
     public int sizeofObject() {
-        return Short.BYTES + Integer.BYTES * MS_NUM_INDICES + Long.BYTES * MS_NUM_INDICES + Long.BYTES;
+        return Short.BYTES + (Integer.BYTES + Long.BYTES) * MS_NUM_INDICES + Long.BYTES;
     }
 }

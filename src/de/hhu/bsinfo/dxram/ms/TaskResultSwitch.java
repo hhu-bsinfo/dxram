@@ -44,7 +44,7 @@ final class TaskResultSwitch implements TaskScriptNode {
      * Evaluate the switch state based on the previous task's return code
      *
      * @param p_prevTaskReturnCode
-     *     Return code of the previous task
+     *         Return code of the previous task
      * @return TaskScript which is the result of the evaluated switch state for further execution
      */
     TaskScript evaluate(final int p_prevTaskReturnCode) {
@@ -73,12 +73,16 @@ final class TaskResultSwitch implements TaskScriptNode {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_switchCases = new Case[p_importer.readInt()];
+        int length = p_importer.readInt(0);
+        if (m_switchCases.length == 0) {
+            m_switchCases = new Case[length];
+        }
         for (int i = 0; i < m_switchCases.length; i++) {
-            m_switchCases[i] = new Case();
+            if (m_switchCases[i] == null) {
+                m_switchCases[i] = new Case();
+            }
             p_importer.importObject(m_switchCases[i]);
         }
-        m_switchCaseDefault = new Case();
         p_importer.importObject(m_switchCaseDefault);
     }
 
@@ -137,8 +141,10 @@ final class TaskResultSwitch implements TaskScriptNode {
 
         @Override
         public void importObject(final Importer p_importer) {
-            m_caseValue = p_importer.readInt();
-            m_case = new TaskScript();
+            m_caseValue = p_importer.readInt(m_caseValue);
+            if (m_case.getTasks()[0] instanceof EmptyTask) {
+                m_case = new TaskScript();
+            }
             p_importer.importObject(m_case);
         }
 

@@ -124,10 +124,10 @@ public class MigrateRangeRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_startChunkID = p_importer.readLong();
-        m_endChunkID = p_importer.readLong();
-        m_nodeID = p_importer.readShort();
-        m_isBackup = p_importer.readBoolean();
+        m_startChunkID = p_importer.readLong(m_startChunkID);
+        m_endChunkID = p_importer.readLong(m_endChunkID);
+        m_nodeID = p_importer.readShort(m_nodeID);
+        m_isBackup = p_importer.readBoolean(m_isBackup);
     }
 
 }

@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Response to a GetMetadataSummaryRequest
@@ -63,7 +64,7 @@ public class GetMetadataSummaryResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        return m_summary.getBytes().length + Integer.BYTES;
+        return ObjectSizeUtil.sizeofString(m_summary);
     }
 
     // Methods
@@ -74,7 +75,7 @@ public class GetMetadataSummaryResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_summary = p_importer.readString();
+        m_summary = p_importer.readString(m_summary);
     }
 
 }

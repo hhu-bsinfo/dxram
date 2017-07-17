@@ -17,6 +17,7 @@ import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Data for a task that describes the context.
@@ -41,11 +42,11 @@ public class TaskContextData implements Importable, Exportable {
      * Constructor
      *
      * @param p_computeGroupId
-     *     Compute group id the task is assigned to.
+     *         Compute group id the task is assigned to.
      * @param p_slaveId
-     *     Id of the slave the task is assigned to.
+     *         Id of the slave the task is assigned to.
      * @param p_slaveNodeIds
-     *     List of node ids of all involved slaves with this task
+     *         List of node ids of all involved slaves with this task
      */
     TaskContextData(final short p_computeGroupId, final short p_slaveId, final short[] p_slaveNodeIds) {
         m_computeGroupId = p_computeGroupId;
@@ -98,14 +99,14 @@ public class TaskContextData implements Importable, Exportable {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_computeGroupId = p_importer.readShort();
-        m_slaveId = p_importer.readShort();
-        m_slaveNodeIds = p_importer.readShortArray();
+        m_computeGroupId = p_importer.readShort(m_computeGroupId);
+        m_slaveId = p_importer.readShort(m_slaveId);
+        m_slaveNodeIds = p_importer.readShortArray(m_slaveNodeIds);
     }
 
     @Override
     public int sizeofObject() {
-        return 2 * Short.BYTES + Integer.BYTES + m_slaveNodeIds.length * Short.BYTES;
+        return 2 * Short.BYTES + ObjectSizeUtil.sizeofShortArray(m_slaveNodeIds);
     }
 
     @Override

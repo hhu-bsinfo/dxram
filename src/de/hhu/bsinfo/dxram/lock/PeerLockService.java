@@ -158,11 +158,11 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
 
                         LockResponse response = request.getResponse(LockResponse.class);
                         if (response != null) {
-                            if (response.getStatusCode() == 0) {
+                            if (response.getLockStatus() == 0) {
                                 // successfully locked on remote
                                 err = ErrorCode.SUCCESS;
                                 break;
-                            } else if (response.getStatusCode() == -1) {
+                            } else if (response.getLockStatus() == -1) {
                                 // timeout for now, but possible retry
                                 err = ErrorCode.LOCK_TIMEOUT;
                                 idle = true;

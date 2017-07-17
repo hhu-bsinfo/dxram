@@ -19,6 +19,7 @@ import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Update All Message
@@ -111,7 +112,7 @@ public class UpdateMetadataAfterRecoveryMessage extends AbstractMessage {
 
     @Override
     protected final int getPayloadLength() {
-        return 3 * Short.BYTES + Integer.BYTES + m_chunkIDRanges.length * Long.BYTES;
+        return 3 * Short.BYTES + ObjectSizeUtil.sizeofLongArray(m_chunkIDRanges);
     }
 
     // Methods
@@ -125,10 +126,10 @@ public class UpdateMetadataAfterRecoveryMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_rangeID = p_importer.readShort();
-        m_creator = p_importer.readShort();
-        m_restorer = p_importer.readShort();
-        m_chunkIDRanges = p_importer.readLongArray();
+        m_rangeID = p_importer.readShort(m_rangeID);
+        m_creator = p_importer.readShort(m_creator);
+        m_restorer = p_importer.readShort(m_restorer);
+        m_chunkIDRanges = p_importer.readLongArray(m_chunkIDRanges);
     }
 
 }

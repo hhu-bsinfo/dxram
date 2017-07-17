@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Response to a PutRequest
@@ -47,10 +47,7 @@ public class PutResponse extends AbstractResponse {
      */
     public PutResponse(final PutRequest p_request, final byte... p_statusCodes) {
         super(p_request, ChunkMessages.SUBTYPE_PUT_RESPONSE);
-
         m_chunkStatusCodes = p_statusCodes;
-
-        setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_statusCodes.length));
     }
 
     /**
@@ -64,23 +61,17 @@ public class PutResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + m_chunkStatusCodes.length * Byte.BYTES;
+        return ObjectSizeUtil.sizeofByteArray(m_chunkStatusCodes);
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_chunkStatusCodes.length);
-
-        p_exporter.writeBytes(m_chunkStatusCodes);
+        p_exporter.writeByteArray(m_chunkStatusCodes);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
-
-        m_chunkStatusCodes = new byte[numChunks];
-
-        p_importer.readBytes(m_chunkStatusCodes);
+        m_chunkStatusCodes = p_importer.readByteArray(m_chunkStatusCodes);
     }
 
 }

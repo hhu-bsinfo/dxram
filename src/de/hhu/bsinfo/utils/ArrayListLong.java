@@ -20,6 +20,7 @@ import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Custom array list implementation offering direct access to a primitive long array
@@ -44,7 +45,7 @@ public class ArrayListLong implements Importable, Exportable {
      * Create the array list with a specific capacity chunk size
      *
      * @param p_capacityChunk
-     *     capacity chunk size
+     *         capacity chunk size
      */
     public ArrayListLong(final int p_capacityChunk) {
         m_capacityChunk = p_capacityChunk;
@@ -56,7 +57,7 @@ public class ArrayListLong implements Importable, Exportable {
      * Create the array list with a single element inserted on construction
      *
      * @param p_element
-     *     Element to insert on construction
+     *         Element to insert on construction
      */
     public ArrayListLong(final long p_element) {
         m_array = new long[] {p_element};
@@ -67,7 +68,7 @@ public class ArrayListLong implements Importable, Exportable {
      * Copy constructor
      *
      * @param p_list
-     *     Contents of list to copy
+     *         Contents of list to copy
      */
     public ArrayListLong(final ArrayListLong p_list) {
         m_array = new long[p_list.m_size];
@@ -78,7 +79,7 @@ public class ArrayListLong implements Importable, Exportable {
      * Constructor for wrapper method
      *
      * @param p_array
-     *     Array to wrap
+     *         Array to wrap
      */
     private ArrayListLong(final long[] p_array) {
         m_array = p_array;
@@ -89,9 +90,9 @@ public class ArrayListLong implements Importable, Exportable {
      * Constructor for copying the contents of a provided array
      *
      * @param p_array
-     *     Array with contents to copy
+     *         Array with contents to copy
      * @param p_dummy
-     *     Dummy variable
+     *         Dummy variable
      */
     private ArrayListLong(final long[] p_array, boolean p_dummy) {
         m_array = Arrays.copyOf(p_array, p_array.length);
@@ -102,7 +103,7 @@ public class ArrayListLong implements Importable, Exportable {
      * Wrap an existing primitive long aray
      *
      * @param p_array
-     *     Array to wrap
+     *         Array to wrap
      * @return ArrayListLong object with wrapped array
      */
     public static ArrayListLong wrap(final long[] p_array) {
@@ -113,7 +114,7 @@ public class ArrayListLong implements Importable, Exportable {
      * Create a array list with the contents of the provided primitive array
      *
      * @param p_array
-     *     Array with contents to copy
+     *         Array with contents to copy
      * @return ArrayListLong object with contents of provided array
      */
     public static ArrayListLong copy(final long[] p_array) {
@@ -151,7 +152,7 @@ public class ArrayListLong implements Importable, Exportable {
      * Add an element to the array. The array is automatically resized if necessary
      *
      * @param p_val
-     *     Value to add
+     *         Value to add
      */
     public void add(final long p_val) {
         if (m_array.length - m_size == 0) {
@@ -167,9 +168,9 @@ public class ArrayListLong implements Importable, Exportable {
      * Do not mix with add(long)!
      *
      * @param p_index
-     *     index at which the specified element is to be inserted
+     *         index at which the specified element is to be inserted
      * @param p_val
-     *     Value to add
+     *         Value to add
      */
     public void add(final int p_index, final long p_val) {
         if (m_array.length <= p_index) {
@@ -187,7 +188,7 @@ public class ArrayListLong implements Importable, Exportable {
      * Add all values of another ArrayListLong object
      *
      * @param p_list
-     *     Array with elements to add to the current one
+     *         Array with elements to add to the current one
      */
     public void addAll(final ArrayListLong p_list) {
         m_array = Arrays.copyOf(m_array, m_array.length + p_list.m_size);
@@ -199,9 +200,9 @@ public class ArrayListLong implements Importable, Exportable {
      * Replaces the element at given index
      *
      * @param p_index
-     *     index at which the specified element is to be overwritten
+     *         index at which the specified element is to be overwritten
      * @param p_val
-     *     Value to set
+     *         Value to set
      */
     public void set(final int p_index, final long p_val) {
         m_array[p_index] = p_val;
@@ -211,7 +212,7 @@ public class ArrayListLong implements Importable, Exportable {
      * Get an element from the array
      *
      * @param p_index
-     *     Index to access
+     *         Index to access
      * @return Element at the specified index
      */
     public long get(final int p_index) {
@@ -222,7 +223,7 @@ public class ArrayListLong implements Importable, Exportable {
      * Remove an element from the array
      *
      * @param p_index
-     *     Index of the element to remove
+     *         Index of the element to remove
      * @return Removed value
      */
     public long remove(final int p_index) {
@@ -240,18 +241,18 @@ public class ArrayListLong implements Importable, Exportable {
 
     @Override
     public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeInt(m_size);
+        p_exporter.writeCompactNumber(m_size);
         p_exporter.writeLongs(m_array, 0, m_size);
     }
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_array = p_importer.readLongArray();
+        m_array = p_importer.readLongArray(m_array);
         m_size = m_array.length;
     }
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES + Long.BYTES * m_size;
+        return ObjectSizeUtil.sizeofCompactedNumber(m_size) + Long.BYTES * m_size;
     }
 }

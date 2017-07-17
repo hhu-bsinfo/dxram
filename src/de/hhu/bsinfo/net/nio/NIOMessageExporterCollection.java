@@ -14,28 +14,25 @@
 package de.hhu.bsinfo.net.nio;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
-import de.hhu.bsinfo.net.core.AbstractMessageImExporter;
-import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.net.core.AbstractMessageExporterCollection;
 
 /**
  * Implementation of an Importer/Exporter for ByteBuffers.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NIOMessageImExporter extends AbstractMessageImExporter {
+public class NIOMessageExporterCollection extends AbstractMessageExporterCollection {
 
     private AbstractMessageExporter m_exporter;
     private AbstractMessageExporter m_exporterWithOverflow;
-    private AbstractMessageImporter m_importer;
 
     /**
      * Constructor
      */
-    public NIOMessageImExporter() {
+    public NIOMessageExporterCollection() {
         super();
         m_exporter = new NIOMessageExporter();
         m_exporterWithOverflow = new NIOMessageExporterOverflow();
-        m_importer = new NIOMessageImporter();
     }
 
     @Override
@@ -45,11 +42,6 @@ public class NIOMessageImExporter extends AbstractMessageImExporter {
         } else {
             return m_exporterWithOverflow;
         }
-    }
-
-    @Override
-    public AbstractMessageImporter getImporter() {
-        return m_importer;
     }
 
 }

@@ -15,11 +15,6 @@ package de.hhu.bsinfo.utils.serialization;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.utils.serialization.Exportable;
-import de.hhu.bsinfo.utils.serialization.Exporter;
-import de.hhu.bsinfo.utils.serialization.Importable;
-import de.hhu.bsinfo.utils.serialization.Importer;
-
 /**
  * Implementation of an Importer/Exporter for ByteBuffers.
  *
@@ -79,6 +74,12 @@ public class ByteBufferImExporter implements Importer, Exporter {
     }
 
     @Override
+    public void writeCompactNumber(int p_v) {
+        byte[] number = CompactNumber.compact(p_v);
+        writeBytes(number);
+    }
+
+    @Override
     public void writeString(final String p_str) {
         writeByteArray(p_str.getBytes());
     }
@@ -100,43 +101,56 @@ public class ByteBufferImExporter implements Importer, Exporter {
     }
 
     @Override
-    public boolean readBoolean() {
+    public boolean readBoolean(final boolean p_bool) {
         return m_byteBuffer.get() == 1;
     }
 
     @Override
-    public byte readByte() {
+    public byte readByte(final byte p_byte) {
         return m_byteBuffer.get();
     }
 
     @Override
-    public short readShort() {
+    public short readShort(final short p_short) {
         return m_byteBuffer.getShort();
     }
 
     @Override
-    public int readInt() {
+    public int readInt(final int p_int) {
         return m_byteBuffer.getInt();
     }
 
     @Override
-    public long readLong() {
+    public long readLong(final long p_long) {
         return m_byteBuffer.getLong();
     }
 
     @Override
-    public float readFloat() {
+    public float readFloat(final float p_float) {
         return m_byteBuffer.getFloat();
     }
 
     @Override
-    public double readDouble() {
+    public double readDouble(final double p_double) {
         return m_byteBuffer.getDouble();
     }
 
     @Override
-    public String readString() {
-        return new String(readByteArray());
+    public int readCompactNumber(int p_int) {
+        int i;
+        for (i = 0; i < Integer.BYTES; i++) {
+            byte b = readByte((byte) 0);
+            if ((b & 0x80) == 0) {
+                break;
+            }
+        }
+
+        return CompactNumber.decompact(m_byteBuffer.array(), m_byteBuffer.position() - i, i);
+    }
+
+    @Override
+    public String readString(final String p_string) {
+        return new String(readByteArray(null));
     }
 
     @Override
@@ -268,39 +282,39 @@ public class ByteBufferImExporter implements Importer, Exporter {
     }
 
     @Override
-    public byte[] readByteArray() {
-        byte[] arr = new byte[readInt()];
+    public byte[] readByteArray(final byte[] p_array) {
+        byte[] arr = new byte[readInt(0)];
         readBytes(arr);
         return arr;
     }
 
     @Override
-    public short[] readShortArray() {
-        short[] arr = new short[readInt()];
+    public short[] readShortArray(final short[] p_array) {
+        short[] arr = new short[readInt(0)];
         readShorts(arr);
         return arr;
     }
 
     @Override
-    public int[] readIntArray() {
-        int[] arr = new int[readInt()];
+    public int[] readIntArray(final int[] p_array) {
+        int[] arr = new int[readInt(0)];
         readInts(arr);
         return arr;
     }
 
     @Override
-    public long[] readLongArray() {
-        long[] arr = new long[readInt()];
+    public long[] readLongArray(final long[] p_array) {
+        long[] arr = new long[readInt(0)];
         readLongs(arr);
         return arr;
     }
 
     @Override
-    public String[] readStringArray() {
-        String[] strings = new String[readInt()];
+    public String[] readStringArray(final String[] p_array) {
+        String[] strings = new String[readInt(0)];
 
         for (int i = 0; i < strings.length; i++) {
-            strings[i] = readString();
+            strings[i] = readString(null);
         }
 
         return strings;

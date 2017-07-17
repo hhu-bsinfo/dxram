@@ -248,11 +248,11 @@ public class NetworkTask implements Task, MessageReceiver {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_messageCnt = p_importer.readLong();
-        m_messageSize = p_importer.readInt();
-        m_threadCnt = p_importer.readInt();
-        m_pattern = p_importer.readInt();
-        m_isMessage = p_importer.readBoolean();
+        m_messageCnt = p_importer.readLong(m_messageCnt);
+        m_messageSize = p_importer.readInt(m_messageSize);
+        m_threadCnt = p_importer.readInt(m_threadCnt);
+        m_pattern = p_importer.readInt(m_pattern);
+        m_isMessage = p_importer.readBoolean(m_isMessage);
     }
 
     @Override

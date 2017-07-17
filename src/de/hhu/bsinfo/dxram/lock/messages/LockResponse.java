@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxram.lock.messages;
 
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -22,6 +24,8 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 05.01.2016
  */
 public class LockResponse extends AbstractResponse {
+
+    private byte m_lockStatus;
 
     /**
      * Creates an instance of LockResponse as a receiver.
@@ -34,14 +38,36 @@ public class LockResponse extends AbstractResponse {
      * Creates an instance of LockResponse as a sender.
      *
      * @param p_request
-     *     Corresponding request to this response.
+     *         Corresponding request to this response.
      * @param p_statusCode
-     *     Status code for locking the chunk.
+     *         Status code for locking the chunk.
      */
     public LockResponse(final LockRequest p_request, final byte p_statusCode) {
         super(p_request, LockMessages.SUBTYPE_LOCK_RESPONSE);
-
-        setStatusCode(p_statusCode);
+        m_lockStatus = p_statusCode;
     }
 
+    /**
+     * Get lock status
+     *
+     * @return the lock status
+     */
+    public byte getLockStatus() {
+        return m_lockStatus;
+    }
+
+    @Override
+    protected final int getPayloadLength() {
+        return Byte.BYTES;
+    }
+
+    @Override
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeByte(m_lockStatus);
+    }
+
+    @Override
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_lockStatus = p_importer.readByte(m_lockStatus);
+    }
 }

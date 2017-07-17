@@ -55,9 +55,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Creates an instance of the object heap
      *
      * @param p_memory
-     *     The underlying storage to use for this memory.
+     *         The underlying storage to use for this memory.
      * @param p_size
-     *     The size of the memory in bytes.
+     *         The size of the memory in bytes.
      */
     public SmallObjectHeap(final Storage p_memory, final long p_size, final int p_maxBlockSize) {
         m_memory = p_memory;
@@ -104,7 +104,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
 
         // #if LOGGER >= DEBUG
         LOGGER.debug("Created free block lists, m_freeBlocksListCount %d, m_freeBlocksListSize %d, m_baseFreeBlockList %d", m_freeBlocksListCount,
-            m_freeBlocksListSize, m_baseFreeBlockList);
+                m_freeBlocksListSize, m_baseFreeBlockList);
         // #endif /* LOGGER >= DEBUG */
 
         // Create one big free block
@@ -140,7 +140,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * from the marker byte.
      *
      * @param p_marker
-     *     Marker byte.
+     *         Marker byte.
      * @return Size of the length field of block with specified marker byte.
      */
     private static int getSizeFromMarker(final int p_marker) {
@@ -161,7 +161,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Calculate the size of the length field for a given memory block size
      *
      * @param p_size
-     *     Memory block size
+     *         Memory block size
      * @return Size of the length field to fit the size of the memory block
      */
     private static int calculateLengthFieldSizeAllocBlock(final int p_size) {
@@ -180,23 +180,23 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Check the memory bounds of an allocated memory region on access
      *
      * @param p_address
-     *     Start address of the allocated memory block
+     *         Start address of the allocated memory block
      * @param p_lengthFieldSize
-     *     Size of the length field
+     *         Size of the length field
      * @param p_size
-     *     Size of the memory block
+     *         Size of the memory block
      * @param p_offset
-     *     Offset to access the black at
+     *         Offset to access the black at
      * @param p_length
-     *     Range of the access starting at offset
+     *         Range of the access starting at offset
      * @return Dummy return for assert
      */
     private static boolean assertMemoryBlockBounds(final long p_address, final long p_lengthFieldSize, final long p_size, final long p_offset,
-        final long p_length) {
+            final long p_length) {
         if (!(p_offset < p_size) || !(p_size >= p_length && p_offset + p_length <= p_size)) {
             throw new MemoryRuntimeException(
-                "Access at invalid offset " + p_offset + ", on address " + p_address + ", with length " + p_length + " for memory block size " + p_size +
-                    ", size length field " + p_lengthFieldSize);
+                    "Access at invalid offset " + p_offset + ", on address " + p_address + ", with length " + p_length + " for memory block size " + p_size +
+                            ", size length field " + p_lengthFieldSize);
         }
 
         return true;
@@ -223,7 +223,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Full memory dump
      *
      * @param p_file
-     *     Destination for the memory file to dump to
+     *         Destination for the memory file to dump to
      */
     public void dump(final String p_file) {
         File file = new File(p_file);
@@ -258,7 +258,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Allocate a memory block
      *
      * @param p_size
-     *     the size of the block in bytes.
+     *         the size of the block in bytes.
      * @return the address of the block or 0 if no free blocks available for the specified size
      */
     public long malloc(final int p_size) {
@@ -270,7 +270,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * allocator cannot find a single free block that fits all the sizes
      *
      * @param p_sizes
-     *     Sizes for the blocks to allocate
+     *         Sizes for the blocks to allocate
      * @return List of addresses for the sizes on success, null on failure
      */
     public long[] multiMallocSizes(final int... p_sizes) {
@@ -282,9 +282,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * allocator cannot find a single free block that fits all the sizes
      *
      * @param p_sizes
-     *     Sizes for the blocks to allocate
+     *         Sizes for the blocks to allocate
      * @param p_usedEntries
-     *     First n elements to be used of size array
+     *         First n elements to be used of size array
      * @return List of addresses for the sizes on success, null on failure
      */
     public long[] multiMallocSizesUsedEntries(final int p_usedEntries, final int... p_sizes) {
@@ -337,9 +337,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * allocator cannot find a single free block that fits all the sizes
      *
      * @param p_size
-     *     Size of one block to allocate
+     *         Size of one block to allocate
      * @param p_count
-     *     Number of blocks of p_size each to allocate
+     *         Number of blocks of p_size each to allocate
      * @return List of addresses for the sizes on success, null on failure
      */
     public long[] multiMalloc(final int p_size, final int p_count) {
@@ -390,7 +390,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Frees a memory block
      *
      * @param p_address
-     *     the address of the block
+     *         the address of the block
      */
 
     public void free(final long p_address) {
@@ -404,7 +404,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Get the size of an allocated block of memory.
      *
      * @param p_address
-     *     Address of the block.
+     *         Address of the block.
      * @return Size of the block in bytes (payload only).
      */
     public int getSizeBlock(final long p_address) {
@@ -421,11 +421,11 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Overwrites the bytes in the memory with the given value
      *
      * @param p_address
-     *     the address to start
+     *         the address to start
      * @param p_size
-     *     the number of bytes to overwrite
+     *         the number of bytes to overwrite
      * @param p_value
-     *     the value to write
+     *         the value to write
      */
     public void set(final long p_address, final long p_size, final byte p_value) {
         assert assertMemoryBounds(p_address, p_size);
@@ -441,9 +441,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Read a single byte from the specified address + offset.
      *
      * @param p_address
-     *     Address.
+     *         Address.
      * @param p_offset
-     *     Offset to add to the address.
+     *         Offset to add to the address.
      * @return Byte read.
      */
     public byte readByte(final long p_address, final long p_offset) {
@@ -462,9 +462,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Read a single short from the specified address + offset.
      *
      * @param p_address
-     *     Address.
+     *         Address.
      * @param p_offset
-     *     Offset to add to the address.
+     *         Offset to add to the address.
      * @return Short read.
      */
     public short readShort(final long p_address, final long p_offset) {
@@ -483,9 +483,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Read a single int from the specified address + offset.
      *
      * @param p_address
-     *     Address.
+     *         Address.
      * @param p_offset
-     *     Offset to add to the address.
+     *         Offset to add to the address.
      * @return Int read.
      */
     public int readInt(final long p_address, final long p_offset) {
@@ -504,9 +504,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Read a long from the specified address + offset.
      *
      * @param p_address
-     *     Address.
+     *         Address.
      * @param p_offset
-     *     Offset to add to the address.
+     *         Offset to add to the address.
      * @return Long read.
      */
     public long readLong(final long p_address, final long p_offset) {
@@ -525,15 +525,15 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Read data into a byte array.
      *
      * @param p_address
-     *     Address in heap to start at.
+     *         Address in heap to start at.
      * @param p_offset
-     *     Offset to add to start address.
+     *         Offset to add to start address.
      * @param p_buffer
-     *     Buffer to read into.
+     *         Buffer to read into.
      * @param p_offsetArray
-     *     Offset within the buffer.
+     *         Offset within the buffer.
      * @param p_length
-     *     Number of elements to read.
+     *         Number of elements to read.
      * @return Number of elements read.
      */
     public int readBytes(final long p_address, final long p_offset, final byte[] p_buffer, final int p_offsetArray, final int p_length) {
@@ -552,15 +552,15 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Read data into a short array.
      *
      * @param p_address
-     *     Address in heap to start at.
+     *         Address in heap to start at.
      * @param p_offset
-     *     Offset to add to start address.
+     *         Offset to add to start address.
      * @param p_buffer
-     *     Buffer to read into.
+     *         Buffer to read into.
      * @param p_offsetArray
-     *     Offset within the buffer.
+     *         Offset within the buffer.
      * @param p_length
-     *     Number of elements to read.
+     *         Number of elements to read.
      * @return Number of elements read.
      */
     public int readShorts(final long p_address, final long p_offset, final short[] p_buffer, final int p_offsetArray, final int p_length) {
@@ -579,15 +579,15 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Read data into an int array.
      *
      * @param p_address
-     *     Address in heap to start at.
+     *         Address in heap to start at.
      * @param p_offset
-     *     Offset to add to start address.
+     *         Offset to add to start address.
      * @param p_buffer
-     *     Buffer to read into.
+     *         Buffer to read into.
      * @param p_offsetArray
-     *     Offset within the buffer.
+     *         Offset within the buffer.
      * @param p_length
-     *     Number of elements to read.
+     *         Number of elements to read.
      * @return Number of elements read.
      */
     public int readInts(final long p_address, final long p_offset, final int[] p_buffer, final int p_offsetArray, final int p_length) {
@@ -606,15 +606,15 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Read data into a long array.
      *
      * @param p_address
-     *     Address in heap to start at.
+     *         Address in heap to start at.
      * @param p_offset
-     *     Offset to add to start address.
+     *         Offset to add to start address.
      * @param p_buffer
-     *     Buffer to read into.
+     *         Buffer to read into.
      * @param p_offsetArray
-     *     Offset within the buffer.
+     *         Offset within the buffer.
      * @param p_length
-     *     Number of elements to read.
+     *         Number of elements to read.
      * @return Number of elements read.
      */
     public int readLongs(final long p_address, final long p_offset, final long[] p_buffer, final int p_offsetArray, final int p_length) {
@@ -633,11 +633,11 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Write a single byte to the specified address + offset.
      *
      * @param p_address
-     *     Address.
+     *         Address.
      * @param p_offset
-     *     Offset to add to the address.
+     *         Offset to add to the address.
      * @param p_value
-     *     Byte to write.
+     *         Byte to write.
      */
     public void writeByte(final long p_address, final long p_offset, final byte p_value) {
         assert assertMemoryBounds(p_address, p_offset);
@@ -655,11 +655,11 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Write a short to the specified address + offset.
      *
      * @param p_address
-     *     Address.
+     *         Address.
      * @param p_offset
-     *     Offset to add to the address.
+     *         Offset to add to the address.
      * @param p_value
-     *     Short to write.
+     *         Short to write.
      */
     public void writeShort(final long p_address, final long p_offset, final short p_value) {
         assert assertMemoryBounds(p_address, p_offset);
@@ -677,11 +677,11 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Write a single int to the specified address + offset.
      *
      * @param p_address
-     *     Address.
+     *         Address.
      * @param p_offset
-     *     Offset to add to the address.
+     *         Offset to add to the address.
      * @param p_value
-     *     int to write.
+     *         int to write.
      */
     public void writeInt(final long p_address, final long p_offset, final int p_value) {
         assert assertMemoryBounds(p_address, p_offset);
@@ -699,11 +699,11 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Write a long value to the specified address + offset.
      *
      * @param p_address
-     *     Address.
+     *         Address.
      * @param p_offset
-     *     Offset to add to the address.
+     *         Offset to add to the address.
      * @param p_value
-     *     Long value to write.
+     *         Long value to write.
      */
     public void writeLong(final long p_address, final long p_offset, final long p_value) {
         assert assertMemoryBounds(p_address, p_offset);
@@ -721,15 +721,15 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Write an array of bytes to the specified address + offset.
      *
      * @param p_address
-     *     Address.
+     *         Address.
      * @param p_offset
-     *     Offset to add to the address.
+     *         Offset to add to the address.
      * @param p_value
-     *     Bytes to write.
+     *         Bytes to write.
      * @param p_offsetArray
-     *     Offset within the buffer.
+     *         Offset within the buffer.
      * @param p_length
-     *     Number of elements to read.
+     *         Number of elements to read.
      * @return Number of elements written.
      */
     public int writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_offsetArray, final int p_length) {
@@ -748,15 +748,15 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Write an array of shorts to the heap.
      *
      * @param p_address
-     *     Address of an allocated block of memory.
+     *         Address of an allocated block of memory.
      * @param p_offset
-     *     Offset within the block of memory to start at.
+     *         Offset within the block of memory to start at.
      * @param p_value
-     *     Array to write.
+     *         Array to write.
      * @param p_offsetArray
-     *     Offset within the array.
+     *         Offset within the array.
      * @param p_length
-     *     Number of elements to write.
+     *         Number of elements to write.
      * @return Number of elements written.
      */
     public int writeShorts(final long p_address, final long p_offset, final short[] p_value, final int p_offsetArray, final int p_length) {
@@ -777,15 +777,15 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Write an array of ints to the heap.
      *
      * @param p_address
-     *     Address of an allocated block of memory.
+     *         Address of an allocated block of memory.
      * @param p_offset
-     *     Offset within the block of memory to start at.
+     *         Offset within the block of memory to start at.
      * @param p_value
-     *     Array to write.
+     *         Array to write.
      * @param p_offsetArray
-     *     Offset within the array.
+     *         Offset within the array.
      * @param p_length
-     *     Number of elements to write.
+     *         Number of elements to write.
      * @return Number of elements written.
      */
     public int writeInts(final long p_address, final long p_offset, final int[] p_value, final int p_offsetArray, final int p_length) {
@@ -804,15 +804,15 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Write an array of longs to the heap.
      *
      * @param p_address
-     *     Address of an allocated block of memory.
+     *         Address of an allocated block of memory.
      * @param p_offset
-     *     Offset within the block of memory to start at.
+     *         Offset within the block of memory to start at.
      * @param p_value
-     *     Array to write.
+     *         Array to write.
      * @param p_offsetArray
-     *     Offset within the array.
+     *         Offset within the array.
      * @param p_length
-     *     Number of elements to write.
+     *         Number of elements to write.
      * @return Number of elements written.
      */
     public int writeLongs(final long p_address, final long p_offset, final long[] p_value, final int p_offsetArray, final int p_length) {
@@ -863,15 +863,15 @@ public final class SmallObjectHeap implements Importable, Exportable {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_maxBlockSize = p_importer.readInt();
-        m_baseFreeBlockList = p_importer.readLong();
-        m_freeBlocksListSize = p_importer.readInt();
-        m_freeBlockListSizes = p_importer.readLongArray();
-        m_freeBlocksListCount = p_importer.readInt();
+        m_maxBlockSize = p_importer.readInt(m_maxBlockSize);
+        m_baseFreeBlockList = p_importer.readLong(m_baseFreeBlockList);
+        m_freeBlocksListSize = p_importer.readInt(m_freeBlocksListSize);
+        m_freeBlockListSizes = p_importer.readLongArray(m_freeBlockListSizes);
+        m_freeBlocksListCount = p_importer.readInt(m_freeBlocksListCount);
         m_status = new Status();
         p_importer.importObject(m_status);
         // get rid of padding separating metadata from VMB
-        p_importer.readLong();
+        p_importer.readLong(0);
 
         // free previously allocated VMB
         m_memory.free();
@@ -907,9 +907,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Reads up to 8 bytes combined in a long
      *
      * @param p_address
-     *     the address
+     *         the address
      * @param p_count
-     *     the number of bytes
+     *         the number of bytes
      * @return the combined bytes
      */
     long read(final long p_address, final int p_count) {
@@ -920,7 +920,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Read the right part of a marker byte
      *
      * @param p_address
-     *     the address
+     *         the address
      * @return the right part of a marker byte
      */
     int readRightPartOfMarker(final long p_address) {
@@ -931,7 +931,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Read the left part of a marker byte
      *
      * @param p_address
-     *     the address
+     *         the address
      * @return the left part of a marker byte
      */
     int readLeftPartOfMarker(final long p_address) {
@@ -942,7 +942,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Reads a pointer
      *
      * @param p_address
-     *     the address
+     *         the address
      * @return the pointer
      */
     long readPointer(final long p_address) {
@@ -954,7 +954,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * by the given address.
      *
      * @param p_address
-     *     Address of block to get the size of.
+     *         Address of block to get the size of.
      * @return Size of memory block at specified address.
      */
     private long getSizeMemoryBlock(final long p_address) {
@@ -970,7 +970,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Reserve a free block of memory.
      *
      * @param p_size
-     *     Size of the block (payload size).
+     *         Size of the block (payload size).
      * @return Address of the reserved block or null if out of memory of no block for requested size was found.
      */
     private long reserveBlock(final int p_size) {
@@ -1012,7 +1012,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Find a free block with a minimum size
      *
      * @param p_size
-     *     Number of bytes that have to fit into that block
+     *         Number of bytes that have to fit into that block
      * @return Address of the still hooked free block
      */
     private long findFreeBlock(final int p_size) {
@@ -1055,9 +1055,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * specified number of bytes. The unused space is hooked back as free space.
      *
      * @param p_address
-     *     Address of the unhooked block to trim
+     *         Address of the unhooked block to trim
      * @param p_size
-     *     Size to trim the block to
+     *         Size to trim the block to
      */
     private void trimFreeBlockToSize(final long p_address, final long p_size) {
         long freeSize;
@@ -1099,9 +1099,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Reserve multiple blocks with a single call reducing metadata processing overhead
      *
      * @param p_bigBlockSize
-     *     Total size of the block to reserve. This already needs to include all marker bytes and length fields aside the payload sizes
+     *         Total size of the block to reserve. This already needs to include all marker bytes and length fields aside the payload sizes
      * @param p_sizes
-     *     List of block sizes (payloads, only)
+     *         List of block sizes (payloads, only)
      * @return Addresses of the allocated blocks
      */
     private long[] multiReserveBlocks(final int p_bigBlockSize, final int[] p_sizes, final int p_usedEntries) {
@@ -1155,11 +1155,11 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Reserve multiple blocks with a single call reducing metadata processing overhead
      *
      * @param p_bigBlockSize
-     *     Total size of the block to reserve. This already needs to include all marker bytes and length fields aside the payload sizes
+     *         Total size of the block to reserve. This already needs to include all marker bytes and length fields aside the payload sizes
      * @param p_size
-     *     Size of the block
+     *         Size of the block
      * @param p_count
-     *     Number of blocks of p_size each
+     *         Number of blocks of p_size each
      * @return Addresses of the allocated blocks
      */
     private long[] multiReserveBlocks(final int p_bigBlockSize, final int p_size, final int p_count) {
@@ -1213,11 +1213,11 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Free a reserved block of memory
      *
      * @param p_address
-     *     Address of the block
+     *         Address of the block
      * @param p_lengthFieldSize
-     *     Size of the length field
+     *         Size of the length field
      * @param p_blockSize
-     *     Size of the block's payload
+     *         Size of the block's payload
      */
     private void freeReservedBlock(final long p_address, final int p_lengthFieldSize, final long p_blockSize) {
         long blockSize;
@@ -1365,7 +1365,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Check the memory bounds with the specified address.
      *
      * @param p_address
-     *     Address to check if within memory.
+     *         Address to check if within memory.
      * @return Dummy return for assert
      */
     private boolean assertMemoryBounds(final long p_address) {
@@ -1380,9 +1380,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Check the memory bounds with the specified start address and size.
      *
      * @param p_address
-     *     Address to check if within bounds.
+     *         Address to check if within bounds.
      * @param p_length
-     *     Number of bytes starting at address.
+     *         Number of bytes starting at address.
      * @return Dummy return for assert
      */
     private boolean assertMemoryBounds(final long p_address, final long p_length) {
@@ -1397,9 +1397,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Creates a free block
      *
      * @param p_address
-     *     the address
+     *         the address
      * @param p_size
-     *     the size
+     *         the size
      */
     private void createFreeBlock(final long p_address, final long p_size) {
         long listOffset;
@@ -1456,7 +1456,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Unhooks a free block
      *
      * @param p_address
-     *     the address
+     *         the address
      */
     private void unhookFreeBlock(final long p_address) {
         int lengthFieldSize;
@@ -1488,7 +1488,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Gets the suitable list for the given size
      *
      * @param p_size
-     *     the size
+     *         the size
      * @return Index of the suitable list
      */
     private int getList(final long p_size) {
@@ -1505,9 +1505,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Writes a marker byte
      *
      * @param p_address
-     *     the address
+     *         the address
      * @param p_right
-     *     the right part
+     *         the right part
      */
     private void writeRightPartOfMarker(final long p_address, final int p_right) {
         byte marker;
@@ -1520,9 +1520,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Writes a marker byte
      *
      * @param p_address
-     *     the address
+     *         the address
      * @param p_left
-     *     the left part
+     *         the left part
      */
     private void writeLeftPartOfMarker(final long p_address, final int p_left) {
         byte marker;
@@ -1535,9 +1535,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Writes a pointer
      *
      * @param p_address
-     *     the address
+     *         the address
      * @param p_pointer
-     *     the pointer
+     *         the pointer
      */
     private void writePointer(final long p_address, final long p_pointer) {
         write(p_address, p_pointer, POINTER_SIZE);
@@ -1547,11 +1547,11 @@ public final class SmallObjectHeap implements Importable, Exportable {
      * Writes up to 8 bytes combined in a long
      *
      * @param p_address
-     *     the address
+     *         the address
      * @param p_bytes
-     *     the combined bytes
+     *         the combined bytes
      * @param p_count
-     *     the number of bytes
+     *         the number of bytes
      */
     private void write(final long p_address, final long p_bytes, final int p_count) {
         m_memory.writeVal(p_address, p_bytes, p_count);
@@ -1657,8 +1657,8 @@ public final class SmallObjectHeap implements Importable, Exportable {
         @Override
         public String toString() {
             return "Status [m_size=" + m_size + ", m_free=" + m_free + ", m_allocatedPayload=" + m_allocatedPayload + ", m_allocatedBlocks=" +
-                m_allocatedBlocks + ", m_freeBlocks=" + m_freeBlocks + ", m_freeSmall64ByteBlocks=" + m_freeSmall64ByteBlocks + ", fragmentation=" +
-                getFragmentation() + ']';
+                    m_allocatedBlocks + ", m_freeBlocks=" + m_freeBlocks + ", m_freeSmall64ByteBlocks=" + m_freeSmall64ByteBlocks + ", fragmentation=" +
+                    getFragmentation() + ']';
         }
 
         @Override
@@ -1674,13 +1674,13 @@ public final class SmallObjectHeap implements Importable, Exportable {
 
         @Override
         public void importObject(final Importer p_importer) {
-            m_size = p_importer.readLong();
-            m_maxBlockSize = p_importer.readInt();
-            m_free = p_importer.readLong();
-            m_allocatedPayload = p_importer.readLong();
-            m_allocatedBlocks = p_importer.readLong();
-            m_freeBlocks = p_importer.readLong();
-            m_freeSmall64ByteBlocks = p_importer.readLong();
+            m_size = p_importer.readLong(m_size);
+            m_maxBlockSize = p_importer.readInt(m_maxBlockSize);
+            m_free = p_importer.readLong(m_free);
+            m_allocatedPayload = p_importer.readLong(m_allocatedPayload);
+            m_allocatedBlocks = p_importer.readLong(m_allocatedBlocks);
+            m_freeBlocks = p_importer.readLong(m_freeBlocks);
+            m_freeSmall64ByteBlocks = p_importer.readLong(m_freeSmall64ByteBlocks);
         }
 
         @Override

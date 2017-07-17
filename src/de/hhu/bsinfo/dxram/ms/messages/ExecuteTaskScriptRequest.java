@@ -93,10 +93,14 @@ public class ExecuteTaskScriptRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_barrierIdentifier = p_importer.readInt();
-        m_ctxData = new TaskContextData();
+        m_barrierIdentifier = p_importer.readInt(m_barrierIdentifier);
+        if (m_ctxData == null) {
+            m_ctxData = new TaskContextData();
+        }
         p_importer.importObject(m_ctxData);
-        m_script = new TaskScript();
+        if (m_script == null) {
+            m_script = new TaskScript();
+        }
         p_importer.importObject(m_script);
     }
 

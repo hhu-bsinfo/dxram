@@ -95,8 +95,8 @@ public class JoinRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_newNode = p_importer.readShort();
-        m_nodeIsSuperpeer = p_importer.readBoolean();
+        m_newNode = p_importer.readShort(m_newNode);
+        m_nodeIsSuperpeer = p_importer.readBoolean(m_nodeIsSuperpeer);
     }
 
 }

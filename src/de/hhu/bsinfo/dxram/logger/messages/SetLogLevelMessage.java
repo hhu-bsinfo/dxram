@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Set the log level of a remote node
@@ -59,7 +60,7 @@ public class SetLogLevelMessage extends AbstractMessage {
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + m_logLevel.getBytes().length;
+        return ObjectSizeUtil.sizeofString(m_logLevel);
     }
 
     // Methods
@@ -70,7 +71,7 @@ public class SetLogLevelMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_logLevel = p_importer.readString();
+        m_logLevel = p_importer.readString(m_logLevel);
     }
 
 }

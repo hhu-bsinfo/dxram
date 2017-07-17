@@ -82,7 +82,7 @@ public class SuperpeerStorageRemoveMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_storageId = p_importer.readInt();
-        m_replicate = p_importer.readBoolean();
+        m_storageId = p_importer.readInt(m_storageId);
+        m_replicate = p_importer.readBoolean(m_replicate);
     }
 }

@@ -29,6 +29,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  */
 public class GraphPartitionIndex extends DataStructure {
     private Map<Integer, Entry> m_index = new TreeMap<>();
+    private int m_size;
 
     /**
      * Constructor
@@ -66,7 +67,7 @@ public class GraphPartitionIndex extends DataStructure {
      * Set a partition entry for the index.
      *
      * @param p_entry
-     *     Entry to set/add.
+     *         Entry to set/add.
      */
     public void setPartitionEntry(final Entry p_entry) {
         m_index.put(p_entry.m_partitionIndex, p_entry);
@@ -76,7 +77,7 @@ public class GraphPartitionIndex extends DataStructure {
      * Get a partition index entry from the index.
      *
      * @param p_partitionId
-     *     Id of the partition index entry to get.
+     *         Id of the partition index entry to get.
      * @return Partition index entry or null if there is no entry for the specified id.
      */
     public Entry getPartitionIndex(final int p_partitionId) {
@@ -96,7 +97,7 @@ public class GraphPartitionIndex extends DataStructure {
      * Rebase a graph global vertexId to a partition local vertex id using the index.
      *
      * @param p_vertexId
-     *     Graph global vertexId to rebase.
+     *         Graph global vertexId to rebase.
      * @return Rebased vertex id to the partition the vertex is in.
      */
     public long rebaseGlobalVertexIdToLocalPartitionVertexId(final long p_vertexId) {
@@ -118,7 +119,7 @@ public class GraphPartitionIndex extends DataStructure {
      * Rebase multiple graph global vertexIds in plance to partition local vertex ids using the index.
      *
      * @param p_vertexIds
-     *     Graph global vertexIds to rebase.
+     *         Graph global vertexIds to rebase.
      * @return True if rebasing all IDs was successful, false if one or multiple could not be rebased, out of range
      */
     public boolean rebaseGlobalVertexIdToLocalPartitionVertexId(final long[] p_vertexIds) {
@@ -151,13 +152,22 @@ public class GraphPartitionIndex extends DataStructure {
     }
 
     @Override
+    public void exportObject(final Exporter p_exporter) {
+        p_exporter.writeInt(m_index.size());
+        for (Entry entry : m_index.values()) {
+            p_exporter.exportObject(entry);
+        }
+    }
+
+    @Override
     public void importObject(final Importer p_importer) {
-        int size = p_importer.readInt();
-        m_index = new TreeMap<>();
-        for (int i = 0; i < size; i++) {
+        m_size = p_importer.readInt(m_size);
+        for (int i = 0; i < m_size; i++) {
             Entry entry = new Entry();
             p_importer.importObject(entry);
-            m_index.put(entry.m_partitionIndex, entry);
+            if (m_index.size() == i) {
+                m_index.put(entry.m_partitionIndex, entry);
+            }
         }
     }
 
@@ -167,14 +177,6 @@ public class GraphPartitionIndex extends DataStructure {
             return Integer.BYTES;
         } else {
             return Integer.BYTES + m_index.size() * m_index.get(0).sizeofObject();
-        }
-    }
-
-    @Override
-    public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeInt(m_index.size());
-        for (Entry entry : m_index.values()) {
-            p_exporter.exportObject(entry);
         }
     }
 
@@ -211,15 +213,15 @@ public class GraphPartitionIndex extends DataStructure {
          * Constructor
          *
          * @param p_nodeId
-         *     Node id the partition gets assigned to.
+         *         Node id the partition gets assigned to.
          * @param p_partitionIndex
-         *     Partition index.
+         *         Partition index.
          * @param p_vertexCount
-         *     Number of vertices in this partition.
+         *         Number of vertices in this partition.
          * @param p_edgeCount
-         *     Number of edges in this partition.
+         *         Number of edges in this partition.
          * @param p_fileStartOffset
-         *     Offset in the file where the partition starts
+         *         Offset in the file where the partition starts
          */
         public Entry(final short p_nodeId, final int p_partitionIndex, final long p_vertexCount, final long p_edgeCount, final long p_fileStartOffset) {
             m_nodeId = p_nodeId;
@@ -275,26 +277,26 @@ public class GraphPartitionIndex extends DataStructure {
         }
 
         @Override
-        public void importObject(final Importer p_importer) {
-            m_nodeId = p_importer.readShort();
-            m_partitionIndex = p_importer.readInt();
-            m_vertexCount = p_importer.readLong();
-            m_edgeCount = p_importer.readLong();
-            m_fileStartOffset = p_importer.readLong();
-        }
-
-        @Override
-        public int sizeofObject() {
-            return Short.BYTES + Integer.BYTES + Long.BYTES + Long.BYTES + Long.BYTES;
-        }
-
-        @Override
         public void exportObject(final Exporter p_exporter) {
             p_exporter.writeShort(m_nodeId);
             p_exporter.writeInt(m_partitionIndex);
             p_exporter.writeLong(m_vertexCount);
             p_exporter.writeLong(m_edgeCount);
             p_exporter.writeLong(m_fileStartOffset);
+        }
+
+        @Override
+        public void importObject(final Importer p_importer) {
+            m_nodeId = p_importer.readShort(m_nodeId);
+            m_partitionIndex = p_importer.readInt(m_partitionIndex);
+            m_vertexCount = p_importer.readLong(m_vertexCount);
+            m_edgeCount = p_importer.readLong(m_edgeCount);
+            m_fileStartOffset = p_importer.readLong(m_fileStartOffset);
+        }
+
+        @Override
+        public int sizeofObject() {
+            return Short.BYTES + Integer.BYTES + Long.BYTES + Long.BYTES + Long.BYTES;
         }
 
         @Override

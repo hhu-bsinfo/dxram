@@ -41,7 +41,7 @@ public class Edge extends DataStructure {
      * Constructor
      *
      * @param p_id
-     *     Chunk ID to assign.
+     *         Chunk ID to assign.
      */
     public Edge(final long p_id) {
         super(p_id);
@@ -62,7 +62,7 @@ public class Edge extends DataStructure {
      * Set the id of the source vertex.
      *
      * @param p_id
-     *     Id of the source vertex to set.
+     *         Id of the source vertex to set.
      */
     public void setFromId(final long p_id) {
         m_fromId = p_id;
@@ -81,7 +81,7 @@ public class Edge extends DataStructure {
      * Set the id of the target vertex.
      *
      * @param p_id
-     *     Id of the target vertex to set.
+     *         Id of the target vertex to set.
      */
     public void setToId(final long p_id) {
         m_toId = p_id;
@@ -97,8 +97,8 @@ public class Edge extends DataStructure {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_fromId = p_importer.readLong();
-        m_toId = p_importer.readLong();
+        m_fromId = p_importer.readLong(m_fromId);
+        m_toId = p_importer.readLong(m_toId);
     }
 
     @Override

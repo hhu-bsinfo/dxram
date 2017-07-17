@@ -693,7 +693,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      *
      * @param p_chunkID
      *         Read the chunk data of the specified ID
-     *
      * @return the number of read bytes
      */
     public int get(final long p_chunkID, final byte[] p_buffer, final int p_offset, final int p_bufferSize) {
@@ -1486,15 +1485,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.03.2016
      */
     public static class Status implements Importable, Exportable {
-        private StorageUnit m_freeMemory = new StorageUnit();
-        private StorageUnit m_maxChunkSize = new StorageUnit();
-        private StorageUnit m_totalMemory = new StorageUnit();
-        private StorageUnit m_totalPayloadMemory = new StorageUnit();
+        private StorageUnit m_freeMemory;
+        private StorageUnit m_maxChunkSize;
+        private StorageUnit m_totalMemory;
+        private StorageUnit m_totalPayloadMemory;
         private long m_numberOfActiveMemoryBlocks = -1;
         private long m_numberOfActiveChunks = -1;
-        private StorageUnit m_totalChunkPayloadMemory = new StorageUnit();
+        private StorageUnit m_totalChunkPayloadMemory;
         private long m_cidTableCount = -1;
-        private StorageUnit m_totalMemoryCIDTables = new StorageUnit();
+        private StorageUnit m_totalMemoryCIDTables;
         private int m_cachedFreeLIDs = -1;
         private long m_availableFreeLIDs = -1;
         private long m_newLIDCounter = -1;
@@ -1637,17 +1636,39 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
         @Override
         public void importObject(final Importer p_importer) {
+            if (m_freeMemory == null) {
+                m_freeMemory = new StorageUnit();
+            }
             p_importer.importObject(m_freeMemory);
+
+            if (m_totalMemory == null) {
+                m_totalMemory = new StorageUnit();
+            }
             p_importer.importObject(m_totalMemory);
+
+            if (m_totalPayloadMemory == null) {
+                m_totalPayloadMemory = new StorageUnit();
+            }
             p_importer.importObject(m_totalPayloadMemory);
-            m_numberOfActiveMemoryBlocks = p_importer.readLong();
-            m_numberOfActiveChunks = p_importer.readLong();
+
+            m_numberOfActiveMemoryBlocks = p_importer.readLong(m_numberOfActiveMemoryBlocks);
+            m_numberOfActiveChunks = p_importer.readLong(m_numberOfActiveChunks);
+
+            if (m_totalChunkPayloadMemory == null) {
+                m_totalChunkPayloadMemory = new StorageUnit();
+            }
             p_importer.importObject(m_totalChunkPayloadMemory);
-            m_cidTableCount = p_importer.readLong();
+
+            m_cidTableCount = p_importer.readLong(m_cidTableCount);
+
+            if (m_totalMemoryCIDTables == null) {
+                m_totalMemoryCIDTables = new StorageUnit();
+            }
             p_importer.importObject(m_totalMemoryCIDTables);
-            m_cachedFreeLIDs = p_importer.readInt();
-            m_availableFreeLIDs = p_importer.readLong();
-            m_newLIDCounter = p_importer.readLong();
+
+            m_cachedFreeLIDs = p_importer.readInt(m_cachedFreeLIDs);
+            m_availableFreeLIDs = p_importer.readLong(m_availableFreeLIDs);
+            m_newLIDCounter = p_importer.readLong(m_newLIDCounter);
         }
 
         @Override

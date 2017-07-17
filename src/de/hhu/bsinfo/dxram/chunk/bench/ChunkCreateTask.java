@@ -20,11 +20,11 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
-import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.utils.RandomUtils;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -80,7 +80,7 @@ public class ChunkCreateTask implements Task {
         }
 
         System.out.printf("Creating (pattern %d) %d chunks in batches of %d chunk(s) of random sizes between %s and %s with %d thread(s)...\n", m_pattern,
-            m_chunkCount, m_chunkBatch, m_chunkSizeBytesBegin, m_chunkSizeBytesEnd, m_numThreads);
+                m_chunkCount, m_chunkBatch, m_chunkSizeBytesBegin, m_chunkSizeBytesEnd, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
@@ -313,14 +313,14 @@ public class ChunkCreateTask implements Task {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_numThreads = p_importer.readInt();
-        m_chunkCount = p_importer.readLong();
-        m_chunkBatch = p_importer.readInt();
+        m_numThreads = p_importer.readInt(m_numThreads);
+        m_chunkCount = p_importer.readLong(m_chunkCount);
+        m_chunkBatch = p_importer.readInt(m_chunkBatch);
         m_chunkSizeBytesBegin = new StorageUnit();
         p_importer.importObject(m_chunkSizeBytesBegin);
         m_chunkSizeBytesEnd = new StorageUnit();
         p_importer.importObject(m_chunkSizeBytesEnd);
-        m_pattern = p_importer.readInt();
+        m_pattern = p_importer.readInt(m_pattern);
     }
 
     @Override

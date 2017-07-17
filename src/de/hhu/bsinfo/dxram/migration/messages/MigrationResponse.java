@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxram.migration.messages;
 
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -22,6 +24,8 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
 public class MigrationResponse extends AbstractResponse {
+
+    private byte m_status;
 
     /**
      * Creates an instance of DataResponse.
@@ -36,9 +40,34 @@ public class MigrationResponse extends AbstractResponse {
      * This constructor is used when sending this message.
      *
      * @param p_request
-     *     the request
+     *         the request
      */
-    public MigrationResponse(final MigrationRequest p_request) {
+    public MigrationResponse(final MigrationRequest p_request, final byte p_status) {
         super(p_request, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE);
+        m_status = p_status;
+    }
+
+    /**
+     * Get the status
+     *
+     * @return the status
+     */
+    public int getStatus() {
+        return m_status;
+    }
+
+    @Override
+    protected final int getPayloadLength() {
+        return Byte.BYTES;
+    }
+
+    @Override
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeByte(m_status);
+    }
+
+    @Override
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_status = p_importer.readByte(m_status);
     }
 }

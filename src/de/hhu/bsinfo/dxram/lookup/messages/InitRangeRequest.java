@@ -108,10 +108,12 @@ public class InitRangeRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_rangeOwner = p_importer.readShort();
-        m_backupRange = new BackupRange();
+        m_rangeOwner = p_importer.readShort(m_rangeOwner);
+        if (m_backupRange == null) {
+            m_backupRange = new BackupRange();
+        }
         p_importer.importObject(m_backupRange);
-        m_isBackup = p_importer.readBoolean();
+        m_isBackup = p_importer.readBoolean(m_isBackup);
     }
 
 }

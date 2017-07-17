@@ -203,7 +203,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         }
 
         GetMasterStatusResponse response = (GetMasterStatusResponse) request.getResponse();
-        if (response.getStatusCode() != 0) {
+        if (response.getStatus() != 0) {
             // #if LOGGER >= ERROR
             LOGGER.error("Cannot get status on non master node 0x%X", masterNodeId);
             // #endif /* LOGGER >= ERROR */
@@ -285,9 +285,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         }
 
         SubmitTaskResponse response = (SubmitTaskResponse) request.getResponse();
-        if (response.getStatusCode() != 0) {
+        if (response.getStatus() != 0) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Error submitting task script, code %d", response.getStatusCode());
+            LOGGER.error("Error submitting task script, code %d", response.getStatus());
             // #endif /* LOGGER >= ERROR */
             return null;
         }
@@ -457,8 +457,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
             // #if LOGGER >= ERROR
             LOGGER.error("Creating instance for task script of request %s failed, most likely non registered task payload type", p_request);
             // #endif /* LOGGER >= ERROR */
-            response = new SubmitTaskResponse(p_request, (short) -1, -1);
-            response.setStatusCode((byte) 3);
+            response = new SubmitTaskResponse(p_request, (short) -1, -1, (byte) 3);
             return;
         }
 
@@ -467,8 +466,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
             LOGGER.error("Cannot submit remote task script %s on non master node type", p_request.getTaskScript());
             // #endif /* LOGGER >= ERROR */
 
-            response = new SubmitTaskResponse(p_request, (short) -1, -1);
-            response.setStatusCode((byte) 1);
+            response = new SubmitTaskResponse(p_request, (short) -1, -1, (byte) 1);
         } else {
             TaskScriptState taskScriptState = new TaskScriptState(p_request.getTaskScript());
             taskScriptState.assignTaskId(m_taskIdCounter.getAndIncrement());
@@ -480,11 +478,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
             if (ret) {
                 m_remoteTasks.put(taskScriptState.getTaskScriptIdAssigned(), taskScriptState);
 
-                response = new SubmitTaskResponse(p_request, m_computeMSInstance.getComputeGroupId(), taskScriptState.getTaskScriptIdAssigned());
-                response.setStatusCode((byte) 0);
+                response = new SubmitTaskResponse(p_request, m_computeMSInstance.getComputeGroupId(), taskScriptState.getTaskScriptIdAssigned(), (byte) 0);
             } else {
-                response = new SubmitTaskResponse(p_request, (short) -1, -1);
-                response.setStatusCode((byte) 2);
+                response = new SubmitTaskResponse(p_request, (short) -1, -1, (byte) 2);
             }
         }
 
@@ -507,13 +503,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         GetMasterStatusResponse response;
 
         StatusMaster status = getStatusMaster();
-        response = new GetMasterStatusResponse(p_request, status);
-
         // check first if we are a master
         if (status == null) {
-            response.setStatusCode((byte) 1);
+            response = new GetMasterStatusResponse(p_request, null, (byte) 1);
         } else {
-            response.setStatusCode((byte) 0);
+            response = new GetMasterStatusResponse(p_request, status, (byte) 0);
         }
 
         try {
@@ -580,13 +574,14 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         private int m_taskScriptsProcessed;
         private ArrayList<Short> m_connectedSlaves;
 
+        private int m_connectedSlavesToRead; // For serialization, only
+
         /**
          * Constructor
          */
         public StatusMaster() {
             m_masterNodeId = NodeID.INVALID_ID;
             m_state = AbstractComputeMSBase.State.STATE_INVALID;
-            m_connectedSlaves = new ArrayList<Short>();
             m_numTaskScriptsQueued = 0;
         }
 
@@ -670,15 +665,25 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
 
         @Override
         public void importObject(final Importer p_importer) {
-            m_masterNodeId = p_importer.readShort();
-            m_state = AbstractComputeMSBase.State.values()[p_importer.readInt()];
-            int size = p_importer.readInt();
-            m_connectedSlaves = new ArrayList<>(size);
-            for (int i = 0; i < size; i++) {
-                m_connectedSlaves.add(p_importer.readShort());
+            m_masterNodeId = p_importer.readShort(m_masterNodeId);
+
+            int tmp = p_importer.readInt(0);
+            if (m_state == AbstractComputeMSBase.State.STATE_INVALID) {
+                m_state = AbstractComputeMSBase.State.values()[tmp];
             }
-            m_numTaskScriptsQueued = p_importer.readInt();
-            m_taskScriptsProcessed = p_importer.readInt();
+
+            m_connectedSlavesToRead = p_importer.readInt(m_connectedSlavesToRead);
+            if (m_connectedSlaves == null) {
+                m_connectedSlaves = new ArrayList<>(m_connectedSlavesToRead);
+            }
+            for (int i = 0; i < m_connectedSlavesToRead; i++) {
+                short slave = p_importer.readShort((short) 0);
+                if (m_connectedSlaves.size() == i) {
+                    m_connectedSlaves.add(slave);
+                }
+            }
+            m_numTaskScriptsQueued = p_importer.readInt(m_numTaskScriptsQueued);
+            m_taskScriptsProcessed = p_importer.readInt(m_taskScriptsProcessed);
         }
 
         @Override

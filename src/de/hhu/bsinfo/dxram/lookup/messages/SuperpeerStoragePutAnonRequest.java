@@ -15,7 +15,6 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
@@ -34,6 +33,8 @@ public class SuperpeerStoragePutAnonRequest extends AbstractRequest {
     private DSByteArray m_data;
 
     private boolean m_isReplicate;
+
+    private long m_chunkID; // Used for serialization, only
 
     /**
      * Creates an instance of SuperpeerStoragePutAnonRequest.
@@ -80,12 +81,12 @@ public class SuperpeerStoragePutAnonRequest extends AbstractRequest {
 
     @Override
     protected final int getPayloadLength() {
-        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+        int size = 0;
 
         if (m_chunk != null) {
             size += Long.BYTES + m_chunk.sizeofObject() + Byte.BYTES;
         } else {
-            size += Long.BYTES + Integer.BYTES + m_data.sizeofObject() + Byte.BYTES;
+            size += Long.BYTES + m_data.sizeofObject() + Byte.BYTES;
         }
 
         return size;
@@ -101,8 +102,12 @@ public class SuperpeerStoragePutAnonRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_data = new DSByteArray(p_importer.readLong(), p_importer.readInt());
+        m_chunkID = p_importer.readLong(m_chunkID);
+        int size = p_importer.readCompactNumber(0);
+        if (m_data == null) {
+            m_data = new DSByteArray(m_chunkID, size);
+        }
         p_importer.importObject(m_data);
-        m_isReplicate = p_importer.readBoolean();
+        m_isReplicate = p_importer.readBoolean(m_isReplicate);
     }
 }

@@ -19,6 +19,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Ask About Backups Request
@@ -32,6 +33,8 @@ public class AskAboutBackupsRequest extends AbstractRequest {
     private int m_numberOfNameserviceEntries;
     private int m_numberOfStorages;
     private int m_numberOfBarriers;
+
+    private int m_length; // Used for serialization, only
 
     // Constructors
 
@@ -108,11 +111,12 @@ public class AskAboutBackupsRequest extends AbstractRequest {
 
     @Override
     protected final int getPayloadLength() {
-        int ret;
+        int ret = 0;
 
-        ret = Integer.BYTES;
         if (m_peers != null && !m_peers.isEmpty()) {
-            ret += Short.BYTES * m_peers.size();
+            ret = ObjectSizeUtil.sizeofCompactedNumber(m_peers.size()) + Short.BYTES * m_peers.size();
+        } else {
+            ret = Byte.BYTES;
         }
         ret += 3 * Integer.BYTES;
 
@@ -123,9 +127,9 @@ public class AskAboutBackupsRequest extends AbstractRequest {
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_peers == null || m_peers.isEmpty()) {
-            p_exporter.writeInt(0);
+            p_exporter.writeCompactNumber(0);
         } else {
-            p_exporter.writeInt(m_peers.size());
+            p_exporter.writeCompactNumber(m_peers.size());
             for (short peer : m_peers) {
                 p_exporter.writeShort(peer);
             }
@@ -137,16 +141,19 @@ public class AskAboutBackupsRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int length;
-
-        m_peers = new ArrayList<Short>();
-        length = p_importer.readInt();
-        for (int i = 0; i < length; i++) {
-            m_peers.add(p_importer.readShort());
+        m_length = p_importer.readCompactNumber(m_length);
+        if (m_peers == null) {
+            m_peers = new ArrayList<Short>(m_length);
         }
-        m_numberOfNameserviceEntries = p_importer.readInt();
-        m_numberOfStorages = p_importer.readInt();
-        m_numberOfBarriers = p_importer.readInt();
+        for (int i = 0; i < m_length; i++) {
+            short peer = p_importer.readShort((short) 0);
+            if (m_peers.size() == i) {
+                m_peers.add(peer);
+            }
+        }
+        m_numberOfNameserviceEntries = p_importer.readInt(m_numberOfNameserviceEntries);
+        m_numberOfStorages = p_importer.readInt(m_numberOfStorages);
+        m_numberOfBarriers = p_importer.readInt(m_numberOfBarriers);
     }
 
 }

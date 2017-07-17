@@ -23,10 +23,10 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
-import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -53,7 +53,7 @@ public class PrintStatisticsToFileTask implements Task {
      * Constructor
      *
      * @param p_path
-     *     Filepath of the file to print to.
+     *         Filepath of the file to print to.
      */
     public PrintStatisticsToFileTask(final String p_path) {
         super();
@@ -119,7 +119,7 @@ public class PrintStatisticsToFileTask implements Task {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_path = p_importer.readString();
+        m_path = p_importer.readString(m_path);
     }
 
     @Override

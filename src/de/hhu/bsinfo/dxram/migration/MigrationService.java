@@ -104,7 +104,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
             }
 
             MigrationResponse response = (MigrationResponse) request.getResponse();
-            if (response.getStatusCode() == -1) {
+            if (response.getStatus() == -1) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Could not migrate chunks");
                 // #endif /* LOGGER >= ERROR */
@@ -386,10 +386,11 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      */
     private void incomingMigrationRequest(final MigrationRequest p_request) {
 
-        MigrationResponse response = new MigrationResponse(p_request);
-
+        MigrationResponse response;
         if (!m_chunk.putMigratedChunks(p_request.getChunkIDs(), p_request.getChunkData())) {
-            response.setStatusCode((byte) -1);
+            response = new MigrationResponse(p_request, (byte) -1);
+        } else {
+            response = new MigrationResponse(p_request, (byte) 0);
         }
 
         try {

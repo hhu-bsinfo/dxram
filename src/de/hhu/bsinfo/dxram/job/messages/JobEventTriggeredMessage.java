@@ -26,6 +26,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
  */
 public class JobEventTriggeredMessage extends AbstractMessage {
     private long m_jobId = JobID.INVALID_ID;
+    private byte m_eventID;
 
     /**
      * Creates an instance of PushJobQueueRequest.
@@ -50,7 +51,7 @@ public class JobEventTriggeredMessage extends AbstractMessage {
         super(p_destination, DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE);
 
         m_jobId = p_jobId;
-        setStatusCode(p_eventId);
+        m_eventID = p_eventId;
     }
 
     /**
@@ -68,21 +69,23 @@ public class JobEventTriggeredMessage extends AbstractMessage {
      * @return Event id.
      */
     public byte getEventId() {
-        return getStatusCode();
+        return m_eventID;
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         p_exporter.writeLong(m_jobId);
+        p_exporter.writeByte(m_eventID);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_jobId = p_importer.readLong();
+        m_jobId = p_importer.readLong(m_jobId);
+        m_eventID = p_importer.readByte(m_eventID);
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Long.BYTES;
+        return Long.BYTES + Byte.BYTES;
     }
 }

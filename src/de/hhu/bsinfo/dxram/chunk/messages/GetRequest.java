@@ -14,11 +14,11 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Request for getting a chunk from a remote node. The size of a chunk is known prior fetching the data
@@ -54,11 +54,7 @@ public class GetRequest extends AbstractRequest {
      */
     public GetRequest(final short p_destination, final DataStructure... p_chunks) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
-
         m_chunks = p_chunks;
-
-        byte tmpCode = getStatusCode();
-        setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_chunks.length));
     }
 
     /**
@@ -84,16 +80,15 @@ public class GetRequest extends AbstractRequest {
     @Override
     protected final int getPayloadLength() {
         if (m_chunks != null) {
-            return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_chunks.length;
+            return ObjectSizeUtil.sizeofCompactedNumber(m_chunks.length) + Long.BYTES * m_chunks.length;
         } else {
-            return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_chunkIDs.length;
+            return ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length) + Long.BYTES * m_chunkIDs.length;
         }
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_chunks.length);
-
+        p_exporter.writeCompactNumber(m_chunks.length);
         for (DataStructure chunk : m_chunks) {
             p_exporter.writeLong(chunk.getID());
         }
@@ -101,11 +96,13 @@ public class GetRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
-
-        m_chunkIDs = new long[numChunks];
+        int length = p_importer.readCompactNumber(0);
+        if (m_chunkIDs == null) {
+            // Do not overwrite existing array
+            m_chunkIDs = new long[length];
+        }
         for (int i = 0; i < m_chunkIDs.length; i++) {
-            m_chunkIDs[i] = p_importer.readLong();
+            m_chunkIDs[i] = p_importer.readLong(m_chunkIDs[i]);
         }
     }
 }

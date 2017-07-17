@@ -128,8 +128,8 @@ public class NameserviceRegisterTask implements Task {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_numThreads = p_importer.readInt();
-        m_chunkCount = p_importer.readInt();
+        m_numThreads = p_importer.readInt(m_numThreads);
+        m_chunkCount = p_importer.readInt(m_chunkCount);
     }
 
     @Override

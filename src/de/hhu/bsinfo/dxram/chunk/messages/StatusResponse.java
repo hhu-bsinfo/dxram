@@ -71,7 +71,9 @@ public class StatusResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_status = new MemoryManagerComponent.Status();
+        if (m_status == null) {
+            m_status = new MemoryManagerComponent.Status();
+        }
         p_importer.importObject(m_status);
     }
 }

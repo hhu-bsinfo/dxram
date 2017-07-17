@@ -109,9 +109,9 @@ public class MigrateRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_chunkID = p_importer.readLong();
-        m_nodeID = p_importer.readShort();
-        m_isBackup = p_importer.readBoolean();
+        m_chunkID = p_importer.readLong(m_chunkID);
+        m_nodeID = p_importer.readShort(m_nodeID);
+        m_isBackup = p_importer.readBoolean(m_isBackup);
     }
 
 }

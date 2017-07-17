@@ -77,7 +77,9 @@ public class GetLookupRangeResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_lookupRange = new LookupRange();
+        if (m_lookupRange == null) {
+            m_lookupRange = new LookupRange();
+        }
         p_importer.importObject(m_lookupRange);
     }
 

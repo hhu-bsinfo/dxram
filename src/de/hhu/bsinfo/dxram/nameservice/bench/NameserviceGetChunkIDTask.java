@@ -125,7 +125,7 @@ public class NameserviceGetChunkIDTask implements Task {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_numThreads = p_importer.readInt();
+        m_numThreads = p_importer.readInt(m_numThreads);
     }
 
     @Override

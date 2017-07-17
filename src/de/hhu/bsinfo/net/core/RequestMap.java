@@ -56,7 +56,7 @@ public final class RequestMap {
         index = p_request.getRequestID() % m_pendingRequests.length;
         if (m_pendingRequests[index] != null) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Request for idx=%d still registered! Request Map might be too small", index);
+            LOGGER.error("Request %s for idx=%d still registered! Request Map might be too small", m_pendingRequests[index], index);
             // #endif /* LOGGER >= ERROR */
         }
         m_pendingRequests[index] = p_request;
@@ -106,15 +106,15 @@ public final class RequestMap {
     /**
      * Returns the corresponding request
      *
-     * @param p_resonse
+     * @param p_response
      *         the response
      * @return the request
      */
-    AbstractRequest getRequest(final AbstractResponse p_resonse) {
+    AbstractRequest getRequest(final AbstractResponse p_response) {
         AbstractRequest ret;
 
         m_lock.readLock().lock();
-        ret = m_pendingRequests[p_resonse.getRequestID() % m_pendingRequests.length];
+        ret = m_pendingRequests[p_response.getRequestID() % m_pendingRequests.length];
         m_lock.readLock().unlock();
 
         return ret;

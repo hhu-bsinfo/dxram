@@ -106,6 +106,16 @@ public interface Exporter {
     void writeDouble(final double p_v);
 
     /**
+     * Write a compact number to the target. A compact number might be 1, 2, 3 or 4 bytes.
+     * Use this call in your exportable object in the
+     * export call to write data to the target.
+     *
+     * @param p_v
+     *         Value to write.
+     */
+    void writeCompactNumber(int p_v);
+
+    /**
      * Write a string to the target.
      * Use this call in your exportable object in the
      * export call to write data to the target.

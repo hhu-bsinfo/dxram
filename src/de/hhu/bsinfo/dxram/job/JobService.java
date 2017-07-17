@@ -495,7 +495,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
 
         @Override
         public void importObject(final Importer p_importer) {
-            m_numUnfinishedJobs = p_importer.readLong();
+            m_numUnfinishedJobs = p_importer.readLong(m_numUnfinishedJobs);
         }
     }
 }

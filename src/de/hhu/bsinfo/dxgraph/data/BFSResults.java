@@ -30,6 +30,8 @@ public class BFSResults extends DataStructure {
     private BFSResult m_aggregatedResult = new BFSResult();
     private Map<Integer, BFSResult> m_bfsResults = new HashMap<>();
 
+    private int m_size; // For serialization, only
+
     /**
      * Constructor
      */
@@ -50,11 +52,11 @@ public class BFSResults extends DataStructure {
      * Add a result of a node running BFS.
      *
      * @param p_computeSlaveId
-     *     Compute slave id of the node.
+     *         Compute slave id of the node.
      * @param p_nodeId
-     *     Node id of the node.
+     *         Node id of the node.
      * @param p_bfsResult
-     *     BFS result of the node.
+     *         BFS result of the node.
      */
     public void addResult(final short p_computeSlaveId, final short p_nodeId, final BFSResult p_bfsResult) {
         m_bfsResults.put(p_nodeId << 16 | p_computeSlaveId, p_bfsResult);
@@ -70,16 +72,28 @@ public class BFSResults extends DataStructure {
     }
 
     @Override
+    public void exportObject(final Exporter p_exporter) {
+        m_aggregatedResult.exportObject(p_exporter);
+
+        p_exporter.writeInt(m_bfsResults.size());
+        for (Map.Entry<Integer, BFSResult> entry : m_bfsResults.entrySet()) {
+            p_exporter.writeInt(entry.getKey());
+            entry.getValue().exportObject(p_exporter);
+        }
+    }
+
+    @Override
     public void importObject(final Importer p_importer) {
-        m_aggregatedResult = new BFSResult();
         m_aggregatedResult.importObject(p_importer);
 
-        int size = p_importer.readInt();
-        for (int i = 0; i < size; i++) {
-            int id = p_importer.readInt();
+        m_size = p_importer.readInt(m_size);
+        for (int i = 0; i < m_size; i++) {
+            int id = p_importer.readInt(0);
             BFSResult result = new BFSResult();
             result.importObject(p_importer);
-            m_bfsResults.put(id, result);
+            if (m_bfsResults.size() == i) {
+                m_bfsResults.put(id, result);
+            }
         }
     }
 
@@ -91,17 +105,6 @@ public class BFSResults extends DataStructure {
             size += Integer.BYTES + entry.getValue().sizeofObject();
         }
         return size;
-    }
-
-    @Override
-    public void exportObject(final Exporter p_exporter) {
-        m_aggregatedResult.exportObject(p_exporter);
-
-        p_exporter.writeInt(m_bfsResults.size());
-        for (Map.Entry<Integer, BFSResult> entry : m_bfsResults.entrySet()) {
-            p_exporter.writeInt(entry.getKey());
-            entry.getValue().exportObject(p_exporter);
-        }
     }
 
     @Override

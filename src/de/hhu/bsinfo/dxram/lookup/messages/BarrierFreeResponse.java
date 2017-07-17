@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
 
 /**
@@ -21,6 +23,9 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.05.2016
  */
 public class BarrierFreeResponse extends AbstractResponse {
+
+    private byte m_status;
+
     /**
      * Creates an instance of BarrierFreeRequest
      */
@@ -32,9 +37,34 @@ public class BarrierFreeResponse extends AbstractResponse {
      * Creates an instance of BarrierFreeRequest
      *
      * @param p_request
-     *     The request to respond to
+     *         The request to respond to
      */
-    public BarrierFreeResponse(final BarrierFreeRequest p_request) {
+    public BarrierFreeResponse(final BarrierFreeRequest p_request, final byte p_status) {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_FREE_RESPONSE);
+        m_status = p_status;
+    }
+
+    /**
+     * Get the status
+     *
+     * @return the status
+     */
+    public int getStatus() {
+        return m_status;
+    }
+
+    @Override
+    protected final int getPayloadLength() {
+        return Byte.BYTES;
+    }
+
+    @Override
+    protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeByte(m_status);
+    }
+
+    @Override
+    protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_status = p_importer.readByte(m_status);
     }
 }

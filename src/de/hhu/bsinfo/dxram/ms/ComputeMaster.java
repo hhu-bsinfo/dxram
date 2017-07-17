@@ -345,11 +345,10 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
             }
 
             ExecuteTaskScriptResponse response = (ExecuteTaskScriptResponse) request.getResponse();
-            if (response.getStatusCode() != 0) {
+            if (response.getStatus() != 0) {
                 // exclude slave from execution
                 // #if LOGGER >= ERROR
-                LOGGER.error("Slave 0x%X response %d on execution of task script %s excluding from current execution", slave, response.getStatusCode(),
-                        taskScript);
+                LOGGER.error("Slave 0x%X response %d on execution of task script %s excluding from current execution", slave, response.getStatus(), taskScript);
                 // #endif /* LOGGER >= ERROR */
             } else {
                 numberOfSlavesOnExecution++;
@@ -478,9 +477,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
                 m_lookup.barrierChangeSize(m_executionBarrierId, m_signedOnSlaves.size() + 1);
             }
 
-            SlaveJoinResponse response = new SlaveJoinResponse(p_message, m_executionBarrierId);
-            response.setStatusCode((byte) 0);
-
+            SlaveJoinResponse response = new SlaveJoinResponse(p_message, m_executionBarrierId, (byte) 0);
             try {
                 m_network.sendMessage(response);
 
@@ -502,9 +499,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
             // #endif /* LOGGER == TRACE */
 
             // send response that joining is not possible currently
-            SlaveJoinResponse response = new SlaveJoinResponse(p_message, BarrierID.INVALID_ID);
-            response.setStatusCode((byte) 1);
-
+            SlaveJoinResponse response = new SlaveJoinResponse(p_message, BarrierID.INVALID_ID, (byte) 1);
             try {
                 m_network.sendMessage(response);
             } catch (final NetworkException e) {

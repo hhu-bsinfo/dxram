@@ -42,11 +42,11 @@ public class BarrierStatus implements Importable, Exportable {
      * Constructor
      *
      * @param p_numSignedOnPeers
-     *     Number of peers that signed on so far
+     *         Number of peers that signed on so far
      * @param p_signedOnNodeIDs
-     *     Array of Node IDs that signed on to the barrier
+     *         Array of Node IDs that signed on to the barrier
      * @param p_customData
-     *     Array of custom data received from the signed on nodes
+     *         Array of custom data received from the signed on nodes
      */
     public BarrierStatus(final short p_numSignedOnPeers, final short[] p_signedOnNodeIDs, final long[] p_customData) {
         m_numSignedOnPeers = p_numSignedOnPeers;
@@ -87,7 +87,7 @@ public class BarrierStatus implements Importable, Exportable {
      * Find custom data provided by a specific node
      *
      * @param p_nodeId
-     *     Node id to find custom data for
+     *         Node id to find custom data for
      * @return If the node id signed on with custom data returns the data, null otherwise
      */
     public Long findCustomData(final short p_nodeId) {
@@ -104,7 +104,7 @@ public class BarrierStatus implements Importable, Exportable {
      * Iterate the list of signed on peers with their provided custom data
      *
      * @param p_consumer
-     *     Block to execute for every signed on peer
+     *         Block to execute for every signed on peer
      */
     public void forEachSignedOnPeer(final Consumer p_consumer) {
         for (int i = 0; i < m_numSignedOnPeers; i++) {
@@ -114,8 +114,7 @@ public class BarrierStatus implements Importable, Exportable {
 
     @Override
     public String toString() {
-        return "m_numSignedOnPeers " + m_numSignedOnPeers + ", m_signedOnNodeIDs " +
-                NodeID.nodeIDArrayToString(m_signedOnNodeIDs) + ", m_customData " +
+        return "m_numSignedOnPeers " + m_numSignedOnPeers + ", m_signedOnNodeIDs " + NodeID.nodeIDArrayToString(m_signedOnNodeIDs) + ", m_customData " +
                 ChunkID.chunkIDArrayToString(m_customData);
     }
 
@@ -128,9 +127,9 @@ public class BarrierStatus implements Importable, Exportable {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_numSignedOnPeers = p_importer.readShort();
-        m_signedOnNodeIDs = p_importer.readShortArray();
-        m_customData = p_importer.readLongArray();
+        m_numSignedOnPeers = p_importer.readShort(m_numSignedOnPeers);
+        m_signedOnNodeIDs = p_importer.readShortArray(m_signedOnNodeIDs);
+        m_customData = p_importer.readLongArray(m_customData);
     }
 
     @Override

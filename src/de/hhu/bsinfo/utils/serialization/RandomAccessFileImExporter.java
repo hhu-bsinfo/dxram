@@ -130,6 +130,12 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
+    public void writeCompactNumber(int p_v) {
+        byte[] number = CompactNumber.compact(p_v);
+        writeBytes(number);
+    }
+
+    @Override
     public void writeString(final String p_str) {
         writeByteArray(p_str.getBytes());
     }
@@ -285,7 +291,7 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public boolean readBoolean() {
+    public boolean readBoolean(final boolean p_bool) {
         try {
             return m_file.readBoolean();
         } catch (final IOException e) {
@@ -294,7 +300,7 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public byte readByte() {
+    public byte readByte(final byte p_byte) {
         try {
             return m_file.readByte();
         } catch (final IOException e) {
@@ -303,7 +309,7 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public short readShort() {
+    public short readShort(final short p_short) {
         try {
             return m_file.readShort();
         } catch (final IOException e) {
@@ -312,7 +318,7 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public int readInt() {
+    public int readInt(final int p_int) {
         try {
             return m_file.readInt();
         } catch (final IOException e) {
@@ -321,7 +327,7 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public long readLong() {
+    public long readLong(final long p_long) {
         try {
             return m_file.readLong();
         } catch (final IOException e) {
@@ -330,7 +336,7 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public float readFloat() {
+    public float readFloat(final float p_float) {
         try {
             return m_file.readFloat();
         } catch (final IOException e) {
@@ -339,7 +345,7 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public double readDouble() {
+    public double readDouble(final double p_double) {
         try {
             return m_file.readDouble();
         } catch (final IOException e) {
@@ -348,8 +354,22 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public String readString() {
-        return new String(readByteArray());
+    public int readCompactNumber(int p_int) {
+        byte[] tmp = new byte[4];
+        int i;
+        for (i = 0; i < Integer.BYTES; i++) {
+            tmp[i] = readByte((byte) 0);
+            if ((tmp[i] & 0x80) == 0) {
+                break;
+            }
+        }
+
+        return CompactNumber.decompact(tmp, 0, i);
+    }
+
+    @Override
+    public String readString(final String p_string) {
+        return new String(readByteArray(null));
     }
 
     @Override
@@ -443,7 +463,7 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public byte[] readByteArray() {
+    public byte[] readByteArray(final byte[] p_array) {
         try {
             byte[] arr = new byte[m_file.readInt()];
             readBytes(arr);
@@ -454,7 +474,7 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public short[] readShortArray() {
+    public short[] readShortArray(final short[] p_array) {
         try {
             short[] arr = new short[m_file.readInt()];
             readShorts(arr);
@@ -465,7 +485,7 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public int[] readIntArray() {
+    public int[] readIntArray(final int[] p_array) {
         try {
             int[] arr = new int[m_file.readInt()];
             readInts(arr);
@@ -476,7 +496,7 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public long[] readLongArray() {
+    public long[] readLongArray(final long[] p_array) {
         try {
             long[] arr = new long[m_file.readInt()];
             readLongs(arr);
@@ -487,12 +507,12 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public String[] readStringArray() {
+    public String[] readStringArray(final String[] p_array) {
         try {
             String[] arr = new String[m_file.readInt()];
 
             for (int i = 0; i < arr.length; i++) {
-                arr[i] = readString();
+                arr[i] = readString(null);
             }
 
             return arr;

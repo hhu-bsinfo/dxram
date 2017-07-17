@@ -176,7 +176,7 @@ public class StorageUnit implements Importable, Exportable {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_bytes = p_importer.readLong();
+        m_bytes = p_importer.readLong(m_bytes);
     }
 
     @Override

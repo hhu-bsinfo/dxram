@@ -68,6 +68,6 @@ public class BarrierAllocResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_barrierId = p_importer.readInt();
+        m_barrierId = p_importer.readInt(m_barrierId);
     }
 }

@@ -65,7 +65,9 @@ public class BFSResultMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_bfsResult = new BFSResult();
+        if (m_bfsResult == null) {
+            m_bfsResult = new BFSResult();
+        }
         p_importer.importObject(m_bfsResult);
     }
 

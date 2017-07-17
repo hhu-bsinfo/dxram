@@ -96,8 +96,8 @@ public class SuperpeerStorageCreateRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_storageId = p_importer.readInt();
-        m_size = p_importer.readInt();
-        m_replicate = p_importer.readBoolean();
+        m_storageId = p_importer.readInt(m_storageId);
+        m_size = p_importer.readInt(m_size);
+        m_replicate = p_importer.readBoolean(m_replicate);
     }
 }

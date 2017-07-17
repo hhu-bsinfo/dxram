@@ -13,11 +13,10 @@
 
 package de.hhu.bsinfo.dxram.log.messages;
 
-import java.nio.charset.StandardCharsets;
-
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Response to a GetUtilizationRequest
@@ -72,9 +71,10 @@ public class GetUtilizationResponse extends AbstractResponse {
     @Override
     protected final int getPayloadLength() {
         if (m_utilization != null) {
-            return Integer.BYTES + m_utilization.getBytes(StandardCharsets.UTF_8).length;
+            byte[] bytes = m_utilization.getBytes();
+            return ObjectSizeUtil.sizeofCompactedNumber(bytes.length) + bytes.length;
         } else {
-            return Integer.BYTES;
+            return Byte.BYTES;
         }
     }
 
@@ -84,13 +84,13 @@ public class GetUtilizationResponse extends AbstractResponse {
         if (m_utilization != null) {
             p_exporter.writeString(m_utilization);
         } else {
-            p_exporter.writeInt(0);
+            p_exporter.writeCompactNumber(0);
         }
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_utilization = p_importer.readString();
+        m_utilization = p_importer.readString(m_utilization);
     }
 
 }

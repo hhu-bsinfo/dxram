@@ -84,7 +84,7 @@ public class BarrierSignOnRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_barrierId = p_importer.readInt();
-        m_customData = p_importer.readLong();
+        m_barrierId = p_importer.readInt(m_barrierId);
+        m_customData = p_importer.readLong(m_customData);
     }
 }

@@ -70,6 +70,6 @@ public class BarrierGetStatusRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_barrierId = p_importer.readInt();
+        m_barrierId = p_importer.readInt(m_barrierId);
     }
 }

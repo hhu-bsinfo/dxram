@@ -16,43 +16,43 @@ package de.hhu.bsinfo.net.core;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.net.nio.NIOMessageImExporter;
+import de.hhu.bsinfo.net.nio.NIOMessageExporterCollection;
 
 /**
  * @author Kevin Beineke, kevin.beineke@hhu.de, 07.07.2017
  */
-public final class ImExporterPool {
+public final class ExporterPool {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ImExporterPool.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(ExporterPool.class.getSimpleName());
     private static final int SLOT_SIZE = 100;
 
     // Attributes
-    private static AbstractMessageImExporter[] ms_imExporters = new AbstractMessageImExporter[SLOT_SIZE];
+    private static AbstractMessageExporterCollection[] ms_exporters = new AbstractMessageExporterCollection[SLOT_SIZE];
 
-    public ImExporterPool() {
+    public ExporterPool() {
     }
 
-    public static AbstractMessageImExporter getInstance() throws NetworkException {
-        AbstractMessageImExporter ret;
+    public static AbstractMessageExporterCollection getInstance() throws NetworkException {
+        AbstractMessageExporterCollection ret;
         long threadID = Thread.currentThread().getId();
 
-        if (threadID >= ms_imExporters.length) {
-            if (ms_imExporters.length == 10 * SLOT_SIZE) {
+        if (threadID >= ms_exporters.length) {
+            if (ms_exporters.length == 10 * SLOT_SIZE) {
                 // TODO
 
                 throw new NetworkException("ThreadID is too high. Change configuration...");
             } else {
                 // Copying without lock might result in lost allocations but this can be ignored
-                AbstractMessageImExporter[] tmp = new AbstractMessageImExporter[ms_imExporters.length + SLOT_SIZE];
-                System.arraycopy(ms_imExporters, 0, tmp, 0, ms_imExporters.length);
-                ms_imExporters = tmp;
+                AbstractMessageExporterCollection[] tmp = new AbstractMessageExporterCollection[ms_exporters.length + SLOT_SIZE];
+                System.arraycopy(ms_exporters, 0, tmp, 0, ms_exporters.length);
+                ms_exporters = tmp;
             }
         }
 
-        ret = ms_imExporters[(int) threadID];
+        ret = ms_exporters[(int) threadID];
         if (ret == null) {
-            ret = new NIOMessageImExporter();
-            ms_imExporters[(int) threadID] = ret;
+            ret = new NIOMessageExporterCollection();
+            ms_exporters[(int) threadID] = ret;
         }
 
         return ret;

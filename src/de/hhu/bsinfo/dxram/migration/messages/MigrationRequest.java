@@ -14,11 +14,11 @@
 package de.hhu.bsinfo.dxram.migration.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Request for storing a Chunk on a remote node after migration
@@ -55,9 +55,7 @@ public class MigrationRequest extends AbstractRequest {
      */
     public MigrationRequest(final short p_destination, final DataStructure... p_dataStructures) {
         super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST);
-
         m_dataStructures = p_dataStructures;
-        setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend((byte) 0, p_dataStructures.length));
     }
 
     /**
@@ -80,9 +78,10 @@ public class MigrationRequest extends AbstractRequest {
 
     @Override
     protected final int getPayloadLength() {
-        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+        int size = 0;
 
         if (m_dataStructures != null) {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_dataStructures.length);
             size += m_dataStructures.length * Long.BYTES;
             size += m_dataStructures.length * Integer.BYTES;
 
@@ -90,6 +89,7 @@ public class MigrationRequest extends AbstractRequest {
                 size += dataStructure.sizeofObject();
             }
         } else {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length);
             size += m_chunkIDs.length * Long.BYTES;
             size += m_chunkIDs.length * Integer.BYTES;
 
@@ -103,27 +103,25 @@ public class MigrationRequest extends AbstractRequest {
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_dataStructures.length);
-
+        p_exporter.writeCompactNumber(m_dataStructures.length);
         for (DataStructure dataStructure : m_dataStructures) {
-            int size = dataStructure.sizeofObject();
-
             p_exporter.writeLong(dataStructure.getID());
-            p_exporter.writeInt(size);
+            p_exporter.writeInt(dataStructure.sizeofObject());
             p_exporter.exportObject(dataStructure);
         }
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
-
-        m_chunkIDs = new long[numChunks];
-        m_data = new byte[numChunks][];
-
+        int length = p_importer.readCompactNumber(0);
+        if (m_chunkIDs == null) {
+            // Do not overwrite existing arrays
+            m_chunkIDs = new long[length];
+            m_data = new byte[length][];
+        }
         for (int i = 0; i < m_chunkIDs.length; i++) {
-            m_chunkIDs[i] = p_importer.readLong();
-            m_data[i] = p_importer.readByteArray();
+            m_chunkIDs[i] = p_importer.readLong(m_chunkIDs[i]);
+            m_data[i] = p_importer.readByteArray(m_data[i]);
         }
     }
 

@@ -73,9 +73,9 @@ public class BFSLevelFinishedMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_token = p_importer.readInt();
-        m_sentMsgCount = p_importer.readLong();
-        m_receivedMsgCount = p_importer.readLong();
+        m_token = p_importer.readInt(m_token);
+        m_sentMsgCount = p_importer.readLong(m_sentMsgCount);
+        m_receivedMsgCount = p_importer.readLong(m_receivedMsgCount);
     }
 
     @Override

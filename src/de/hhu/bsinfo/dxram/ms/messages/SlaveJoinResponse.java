@@ -25,6 +25,7 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
  */
 public class SlaveJoinResponse extends AbstractResponse {
     private int m_executionBarrierId = BarrierID.INVALID_ID;
+    private byte m_status;
 
     /**
      * Creates an instance of SlaveJoinResponse.
@@ -43,10 +44,10 @@ public class SlaveJoinResponse extends AbstractResponse {
      * @param p_executionBarrierId
      *         The id of the barrier to sync for execution of a task
      */
-    public SlaveJoinResponse(final SlaveJoinRequest p_request, final int p_executionBarrierId) {
+    public SlaveJoinResponse(final SlaveJoinRequest p_request, final int p_executionBarrierId, final byte p_status) {
         super(p_request, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE);
-
         m_executionBarrierId = p_executionBarrierId;
+        m_status = p_status;
     }
 
     /**
@@ -58,18 +59,29 @@ public class SlaveJoinResponse extends AbstractResponse {
         return m_executionBarrierId;
     }
 
+    /**
+     * Get the status
+     *
+     * @return the status
+     */
+    public int getStatus() {
+        return m_status;
+    }
+
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         p_exporter.writeInt(m_executionBarrierId);
+        p_exporter.writeByte(m_status);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_executionBarrierId = p_importer.readInt();
+        m_executionBarrierId = p_importer.readInt(m_executionBarrierId);
+        m_status = p_importer.readByte(m_status);
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES;
+        return Integer.BYTES + Byte.BYTES;
     }
 }

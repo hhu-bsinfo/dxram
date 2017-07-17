@@ -15,7 +15,6 @@ package de.hhu.bsinfo.dxram.lock.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
@@ -29,6 +28,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 public class UnlockMessage extends AbstractMessage {
 
     private long m_chunkID = ChunkID.INVALID_ID;
+    private byte m_lockCode;
 
     /**
      * Creates an instance of UnlockRequest as a receiver.
@@ -52,10 +52,10 @@ public class UnlockMessage extends AbstractMessage {
 
         m_chunkID = p_chunkID;
 
-        if (p_writeLock) {
-            setStatusCode(ChunkMessagesMetadataUtils.setWriteLockFlag(getStatusCode(), true));
+        if (!p_writeLock) {
+            m_lockCode = 1;
         } else {
-            setStatusCode(ChunkMessagesMetadataUtils.setReadLockFlag(getStatusCode(), true));
+            m_lockCode = 2;
         }
     }
 
@@ -74,28 +74,25 @@ public class UnlockMessage extends AbstractMessage {
      * @return True for write lock, false read lock.
      */
     public boolean isWriteLockOperation() {
-        if (ChunkMessagesMetadataUtils.isLockAcquireFlagSet(getStatusCode())) {
-            return !ChunkMessagesMetadataUtils.isReadLockFlagSet(getStatusCode());
-        } else {
-            assert 1 == 2;
-            return true;
-        }
+        return m_lockCode != 1;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Long.BYTES;
+        return Byte.BYTES + Long.BYTES;
     }
 
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeByte(m_lockCode);
         p_exporter.writeLong(m_chunkID);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_chunkID = p_importer.readLong();
+        m_lockCode = p_importer.readByte(m_lockCode);
+        m_chunkID = p_importer.readLong(m_chunkID);
     }
 
 }

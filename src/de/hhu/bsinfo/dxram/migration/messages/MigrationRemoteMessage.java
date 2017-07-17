@@ -92,8 +92,8 @@ public class MigrationRemoteMessage extends AbstractMessage {
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
 
-        m_chunkID = p_importer.readLong();
-        m_target = p_importer.readShort();
+        m_chunkID = p_importer.readLong(m_chunkID);
+        m_target = p_importer.readShort(m_target);
 
     }
 }

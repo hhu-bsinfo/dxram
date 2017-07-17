@@ -77,7 +77,7 @@ public class GetChunkIDForNameserviceEntryResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_chunkID = p_importer.readLong();
+        m_chunkID = p_importer.readLong(m_chunkID);
     }
 
 }

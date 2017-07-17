@@ -31,7 +31,7 @@ public final class DSByteArray extends DataStructure {
      * Sets the chunk id to invalid.
      *
      * @param p_bufferSize
-     *     p_bufferSize Initial size of the byte array
+     *         p_bufferSize Initial size of the byte array
      */
     public DSByteArray(final int p_bufferSize) {
         super();
@@ -42,9 +42,9 @@ public final class DSByteArray extends DataStructure {
      * Constructor
      *
      * @param p_id
-     *     ID the chunk is assigned to.
+     *         ID the chunk is assigned to.
      * @param p_bufferSize
-     *     Initial size of the byte array
+     *         Initial size of the byte array
      */
     public DSByteArray(final long p_id, final int p_bufferSize) {
         super(p_id);
@@ -57,8 +57,8 @@ public final class DSByteArray extends DataStructure {
      * Create the chunk with an external buffer.
      *
      * @param p_buffer
-     *     External buffer containing the data for the chunk. Be careful
-     *     with shared references.
+     *         External buffer containing the data for the chunk. Be careful
+     *         with shared references.
      */
     public DSByteArray(final byte[] p_buffer) {
         super();
@@ -75,10 +75,10 @@ public final class DSByteArray extends DataStructure {
      * Create the chunk with an external buffer.
      *
      * @param p_id
-     *     ID the chunk is assigned to.
+     *         ID the chunk is assigned to.
      * @param p_buffer
-     *     External buffer containing the data for the chunk. Be careful
-     *     with shared references.
+     *         External buffer containing the data for the chunk. Be careful
+     *         with shared references.
      */
     public DSByteArray(final long p_id, final byte[] p_buffer) {
         super(p_id);

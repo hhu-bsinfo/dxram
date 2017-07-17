@@ -26,7 +26,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 10.04.2017
  */
 public class LockedChunkEntry implements Importable, Exportable {
-    public static final int SIZEOF_OBJECT = Long.BYTES + Short.BYTES;
 
     private long m_chunkId;
     private short m_nodeId;
@@ -43,9 +42,9 @@ public class LockedChunkEntry implements Importable, Exportable {
      * Constructor
      *
      * @param p_chunkId
-     *     Locked chunk id
+     *         Locked chunk id
      * @param p_nodeId
-     *     Peer that locked the chunk
+     *         Peer that locked the chunk
      */
     public LockedChunkEntry(final long p_chunkId, final short p_nodeId) {
         m_chunkId = p_chunkId;
@@ -78,12 +77,12 @@ public class LockedChunkEntry implements Importable, Exportable {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_chunkId = p_importer.readLong();
-        m_nodeId = p_importer.readShort();
+        m_chunkId = p_importer.readLong(m_chunkId);
+        m_nodeId = p_importer.readShort(m_nodeId);
     }
 
     @Override
     public int sizeofObject() {
-        return SIZEOF_OBJECT;
+        return Long.BYTES + Short.BYTES;
     }
 }

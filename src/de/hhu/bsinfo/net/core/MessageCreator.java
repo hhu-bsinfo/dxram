@@ -20,8 +20,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.net.nio.NIOMessageImporter;
-
 /**
  * The MessageCreator builds messages and forwards them to the MessageHandlers.
  * Uses a ring-buffer implementation for incoming buffers.
@@ -101,14 +99,13 @@ public class MessageCreator extends Thread {
         Object[] job;
         AbstractConnection connection;
         ByteBuffer buffer;
-        AbstractMessageImporter importer = new NIOMessageImporter();
 
         job = new Object[2];
         while (!m_shutdown) {
             if (popJob(job)) {
                 connection = (AbstractConnection) job[0];
                 buffer = (ByteBuffer) job[1];
-                connection.getPipeIn().processBuffer(buffer, importer);
+                connection.getPipeIn().processBuffer(buffer);
                 connection.returnProcessedBuffer(buffer);
             } else {
                 LockSupport.park();

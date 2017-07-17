@@ -18,16 +18,14 @@ package de.hhu.bsinfo.net.core;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public abstract class AbstractMessageImExporter {
+public abstract class AbstractMessageExporterCollection {
 
     /**
      * Constructor
      */
-    protected AbstractMessageImExporter() {
+    protected AbstractMessageExporterCollection() {
     }
 
     protected abstract AbstractMessageExporter getExporter(boolean p_hasOverflow);
-
-    protected abstract AbstractMessageImporter getImporter();
 
 }

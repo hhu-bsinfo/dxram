@@ -19,6 +19,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Send Superpeers Message
@@ -29,6 +30,8 @@ public class SendSuperpeersMessage extends AbstractMessage {
 
     // Attributes
     private ArrayList<Short> m_superpeers;
+
+    private int m_superpeersToRead; // For serialization, only
 
     // Constructors
 
@@ -70,23 +73,20 @@ public class SendSuperpeersMessage extends AbstractMessage {
 
     @Override
     protected final int getPayloadLength() {
-        int ret;
-
-        ret = Integer.BYTES;
-        if (m_superpeers != null && !m_superpeers.isEmpty()) {
-            ret += Short.BYTES * m_superpeers.size();
+        if (m_superpeers == null || m_superpeers.isEmpty()) {
+            return Byte.BYTES;
+        } else {
+            return ObjectSizeUtil.sizeofCompactedNumber(m_superpeers.size()) + Short.BYTES * m_superpeers.size();
         }
-
-        return ret;
     }
 
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_superpeers == null || m_superpeers.isEmpty()) {
-            p_exporter.writeInt(0);
+            p_exporter.writeCompactNumber(0);
         } else {
-            p_exporter.writeInt(m_superpeers.size());
+            p_exporter.writeCompactNumber(m_superpeers.size());
             for (short superpeer : m_superpeers) {
                 p_exporter.writeShort(superpeer);
             }
@@ -95,12 +95,15 @@ public class SendSuperpeersMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int length;
-
-        m_superpeers = new ArrayList<Short>();
-        length = p_importer.readInt();
-        for (int i = 0; i < length; i++) {
-            m_superpeers.add(p_importer.readShort());
+        m_superpeersToRead = p_importer.readCompactNumber(m_superpeersToRead);
+        if (m_superpeers == null) {
+            m_superpeers = new ArrayList<Short>(m_superpeersToRead);
+        }
+        for (int i = 0; i < m_superpeersToRead; i++) {
+            short superpeer = p_importer.readShort((short) 0);
+            if (m_superpeers.size() == i) {
+                m_superpeers.add(superpeer);
+            }
         }
     }
 

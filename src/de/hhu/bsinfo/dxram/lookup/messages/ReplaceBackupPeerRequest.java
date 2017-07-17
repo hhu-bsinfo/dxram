@@ -125,10 +125,10 @@ public class ReplaceBackupPeerRequest extends AbstractRequest {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_rangeID = p_importer.readShort();
-        m_failedBackupPeer = p_importer.readShort();
-        m_newBackupPeer = p_importer.readShort();
-        m_isBackup = p_importer.readBoolean();
+        m_rangeID = p_importer.readShort(m_rangeID);
+        m_failedBackupPeer = p_importer.readShort(m_failedBackupPeer);
+        m_newBackupPeer = p_importer.readShort(m_newBackupPeer);
+        m_isBackup = p_importer.readBoolean(m_isBackup);
     }
 
 }

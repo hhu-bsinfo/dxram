@@ -20,13 +20,13 @@ import java.io.PrintStream;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.ms.Task;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.ms.Signal;
-import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.ms.Signal;
+import de.hhu.bsinfo.dxram.ms.Task;
+import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -53,7 +53,7 @@ public class PrintMemoryStatusToFileTask implements Task {
      * Constructor
      *
      * @param p_path
-     *     Filepath of the file to print to.
+     *         Filepath of the file to print to.
      */
     public PrintMemoryStatusToFileTask(final String p_path) {
         m_path = p_path;
@@ -118,7 +118,7 @@ public class PrintMemoryStatusToFileTask implements Task {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_path = p_importer.readString();
+        m_path = p_importer.readString(m_path);
     }
 
     @Override

@@ -32,8 +32,7 @@ public class LogBufferMessage extends AbstractMessage {
     // Attributes
     private short m_rangeID;
     private ByteBuffer m_buffer;
-
-    private int m_copiedBytes;
+    private int m_bytesRead;
 
     // Constructors
 
@@ -62,7 +61,7 @@ public class LogBufferMessage extends AbstractMessage {
 
         m_rangeID = p_rangeID;
         m_buffer = p_buffer;
-        m_copiedBytes = m_buffer.limit();
+        m_bytesRead = m_buffer.limit() + Short.BYTES;
     }
 
     // Getters
@@ -78,11 +77,7 @@ public class LogBufferMessage extends AbstractMessage {
 
     @Override
     protected final int getPayloadLength() {
-        if (m_copiedBytes == 0) {
-            return 0;
-        } else {
-            return Short.BYTES + m_copiedBytes;
-        }
+        return m_bytesRead;
     }
 
     // Methods
@@ -93,20 +88,12 @@ public class LogBufferMessage extends AbstractMessage {
     }
 
     @Override
-    protected final void readPayload(final AbstractMessageImporter p_importer, final ByteBuffer p_buffer, final int p_payloadSize, final boolean p_wasCopied) {
-        if (p_wasCopied) {
-            // De-serialize later
-            m_buffer = p_buffer;
-            m_copiedBytes = 0;
-        } else {
-            // Message buffer will be re-used -> copy data for later de-serialization
-            m_buffer = ByteBuffer.allocate(p_payloadSize);
-            m_buffer.put(p_buffer.array(), p_buffer.position(), p_payloadSize);
-            p_buffer.position(p_buffer.position() + p_payloadSize);
-            m_buffer.rewind();
-
-            m_copiedBytes = p_payloadSize;
-        }
+    protected final void readPayload(final AbstractMessageImporter p_importer, final int p_payloadSize) {
+        // Just copy all bytes, will be serialized into primary write buffer later
+        byte[] bytes = new byte[p_payloadSize];
+        p_importer.readBytes(bytes);
+        m_buffer = ByteBuffer.wrap(bytes);
+        m_bytesRead = m_buffer.limit();
     }
 
 }

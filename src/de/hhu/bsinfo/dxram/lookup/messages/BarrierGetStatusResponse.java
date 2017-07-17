@@ -26,6 +26,7 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
 public class BarrierGetStatusResponse extends AbstractResponse {
     private int m_barrierId;
     private BarrierStatus m_barrierStatus;
+    private byte m_status;
 
     /**
      * Creates an instance of BarrierGetStatusResponse.
@@ -44,11 +45,12 @@ public class BarrierGetStatusResponse extends AbstractResponse {
      * @param p_barrierStatus
      *         Status of the barrier
      */
-    public BarrierGetStatusResponse(final BarrierGetStatusRequest p_request, final BarrierStatus p_barrierStatus) {
+    public BarrierGetStatusResponse(final BarrierGetStatusRequest p_request, final BarrierStatus p_barrierStatus, final byte p_status) {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_STATUS_RESPONSE);
 
         m_barrierId = p_request.getBarrierId();
         m_barrierStatus = p_barrierStatus;
+        m_status = p_status;
     }
 
     /**
@@ -69,21 +71,34 @@ public class BarrierGetStatusResponse extends AbstractResponse {
         return m_barrierStatus;
     }
 
+    /**
+     * Get the status
+     *
+     * @return the status
+     */
+    public int getStatus() {
+        return m_status;
+    }
+
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + m_barrierStatus.sizeofObject();
+        return Integer.BYTES + m_barrierStatus.sizeofObject() + Byte.BYTES;
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         p_exporter.writeInt(m_barrierId);
         p_exporter.exportObject(m_barrierStatus);
+        p_exporter.writeByte(m_status);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_barrierId = p_importer.readInt();
-        m_barrierStatus = new BarrierStatus();
+        m_barrierId = p_importer.readInt(m_barrierId);
+        if (m_barrierStatus == null) {
+            m_barrierStatus = new BarrierStatus();
+        }
         p_importer.importObject(m_barrierStatus);
+        m_status = p_importer.readByte(m_status);
     }
 }

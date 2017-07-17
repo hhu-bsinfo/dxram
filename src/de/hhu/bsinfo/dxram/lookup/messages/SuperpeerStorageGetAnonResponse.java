@@ -29,6 +29,7 @@ public class SuperpeerStorageGetAnonResponse extends AbstractResponse {
     // when the response is received, the chunk objects from the request are
     // used to directly write the data to it to avoid further copying
     private byte[] m_data;
+    private byte m_status;
 
     /**
      * Creates an instance of SuperpeerStorageGetAnonResponse.
@@ -47,10 +48,19 @@ public class SuperpeerStorageGetAnonResponse extends AbstractResponse {
      * @param p_data
      *         Data read from memory
      */
-    public SuperpeerStorageGetAnonResponse(final SuperpeerStorageGetAnonRequest p_request, final byte[] p_data) {
+    public SuperpeerStorageGetAnonResponse(final SuperpeerStorageGetAnonRequest p_request, final byte[] p_data, final byte p_status) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_RESPONSE);
-
         m_data = p_data;
+        m_status = p_status;
+    }
+
+    /**
+     * Get the status
+     *
+     * @return the status
+     */
+    public int getStatus() {
+        return m_status;
     }
 
     @Override
@@ -65,11 +75,8 @@ public class SuperpeerStorageGetAnonResponse extends AbstractResponse {
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        if (m_data == null) {
-            // indicate no data available
-            p_exporter.writeByte((byte) 0);
-        } else {
-            p_exporter.writeByte((byte) 0);
+        p_exporter.writeByte(m_status);
+        if (m_data != null) {
             p_exporter.writeByteArray(m_data);
         }
     }
@@ -80,7 +87,8 @@ public class SuperpeerStorageGetAnonResponse extends AbstractResponse {
         // the data structure provided by the request to avoid further copying of data
         SuperpeerStorageGetAnonRequest request = (SuperpeerStorageGetAnonRequest) getCorrespondingRequest();
 
-        if (p_importer.readByte() == 1) {
+        m_status = p_importer.readByte(m_status);
+        if (m_status == 0) {
             p_importer.importObject(request.getDataStructure());
             request.getDataStructure().setState(ChunkState.OK);
         } else {

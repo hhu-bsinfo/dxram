@@ -180,12 +180,12 @@ public abstract class AbstractRequest extends AbstractMessage {
         m_waitingThread = Thread.currentThread();
 
         long cur = System.nanoTime();
-        long deadline = cur + p_timeoutMs * 1000;
+        long deadline = cur + p_timeoutMs * 1000 * 1000;
         while (!m_fulfilled) {
 
             if (m_aborted) {
                 // #if LOGGER >= TRACE
-                LOGGER.trace("Response for request %s , aborted, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0);
+                LOGGER.trace("Response for request %s , aborted, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0 / 1000.0);
                 // #endif /* LOGGER >= TRACE */
 
                 throw new NetworkResponseCancelledException(getDestination());
@@ -194,12 +194,12 @@ public abstract class AbstractRequest extends AbstractMessage {
             if (!m_ignoreTimeout) {
                 if (System.nanoTime() > deadline) {
                     // #if LOGGER >= TRACE
-                    LOGGER.trace("Response for request %s , delayed, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0);
+                    LOGGER.trace("Response for request %s , delayed, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0 / 1000.0);
                     // #endif /* LOGGER >= TRACE */
 
                     throw new NetworkResponseDelayedException(getDestination());
                 }
-                LockSupport.parkUntil(deadline);
+                LockSupport.parkNanos(p_timeoutMs * 1000 * 1000);
             } else {
                 LockSupport.park();
             }
@@ -208,7 +208,7 @@ public abstract class AbstractRequest extends AbstractMessage {
         // TODO statistics for req/resp latency?
 
         // #if LOGGER >= TRACE
-        LOGGER.trace("Request %s fulfilled, response %s, latency %f ms", toString(), m_response, (System.nanoTime() - cur) / 1000.0);
+        LOGGER.trace("Request %s fulfilled, response %s, latency %f ms", toString(), m_response, (System.nanoTime() - cur) / 1000.0 / 1000.0);
         // #endif /* LOGGER >= TRACE */
     }
 

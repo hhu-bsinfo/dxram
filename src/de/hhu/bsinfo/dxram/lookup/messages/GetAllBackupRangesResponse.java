@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Response to a GetBackupRangesRequest
@@ -66,7 +67,7 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        int ret = Integer.BYTES;
+        int ret = ObjectSizeUtil.sizeofCompactedNumber(m_backupRanges.length);
 
         for (BackupRange backupRange : m_backupRanges) {
             ret += backupRange.sizeofObject();
@@ -79,9 +80,9 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         if (m_backupRanges == null) {
-            p_exporter.writeInt(0);
+            p_exporter.writeCompactNumber(0);
         } else {
-            p_exporter.writeInt(m_backupRanges.length);
+            p_exporter.writeCompactNumber(m_backupRanges.length);
             for (BackupRange backupRange : m_backupRanges) {
                 p_exporter.exportObject(backupRange);
             }
@@ -90,15 +91,15 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int size;
-
-        size = p_importer.readInt();
-        if (size > 0) {
-            m_backupRanges = new BackupRange[size];
-            for (int i = 0; i < m_backupRanges.length; i++) {
+        int length = p_importer.readCompactNumber(0);
+        if (m_backupRanges == null) {
+            m_backupRanges = new BackupRange[length];
+        }
+        for (int i = 0; i < m_backupRanges.length; i++) {
+            if (m_backupRanges[i] == null) {
                 m_backupRanges[i] = new BackupRange();
-                p_importer.importObject(m_backupRanges[i]);
             }
+            p_importer.importObject(m_backupRanges[i]);
         }
     }
 

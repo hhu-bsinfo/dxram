@@ -14,10 +14,10 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Request to create new chunks remotely.
@@ -46,10 +46,7 @@ public class CreateRequest extends AbstractRequest {
      */
     public CreateRequest(final short p_destination, final int... p_sizes) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST);
-
         m_sizes = p_sizes;
-
-        setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_sizes.length));
     }
 
     /**
@@ -63,20 +60,16 @@ public class CreateRequest extends AbstractRequest {
 
     @Override
     protected final int getPayloadLength() {
-        return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Integer.BYTES * m_sizes.length;
+        return ObjectSizeUtil.sizeofIntArray(m_sizes);
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_sizes.length);
-
         p_exporter.writeIntArray(m_sizes);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int numSizes = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
-
-        m_sizes = p_importer.readIntArray();
+        m_sizes = p_importer.readIntArray(m_sizes);
     }
 }

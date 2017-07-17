@@ -13,22 +13,16 @@
 
 package de.hhu.bsinfo.dxram.backup;
 
-import java.io.Serializable;
-
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.ArrayListLong;
-import de.hhu.bsinfo.utils.serialization.Exportable;
-import de.hhu.bsinfo.utils.serialization.Exporter;
-import de.hhu.bsinfo.utils.serialization.Importable;
-import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Btree to store backup ranges of migrated chunks.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.06.2015
  */
-public final class BackupRangeTree implements Serializable, Importable, Exportable {
+public final class BackupRangeTree {
 
     // Constants
     private static final short INVALID = -1;
@@ -50,15 +44,17 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
 
     private Entry m_changedEntry;
 
+    private int m_elementsInTree; // Used for serialization, only
+
     // Constructors
 
     /**
      * Creates an instance of MigrationsTree
      *
      * @param p_order
-     *     order of the btree
+     *         order of the btree
      * @param p_nodeID
-     *     this node's NodeID
+     *         this node's NodeID
      */
     public BackupRangeTree(final short p_order, final short p_nodeID) {
         m_minEntries = p_order;
@@ -82,9 +78,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Returns the node in which the predecessor is
      *
      * @param p_chunkID
-     *     ChunkID whose predecessor's node is searched
+     *         ChunkID whose predecessor's node is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the node in which the predecessor of p_chunkID is or null if there is no predecessor
      */
     private static Node getPredecessorsNode(final long p_chunkID, final Node p_node) {
@@ -135,9 +131,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Returns the entry of the predecessor
      *
      * @param p_chunkID
-     *     the ChunkID whose predecessor is searched
+     *         the ChunkID whose predecessor is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the entry of p_chunkID's predecessor or null if there is no predecessor
      */
     private static Entry getPredecessorsEntry(final long p_chunkID, final Node p_node) {
@@ -163,9 +159,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Returns the node in which the successor is
      *
      * @param p_chunkID
-     *     ChunkID whose successor's node is searched
+     *         ChunkID whose successor's node is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the node in which the successor of p_chunkID is or null if there is no successor
      */
     private static Node getSuccessorsNode(final long p_chunkID, final Node p_node) {
@@ -216,9 +212,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Returns the entry of the successor
      *
      * @param p_chunkID
-     *     the ChunkID whose successor is searched
+     *         the ChunkID whose successor is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the entry of p_chunkID's successor or null if there is no successor
      */
     private static Entry getSuccessorsEntry(final long p_chunkID, final Node p_node) {
@@ -244,11 +240,11 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Prints one node of the btree and walks down the btree recursively
      *
      * @param p_node
-     *     the current node
+     *         the current node
      * @param p_prefix
-     *     the prefix to use
+     *         the prefix to use
      * @param p_isTail
-     *     defines wheter the node is the tail
+     *         defines wheter the node is the tail
      * @return String interpretation of the tree
      */
     private static String getString(final Node p_node, final String p_prefix, final boolean p_isTail) {
@@ -302,96 +298,10 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
     }
 
     /**
-     * Adds one node as pair of long and short from the btree to the byte buffer and walks down the btree recursively
-     *
-     * @param p_node
-     *     the current node
-     * @param p_exporter
-     *     bytebuffer to write into
-     */
-    private static void putTreeInByteBuffer(final Node p_node, final Exporter p_exporter) {
-        Node obj;
-
-        for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
-
-            p_exporter.writeLong(p_node.getChunkID(i));
-            p_exporter.writeShort(p_node.getRangeID(i));
-
-        }
-
-        for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
-            obj = p_node.getChild(i);
-
-            if (obj != null) {
-                putTreeInByteBuffer(obj, p_exporter);
-            }
-
-        }
-        if (p_node.getNumberOfChildren() >= 1) {
-            obj = p_node.getChild(p_node.getNumberOfChildren() - 1);
-
-            putTreeInByteBuffer(obj, p_exporter);
-        }
-
-    }
-
-    @Override
-    public void importObject(final Importer p_importer) {
-        // Size is read before!
-        m_minEntries = p_importer.readShort();
-        m_minChildren = (short) (m_minEntries + 1);
-        m_maxEntries = (short) (2 * m_minEntries);
-        m_maxChildren = (short) (m_maxEntries + 1);
-
-        int elementsInBTree = p_importer.readInt();
-        if (elementsInBTree > 0) {
-            for (int i = 0; i < elementsInBTree; i++) {
-                long cid = p_importer.readLong();
-                short rid = p_importer.readShort();
-
-                createOrReplaceEntry(cid, rid);
-            }
-        }
-    }
-
-    @Override
-    public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeShort(m_minEntries);
-        if (m_root != null) {
-            // Push Size
-            int numberOfTreeElements = m_entrySize + 1;
-            p_exporter.writeInt(numberOfTreeElements);
-
-            // Push elements
-            putTreeInByteBuffer(m_root, p_exporter);
-        } else {
-            p_exporter.writeInt(-1);
-        }
-    }
-
-    @Override
-    public int sizeofObject() {
-        int numberOfBytesWritten = Integer.BYTES;
-
-        // Size of the b tree list
-        // Integer represents the bytes where the size of the list is stored, m_size + 1 for number of entries including the
-        // default (LocalID: 0x1000000000000 NodeID: 0xNID), long and short for key and value
-        if (m_root != null) {
-            numberOfBytesWritten += (m_entrySize + 1) * (Long.BYTES + Short.BYTES);
-        }
-
-        numberOfBytesWritten += Short.BYTES;
-
-        numberOfBytesWritten += Short.BYTES;
-
-        return numberOfBytesWritten;
-    }
-
-    /**
      * Removes given chunk from btree
      *
      * @param p_chunkID
-     *     ChunkID of deleted object
+     *         ChunkID of deleted object
      * @note should always be called if an object is deleted
      */
     public void remove(final long p_chunkID) {
@@ -513,31 +423,10 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
     }
 
     /**
-     * Stores the backup range ID for a single chunk
-     *
-     * @param p_chunkID
-     *     ChunkIDs of created/migrated/recovered chunks
-     * @param p_rangeID
-     *     the backup range ID
-     * @return true if insertion was successful
-     */
-    public boolean putChunkIDs(final long[] p_chunkID, final short p_rangeID) {
-        boolean ret = true;
-
-        for (long chunkID : p_chunkID) {
-            if (!putChunkID(chunkID, p_rangeID)) {
-                ret = false;
-            }
-        }
-
-        return ret;
-    }
-
-    /**
      * Returns the backup range ID for given object
      *
      * @param p_chunkID
-     *     ChunkID of requested object
+     *         ChunkID of requested object
      * @return the backup range ID
      */
     public short getBackupRange(final long p_chunkID) {
@@ -556,9 +445,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Stores the backup range ID for a single chunk
      *
      * @param p_chunkID
-     *     ChunkID of created/migrated/recovered chunk
+     *         ChunkID of created/migrated/recovered chunk
      * @param p_rangeID
-     *     the backup range ID
+     *         the backup range ID
      * @return true if insertion was successful
      */
     boolean putChunkID(final long p_chunkID, final short p_rangeID) {
@@ -598,11 +487,11 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Stores the backup range ID for a chunk range
      *
      * @param p_firstChunkID
-     *     first ChunkID of migrated/recovered chunk range
+     *         first ChunkID of migrated/recovered chunk range
      * @param p_lastChunkID
-     *     last ChunkID of migrated/recovered chunk range
+     *         last ChunkID of migrated/recovered chunk range
      * @param p_rangeID
-     *     the backup range ID
+     *         the backup range ID
      * @return true if insertion was successful
      */
     boolean putChunkIDRange(final long p_firstChunkID, final long p_lastChunkID, final short p_rangeID) {
@@ -633,7 +522,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Initialize new backup range. Is continued with first local insertion.
      *
      * @param p_rangeID
-     *     the new backup range ID
+     *         the new backup range ID
      */
     void initializeNewBackupRange(final short p_rangeID) {
         m_oldRangeID = getRangeIDOrSuccessorsRangeID(LOCAL_MAXIMUM_ID);
@@ -645,7 +534,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Returns ChunkIDs of all Chunks in given range
      *
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @return all ChunkID ranges
      */
     long[] getAllChunkIDRangesOfBackupRange(final short p_rangeID) {
@@ -662,9 +551,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Iterates the node and returns ChunkIDs of given range
      *
      * @param p_node
-     *     the node
+     *         the node
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @return all ChunkIDs
      */
     private long[] iterateNode(final Node p_node, final short p_rangeID) {
@@ -731,9 +620,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Creates a new entry or replaces the old one
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_rangeID
-     *     the backup range ID
+     *         the backup range ID
      * @return the node in which the entry is stored
      */
     private Node createOrReplaceEntry(final long p_chunkID, final short p_rangeID) {
@@ -804,11 +693,11 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Merges the object or range with predecessor
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_rangeID
-     *     the backup range ID
+     *         the backup range ID
      * @param p_node
-     *     anchor node
+     *         anchor node
      */
     private void mergeWithPredecessorOrBound(final long p_chunkID, final short p_rangeID, final Node p_node) {
         Entry predecessor;
@@ -845,9 +734,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Merges the object or range with successor
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_rangeID
-     *     the backup range ID
+     *         the backup range ID
      */
     private void mergeWithSuccessor(final long p_chunkID, final short p_rangeID) {
         Node node;
@@ -864,9 +753,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Removes all entries between start (inclusive) and end
      *
      * @param p_start
-     *     the first object in range
+     *         the first object in range
      * @param p_end
-     *     the last object in range
+     *         the last object in range
      */
     private void removeEntriesWithinRange(final long p_start, final long p_end) {
         long successor;
@@ -884,7 +773,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Returns the node in which the next entry to given ChunkID (could be the ChunkID itself) is stored
      *
      * @param p_chunkID
-     *     ChunkID whose node is searched
+     *         ChunkID whose node is searched
      * @return node in which ChunkID is stored if ChunkID is in tree or successors node, null if there is no successor
      */
     private Node getNodeOrSuccessorsNode(final long p_chunkID) {
@@ -937,7 +826,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Returns next ChunkID to given ChunkID (could be the ChunkID itself)
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return p_chunkID if p_chunkID is in btree or successor of p_chunkID, (-1) if there is no successor
      */
     private long getCIDOrSuccessorsCID(final long p_chunkID) {
@@ -962,7 +851,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Returns the backup range ID of next ChunkID to given ChunkID (could be the ChunkID itself)
      *
      * @param p_chunkID
-     *     the ChunkID whose corresponding RangeID is searched
+     *         the ChunkID whose corresponding RangeID is searched
      * @return RangeID for p_chunkID if p_chunkID is in btree or successors NodeID
      */
     private short getRangeIDOrSuccessorsRangeID(final long p_chunkID) {
@@ -987,9 +876,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Splits down the middle if node is greater than maxEntries
      *
      * @param p_chunkID
-     *     the new ChunkID that causes the splitting
+     *         the new ChunkID that causes the splitting
      * @param p_node
-     *     the node that has to be split
+     *         the node that has to be split
      * @return the node in which p_chunkID must be inserted
      */
     private Node split(final long p_chunkID, final Node p_node) {
@@ -1062,7 +951,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Removes given p_chunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return p_chunkID or (-1) if there is no entry for p_chunkID
      */
     private long removeInternal(final long p_chunkID) {
@@ -1079,9 +968,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Removes the p_chunkID from given node and checks invariants
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_node
-     *     the node in which p_chunkID should be stored
+     *         the node in which p_chunkID should be stored
      * @return p_chunkID or (-1) if there is no entry for p_chunkID
      */
     private long removeInternal(final long p_chunkID, final Node p_node) {
@@ -1134,7 +1023,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Combines children entries with parent when size is less than minEntries
      *
      * @param p_node
-     *     the node
+     *         the node
      */
     private void combined(final Node p_node) {
         Node parent;
@@ -1252,7 +1141,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
      * Validates the node according to the btree invariants
      *
      * @param p_node
-     *     the node
+     *         the node
      * @return whether the node is valid or not
      */
     private boolean validateNode(final Node p_node) {
@@ -1372,11 +1261,11 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Creates an instance of Node
          *
          * @param p_parent
-         *     the parent
+         *         the parent
          * @param p_maxEntries
-         *     the number of entries that can be stored
+         *         the number of entries that can be stored
          * @param p_maxChildren
-         *     the number of children that can be stored
+         *         the number of children that can be stored
          */
         private Node(final Node p_parent, final short p_maxEntries, final int p_maxChildren) {
             m_parent = p_parent;
@@ -1391,7 +1280,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Compares two nodes
          *
          * @param p_cmp
-         *     the node to compare with
+         *         the node to compare with
          * @return 0 if the nodes are equal, (-1) if p_cmp is larger, 1 otherwise
          */
         @Override
@@ -1478,7 +1367,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Returns the parent node
          *
          * @param p_parent
-         *     the parent node
+         *         the parent node
          */
         private void setParent(final Node p_parent) {
             m_parent = p_parent;
@@ -1506,7 +1395,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Returns the ChunkID to given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the ChunkID to given index
          */
         private long getChunkID(final int p_index) {
@@ -1517,7 +1406,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Returns the data leaf to given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the data leaf to given index
          */
         private short getRangeID(final int p_index) {
@@ -1529,7 +1418,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * java.util.Arrays adapted to our needs
          *
          * @param p_chunkID
-         *     the ChunkID
+         *         the ChunkID
          * @return the index for given ChunkID, if it is contained in the array, (-(insertion point) - 1) otherwise
          */
         private int indexOf(final long p_chunkID) {
@@ -1566,9 +1455,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Adds an entry
          *
          * @param p_chunkID
-         *     the ChunkID
+         *         the ChunkID
          * @param p_rangeID
-         *     the backup range ID
+         *         the backup range ID
          */
         private void addEntry(final long p_chunkID, final short p_rangeID) {
             int index;
@@ -1588,11 +1477,11 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Adds an entry
          *
          * @param p_chunkID
-         *     the ChunkID
+         *         the ChunkID
          * @param p_rangeID
-         *     the backup range ID
+         *         the backup range ID
          * @param p_index
-         *     the index to store the element at
+         *         the index to store the element at
          */
         private void addEntry(final long p_chunkID, final short p_rangeID, final int p_index) {
             System.arraycopy(m_keys, p_index, m_keys, p_index + 1, m_numberOfEntries - p_index);
@@ -1608,13 +1497,13 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Adds entries from another node
          *
          * @param p_node
-         *     the other node
+         *         the other node
          * @param p_offsetSrc
-         *     the offset in source array
+         *         the offset in source array
          * @param p_endSrc
-         *     the end of source array
+         *         the end of source array
          * @param p_offsetDst
-         *     the offset in destination array or -1 if the source array has to be prepended
+         *         the offset in destination array or -1 if the source array has to be prepended
          */
         private void addEntries(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
             long[] aux1;
@@ -1643,11 +1532,11 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Changes an entry
          *
          * @param p_chunkID
-         *     the ChunkID
+         *         the ChunkID
          * @param p_rangeID
-         *     the backup range ID
+         *         the backup range ID
          * @param p_index
-         *     the index of given entry in this node
+         *         the index of given entry in this node
          */
         private void changeEntry(final long p_chunkID, final short p_rangeID, final int p_index) {
 
@@ -1661,7 +1550,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Removes the entry with given ChunkID
          *
          * @param p_chunkID
-         *     ChunkID of the entry that has to be deleted
+         *         ChunkID of the entry that has to be deleted
          * @return p_chunkID or (-1) if there is no entry for p_chunkID in this node
          */
         private long removeEntry(final long p_chunkID) {
@@ -1685,7 +1574,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Removes the entry with given index
          *
          * @param p_index
-         *     the index of the entry that has to be deleted
+         *         the index of the entry that has to be deleted
          * @return ChunkID or (-1) if p_index is to large
          */
         private long removeEntry(final int p_index) {
@@ -1706,7 +1595,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Returns the child with given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the child with given index
          */
         private Node getChild(final int p_index) {
@@ -1726,7 +1615,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * java.util.Arrays adapted to our needs
          *
          * @param p_child
-         *     the child
+         *         the child
          * @return the index of the given child, if it is contained in the array, (-(insertion point) - 1) otherwise
          */
         private int indexOf(final Node p_child) {
@@ -1765,7 +1654,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Adds a child
          *
          * @param p_child
-         *     the child
+         *         the child
          */
         private void addChild(final Node p_child) {
             int index;
@@ -1783,13 +1672,13 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Adds children of another node
          *
          * @param p_node
-         *     the other node
+         *         the other node
          * @param p_offsetSrc
-         *     the offset in source array
+         *         the offset in source array
          * @param p_endSrc
-         *     the end of source array
+         *         the end of source array
          * @param p_offsetDst
-         *     the offset in destination array or -1 if the source array has to be prepended
+         *         the offset in destination array or -1 if the source array has to be prepended
          */
         private void addChildren(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
             Node[] aux;
@@ -1826,7 +1715,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Removes the given child
          *
          * @param p_child
-         *     the child
+         *         the child
          * @return true if the child was found and deleted, false otherwise
          */
         private boolean removeChild(final Node p_child) {
@@ -1848,7 +1737,7 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Removes the child with given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the deleted child
          */
         private Node removeChild(final int p_index) {
@@ -1882,9 +1771,9 @@ public final class BackupRangeTree implements Serializable, Importable, Exportab
          * Creates an instance of Entry
          *
          * @param p_chunkID
-         *     the ChunkID
+         *         the ChunkID
          * @param p_rangeID
-         *     the backup range ID
+         *         the backup range ID
          */
         Entry(final long p_chunkID, final short p_rangeID) {
             m_chunkID = p_chunkID;

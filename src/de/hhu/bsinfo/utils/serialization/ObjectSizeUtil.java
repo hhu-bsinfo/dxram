@@ -28,6 +28,15 @@ public final class ObjectSizeUtil {
     }
 
     /**
+     * Get the size of a single compacted number
+     *
+     * @return Serialization size of a single compacted number
+     */
+    public static int sizeofCompactedNumber(final int p_number) {
+        return CompactNumber.getSizeOfNumber(p_number);
+    }
+
+    /**
      * Get the size of a single boolean value (typical size for an implementation)
      *
      * @return Serialization size of a single boolean value
@@ -44,7 +53,7 @@ public final class ObjectSizeUtil {
      * @return Serialization size
      */
     public static int sizeofByteArray(final byte[] p_arr) {
-        return Integer.BYTES + p_arr.length * Byte.BYTES;
+        return CompactNumber.getSizeOfNumber(p_arr.length) + p_arr.length * Byte.BYTES;
     }
 
     /**
@@ -55,7 +64,7 @@ public final class ObjectSizeUtil {
      * @return Serialization size
      */
     public static int sizeofShortArray(final short[] p_arr) {
-        return Integer.BYTES + p_arr.length * Short.BYTES;
+        return CompactNumber.getSizeOfNumber(p_arr.length) + p_arr.length * Short.BYTES;
     }
 
     /**
@@ -66,7 +75,7 @@ public final class ObjectSizeUtil {
      * @return Serialization size
      */
     public static int sizeofIntArray(final int[] p_arr) {
-        return Integer.BYTES + p_arr.length * Integer.BYTES;
+        return CompactNumber.getSizeOfNumber(p_arr.length) + p_arr.length * Integer.BYTES;
     }
 
     /**
@@ -77,7 +86,7 @@ public final class ObjectSizeUtil {
      * @return Serialization size
      */
     public static int sizeofLongArray(final long[] p_arr) {
-        return Integer.BYTES + p_arr.length * Long.BYTES;
+        return CompactNumber.getSizeOfNumber(p_arr.length) + p_arr.length * Long.BYTES;
     }
 
     /**

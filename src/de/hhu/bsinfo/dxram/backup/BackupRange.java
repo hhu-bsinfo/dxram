@@ -51,9 +51,9 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Creates an instance of BackupRange
      *
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @param p_backupPeers
-     *     the backup peers
+     *         the backup peers
      */
     public BackupRange(final short p_rangeID, final short[] p_backupPeers) {
         m_rangeID = p_rangeID;
@@ -65,7 +65,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Converts backup peers from long to short[]
      *
      * @param p_backupPeers
-     *     the backup peers in long representation
+     *         the backup peers in long representation
      * @return the backup peers in short[] representation
      */
     public static short[] convert(final long p_backupPeers) {
@@ -83,7 +83,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Converts backup peers from short[] to long
      *
      * @param p_backupPeers
-     *     the backup peers in short[] representation
+     *         the backup peers in short[] representation
      * @return the backup peers in long representation
      */
     public static long convert(final short[] p_backupPeers) {
@@ -100,9 +100,9 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Converts owner and backup peers from short + short[] to long
      *
      * @param p_owner
-     *     the owner
+     *         the owner
      * @param p_backupPeers
-     *     the backup peers in short[] representation
+     *         the backup peers in short[] representation
      * @return the owner and backup peers in long representation or -1 if replication factor is greater than 3
      */
     public static long convert(final short p_owner, final short[] p_backupPeers) {
@@ -123,9 +123,9 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Adds the backup peer
      *
      * @param p_backupPeers
-     *     current backup peers
+     *         current backup peers
      * @param p_newPeer
-     *     the new backup peer
+     *         the new backup peer
      * @return all backup peers in a short array
      */
     public static long addBackupPeer(final long p_backupPeers, final short p_newPeer) {
@@ -145,11 +145,11 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Replaces the failed backup peer
      *
      * @param p_backupPeers
-     *     current backup peers
+     *         current backup peers
      * @param p_oldPeer
-     *     the failed backup peer
+     *         the failed backup peer
      * @param p_newPeer
-     *     the new backup peer
+     *         the new backup peer
      * @return all backup peers in a short array
      */
     public static long replaceBackupPeer(final long p_backupPeers, final short p_oldPeer, final short p_newPeer) {
@@ -179,7 +179,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Sets the replication factor
      *
      * @param p_replicationFactor
-     *     the replication factor
+     *         the replication factor
      */
     public static void setReplicationFactor(final byte p_replicationFactor) {
         ms_replicationFactor = p_replicationFactor;
@@ -189,7 +189,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Sets the replication factor
      *
      * @param p_backupRangeSize
-     *     the backup range size that must not be exceeded
+     *         the backup range size that must not be exceeded
      */
     public static void setBackupRangeSize(final long p_backupRangeSize) {
         ms_backupRangeSize = p_backupRangeSize;
@@ -199,11 +199,11 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Replaces the backup peer at given index
      *
      * @param p_backupPeers
-     *     all backup peers in long representation
+     *         all backup peers in long representation
      * @param p_index
-     *     the index
+     *         the index
      * @param p_newPeer
-     *     the replacement
+     *         the replacement
      * @return all backup peers including replacement
      */
     private static long replace(final long p_backupPeers, final int p_index, final short p_newPeer) {
@@ -223,7 +223,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Set RangeID
      *
      * @param p_rangeID
-     *      the RangeID
+     *         the RangeID
      */
     public void setRangeID(final short p_rangeID) {
         m_rangeID = p_rangeID;
@@ -266,7 +266,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Compares this backup range with another; Only compares the RangeIDs
      *
      * @param p_otherBackupRange
-     *     the other backup range
+     *         the other backup range
      * @return 0 if backup ranges are equal; value smaller than 0 if this backup range is smaller; value greater than 0 if the other backup range is smaller
      */
     @Override
@@ -278,8 +278,8 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
     public void importObject(final Importer p_importer) {
         long backupPeers;
 
-        m_rangeID = p_importer.readShort();
-        backupPeers = p_importer.readLong();
+        m_rangeID = p_importer.readShort(m_rangeID);
+        backupPeers = p_importer.readLong(0);
         m_backupPeers = BackupRange.convert(backupPeers);
     }
 
@@ -309,7 +309,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Adds the backup peer at the end of the array or first entry with INVALID_ID
      *
      * @param p_newPeer
-     *     the new backup peer
+     *         the new backup peer
      * @return whether the peer was added or not
      */
     boolean addBackupPeer(final short p_newPeer) {
@@ -330,9 +330,9 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Replaces the backup peer with another one. The old peer is removed and the new peer is appended.
      *
      * @param p_oldPeer
-     *     the old backup peer
+     *         the old backup peer
      * @param p_newPeer
-     *     the new backup peer
+     *         the new backup peer
      */
     public void replaceBackupPeer(final short p_oldPeer, final short p_newPeer) {
         int addIndex = m_backupPeers.length - 1;
@@ -365,7 +365,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Checks if the Chunk fits in backup range
      *
      * @param p_size
-     *     the size of the chunk + log header size
+     *         the size of the chunk + log header size
      * @return true if it fits
      */
     boolean fits(final long p_size) {
@@ -380,7 +380,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Puts chunks to the backup range. Increases size only
      *
      * @param p_size
-     *     the size of all chunks including log headers
+     *         the size of all chunks including log headers
      */
     void addChunks(final long p_size) {
         m_size += p_size;
@@ -390,7 +390,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Puts a chunk to the backup range. Increases size only
      *
      * @param p_size
-     *     the size of the chunk + log header size
+     *         the size of the chunk + log header size
      */
     void addChunk(final long p_size) {
         m_size += p_size;
@@ -400,7 +400,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * Removes a chunk from the backup range. Decreases size only
      *
      * @param p_size
-     *     the size of the chunk + log header size
+     *         the size of the chunk + log header size
      */
     void removeChunk(final long p_size) {
         m_size -= p_size;

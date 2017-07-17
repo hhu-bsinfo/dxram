@@ -80,7 +80,7 @@ public class ChunkRemoveAllTask implements Task {
         }
 
         System.out.printf("Removing all (pattern %d) active chunks (total %d) in batches of %d chunk(s) with %d thread(s)...\n", m_pattern, activeChunkCount,
-            m_chunkBatch, m_numThreads);
+                m_chunkBatch, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
@@ -221,9 +221,9 @@ public class ChunkRemoveAllTask implements Task {
 
     @Override
     public void importObject(final Importer p_importer) {
-        m_numThreads = p_importer.readInt();
-        m_chunkBatch = p_importer.readInt();
-        m_pattern = p_importer.readInt();
+        m_numThreads = p_importer.readInt(m_numThreads);
+        m_chunkBatch = p_importer.readInt(m_chunkBatch);
+        m_pattern = p_importer.readInt(m_pattern);
     }
 
     @Override

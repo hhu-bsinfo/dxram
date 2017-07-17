@@ -894,7 +894,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 
                 m_metadata.setState(p_failedNode, PeerState.IN_RECOVERY);
 
-
                 int waitingTimerPerBackupRange = 3000;
 
                 // Send all recovery requests
@@ -2074,14 +2073,14 @@ public class OverlaySuperpeer implements MessageReceiver {
             creator = p_request.getSource();
         }
 
-        BarrierFreeResponse response = new BarrierFreeResponse(p_request);
+        BarrierFreeResponse response;
         if (!m_metadata.removeBarrier(creator, p_request.getBarrierId())) {
             // #if LOGGER >= ERROR
             LOGGER.error("Free'ing barrier 0x%X failed", p_request.getBarrierId());
             // #endif /* LOGGER >= ERROR */
-            response.setStatusCode((byte) -1);
+            response = new BarrierFreeResponse(p_request, (byte) -1);
         } else {
-            response.setStatusCode((byte) 0);
+            response = new BarrierFreeResponse(p_request, (byte) 0);
         }
 
         try {
@@ -2168,10 +2167,9 @@ public class OverlaySuperpeer implements MessageReceiver {
         BarrierGetStatusResponse response;
         if (barrierStatus == null) {
             // barrier does not exist
-            response = new BarrierGetStatusResponse(p_request, new BarrierStatus());
-            response.setStatusCode((byte) -1);
+            response = new BarrierGetStatusResponse(p_request, new BarrierStatus(), (byte) -1);
         } else {
-            response = new BarrierGetStatusResponse(p_request, barrierStatus);
+            response = new BarrierGetStatusResponse(p_request, barrierStatus, (byte) 0);
         }
 
         try {
@@ -2198,11 +2196,11 @@ public class OverlaySuperpeer implements MessageReceiver {
             creator = p_request.getSource();
         }
 
-        BarrierChangeSizeResponse response = new BarrierChangeSizeResponse(p_request);
+        BarrierChangeSizeResponse response;
         if (!m_metadata.changeSizeOfBarrier(creator, p_request.getBarrierId(), p_request.getBarrierSize())) {
-            response.setStatusCode((byte) -1);
+            response = new BarrierChangeSizeResponse(p_request, (byte) -1);
         } else {
-            response.setStatusCode((byte) 0);
+            response = new BarrierChangeSizeResponse(p_request, (byte) 0);
         }
 
         try {
@@ -2249,8 +2247,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         int ret = m_metadata.createStorage(p_request.getStorageId(), p_request.getSize());
 
         if (!p_request.isReplicate()) {
-            SuperpeerStorageCreateResponse response = new SuperpeerStorageCreateResponse(p_request);
-            response.setStatusCode((byte) ret);
+            SuperpeerStorageCreateResponse response = new SuperpeerStorageCreateResponse(p_request, (byte) ret);
             try {
                 m_network.sendMessage(response);
             } catch (final NetworkException e) {
@@ -2306,9 +2303,11 @@ public class OverlaySuperpeer implements MessageReceiver {
             chunk.setState(ChunkState.OK);
         }
 
-        SuperpeerStorageGetResponse response = new SuperpeerStorageGetResponse(p_request, chunk);
+        SuperpeerStorageGetResponse response;
         if (chunk.getID() == ChunkID.INVALID_ID) {
-            response.setStatusCode((byte) -1);
+            response = new SuperpeerStorageGetResponse(p_request, chunk, (byte) -1);
+        } else {
+            response = new SuperpeerStorageGetResponse(p_request, chunk, (byte) 0);
         }
 
         try {
@@ -2329,9 +2328,11 @@ public class OverlaySuperpeer implements MessageReceiver {
     private void incomingSuperpeerStorageGetAnonRequest(final SuperpeerStorageGetAnonRequest p_request) {
         byte[] data = m_metadata.getStorage(p_request.getStorageID());
 
-        SuperpeerStorageGetAnonResponse response = new SuperpeerStorageGetAnonResponse(p_request, data);
+        SuperpeerStorageGetAnonResponse response;
         if (data == null) {
-            response.setStatusCode((byte) -1);
+            response = new SuperpeerStorageGetAnonResponse(p_request, null, (byte) -1);
+        } else {
+            response = new SuperpeerStorageGetAnonResponse(p_request, data, (byte) 0);
         }
 
         try {
@@ -2354,9 +2355,11 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         int res = m_metadata.putStorage((int) chunk.getID(), chunk.getData());
         if (!p_request.isReplicate()) {
-            SuperpeerStoragePutResponse response = new SuperpeerStoragePutResponse(p_request);
+            SuperpeerStoragePutResponse response;
             if (res != chunk.sizeofObject()) {
-                response.setStatusCode((byte) -1);
+                response = new SuperpeerStoragePutResponse(p_request, (byte) -1);
+            } else {
+                response = new SuperpeerStoragePutResponse(p_request, (byte) 0);
             }
 
             try {
@@ -2405,9 +2408,11 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         int res = m_metadata.putStorage((int) chunk.getID(), chunk.getData());
         if (!p_request.isReplicate()) {
-            SuperpeerStoragePutAnonResponse response = new SuperpeerStoragePutAnonResponse(p_request);
+            SuperpeerStoragePutAnonResponse response;
             if (res != chunk.sizeofObject()) {
-                response.setStatusCode((byte) -1);
+                response = new SuperpeerStoragePutAnonResponse(p_request, (byte) -1);
+            } else {
+                response = new SuperpeerStoragePutAnonResponse(p_request, (byte) 0);
             }
 
             try {

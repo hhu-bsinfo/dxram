@@ -80,7 +80,7 @@ public class NotifyAboutNewSuccessorMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_newSuccessor = p_importer.readShort();
+        m_newSuccessor = p_importer.readShort(m_newSuccessor);
     }
 
 }

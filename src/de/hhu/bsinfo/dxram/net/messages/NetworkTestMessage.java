@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Network message for running tests/benchmarks.
@@ -57,11 +58,11 @@ public class NetworkTestMessage extends AbstractMessage {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_data = p_importer.readByteArray();
+        m_data = p_importer.readByteArray(m_data);
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Integer.BYTES + m_data.length * Byte.BYTES;
+        return ObjectSizeUtil.sizeofByteArray(m_data);
     }
 }

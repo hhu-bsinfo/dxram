@@ -66,7 +66,7 @@ final class TaskResultCondition implements TaskScriptNode {
      * Evaluate the condition based on the previous task's return code
      *
      * @param p_prevTaskReturnCode
-     *     Return code of the previous task
+     *         Return code of the previous task
      * @return TaskScript which is the result of the evaluated condition for further execution
      */
     TaskScript evaluate(final int p_prevTaskReturnCode) {
@@ -98,13 +98,17 @@ final class TaskResultCondition implements TaskScriptNode {
 
     @Override
     public void importObject(Importer p_importer) {
-        m_cond = p_importer.readString();
-        m_param = p_importer.readInt();
+        m_cond = p_importer.readString(m_cond);
+        m_param = p_importer.readInt(m_param);
 
-        m_true = new TaskScript();
+        if (m_true == null) {
+            m_true = new TaskScript();
+        }
         p_importer.importObject(m_true);
 
-        m_false = new TaskScript();
+        if (m_false == null) {
+            m_false = new TaskScript();
+        }
         p_importer.importObject(m_false);
     }
 

@@ -13,12 +13,12 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Response to a GetRequest
@@ -57,9 +57,8 @@ public class GetResponse extends AbstractResponse {
      */
     public GetResponse(final GetRequest p_request, final byte[][] p_dataChunks, final int p_totalSuccessful) {
         super(p_request, ChunkMessages.SUBTYPE_GET_RESPONSE);
-
+        m_totalSuccessful = p_totalSuccessful;
         m_dataChunks = p_dataChunks;
-        setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_totalSuccessful));
     }
 
     /**
@@ -73,7 +72,7 @@ public class GetResponse extends AbstractResponse {
 
     @Override
     protected final int getPayloadLength() {
-        int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+        int size = ObjectSizeUtil.sizeofCompactedNumber(m_totalSuccessful);
 
         // when writing payload
         if (m_dataChunks != null) {
@@ -102,8 +101,7 @@ public class GetResponse extends AbstractResponse {
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_exporter, m_totalSuccessful);
-
+        p_exporter.writeCompactNumber(m_totalSuccessful);
         for (int i = 0; i < m_dataChunks.length; i++) {
             if (m_dataChunks[i] == null) {
                 // indicate no data available
@@ -117,14 +115,14 @@ public class GetResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_totalSuccessful = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_importer);
+        m_totalSuccessful = p_importer.readCompactNumber(m_totalSuccessful);
 
         // read the payload from the buffer and write it directly into
         // the chunk objects provided by the request to avoid further copying of data
         GetRequest request = (GetRequest) getCorrespondingRequest();
 
         for (DataStructure chunk : request.getChunks()) {
-            if (p_importer.readByte() == 1) {
+            if (p_importer.readByte((byte) (chunk.getState() == ChunkState.DOES_NOT_EXIST ? 0 : 1)) == 1) {
                 p_importer.importObject(chunk);
                 chunk.setState(ChunkState.OK);
             } else {

@@ -68,7 +68,9 @@ public class SuperpeerStorageStatusResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_status = new SuperpeerStorage.Status();
+        if (m_status == null) {
+            m_status = new SuperpeerStorage.Status();
+        }
         p_importer.importObject(m_status);
     }
 }

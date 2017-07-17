@@ -76,7 +76,7 @@ public class GetNameserviceEntryCountResponse extends AbstractResponse {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_count = p_importer.readInt();
+        m_count = p_importer.readInt(m_count);
     }
 
 }

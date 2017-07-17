@@ -28,6 +28,7 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
     // when the response is received, the data structures from the request are
     // used to directly write the data to them and avoiding further copying
     private DataStructure m_dataStructure;
+    private byte m_status;
 
     /**
      * Creates an instance of SuperpeerStorageGetResponse.
@@ -48,21 +49,31 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
      * @param p_dataStructure
      *         Data structure filled with the read data from memory
      */
-    public SuperpeerStorageGetResponse(final SuperpeerStorageGetRequest p_request, final DataStructure p_dataStructure) {
+    public SuperpeerStorageGetResponse(final SuperpeerStorageGetRequest p_request, final DataStructure p_dataStructure, final byte p_status) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE);
-
         m_dataStructure = p_dataStructure;
+        m_status = p_status;
+    }
+
+    /**
+     * Get the status
+     *
+     * @return the status
+     */
+    public int getStatus() {
+        return m_status;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return m_dataStructure.sizeofObject();
+        return m_dataStructure.sizeofObject() + Byte.BYTES;
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         // read the data to be sent to the remote from the chunk set for this message
         p_exporter.exportObject(m_dataStructure);
+        p_exporter.writeByte(m_status);
     }
 
     @Override
@@ -73,5 +84,6 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
 
         m_dataStructure = request.getDataStructure();
         p_importer.importObject(m_dataStructure);
+        m_status = p_importer.readByte(m_status);
     }
 }
