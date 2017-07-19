@@ -88,7 +88,6 @@ public abstract class AbstractPipeIn {
 
         m_flowControl.dataReceived(p_buffer.remaining());
 
-        // System.out.println("Incoming buffer: " + p_buffer);
         while (p_buffer.hasRemaining()) {
             if (m_currentMessage != null || readHeader(p_buffer)) {
                 try {
@@ -129,8 +128,6 @@ public abstract class AbstractPipeIn {
                     }
                     // #endif /* LOGGER >= ERROR */
                 }
-            } else {
-                // System.out.println("Message header unfinished");
             }
         }
 
@@ -165,21 +162,16 @@ public abstract class AbstractPipeIn {
         importer = m_importers.getImporter(p_buffer.remaining() < AbstractMessage.HEADER_SIZE);
         importer.setBuffer(p_buffer.array(), p_buffer.position(), p_buffer.limit());
 
-        //System.out.println("Reading header; " + p_buffer);
-
         try {
             importer.importObject(m_currentHeader);
         } catch (final ArrayIndexOutOfBoundsException e) {
             // Header is incomplete continue later
-            // System.out.println("Out of bounds during reading header; " + p_buffer);
-            //System.out.println("Out of bounds during reading header; position: " + p_buffer.remaining());
             p_buffer.position(importer.getPosition());
             m_importers.returnImporter(importer, false);
             return false;
         }
         p_buffer.position(importer.getPosition());
         m_importers.returnImporter(importer, true);
-        //System.out.println("Finished reading header; " + p_buffer);
 
         return true;
     }
@@ -202,7 +194,6 @@ public abstract class AbstractPipeIn {
         ret.initialize(m_currentHeader);
         ret.setDestination(m_ownNodeID);
         ret.setSource(m_destinationNodeID);
-        // System.out.println("Created message: " + ret);
 
         return ret;
     }
@@ -215,14 +206,10 @@ public abstract class AbstractPipeIn {
      * @return message
      */
     private boolean readPayload(final ByteBuffer p_buffer) throws IOException {
-        int readBytes = 0;
-        int initialBufferPosition = p_buffer.position();
         int payloadSize = m_currentHeader.getPayloadSize();
         AbstractRequest request;
         AbstractResponse response;
         AbstractMessageImporter importer;
-
-        //System.out.println("Reading payload; " + p_buffer + ", " + payloadSize);
 
         // hack:
         // to avoid copying data multiple times, some responses use the same objects provided
@@ -237,14 +224,8 @@ public abstract class AbstractPipeIn {
             response = (AbstractResponse) m_currentMessage;
             request = m_requestMap.getRequest(response);
             if (request == null) {
-
-                System.out.println(
-                        "Request null for " + m_currentMessage.getType() + "," + m_currentHeader.getSubtype() + "; " + m_currentMessage.getMessageID() + ", " +
-                                m_currentMessage.isResponse() + ", " + m_currentMessage.isExclusive());
-
                 p_buffer.position(Math.max(p_buffer.position() + payloadSize, p_buffer.limit()));
                 // Request is not available, probably because of a time-out
-                // System.out.println("Aborting reading payload: Request not available");
                 m_currentMessage = null;
                 m_currentHeader.clear();
                 return false;
@@ -260,19 +241,17 @@ public abstract class AbstractPipeIn {
             // Message is incomplete -> continue later
             p_buffer.position(importer.getPosition());
             m_importers.returnImporter(importer, false);
-            // System.out.println("Aborting reading payload: Out of bounds; " + p_buffer);
             return false;
         }
-        p_buffer.position(importer.getPosition());
-        m_importers.returnImporter(importer, true);
-        // System.out.println("Finished reading payload; " + p_buffer + ", " + initialBufferPosition + "; " + m_currentMessage.getPayloadLength());
 
-        // FIXME:
-        /*readBytes += p_buffer.position() - initialBufferPosition;
+        int readBytes = importer.getNumberOfReadBytes();
         int calculatedPayloadSize = m_currentMessage.getPayloadLength();
         if (readBytes < calculatedPayloadSize) {
             throw new IOException("Message buffer is too large: " + calculatedPayloadSize + " > " + readBytes + " (payload in bytes)");
-        }*/
+        }
+
+        p_buffer.position(importer.getPosition());
+        m_importers.returnImporter(importer, true);
 
         return true;
     }

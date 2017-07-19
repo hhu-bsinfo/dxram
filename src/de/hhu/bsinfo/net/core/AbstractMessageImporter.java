@@ -16,9 +16,9 @@ package de.hhu.bsinfo.net.core;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Implementation of an Importer/Exporter for ByteBuffers.
+ * Abstraction of an Importer for network messages.
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 05.07.2017
  */
 public abstract class AbstractMessageImporter implements Importer {
 
@@ -28,12 +28,38 @@ public abstract class AbstractMessageImporter implements Importer {
     protected AbstractMessageImporter() {
     }
 
+    /**
+     * Get current position in byte array
+     *
+     * @return the position
+     */
     protected abstract int getPosition();
 
+    /**
+     * Get the number of de-serialized bytes.
+     *
+     * @return number of read bytes
+     */
     public abstract int getNumberOfReadBytes();
 
+    /**
+     * Set buffer to write into, offset and limit.
+     *
+     * @param p_buffer
+     *         the byte array
+     * @param p_position
+     *         the offset
+     * @param p_limit
+     *         the limit
+     */
     protected abstract void setBuffer(byte[] p_buffer, int p_position, int p_limit);
 
+    /**
+     * Set the number of read bytes. Only relevant for underflow importer to skip already finished operations.
+     *
+     * @param p_numberOfReadBytes
+     *         the number of read bytes
+     */
     public abstract void setNumberOfReadBytes(int p_numberOfReadBytes);
 
 }

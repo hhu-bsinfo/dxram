@@ -14,9 +14,9 @@
 package de.hhu.bsinfo.net.core;
 
 /**
- * Implementation of an Importer/Exporter for ByteBuffers.
+ * Message exporter collection.
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 05.07.2017
  */
 public abstract class AbstractMessageExporterCollection {
 
@@ -26,6 +26,13 @@ public abstract class AbstractMessageExporterCollection {
     protected AbstractMessageExporterCollection() {
     }
 
+    /**
+     * Get exporter
+     *
+     * @param p_hasOverflow
+     *         whether an overflow will occur during serialization or not
+     * @return the exporter
+     */
     protected abstract AbstractMessageExporter getExporter(boolean p_hasOverflow);
 
 }

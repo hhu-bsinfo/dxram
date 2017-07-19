@@ -270,29 +270,57 @@ public abstract class AbstractMessage {
         fillBuffer(p_buffer, p_offset, p_messageSize - HEADER_SIZE, p_hasOverflow);
     }
 
+    // @formatter:off
     /**
-     * Reads the message payload from the byte buffer
+     * Reads the message payload
+     *
+     * This method might be interrupted on every operation as payload can be scattered over several packets (this is always
+     * the case for messages larger than network buffer size). As a consequence, this method might be called several times
+     * for one single message. Thus, every operation in overwritten methods must be idempotent (same result for repeated
+     * execution). All available import methods from importer guarantee idempotence and work atomically (read all or nothing).
+     *
+     * Spare other I/O accesses and prints.
+     *
+     * Example implementation for data structures (importable, exportable objects):
+     *      if (m_obj == null) {
+     *          m_obj = new ImExObject();
+     *      }
+     *      p_importer.importObject(m_obj);
+     *
+     * Example implementation for array lists:
+     *      m_size = p_importer.readInt(m_size);
+     *      if (m_arrayList == null) {
+     *          // Do not overwrite array list after overflow
+     *          m_arrayList = new ArrayList<>(m_size);
+     *      }
+     *      for (int i = 0; i < m_size; i++) {
+     *          long l = p_importer.readLong(0);
+     *          if (m_arrayList.size() == i) {
+     *              m_arrayList.add(l);
+     *          }
+     *      }
      *
      * @param p_importer
      *         the importer
      */
-    protected void readPayload(final AbstractMessageImporter p_importer) throws ArrayIndexOutOfBoundsException {
+    // @formatter:on
+    protected void readPayload(final AbstractMessageImporter p_importer) {
     }
 
     /**
-     * Reads the message payload from the byte buffer; used for logging to copy directly into primary write buffer if possible
+     * Reads the message payload; used for logging to copy directly into primary write buffer if possible
      *
      * @param p_importer
      *         the importer
      * @param p_payloadSize
      *         the message's payload size
      */
-    protected void readPayload(final AbstractMessageImporter p_importer, final int p_payloadSize) throws ArrayIndexOutOfBoundsException {
+    protected void readPayload(final AbstractMessageImporter p_importer, final int p_payloadSize) {
         readPayload(p_importer);
     }
 
     /**
-     * Writes the message payload into the buffer
+     * Writes the message payload
      *
      * @param p_exporter
      *         the buffer

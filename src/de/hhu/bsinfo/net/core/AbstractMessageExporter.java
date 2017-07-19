@@ -16,9 +16,9 @@ package de.hhu.bsinfo.net.core;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 
 /**
- * Implementation of an Importer/Exporter for ByteBuffers.
+ * Abstraction of an Exporter for network messages.
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 05.07.2017
  */
 public abstract class AbstractMessageExporter implements Exporter {
 
@@ -28,10 +28,27 @@ public abstract class AbstractMessageExporter implements Exporter {
     protected AbstractMessageExporter() {
     }
 
+    /**
+     * Get the number of serialized bytes.
+     *
+     * @return number of written bytes
+     */
     protected abstract int getNumberOfWrittenBytes();
 
+    /**
+     * Set buffer to write into.
+     *
+     * @param p_buffer
+     *         the byte array
+     */
     protected abstract void setBuffer(byte[] p_buffer);
 
+    /**
+     * Set buffer offset
+     *
+     * @param p_position
+     *         the offset
+     */
     protected abstract void setPosition(int p_position);
 
 }

@@ -17,9 +17,9 @@ import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageExporterCollection;
 
 /**
- * Implementation of an Importer/Exporter for ByteBuffers.
+ * Exporter collection.
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
 public class NIOMessageExporterCollection extends AbstractMessageExporterCollection {
 

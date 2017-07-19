@@ -17,15 +17,16 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporterCollection;
 
 /**
- * Implementation of an Importer/Exporter for ByteBuffers.
+ * Importer collection.
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
 public class NIOMessageImporterCollection extends AbstractMessageImporterCollection {
 
     private NIOMessageImporter m_importer;
     private NIOMessageImporterOverflow m_importerOverflow;
     private NIOMessageImporterUnderflow m_importerUnderflow;
+    private NIOMessageImporterUnderOverflow m_importerUnderOverflow;
 
     private UnfinishedOperation m_unfinishedOperation;
 
@@ -42,6 +43,7 @@ public class NIOMessageImporterCollection extends AbstractMessageImporterCollect
         m_importer = new NIOMessageImporter();
         m_importerOverflow = new NIOMessageImporterOverflow(m_unfinishedOperation);
         m_importerUnderflow = new NIOMessageImporterUnderflow(m_unfinishedOperation);
+        m_importerUnderOverflow = new NIOMessageImporterUnderOverflow(m_unfinishedOperation);
 
         m_bytesCopied = 0;
     }
@@ -51,10 +53,12 @@ public class NIOMessageImporterCollection extends AbstractMessageImporterCollect
         AbstractMessageImporter ret;
 
         if (m_bytesCopied != 0) {
-            // System.out.println("Using importer underflow");
+            /*if (p_hasOverflow) {
+                ret = m_importerUnderOverflow;
+            } else {*/
             ret = m_importerUnderflow;
+            //}
         } else if (p_hasOverflow) {
-            // System.out.println("Using importer overflow");
             ret = m_importerOverflow;
         } else {
             ret = m_importer;

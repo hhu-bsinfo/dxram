@@ -18,9 +18,9 @@ import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
- * Implementation of an Importer/Exporter for ByteBuffers.
+ * Implementation of an Exporter for byte arrays with insufficient length (wrap around).
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
 class NIOMessageExporterOverflow extends AbstractMessageExporter {
 

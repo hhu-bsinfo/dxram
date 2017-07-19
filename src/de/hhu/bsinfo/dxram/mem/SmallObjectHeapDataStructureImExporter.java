@@ -14,11 +14,11 @@
 package de.hhu.bsinfo.dxram.mem;
 
 import de.hhu.bsinfo.soh.SmallObjectHeap;
-import de.hhu.bsinfo.utils.serialization.CompactNumber;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Importer/Exporter wrapper to allow Importables/Exportables to be directly written
@@ -115,8 +115,13 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
 
     @Override
     public void writeCompactNumber(int p_v) {
-        byte[] number = CompactNumber.compact(p_v);
-        writeBytes(number);
+        int length = ObjectSizeUtil.sizeofCompactedNumber(p_v);
+
+        int i;
+        for (i = 0; i < length - 1; i++) {
+            writeByte((byte) ((byte) (p_v >> 7 * i) & 0x7F | 0x80));
+        }
+        writeByte((byte) ((byte) (p_v >> 7 * i) & 0x7F));
     }
 
     @Override
@@ -190,17 +195,19 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
 
     @Override
     public int readCompactNumber(int p_int) {
-        // TODO: Avoid allocation and copying
-        byte[] tmp = new byte[4];
-        int i;
-        for (i = 0; i < Integer.BYTES; i++) {
-            tmp[i] = readByte((byte) 0);
-            if ((tmp[i] & 0x80) == 0) {
+        int ret = 0;
+
+        for (int i = 0; i < Integer.BYTES; i++) {
+            int tmp = readByte((byte) 0);
+            // Compact numbers are little-endian!
+            ret |= (tmp & 0x7F) << i * 7;
+            if ((tmp & 0x80) == 0) {
+                // Highest bit unset -> no more bytes to come for this number
                 break;
             }
         }
 
-        return CompactNumber.decompact(tmp, 0, i);
+        return ret;
     }
 
     @Override
