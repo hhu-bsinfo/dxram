@@ -13,7 +13,6 @@
 
 package de.hhu.bsinfo.net;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -58,7 +57,6 @@ public final class NetworkSystem {
 
     private final RequestMap m_requestMap;
     private final int m_timeOut;
-    private final boolean m_directBuffer;
 
     private final AbstractConnectionManager m_connectionManager;
 
@@ -86,11 +84,10 @@ public final class NetworkSystem {
         if (p_config instanceof NIOConnectionManagerConfig) {
             m_connectionManager = new NIOConnectionManager((NIOConnectionManagerConfig) m_config, p_nodeMap, m_messageDirectory, m_requestMap, m_messageCreator,
                     m_messageHandlers);
-            m_directBuffer = false;
         } else if (p_config instanceof IBConnectionManagerConfig) {
             m_connectionManager = new IBConnectionManager((IBConnectionManagerConfig) m_config, p_nodeMap, m_messageDirectory, m_requestMap, m_messageCreator,
                     m_messageHandlers);
-            m_directBuffer = true;
+            ((IBConnectionManager) m_connectionManager).init();
         } else {
             throw new NotImplementedException();
         }
@@ -198,9 +195,9 @@ public final class NetworkSystem {
 
         try {
             if (m_connectionManager.getConnection(p_nodeID) == null) {
-                throw new IOException("Connection to " + NodeID.toHexString(p_nodeID) + " could not be established");
+                throw new NetworkException("Connection to " + NodeID.toHexString(p_nodeID) + " could not be established");
             }
-        } catch (final IOException e) {
+        } catch (final NetworkException e) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("IOException during connection lookup", e);
             // #endif /* LOGGER >= DEBUG */
@@ -242,7 +239,7 @@ public final class NetworkSystem {
             }
             try {
                 if (connection != null) {
-                    connection.postMessage(p_message, m_directBuffer);
+                    connection.postMessage(p_message);
                 } else {
                     long timestamp = m_lastFailures.get(p_message.getDestination() & 0xFFFF);
                     if (timestamp == 0 || timestamp + 1000 < System.currentTimeMillis()) {

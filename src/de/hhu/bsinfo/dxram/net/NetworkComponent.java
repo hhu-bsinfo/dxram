@@ -302,7 +302,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
                 }
             }
         } else {
-            DXRAMJNIManager.loadJNIModule("JNIIbnet");
+            DXRAMJNIManager.loadJNIModule("JNIIbdxnet");
         }
 
         NetworkSystemConfig config;
@@ -322,9 +322,8 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
                     .setConnectionTimeout((int) getConfig().getConnectionTimeout().getMs()).setBufferPoolSize(getConfig().getIbBufferPoolSize())
                     .setMaxRecvReqs(getConfig().getIbMaxRecvReqs()).setMaxSendReqs(getConfig().getIbMaxSendReqs())
                     .setFlowControlMaxRecvReqs(getConfig().getIbFlowControlMaxRecvReqs()).setFlowControlMaxSendReqs(getConfig().getIbFlowControlMaxSendReqs())
-                    .setOutgoingJobPoolSize(getConfig().getIbOutgoingJobPoolSize()).setSendThreads(getConfig().getIbSendThreads())
-                    .setRecvThreads(getConfig().getIbRecvThreads()).setEnableSignalHandler(getConfig().getIbEnableSignalHandler())
-                    .setEnableDebugThread(getConfig().getIbEnableDebugThread()).build();
+                    .setSendThreads(getConfig().getIbSendThreads()).setRecvThreads(getConfig().getIbRecvThreads())
+                    .setEnableSignalHandler(getConfig().getIbEnableSignalHandler()).setEnableDebugThread(getConfig().getIbEnableDebugThread()).build();
         }
 
         m_networkSystem = new NetworkSystem(config, new NodeMappings(m_boot));
