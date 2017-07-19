@@ -61,5 +61,4 @@ public abstract class AbstractMessageImporter implements Importer {
      *         the number of read bytes
      */
     public abstract void setNumberOfReadBytes(int p_numberOfReadBytes);
-
 }

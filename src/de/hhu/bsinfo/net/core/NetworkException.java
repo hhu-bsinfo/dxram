@@ -20,11 +20,6 @@ package de.hhu.bsinfo.net.core;
  */
 public class NetworkException extends Exception {
 
-    // Constants
-    private static final long serialVersionUID = 4732144734226695683L;
-
-    // Constructors
-
     /**
      * Creates an instance of NetworkException
      *

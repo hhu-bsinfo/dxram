@@ -230,6 +230,20 @@ public abstract class AbstractMessage {
         return m_exclusivity;
     }
 
+    /**
+     * Serialize the message into given byte buffer
+     *
+     * @param p_buffer
+     *         the ByteBuffer to store serialized message
+     * @param p_messageSize
+     *         the message to serialize
+     * @throws NetworkException
+     *         if message could not be serialized
+     */
+    public final void serialize(final AbstractMessageExporter p_exporter, final int p_messageSize) throws NetworkException {
+        fillBuffer(p_exporter, p_messageSize - HEADER_SIZE);
+    }
+
     // Setters
 
     @Override
@@ -271,34 +285,31 @@ public abstract class AbstractMessage {
     }
 
     // @formatter:off
+
     /**
      * Reads the message payload
-     *
      * This method might be interrupted on every operation as payload can be scattered over several packets (this is always
      * the case for messages larger than network buffer size). As a consequence, this method might be called several times
      * for one single message. Thus, every operation in overwritten methods must be idempotent (same result for repeated
      * execution). All available import methods from importer guarantee idempotence and work atomically (read all or nothing).
-     *
      * Spare other I/O accesses and prints.
-     *
      * Example implementation for data structures (importable, exportable objects):
-     *      if (m_obj == null) {
-     *          m_obj = new ImExObject();
-     *      }
-     *      p_importer.importObject(m_obj);
-     *
+     * if (m_obj == null) {
+     * m_obj = new ImExObject();
+     * }
+     * p_importer.importObject(m_obj);
      * Example implementation for array lists:
-     *      m_size = p_importer.readInt(m_size);
-     *      if (m_arrayList == null) {
-     *          // Do not overwrite array list after overflow
-     *          m_arrayList = new ArrayList<>(m_size);
-     *      }
-     *      for (int i = 0; i < m_size; i++) {
-     *          long l = p_importer.readLong(0);
-     *          if (m_arrayList.size() == i) {
-     *              m_arrayList.add(l);
-     *          }
-     *      }
+     * m_size = p_importer.readInt(m_size);
+     * if (m_arrayList == null) {
+     * // Do not overwrite array list after overflow
+     * m_arrayList = new ArrayList<>(m_size);
+     * }
+     * for (int i = 0; i < m_size; i++) {
+     * long l = p_importer.readLong(0);
+     * if (m_arrayList.size() == i) {
+     * m_arrayList.add(l);
+     * }
+     * }
      *
      * @param p_importer
      *         the importer
@@ -356,12 +367,7 @@ public abstract class AbstractMessage {
      * @throws NetworkException
      *         if message buffer is too small
      */
-    private void fillBuffer(final byte[] p_buffer, final int p_offset, final int p_payloadSize, final boolean p_hasOverflow) throws NetworkException {
-
-        AbstractMessageExporter exporter = ExporterPool.getInstance().getExporter(p_hasOverflow);
-        exporter.setBuffer(p_buffer);
-        exporter.setPosition(p_offset);
-
+    private void fillBuffer(final AbstractMessageExporter p_exporter, final int p_payloadSize) throws NetworkException {
         try {
             // Message reused (probably pooled)
             if (m_messageID == m_oldMessageID) {
@@ -370,19 +376,19 @@ public abstract class AbstractMessage {
 
             // Put message ID (default 3 byte)
             for (int i = 0; i < AbstractMessage.MESSAGE_ID_LENGTH; i++) {
-                exporter.writeByte((byte) (m_messageID >> (AbstractMessage.MESSAGE_ID_LENGTH - 1 - i) * 8 & 0xFF));
+                p_exporter.writeByte((byte) (m_messageID >> (AbstractMessage.MESSAGE_ID_LENGTH - 1 - i) * 8 & 0xFF));
             }
-            exporter.writeByte(m_type);
-            exporter.writeByte(m_subtype);
-            exporter.writeByte((byte) ((m_messageType << 4) + (m_exclusivity ? 1 : 0)));
-            exporter.writeInt(p_payloadSize);
+            p_exporter.writeByte(m_type);
+            p_exporter.writeByte(m_subtype);
+            p_exporter.writeByte((byte) ((m_messageType << 4) + (m_exclusivity ? 1 : 0)));
+            p_exporter.writeInt(p_payloadSize);
 
-            writePayload(exporter);
+            writePayload(p_exporter);
         } catch (final BufferOverflowException e) {
             throw new NetworkException("Could not create message " + this + ", because message buffer is too small, payload size " + p_payloadSize, e);
         }
 
-        int numberOfWrittenBytes = exporter.getNumberOfWrittenBytes();
+        int numberOfWrittenBytes = p_exporter.getNumberOfWrittenBytes();
         int messageSize = p_payloadSize + HEADER_SIZE;
         if (numberOfWrittenBytes < messageSize) {
             throw new NetworkException(

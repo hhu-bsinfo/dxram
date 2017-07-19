@@ -1,13 +1,10 @@
 package de.hhu.bsinfo.net.core;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.net.nio.NIOMessageImporterCollection;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -24,8 +21,6 @@ public abstract class AbstractPipeIn {
     private final DataReceiver m_listener;
     private final MessageDirectory m_messageDirectory;
     private final RequestMap m_requestMap;
-
-    private AbstractMessageImporterCollection m_importers;
 
     private long m_receivedMessages;
 
@@ -44,8 +39,6 @@ public abstract class AbstractPipeIn {
         m_listener = p_dataReceiver;
         m_messageDirectory = p_messageDirectory;
         m_requestMap = p_requestMap;
-
-        m_importers = new NIOMessageImporterCollection();
     }
 
     short getOwnNodeID() {
@@ -68,13 +61,17 @@ public abstract class AbstractPipeIn {
         return m_receivedMessages;
     }
 
-    protected AbstractFlowControl getFlowControl() {
-        return m_flowControl;
+    @Override
+    public String toString() {
+        return "PipeIn[m_ownNodeID " + NodeID.toHexString(m_ownNodeID) + ", m_destinationNodeID " + NodeID.toHexString(m_destinationNodeID) +
+                ", m_flowControl " + m_flowControl + ", m_receivedMessages " + m_receivedMessages + ']';
     }
 
     public abstract boolean isOpen();
 
-    public abstract void returnProcessedBuffer(final ByteBuffer p_buffer);
+    protected AbstractFlowControl getFlowControl() {
+        return m_flowControl;
+    }
 
     /**
      * Adds a buffer to byte stream and creates a message if all data was gathered.
@@ -82,99 +79,104 @@ public abstract class AbstractPipeIn {
      * @param p_buffer
      *         the new buffer
      */
-    void processBuffer(final ByteBuffer p_buffer) {
+    protected void processBuffer(final int p_bytesAvailable) throws NetworkException {
+        int bytesRead;
         int counterNormal = 0;
         int counterExclusive = 0;
+        int bytesAvailable = p_bytesAvailable;
 
-        m_flowControl.dataReceived(p_buffer.remaining());
+        m_flowControl.dataReceived(p_bytesAvailable);
 
-        while (p_buffer.hasRemaining()) {
-            if (m_currentMessage != null || readHeader(p_buffer)) {
-                try {
-                    if (m_currentMessage == null) {
-                        m_currentMessage = createMessage();
-                    }
+        while (bytesAvailable > 0) {
+            if (m_currentMessage == null) {
+                bytesRead = readHeader(bytesAvailable, AbstractMessage.HEADER_SIZE);
 
-                    if (readPayload(p_buffer)) {
-                        if (m_currentMessage.isResponse()) {
-                            m_requestMap.fulfill((AbstractResponse) m_currentMessage);
-                        } else {
-                            if (!m_currentMessage.isExclusive()) {
-                                m_normalMessages[counterNormal++] = m_currentMessage;
-                                if (counterNormal == m_normalMessages.length) {
-                                    deliverMessages(m_normalMessages);
-                                    Arrays.fill(m_normalMessages, null);
-                                    counterNormal = 0;
-                                }
-                            } else {
-                                m_exclusiveMessages[counterExclusive++] = m_currentMessage;
-                                if (counterExclusive == m_exclusiveMessages.length) {
-                                    deliverMessages(m_exclusiveMessages);
-                                    Arrays.fill(m_exclusiveMessages, null);
-                                    counterExclusive = 0;
-                                }
-                            }
-                        }
-                        m_currentMessage = null;
-                        m_currentHeader.clear();
-                        m_receivedMessages++;
+                if (bytesRead < AbstractMessage.HEADER_SIZE) {
+                    // end of current data stream in importer, incomplete header
+                    break;
+                }
+
+                bytesAvailable -= bytesRead;
+                m_currentMessage = createMessage();
+            }
+
+            // hack:
+            // to avoid copying data multiple times, some responses use the same objects provided
+            // with the request to directly write the data to them instead of creating a temporary
+            // object in the response, de-serializing the data and then copying from the temporary object
+            // to the object that should receive the data in the first place. (example DXRAM: get request/response)
+            // This is only possible, if we have a reference to the original request within the response
+            // while reading from the network byte buffer. But in this low level stage, we (usually) don't have
+            // access to requests/responses. So we exploit the request map to get our corresponding request
+            // before de-serializing the network buffer for every request.
+            if (m_currentMessage.isResponse()) {
+                AbstractResponse response = (AbstractResponse) m_currentMessage;
+                AbstractRequest request = m_requestMap.getRequest(response);
+                if (request == null) {
+                    System.out.println(
+                            "Request null for " + m_currentMessage.getType() + ',' + m_currentHeader.getSubtype() + "; " + m_currentMessage.getMessageID() +
+                                    ", " + m_currentMessage.isResponse() + ", " + m_currentMessage.isExclusive());
+
+                    // Request is not available, probably because of a time-out
+                    // Skip payload and throw away the (now) useless response
+                    // System.out.println("Aborting reading payload: Request not available");
+                    bytesAvailable -= m_currentHeader.getPayloadSize();
+                    m_currentHeader.clear();
+                    m_currentMessage = null;
+                    continue;
+                }
+
+                response.setCorrespondingRequest(request);
+            }
+
+            bytesRead = readPayload(bytesAvailable, m_currentHeader.getPayloadSize());
+
+            if (bytesRead < m_currentHeader.getPayloadSize()) {
+                // end of current data stream on importer, incomplete payload
+                break;
+            }
+
+            bytesAvailable -= bytesRead;
+
+            if (m_currentMessage.isResponse()) {
+                m_requestMap.fulfill((AbstractResponse) m_currentMessage);
+            } else {
+                if (!m_currentMessage.isExclusive()) {
+                    m_normalMessages[counterNormal++] = m_currentMessage;
+                    if (counterNormal == m_normalMessages.length) {
+                        deliverMessages(m_normalMessages);
+                        Arrays.fill(m_normalMessages, null);
+                        counterNormal = 0;
                     }
-                } catch (final Exception e) {
-                    // #if LOGGER >= ERROR
-                    if (m_currentMessage != null) {
-                        LOGGER.error("Unable to create message: %s", m_currentMessage, e);
-                    } else {
-                        LOGGER.error("Unable to create message", e);
+                } else {
+                    m_exclusiveMessages[counterExclusive++] = m_currentMessage;
+                    if (counterExclusive == m_exclusiveMessages.length) {
+                        deliverMessages(m_exclusiveMessages);
+                        Arrays.fill(m_exclusiveMessages, null);
+                        counterExclusive = 0;
                     }
-                    // #endif /* LOGGER >= ERROR */
                 }
             }
+
+            m_currentMessage = null;
+            m_currentHeader.clear();
+            m_receivedMessages++;
         }
 
         if (counterNormal > 0) {
             deliverMessages(m_normalMessages);
             Arrays.fill(m_normalMessages, 0, counterNormal, null);
         }
+
         if (counterExclusive > 0) {
             deliverMessages(m_exclusiveMessages);
             Arrays.fill(m_exclusiveMessages, 0, counterExclusive, null);
         }
     }
 
-    @Override
-    public String toString() {
-        return "PipeIn[m_ownNodeID " + NodeID.toHexString(m_ownNodeID) + ", m_destinationNodeID " + NodeID.toHexString(m_destinationNodeID) +
-                ", m_flowControl " + m_flowControl + ", m_receivedMessages " + m_receivedMessages + ']';
-    }
+    protected abstract AbstractMessageImporter getImporter(final boolean p_overflow);
 
-    /**
-     * Informs the ConnectionListener about new messages
-     *
-     * @param p_messages
-     *         the new messages
-     */
-    private void deliverMessages(final AbstractMessage[] p_messages) {
-        m_listener.newMessages(p_messages);
-    }
-
-    private boolean readHeader(final ByteBuffer p_buffer) {
-        AbstractMessageImporter importer;
-        importer = m_importers.getImporter(p_buffer.remaining() < AbstractMessage.HEADER_SIZE);
-        importer.setBuffer(p_buffer.array(), p_buffer.position(), p_buffer.limit());
-
-        try {
-            importer.importObject(m_currentHeader);
-        } catch (final ArrayIndexOutOfBoundsException e) {
-            // Header is incomplete continue later
-            p_buffer.position(importer.getPosition());
-            m_importers.returnImporter(importer, false);
-            return false;
-        }
-        p_buffer.position(importer.getPosition());
-        m_importers.returnImporter(importer, true);
-
-        return true;
-    }
+    protected abstract void returnImporter(final AbstractMessageImporter p_importer, final boolean p_finished);
 
     private AbstractMessage createMessage() throws NetworkException {
         AbstractMessage ret;
@@ -198,6 +200,22 @@ public abstract class AbstractPipeIn {
         return ret;
     }
 
+    private int readHeader(final int p_bytesAvailable, final int p_bytesToRead) {
+        AbstractMessageImporter importer = getImporter(p_bytesAvailable < p_bytesToRead);
+
+        try {
+            importer.importObject(m_currentHeader);
+        } catch (final ArrayIndexOutOfBoundsException e) {
+            // Header is incomplete continue later
+            System.out.println("Out of bounds during reading header, position: " + p_bytesAvailable);
+            returnImporter(importer, false);
+            return -1;
+        }
+        returnImporter(importer, true);
+
+        return p_bytesToRead;
+    }
+
     /**
      * Create a message from a given buffer
      *
@@ -205,54 +223,36 @@ public abstract class AbstractPipeIn {
      *         buffer containing a message
      * @return message
      */
-    private boolean readPayload(final ByteBuffer p_buffer) throws IOException {
-        int payloadSize = m_currentHeader.getPayloadSize();
-        AbstractRequest request;
-        AbstractResponse response;
-        AbstractMessageImporter importer;
+    private int readPayload(final int p_bytesAvailable, final int p_bytesToRead) {
+        AbstractMessageImporter importer = getImporter(p_bytesAvailable < p_bytesToRead);
 
-        // hack:
-        // to avoid copying data multiple times, some responses use the same objects provided
-        // with the request to directly write the data to them instead of creating a temporary
-        // object in the response, de-serializing the data and then copying from the temporary object
-        // to the object that should receive the data in the first place. (example DXRAM: get request/response)
-        // This is only possible, if we have a reference to the original request within the response
-        // while reading from the network byte buffer. But in this low level stage, we (usually) don't have
-        // access to requests/responses. So we exploit the request map to get our corresponding request
-        // before de-serializing the network buffer for every request.
-        if (m_currentMessage.isResponse()) {
-            response = (AbstractResponse) m_currentMessage;
-            request = m_requestMap.getRequest(response);
-            if (request == null) {
-                p_buffer.position(Math.max(p_buffer.position() + payloadSize, p_buffer.limit()));
-                // Request is not available, probably because of a time-out
-                m_currentMessage = null;
-                m_currentHeader.clear();
-                return false;
-            }
-            response.setCorrespondingRequest(request);
-        }
-
-        importer = m_importers.getImporter(p_buffer.remaining() < payloadSize);
-        importer.setBuffer(p_buffer.array(), p_buffer.position(), p_buffer.limit());
         try {
-            m_currentMessage.readPayload(importer, payloadSize);
+            m_currentMessage.readPayload(importer, p_bytesToRead);
         } catch (final ArrayIndexOutOfBoundsException e) {
             // Message is incomplete -> continue later
-            p_buffer.position(importer.getPosition());
-            m_importers.returnImporter(importer, false);
-            return false;
+
+            returnImporter(importer, false);
+            return -1;
         }
 
         int readBytes = importer.getNumberOfReadBytes();
         int calculatedPayloadSize = m_currentMessage.getPayloadLength();
         if (readBytes < calculatedPayloadSize) {
-            throw new IOException("Message buffer is too large: " + calculatedPayloadSize + " > " + readBytes + " (payload in bytes)");
+            throw new NetworkRuntimeException("Message buffer is too large: " + calculatedPayloadSize + " > " + readBytes + " (payload in bytes)");
         }
 
-        p_buffer.position(importer.getPosition());
-        m_importers.returnImporter(importer, true);
+        returnImporter(importer, true);
 
-        return true;
+        return p_bytesToRead;
+    }
+
+    /**
+     * Informs the ConnectionListener about new messages
+     *
+     * @param p_messages
+     *         the new messages
+     */
+    private void deliverMessages(final AbstractMessage[] p_messages) {
+        m_listener.newMessages(p_messages);
     }
 }

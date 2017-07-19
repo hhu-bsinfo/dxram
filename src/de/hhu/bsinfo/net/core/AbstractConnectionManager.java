@@ -105,6 +105,10 @@ public abstract class AbstractConnectionManager {
                 }
 
                 if (ret != null) {
+                    // #if LOGGER >= DEBUG
+                    LOGGER.debug("Connection created: 0x%X", p_destination);
+                    // #endif /* LOGGER >= DEBUG */
+
                     m_connections[p_destination & 0xFFFF] = ret;
                     m_openConnections++;
                 } else {

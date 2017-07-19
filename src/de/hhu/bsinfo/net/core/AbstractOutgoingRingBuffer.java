@@ -13,7 +13,6 @@
 
 package de.hhu.bsinfo.net.core;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -22,39 +21,25 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.05.2016
  */
-public final class OutgoingRingBuffer {
+public abstract class AbstractOutgoingRingBuffer {
 
     // Attributes
-    private final byte[] m_buffer;
-    private volatile int m_posFront;
-    private AtomicInteger m_posBack;
+    protected volatile int m_posFront;
+    protected final AtomicInteger m_posBack;
 
-    private AtomicInteger m_producers;
-    private volatile boolean m_consumerWaits;
+    protected final AtomicInteger m_producers;
+    protected volatile boolean m_consumerWaits;
 
-    private ByteBuffer m_sendByteBuffer;
+    private final int m_bufferSize;
 
-    private boolean m_directBuffer;
-
-    /**
-     * Creates an instance of MessageCreator
-     *
-     * @param p_osBufferSize
-     *         the outgoing buffer size
-     */
-    OutgoingRingBuffer(final int p_osBufferSize, final boolean p_directBuffers) {
-        m_directBuffer = p_directBuffers;
-
-        m_buffer = new byte[p_osBufferSize * 2];
-
+    public AbstractOutgoingRingBuffer(final int p_bufferSize) {
         m_posFront = 0;
         m_posBack = new AtomicInteger(0);
 
         m_producers = new AtomicInteger(0);
         m_consumerWaits = false;
 
-        //m_sendBuffer = new Buffer(m_buffer);
-        m_sendByteBuffer = ByteBuffer.wrap(m_buffer);
+        m_bufferSize = p_bufferSize;
     }
 
     /**
@@ -66,61 +51,8 @@ public final class OutgoingRingBuffer {
         return (m_posFront & 0x7FFFFFFFL) == (m_posBack.get() & 0x7FFFFFFFL);
     }
 
-    /**
-     * Gets a buffer from the beginning of the array.
-     *
-     * @return the ByteBuffer
-     */
-    public ByteBuffer popFront() {
-        int posBack;
-        int posBackRelative;
-        int posFront;
-        int posFrontRelative;
-        int bufferSize = m_buffer.length;
-
-        // Deny access to incoming producers
-        m_consumerWaits = true;
-
-        // Wait for all producers to finish copying
-        while (m_producers.get() > 0) {
-            Thread.yield();
-        }
-
-        posBack = (int) (m_posBack.get() & 0x7FFFFFFFL);
-        posBackRelative = posBack % bufferSize;
-        posFront = (int) (m_posFront & 0x7FFFFFFFL);
-        posFrontRelative = posFront % bufferSize;
-        if (posBackRelative < posFrontRelative) {
-            m_sendByteBuffer.limit(bufferSize);
-        } else {
-            m_sendByteBuffer.limit(posBackRelative);
-        }
-        m_sendByteBuffer.position(posFrontRelative);
-
-        m_consumerWaits = false;
-        // TODO: expensive to enter synchronized block
-        synchronized (m_buffer) {
-            m_buffer.notifyAll();
-        }
-
-        return m_sendByteBuffer;
-    }
-
     public void shiftFront(final int p_writtenBytes) {
         m_posFront += p_writtenBytes;
-    }
-
-    boolean pushNodeID(final ByteBuffer p_buffer) {
-
-        if (m_posBack.get() == 0) {
-            m_buffer[0] = p_buffer.get();
-            m_buffer[1] = p_buffer.get();
-            m_posBack.set(2);
-        } else {
-            System.out.println("ERROR");
-        }
-
-        return true;
     }
 
     /**
@@ -132,13 +64,12 @@ public final class OutgoingRingBuffer {
      * @throws NetworkException
      *         if message could not be serialized
      */
-    boolean pushMessage(final AbstractMessage p_message, final int p_messageSize) throws NetworkException {
+    void pushMessage(final AbstractMessage p_message, final int p_messageSize) throws NetworkException {
         int posBackUnlimited;
         int posBack;
         int posBackRelative;
         int posFront;
         int posFrontRelative;
-        int bufferSize = m_buffer.length;
 
         m_producers.incrementAndGet();
         while (m_consumerWaits) {
@@ -146,8 +77,8 @@ public final class OutgoingRingBuffer {
             m_producers.decrementAndGet();
             while (m_consumerWaits) {
                 try {
-                    synchronized (m_buffer) {
-                        m_buffer.wait();
+                    synchronized (m_producers) {
+                        m_producers.wait();
                     }
                 } catch (InterruptedException ignore) {
                 }
@@ -159,13 +90,13 @@ public final class OutgoingRingBuffer {
         while (true) {
             posBackUnlimited = m_posBack.get(); // We need this value for compareAndSet operation
             posBack = (int) (posBackUnlimited & 0x7FFFFFFFL); // posBack must not be negative
-            posBackRelative = posBack % bufferSize; // posBackRelative must not exceed buffer
+            posBackRelative = posBack % m_bufferSize; // posBackRelative must not exceed buffer
             posFront = (int) (m_posFront & 0x7FFFFFFFL);
-            posFrontRelative = posFront % bufferSize;
+            posFrontRelative = posFront % m_bufferSize;
 
             if (posBack == posFront /* empty */ ||
                     posBackRelative < posFrontRelative && posFrontRelative - posBackRelative > p_messageSize /* with overflow */ ||
-                    posBackRelative > posFrontRelative && bufferSize - posBackRelative + posFrontRelative > p_messageSize /* without overflow */) {
+                    posBackRelative > posFrontRelative && m_bufferSize - posBackRelative + posFrontRelative > p_messageSize /* without overflow */) {
 
                 // Optimistic increase
                 if (m_posBack.compareAndSet(posBackUnlimited, posBackUnlimited + p_messageSize)) {
@@ -178,8 +109,8 @@ public final class OutgoingRingBuffer {
                 System.out.println("Buffer full!");
                 m_producers.decrementAndGet();
                 try {
-                    synchronized (m_buffer) {
-                        m_buffer.wait();
+                    synchronized (m_producers) {
+                        m_producers.wait();
                     }
                 } catch (InterruptedException ignore) {
                 }
@@ -188,16 +119,45 @@ public final class OutgoingRingBuffer {
         }
 
         // Serialize message into ring buffer
-        int start = posBackRelative;
-        if (p_messageSize > bufferSize - start /* with overflow */) {
-            p_message.serialize(m_buffer, start, p_messageSize, true);
-        } else {
-            p_message.serialize(m_buffer, start, p_messageSize, false);
-        }
+        serialize(p_message, posBackRelative, p_messageSize, p_messageSize > m_bufferSize - posBackRelative /* with overflow */);
 
         // Leave
         m_producers.decrementAndGet();
+    }
 
-        return posFront == posBack;
+    protected abstract void serialize(final AbstractMessage p_message, final int p_start, final int p_messageSize, final boolean p_hasOverflow)
+            throws NetworkException;
+
+    // empty if both back and front are equal
+    protected long popFrontShift() {
+        int posBack;
+        int posBackRelative;
+        int posFront;
+        int posFrontRelative;
+
+        // Deny access to incoming producers
+        m_consumerWaits = true;
+
+        // Wait for all producers to finish copying
+        while (m_producers.get() > 0) {
+            Thread.yield();
+        }
+
+        posBack = (int) (m_posBack.get() & 0x7FFFFFFFL);
+        posBackRelative = posBack % m_bufferSize;
+        posFront = (int) (m_posFront & 0x7FFFFFFFL);
+        posFrontRelative = posFront % m_bufferSize;
+
+        if (posBackRelative < posFrontRelative) {
+            posBackRelative = m_bufferSize;
+        }
+
+        m_consumerWaits = false;
+        // TODO: expensive to enter synchronized block
+        synchronized (m_producers) {
+            m_producers.notifyAll();
+        }
+
+        return (long) posBackRelative << 32 | (long) posFrontRelative;
     }
 }

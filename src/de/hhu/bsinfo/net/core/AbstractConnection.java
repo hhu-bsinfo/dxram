@@ -13,7 +13,6 @@
 
 package de.hhu.bsinfo.net.core;
 
-import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
@@ -48,16 +47,8 @@ public abstract class AbstractConnection<PipeIn extends AbstractPipeIn, PipeOut 
         return m_pipeIn.getDestinationNodeID();
     }
 
-    public final void returnProcessedBuffer(final ByteBuffer p_buffer) {
-        // #if LOGGER >= TRACE
-        LOGGER.trace("Returning processed buffer, size %d", p_buffer.capacity());
-        // #endif /* LOGGER >= TRACE */
-
-        m_pipeIn.returnProcessedBuffer(p_buffer);
-    }
-
-    public final void postMessage(final AbstractMessage p_message, final boolean p_directBuffer) throws NetworkException {
-        m_pipeOut.postMessage(p_message, p_directBuffer);
+    public final void postMessage(final AbstractMessage p_message) throws NetworkException {
+        m_pipeOut.postMessage(p_message);
     }
 
     public final PipeIn getPipeIn() {

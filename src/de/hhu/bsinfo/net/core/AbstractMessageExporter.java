@@ -50,5 +50,4 @@ public abstract class AbstractMessageExporter implements Exporter {
      *         the offset
      */
     protected abstract void setPosition(int p_position);
-
 }

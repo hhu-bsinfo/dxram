@@ -20,6 +20,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.net.ib.IBConnection;
+import de.hhu.bsinfo.net.ib.IBPipeIn;
+import de.hhu.bsinfo.net.nio.NIOConnection;
+import de.hhu.bsinfo.net.nio.NIOPipeIn;
+
 /**
  * The MessageCreator builds messages and forwards them to the MessageHandlers.
  * Uses a ring-buffer implementation for incoming buffers.
@@ -32,7 +37,11 @@ public class MessageCreator extends Thread {
     // Attributes
     private volatile boolean m_shutdown;
 
-    private Object[] m_buffer;
+    private AbstractConnection[] m_connectionBuffer;
+    private ByteBuffer[] m_byteBufferBuffer;
+    private long[] m_addrBuffer;
+    private int[] m_sizeBuffer;
+
     private int m_size;
     private int m_maxBytes;
     private long m_currentBytes;
@@ -49,7 +58,10 @@ public class MessageCreator extends Thread {
      */
     public MessageCreator(final int p_osBufferSize) {
         m_size = 2 * (2 * 1024 + 1);
-        m_buffer = new Object[m_size * 2];
+        m_connectionBuffer = new AbstractConnection[m_size];
+        m_byteBufferBuffer = new ByteBuffer[m_size];
+        m_addrBuffer = new long[m_size];
+        m_sizeBuffer = new int[m_size];
         m_maxBytes = p_osBufferSize * 8;
         m_currentBytes = 0;
 
@@ -96,19 +108,51 @@ public class MessageCreator extends Thread {
      */
     @Override
     public void run() {
-        Object[] job;
         AbstractConnection connection;
         ByteBuffer buffer;
 
-        job = new Object[2];
+        long addr;
+        int size;
+
         while (!m_shutdown) {
-            if (popJob(job)) {
-                connection = (AbstractConnection) job[0];
-                buffer = (ByteBuffer) job[1];
-                connection.getPipeIn().processBuffer(buffer);
-                connection.returnProcessedBuffer(buffer);
-            } else {
+            // pop a job
+            m_lock.lock();
+
+            if (m_posFront == m_posBack) {
+                // Ring-buffer is empty.
+                m_lock.unlock();
+
                 LockSupport.park();
+            } else {
+                connection = m_connectionBuffer[m_posFront % m_size];
+                buffer = m_byteBufferBuffer[m_posFront % m_size];
+                addr = m_addrBuffer[m_posFront % m_size];
+                size = m_sizeBuffer[m_posFront % m_size];
+
+                if (buffer != null) {
+                    m_currentBytes -= buffer.remaining();
+                } else {
+                    m_currentBytes -= size;
+                }
+
+                m_posFront += 1;
+                m_lock.unlock();
+
+                try {
+                    if (buffer != null) {
+                        // NIO path
+                        NIOPipeIn pipeIn = ((NIOConnection) connection).getPipeIn();
+                        pipeIn.processBuffer(buffer);
+                    } else {
+                        // IB path
+                        IBPipeIn pipeIn = ((IBConnection) connection).getPipeIn();
+                        pipeIn.processBuffer(addr, size);
+                    }
+                } catch (final NetworkException e) {
+                    // #if LOGGER == ERROR
+                    LOGGER.error("Processing incoming buffer failed", e);
+                    // #endif /* LOGGER == ERROR */
+                }
             }
         }
     }
@@ -116,6 +160,7 @@ public class MessageCreator extends Thread {
     /**
      * Shutdown
      */
+
     public void shutdown() {
         // #if LOGGER == INFO
         LOGGER.info("Message creator shutdown...");
@@ -147,7 +192,7 @@ public class MessageCreator extends Thread {
      *         the incoming buffer
      * @return whether the job was added or not
      */
-    public boolean pushJob(final AbstractConnection p_connection, final ByteBuffer p_buffer) {
+    public boolean pushJob(final AbstractConnection p_connection, final ByteBuffer p_buffer, final long p_addr, final int p_size) {
         boolean locked = false;
         boolean wakeup = false;
 
@@ -156,7 +201,7 @@ public class MessageCreator extends Thread {
             locked = true;
         }
 
-        if ((m_posBack + 2) % m_size == m_posFront % m_size || m_currentBytes >= m_maxBytes) {
+        if ((m_posBack + 1) % m_size == m_posFront % m_size || m_currentBytes >= m_maxBytes) {
             // Return without adding the job if queue is full or too many bytes are pending
             if (locked) {
                 m_lock.unlock();
@@ -169,10 +214,12 @@ public class MessageCreator extends Thread {
             wakeup = true;
         }
 
-        m_buffer[m_posBack % m_size] = p_connection;
-        m_buffer[(m_posBack + 1) % m_size] = p_buffer;
+        m_connectionBuffer[m_posBack % m_size] = p_connection;
+        m_byteBufferBuffer[m_posBack % m_size] = p_buffer;
+        m_addrBuffer[m_posBack % m_size] = p_addr;
+        m_sizeBuffer[m_posBack % m_size] = p_size;
         m_currentBytes += p_buffer.remaining();
-        m_posBack += 2;
+        m_posBack += 1;
 
         if (locked) {
             m_lock.unlock();
@@ -181,31 +228,6 @@ public class MessageCreator extends Thread {
         if (wakeup) {
             LockSupport.unpark(this);
         }
-
-        return true;
-    }
-
-    /**
-     * Gets a job (connection and incoming buffer) from the beginning of the buffer.
-     *
-     * @param p_job
-     *         the job array to be filled
-     * @return whether the job array was filled or not
-     */
-    private boolean popJob(final Object[] p_job) {
-        m_lock.lock();
-
-        if (m_posFront == m_posBack) {
-            // Ring-buffer is empty.
-            m_lock.unlock();
-            return false;
-        }
-
-        p_job[0] = m_buffer[m_posFront % m_size];
-        p_job[1] = m_buffer[(m_posFront + 1) % m_size];
-        m_currentBytes -= ((ByteBuffer) p_job[1]).remaining();
-        m_posFront += 2;
-        m_lock.unlock();
 
         return true;
     }
