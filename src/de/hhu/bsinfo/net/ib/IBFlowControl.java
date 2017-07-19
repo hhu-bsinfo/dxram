@@ -12,16 +12,15 @@ import de.hhu.bsinfo.net.core.NetworkException;
 public class IBFlowControl extends AbstractFlowControl {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBFlowControl.class.getSimpleName());
 
-    protected IBFlowControl(final short p_destinationNodeId, final int p_flowControlWindowSize) {
+    private final IBWriteInterestManager m_writeInterestManager;
+
+    protected IBFlowControl(final short p_destinationNodeId, final int p_flowControlWindowSize, final IBWriteInterestManager p_writeInterestManager) {
         super(p_destinationNodeId, p_flowControlWindowSize);
+        m_writeInterestManager = p_writeInterestManager;
     }
 
     @Override
     public void flowControlWrite() throws NetworkException {
-        if (!JNIIbnet.postFlowControlData(getDestinationNodeId(), getAndResetFlowControlData())) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Could not send flow control data to node 0x%X!", getDestinationNodeId());
-            // #endif /* LOGGER >= ERROR */
-        }
+        m_writeInterestManager.pushBackFlowControlInterest(getDestinationNodeId(), getAndResetFlowControlData());
     }
 }

@@ -1,7 +1,6 @@
 package de.hhu.bsinfo.net.ib;
 
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,38 +20,55 @@ import de.hhu.bsinfo.utils.NodeID;
 /**
  * Created by nothaas on 6/13/17.
  */
-public class IBConnectionManager extends AbstractConnectionManager implements JNIIbnet.Callbacks {
+public class IBConnectionManager extends AbstractConnectionManager
+        implements JNIIbdxnet.SendHandler, JNIIbdxnet.RecvHandler, JNIIbdxnet.DiscoveryHandler, JNIIbdxnet.ConnectionHandler {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBConnectionManager.class.getSimpleName());
 
     private final IBConnectionManagerConfig m_config;
+    private final NodeMap m_nodeMap;
 
     private final MessageDirectory m_messageDirectory;
     private final RequestMap m_requestMap;
     private final MessageCreator m_messageCreator;
     private final DataReceiver m_dataReceiver;
 
-    private final IBBufferPool m_bufferPool;
+    private final IBWriteInterestManager m_writeInterestManager;
 
     private final boolean[] m_nodeConnected;
+
+    // struct NextWorkParameters
+    // {
+    //    uint64_t m_ptrBuffer;
+    //    uint32_t m_len;
+    //    uint32_t m_flowControlData;
+    //    uint16_t m_nodeId;
+    //} __attribute__((packed));
+    private final IBSendWorkParameterPool m_sendWorkParameterPool;
 
     public IBConnectionManager(final IBConnectionManagerConfig p_config, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
             final RequestMap p_requestMap, final MessageCreator p_messageCreator, final DataReceiver p_dataReciever) {
         super(p_config);
 
         m_config = p_config;
+        m_nodeMap = p_nodeMap;
 
         m_messageDirectory = p_messageDirectory;
         m_requestMap = p_requestMap;
         m_messageCreator = p_messageCreator;
         m_dataReceiver = p_dataReciever;
 
-        m_bufferPool = new IBBufferPool(m_config.getBufferSize(), m_config.getBufferPoolSize());
+        m_writeInterestManager = new IBWriteInterestManager();
 
         m_nodeConnected = new boolean[NodeID.MAX_ID];
 
-        if (!JNIIbnet.init(m_config.getOwnNodeId(), m_config.getMaxRecvReqs(), m_config.getMaxSendReqs(), m_config.getBufferSize(),
-                m_config.getFlowControlMaxRecvReqs(), m_config.getFlowControlMaxSendReqs(), m_config.getOutgoingJobPoolSize(), m_config.getSendThreads(),
-                m_config.getRecvThreads(), m_config.getMaxConnections(), this, m_config.getEnableSignalHandler(), m_config.getEnableDebugThread())) {
+        m_sendWorkParameterPool = new IBSendWorkParameterPool(Long.BYTES + Integer.BYTES + Integer.BYTES + Short.BYTES);
+    }
+
+    public void init() {
+        // can't call this in the constructor because it relies on the implemented interfaces for callbacks
+        if (!JNIIbdxnet.init(m_config.getOwnNodeId(), m_config.getMaxRecvReqs(), m_config.getMaxSendReqs(), m_config.getBufferSize(),
+                m_config.getFlowControlMaxRecvReqs(), m_config.getFlowControlMaxSendReqs(), m_config.getSendThreads(), m_config.getRecvThreads(),
+                m_config.getMaxConnections(), this, this, this, this, m_config.getEnableSignalHandler(), m_config.getEnableDebugThread())) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("Initializing ibnet failed, check ibnet logs");
             // #endif /* LOGGER >= DEBUG */
@@ -66,21 +82,25 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
                 continue;
             }
 
-            InetSocketAddress addr = p_nodeMap.getAddress((short) i);
+            InetSocketAddress addr = m_nodeMap.getAddress((short) i);
 
             if (!"/255.255.255.255".equals(addr.getAddress().toString())) {
                 byte[] bytes = addr.getAddress().getAddress();
                 int val = (int) (((long) bytes[0] & 0xFF) << 24 | bytes[1] & 0xFF << 16 | bytes[2] & 0xFF << 8 | bytes[3] & 0xFF);
-                JNIIbnet.addNode(val);
+                JNIIbdxnet.addNode(val);
             }
         }
     }
 
     @Override
     public void close() {
-        JNIIbnet.shutdown();
+        // #if LOGGER >= DEBUG
+        LOGGER.debug("Closing connection manager");
+        // #endif /* LOGGER >= DEBUG */
 
         super.close();
+
+        JNIIbdxnet.shutdown();
     }
 
     @Override
@@ -99,8 +119,8 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         connection = (IBConnection) m_connections[p_destination & 0xFFFF];
 
         if (connection == null) {
-            connection = new IBConnection(m_config.getOwnNodeId(), p_destination, m_config.getBufferSize(), m_config.getFlowControlWindow(), m_messageCreator,
-                    m_messageDirectory, m_requestMap, m_dataReceiver, m_bufferPool);
+            connection = new IBConnection(m_config.getOwnNodeId(), p_destination, m_config.getBufferSize(), m_config.getFlowControlWindow(), m_messageDirectory,
+                    m_requestMap, m_dataReceiver, m_writeInterestManager);
             m_connections[p_destination & 0xFFFF] = connection;
             m_openConnections++;
         }
@@ -150,6 +170,9 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         // #endif /* LOGGER >= DEBUG */
 
         m_nodeConnected[p_nodeId & 0xFFFF] = false;
+
+        // TODO correct spot?
+        m_writeInterestManager.nodeDisconnected(p_nodeId);
     }
 
     @Override
@@ -167,12 +190,50 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
     }
 
     @Override
-    public ByteBuffer getReceiveBuffer(final int p_size) {
-        return m_bufferPool.getBuffer();
+    public long getNextDataToSend(short p_prevNodeIdWritten, int p_prevDataWrittenLen, long p_prevFlowControlWritten) {
+        // return interest of previous call
+        if (p_prevNodeIdWritten != NodeID.INVALID_ID) {
+
+            m_writeInterestManager.finishedProcessingInterest(p_prevNodeIdWritten, p_prevDataWrittenLen, p_prevFlowControlWritten);
+
+            // also notify that previous data has been processed (if connection is still available)
+            try {
+                IBConnection prevConnection = (IBConnection) getConnection(p_prevNodeIdWritten);
+                prevConnection.getPipeOut().dataProcessed(p_prevDataWrittenLen);
+            } catch (final NetworkException e) {
+                // TODO ignore ?
+            }
+        }
+
+        // poll for next interest
+        IBWriteInterest interest = m_writeInterestManager.getNextInterest();
+
+        // no data available
+        if (interest == null) {
+            return 0;
+        }
+
+        // #if LOGGER >= TRACE
+        LOGGER.trace("Next write interest: %s", interest);
+        // #endif /* LOGGER >= TRACE */
+
+        // prepare next work load
+        IBConnection connection;
+        try {
+            connection = (IBConnection) getConnection(interest.getNodeId());
+        } catch (final NetworkException e) {
+            // TODO ?
+
+            m_writeInterestManager.nodeDisconnected(interest.getNodeId());
+            return 0;
+        }
+
+        // return -1 if no data is available, otherwise valid (unsafe) memory address
+        return connection.getPipeOut().getNextBuffer();
     }
 
     @Override
-    public void receivedBuffer(final short p_sourceNodeId, final ByteBuffer p_buffer, final int p_length) {
+    public void receivedBuffer(final short p_sourceNodeId, final long p_addr, final int p_length) {
         // #if LOGGER >= TRACE
         LOGGER.trace("Received buffer (%d) from 0x%X", p_length, p_sourceNodeId);
         // #endif /* LOGGER >= TRACE */
@@ -187,7 +248,14 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
             return;
         }
 
-        connection.getPipeIn().processReceivedBuffer(p_buffer, p_length);
+        // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
+        while (!m_messageCreator.pushJob(connection, null, p_addr, p_length)) {
+            // #if LOGGER == TRACE
+            LOGGER.trace("Message creator: Job queue is full!");
+            // #endif /* LOGGER == TRACE */
+
+            Thread.yield();
+        }
     }
 
     @Override

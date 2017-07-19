@@ -1,11 +1,10 @@
 package de.hhu.bsinfo.net.ib;
 
-import java.nio.ByteBuffer;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.net.core.AbstractFlowControl;
+import de.hhu.bsinfo.net.core.AbstractOutgoingRingBuffer;
 import de.hhu.bsinfo.net.core.AbstractPipeOut;
 
 /**
@@ -14,8 +13,22 @@ import de.hhu.bsinfo.net.core.AbstractPipeOut;
 public class IBPipeOut extends AbstractPipeOut {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBPipeOut.class.getSimpleName());
 
-    public IBPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl) {
-        super(p_ownNodeId, p_destinationNodeId, p_bufferSize, p_flowControl, true);
+    private final IBWriteInterestManager m_writeInterestManager;
+    private final IBConnection m_parentConnection;
+
+    public IBPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
+            final AbstractOutgoingRingBuffer p_outgoingBuffer, final IBWriteInterestManager p_writeInterestManager, final IBConnection p_parentConnection) {
+        super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_outgoingBuffer);
+        m_writeInterestManager = p_writeInterestManager;
+        m_parentConnection = p_parentConnection;
+    }
+
+    long getNextBuffer() {
+        return ((IBOutgoingRingBuffer) getOutgoingQueue()).popFront(m_parentConnection);
+    }
+
+    int getFlowControlToWrite() {
+        return getFlowControl().getAndResetFlowControlData();
     }
 
     @Override
@@ -24,36 +37,7 @@ public class IBPipeOut extends AbstractPipeOut {
     }
 
     @Override
-    protected void bufferPosted() {
-        // TODO
-        /*ByteBuffer buffer;
-
-        while (true) {
-            buffer = getOutgoingQueue().popFront();
-
-            if (buffer == null) {
-                break;
-            }
-
-            if (!buffer.isDirect()) {
-                throw new IllegalStateException("Buffer _MUST_ be direct for InfiniBand");
-            }
-
-            // #if LOGGER == TRACE
-            LOGGER.trace("Posting buffer %s to 0x%X", buffer, getDestinationNodeID());
-            // #endif /* LOGGER == TRACE */
-
-            /*if (buffer.position() != 0) {
-                throw new IllegalStateException();
-            }
-
-            if (!JNIIbnet.postBuffer(getDestinationNodeID(), buffer, buffer.remaining())) {
-                // #if LOGGER == ERROR
-                LOGGER.error("Posting buffer (%d) to 0x%X failed", buffer.remaining(), getDestinationNodeID());
-                // #endif /* LOGGER == ERROR */
-            /*}
-
-            getOutgoingQueue().returnBuffer(buffer);
-        }*/
+    protected void bufferPosted(final int p_size) {
+        m_writeInterestManager.pushBackDataInterest(getDestinationNodeID(), p_size);
     }
 }

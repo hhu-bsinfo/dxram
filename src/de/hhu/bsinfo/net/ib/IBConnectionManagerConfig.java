@@ -20,8 +20,6 @@ public abstract class IBConnectionManagerConfig extends ConnectionManagerConfig 
 
     public abstract int getFlowControlMaxSendReqs();
 
-    public abstract int getOutgoingJobPoolSize();
-
     public abstract int getSendThreads();
 
     public abstract int getRecvThreads();
@@ -57,8 +55,6 @@ public abstract class IBConnectionManagerConfig extends ConnectionManagerConfig 
         public abstract Builder setFlowControlMaxRecvReqs(final int p_val);
 
         public abstract Builder setFlowControlMaxSendReqs(final int p_val);
-
-        public abstract Builder setOutgoingJobPoolSize(final int p_val);
 
         public abstract Builder setSendThreads(final int p_val);
 
