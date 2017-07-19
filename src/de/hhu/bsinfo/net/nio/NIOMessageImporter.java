@@ -13,10 +13,7 @@
 
 package de.hhu.bsinfo.net.nio;
 
-import java.util.Arrays;
-
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.utils.serialization.CompactNumber;
 import de.hhu.bsinfo.utils.serialization.Importable;
 
 /**
@@ -29,8 +26,6 @@ class NIOMessageImporter extends AbstractMessageImporter {
     private byte[] m_buffer;
     private int m_currentPosition;
     private int m_startPosition;
-    private byte[] m_leftover;
-    private byte[] m_compactNumber;
 
     /**
      * Constructor
@@ -51,27 +46,6 @@ class NIOMessageImporter extends AbstractMessageImporter {
     @Override
     public void setNumberOfReadBytes(int p_numberOfReadBytes) {
         // Not relevant for this importer
-    }
-
-    @Override
-    public byte[] getLeftover() {
-        return m_leftover;
-    }
-
-    @Override
-    public void setLeftover(final byte[] p_leftover) {
-        // Not relevant for this importer
-        m_leftover = p_leftover;
-    }
-
-    @Override
-    public byte[] getCompactedNumber() {
-        return m_compactNumber;
-    }
-
-    @Override
-    public void setCompactedNumber(byte[] p_compactedNumber) {
-        m_compactNumber = p_compactedNumber;
     }
 
     @Override
@@ -103,9 +77,9 @@ class NIOMessageImporter extends AbstractMessageImporter {
         // System.out.println("\t\tReading short: " + m_currentPosition);
         short ret = 0;
         for (int i = 0; i < Short.BYTES; i++) {
-            ret <<= 8;
-            ret ^= (short) m_buffer[m_currentPosition++] & 0xff;
+            ret |= (m_buffer[m_currentPosition++] & 0xFF) << (Short.BYTES - 1 - i) * 8;
         }
+
         return ret;
     }
 
@@ -114,8 +88,7 @@ class NIOMessageImporter extends AbstractMessageImporter {
         // System.out.println("\t\tReading int: " + m_currentPosition);
         int ret = 0;
         for (int i = 0; i < Integer.BYTES; i++) {
-            ret <<= 8;
-            ret ^= (int) m_buffer[m_currentPosition++] & 0xff;
+            ret |= (m_buffer[m_currentPosition++] & 0xFF) << (Integer.BYTES - 1 - i) * 8;
         }
         return ret;
     }
@@ -125,8 +98,7 @@ class NIOMessageImporter extends AbstractMessageImporter {
         // System.out.println("\t\tReading long: " + m_currentPosition);
         long ret = 0;
         for (int i = 0; i < Long.BYTES; i++) {
-            ret <<= 8;
-            ret ^= (long) m_buffer[m_currentPosition++] & 0xff;
+            ret |= ((long) m_buffer[m_currentPosition++] & 0xFF) << (Long.BYTES - 1 - i) * 8;
         }
         return ret;
     }
@@ -146,17 +118,21 @@ class NIOMessageImporter extends AbstractMessageImporter {
     @Override
     public int readCompactNumber(int p_int) {
         // System.out.println("\t\tReading compact number: " + m_currentPosition);
-        Arrays.fill(m_compactNumber, (byte) 0);
-        int i;
-        for (i = 0; i < Integer.BYTES; i++) {
-            m_compactNumber[i] = readByte((byte) 0);
-            // System.out.println(m_compactNumber[i]);
-            if ((m_compactNumber[i] & 0x80) == 0) {
+        int ret = 0;
+
+        for (int i = 0; i < Integer.BYTES; i++) {
+            int tmp = m_buffer[m_currentPosition++];
+            // System.out.println("\t" + tmp);
+            // Compact numbers are little-endian!
+            ret |= (tmp & 0x7F) << i * 7;
+            if ((tmp & 0x80) == 0) {
+                // Highest bit unset -> no more bytes to come for this number
                 break;
             }
         }
+        // System.out.println("Length: " + ret);
 
-        return CompactNumber.decompact(m_compactNumber, 0, i);
+        return ret;
     }
 
     @Override

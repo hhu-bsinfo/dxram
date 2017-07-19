@@ -13,11 +13,10 @@
 
 package de.hhu.bsinfo.net.nio;
 
-import java.util.Arrays;
-
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.utils.serialization.CompactNumber;
+import de.hhu.bsinfo.net.core.AbstractMessageImporterCollection;
 import de.hhu.bsinfo.utils.serialization.Importable;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Implementation of an Importer/Exporter for ByteBuffers.
@@ -28,15 +27,27 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
 
     private byte[] m_buffer;
     private int m_currentPosition;
-    private byte[] m_leftover;
+
+    // TODO:
     private int m_skipBytes;
     private int m_skippedBytes;
-    private byte[] m_compactNumber;
+
+    // This is the end of given buffer (might differ from buffer's length)
+    private int m_limit;
+
+    // TODO:
+    private AbstractMessageImporterCollection.UnfinishedOperation m_unfinishedOperation;
+
+    // Re-use exception to avoid "new"
+    private ArrayIndexOutOfBoundsException m_exception;
+
+    // TODO: Overflow might happen here as well
 
     /**
      * Constructor
      */
-    NIOMessageImporterUnderflow() {
+    NIOMessageImporterUnderflow(final AbstractMessageImporterCollection.UnfinishedOperation p_unfinishedOperation) {
+        m_unfinishedOperation = p_unfinishedOperation;
     }
 
     @Override
@@ -47,16 +58,6 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
     @Override
     public int getNumberOfReadBytes() {
         return m_currentPosition + m_skipBytes;
-    }
-
-    @Override
-    public byte[] getLeftover() {
-        return m_leftover;
-    }
-
-    @Override
-    public byte[] getCompactedNumber() {
-        return m_compactNumber;
     }
 
     @Override
@@ -72,24 +73,16 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
     }
 
     @Override
-    public void setLeftover(byte[] p_leftover) {
-        m_leftover = p_leftover;
-    }
-
-    @Override
-    public void setCompactedNumber(byte[] p_compactedNumber) {
-        m_compactNumber = p_compactedNumber;
-    }
-
-    @Override
     public void importObject(final Importable p_object) {
         p_object.importObject(this);
     }
 
     @Override
     public boolean readBoolean(final boolean p_bool) {
-        if (m_skippedBytes++ < m_skipBytes) {
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
             // System.out.println("\t\tSkipping reading boolean: " + m_currentPosition + " (underflow)");
+            // Boolean was read before, return passed value
+            m_skippedBytes++;
             return p_bool;
         } else {
             // System.out.println("\t\tReading boolean: " + m_currentPosition + " (underflow)");
@@ -99,8 +92,10 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
 
     @Override
     public byte readByte(final byte p_byte) {
-        if (m_skippedBytes++ < m_skipBytes) {
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
             // System.out.println("\t\tSkipping reading byte: " + m_currentPosition + " (underflow)");
+            // Byte was read before, return passed value
+            m_skippedBytes++;
             return p_byte;
         } else {
             // System.out.println("\t\tReading byte: " + m_currentPosition + " (underflow)");
@@ -110,25 +105,26 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
 
     @Override
     public short readShort(final short p_short) {
-        if (m_skippedBytes + Short.BYTES < m_skipBytes) {
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
             m_skippedBytes += Short.BYTES;
             // System.out.println("\t\tSkipping reading short: " + m_currentPosition + " (underflow)");
+            // Short was read before, return passed value
             return p_short;
         } else if (m_skippedBytes < m_skipBytes) {
             // System.out.println("\t\tContinue reading short: " + m_currentPosition + " (underflow)");
-            short ret = m_leftover[0];
-            ret <<= 8;
-            ret ^= (short) m_buffer[m_currentPosition++] & 0xff;
-            m_skippedBytes++;
+            // Short was partly de-serialized -> continue
+            short ret = (short) m_unfinishedOperation.getPrimitive();
+            for (int i = m_skipBytes - m_skippedBytes; i < Short.BYTES; i++) {
+                ret |= (m_buffer[m_currentPosition++] & 0xFF) << (Short.BYTES - 1 - i) * 8;
+            }
+            m_skippedBytes = m_skipBytes;
             return ret;
         } else {
-            // TODO: Overflow might happen here as well
-
             // System.out.println("\t\tReading short: " + m_currentPosition + " (underflow)");
+            // Read short normally as all previously read bytes have been skipped already
             short ret = 0;
             for (int i = 0; i < Short.BYTES; i++) {
-                ret <<= 8;
-                ret ^= (short) m_buffer[m_currentPosition++] & 0xff;
+                ret |= (m_buffer[m_currentPosition++] & 0xFF) << (Short.BYTES - 1 - i) * 8;
             }
             return ret;
         }
@@ -136,30 +132,26 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
 
     @Override
     public int readInt(final int p_int) {
-        if (m_skippedBytes + Integer.BYTES < m_skipBytes) {
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
             m_skippedBytes += Integer.BYTES;
             // System.out.println("\t\tSkipping reading int: " + m_currentPosition + " (underflow)");
+            // Int was read before, return passed value
             return p_int;
         } else if (m_skippedBytes < m_skipBytes) {
             // System.out.println("\t\tContinue reading int: " + m_currentPosition + " (underflow)");
-            int ret = 0;
-            int i;
-            for (i = 0; i < m_skipBytes - m_skippedBytes; i++) {
-                ret <<= 8;
-                ret ^= (int) m_leftover[i] & 0xff;
-            }
-            for (int j = i; j < Integer.BYTES; j++) {
-                ret <<= 8;
-                ret ^= (int) m_buffer[m_currentPosition++] & 0xff;
+            // Int was partly de-serialized -> continue
+            int ret = (int) m_unfinishedOperation.getPrimitive();
+            for (int i = m_skipBytes - m_skippedBytes; i < Integer.BYTES; i++) {
+                ret |= (m_buffer[m_currentPosition++] & 0xFF) << (Integer.BYTES - 1 - i) * 8;
             }
             m_skippedBytes = m_skipBytes;
             return ret;
         } else {
             // System.out.println("\t\tReading int: " + m_currentPosition + " (underflow)");
+            // Read int normally as all previously read bytes have been skipped already
             int ret = 0;
             for (int i = 0; i < Integer.BYTES; i++) {
-                ret <<= 8;
-                ret ^= (int) m_buffer[m_currentPosition++] & 0xff;
+                ret |= (m_buffer[m_currentPosition++] & 0xFF) << (Integer.BYTES - 1 - i) * 8;
             }
             return ret;
         }
@@ -167,30 +159,26 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
 
     @Override
     public long readLong(final long p_long) {
-        if (m_skippedBytes + Long.BYTES < m_skipBytes) {
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
             m_skippedBytes += Long.BYTES;
             // System.out.println("\t\tSkipping reading long: " + m_currentPosition + " (underflow)");
+            // Long was read before, return passed value
             return p_long;
         } else if (m_skippedBytes < m_skipBytes) {
             // System.out.println("\t\tContinue reading long: " + m_currentPosition + " (underflow)");
-            int ret = 0;
-            int i;
-            for (i = 0; i < m_skipBytes - m_skippedBytes; i++) {
-                ret <<= 8;
-                ret ^= (int) m_leftover[i] & 0xff;
-            }
-            for (int j = i; j < Long.BYTES; j++) {
-                ret <<= 8;
-                ret ^= (int) m_buffer[m_currentPosition++] & 0xff;
+            // Long was partly de-serialized -> continue
+            long ret = m_unfinishedOperation.getPrimitive();
+            for (int i = m_skipBytes - m_skippedBytes; i < Long.BYTES; i++) {
+                ret |= ((long) m_buffer[m_currentPosition++] & 0xFF) << (Long.BYTES - 1 - i) * 8;
             }
             m_skippedBytes = m_skipBytes;
             return ret;
         } else {
             // System.out.println("\t\tReading long: " + m_currentPosition + " (underflow)");
+            // Read long normally as all previously read bytes have been skipped already
             long ret = 0;
             for (int i = 0; i < Long.BYTES; i++) {
-                ret <<= 8;
-                ret ^= (long) m_buffer[m_currentPosition++] & 0xff;
+                ret |= ((long) m_buffer[m_currentPosition++] & 0xFF) << (Long.BYTES - 1 - i) * 8;
             }
             return ret;
         }
@@ -198,35 +186,62 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
 
     @Override
     public float readFloat(final float p_float) {
-        return Float.intBitsToFloat(readInt(Float.floatToIntBits(p_float)));
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
+            m_skippedBytes += Float.BYTES;
+            // Float was read before, return passed value
+            return p_float;
+        } else {
+            return Float.intBitsToFloat(readInt(0));
+        }
     }
 
     @Override
     public double readDouble(final double p_double) {
-        return Double.longBitsToDouble(readLong(Double.doubleToLongBits(p_double)));
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
+            m_skippedBytes += Double.BYTES;
+            // Double was read before, return passed value
+            return p_double;
+        } else {
+            return Double.longBitsToDouble(readLong(0));
+        }
     }
 
     @Override
     public int readCompactNumber(int p_int) {
-        int ret;
-
-        // TODO: Handle overflow in importerUnderflow as well!
-
         // System.out.println("\t\tReading compact number: " + m_currentPosition + " (underflow)");
 
-        int i;
-        for (i = 0; i < Integer.BYTES; i++) {
-            m_compactNumber[i] = readByte(m_compactNumber[i]);
-            if ((m_compactNumber[i] & 0x80) == 0) {
-                break;
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
+            m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(p_int);
+            // Compact number was read before, return passed value
+            return p_int;
+        } else if (m_skippedBytes < m_skipBytes) {
+            // Compact number was partly de-serialized -> continue
+            int ret = (int) m_unfinishedOperation.getPrimitive();
+            for (int i = m_skipBytes - m_skippedBytes; i < Integer.BYTES; i++) {
+                int tmp = m_buffer[m_currentPosition++];
+                // Compact numbers are little-endian!
+                ret |= (tmp & 0x7F) << i * 7;
+                if ((tmp & 0x80) == 0) {
+                    // Highest bit unset -> no more bytes to come for this number
+                    break;
+                }
             }
+            m_skippedBytes = m_skipBytes;
+            return ret;
+        } else {
+            // Read compact number normally as all previously read bytes have been skipped already
+            int ret = 0;
+            for (int i = 0; i < Integer.BYTES; i++) {
+                int tmp = m_buffer[m_currentPosition++];
+                // Compact numbers are little-endian!
+                ret |= (tmp & 0x7F) << i * 7;
+                if ((tmp & 0x80) == 0) {
+                    // Highest bit unset -> no more bytes to come for this number
+                    break;
+                }
+            }
+            return ret;
         }
-
-        ret = CompactNumber.decompact(m_compactNumber, 0, i);
-        Arrays.fill(m_compactNumber, (byte) 0);
-
-        return ret;
-
     }
 
     @Override
@@ -244,18 +259,22 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
     @Override
     public int readBytes(final byte[] p_array, final int p_offset, final int p_length) {
 
-        if (m_skippedBytes + p_length < m_skipBytes) {
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
+            // Bytes were read before
             m_skippedBytes += p_length;
             // System.out.println("\t\tSkipping reading bytes: " + m_currentPosition + ", " + p_length + " (underflow)");
             return p_length;
         } else if (m_skippedBytes < m_skipBytes) {
+            // Bytes were partly de-serialized -> continue
             // System.out.println("\t\tContinue reading bytes: " + m_currentPosition + " (underflow)");
             int bytesCopied = m_skipBytes - m_skippedBytes;
             System.arraycopy(m_buffer, m_currentPosition, p_array, p_offset + bytesCopied, p_length - bytesCopied);
             m_currentPosition += p_length - bytesCopied;
+            m_skippedBytes = m_skipBytes;
 
             return p_length;
         } else {
+            // Read bytes normally as all previously read bytes have been skipped already
             // System.out.println("\t\tReading bytes: " + m_currentPosition + " (underflow)");
             System.arraycopy(m_buffer, m_currentPosition, p_array, p_offset, p_length);
             m_currentPosition += p_length;
@@ -308,86 +327,150 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
 
     @Override
     public byte[] readByteArray(final byte[] p_array) {
-        if (p_array == null) {
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
+            // System.out.println("\t\tSkipping reading byte array: " + m_currentPosition + " (underflow)");
+            // Array length and array were read before, return passed array
+            m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(p_array.length) + p_array.length;
+            return p_array;
+        } else if (m_skippedBytes < m_skipBytes) {
+            // Byte array was partly de-serialized -> continue
+            // System.out.println("\t\tContinue reading byte array: " + m_currentPosition + " (underflow)");
+            byte[] arr;
+            if (m_unfinishedOperation.getObject() == null) {
+                // Array length has not been read completely
+                arr = new byte[readCompactNumber(0)];
+            } else {
+                // Array was created before but is incomplete
+                arr = (byte[]) m_unfinishedOperation.getObject();
+                m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(arr.length);
+            }
+            readBytes(arr);
+            return arr;
+        } else {
+            // Read bytes normally as all previously read bytes have been skipped already
             // System.out.println("\t\tReading byte array: " + m_currentPosition + " (underflow)");
             byte[] arr = new byte[readCompactNumber(0)];
             readBytes(arr);
             return arr;
-        } else if (m_skippedBytes + 4 + p_array.length < m_skipBytes) {
-            // System.out.println("\t\tSkipping reading byte array: " + m_currentPosition + " (underflow)");
-            m_skippedBytes += p_array.length;
-            return p_array;
-        } else {
-            // System.out.println("\t\tContinue reading byte array: " + m_currentPosition + " (underflow)");
-            readBytes(p_array);
-            return p_array;
         }
     }
 
     @Override
     public short[] readShortArray(final short[] p_array) {
-        if (p_array == null) {
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
+            // System.out.println("\t\tSkipping reading short array: " + m_currentPosition + " (underflow)");
+            // Array length and array were read before, return passed array
+            m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(p_array.length) + p_array.length * Short.BYTES;
+            return p_array;
+        } else if (m_skippedBytes < m_skipBytes) {
+            // Short array was partly de-serialized -> continue
+            // System.out.println("\t\tContinue reading short array: " + m_currentPosition + " (underflow)");
+            short[] arr;
+            if (m_unfinishedOperation.getObject() == null) {
+                // Array length has not been read completely
+                arr = new short[readCompactNumber(0)];
+            } else {
+                // Array was created before but is incomplete
+                arr = (short[]) m_unfinishedOperation.getObject();
+                m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(arr.length);
+            }
+            readShorts(arr);
+            return arr;
+        } else {
+            // Read shorts normally as all previously read bytes have been skipped already
             // System.out.println("\t\tReading short array: " + m_currentPosition + " (underflow)");
             short[] arr = new short[readCompactNumber(0)];
             readShorts(arr);
             return arr;
-        } else if (m_skippedBytes + 4 + p_array.length * 2 < m_skipBytes) {
-            // System.out.println("\t\tSkipping reading short array: " + m_currentPosition + " (underflow)");
-            m_skippedBytes += p_array.length;
-            return p_array;
-        } else {
-            // System.out.println("\t\tContinue reading short array: " + m_currentPosition + " (underflow)");
-            readShorts(p_array);
-            return p_array;
         }
     }
 
     @Override
     public int[] readIntArray(final int[] p_array) {
-        if (p_array == null) {
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
+            // System.out.println("\t\tSkipping reading int array: " + m_currentPosition + " (underflow)");
+            // Array length and array were read before, return passed array
+            m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(p_array.length) + p_array.length * Integer.BYTES;
+            return p_array;
+        } else if (m_skippedBytes < m_skipBytes) {
+            // Int array was partly de-serialized -> continue
+            // System.out.println("\t\tContinue reading int array: " + m_currentPosition + " (underflow)");
+            int[] arr;
+            if (m_unfinishedOperation.getObject() == null) {
+                // Array length has not been read completely
+                arr = new int[readCompactNumber(0)];
+            } else {
+                // Array was created before but is incomplete
+                arr = (int[]) m_unfinishedOperation.getObject();
+                m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(arr.length);
+            }
+            readInts(arr);
+            return arr;
+        } else {
+            // Read integers normally as all previously read bytes have been skipped already
             // System.out.println("\t\tReading int array: " + m_currentPosition + " (underflow)");
             int[] arr = new int[readCompactNumber(0)];
             readInts(arr);
             return arr;
-        } else if (m_skippedBytes + 4 + p_array.length * 4 < m_skipBytes) {
-            // System.out.println("\t\tSkipping reading int array: " + m_currentPosition + " (underflow)");
-            m_skippedBytes += p_array.length;
-            return p_array;
-        } else {
-            // System.out.println("\t\tContinue reading int array: " + m_currentPosition + " (underflow)");
-            readInts(p_array);
-            return p_array;
         }
     }
 
     @Override
     public long[] readLongArray(final long[] p_array) {
-        if (p_array == null) {
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
+            // System.out.println("\t\tSkipping reading long array: " + m_currentPosition + " (underflow)");
+            // Array length and array were read before, return passed array
+            m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(p_array.length) + p_array.length * Long.BYTES;
+            return p_array;
+        } else if (m_skippedBytes < m_skipBytes) {
+            // Long array was partly de-serialized -> continue
+            // System.out.println("\t\tContinue reading long array: " + m_currentPosition + " (underflow)");
+            long[] arr;
+            if (m_unfinishedOperation.getObject() == null) {
+                // Array length has not been read completely
+                arr = new long[readCompactNumber(0)];
+            } else {
+                // Array was created before but is incomplete
+                arr = (long[]) m_unfinishedOperation.getObject();
+                m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(arr.length);
+            }
+            readLongs(arr);
+            return arr;
+        } else {
+            // Read longs normally as all previously read bytes have been skipped already
             // System.out.println("\t\tReading long array: " + m_currentPosition + " (underflow)");
             long[] arr = new long[readCompactNumber(0)];
             readLongs(arr);
             return arr;
-        } else if (m_skippedBytes + 4 + p_array.length * 8 < m_skipBytes) {
-            // System.out.println("\t\tSkipping reading long array: " + m_currentPosition + " (underflow)");
-            m_skippedBytes += p_array.length;
-            return p_array;
-        } else {
-            // System.out.println("\t\tContinue reading long array: " + m_currentPosition + " (underflow)");
-            readLongs(p_array);
-            return p_array;
         }
     }
 
     @Override
     public String[] readStringArray(final String[] p_array) {
-        // System.out.println("\t\tReading string array: " + m_currentPosition + " (underflow)");
-        if (p_array == null) {
-            String[] arr = new String[readCompactNumber(0)];
+        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
+            // System.out.println("\t\tSkipping reading String array: " + m_currentPosition + " (underflow)");
+            // Array length and array were read before, return passed array
+            m_skippedBytes += ObjectSizeUtil.sizeofStringArray(p_array);
+            return p_array;
+        } else if (m_skippedBytes < m_skipBytes) {
+            // String array was partly de-serialized -> continue
+            // System.out.println("\t\tContinue reading String array: " + m_currentPosition + " (underflow)");
+            String[] arr;
+            if (m_unfinishedOperation.getObject() == null) {
+                // Array length has not been read completely
+                arr = new String[readCompactNumber(0)];
+            } else {
+                // Array was created before but is incomplete
+                arr = (String[]) m_unfinishedOperation.getObject();
+                m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(arr.length);
+            }
             for (int i = 0; i < arr.length; i++) {
                 arr[i] = readString(arr[i]);
             }
             return arr;
         } else {
+            // Read Strings normally as all previously read bytes have been skipped already
+            // System.out.println("\t\tReading String array: " + m_currentPosition + " (underflow)");
             for (int i = 0; i < p_array.length; i++) {
                 p_array[i] = readString(p_array[i]);
             }

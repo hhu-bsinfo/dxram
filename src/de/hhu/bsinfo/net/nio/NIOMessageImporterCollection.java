@@ -27,8 +27,8 @@ public class NIOMessageImporterCollection extends AbstractMessageImporterCollect
     private NIOMessageImporterOverflow m_importerOverflow;
     private NIOMessageImporterUnderflow m_importerUnderflow;
 
-    private byte[] m_compactedNumber;
-    private byte[] m_leftover;
+    private UnfinishedOperation m_unfinishedOperation;
+
     private int m_bytesCopied;
 
     /**
@@ -36,12 +36,13 @@ public class NIOMessageImporterCollection extends AbstractMessageImporterCollect
      */
     public NIOMessageImporterCollection() {
         super();
-        m_importer = new NIOMessageImporter();
-        m_importerOverflow = new NIOMessageImporterOverflow();
-        m_importerUnderflow = new NIOMessageImporterUnderflow();
 
-        m_compactedNumber = new byte[4];
-        m_leftover = new byte[7];
+        m_unfinishedOperation = new UnfinishedOperation();
+
+        m_importer = new NIOMessageImporter();
+        m_importerOverflow = new NIOMessageImporterOverflow(m_unfinishedOperation);
+        m_importerUnderflow = new NIOMessageImporterUnderflow(m_unfinishedOperation);
+
         m_bytesCopied = 0;
     }
 
@@ -58,9 +59,7 @@ public class NIOMessageImporterCollection extends AbstractMessageImporterCollect
         } else {
             ret = m_importer;
         }
-        ret.setLeftover(m_leftover);
         ret.setNumberOfReadBytes(m_bytesCopied);
-        ret.setCompactedNumber(m_compactedNumber);
 
         return ret;
     }
@@ -69,10 +68,9 @@ public class NIOMessageImporterCollection extends AbstractMessageImporterCollect
     protected void returnImporter(final AbstractMessageImporter p_importer, final boolean p_finished) {
         if (p_finished) {
             m_bytesCopied = 0;
+            m_unfinishedOperation.reset();
         } else {
             m_bytesCopied = p_importer.getNumberOfReadBytes();
-            m_leftover = p_importer.getLeftover();
-            m_compactedNumber = p_importer.getCompactedNumber();
         }
     }
 

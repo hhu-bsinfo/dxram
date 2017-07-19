@@ -14,8 +14,8 @@
 package de.hhu.bsinfo.net.nio;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
-import de.hhu.bsinfo.utils.serialization.CompactNumber;
 import de.hhu.bsinfo.utils.serialization.Exportable;
+import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
  * Implementation of an Importer/Exporter for ByteBuffers.
@@ -98,8 +98,13 @@ class NIOMessageExporter extends AbstractMessageExporter {
 
     @Override
     public void writeCompactNumber(int p_v) {
-        byte[] number = CompactNumber.compact(p_v);
-        writeBytes(number);
+        int length = ObjectSizeUtil.sizeofCompactedNumber(p_v);
+
+        int i;
+        for (i = 0; i < length - 1; i++) {
+            writeByte((byte) ((byte) (p_v >> 7 * i) & 0x7F | 0x80));
+        }
+        writeByte((byte) ((byte) (p_v >> 7 * i) & 0x7F));
     }
 
     @Override

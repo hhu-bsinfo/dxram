@@ -110,10 +110,10 @@ public final class ObjectSizeUtil {
     public static int sizeofStringArray(final String[] p_arr) {
         int size = 0;
 
-        size += Integer.BYTES;
-
+        size += sizeofCompactedNumber(p_arr.length);
         for (int i = 0; i < p_arr.length; i++) {
-            size += p_arr[i].getBytes().length;
+            int length = p_arr[i].getBytes().length;
+            size += sizeofCompactedNumber(length) + length;
         }
 
         return size;

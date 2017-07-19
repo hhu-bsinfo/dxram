@@ -13,10 +13,8 @@
 
 package de.hhu.bsinfo.net.nio;
 
-import java.util.Arrays;
-
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.utils.serialization.CompactNumber;
+import de.hhu.bsinfo.net.core.AbstractMessageImporterCollection;
 import de.hhu.bsinfo.utils.serialization.Importable;
 
 /**
@@ -29,14 +27,22 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     private byte[] m_buffer;
     private int m_currentPosition;
     private int m_startPosition;
+
+    // This is the end of given buffer (might differ from buffer's length)
     private int m_limit;
-    private byte[] m_leftover;
-    private byte[] m_compactNumber;
+
+    // Object to store the unfinished operation in (if there is one)
+    private AbstractMessageImporterCollection.UnfinishedOperation m_unfinishedOperation;
+
+    // Re-use exception to avoid "new"
+    private ArrayIndexOutOfBoundsException m_exception;
 
     /**
      * Constructor
      */
-    NIOMessageImporterOverflow() {
+    NIOMessageImporterOverflow(final AbstractMessageImporterCollection.UnfinishedOperation p_unfinishedOperation) {
+        m_unfinishedOperation = p_unfinishedOperation;
+        m_exception = new ArrayIndexOutOfBoundsException();
     }
 
     @Override
@@ -50,13 +56,8 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     }
 
     @Override
-    public byte[] getLeftover() {
-        return m_leftover;
-    }
-
-    @Override
-    public byte[] getCompactedNumber() {
-        return m_compactNumber;
+    public void setNumberOfReadBytes(int p_numberOfReadBytes) {
+        // Not relevant for this importer
     }
 
     @Override
@@ -68,21 +69,6 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     }
 
     @Override
-    public void setNumberOfReadBytes(int p_numberOfReadBytes) {
-        // Not relevant for this importer
-    }
-
-    @Override
-    public void setLeftover(final byte[] p_leftover) {
-        m_leftover = p_leftover;
-    }
-
-    @Override
-    public void setCompactedNumber(byte[] p_compactedNumber) {
-        m_compactNumber = p_compactedNumber;
-    }
-
-    @Override
     public void importObject(final Importable p_object) {
         p_object.importObject(this);
     }
@@ -91,9 +77,10 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     public boolean readBoolean(final boolean p_bool) {
         // System.out.println("\t\tReading boolean: " + m_currentPosition + " (overflow)");
         if (m_currentPosition == m_limit) {
-            // TODO: Pool exceptions?
-            throw new ArrayIndexOutOfBoundsException();
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
         }
+
         return m_buffer[m_currentPosition++] == 1;
     }
 
@@ -101,8 +88,10 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     public byte readByte(final byte p_byte) {
         // System.out.println("\t\tReading byte: " + m_currentPosition + " (overflow)");
         if (m_currentPosition == m_limit) {
-            throw new ArrayIndexOutOfBoundsException();
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
         }
+
         return m_buffer[m_currentPosition++];
     }
 
@@ -111,17 +100,22 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
         // System.out.println("\t\tReading short: " + m_currentPosition + " (overflow)");
         short ret = 0;
 
-        // TODO: Do not use leftover array
-        if (m_currentPosition + Short.BYTES == m_limit) {
-            System.arraycopy(m_buffer, m_currentPosition, m_leftover, 0, m_limit - m_currentPosition);
-            m_currentPosition = m_limit;
-            throw new ArrayIndexOutOfBoundsException();
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
         }
 
         for (int i = 0; i < Short.BYTES; i++) {
-            ret <<= 8;
-            ret ^= (short) m_buffer[m_currentPosition++] & 0xff;
+            if (m_currentPosition == m_limit) {
+                // Store unfinished short and throw exception to continue later
+                m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
+                m_unfinishedOperation.setPrimitive(ret);
+                throw m_exception;
+            }
+
+            ret |= (m_buffer[m_currentPosition++] & 0xFF) << (Short.BYTES - 1 - i) * 8;
         }
+
         return ret;
     }
 
@@ -130,16 +124,22 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
         // System.out.println("\t\tReading int: " + m_currentPosition + " (overflow)");
         int ret = 0;
 
-        if (m_currentPosition + Integer.BYTES >= m_limit) {
-            System.arraycopy(m_buffer, m_currentPosition, m_leftover, 0, m_limit - m_currentPosition);
-            m_currentPosition = m_limit;
-            throw new ArrayIndexOutOfBoundsException();
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
         }
 
         for (int i = 0; i < Integer.BYTES; i++) {
-            ret <<= 8;
-            ret ^= (int) m_buffer[m_currentPosition++] & 0xff;
+            if (m_currentPosition == m_limit) {
+                // Store unfinished int and throw exception to continue later
+                m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
+                m_unfinishedOperation.setPrimitive(ret);
+                throw m_exception;
+            }
+
+            ret |= (m_buffer[m_currentPosition++] & 0xFF) << (Integer.BYTES - 1 - i) * 8;
         }
+
         return ret;
     }
 
@@ -148,16 +148,22 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
         // System.out.println("\t\tReading long: " + m_currentPosition + " (overflow)");
         long ret = 0;
 
-        if (m_currentPosition + Long.BYTES >= m_limit) {
-            System.arraycopy(m_buffer, m_currentPosition, m_leftover, 0, m_limit - m_currentPosition);
-            m_currentPosition = m_limit;
-            throw new ArrayIndexOutOfBoundsException();
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
         }
 
         for (int i = 0; i < Long.BYTES; i++) {
-            ret <<= 8;
-            ret ^= (long) m_buffer[m_currentPosition++] & 0xff;
+            if (m_currentPosition == m_limit) {
+                // Store unfinished long and throw exception to continue later
+                m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
+                m_unfinishedOperation.setPrimitive(ret);
+                throw m_exception;
+            }
+
+            ret |= ((long) m_buffer[m_currentPosition++] & 0xFF) << (Long.BYTES - 1 - i) * 8;
         }
+
         return ret;
     }
 
@@ -176,35 +182,46 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     @Override
     public int readCompactNumber(int p_int) {
         // System.out.println("\t\tReading compact number: " + m_currentPosition + " (overflow)");
-        Arrays.fill(m_compactNumber, (byte) 0);
-        int i;
-        for (i = 0; i < Integer.BYTES; i++) {
-            m_compactNumber[i] = readByte((byte) 0);
-            // System.out.println(m_compactNumber[i]);
-            if ((m_compactNumber[i] & 0x80) == 0) {
+        int ret = 0;
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
+        for (int i = 0; i < Integer.BYTES; i++) {
+            if (m_currentPosition == m_limit) {
+                // Store unfinished compact number and start index of unfinished compact number (needed in underflow importer)
+                // Throw exception to continue later
+                m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
+                m_unfinishedOperation.setPrimitive(ret);
+                throw m_exception;
+            }
+
+            int tmp = m_buffer[m_currentPosition++];
+            // Compact numbers are little-endian!
+            ret |= (tmp & 0x7F) << i * 7;
+            if ((tmp & 0x80) == 0) {
+                // Highest bit unset -> no more bytes to come for this number
                 break;
             }
         }
-
-        return CompactNumber.decompact(m_compactNumber, 0, i);
+        return ret;
     }
 
     @Override
     public String readString(final String p_string) {
-        // System.out.println("\t\tReading string: " + m_currentPosition + " (overflow)");
-        byte[] arr = new byte[readCompactNumber(0)];
-        try {
-            readBytes(arr);
-        } catch (final ArrayIndexOutOfBoundsException ignore) {
-            // Return incomplete string to continue later
-            return new String(arr);
-        }
-
-        return new String(arr);
+        return new String(readByteArray(null));
     }
 
     @Override
     public int readBytes(final byte[] p_array) {
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
         return readBytes(p_array, 0, p_array.length);
     }
 
@@ -212,10 +229,17 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     public int readBytes(final byte[] p_array, final int p_offset, final int p_length) {
         // System.out.println("\t\tReading bytes (" + p_length + "): " + m_currentPosition + " (overflow)");
 
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
         if (m_currentPosition + p_length >= m_limit) {
             System.arraycopy(m_buffer, m_currentPosition, p_array, p_offset, m_limit - m_currentPosition);
+            // Do not store unfinished operation as partly de-serialized array will be passed anyway
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             m_currentPosition = m_limit;
-            throw new ArrayIndexOutOfBoundsException();
+            throw m_exception;
         }
 
         System.arraycopy(m_buffer, m_currentPosition, p_array, p_offset, p_length);
@@ -226,22 +250,53 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public int readShorts(final short[] p_array) {
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+        // Exception might be thrown in readShorts
+        // Do not store unfinished operation as partly de-serialized array will be passed anyway
         return readShorts(p_array, 0, p_array.length);
     }
 
     @Override
     public int readInts(final int[] p_array) {
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
+        // Exception might be thrown in readInts
+        // Do not store unfinished operation as partly de-serialized array will be passed anyway
         return readInts(p_array, 0, p_array.length);
     }
 
     @Override
     public int readLongs(final long[] p_array) {
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
+        // Exception might be thrown in readLongs
+        // Do not store unfinished operation as partly de-serialized array will be passed anyway
         return readLongs(p_array, 0, p_array.length);
     }
 
     @Override
     public int readShorts(final short[] p_array, final int p_offset, final int p_length) {
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
         for (int i = 0; i < p_length; i++) {
+            // Exception might be thrown in readShort
+            // Do not store unfinished operation as partly de-serialized array will be passed anyway
             p_array[p_offset + i] = readShort((short) 0);
         }
 
@@ -250,7 +305,15 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public int readInts(final int[] p_array, final int p_offset, final int p_length) {
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
         for (int i = 0; i < p_length; i++) {
+            // Exception might be thrown in readInt
+            // Do not store unfinished operation as partly de-serialized array will be passed anyway
             p_array[p_offset + i] = readInt(0);
         }
 
@@ -259,7 +322,15 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public int readLongs(final long[] p_array, final int p_offset, final int p_length) {
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
         for (int i = 0; i < p_length; i++) {
+            // Exception might be thrown in readLong
+            // Do not store unfinished operation as partly de-serialized array will be passed anyway
             p_array[p_offset + i] = readLong(0);
         }
 
@@ -269,41 +340,117 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     @Override
     public byte[] readByteArray(final byte[] p_array) {
         // System.out.println("\t\tReading byte array: " + m_currentPosition + " (overflow)");
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
+        int startPosition = m_currentPosition;
         byte[] arr = new byte[readCompactNumber(0)];
-        readBytes(arr);
+        try {
+            readBytes(arr);
+        } catch (final ArrayIndexOutOfBoundsException e) {
+            // Store partly de-serialized array to be finished later
+            m_unfinishedOperation.setIndex(startPosition - m_startPosition);
+            m_unfinishedOperation.setObject(arr);
+
+            // System.out.println("Setting unfinished operation at position " + startPosition);
+
+            throw e;
+        }
         return arr;
     }
 
     @Override
     public short[] readShortArray(final short[] p_array) {
         // System.out.println("\t\tReading short array: " + m_currentPosition + " (overflow)");
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
+        int startPosition = m_currentPosition;
         short[] arr = new short[readCompactNumber(0)];
-        readShorts(arr);
+        try {
+            readShorts(arr);
+        } catch (final ArrayIndexOutOfBoundsException e) {
+            // Store partly de-serialized array to be finished later
+            m_unfinishedOperation.setIndex(startPosition - m_startPosition);
+            m_unfinishedOperation.setObject(arr);
+            throw e;
+        }
+
         return arr;
     }
 
     @Override
     public int[] readIntArray(final int[] p_array) {
         // System.out.println("\t\tReading int array: " + m_currentPosition + " (overflow)");
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
+        int startPosition = m_currentPosition;
         int[] arr = new int[readCompactNumber(0)];
-        readInts(arr);
+        try {
+            readInts(arr);
+        } catch (final ArrayIndexOutOfBoundsException e) {
+            // Store partly de-serialized array to be finished later
+            m_unfinishedOperation.setIndex(startPosition - m_startPosition);
+            m_unfinishedOperation.setObject(arr);
+            throw e;
+        }
+
         return arr;
     }
 
     @Override
     public long[] readLongArray(final long[] p_array) {
         // System.out.println("\t\tReading long array: " + m_currentPosition + " (overflow)");
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
+        int startPosition = m_currentPosition;
         long[] arr = new long[readCompactNumber(0)];
-        readLongs(arr);
+        try {
+            readLongs(arr);
+        } catch (final ArrayIndexOutOfBoundsException e) {
+            // Store partly de-serialized array to be finished later
+            m_unfinishedOperation.setIndex(startPosition - m_startPosition);
+            m_unfinishedOperation.setObject(arr);
+            throw e;
+        }
+
         return arr;
     }
 
     @Override
     public String[] readStringArray(final String[] p_array) {
         // System.out.println("\t\tReading string array: " + m_currentPosition + " (overflow)");
+
+        if (m_currentPosition == m_limit) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
+
+        int startPosition = m_currentPosition;
         String[] strings = new String[readCompactNumber(0)];
-        for (int i = 0; i < strings.length; i++) {
-            strings[i] = readString(null);
+        try {
+            for (int i = 0; i < strings.length; i++) {
+                strings[i] = readString(null);
+            }
+        } catch (final ArrayIndexOutOfBoundsException e) {
+            // Store partly de-serialized array to be finished later
+            m_unfinishedOperation.setIndex(startPosition - m_startPosition);
+            m_unfinishedOperation.setObject(strings);
+            throw e;
         }
 
         return strings;

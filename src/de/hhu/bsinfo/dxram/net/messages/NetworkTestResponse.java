@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxram.net.messages;
 
+import java.util.Arrays;
+
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractResponse;
@@ -48,6 +50,7 @@ public class NetworkTestResponse extends AbstractResponse {
         super(p_request, NetworkMessages.SUBTYPE_TEST_RESPONSE);
 
         m_data = new byte[p_payloadSize];
+        Arrays.fill(m_data, (byte) 2);
     }
 
     @Override

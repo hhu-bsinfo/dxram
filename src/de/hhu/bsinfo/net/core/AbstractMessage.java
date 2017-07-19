@@ -32,10 +32,9 @@ public abstract class AbstractMessage {
      *  3b        + 1b   + 1b      + 1b                          + 4b           = 10 bytes
      */
     static final byte HEADER_SIZE = 10;
-    static final byte PAYLOAD_SIZE_LENGTH = 4;
+    static final byte MESSAGE_ID_LENGTH = 3;
     // Constants
     private static final int INVALID_MESSAGE_ID = -1;
-    private static final byte DEFAULT_MESSAGE_TYPE = 0;
     private static final byte DEFAULT_TYPE = 0;
     private static final byte DEFAULT_SUBTYPE = 0;
 
@@ -341,13 +340,10 @@ public abstract class AbstractMessage {
                 m_messageID = getNextMessageID();
             }
 
-            // Put 3 byte message ID
-            exporter.writeByte((byte) (m_messageID >>> 16));
-            exporter.writeByte((byte) (m_messageID >>> 8));
-            exporter.writeByte((byte) m_messageID);
-
-            System.out.println("Exporting " + m_messageID + ", " + this);
-
+            // Put message ID (default 3 byte)
+            for (int i = 0; i < AbstractMessage.MESSAGE_ID_LENGTH; i++) {
+                exporter.writeByte((byte) (m_messageID >> (AbstractMessage.MESSAGE_ID_LENGTH - 1 - i) * 8 & 0xFF));
+            }
             exporter.writeByte(m_type);
             exporter.writeByte(m_subtype);
             exporter.writeByte((byte) ((m_messageType << 4) + (m_exclusivity ? 1 : 0)));

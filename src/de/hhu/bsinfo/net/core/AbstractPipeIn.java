@@ -165,21 +165,21 @@ public abstract class AbstractPipeIn {
         importer = m_importers.getImporter(p_buffer.remaining() < AbstractMessage.HEADER_SIZE);
         importer.setBuffer(p_buffer.array(), p_buffer.position(), p_buffer.limit());
 
-        // System.out.println("Reading header; " + p_buffer);
+        //System.out.println("Reading header; " + p_buffer);
 
         try {
             importer.importObject(m_currentHeader);
         } catch (final ArrayIndexOutOfBoundsException e) {
             // Header is incomplete continue later
-            //System.out.println("Out of bounds during reading header; " + p_buffer);
-            System.out.println("Out of bounds during reading header; position: " + p_buffer.remaining());
+            // System.out.println("Out of bounds during reading header; " + p_buffer);
+            //System.out.println("Out of bounds during reading header; position: " + p_buffer.remaining());
             p_buffer.position(importer.getPosition());
             m_importers.returnImporter(importer, false);
             return false;
         }
         p_buffer.position(importer.getPosition());
         m_importers.returnImporter(importer, true);
-        // System.out.println("Finished reading header; " + p_buffer);
+        //System.out.println("Finished reading header; " + p_buffer);
 
         return true;
     }
@@ -222,7 +222,7 @@ public abstract class AbstractPipeIn {
         AbstractResponse response;
         AbstractMessageImporter importer;
 
-        // System.out.println("Reading payload; " + p_buffer + ", " + payloadSize);
+        //System.out.println("Reading payload; " + p_buffer + ", " + payloadSize);
 
         // hack:
         // to avoid copying data multiple times, some responses use the same objects provided
@@ -242,7 +242,7 @@ public abstract class AbstractPipeIn {
                         "Request null for " + m_currentMessage.getType() + "," + m_currentHeader.getSubtype() + "; " + m_currentMessage.getMessageID() + ", " +
                                 m_currentMessage.isResponse() + ", " + m_currentMessage.isExclusive());
 
-                p_buffer.position(p_buffer.position() + payloadSize);
+                p_buffer.position(Math.max(p_buffer.position() + payloadSize, p_buffer.limit()));
                 // Request is not available, probably because of a time-out
                 // System.out.println("Aborting reading payload: Request not available");
                 m_currentMessage = null;

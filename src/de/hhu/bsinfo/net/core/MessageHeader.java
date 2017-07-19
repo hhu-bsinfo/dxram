@@ -69,20 +69,14 @@ class MessageHeader implements Importable {
 
     @Override
     public void importObject(Importer p_importer) {
-        int tmp = p_importer.readByte((byte) 0);
-        if (tmp != 0) {
-            m_messageID |= (tmp & 0xFF) << 16;
+        // Read message ID (default 3 byte)
+        int tmp;
+        for (int i = 0; i < AbstractMessage.MESSAGE_ID_LENGTH; i++) {
+            tmp = p_importer.readByte((byte) 0);
+            if (tmp != 0) {
+                m_messageID |= (tmp & 0xFF) << (AbstractMessage.MESSAGE_ID_LENGTH - 1 - i) * 8;
+            }
         }
-        tmp = p_importer.readByte((byte) 0);
-        if (tmp != 0) {
-            m_messageID |= (tmp & 0xFF) << 8;
-        }
-        tmp = p_importer.readByte((byte) 0);
-        if (tmp != 0) {
-            m_messageID |= tmp & 0xFF;
-        }
-
-        System.out.println("Importing " + m_messageID);
 
         m_type = p_importer.readByte(m_type);
         m_subtype = p_importer.readByte(m_subtype);
@@ -92,6 +86,6 @@ class MessageHeader implements Importable {
 
     @Override
     public int sizeofObject() {
-        return 10;
+        return AbstractMessage.HEADER_SIZE;
     }
 }

@@ -52,29 +52,16 @@ public final class CompactNumber {
      * @return the byte array with number in it
      */
     public static byte[] compact(final int p_number) {
-        byte[] ret = null;
+        byte[] ret;
 
-        if (p_number <= 0x7F) {
-            ret = new byte[1];
-            ret[0] = (byte) ((byte) p_number & 0x7F);
-        } else if (p_number <= 0x3FFF) {
-            ret = new byte[2];
-            ret[0] = (byte) ((byte) p_number & 0x7F | 0x80);
-            ret[1] = (byte) ((byte) (p_number >> 7) & 0x7F);
-        } else if (p_number <= 0x1FFFFF) {
-            ret = new byte[3];
-            ret[0] = (byte) ((byte) p_number & 0x7F | 0x80);
-            ret[1] = (byte) ((byte) (p_number >> 7) & 0x7F | 0x80);
-            ret[2] = (byte) ((byte) (p_number >> 14) & 0x7F);
-        } else if (p_number <= 0xFFFFFFF) {
-            ret = new byte[4];
-            ret[0] = (byte) ((byte) p_number & 0x7F | 0x80);
-            ret[1] = (byte) ((byte) (p_number >> 7) & 0x7F | 0x80);
-            ret[2] = (byte) ((byte) (p_number >> 14) & 0x7F | 0x80);
-            ret[3] = (byte) ((byte) (p_number >> 21) & 0x7F);
-        } else {
-            System.out.println("Number to large to compact. Maximum is " + Math.pow(2, 28));
+        int length = getSizeOfNumber(p_number);
+        ret = new byte[length];
+
+        int i;
+        for (i = 0; i < length - 1; i++) {
+            ret[i] = (byte) ((byte) (p_number >> 7 * i) & 0x7F | 0x80);
         }
+        ret[i] = (byte) ((byte) (p_number >> 7 * i) & 0x7F);
 
         return ret;
     }

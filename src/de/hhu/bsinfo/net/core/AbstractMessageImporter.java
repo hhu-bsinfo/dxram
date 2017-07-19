@@ -32,16 +32,8 @@ public abstract class AbstractMessageImporter implements Importer {
 
     public abstract int getNumberOfReadBytes();
 
-    public abstract byte[] getLeftover();
-
-    public abstract byte[] getCompactedNumber();
-
     protected abstract void setBuffer(byte[] p_buffer, int p_position, int p_limit);
 
     public abstract void setNumberOfReadBytes(int p_numberOfReadBytes);
-
-    public abstract void setLeftover(byte[] p_leftover);
-
-    public abstract void setCompactedNumber(byte[] p_compactedNumber);
 
 }
