@@ -35,14 +35,16 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
     // The unfinished operation from last read (if there is one)
     private UnfinishedImporterOperation m_unfinishedOperation;
 
-    // This is the end of given buffer (might differ from buffer's length)
-    private int m_limit;
-
     /**
      * Constructor
      */
     NIOMessageImporterUnderflow(final UnfinishedImporterOperation p_unfinishedOperation) {
         m_unfinishedOperation = p_unfinishedOperation;
+    }
+
+    @Override
+    protected int getPosition() {
+        return m_currentPosition;
     }
 
     @Override
@@ -428,7 +430,17 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
         }
     }
 
-    void setBuffer(final byte[] p_buffer, final int p_position, final int p_limit) {
+    /**
+     * Set buffer to write into, offset and limit.
+     *
+     * @param p_buffer
+     *         the byte array
+     * @param p_position
+     *         the offset
+     * @param p_limit
+     *         the limit
+     */
+    void setBuffer(final byte[] p_buffer, final int p_position) {
         m_buffer = p_buffer;
         m_currentPosition = p_position;
     }

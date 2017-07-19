@@ -270,20 +270,6 @@ public abstract class AbstractMessage {
         return HEADER_SIZE + getPayloadLength();
     }
 
-    /**
-     * Serialize the message into given byte buffer
-     *
-     * @param p_buffer
-     *         the ByteBuffer to store serialized message
-     * @param p_messageSize
-     *         the message to serialize
-     * @throws NetworkException
-     *         if message could not be serialized
-     */
-    protected final void serialize(final byte[] p_buffer, final int p_offset, final int p_messageSize, final boolean p_hasOverflow) throws NetworkException {
-        fillBuffer(p_buffer, p_offset, p_messageSize - HEADER_SIZE, p_hasOverflow);
-    }
-
     // @formatter:off
 
     /**

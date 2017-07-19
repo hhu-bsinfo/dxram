@@ -18,16 +18,15 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
     private int m_skipBytes;
     private int m_skippedBytes;
 
-    // This is the end of given buffer (might differ from buffer's length)
-    private int m_limit;
-
     private UnfinishedImporterOperation m_unfinishedOperation;
-
-    // Re-use exception to avoid "new"
-    private ArrayIndexOutOfBoundsException m_exception;
 
     IBMessageImporterUnderflow(final UnfinishedImporterOperation p_unfinishedOperation) {
         m_unfinishedOperation = p_unfinishedOperation;
+    }
+
+    @Override
+    protected int getPosition() {
+        return m_currentPosition;
     }
 
     @Override

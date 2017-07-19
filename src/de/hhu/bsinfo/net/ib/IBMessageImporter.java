@@ -22,6 +22,11 @@ class IBMessageImporter extends AbstractMessageImporter {
     }
 
     @Override
+    protected int getPosition() {
+        return m_currentPosition;
+    }
+
+    @Override
     public int getNumberOfReadBytes() {
         return m_currentPosition - m_startPosition;
     }
@@ -38,9 +43,9 @@ class IBMessageImporter extends AbstractMessageImporter {
 
     @Override
     public boolean readBoolean(final boolean p_bool) {
-        boolean b = UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) == 1;
+        boolean v = UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) == 1;
         m_currentPosition++;
-        return b;
+        return v;
     }
 
     @Override

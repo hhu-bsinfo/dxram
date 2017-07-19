@@ -36,14 +36,6 @@ public abstract class AbstractMessageExporter implements Exporter {
     protected abstract int getNumberOfWrittenBytes();
 
     /**
-     * Set buffer to write into.
-     *
-     * @param p_buffer
-     *         the byte array
-     */
-    protected abstract void setBuffer(byte[] p_buffer);
-
-    /**
      * Set buffer offset
      *
      * @param p_position

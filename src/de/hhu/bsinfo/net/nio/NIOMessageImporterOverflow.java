@@ -46,6 +46,11 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     }
 
     @Override
+    protected int getPosition() {
+        return m_currentPosition;
+    }
+
+    @Override
     public int getNumberOfReadBytes() {
         return m_currentPosition - m_startPosition;
     }

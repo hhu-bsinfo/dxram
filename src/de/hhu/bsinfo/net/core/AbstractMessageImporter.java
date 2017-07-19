@@ -43,18 +43,6 @@ public abstract class AbstractMessageImporter implements Importer {
     public abstract int getNumberOfReadBytes();
 
     /**
-     * Set buffer to write into, offset and limit.
-     *
-     * @param p_buffer
-     *         the byte array
-     * @param p_position
-     *         the offset
-     * @param p_limit
-     *         the limit
-     */
-    protected abstract void setBuffer(byte[] p_buffer, int p_position, int p_limit);
-
-    /**
      * Set the number of read bytes. Only relevant for underflow importer to skip already finished operations.
      *
      * @param p_numberOfReadBytes

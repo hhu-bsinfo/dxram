@@ -59,7 +59,7 @@ class NIOMessageImporterCollection {
             } else {*/
 
             // mirror ByteBuffer position and limit (range) to importer
-            m_importerUnderflow.setBuffer(p_buffer.array(), p_buffer.position(), p_buffer.limit());
+            m_importerUnderflow.setBuffer(p_buffer.array(), p_buffer.position());
             ret = m_importerUnderflow;
             //}
         } else if (p_hasOverflow) {

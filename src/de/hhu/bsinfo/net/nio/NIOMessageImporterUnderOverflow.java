@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.net.nio;
 
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractMessageImporterCollection;
+import de.hhu.bsinfo.net.core.UnfinishedImporterOperation;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
@@ -37,7 +37,7 @@ class NIOMessageImporterUnderOverflow extends AbstractMessageImporter {
     private int m_limit;
 
     // The unfinished operation from last read (if there is one) and object to store the new unfinished operation in (if there is one)
-    private AbstractMessageImporterCollection.UnfinishedOperation m_unfinishedOperation;
+    private UnfinishedImporterOperation m_unfinishedOperation;
 
     // Re-use exception to avoid "new"
     private ArrayIndexOutOfBoundsException m_exception;
@@ -45,7 +45,7 @@ class NIOMessageImporterUnderOverflow extends AbstractMessageImporter {
     /**
      * Constructor
      */
-    NIOMessageImporterUnderOverflow(final AbstractMessageImporterCollection.UnfinishedOperation p_unfinishedOperation) {
+    NIOMessageImporterUnderOverflow(final UnfinishedImporterOperation p_unfinishedOperation) {
         m_unfinishedOperation = p_unfinishedOperation;
         m_exception = new ArrayIndexOutOfBoundsException();
     }
@@ -58,14 +58,6 @@ class NIOMessageImporterUnderOverflow extends AbstractMessageImporter {
     @Override
     public int getNumberOfReadBytes() {
         return m_currentPosition - m_startPosition + m_skipBytes;
-    }
-
-    @Override
-    protected void setBuffer(final byte[] p_buffer, final int p_position, final int p_limit) {
-        m_buffer = p_buffer;
-        m_currentPosition = p_position;
-        m_startPosition = p_position;
-        m_limit = p_limit;
     }
 
     @Override
@@ -694,4 +686,10 @@ class NIOMessageImporterUnderOverflow extends AbstractMessageImporter {
         }
     }
 
+    void setBuffer(final byte[] p_buffer, final int p_position, final int p_limit) {
+        m_buffer = p_buffer;
+        m_currentPosition = p_position;
+        m_startPosition = p_position;
+        m_limit = p_limit;
+    }
 }
