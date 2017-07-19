@@ -70,12 +70,14 @@ class IBMessageExporterOverflow extends AbstractMessageExporter {
         } else {
             int i;
             for (i = 0; i < 2 && m_currentPosition < m_bufferSize; i++) {
-                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> (Short.BYTES - 1 - i) * 8 & 0xFF));
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> i * 8 & 0xFF));
                 m_currentPosition++;
             }
             m_currentPosition = 0;
             for (int j = i; j < Short.BYTES; j++) {
-                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> (Short.BYTES - 1 - j) * 8 & 0xFF));
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> j * 8 & 0xFF));
                 m_currentPosition++;
             }
         }
@@ -89,12 +91,14 @@ class IBMessageExporterOverflow extends AbstractMessageExporter {
         } else {
             int i;
             for (i = 0; i < Integer.BYTES && m_currentPosition < m_bufferSize; i++) {
-                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> (Integer.BYTES - 1 - i) * 8 & 0xFF));
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> i * 8 & 0xFF));
                 m_currentPosition++;
             }
             m_currentPosition = 0;
             for (int j = i; j < Integer.BYTES; j++) {
-                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> (Integer.BYTES - 1 - j) * 8 & 0xFF));
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> j * 8 & 0xFF));
                 m_currentPosition++;
             }
         }
@@ -108,12 +112,14 @@ class IBMessageExporterOverflow extends AbstractMessageExporter {
         } else {
             int i;
             for (i = 0; i < Long.BYTES && m_currentPosition < m_bufferSize; i++) {
-                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> (Long.BYTES - 1 - i) * 8 & 0xFF));
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> i * 8 & 0xFF));
                 m_currentPosition++;
             }
             m_currentPosition = 0;
             for (int j = i; j < Long.BYTES; j++) {
-                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> (Long.BYTES - 1 - j) * 8 & 0xFF));
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> j * 8 & 0xFF));
                 m_currentPosition++;
             }
         }
