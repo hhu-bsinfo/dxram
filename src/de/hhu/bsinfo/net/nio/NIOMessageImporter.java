@@ -34,11 +34,6 @@ class NIOMessageImporter extends AbstractMessageImporter {
     }
 
     @Override
-    protected int getPosition() {
-        return m_currentPosition;
-    }
-
-    @Override
     public int getNumberOfReadBytes() {
         return m_currentPosition - m_startPosition;
     }
@@ -46,13 +41,6 @@ class NIOMessageImporter extends AbstractMessageImporter {
     @Override
     public void setNumberOfReadBytes(int p_numberOfReadBytes) {
         // Not relevant for this importer
-    }
-
-    @Override
-    protected void setBuffer(final byte[] p_buffer, final int p_position, final int p_limit) {
-        m_buffer = p_buffer;
-        m_currentPosition = p_position;
-        m_startPosition = p_position;
     }
 
     @Override
@@ -109,7 +97,7 @@ class NIOMessageImporter extends AbstractMessageImporter {
     }
 
     @Override
-    public int readCompactNumber(int p_int) {
+    public int readCompactNumber(final int p_int) {
         int ret = 0;
 
         for (int i = 0; i < Integer.BYTES; i++) {
@@ -223,4 +211,10 @@ class NIOMessageImporter extends AbstractMessageImporter {
         return strings;
     }
 
+    void setBuffer(final byte[] p_buffer, final int p_position, final int p_limit) {
+        m_buffer = p_buffer;
+
+        m_currentPosition = p_position;
+        m_startPosition = p_position;
+    }
 }

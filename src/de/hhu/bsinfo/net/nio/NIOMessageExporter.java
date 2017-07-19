@@ -35,17 +35,12 @@ class NIOMessageExporter extends AbstractMessageExporter {
     }
 
     @Override
-    protected int getNumberOfWrittenBytes() {
+    public int getNumberOfWrittenBytes() {
         return m_currentPosition - m_startPosition;
     }
 
     @Override
-    protected void setBuffer(final byte[] p_buffer) {
-        m_buffer = p_buffer;
-    }
-
-    @Override
-    protected void setPosition(final int p_position) {
+    public void setPosition(final int p_position) {
         m_currentPosition = p_position;
         m_startPosition = p_position;
     }
@@ -56,7 +51,7 @@ class NIOMessageExporter extends AbstractMessageExporter {
     }
 
     @Override
-    public void writeBoolean(boolean p_v) {
+    public void writeBoolean(final boolean p_v) {
         m_buffer[m_currentPosition++] = (byte) (p_v ? 1 : 0);
     }
 
@@ -199,4 +194,7 @@ class NIOMessageExporter extends AbstractMessageExporter {
         }
     }
 
+    public void setBuffer(final byte[] p_buffer) {
+        m_buffer = p_buffer;
+    }
 }

@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.net.nio;
 
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractMessageImporterCollection;
+import de.hhu.bsinfo.net.core.UnfinishedImporterOperation;
 import de.hhu.bsinfo.utils.serialization.Importable;
 
 /**
@@ -32,7 +32,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     private int m_limit;
 
     // Object to store the unfinished operation in (if there is one)
-    private AbstractMessageImporterCollection.UnfinishedOperation m_unfinishedOperation;
+    private UnfinishedImporterOperation m_unfinishedOperation;
 
     // Re-use exception to avoid "new"
     private ArrayIndexOutOfBoundsException m_exception;
@@ -40,14 +40,9 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     /**
      * Constructor
      */
-    NIOMessageImporterOverflow(final AbstractMessageImporterCollection.UnfinishedOperation p_unfinishedOperation) {
+    NIOMessageImporterOverflow(final UnfinishedImporterOperation p_unfinishedOperation) {
         m_unfinishedOperation = p_unfinishedOperation;
         m_exception = new ArrayIndexOutOfBoundsException();
-    }
-
-    @Override
-    protected int getPosition() {
-        return m_currentPosition;
     }
 
     @Override
@@ -58,14 +53,6 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     @Override
     public void setNumberOfReadBytes(int p_numberOfReadBytes) {
         // Not relevant for this importer
-    }
-
-    @Override
-    protected void setBuffer(final byte[] p_buffer, final int p_position, final int p_limit) {
-        m_buffer = p_buffer;
-        m_currentPosition = p_position;
-        m_startPosition = p_position;
-        m_limit = p_limit;
     }
 
     @Override
@@ -173,7 +160,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     }
 
     @Override
-    public int readCompactNumber(int p_int) {
+    public int readCompactNumber(final int p_int) {
         int ret = 0;
 
         if (m_currentPosition == m_limit) {
@@ -433,4 +420,11 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
         return strings;
     }
 
+    void setBuffer(final byte[] p_buffer, final int p_position, final int p_limit) {
+        m_buffer = p_buffer;
+
+        m_currentPosition = p_position;
+        m_startPosition = p_position;
+        m_limit = p_limit;
+    }
 }

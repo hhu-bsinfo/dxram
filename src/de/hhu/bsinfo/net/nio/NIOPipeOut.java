@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.net.NodeMap;
 import de.hhu.bsinfo.net.core.AbstractFlowControl;
+import de.hhu.bsinfo.net.core.AbstractOutgoingRingBuffer;
 import de.hhu.bsinfo.net.core.AbstractPipeOut;
 import de.hhu.bsinfo.net.core.NetworkException;
 
@@ -18,6 +19,8 @@ import de.hhu.bsinfo.net.core.NetworkException;
 public class NIOPipeOut extends AbstractPipeOut {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NIOPipeOut.class.getSimpleName());
 
+    private final int m_bufferSize;
+
     private SocketChannel m_outgoingChannel;
     private final ChangeOperationsRequest m_writeOperation;
 
@@ -26,8 +29,11 @@ public class NIOPipeOut extends AbstractPipeOut {
     private final ByteBuffer m_flowControlBytes;
 
     NIOPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl,
-            final NIOSelector p_nioSelector, final NodeMap p_nodeMap, final NIOConnection p_parentConnection) {
-        super(p_ownNodeId, p_destinationNodeId, p_bufferSize, p_flowControl, false);
+            final AbstractOutgoingRingBuffer p_outgoingBuffer, final NIOSelector p_nioSelector, final NodeMap p_nodeMap,
+            final NIOConnection p_parentConnection) {
+        super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_outgoingBuffer);
+
+        m_bufferSize = p_bufferSize;
 
         m_outgoingChannel = null;
         m_writeOperation = new ChangeOperationsRequest(p_parentConnection, NIOSelector.WRITE);
@@ -48,11 +54,11 @@ public class NIOPipeOut extends AbstractPipeOut {
             m_outgoingChannel.socket().setSoTimeout(0);
             m_outgoingChannel.socket().setTcpNoDelay(true);
             m_outgoingChannel.socket().setReceiveBufferSize(32);
-            m_outgoingChannel.socket().setSendBufferSize(getBufferSize());
+            m_outgoingChannel.socket().setSendBufferSize(m_bufferSize);
             int sendBufferSize = m_outgoingChannel.socket().getSendBufferSize();
-            if (sendBufferSize < getBufferSize()) {
+            if (sendBufferSize < m_bufferSize) {
                 // #if LOGGER >= WARN
-                LOGGER.warn("Send buffer size could not be set properly. Check OS settings! Requested: %d, actual: %d", getBufferSize(), sendBufferSize);
+                LOGGER.warn("Send buffer size could not be set properly. Check OS settings! Requested: %d, actual: %d", m_bufferSize, sendBufferSize);
                 // #endif /* LOGGER >= WARN */
             }
 
@@ -62,6 +68,13 @@ public class NIOPipeOut extends AbstractPipeOut {
         }
     }
 
+    // for NIO (initial message sending node id)
+    void postBuffer(final ByteBuffer p_buffer) throws NetworkException {
+        System.out.println("Warning: Large messages currently not supported!");
+        ((NIOOutgoingRingBuffer) getOutgoingQueue()).pushNodeID(p_buffer);
+        bufferPosted(p_buffer.remaining());
+    }
+
     /**
      * Writes to the given connection
      *
@@ -69,13 +82,13 @@ public class NIOPipeOut extends AbstractPipeOut {
      * @throws IOException
      *         if the data could not be written
      */
-    public boolean write() throws IOException {
+    boolean write() throws IOException {
         boolean ret = true;
         int writtenBytes = 0;
         int bytes;
         ByteBuffer buffer;
 
-        buffer = getOutgoingQueue().popFront();
+        buffer = ((NIOOutgoingRingBuffer) getOutgoingQueue()).popFront();
         if (buffer != null) {
             while (buffer.remaining() > 0) {
 
@@ -124,7 +137,7 @@ public class NIOPipeOut extends AbstractPipeOut {
     }
 
     @Override
-    protected void bufferPosted() {
+    protected void bufferPosted(final int p_size) {
         // Change operation (read <-> write) and/or connection
         m_nioSelector.changeOperationInterestAsync(m_writeOperation);
     }

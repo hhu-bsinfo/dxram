@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.net.nio;
 
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractMessageImporterCollection;
+import de.hhu.bsinfo.net.core.UnfinishedImporterOperation;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
@@ -33,29 +33,21 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
     private int m_skippedBytes;
 
     // The unfinished operation from last read (if there is one)
-    private AbstractMessageImporterCollection.UnfinishedOperation m_unfinishedOperation;
+    private UnfinishedImporterOperation m_unfinishedOperation;
+
+    // This is the end of given buffer (might differ from buffer's length)
+    private int m_limit;
 
     /**
      * Constructor
      */
-    NIOMessageImporterUnderflow(final AbstractMessageImporterCollection.UnfinishedOperation p_unfinishedOperation) {
+    NIOMessageImporterUnderflow(final UnfinishedImporterOperation p_unfinishedOperation) {
         m_unfinishedOperation = p_unfinishedOperation;
-    }
-
-    @Override
-    protected int getPosition() {
-        return m_currentPosition;
     }
 
     @Override
     public int getNumberOfReadBytes() {
         return m_currentPosition + m_skipBytes;
-    }
-
-    @Override
-    protected void setBuffer(final byte[] p_buffer, final int p_position, final int p_limit) {
-        m_buffer = p_buffer;
-        m_currentPosition = p_position;
     }
 
     @Override
@@ -436,4 +428,8 @@ class NIOMessageImporterUnderflow extends AbstractMessageImporter {
         }
     }
 
+    void setBuffer(final byte[] p_buffer, final int p_position, final int p_limit) {
+        m_buffer = p_buffer;
+        m_currentPosition = p_position;
+    }
 }

@@ -35,17 +35,12 @@ class NIOMessageExporterOverflow extends AbstractMessageExporter {
     }
 
     @Override
-    protected int getNumberOfWrittenBytes() {
+    public int getNumberOfWrittenBytes() {
         return m_buffer.length - m_startPosition + m_currentPosition;
     }
 
     @Override
-    protected void setBuffer(final byte[] p_buffer) {
-        m_buffer = p_buffer;
-    }
-
-    @Override
-    protected void setPosition(final int p_position) {
+    public void setPosition(final int p_position) {
         m_currentPosition = p_position;
         m_startPosition = p_position;
     }
@@ -53,7 +48,6 @@ class NIOMessageExporterOverflow extends AbstractMessageExporter {
     @Override
     public void exportObject(final Exportable p_object) {
         p_object.exportObject(this);
-        m_currentPosition += p_object.sizeofObject();
     }
 
     @Override
@@ -167,8 +161,8 @@ class NIOMessageExporterOverflow extends AbstractMessageExporter {
             System.arraycopy(p_array, p_offset, m_buffer, m_currentPosition, p_length);
             m_currentPosition += p_length;
         } else {
-            System.arraycopy(p_array, 0, m_buffer, m_currentPosition, m_buffer.length - m_currentPosition);
-            System.arraycopy(p_array, m_buffer.length - m_currentPosition, m_buffer, 0, p_length - (m_buffer.length - m_currentPosition));
+            System.arraycopy(p_array, p_offset, m_buffer, m_currentPosition, m_buffer.length - m_currentPosition);
+            System.arraycopy(p_array, p_offset + m_buffer.length - m_currentPosition, m_buffer, 0, p_length - (m_buffer.length - m_currentPosition));
             m_currentPosition = p_length - (m_buffer.length - m_currentPosition) + 1;
         }
 
@@ -249,4 +243,7 @@ class NIOMessageExporterOverflow extends AbstractMessageExporter {
         }
     }
 
+    void setBuffer(final byte[] p_buffer) {
+        m_buffer = p_buffer;
+    }
 }

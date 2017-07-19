@@ -14,14 +14,13 @@
 package de.hhu.bsinfo.net.nio;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
-import de.hhu.bsinfo.net.core.AbstractMessageExporterCollection;
 
 /**
  * Exporter collection.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
-public class NIOMessageExporterCollection extends AbstractMessageExporterCollection {
+class NIOMessageExporterCollection {
 
     private AbstractMessageExporter m_exporter;
     private AbstractMessageExporter m_exporterWithOverflow;
@@ -29,14 +28,13 @@ public class NIOMessageExporterCollection extends AbstractMessageExporterCollect
     /**
      * Constructor
      */
-    public NIOMessageExporterCollection() {
+    NIOMessageExporterCollection() {
         super();
         m_exporter = new NIOMessageExporter();
         m_exporterWithOverflow = new NIOMessageExporterOverflow();
     }
 
-    @Override
-    public AbstractMessageExporter getExporter(final boolean p_hasOverflow) {
+    AbstractMessageExporter getExporter(final boolean p_hasOverflow) {
         if (!p_hasOverflow) {
             return m_exporter;
         } else {

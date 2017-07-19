@@ -36,7 +36,7 @@ import de.hhu.bsinfo.net.core.RequestMap;
  *
  * @author Florian Klein, florian.klein@hhu.de, 18.03.2012
  */
-class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
+public class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NIOConnection.class.getSimpleName());
 
     private NIOSelector m_nioSelector;
@@ -52,9 +52,10 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
         super(p_ownNodeId);
 
         NIOFlowControl flowControl = new NIOFlowControl(p_destination, p_flowControlWindowSize, p_nioSelector, this);
+        NIOOutgoingRingBuffer outgoingBuffer = new NIOOutgoingRingBuffer(p_bufferSize);
         NIOPipeIn pipeIn =
                 new NIOPipeIn(p_ownNodeId, p_destination, flowControl, p_messageDirectory, p_requestMap, p_dataReceiver, p_bufferPool, p_messageCreator, this);
-        NIOPipeOut pipeOut = new NIOPipeOut(p_ownNodeId, p_destination, p_bufferSize, flowControl, p_nioSelector, p_nodeMap, this);
+        NIOPipeOut pipeOut = new NIOPipeOut(p_ownNodeId, p_destination, p_bufferSize, flowControl, outgoingBuffer, p_nioSelector, p_nodeMap, this);
 
         setPipes(pipeIn, pipeOut);
 
@@ -70,9 +71,10 @@ class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
         super(p_ownNodeId);
 
         NIOFlowControl flowControl = new NIOFlowControl(p_destination, p_flowControlWindowSize, p_nioSelector, this);
+        NIOOutgoingRingBuffer outgoingBuffer = new NIOOutgoingRingBuffer(p_bufferSize);
         NIOPipeIn pipeIn =
                 new NIOPipeIn(p_ownNodeId, p_destination, flowControl, p_messageDirectory, p_requestMap, p_dataReceiver, p_bufferPool, p_messageCreator, this);
-        NIOPipeOut pipeOut = new NIOPipeOut(p_ownNodeId, p_destination, p_bufferSize, flowControl, p_nioSelector, p_nodeMap, this);
+        NIOPipeOut pipeOut = new NIOPipeOut(p_ownNodeId, p_destination, p_bufferSize, flowControl, outgoingBuffer, p_nioSelector, p_nodeMap, this);
 
         setPipes(pipeIn, pipeOut);
 

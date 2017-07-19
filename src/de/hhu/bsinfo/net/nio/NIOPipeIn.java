@@ -8,10 +8,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.net.core.AbstractFlowControl;
+import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.net.core.AbstractPipeIn;
 import de.hhu.bsinfo.net.core.DataReceiver;
 import de.hhu.bsinfo.net.core.MessageCreator;
 import de.hhu.bsinfo.net.core.MessageDirectory;
+import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.net.core.RequestMap;
 
 /**
@@ -27,6 +29,10 @@ public class NIOPipeIn extends AbstractPipeIn {
 
     private final NIOConnection m_parentConnection;
 
+    private NIOMessageImporterCollection m_importers;
+
+    private ByteBuffer m_currentBuffer;
+
     public NIOPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
             final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver, final NIOBufferPool p_bufferPool,
             final MessageCreator p_messageCreator, final NIOConnection p_parentConnection) {
@@ -38,6 +44,8 @@ public class NIOPipeIn extends AbstractPipeIn {
         m_flowControlBytes = ByteBuffer.allocateDirect(Integer.BYTES);
 
         m_parentConnection = p_parentConnection;
+
+        m_importers = new NIOMessageImporterCollection();
     }
 
     public SocketChannel getChannel() {
@@ -48,6 +56,21 @@ public class NIOPipeIn extends AbstractPipeIn {
         m_incomingChannel = p_channel;
     }
 
+    public void processBuffer(final ByteBuffer p_buffer) throws NetworkException {
+        m_currentBuffer = p_buffer;
+
+        processBuffer(m_currentBuffer.remaining());
+    }
+
+    public void returnProcessedBuffer(final ByteBuffer p_buffer) {
+        m_bufferPool.returnBuffer(p_buffer);
+    }
+
+    @Override
+    public boolean isOpen() {
+        return m_incomingChannel != null && m_incomingChannel.isOpen();
+    }
+
     /**
      * Reads from the given connection
      * m_buffer needs to be synchronized externally
@@ -56,7 +79,7 @@ public class NIOPipeIn extends AbstractPipeIn {
      * @throws IOException
      *         if the data could not be read
      */
-    public boolean read() throws IOException {
+    boolean read() throws IOException {
         boolean ret = true;
         long readBytes;
         ByteBuffer buffer;
@@ -79,7 +102,7 @@ public class NIOPipeIn extends AbstractPipeIn {
                 // #endif /* LOGGER >= TRACE */
 
                 // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
-                while (!m_messageCreator.pushJob(m_parentConnection, buffer)) {
+                while (!m_messageCreator.pushJob(m_parentConnection, buffer, -1, -1)) {
                     // #if LOGGER == TRACE
                     LOGGER.trace("Network-Selector: Job queue is full!");
                     // #endif /* LOGGER == TRACE */
@@ -120,12 +143,16 @@ public class NIOPipeIn extends AbstractPipeIn {
     }
 
     @Override
-    public boolean isOpen() {
-        return m_incomingChannel != null && m_incomingChannel.isOpen();
+    protected AbstractMessageImporter getImporter(final boolean p_overflow) {
+        NIOMessageImporter importer;
+        importer = (NIOMessageImporter) m_importers.getImporter(m_currentBuffer, p_overflow);
+        return importer;
     }
 
     @Override
-    public void returnProcessedBuffer(final ByteBuffer p_buffer) {
-        m_bufferPool.returnBuffer(p_buffer);
+    protected void returnImporter(final AbstractMessageImporter p_importer, final boolean p_finished) {
+        // write back updated position from importer to ByteBuffer
+        m_currentBuffer.position(m_currentBuffer.position() + p_importer.getNumberOfReadBytes());
+        m_importers.returnImporter(p_importer, true);
     }
 }
