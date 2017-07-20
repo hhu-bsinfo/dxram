@@ -72,9 +72,7 @@ public class UnsafeMemory {
      * @return Number of read elements.
      */
     public static int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
-        for (int i = 0; i < p_length; i++) {
-            p_array[p_arrayOffset + i] = ms_unsafeHandler.getUnsafe().getByte(p_ptr + i);
-        }
+        ms_unsafeHandler.getUnsafe().copyMemory(null, p_ptr, p_array, p_arrayOffset, p_length);
 
         return p_length;
     }
@@ -264,9 +262,7 @@ public class UnsafeMemory {
      * @return Number of written elements
      */
     public static int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
-        for (int i = 0; i < p_length; i++) {
-            ms_unsafeHandler.getUnsafe().putByte(p_ptr + i, p_array[p_arrayOffset + i]);
-        }
+        ms_unsafeHandler.getUnsafe().copyMemory(p_array, p_arrayOffset, null, p_ptr, p_length);
 
         return p_length;
     }
