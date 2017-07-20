@@ -319,11 +319,10 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
                     .setRequestTimeOut((int) getConfig().getRequestTimeout().getMs()).setBufferSize((int) getConfig().getBufferSize().getBytes())
                     .setRequestMapSize(getConfig().getRequestMapEntryCount()).setMaxConnections(getConfig().getMaxConnections())
                     .setFlowControlWindow((int) getConfig().getFlowControlWindowSize().getBytes())
-                    .setConnectionTimeout((int) getConfig().getConnectionTimeout().getMs()).setBufferPoolSize(getConfig().getIbBufferPoolSize())
-                    .setMaxRecvReqs(getConfig().getIbMaxRecvReqs()).setMaxSendReqs(getConfig().getIbMaxSendReqs())
-                    .setFlowControlMaxRecvReqs(getConfig().getIbFlowControlMaxRecvReqs()).setFlowControlMaxSendReqs(getConfig().getIbFlowControlMaxSendReqs())
-                    .setSendThreads(getConfig().getIbSendThreads()).setRecvThreads(getConfig().getIbRecvThreads())
-                    .setEnableSignalHandler(getConfig().getIbEnableSignalHandler()).setEnableDebugThread(getConfig().getIbEnableDebugThread()).build();
+                    .setConnectionTimeout((int) getConfig().getConnectionTimeout().getMs()).setMaxRecvReqs(getConfig().getIbMaxRecvReqs())
+                    .setFlowControlMaxRecvReqs(getConfig().getIbFlowControlMaxRecvReqs()).setSendThreads(getConfig().getIbSendThreads())
+                    .setRecvThreads(getConfig().getIbRecvThreads()).setEnableSignalHandler(getConfig().getIbEnableSignalHandler())
+                    .setEnableDebugThread(getConfig().getIbEnableDebugThread()).build();
         }
 
         m_networkSystem = new NetworkSystem(config, new NodeMappings(m_boot));

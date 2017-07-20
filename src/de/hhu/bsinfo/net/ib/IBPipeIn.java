@@ -22,7 +22,7 @@ class IBPipeIn extends AbstractPipeIn {
 
     @Override
     public void returnProcessedBuffer(final Object p_unused, final long p_addr) {
-        // TODO return to IB context
+        JNIIbdxnet.returnRecvBuffer(p_addr);
     }
 
     @Override

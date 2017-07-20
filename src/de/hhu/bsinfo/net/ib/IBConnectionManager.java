@@ -66,9 +66,9 @@ public class IBConnectionManager extends AbstractConnectionManager
 
     public void init() {
         // can't call this in the constructor because it relies on the implemented interfaces for callbacks
-        if (!JNIIbdxnet.init(m_config.getOwnNodeId(), m_config.getMaxRecvReqs(), m_config.getMaxSendReqs(), m_config.getBufferSize(),
-                m_config.getFlowControlMaxRecvReqs(), m_config.getFlowControlMaxSendReqs(), m_config.getSendThreads(), m_config.getRecvThreads(),
-                m_config.getMaxConnections(), this, this, this, this, m_config.getEnableSignalHandler(), m_config.getEnableDebugThread())) {
+        if (!JNIIbdxnet.init(m_config.getOwnNodeId(), m_config.getBufferSize(), m_config.getMaxRecvReqs(), m_config.getFlowControlMaxRecvReqs(),
+                m_config.getSendThreads(), m_config.getRecvThreads(), m_config.getMaxConnections(), this, this, this, this, m_config.getEnableSignalHandler(),
+                m_config.getEnableDebugThread())) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("Initializing ibnet failed, check ibnet logs");
             // #endif /* LOGGER >= DEBUG */

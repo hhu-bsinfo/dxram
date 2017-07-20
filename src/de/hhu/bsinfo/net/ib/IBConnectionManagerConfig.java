@@ -10,15 +10,9 @@ public abstract class IBConnectionManagerConfig extends ConnectionManagerConfig 
         return new AutoValue_IBConnectionManagerConfig.Builder();
     }
 
-    public abstract int getBufferPoolSize();
-
     public abstract int getMaxRecvReqs();
 
-    public abstract int getMaxSendReqs();
-
     public abstract int getFlowControlMaxRecvReqs();
-
-    public abstract int getFlowControlMaxSendReqs();
 
     public abstract int getSendThreads();
 
@@ -46,15 +40,9 @@ public abstract class IBConnectionManagerConfig extends ConnectionManagerConfig 
 
         public abstract Builder setConnectionTimeout(final int p_val);
 
-        public abstract Builder setBufferPoolSize(final int p_val);
-
         public abstract Builder setMaxRecvReqs(final int p_val);
 
-        public abstract Builder setMaxSendReqs(final int p_val);
-
         public abstract Builder setFlowControlMaxRecvReqs(final int p_val);
-
-        public abstract Builder setFlowControlMaxSendReqs(final int p_val);
 
         public abstract Builder setSendThreads(final int p_val);
 
