@@ -50,11 +50,9 @@ class MessageImporterCollection {
 
         if (m_bytesCopied != 0) {
             // TODO: under-overflow
-            System.out.println("underflow");
             ret = m_importerUnderflow;
         } else if (p_hasOverflow) {
             ret = m_importerOverflow;
-            System.out.println("overflow");
         } else {
             ret = m_importer;
         }
@@ -72,7 +70,6 @@ class MessageImporterCollection {
         } else {
             m_bytesCopied = p_importer.getNumberOfReadBytes();
         }
-
         return p_importer.getNumberOfReadBytes();
     }
 

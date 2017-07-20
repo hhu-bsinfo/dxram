@@ -303,13 +303,10 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
     @Override
     public byte[] readByteArray(final byte[] p_array) {
         if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            System.out.println("Skipping byte array");
-
             // Array length and array were read before, return passed array
             m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(p_array.length) + p_array.length;
             return p_array;
         } else if (m_skippedBytes < m_skipBytes) {
-            System.out.println("Continuing reading byte array");
             // Byte array was partly de-serialized -> continue
             byte[] arr;
             if (m_unfinishedOperation.getObject() == null) {
@@ -320,14 +317,11 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
                 arr = (byte[]) m_unfinishedOperation.getObject();
                 m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(arr.length);
             }
-            System.out.println(arr.length);
             readBytes(arr);
             return arr;
         } else {
-            System.out.println("Reading byte array");
             // Read bytes normally as all previously read bytes have been skipped already
             byte[] arr = new byte[readCompactNumber(0)];
-            System.out.println(arr.length);
             readBytes(arr);
             return arr;
         }

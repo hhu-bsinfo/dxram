@@ -25,6 +25,7 @@ public abstract class AbstractPipeIn {
     private long m_receivedMessages;
 
     private MessageImporterCollection m_importers;
+    private int m_currentPosition;
     private AbstractMessage m_currentMessage;
     private MessageHeader m_currentHeader = new MessageHeader();
 
@@ -81,26 +82,22 @@ public abstract class AbstractPipeIn {
     /**
      * Adds a buffer to byte stream and creates a message if all data was gathered.
      */
-    protected void processBuffer(final long p_addr, final int p_bytesAvailable) throws NetworkException {
+    void processBuffer(final long p_addr, final int p_bytesAvailable) throws NetworkException {
         int bytesRead;
         int counterNormal = 0;
         int counterExclusive = 0;
-        int bytesAvailable = p_bytesAvailable;
-        int currentPosition = 0;
 
         m_flowControl.dataReceived(p_bytesAvailable);
 
-        while (bytesAvailable > 0) {
+        m_currentPosition = 0;
+        while (p_bytesAvailable > m_currentPosition) {
             if (m_currentMessage == null) {
-                bytesRead = readHeader(p_addr, bytesAvailable, currentPosition, AbstractMessage.HEADER_SIZE);
+                bytesRead = readHeader(p_addr, p_bytesAvailable, AbstractMessage.HEADER_SIZE);
 
                 if (bytesRead < AbstractMessage.HEADER_SIZE) {
                     // end of current data stream in importer, incomplete header
                     break;
                 }
-
-                bytesAvailable -= bytesRead;
-                currentPosition += bytesRead;
                 m_currentMessage = createMessage();
             }
 
@@ -123,9 +120,7 @@ public abstract class AbstractPipeIn {
 
                     // Request is not available, probably because of a time-out
                     // Skip payload and throw away the (now) useless response
-                    // System.out.println("Aborting reading payload: Request not available");
-                    bytesAvailable -= m_currentHeader.getPayloadSize();
-                    currentPosition += m_currentHeader.getPayloadSize();
+                    m_currentPosition += m_currentHeader.getPayloadSize();
                     m_currentHeader.clear();
                     m_currentMessage = null;
                     continue;
@@ -134,15 +129,12 @@ public abstract class AbstractPipeIn {
                 response.setCorrespondingRequest(request);
             }
 
-            bytesRead = readPayload(p_addr, bytesAvailable, currentPosition, m_currentHeader.getPayloadSize());
+            bytesRead = readPayload(p_addr, p_bytesAvailable, m_currentHeader.getPayloadSize());
 
             if (bytesRead < m_currentHeader.getPayloadSize()) {
                 // end of current data stream on importer, incomplete payload
                 break;
             }
-
-            bytesAvailable -= bytesRead;
-            currentPosition += bytesRead;
 
             if (m_currentMessage.isResponse()) {
                 m_requestMap.fulfill((AbstractResponse) m_currentMessage);
@@ -202,15 +194,18 @@ public abstract class AbstractPipeIn {
         return ret;
     }
 
-    private int readHeader(final long p_addr, final int p_bytesAvailable, final int p_currentPosition, final int p_bytesToRead) {
-        AbstractMessageImporter importer = m_importers.getImporter(p_addr, p_bytesAvailable, p_currentPosition, p_bytesAvailable < p_bytesToRead);
+    private int readHeader(final long p_addr, final int p_bytesAvailable, final int p_bytesToRead) {
+        AbstractMessageImporter importer =
+                m_importers.getImporter(p_addr, p_bytesAvailable, m_currentPosition, m_currentPosition + p_bytesToRead > p_bytesAvailable);
 
         try {
             importer.importObject(m_currentHeader);
         } catch (final ArrayIndexOutOfBoundsException e) {
             // Header is incomplete continue later
+            m_currentPosition = importer.getPosition();
             return m_importers.returnImporter(importer, false);
         }
+        m_currentPosition = importer.getPosition();
         return m_importers.returnImporter(importer, true);
     }
 
@@ -219,13 +214,15 @@ public abstract class AbstractPipeIn {
      *
      * @return number of read bytes
      */
-    private int readPayload(final long p_addr, final int p_bytesAvailable, final int p_currentPosition, final int p_bytesToRead) {
-        AbstractMessageImporter importer = m_importers.getImporter(p_addr, p_bytesAvailable, p_currentPosition, p_bytesAvailable < p_bytesToRead);
+    private int readPayload(final long p_addr, final int p_bytesAvailable, final int p_bytesToRead) {
+        AbstractMessageImporter importer =
+                m_importers.getImporter(p_addr, p_bytesAvailable, m_currentPosition, m_currentPosition + p_bytesToRead > p_bytesAvailable);
 
         try {
             m_currentMessage.readPayload(importer, p_bytesToRead);
         } catch (final ArrayIndexOutOfBoundsException e) {
             // Message is incomplete -> continue later
+            m_currentPosition = importer.getPosition();
             return m_importers.returnImporter(importer, false);
         }
 
@@ -233,6 +230,8 @@ public abstract class AbstractPipeIn {
         if (readBytes < p_bytesToRead) {
             throw new NetworkRuntimeException("Message buffer is too large: " + p_bytesToRead + " > " + readBytes + " (payload in bytes)");
         }
+
+        m_currentPosition = importer.getPosition();
 
         return readBytes;
     }
