@@ -190,11 +190,11 @@ public class IBConnectionManager extends AbstractConnectionManager
     }
 
     @Override
-    public long getNextDataToSend(short p_prevNodeIdWritten, int p_prevDataWrittenLen, long p_prevFlowControlWritten) {
+    public long getNextDataToSend(final short p_prevNodeIdWritten, final int p_prevDataWrittenLen) {
         // return interest of previous call
         if (p_prevNodeIdWritten != NodeID.INVALID_ID) {
 
-            m_writeInterestManager.finishedProcessingInterest(p_prevNodeIdWritten, p_prevDataWrittenLen, p_prevFlowControlWritten);
+            m_writeInterestManager.finishedProcessingInterests(p_prevNodeIdWritten);
 
             // also notify that previous data has been processed (if connection is still available)
             try {
@@ -206,36 +206,36 @@ public class IBConnectionManager extends AbstractConnectionManager
         }
 
         // poll for next interest
-        IBWriteInterest interest = m_writeInterestManager.getNextInterest();
+        short nodeId = m_writeInterestManager.getNextInterest();
 
         // no data available
-        if (interest == null) {
+        if (nodeId == NodeID.INVALID_ID) {
             return 0;
         }
 
         // #if LOGGER >= TRACE
-        LOGGER.trace("Next write interest: %s", interest);
+        LOGGER.trace("Next write interest on node 0x%X", nodeId);
         // #endif /* LOGGER >= TRACE */
 
         // prepare next work load
         IBConnection connection;
         try {
-            connection = (IBConnection) getConnection(interest.getNodeId());
+            connection = (IBConnection) getConnection(nodeId);
         } catch (final NetworkException e) {
             // TODO ?
 
-            m_writeInterestManager.nodeDisconnected(interest.getNodeId());
+            m_writeInterestManager.nodeDisconnected(nodeId);
             return 0;
         }
 
-        // return -1 if no data is available, otherwise valid (unsafe) memory address
+        // return 0 if no data is available, otherwise valid (unsafe) memory address
         return connection.getPipeOut().getNextBuffer();
     }
 
     @Override
     public void receivedBuffer(final short p_sourceNodeId, final long p_addr, final int p_length) {
         // #if LOGGER >= TRACE
-        LOGGER.trace("Received buffer (%d) from 0x%X", p_length, p_sourceNodeId);
+        LOGGER.trace("Received buffer (0x%X, %d) from 0x%X", p_addr, p_length, p_sourceNodeId);
         // #endif /* LOGGER >= TRACE */
 
         IBConnection connection;

@@ -5,13 +5,13 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.utils.NodeID;
 
-public class IBWriteInterestManager {
+class IBWriteInterestManager {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBWriteInterestManager.class.getSimpleName());
 
     private final IBWriteInterestQueue m_interestQueue;
     private final IBWriteInterest[] m_writeInterests;
 
-    public IBWriteInterestManager() {
+    IBWriteInterestManager() {
         m_interestQueue = new IBWriteInterestQueue();
         m_writeInterests = new IBWriteInterest[NodeID.MAX_ID];
 
@@ -20,56 +20,46 @@ public class IBWriteInterestManager {
         }
     }
 
-    public void pushBackDataInterest(final short p_nodeId, final long p_bytesAvailable) {
+    void pushBackInterest(final short p_nodeId) {
         // #if LOGGER == TRACE
-        LOGGER.trace("Push back data interest: 0x%X, %d", p_nodeId, p_bytesAvailable);
+        LOGGER.trace("Push back interest: 0x%X", p_nodeId);
         // #endif /* LOGGER == TRACE */
 
-        if (m_writeInterests[p_nodeId & 0xFFFF].addDataInterests(p_bytesAvailable)) {
+        if (m_writeInterests[p_nodeId & 0xFFFF].addInterest()) {
             m_interestQueue.pushBack(p_nodeId);
         }
     }
 
-    public void pushBackFlowControlInterest(final short p_nodeId, final long p_flowControlData) {
-        // #if LOGGER == TRACE
-        LOGGER.trace("Push back flow control interest: 0x%X, %d", p_nodeId, p_flowControlData);
-        // #endif /* LOGGER == TRACE */
-
-        if (m_writeInterests[p_nodeId & 0xFFFF].addFlowControlInterests(p_flowControlData)) {
-            m_interestQueue.pushBack(p_nodeId);
-        }
-    }
-
-    public IBWriteInterest getNextInterest() {
+    short getNextInterest() {
         short nodeId = m_interestQueue.popFront();
 
-        if (nodeId != NodeID.INVALID_ID) {
-            // got interest token but the queue is already acquired
-            // put interest back
-            if (!m_writeInterests[nodeId & 0xFFFF].acquire()) {
-                // force push back, don't lose interest token
-                while (!m_interestQueue.pushBack(nodeId)) {
-                    Thread.yield();
-                }
+        if (nodeId == NodeID.INVALID_ID) {
+            return NodeID.INVALID_ID;
+        }
 
-                return null;
+        // got interest token but the queue is already acquired
+        // put interest back
+        if (!m_writeInterests[nodeId & 0xFFFF].acquire()) {
+            // force push back, don't lose interest token
+            while (!m_interestQueue.pushBack(nodeId)) {
+                Thread.yield();
             }
 
-            return m_writeInterests[nodeId & 0xFFFF];
-        } else {
-            return null;
+            return NodeID.INVALID_ID;
         }
+
+        // consume current interest count
+        // everything that's in the buffer up to this point is going to get sent
+        m_writeInterests[nodeId & 0xFFFF].consumeInterests();
+
+        return nodeId;
     }
 
-    public void finishedProcessingInterest(final short p_nodeId, final long p_dataWritten, final long p_flowControlWritten) {
-        IBWriteInterest interest = m_writeInterests[p_nodeId & 0xFFFF];
-
-        if (interest.consumedInterests(p_dataWritten, p_flowControlWritten)) {
-            m_interestQueue.pushBack(p_nodeId);
-        }
+    void finishedProcessingInterests(final short p_nodeId) {
+        m_writeInterests[p_nodeId & 0xFFFF].release();
     }
 
-    public void nodeDisconnected(final short p_nodeId) {
+    void nodeDisconnected(final short p_nodeId) {
         m_writeInterests[p_nodeId & 0xFFFF].reset();
     }
 }

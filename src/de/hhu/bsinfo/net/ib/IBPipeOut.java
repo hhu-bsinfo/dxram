@@ -38,6 +38,6 @@ public class IBPipeOut extends AbstractPipeOut {
 
     @Override
     protected void bufferPosted(final int p_size) {
-        m_writeInterestManager.pushBackDataInterest(getDestinationNodeID(), p_size);
+        m_writeInterestManager.pushBackInterest(getDestinationNodeID());
     }
 }

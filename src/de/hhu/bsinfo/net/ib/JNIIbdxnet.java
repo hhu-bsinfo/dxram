@@ -15,7 +15,7 @@ package de.hhu.bsinfo.net.ib;
 
 public final class JNIIbdxnet {
     public interface SendHandler {
-        long getNextDataToSend(final short p_prevNodeIdWritten, final int p_prevDataWrittenLen, final long p_prevFlowControlWritten);
+        long getNextDataToSend(final short p_prevNodeIdWritten, final int p_prevDataWrittenLen);
     }
 
     public interface RecvHandler {

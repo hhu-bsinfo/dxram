@@ -2,6 +2,9 @@ package de.hhu.bsinfo.net.ib;
 
 import java.nio.ByteBuffer;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractOutgoingRingBuffer;
@@ -13,11 +16,12 @@ import de.hhu.bsinfo.utils.ByteBufferHelper;
  * Created by nothaas on 7/17/17.
  */
 public class IBOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(IBOutgoingRingBuffer.class.getSimpleName());
 
     // struct NextWorkParameters
     // {
-    //    uint64_t m_ptrBuffer;
-    //    uint32_t m_len;
+    //    uint32_t m_posFrontRel;
+    //    uint32_t m_posBackRel;
     //    uint32_t m_flowControlData;
     //    uint16_t m_nodeId;
     //} __attribute__((packed));
@@ -34,7 +38,7 @@ public class IBOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
         m_bufferSize = p_bufferSize;
     }
 
-    // -1 if nothing available, otherwise unsafe address with data to send stored there
+    // 0 if nothing available, otherwise unsafe address with data to send stored there
     long popFront(final IBConnection p_connection) {
         long tmp;
         int posBackRelative;
@@ -46,21 +50,26 @@ public class IBOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
 
         // Empty
         if (posBackRelative == posFrontRelative) {
-            return -1;
+            return 0;
         }
 
         // assemble arguments for struct to pass back to jni
         ByteBuffer arguments = ms_sendWorkParameterPool.getInstance();
 
         arguments.clear();
-        // memory start address of data to write
-        arguments.putLong(m_bufferAddr + posFrontRelative);
-        // length of data
-        arguments.putInt(posBackRelative - posFrontRelative);
+        // relative position of data start in buffer
+        arguments.putInt(posFrontRelative);
+        // relative position of data end in buffer
+        arguments.putInt(posBackRelative);
         // flow control data
         arguments.putInt(p_connection.getPipeOut().getFlowControlToWrite());
         // node id
         arguments.putShort(p_connection.getDestinationNodeID());
+
+        // #if LOGGER >= TRACE
+        LOGGER.trace("Next write on node 0x%X, posFrontRelative %d, posBackRelative %d", p_connection.getDestinationNodeID(), posFrontRelative,
+                posBackRelative);
+        // #endif /* LOGGER >= TRACE */
 
         return ByteBufferHelper.getDirectAddress(arguments);
     }
