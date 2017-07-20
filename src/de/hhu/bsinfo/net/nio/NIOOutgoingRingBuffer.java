@@ -3,22 +3,28 @@ package de.hhu.bsinfo.net.nio;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractOutgoingRingBuffer;
+import de.hhu.bsinfo.net.core.ExporterPool;
 import de.hhu.bsinfo.net.core.NetworkException;
+import de.hhu.bsinfo.utils.ByteBufferHelper;
+import de.hhu.bsinfo.utils.UnsafeMemory;
 
 /**
  * Created by nothaas on 7/17/17.
  */
 public class NIOOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
 
-    private final byte[] m_buffer;
+    private final long m_bufferAddr;
+    private final int m_bufferSize;
     private ByteBuffer m_sendByteBuffer;
 
     NIOOutgoingRingBuffer(final int p_osBufferSize) {
-        super(p_osBufferSize);
+        super(p_osBufferSize * 2);
 
-        m_buffer = new byte[p_osBufferSize * 2];
-        m_sendByteBuffer = ByteBuffer.wrap(m_buffer);
+        m_sendByteBuffer = ByteBuffer.allocateDirect(p_osBufferSize * 2);
+        m_bufferSize = p_osBufferSize * 2;
+        m_bufferAddr = ByteBufferHelper.getDirectAddress(m_sendByteBuffer);
     }
 
     ByteBuffer popFront() {
@@ -38,8 +44,8 @@ public class NIOOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
 
     boolean pushNodeID(final ByteBuffer p_buffer) {
         if (m_posBack.get() == 0) {
-            m_buffer[0] = p_buffer.get();
-            m_buffer[1] = p_buffer.get();
+            UnsafeMemory.writeByte(m_bufferAddr, p_buffer.get());
+            UnsafeMemory.writeByte(m_bufferAddr + 1, p_buffer.get());
             m_posBack.set(2);
         } else {
             throw new IllegalStateException();
@@ -49,8 +55,8 @@ public class NIOOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
     }
 
     protected void serialize(final AbstractMessage p_message, final int p_start, final int p_messageSize, final boolean p_hasOverflow) throws NetworkException {
-        NIOMessageExporter exporter = (NIOMessageExporter) NIOExporterPool.getInstance().getExporter(p_hasOverflow);
-        exporter.setBuffer(m_buffer);
+        AbstractMessageExporter exporter = ExporterPool.getInstance().getExporter(p_hasOverflow);
+        exporter.setBuffer(m_bufferAddr, m_bufferSize);
         exporter.setPosition(p_start);
 
         p_message.serialize(exporter, p_messageSize);

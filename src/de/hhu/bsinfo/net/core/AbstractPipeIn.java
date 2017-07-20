@@ -24,6 +24,7 @@ public abstract class AbstractPipeIn {
 
     private long m_receivedMessages;
 
+    private MessageImporterCollection m_importers;
     private AbstractMessage m_currentMessage;
     private MessageHeader m_currentHeader = new MessageHeader();
 
@@ -31,10 +32,12 @@ public abstract class AbstractPipeIn {
     private final AbstractMessage[] m_exclusiveMessages = new AbstractMessage[25];
 
     protected AbstractPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
-            final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver, final boolean p_useDirectBuffer) {
+            final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver) {
         m_ownNodeID = p_ownNodeId;
         m_destinationNodeID = p_destinationNodeId;
         m_flowControl = p_flowControl;
+
+        m_importers = new MessageImporterCollection();
 
         m_listener = p_dataReceiver;
         m_messageDirectory = p_messageDirectory;
@@ -67,6 +70,8 @@ public abstract class AbstractPipeIn {
                 ", m_flowControl " + m_flowControl + ", m_receivedMessages " + m_receivedMessages + ']';
     }
 
+    public abstract void returnProcessedBuffer(final Object p_obj, final long p_addr);
+
     public abstract boolean isOpen();
 
     protected AbstractFlowControl getFlowControl() {
@@ -75,21 +80,19 @@ public abstract class AbstractPipeIn {
 
     /**
      * Adds a buffer to byte stream and creates a message if all data was gathered.
-     *
-     * @param p_buffer
-     *         the new buffer
      */
-    protected void processBuffer(final int p_bytesAvailable) throws NetworkException {
+    protected void processBuffer(final long p_addr, final int p_bytesAvailable) throws NetworkException {
         int bytesRead;
         int counterNormal = 0;
         int counterExclusive = 0;
         int bytesAvailable = p_bytesAvailable;
+        int currentPosition = 0;
 
         m_flowControl.dataReceived(p_bytesAvailable);
 
         while (bytesAvailable > 0) {
             if (m_currentMessage == null) {
-                bytesRead = readHeader(bytesAvailable, AbstractMessage.HEADER_SIZE);
+                bytesRead = readHeader(p_addr, bytesAvailable, currentPosition, AbstractMessage.HEADER_SIZE);
 
                 if (bytesRead < AbstractMessage.HEADER_SIZE) {
                     // end of current data stream in importer, incomplete header
@@ -97,6 +100,7 @@ public abstract class AbstractPipeIn {
                 }
 
                 bytesAvailable -= bytesRead;
+                currentPosition += bytesRead;
                 m_currentMessage = createMessage();
             }
 
@@ -121,6 +125,7 @@ public abstract class AbstractPipeIn {
                     // Skip payload and throw away the (now) useless response
                     // System.out.println("Aborting reading payload: Request not available");
                     bytesAvailable -= m_currentHeader.getPayloadSize();
+                    currentPosition += m_currentHeader.getPayloadSize();
                     m_currentHeader.clear();
                     m_currentMessage = null;
                     continue;
@@ -129,7 +134,7 @@ public abstract class AbstractPipeIn {
                 response.setCorrespondingRequest(request);
             }
 
-            bytesRead = readPayload(bytesAvailable, m_currentHeader.getPayloadSize());
+            bytesRead = readPayload(p_addr, bytesAvailable, currentPosition, m_currentHeader.getPayloadSize());
 
             if (bytesRead < m_currentHeader.getPayloadSize()) {
                 // end of current data stream on importer, incomplete payload
@@ -137,6 +142,7 @@ public abstract class AbstractPipeIn {
             }
 
             bytesAvailable -= bytesRead;
+            currentPosition += bytesRead;
 
             if (m_currentMessage.isResponse()) {
                 m_requestMap.fulfill((AbstractResponse) m_currentMessage);
@@ -174,10 +180,6 @@ public abstract class AbstractPipeIn {
         }
     }
 
-    protected abstract AbstractMessageImporter getImporter(final boolean p_overflow);
-
-    protected abstract void returnImporter(final AbstractMessageImporter p_importer, final boolean p_finished);
-
     private AbstractMessage createMessage() throws NetworkException {
         AbstractMessage ret;
         byte type = m_currentHeader.getType();
@@ -200,50 +202,39 @@ public abstract class AbstractPipeIn {
         return ret;
     }
 
-    private int readHeader(final int p_bytesAvailable, final int p_bytesToRead) {
-        AbstractMessageImporter importer = getImporter(p_bytesAvailable < p_bytesToRead);
+    private int readHeader(final long p_addr, final int p_bytesAvailable, final int p_currentPosition, final int p_bytesToRead) {
+        AbstractMessageImporter importer = m_importers.getImporter(p_addr, p_bytesAvailable, p_currentPosition, p_bytesAvailable < p_bytesToRead);
 
         try {
             importer.importObject(m_currentHeader);
         } catch (final ArrayIndexOutOfBoundsException e) {
             // Header is incomplete continue later
-            System.out.println("Out of bounds during reading header, position: " + p_bytesAvailable);
-            returnImporter(importer, false);
-            return -1;
+            return m_importers.returnImporter(importer, false);
         }
-        returnImporter(importer, true);
-
-        return p_bytesToRead;
+        return m_importers.returnImporter(importer, true);
     }
 
     /**
      * Create a message from a given buffer
      *
-     * @param p_buffer
-     *         buffer containing a message
-     * @return message
+     * @return number of read bytes
      */
-    private int readPayload(final int p_bytesAvailable, final int p_bytesToRead) {
-        AbstractMessageImporter importer = getImporter(p_bytesAvailable < p_bytesToRead);
+    private int readPayload(final long p_addr, final int p_bytesAvailable, final int p_currentPosition, final int p_bytesToRead) {
+        AbstractMessageImporter importer = m_importers.getImporter(p_addr, p_bytesAvailable, p_currentPosition, p_bytesAvailable < p_bytesToRead);
 
         try {
             m_currentMessage.readPayload(importer, p_bytesToRead);
         } catch (final ArrayIndexOutOfBoundsException e) {
             // Message is incomplete -> continue later
-
-            returnImporter(importer, false);
-            return -1;
+            return m_importers.returnImporter(importer, false);
         }
 
-        int readBytes = importer.getNumberOfReadBytes();
-        int calculatedPayloadSize = m_currentMessage.getPayloadLength();
-        if (readBytes < calculatedPayloadSize) {
-            throw new NetworkRuntimeException("Message buffer is too large: " + calculatedPayloadSize + " > " + readBytes + " (payload in bytes)");
+        int readBytes = m_importers.returnImporter(importer, true);
+        if (readBytes < p_bytesToRead) {
+            throw new NetworkRuntimeException("Message buffer is too large: " + p_bytesToRead + " > " + readBytes + " (payload in bytes)");
         }
 
-        returnImporter(importer, true);
-
-        return p_bytesToRead;
+        return readBytes;
     }
 
     /**

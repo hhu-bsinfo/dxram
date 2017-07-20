@@ -1,26 +1,30 @@
-package de.hhu.bsinfo.net.ib;
+package de.hhu.bsinfo.net.core;
 
-import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.UnfinishedImporterOperation;
 import de.hhu.bsinfo.utils.UnsafeMemory;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
- * Created by nothaas on 7/11/17.
+ * Implementation of an Importer for network messages, used after overflow.
+ *
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
-class IBMessageImporterUnderflow extends AbstractMessageImporter {
+class MessageImporterUnderflow extends AbstractMessageImporter {
 
     private long m_bufferAddress;
-    private int m_bufferSize;
     private int m_currentPosition;
 
+    // Number of bytes read before and bytes already skipped
     private int m_skipBytes;
     private int m_skippedBytes;
 
+    // The unfinished operation from last read (if there is one)
     private UnfinishedImporterOperation m_unfinishedOperation;
 
-    IBMessageImporterUnderflow(final UnfinishedImporterOperation p_unfinishedOperation) {
+    /**
+     * Constructor
+     */
+    MessageImporterUnderflow(final UnfinishedImporterOperation p_unfinishedOperation) {
         m_unfinishedOperation = p_unfinishedOperation;
     }
 
@@ -32,6 +36,12 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
     @Override
     public int getNumberOfReadBytes() {
         return m_currentPosition + m_skipBytes;
+    }
+
+    @Override
+    public void setBuffer(final long p_addr, final int p_size, final int p_position) {
+        m_bufferAddress = p_addr;
+        m_currentPosition = p_position;
     }
 
     @Override
@@ -52,9 +62,9 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
             m_skippedBytes++;
             return p_bool;
         } else {
-            boolean b = UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) == 1;
+            boolean ret = UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) == 1;
             m_currentPosition++;
-            return b;
+            return ret;
         }
     }
 
@@ -65,17 +75,17 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
             m_skippedBytes++;
             return p_byte;
         } else {
-            byte b = UnsafeMemory.readByte(m_bufferAddress + m_currentPosition);
+            byte ret = UnsafeMemory.readByte(m_bufferAddress + m_currentPosition);
             m_currentPosition++;
-            return b;
+            return ret;
         }
     }
 
     @Override
     public short readShort(final short p_short) {
         if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            m_skippedBytes += Short.BYTES;
             // Short was read before, return passed value
+            m_skippedBytes += Short.BYTES;
             return p_short;
         } else if (m_skippedBytes < m_skipBytes) {
             // Short was partly de-serialized -> continue
@@ -102,8 +112,8 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
     @Override
     public int readInt(final int p_int) {
         if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            m_skippedBytes += Integer.BYTES;
             // Int was read before, return passed value
+            m_skippedBytes += Integer.BYTES;
             return p_int;
         } else if (m_skippedBytes < m_skipBytes) {
             // Int was partly de-serialized -> continue
@@ -130,8 +140,8 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
     @Override
     public long readLong(final long p_long) {
         if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            m_skippedBytes += Long.BYTES;
             // Long was read before, return passed value
+            m_skippedBytes += Long.BYTES;
             return p_long;
         } else if (m_skippedBytes < m_skipBytes) {
             // Long was partly de-serialized -> continue
@@ -158,8 +168,8 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
     @Override
     public float readFloat(final float p_float) {
         if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            m_skippedBytes += Float.BYTES;
             // Float was read before, return passed value
+            m_skippedBytes += Float.BYTES;
             return p_float;
         } else {
             return Float.intBitsToFloat(readInt(0));
@@ -169,8 +179,8 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
     @Override
     public double readDouble(final double p_double) {
         if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            m_skippedBytes += Double.BYTES;
             // Double was read before, return passed value
+            m_skippedBytes += Double.BYTES;
             return p_double;
         } else {
             return Double.longBitsToDouble(readLong(0));
@@ -180,8 +190,8 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
     @Override
     public int readCompactNumber(int p_int) {
         if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(p_int);
             // Compact number was read before, return passed value
+            m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(p_int);
             return p_int;
         } else if (m_skippedBytes < m_skipBytes) {
             // Compact number was partly de-serialized -> continue
@@ -293,10 +303,13 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
     @Override
     public byte[] readByteArray(final byte[] p_array) {
         if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
+            System.out.println("Skipping byte array");
+
             // Array length and array were read before, return passed array
             m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(p_array.length) + p_array.length;
             return p_array;
         } else if (m_skippedBytes < m_skipBytes) {
+            System.out.println("Continuing reading byte array");
             // Byte array was partly de-serialized -> continue
             byte[] arr;
             if (m_unfinishedOperation.getObject() == null) {
@@ -307,11 +320,14 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
                 arr = (byte[]) m_unfinishedOperation.getObject();
                 m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(arr.length);
             }
+            System.out.println(arr.length);
             readBytes(arr);
             return arr;
         } else {
+            System.out.println("Reading byte array");
             // Read bytes normally as all previously read bytes have been skipped already
             byte[] arr = new byte[readCompactNumber(0)];
+            System.out.println(arr.length);
             readBytes(arr);
             return arr;
         }
@@ -426,11 +442,5 @@ class IBMessageImporterUnderflow extends AbstractMessageImporter {
             }
             return p_array;
         }
-    }
-
-    void setBuffer(final long p_addr, final int p_size, final int p_position) {
-        m_bufferAddress = p_addr;
-        m_bufferSize = p_size;
-        m_currentPosition = p_position;
     }
 }

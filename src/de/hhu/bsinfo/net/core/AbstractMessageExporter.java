@@ -36,10 +36,18 @@ public abstract class AbstractMessageExporter implements Exporter {
     protected abstract int getNumberOfWrittenBytes();
 
     /**
+     * TODO
+     *
+     * @param p_addr
+     * @param p_size
+     */
+    public abstract void setBuffer(long p_addr, int p_size);
+
+    /**
      * Set buffer offset
      *
      * @param p_position
      *         the offset
      */
-    protected abstract void setPosition(int p_position);
+    public abstract void setPosition(int p_position);
 }

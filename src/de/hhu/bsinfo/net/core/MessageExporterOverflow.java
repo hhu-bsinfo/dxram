@@ -1,42 +1,31 @@
-/*
- * Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- */
+package de.hhu.bsinfo.net.core;
 
-package de.hhu.bsinfo.net.nio;
-
-import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.utils.UnsafeMemory;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
- * Implementation of an Exporter for byte arrays with insufficient length (wrap around).
+ * Implementation of an Exporter for network messages, with insufficient space (wrap around).
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
-class NIOMessageExporterOverflow extends AbstractMessageExporter {
+class MessageExporterOverflow extends AbstractMessageExporter {
 
-    private byte[] m_buffer;
+    private long m_bufferAddress;
+    private int m_bufferSize;
     private int m_currentPosition;
     private int m_startPosition;
 
     /**
      * Constructor
      */
-    NIOMessageExporterOverflow() {
+    MessageExporterOverflow() {
+
     }
 
     @Override
     public int getNumberOfWrittenBytes() {
-        return m_buffer.length - m_startPosition + m_currentPosition;
+        return m_bufferSize - m_startPosition + m_currentPosition;
     }
 
     @Override
@@ -46,80 +35,97 @@ class NIOMessageExporterOverflow extends AbstractMessageExporter {
     }
 
     @Override
+    public void setBuffer(final long p_addr, final int p_size) {
+        m_bufferAddress = p_addr;
+        m_bufferSize = p_size;
+    }
+
+    @Override
     public void exportObject(final Exportable p_object) {
         p_object.exportObject(this);
     }
 
     @Override
-    public void writeBoolean(boolean p_v) {
-        if (m_currentPosition == m_buffer.length) {
-            m_buffer[0] = (byte) (p_v ? 1 : 0);
+    public void writeBoolean(final boolean p_v) {
+        if (m_currentPosition == m_bufferSize) {
+            UnsafeMemory.writeByte(m_bufferAddress, (byte) (p_v ? 1 : 0));
             m_currentPosition = 1;
         } else {
-            m_buffer[m_currentPosition++] = (byte) (p_v ? 1 : 0);
+            UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v ? 1 : 0));
+            m_currentPosition++;
         }
     }
 
     @Override
     public void writeByte(final byte p_v) {
-        if (m_currentPosition == m_buffer.length) {
-            m_buffer[0] = p_v;
+        if (m_currentPosition == m_bufferSize) {
+            UnsafeMemory.writeByte(m_bufferAddress, p_v);
             m_currentPosition = 1;
         } else {
-            m_buffer[m_currentPosition++] = p_v;
+            UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, p_v);
+            m_currentPosition++;
         }
     }
 
     @Override
     public void writeShort(final short p_v) {
-        if (m_currentPosition + Short.BYTES < m_buffer.length) {
-            for (int i = 0; i < Short.BYTES; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (Short.BYTES - 1 - i) * 8 & 0xFF);
-            }
+        if (m_currentPosition + Short.BYTES < m_bufferSize) {
+            UnsafeMemory.writeShort(m_bufferAddress + m_currentPosition, p_v);
+            m_currentPosition += Short.BYTES;
         } else {
             int i;
-            for (i = 0; i < Short.BYTES && m_currentPosition < m_buffer.length; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (Short.BYTES - 1 - i) * 8 & 0xFF);
+            for (i = 0; i < Short.BYTES && m_currentPosition < m_bufferSize; i++) {
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> i * 8 & 0xFF));
+                m_currentPosition++;
             }
             m_currentPosition = 0;
             for (int j = i; j < Short.BYTES; j++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (Short.BYTES - 1 - j) * 8 & 0xFF);
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> j * 8 & 0xFF));
+                m_currentPosition++;
             }
         }
     }
 
     @Override
     public void writeInt(final int p_v) {
-        if (m_currentPosition + Integer.BYTES < m_buffer.length) {
-            for (int i = 0; i < Integer.BYTES; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (Integer.BYTES - 1 - i) * 8 & 0xFF);
-            }
+        if (m_currentPosition + Integer.BYTES < m_bufferSize) {
+            UnsafeMemory.writeInt(m_bufferAddress + m_currentPosition, p_v);
+            m_currentPosition += Integer.BYTES;
         } else {
             int i;
-            for (i = 0; i < Integer.BYTES && m_currentPosition < m_buffer.length; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (Integer.BYTES - 1 - i) * 8 & 0xFF);
+            for (i = 0; i < Integer.BYTES && m_currentPosition < m_bufferSize; i++) {
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> i * 8 & 0xFF));
+                m_currentPosition++;
             }
             m_currentPosition = 0;
             for (int j = i; j < Integer.BYTES; j++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (Integer.BYTES - 1 - j) * 8 & 0xFF);
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> j * 8 & 0xFF));
+                m_currentPosition++;
             }
         }
     }
 
     @Override
     public void writeLong(final long p_v) {
-        if (m_currentPosition + Long.BYTES < m_buffer.length) {
-            for (int i = 0; i < Long.BYTES; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (Long.BYTES - 1 - i) * 8 & 0xFF);
-            }
+        if (m_currentPosition + Long.BYTES < m_bufferSize) {
+            UnsafeMemory.writeLong(m_bufferAddress + m_currentPosition, p_v);
+            m_currentPosition += Long.BYTES;
         } else {
             int i;
-            for (i = 0; i < Long.BYTES && m_currentPosition < m_buffer.length; i++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (Long.BYTES - 1 - i) * 8 & 0xFF);
+            for (i = 0; i < Long.BYTES && m_currentPosition < m_bufferSize; i++) {
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> i * 8 & 0xFF));
+                m_currentPosition++;
             }
             m_currentPosition = 0;
             for (int j = i; j < Long.BYTES; j++) {
-                m_buffer[m_currentPosition++] = (byte) (p_v >> (Long.BYTES - 1 - j) * 8 & 0xFF);
+                // big endian to little endian
+                UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v >> j * 8 & 0xFF));
+                m_currentPosition++;
             }
         }
     }
@@ -135,7 +141,7 @@ class NIOMessageExporterOverflow extends AbstractMessageExporter {
     }
 
     @Override
-    public void writeCompactNumber(int p_v) {
+    public void writeCompactNumber(final int p_v) {
         int length = ObjectSizeUtil.sizeofCompactedNumber(p_v);
 
         int i;
@@ -156,20 +162,6 @@ class NIOMessageExporterOverflow extends AbstractMessageExporter {
     }
 
     @Override
-    public int writeBytes(final byte[] p_array, final int p_offset, final int p_length) {
-        if (m_currentPosition + p_length < m_buffer.length) {
-            System.arraycopy(p_array, p_offset, m_buffer, m_currentPosition, p_length);
-            m_currentPosition += p_length;
-        } else {
-            System.arraycopy(p_array, p_offset, m_buffer, m_currentPosition, m_buffer.length - m_currentPosition);
-            System.arraycopy(p_array, p_offset + m_buffer.length - m_currentPosition, m_buffer, 0, p_length - (m_buffer.length - m_currentPosition));
-            m_currentPosition = p_length - (m_buffer.length - m_currentPosition) + 1;
-        }
-
-        return p_length;
-    }
-
-    @Override
     public int writeShorts(final short[] p_array) {
         return writeShorts(p_array, 0, p_array.length);
     }
@@ -182,6 +174,20 @@ class NIOMessageExporterOverflow extends AbstractMessageExporter {
     @Override
     public int writeLongs(final long[] p_array) {
         return writeLongs(p_array, 0, p_array.length);
+    }
+
+    @Override
+    public int writeBytes(final byte[] p_array, final int p_offset, final int p_length) {
+        if (m_currentPosition + p_length < m_bufferSize) {
+            int ret = UnsafeMemory.writeBytes(m_bufferAddress + m_currentPosition, p_array, p_offset, p_length);
+            m_currentPosition += Byte.BYTES * ret;
+        } else {
+            UnsafeMemory.writeBytes(m_bufferAddress + m_currentPosition, p_array, p_offset, m_bufferSize - m_currentPosition);
+            UnsafeMemory.writeBytes(m_bufferAddress, p_array, p_offset + m_bufferSize - m_currentPosition, p_length - (m_bufferSize - m_currentPosition));
+            m_currentPosition = p_length - (m_bufferSize - m_currentPosition) + 1;
+        }
+
+        return p_length;
     }
 
     @Override
@@ -238,12 +244,10 @@ class NIOMessageExporterOverflow extends AbstractMessageExporter {
     @Override
     public void writeStringArray(final String[] p_array) {
         writeCompactNumber(p_array.length);
+
         for (int i = 0; i < p_array.length; i++) {
             writeString(p_array[i]);
         }
     }
 
-    void setBuffer(final byte[] p_buffer) {
-        m_buffer = p_buffer;
-    }
 }

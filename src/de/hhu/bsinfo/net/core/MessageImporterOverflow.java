@@ -1,35 +1,19 @@
-/*
- * Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- */
+package de.hhu.bsinfo.net.core;
 
-package de.hhu.bsinfo.net.nio;
-
-import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.UnfinishedImporterOperation;
+import de.hhu.bsinfo.utils.UnsafeMemory;
 import de.hhu.bsinfo.utils.serialization.Importable;
 
 /**
- * Implementation of an Importer for byte arrays with insufficient length.
+ * Implementation of an Importer for network messages, with insufficient buffer length.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
-class NIOMessageImporterOverflow extends AbstractMessageImporter {
+class MessageImporterOverflow extends AbstractMessageImporter {
 
-    private byte[] m_buffer;
+    private long m_bufferAddress;
+    private int m_bufferSize;
     private int m_currentPosition;
     private int m_startPosition;
-
-    // This is the end of given buffer (might differ from buffer's length)
-    private int m_limit;
 
     // Object to store the unfinished operation in (if there is one)
     private UnfinishedImporterOperation m_unfinishedOperation;
@@ -37,10 +21,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     // Re-use exception to avoid "new"
     private ArrayIndexOutOfBoundsException m_exception;
 
-    /**
-     * Constructor
-     */
-    NIOMessageImporterOverflow(final UnfinishedImporterOperation p_unfinishedOperation) {
+    MessageImporterOverflow(final UnfinishedImporterOperation p_unfinishedOperation) {
         m_unfinishedOperation = p_unfinishedOperation;
         m_exception = new ArrayIndexOutOfBoundsException();
     }
@@ -56,6 +37,14 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     }
 
     @Override
+    public void setBuffer(final long p_addr, final int p_size, final int p_position) {
+        m_bufferAddress = p_addr;
+        m_bufferSize = p_size;
+        m_currentPosition = p_position;
+        m_startPosition = p_position;
+    }
+
+    @Override
     public void setNumberOfReadBytes(int p_numberOfReadBytes) {
         // Not relevant for this importer
     }
@@ -67,42 +56,48 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public boolean readBoolean(final boolean p_bool) {
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
-        return m_buffer[m_currentPosition++] == 1;
+        boolean ret = UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) == 1;
+        m_currentPosition++;
+        return ret;
     }
 
     @Override
     public byte readByte(final byte p_byte) {
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
-        return m_buffer[m_currentPosition++];
+        byte ret = UnsafeMemory.readByte(m_bufferAddress + m_currentPosition);
+        m_currentPosition++;
+        return ret;
     }
 
     @Override
     public short readShort(final short p_short) {
         short ret = 0;
 
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
         for (int i = 0; i < Short.BYTES; i++) {
-            if (m_currentPosition == m_limit) {
+            if (m_currentPosition == m_bufferSize) {
                 // Store unfinished short and throw exception to continue later
                 m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
                 m_unfinishedOperation.setPrimitive(ret);
                 throw m_exception;
             }
 
-            ret |= (m_buffer[m_currentPosition++] & 0xFF) << (Short.BYTES - 1 - i) * 8;
+            // read little endian byte order to big endian
+            ret |= (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
+            m_currentPosition++;
         }
 
         return ret;
@@ -112,20 +107,22 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     public int readInt(final int p_int) {
         int ret = 0;
 
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
         for (int i = 0; i < Integer.BYTES; i++) {
-            if (m_currentPosition == m_limit) {
+            if (m_currentPosition == m_bufferSize) {
                 // Store unfinished int and throw exception to continue later
                 m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
                 m_unfinishedOperation.setPrimitive(ret);
                 throw m_exception;
             }
 
-            ret |= (m_buffer[m_currentPosition++] & 0xFF) << (Integer.BYTES - 1 - i) * 8;
+            // read little endian byte order to big endian
+            ret |= (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
+            m_currentPosition++;
         }
 
         return ret;
@@ -135,20 +132,22 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     public long readLong(final long p_long) {
         long ret = 0;
 
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
         for (int i = 0; i < Long.BYTES; i++) {
-            if (m_currentPosition == m_limit) {
+            if (m_currentPosition == m_bufferSize) {
                 // Store unfinished long and throw exception to continue later
                 m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
                 m_unfinishedOperation.setPrimitive(ret);
                 throw m_exception;
             }
 
-            ret |= ((long) m_buffer[m_currentPosition++] & 0xFF) << (Long.BYTES - 1 - i) * 8;
+            // read little endian byte order to big endian
+            ret |= (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
+            m_currentPosition++;
         }
 
         return ret;
@@ -168,13 +167,13 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     public int readCompactNumber(final int p_int) {
         int ret = 0;
 
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
         for (int i = 0; i < Integer.BYTES; i++) {
-            if (m_currentPosition == m_limit) {
+            if (m_currentPosition == m_bufferSize) {
                 // Store unfinished compact number and start index of unfinished compact number (needed in underflow importer)
                 // Throw exception to continue later
                 m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
@@ -182,7 +181,9 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
                 throw m_exception;
             }
 
-            int tmp = m_buffer[m_currentPosition++];
+            int tmp = UnsafeMemory.readByte(m_bufferAddress + m_currentPosition);
+            m_currentPosition++;
+
             // Compact numbers are little-endian!
             ret |= (tmp & 0x7F) << i * 7;
             if ((tmp & 0x80) == 0) {
@@ -200,8 +201,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public int readBytes(final byte[] p_array) {
-
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -210,30 +210,8 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     }
 
     @Override
-    public int readBytes(final byte[] p_array, final int p_offset, final int p_length) {
-        if (m_currentPosition == m_limit) {
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
-            throw m_exception;
-        }
-
-        if (m_currentPosition + p_length >= m_limit) {
-            System.arraycopy(m_buffer, m_currentPosition, p_array, p_offset, m_limit - m_currentPosition);
-            // Do not store unfinished operation as partly de-serialized array will be passed anyway
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
-            m_currentPosition = m_limit;
-            throw m_exception;
-        }
-
-        System.arraycopy(m_buffer, m_currentPosition, p_array, p_offset, p_length);
-        m_currentPosition += p_length;
-
-        return p_length;
-    }
-
-    @Override
     public int readShorts(final short[] p_array) {
-
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -244,8 +222,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public int readInts(final int[] p_array) {
-
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -257,8 +234,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public int readLongs(final long[] p_array) {
-
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -269,9 +245,30 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
     }
 
     @Override
-    public int readShorts(final short[] p_array, final int p_offset, final int p_length) {
+    public int readBytes(final byte[] p_array, final int p_offset, final int p_length) {
+        if (m_currentPosition == m_bufferSize) {
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            throw m_exception;
+        }
 
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition + p_length >= m_bufferSize) {
+            UnsafeMemory.readBytes(m_bufferAddress + m_currentPosition, p_array, p_offset, m_bufferSize - m_currentPosition);
+
+            // Do not store unfinished operation as partly de-serialized array will be passed anyway
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
+            m_currentPosition = m_bufferSize;
+            throw m_exception;
+        }
+
+        UnsafeMemory.readBytes(m_bufferAddress + m_currentPosition, p_array, p_offset, p_length);
+        m_currentPosition += p_length;
+
+        return p_length;
+    }
+
+    @Override
+    public int readShorts(final short[] p_array, final int p_offset, final int p_length) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -287,8 +284,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public int readInts(final int[] p_array, final int p_offset, final int p_length) {
-
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -304,8 +300,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public int readLongs(final long[] p_array, final int p_offset, final int p_length) {
-
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -321,7 +316,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public byte[] readByteArray(final byte[] p_array) {
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -341,7 +336,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public short[] readShortArray(final short[] p_array) {
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -362,7 +357,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public int[] readIntArray(final int[] p_array) {
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -383,7 +378,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public long[] readLongArray(final long[] p_array) {
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -404,7 +399,7 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
 
     @Override
     public String[] readStringArray(final String[] p_array) {
-        if (m_currentPosition == m_limit) {
+        if (m_currentPosition == m_bufferSize) {
             m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
@@ -423,13 +418,5 @@ class NIOMessageImporterOverflow extends AbstractMessageImporter {
         }
 
         return strings;
-    }
-
-    void setBuffer(final byte[] p_buffer, final int p_position, final int p_limit) {
-        m_buffer = p_buffer;
-
-        m_currentPosition = p_position;
-        m_startPosition = p_position;
-        m_limit = p_limit;
     }
 }

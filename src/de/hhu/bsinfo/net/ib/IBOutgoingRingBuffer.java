@@ -3,7 +3,9 @@ package de.hhu.bsinfo.net.ib;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractOutgoingRingBuffer;
+import de.hhu.bsinfo.net.core.ExporterPool;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.utils.ByteBufferHelper;
 
@@ -65,7 +67,7 @@ public class IBOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
 
     @Override
     protected void serialize(final AbstractMessage p_message, final int p_start, final int p_messageSize, final boolean p_hasOverflow) throws NetworkException {
-        IBMessageExporter exporter = (IBMessageExporter) IBExporterPool.getInstance().getExporter(p_hasOverflow);
+        AbstractMessageExporter exporter = ExporterPool.getInstance().getExporter(p_hasOverflow);
         exporter.setBuffer(m_bufferAddr, m_bufferSize);
         exporter.setPosition(p_start);
 

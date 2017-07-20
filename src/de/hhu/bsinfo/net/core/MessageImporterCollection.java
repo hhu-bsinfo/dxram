@@ -11,24 +11,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.net.nio;
-
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.UnfinishedImporterOperation;
+package de.hhu.bsinfo.net.core;
 
 /**
  * Importer collection.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
-class NIOMessageImporterCollection {
+class MessageImporterCollection {
 
-    private NIOMessageImporter m_importer;
-    private NIOMessageImporterOverflow m_importerOverflow;
-    private NIOMessageImporterUnderflow m_importerUnderflow;
-    private NIOMessageImporterUnderOverflow m_importerUnderOverflow;
+    private MessageImporterDefault m_importer;
+    private MessageImporterOverflow m_importerOverflow;
+    private MessageImporterUnderflow m_importerUnderflow;
+    private MessageImporterUnderOverflow m_importerUnderOverflow;
 
     private UnfinishedImporterOperation m_unfinishedOperation;
 
@@ -37,52 +32,48 @@ class NIOMessageImporterCollection {
     /**
      * Constructor
      */
-    NIOMessageImporterCollection() {
+    MessageImporterCollection() {
         super();
 
         m_unfinishedOperation = new UnfinishedImporterOperation();
 
-        m_importer = new NIOMessageImporter();
-        m_importerOverflow = new NIOMessageImporterOverflow(m_unfinishedOperation);
-        m_importerUnderflow = new NIOMessageImporterUnderflow(m_unfinishedOperation);
-        m_importerUnderOverflow = new NIOMessageImporterUnderOverflow(m_unfinishedOperation);
+        m_importer = new MessageImporterDefault();
+        m_importerOverflow = new MessageImporterOverflow(m_unfinishedOperation);
+        m_importerUnderflow = new MessageImporterUnderflow(m_unfinishedOperation);
+        m_importerUnderOverflow = new MessageImporterUnderOverflow(m_unfinishedOperation);
 
         m_bytesCopied = 0;
     }
 
-    AbstractMessageImporter getImporter(final ByteBuffer p_buffer, final boolean p_hasOverflow) {
+    AbstractMessageImporter getImporter(final long p_addr, final int p_size, final int p_position, final boolean p_hasOverflow) {
         AbstractMessageImporter ret;
 
         if (m_bytesCopied != 0) {
-            /*if (p_hasOverflow) {
-                ret = m_importerUnderOverflow;
-            } else {*/
-
-            // mirror ByteBuffer position and limit (range) to importer
-            m_importerUnderflow.setBuffer(p_buffer.array(), p_buffer.position());
+            // TODO: under-overflow
+            System.out.println("underflow");
             ret = m_importerUnderflow;
-            //}
         } else if (p_hasOverflow) {
-            // mirror ByteBuffer position and limit (range) to importer
-            m_importerOverflow.setBuffer(p_buffer.array(), p_buffer.position(), p_buffer.limit());
             ret = m_importerOverflow;
+            System.out.println("overflow");
         } else {
-            // mirror ByteBuffer position and limit (range) to importer
-            m_importer.setBuffer(p_buffer.array(), p_buffer.position(), p_buffer.limit());
             ret = m_importer;
         }
+        // mirror ByteBuffer position and limit (range) to importer
+        ret.setBuffer(p_addr, p_size, p_position);
         ret.setNumberOfReadBytes(m_bytesCopied);
 
         return ret;
     }
 
-    void returnImporter(final AbstractMessageImporter p_importer, final boolean p_finished) {
+    int returnImporter(final AbstractMessageImporter p_importer, final boolean p_finished) {
         if (p_finished) {
             m_bytesCopied = 0;
             m_unfinishedOperation.reset();
         } else {
             m_bytesCopied = p_importer.getNumberOfReadBytes();
         }
+
+        return p_importer.getNumberOfReadBytes();
     }
 
 }

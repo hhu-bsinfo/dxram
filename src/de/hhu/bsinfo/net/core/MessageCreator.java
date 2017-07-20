@@ -13,17 +13,13 @@
 
 package de.hhu.bsinfo.net.core;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.net.ib.IBConnection;
-import de.hhu.bsinfo.net.ib.IBPipeIn;
-import de.hhu.bsinfo.net.nio.NIOConnection;
-import de.hhu.bsinfo.net.nio.NIOPipeIn;
+import de.hhu.bsinfo.net.nio.NIOBufferPool;
 
 /**
  * The MessageCreator builds messages and forwards them to the MessageHandlers.
@@ -38,7 +34,7 @@ public class MessageCreator extends Thread {
     private volatile boolean m_shutdown;
 
     private AbstractConnection[] m_connectionBuffer;
-    private ByteBuffer[] m_byteBufferBuffer;
+    private NIOBufferPool.DirectBufferWrapper[] m_directBuffers;
     private long[] m_addrBuffer;
     private int[] m_sizeBuffer;
 
@@ -59,7 +55,7 @@ public class MessageCreator extends Thread {
     public MessageCreator(final int p_osBufferSize) {
         m_size = 2 * (2 * 1024 + 1);
         m_connectionBuffer = new AbstractConnection[m_size];
-        m_byteBufferBuffer = new ByteBuffer[m_size];
+        m_directBuffers = new NIOBufferPool.DirectBufferWrapper[m_size];
         m_addrBuffer = new long[m_size];
         m_sizeBuffer = new int[m_size];
         m_maxBytes = p_osBufferSize * 8;
@@ -109,8 +105,9 @@ public class MessageCreator extends Thread {
     @Override
     public void run() {
         AbstractConnection connection;
-        ByteBuffer buffer;
+        AbstractPipeIn pipeIn;
 
+        NIOBufferPool.DirectBufferWrapper buffer;
         long addr;
         int size;
 
@@ -125,29 +122,18 @@ public class MessageCreator extends Thread {
                 LockSupport.park();
             } else {
                 connection = m_connectionBuffer[m_posFront % m_size];
-                buffer = m_byteBufferBuffer[m_posFront % m_size];
+                buffer = m_directBuffers[m_posFront % m_size];
                 addr = m_addrBuffer[m_posFront % m_size];
                 size = m_sizeBuffer[m_posFront % m_size];
 
-                if (buffer != null) {
-                    m_currentBytes -= buffer.remaining();
-                } else {
-                    m_currentBytes -= size;
-                }
-
+                m_currentBytes -= size;
                 m_posFront += 1;
                 m_lock.unlock();
 
                 try {
-                    if (buffer != null) {
-                        // NIO path
-                        NIOPipeIn pipeIn = ((NIOConnection) connection).getPipeIn();
-                        pipeIn.processBuffer(buffer);
-                    } else {
-                        // IB path
-                        IBPipeIn pipeIn = ((IBConnection) connection).getPipeIn();
-                        pipeIn.processBuffer(addr, size);
-                    }
+                    pipeIn = connection.getPipeIn();
+                    pipeIn.processBuffer(addr, size);
+                    pipeIn.returnProcessedBuffer(buffer, addr);
                 } catch (final NetworkException e) {
                     // #if LOGGER == ERROR
                     LOGGER.error("Processing incoming buffer failed", e);
@@ -188,11 +174,10 @@ public class MessageCreator extends Thread {
      *
      * @param p_connection
      *         the connection associated with the buffer
-     * @param p_buffer
-     *         the incoming buffer
      * @return whether the job was added or not
      */
-    public boolean pushJob(final AbstractConnection p_connection, final ByteBuffer p_buffer, final long p_addr, final int p_size) {
+    public boolean pushJob(final AbstractConnection p_connection, final NIOBufferPool.DirectBufferWrapper p_directBufferWrapper, final long p_addr,
+            final int p_size) {
         boolean locked = false;
         boolean wakeup = false;
 
@@ -215,10 +200,10 @@ public class MessageCreator extends Thread {
         }
 
         m_connectionBuffer[m_posBack % m_size] = p_connection;
-        m_byteBufferBuffer[m_posBack % m_size] = p_buffer;
+        m_directBuffers[m_posBack % m_size] = p_directBufferWrapper;
         m_addrBuffer[m_posBack % m_size] = p_addr;
         m_sizeBuffer[m_posBack % m_size] = p_size;
-        m_currentBytes += p_buffer.remaining();
+        m_currentBytes += p_size;
         m_posBack += 1;
 
         if (locked) {

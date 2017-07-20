@@ -1,37 +1,25 @@
-/*
- * Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- */
+package de.hhu.bsinfo.net.core;
 
-package de.hhu.bsinfo.net.nio;
-
-import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+import de.hhu.bsinfo.utils.UnsafeMemory;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
- * Implementation of an Exporter for byte arrays.
+ * Implementation of an Exporter for network messages.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
-class NIOMessageExporter extends AbstractMessageExporter {
+class MessageExporterDefault extends AbstractMessageExporter {
 
-    private byte[] m_buffer;
+    private long m_bufferAddress;
     private int m_currentPosition;
     private int m_startPosition;
 
     /**
      * Constructor
      */
-    NIOMessageExporter() {
+    MessageExporterDefault() {
+
     }
 
     @Override
@@ -46,60 +34,69 @@ class NIOMessageExporter extends AbstractMessageExporter {
     }
 
     @Override
+    public void setBuffer(final long p_addr, final int p_size) {
+        m_bufferAddress = p_addr;
+    }
+
+    @Override
     public void exportObject(final Exportable p_object) {
         p_object.exportObject(this);
     }
 
     @Override
     public void writeBoolean(final boolean p_v) {
-        m_buffer[m_currentPosition++] = (byte) (p_v ? 1 : 0);
+        UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) (p_v ? 1 : 0));
+        m_currentPosition++;
     }
 
     @Override
     public void writeByte(final byte p_v) {
-        m_buffer[m_currentPosition++] = p_v;
+        UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, p_v);
+        m_currentPosition++;
     }
 
     @Override
     public void writeShort(final short p_v) {
-        for (int i = 0; i < Short.BYTES; i++) {
-            m_buffer[m_currentPosition++] = (byte) (p_v >> (Short.BYTES - 1 - i) * 8 & 0xFF);
-        }
+        UnsafeMemory.writeShort(m_bufferAddress + m_currentPosition, p_v);
+        m_currentPosition += Short.BYTES;
     }
 
     @Override
     public void writeInt(final int p_v) {
-        for (int i = 0; i < Integer.BYTES; i++) {
-            m_buffer[m_currentPosition++] = (byte) (p_v >> (Integer.BYTES - 1 - i) * 8 & 0xFF);
-        }
+        UnsafeMemory.writeInt(m_bufferAddress + m_currentPosition, p_v);
+        m_currentPosition += Integer.BYTES;
     }
 
     @Override
     public void writeLong(final long p_v) {
-        for (int i = 0; i < Long.BYTES; i++) {
-            m_buffer[m_currentPosition++] = (byte) (p_v >> (Long.BYTES - 1 - i) * 8 & 0xFF);
-        }
+        UnsafeMemory.writeLong(m_bufferAddress + m_currentPosition, p_v);
+        m_currentPosition += Long.BYTES;
     }
 
     @Override
     public void writeFloat(final float p_v) {
-        writeInt(Float.floatToRawIntBits(p_v));
+        UnsafeMemory.writeFloat(m_bufferAddress + m_currentPosition, p_v);
+        m_currentPosition += Float.BYTES;
     }
 
     @Override
     public void writeDouble(final double p_v) {
-        writeLong(Double.doubleToRawLongBits(p_v));
+        UnsafeMemory.writeDouble(m_bufferAddress + m_currentPosition, p_v);
+        m_currentPosition += Double.BYTES;
     }
 
     @Override
-    public void writeCompactNumber(int p_v) {
+    public void writeCompactNumber(final int p_v) {
         int length = ObjectSizeUtil.sizeofCompactedNumber(p_v);
 
         int i;
         for (i = 0; i < length - 1; i++) {
-            writeByte((byte) ((byte) (p_v >> 7 * i) & 0x7F | 0x80));
+            UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) ((byte) (p_v >> 7 * i) & 0x7F | 0x80));
+            m_currentPosition++;
         }
-        writeByte((byte) ((byte) (p_v >> 7 * i) & 0x7F));
+
+        UnsafeMemory.writeByte(m_bufferAddress + m_currentPosition, (byte) ((byte) (p_v >> 7 * i) & 0x7F));
+        m_currentPosition++;
     }
 
     @Override
@@ -110,14 +107,6 @@ class NIOMessageExporter extends AbstractMessageExporter {
     @Override
     public int writeBytes(final byte[] p_array) {
         return writeBytes(p_array, 0, p_array.length);
-    }
-
-    @Override
-    public int writeBytes(final byte[] p_array, final int p_offset, final int p_length) {
-        System.arraycopy(p_array, p_offset, m_buffer, m_currentPosition, p_length);
-        m_currentPosition += p_length;
-
-        return p_length;
     }
 
     @Override
@@ -136,30 +125,35 @@ class NIOMessageExporter extends AbstractMessageExporter {
     }
 
     @Override
-    public int writeShorts(final short[] p_array, final int p_offset, final int p_length) {
-        for (int i = 0; i < p_length; i++) {
-            writeShort(p_array[p_offset + i]);
-        }
+    public int writeBytes(final byte[] p_array, final int p_offset, final int p_length) {
+        int ret = UnsafeMemory.writeBytes(m_bufferAddress + m_currentPosition, p_array, p_offset, p_length);
+        m_currentPosition += Byte.BYTES * ret;
 
-        return p_length;
+        return ret;
+    }
+
+    @Override
+    public int writeShorts(final short[] p_array, final int p_offset, final int p_length) {
+        int ret = UnsafeMemory.writeShorts(m_bufferAddress + m_currentPosition, p_array, p_offset, p_length);
+        m_currentPosition += Short.BYTES * ret;
+
+        return ret;
     }
 
     @Override
     public int writeInts(final int[] p_array, final int p_offset, final int p_length) {
-        for (int i = 0; i < p_length; i++) {
-            writeInt(p_array[p_offset + i]);
-        }
+        int ret = UnsafeMemory.writeInts(m_bufferAddress + m_currentPosition, p_array, p_offset, p_length);
+        m_currentPosition += Integer.BYTES * ret;
 
-        return p_length;
+        return ret;
     }
 
     @Override
     public int writeLongs(final long[] p_array, final int p_offset, final int p_length) {
-        for (int i = 0; i < p_length; i++) {
-            writeLong(p_array[p_offset + i]);
-        }
+        int ret = UnsafeMemory.writeLongs(m_bufferAddress + m_currentPosition, p_array, p_offset, p_length);
+        m_currentPosition += Long.BYTES * ret;
 
-        return p_length;
+        return ret;
     }
 
     @Override
@@ -189,12 +183,9 @@ class NIOMessageExporter extends AbstractMessageExporter {
     @Override
     public void writeStringArray(final String[] p_array) {
         writeCompactNumber(p_array.length);
+
         for (int i = 0; i < p_array.length; i++) {
             writeString(p_array[i]);
         }
-    }
-
-    public void setBuffer(final byte[] p_buffer) {
-        m_buffer = p_buffer;
     }
 }

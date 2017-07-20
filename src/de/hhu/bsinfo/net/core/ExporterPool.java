@@ -11,29 +11,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.net.nio;
+package de.hhu.bsinfo.net.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.net.core.NetworkRuntimeException;
-
 /**
  * @author Kevin Beineke, kevin.beineke@hhu.de, 07.07.2017
  */
-public final class NIOExporterPool {
+public final class ExporterPool {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(NIOExporterPool.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(ExporterPool.class.getSimpleName());
     private static final int SLOT_SIZE = 100;
 
     // Attributes
-    private static NIOMessageExporterCollection[] ms_exporters = new NIOMessageExporterCollection[SLOT_SIZE];
+    private static MessageExporterCollection[] ms_exporters = new MessageExporterCollection[SLOT_SIZE];
 
-    private NIOExporterPool() {
+    private ExporterPool() {
     }
 
-    public static NIOMessageExporterCollection getInstance() {
-        NIOMessageExporterCollection ret;
+    public static MessageExporterCollection getInstance() {
+        MessageExporterCollection ret;
         long threadID = Thread.currentThread().getId();
 
         if (threadID >= ms_exporters.length) {
@@ -43,7 +41,7 @@ public final class NIOExporterPool {
                 throw new NetworkRuntimeException("ThreadID is too high. Change configuration...");
             } else {
                 // Copying without lock might result in lost allocations but this can be ignored
-                NIOMessageExporterCollection[] tmp = new NIOMessageExporterCollection[ms_exporters.length + SLOT_SIZE];
+                MessageExporterCollection[] tmp = new MessageExporterCollection[ms_exporters.length + SLOT_SIZE];
                 System.arraycopy(ms_exporters, 0, tmp, 0, ms_exporters.length);
                 ms_exporters = tmp;
             }
@@ -51,7 +49,7 @@ public final class NIOExporterPool {
 
         ret = ms_exporters[(int) threadID];
         if (ret == null) {
-            ret = new NIOMessageExporterCollection();
+            ret = new MessageExporterCollection();
 
             ms_exporters[(int) threadID] = ret;
         }

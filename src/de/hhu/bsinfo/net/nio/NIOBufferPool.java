@@ -7,6 +7,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.utils.ByteBufferHelper;
+
 /**
  * Created by nothaas on 6/12/17.
  */
@@ -22,25 +24,25 @@ public final class NIOBufferPool {
 
     private final int m_osBufferSize;
 
-    private final ArrayList<ByteBuffer> m_largeBufferPool;
-    private final ArrayList<ByteBuffer> m_mediumBufferPool;
-    private final ArrayList<ByteBuffer> m_smallBufferPool;
+    private final ArrayList<DirectBufferWrapper> m_largeBufferPool;
+    private final ArrayList<DirectBufferWrapper> m_mediumBufferPool;
+    private final ArrayList<DirectBufferWrapper> m_smallBufferPool;
     private final ReentrantLock m_bufferPoolLock;
 
-    public NIOBufferPool(final int p_osBufferSize) {
+    NIOBufferPool(final int p_osBufferSize) {
         m_osBufferSize = p_osBufferSize;
 
-        m_largeBufferPool = new ArrayList<ByteBuffer>();
-        m_mediumBufferPool = new ArrayList<ByteBuffer>();
-        m_smallBufferPool = new ArrayList<ByteBuffer>();
+        m_largeBufferPool = new ArrayList<DirectBufferWrapper>();
+        m_mediumBufferPool = new ArrayList<DirectBufferWrapper>();
+        m_smallBufferPool = new ArrayList<DirectBufferWrapper>();
         for (int i = 0; i < LARGE_BUFFER_POOL_SIZE; i++) {
-            m_largeBufferPool.add(ByteBuffer.allocate(p_osBufferSize / LARGE_BUFFER_POOL_FACTOR));
+            m_largeBufferPool.add(new DirectBufferWrapper(p_osBufferSize / LARGE_BUFFER_POOL_FACTOR));
         }
         for (int i = 0; i < MEDIUM_BUFFER_POOL_SIZE; i++) {
-            m_mediumBufferPool.add(ByteBuffer.allocate(p_osBufferSize / MEDIUM_BUFFER_POOL_FACTOR));
+            m_largeBufferPool.add(new DirectBufferWrapper(p_osBufferSize / MEDIUM_BUFFER_POOL_FACTOR));
         }
         for (int i = 0; i < SMALL_BUFFER_POOL_SIZE; i++) {
-            m_smallBufferPool.add(ByteBuffer.allocate(p_osBufferSize / SMALL_BUFFER_POOL_FACTOR));
+            m_largeBufferPool.add(new DirectBufferWrapper(p_osBufferSize / SMALL_BUFFER_POOL_FACTOR));
         }
         m_bufferPoolLock = new ReentrantLock(false);
     }
@@ -49,8 +51,8 @@ public final class NIOBufferPool {
         return m_osBufferSize;
     }
 
-    public ByteBuffer getBuffer() {
-        ByteBuffer buffer;
+    public DirectBufferWrapper getBuffer() {
+        DirectBufferWrapper buffer;
 
         m_bufferPoolLock.lock();
         if (!m_largeBufferPool.isEmpty()) {
@@ -63,7 +65,8 @@ public final class NIOBufferPool {
             // #if LOGGER >= WARN
             LOGGER.warn("Insufficient pooled incoming buffers. Allocating temporary buffer.");
             // #endif /* LOGGER >= WARN */
-            buffer = ByteBuffer.allocate(m_osBufferSize);
+
+            buffer = new DirectBufferWrapper(m_osBufferSize);
         }
         m_bufferPoolLock.unlock();
 
@@ -73,25 +76,44 @@ public final class NIOBufferPool {
     /**
      * Returns the pooled buffer
      *
-     * @param p_byteBuffer
+     * @param p_directBufferWrapper
      *         the pooled buffer
      */
-    void returnBuffer(final ByteBuffer p_byteBuffer) {
+    void returnBuffer(final DirectBufferWrapper p_directBufferWrapper) {
         m_bufferPoolLock.lock();
-        p_byteBuffer.clear();
-        if (p_byteBuffer.capacity() == m_osBufferSize / LARGE_BUFFER_POOL_FACTOR) {
+        p_directBufferWrapper.getBuffer().clear();
+        if (p_directBufferWrapper.getBuffer().capacity() == m_osBufferSize / LARGE_BUFFER_POOL_FACTOR) {
             if (m_largeBufferPool.size() < LARGE_BUFFER_POOL_SIZE) {
-                m_largeBufferPool.add(p_byteBuffer);
+                m_largeBufferPool.add(p_directBufferWrapper);
             }
-        } else if (p_byteBuffer.capacity() == m_osBufferSize / MEDIUM_BUFFER_POOL_FACTOR) {
+        } else if (p_directBufferWrapper.getBuffer().capacity() == m_osBufferSize / MEDIUM_BUFFER_POOL_FACTOR) {
             if (m_mediumBufferPool.size() < MEDIUM_BUFFER_POOL_SIZE) {
-                m_mediumBufferPool.add(p_byteBuffer);
+                m_mediumBufferPool.add(p_directBufferWrapper);
             }
-        } else if (p_byteBuffer.capacity() == m_osBufferSize / SMALL_BUFFER_POOL_FACTOR) {
+        } else if (p_directBufferWrapper.getBuffer().capacity() == m_osBufferSize / SMALL_BUFFER_POOL_FACTOR) {
             if (m_smallBufferPool.size() < SMALL_BUFFER_POOL_SIZE) {
-                m_smallBufferPool.add(p_byteBuffer);
+                m_smallBufferPool.add(p_directBufferWrapper);
             }
         }
         m_bufferPoolLock.unlock();
+    }
+
+    public static class DirectBufferWrapper {
+
+        private ByteBuffer m_buffer;
+        private long m_addr;
+
+        DirectBufferWrapper(final int p_size) {
+            m_buffer = ByteBuffer.allocateDirect(p_size);
+            m_addr = ByteBufferHelper.getDirectAddress(m_buffer);
+        }
+
+        ByteBuffer getBuffer() {
+            return m_buffer;
+        }
+
+        long getAddress() {
+            return m_addr;
+        }
     }
 }

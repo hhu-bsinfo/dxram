@@ -11,34 +11,39 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.net.ib;
-
-import de.hhu.bsinfo.net.core.AbstractMessageExporter;
+package de.hhu.bsinfo.net.core;
 
 /**
- * Implementation of an Importer/Exporter for ByteBuffers.
+ * Exporter collection.
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
-class IBMessageExporterCollection {
+public class MessageExporterCollection {
 
     private AbstractMessageExporter m_exporter;
-    private AbstractMessageExporter m_exporterWithOverflow;
+    private AbstractMessageExporter m_exporterOverflow;
 
     /**
      * Constructor
      */
-    IBMessageExporterCollection() {
+    MessageExporterCollection() {
         super();
-        m_exporter = new IBMessageExporter();
-        m_exporterWithOverflow = new IBMessageExporterOverflow();
+        m_exporter = new MessageExporterDefault();
+        m_exporterOverflow = new MessageExporterOverflow();
     }
 
-    AbstractMessageExporter getExporter(final boolean p_hasOverflow) {
+    /**
+     * Get corresponding exporter (default, overflow)
+     *
+     * @param p_hasOverflow
+     *         whether all bytes to export fit in buffer
+     * @return the AbstractMessageExporter
+     */
+    public AbstractMessageExporter getExporter(final boolean p_hasOverflow) {
         if (!p_hasOverflow) {
             return m_exporter;
         } else {
-            return m_exporterWithOverflow;
+            return m_exporterOverflow;
         }
     }
 }
