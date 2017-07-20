@@ -233,7 +233,7 @@ public class IBConnectionManager extends AbstractConnectionManager
     }
 
     @Override
-    public void receivedBuffer(final short p_sourceNodeId, final long p_addr, final int p_length) {
+    public void receivedBuffer(final short p_sourceNodeId, final long p_bufferHandle, final long p_addr, final int p_length) {
         // #if LOGGER >= TRACE
         LOGGER.trace("Received buffer (0x%X, %d) from 0x%X", p_addr, p_length, p_sourceNodeId);
         // #endif /* LOGGER >= TRACE */
@@ -249,7 +249,7 @@ public class IBConnectionManager extends AbstractConnectionManager
         }
 
         // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
-        while (!m_messageCreator.pushJob(connection, null, p_addr, p_length)) {
+        while (!m_messageCreator.pushJob(connection, null, p_bufferHandle, p_addr, p_length)) {
             // #if LOGGER == TRACE
             LOGGER.trace("Message creator: Job queue is full!");
             // #endif /* LOGGER == TRACE */

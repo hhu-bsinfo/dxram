@@ -35,6 +35,7 @@ public class MessageCreator extends Thread {
 
     private AbstractConnection[] m_connectionBuffer;
     private NIOBufferPool.DirectBufferWrapper[] m_directBuffers;
+    private long[] m_bufferHandleBuffer;
     private long[] m_addrBuffer;
     private int[] m_sizeBuffer;
 
@@ -56,6 +57,7 @@ public class MessageCreator extends Thread {
         m_size = 2 * (2 * 1024 + 1);
         m_connectionBuffer = new AbstractConnection[m_size];
         m_directBuffers = new NIOBufferPool.DirectBufferWrapper[m_size];
+        m_bufferHandleBuffer = new long[m_size];
         m_addrBuffer = new long[m_size];
         m_sizeBuffer = new int[m_size];
         m_maxBytes = p_osBufferSize * 8;
@@ -108,6 +110,7 @@ public class MessageCreator extends Thread {
         AbstractPipeIn pipeIn;
 
         NIOBufferPool.DirectBufferWrapper buffer;
+        long bufferHandle;
         long addr;
         int size;
 
@@ -122,6 +125,7 @@ public class MessageCreator extends Thread {
                 LockSupport.park();
             } else {
                 connection = m_connectionBuffer[m_posFront % m_size];
+                bufferHandle = m_bufferHandleBuffer[m_posFront % m_size];
                 buffer = m_directBuffers[m_posFront % m_size];
                 addr = m_addrBuffer[m_posFront % m_size];
                 size = m_sizeBuffer[m_posFront % m_size];
@@ -133,7 +137,7 @@ public class MessageCreator extends Thread {
                 try {
                     pipeIn = connection.getPipeIn();
                     pipeIn.processBuffer(addr, size);
-                    pipeIn.returnProcessedBuffer(buffer, addr);
+                    pipeIn.returnProcessedBuffer(buffer, bufferHandle);
                 } catch (final NetworkException e) {
                     // #if LOGGER == ERROR
                     LOGGER.error("Processing incoming buffer failed", e);
@@ -176,8 +180,8 @@ public class MessageCreator extends Thread {
      *         the connection associated with the buffer
      * @return whether the job was added or not
      */
-    public boolean pushJob(final AbstractConnection p_connection, final NIOBufferPool.DirectBufferWrapper p_directBufferWrapper, final long p_addr,
-            final int p_size) {
+    public boolean pushJob(final AbstractConnection p_connection, final NIOBufferPool.DirectBufferWrapper p_directBufferWrapper, final long p_bufferHandle,
+            final long p_addr, final int p_size) {
         boolean locked = false;
         boolean wakeup = false;
 
@@ -201,6 +205,7 @@ public class MessageCreator extends Thread {
 
         m_connectionBuffer[m_posBack % m_size] = p_connection;
         m_directBuffers[m_posBack % m_size] = p_directBufferWrapper;
+        m_bufferHandleBuffer[m_posBack % m_size] = p_bufferHandle;
         m_addrBuffer[m_posBack % m_size] = p_addr;
         m_sizeBuffer[m_posBack % m_size] = p_size;
         m_currentBytes += p_size;

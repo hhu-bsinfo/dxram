@@ -91,7 +91,7 @@ class NIOPipeIn extends AbstractPipeIn {
                 // #endif /* LOGGER >= TRACE */
 
                 // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
-                while (!m_messageCreator.pushJob(m_parentConnection, directBufferWrapper, directBufferWrapper.getAddress(), buffer.remaining())) {
+                while (!m_messageCreator.pushJob(m_parentConnection, directBufferWrapper, 0, directBufferWrapper.getAddress(), buffer.remaining())) {
                     // #if LOGGER == TRACE
                     LOGGER.trace("Network-Selector: Job queue is full!");
                     // #endif /* LOGGER == TRACE */

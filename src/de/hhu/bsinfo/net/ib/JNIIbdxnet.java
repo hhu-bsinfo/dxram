@@ -20,7 +20,7 @@ public final class JNIIbdxnet {
 
     public interface RecvHandler {
         // note: byte buffer must be allocated as direct buffer
-        void receivedBuffer(final short p_sourceNodeId, final long p_addr, final int p_length);
+        void receivedBuffer(final short p_sourceNodeId, final long p_bufferHandle, final long p_addr, final int p_length);
 
         void receivedFlowControlData(final short p_sourceNodeId, final int p_bytes);
     }

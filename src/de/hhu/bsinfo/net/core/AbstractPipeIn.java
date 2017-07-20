@@ -70,7 +70,7 @@ public abstract class AbstractPipeIn {
                 ", m_flowControl " + m_flowControl + ", m_receivedMessages " + m_receivedMessages + ']';
     }
 
-    public abstract void returnProcessedBuffer(final Object p_obj, final long p_addr);
+    public abstract void returnProcessedBuffer(final Object p_obj, final long p_bufferHandle);
 
     public abstract boolean isOpen();
 

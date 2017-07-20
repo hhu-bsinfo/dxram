@@ -21,8 +21,8 @@ class IBPipeIn extends AbstractPipeIn {
     }
 
     @Override
-    public void returnProcessedBuffer(final Object p_unused, final long p_addr) {
-        JNIIbdxnet.returnRecvBuffer(p_addr);
+    public void returnProcessedBuffer(final Object p_unused, final long p_bufferHandle) {
+        JNIIbdxnet.returnRecvBuffer(p_bufferHandle);
     }
 
     @Override
