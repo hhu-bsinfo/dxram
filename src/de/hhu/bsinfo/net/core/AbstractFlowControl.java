@@ -48,7 +48,7 @@ public abstract class AbstractFlowControl {
     // call when data has to be written to a connection
     void dataToSend(final int p_writtenBytes) {
         // #if LOGGER >= TRACE
-        LOGGER.trace("executeFlowControlDataWritten: %d", p_writtenBytes);
+        LOGGER.trace("flowControlDataToSend (%X): %d", m_destinationNodeID, p_writtenBytes);
         // #endif /* LOGGER >= TRACE */
 
         m_flowControlCondLock.lock();
@@ -68,7 +68,7 @@ public abstract class AbstractFlowControl {
     // call when data was received on a connection
     void dataReceived(final int p_receivedBytes) {
         // #if LOGGER >= TRACE
-        LOGGER.trace("executeFlowControlDataReceived: %d", p_receivedBytes);
+        LOGGER.trace("flowControlDataReceived (%X): %d", m_destinationNodeID, p_receivedBytes);
         // #endif /* LOGGER >= TRACE */
 
         m_flowControlCondLock.lock();
@@ -88,7 +88,7 @@ public abstract class AbstractFlowControl {
     // call when a flow control message was received
     public void handleFlowControlData(final int p_confirmedBytes) {
         // #if LOGGER >= TRACE
-        LOGGER.trace("handleFlowControlMessage: %d", p_confirmedBytes);
+        LOGGER.trace("handleFlowControlData (%X): %d", m_destinationNodeID, p_confirmedBytes);
         // #endif /* LOGGER >= TRACE */
 
         m_flowControlCondLock.lock();
@@ -108,12 +108,12 @@ public abstract class AbstractFlowControl {
     public int getAndResetFlowControlData() {
         int ret;
 
-        // #if LOGGER >= TRACE
-        LOGGER.trace("getAndResetFlowControlBytes");
-        // #endif /* LOGGER >= TRACE */
-
         m_flowControlCondLock.lock();
         ret = m_receivedBytes;
+
+        // #if LOGGER >= TRACE
+        LOGGER.trace("getAndResetFlowControlData (%X): %d", m_destinationNodeID, ret);
+        // #endif /* LOGGER >= TRACE */
 
         // Reset received bytes counter
         m_receivedBytes = 0;

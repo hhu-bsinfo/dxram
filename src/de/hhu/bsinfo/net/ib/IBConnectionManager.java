@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.net.ib;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,6 +16,7 @@ import de.hhu.bsinfo.net.core.MessageDirectory;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.net.core.NetworkRuntimeException;
 import de.hhu.bsinfo.net.core.RequestMap;
+import de.hhu.bsinfo.utils.ByteBufferHelper;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -206,7 +208,7 @@ public class IBConnectionManager extends AbstractConnectionManager
         }
 
         // poll for next interest
-        short nodeId = m_writeInterestManager.getNextInterest();
+        short nodeId = m_writeInterestManager.getNextInterests();
 
         // no data available
         if (nodeId == NodeID.INVALID_ID) {
@@ -214,7 +216,7 @@ public class IBConnectionManager extends AbstractConnectionManager
         }
 
         // #if LOGGER >= TRACE
-        LOGGER.trace("Next write interest on node 0x%X", nodeId);
+        LOGGER.trace("Next write interests on node 0x%X", nodeId);
         // #endif /* LOGGER >= TRACE */
 
         // prepare next work load
@@ -228,8 +230,48 @@ public class IBConnectionManager extends AbstractConnectionManager
             return 0;
         }
 
-        // return 0 if no data is available, otherwise valid (unsafe) memory address
-        return connection.getPipeOut().getNextBuffer();
+        // assemble arguments for struct to pass back to jni
+        ByteBuffer arguments = m_sendWorkParameterPool.getInstance();
+        arguments.clear();
+
+        // process data interests
+        if (m_writeInterestManager.consumeDataInterests(nodeId)) {
+            long pos = connection.getPipeOut().getNextBuffer();
+            int relPosBackRel = (int) (pos >> 32 & 0x7FFFFFFF);
+            int relPosFrontRel = (int) (pos & 0x7FFFFFFF);
+
+            // relative position of data start in buffer
+            arguments.putInt(relPosFrontRel);
+            // relative position of data end in buffer
+            arguments.putInt(relPosBackRel);
+
+            // #if LOGGER >= TRACE
+            LOGGER.trace("Next data write on node 0x%X, posFrontRelative %d, posBackRelative %d", nodeId, relPosFrontRel, relPosBackRel);
+            // #endif /* LOGGER >= TRACE */
+        } else {
+            // no data to write, fc only
+            arguments.putInt(0);
+            arguments.putInt(0);
+        }
+
+        // process flow control interests
+        if (m_writeInterestManager.consumeFcInterests(nodeId)) {
+            int fcData = connection.getPipeOut().getFlowControlToWrite();
+
+            arguments.putInt(fcData);
+
+            // #if LOGGER >= TRACE
+            LOGGER.trace("Next flow control write on node 0x%X, fc data %d", nodeId, fcData);
+            // #endif /* LOGGER >= TRACE */
+        } else {
+            // data only, no fc
+            arguments.putInt(0);
+        }
+
+        // node id
+        arguments.putShort(nodeId);
+
+        return ByteBufferHelper.getDirectAddress(arguments);
     }
 
     @Override

@@ -20,17 +20,28 @@ class IBWriteInterestManager {
         }
     }
 
-    void pushBackInterest(final short p_nodeId) {
+    void pushBackDataInterest(final short p_nodeId) {
         // #if LOGGER == TRACE
-        LOGGER.trace("Push back interest: 0x%X", p_nodeId);
+        LOGGER.trace("pushBackDataInterest: 0x%X", p_nodeId);
         // #endif /* LOGGER == TRACE */
 
-        if (m_writeInterests[p_nodeId & 0xFFFF].addInterest()) {
+        if (m_writeInterests[p_nodeId & 0xFFFF].addDataInterest()) {
             m_interestQueue.pushBack(p_nodeId);
         }
     }
 
-    short getNextInterest() {
+    void pushBackFcInterest(final short p_nodeId) {
+        // #if LOGGER == TRACE
+        LOGGER.trace("pushBackDataInterest: 0x%X", p_nodeId);
+        // #endif /* LOGGER == TRACE */
+
+        if (m_writeInterests[p_nodeId & 0xFFFF].addFcInterest()) {
+            m_interestQueue.pushBack(p_nodeId);
+        }
+    }
+
+    // caller has to manually consume the interests of both data and fc
+    short getNextInterests() {
         short nodeId = m_interestQueue.popFront();
 
         if (nodeId == NodeID.INVALID_ID) {
@@ -48,11 +59,19 @@ class IBWriteInterestManager {
             return NodeID.INVALID_ID;
         }
 
+        return nodeId;
+    }
+
+    boolean consumeDataInterests(final short p_nodeId) {
         // consume current interest count
         // everything that's in the buffer up to this point is going to get sent
-        m_writeInterests[nodeId & 0xFFFF].consumeInterests();
+        return m_writeInterests[p_nodeId & 0xFFFF].consumeDataInterests() > 0;
+    }
 
-        return nodeId;
+    boolean consumeFcInterests(final short p_nodeId) {
+        // consume current interest count
+        // everything that's in the buffer up to this point is going to get sent
+        return m_writeInterests[p_nodeId & 0xFFFF].consumeFcInterests() > 0;
     }
 
     void finishedProcessingInterests(final short p_nodeId) {

@@ -21,6 +21,6 @@ public class IBFlowControl extends AbstractFlowControl {
 
     @Override
     public void flowControlWrite() throws NetworkException {
-        m_writeInterestManager.pushBackInterest(getDestinationNodeId());
+        m_writeInterestManager.pushBackFcInterest(getDestinationNodeId());
     }
 }
