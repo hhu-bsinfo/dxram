@@ -1,7 +1,7 @@
 package de.hhu.bsinfo.net.ib;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,20 +12,22 @@ class IBWriteInterest {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBWriteInterest.class.getSimpleName());
 
     private final short m_nodeId;
-    private AtomicInteger m_dataInterestAvailable;
-    private AtomicInteger m_fcInterestAvailable;
+    private ReentrantLock m_interestLock;
+    private int m_dataInterestAvailable;
+    private int m_fcInterestAvailable;
     private AtomicBoolean m_interestAcquired;
 
     IBWriteInterest(final short p_nodeId) {
         m_nodeId = p_nodeId;
-        m_dataInterestAvailable = new AtomicInteger(0);
-        m_fcInterestAvailable = new AtomicInteger(0);
+        m_interestLock = new ReentrantLock(false);
+        m_dataInterestAvailable = 0;
+        m_fcInterestAvailable = 0;
         m_interestAcquired = new AtomicBoolean(false);
     }
 
     @Override
     public String toString() {
-        return NodeID.toHexString(m_nodeId) + ", " + m_dataInterestAvailable.get() + ", " + m_dataInterestAvailable.get() + ", " + m_interestAcquired.get();
+        return NodeID.toHexString(m_nodeId) + ", " + m_dataInterestAvailable + ", " + m_dataInterestAvailable + ", " + m_interestAcquired.get();
     }
 
     short getNodeId() {
@@ -41,37 +43,64 @@ class IBWriteInterest {
     }
 
     boolean addDataInterest() {
-        int ret = m_dataInterestAvailable.getAndIncrement();
+        boolean ret;
 
-        // #if LOGGER == TRACE
-        LOGGER.trace("addDataInterest 0x%X, total count %d", m_nodeId, ret + 1);
-        // #endif /* LOGGER == TRACE */
+        m_interestLock.lock();
 
-        return ret == 0 && m_fcInterestAvailable.get() == 0;
+        ret = m_dataInterestAvailable == 0 && m_fcInterestAvailable == 0;
+        m_dataInterestAvailable++;
+
+        m_interestLock.unlock();
+
+        return ret;
     }
 
     boolean addFcInterest() {
-        int ret = m_fcInterestAvailable.getAndIncrement();
+        boolean ret;
 
-        // #if LOGGER == TRACE
-        LOGGER.trace("addFcInterest 0x%X, total count %d", m_nodeId, ret + 1);
-        // #endif /* LOGGER == TRACE */
+        m_interestLock.lock();
 
-        return ret == 0 && m_dataInterestAvailable.get() == 0;
+        ret = m_fcInterestAvailable == 0 && m_dataInterestAvailable == 0;
+        m_fcInterestAvailable++;
+
+        m_interestLock.unlock();
+
+        return ret;
     }
 
     int consumeDataInterests() {
-        return m_dataInterestAvailable.getAndSet(0);
+        int ret;
+
+        m_interestLock.lock();
+
+        ret = m_dataInterestAvailable;
+        m_dataInterestAvailable = 0;
+
+        m_interestLock.unlock();
+
+        return ret;
     }
 
     int consumeFcInterests() {
-        return m_fcInterestAvailable.getAndSet(0);
+        int ret;
+
+        m_interestLock.lock();
+
+        ret = m_fcInterestAvailable;
+        m_fcInterestAvailable = 0;
+
+        m_interestLock.unlock();
+
+        return ret;
     }
 
     // on node disconnect, only
     void reset() {
-        m_dataInterestAvailable.set(0);
-        m_fcInterestAvailable.set(0);
+        m_interestLock.lock();
+        m_dataInterestAvailable = 0;
+        m_fcInterestAvailable = 0;
+        m_interestLock.unlock();
+
         m_interestAcquired.set(false);
     }
 }
