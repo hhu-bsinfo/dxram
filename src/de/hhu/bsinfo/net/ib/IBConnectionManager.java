@@ -38,13 +38,13 @@ public class IBConnectionManager extends AbstractConnectionManager
 
     private final boolean[] m_nodeConnected;
 
-    // struct NextWorkParameters
-    // {
-    //    uint64_t m_ptrBuffer;
-    //    uint32_t m_len;
-    //    uint32_t m_flowControlData;
-    //    uint16_t m_nodeId;
-    //} __attribute__((packed));
+    //    struct NextWorkParameters
+    //    {
+    //        uint32_t m_posFrontRel;
+    //        uint32_t m_posBackRel;
+    //        uint32_t m_flowControlData;
+    //        uint16_t m_nodeId;
+    //    } __attribute__((packed));
     private final IBSendWorkParameterPool m_sendWorkParameterPool;
 
     public IBConnectionManager(final IBConnectionManagerConfig p_config, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
@@ -195,6 +195,9 @@ public class IBConnectionManager extends AbstractConnectionManager
     public long getNextDataToSend(final short p_prevNodeIdWritten, final int p_prevDataWrittenLen) {
         // return interest of previous call
         if (p_prevNodeIdWritten != NodeID.INVALID_ID) {
+            // #if LOGGER >= TRACE
+            LOGGER.trace("getNextDataToSend, p_prevNodeIdWritten 0x%X, p_prevDataWrittenLen %d", p_prevNodeIdWritten, p_prevDataWrittenLen);
+            // #endif /* LOGGER >= TRACE */
 
             m_writeInterestManager.finishedProcessingInterests(p_prevNodeIdWritten);
 
@@ -204,6 +207,9 @@ public class IBConnectionManager extends AbstractConnectionManager
                 prevConnection.getPipeOut().dataProcessed(p_prevDataWrittenLen);
             } catch (final NetworkException e) {
                 // TODO ignore ?
+                // #if LOGGER >= ERROR
+                LOGGER.trace("Getting connection 0x%X for previous data written failed", p_prevNodeIdWritten);
+                // #endif /* LOGGER >= ERROR */
             }
         }
 
