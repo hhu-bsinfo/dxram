@@ -19,6 +19,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.net.nio.NIOBufferPool;
 
 /**
@@ -29,6 +31,8 @@ import de.hhu.bsinfo.net.nio.NIOBufferPool;
  */
 public class MessageCreator extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(MessageCreator.class.getSimpleName());
+    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(MessageCreator.class, "MessageCreatorPush");
+    private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(MessageCreator.class, "MessageCreatorPop");
 
     // Attributes
     private volatile boolean m_shutdown;
@@ -115,6 +119,11 @@ public class MessageCreator extends Thread {
         int size;
 
         while (!m_shutdown) {
+
+            // #ifdef STATISTICS
+            SOP_POP.enter();
+            // #endif /* STATISTICS */
+
             // pop a job
             m_lock.lock();
 
@@ -122,7 +131,8 @@ public class MessageCreator extends Thread {
                 // Ring-buffer is empty.
                 m_lock.unlock();
 
-                LockSupport.park();
+                // Wait for a short period (~ xx µs) and continue
+                LockSupport.parkNanos(1);
             } else {
                 connection = m_connectionBuffer[m_posFront % m_size];
                 bufferHandle = m_bufferHandleBuffer[m_posFront % m_size];
@@ -133,6 +143,10 @@ public class MessageCreator extends Thread {
                 m_currentBytes -= size;
                 m_posFront += 1;
                 m_lock.unlock();
+
+                // #ifdef STATISTICS
+                SOP_POP.leave();
+                // #endif /* STATISTICS */
 
                 try {
                     pipeIn = connection.getPipeIn();
@@ -183,7 +197,10 @@ public class MessageCreator extends Thread {
     public boolean pushJob(final AbstractConnection p_connection, final NIOBufferPool.DirectBufferWrapper p_directBufferWrapper, final long p_bufferHandle,
             final long p_addr, final int p_size) {
         boolean locked = false;
-        boolean wakeup = false;
+
+        // #ifdef STATISTICS
+        SOP_PUSH.enter();
+        // #endif /* STATISTICS */
 
         if (m_posFront != m_posBack) {
             m_lock.lock();
@@ -199,10 +216,6 @@ public class MessageCreator extends Thread {
             return false;
         }
 
-        if (m_currentBytes == 0) {
-            wakeup = true;
-        }
-
         m_connectionBuffer[m_posBack % m_size] = p_connection;
         m_directBuffers[m_posBack % m_size] = p_directBufferWrapper;
         m_bufferHandleBuffer[m_posBack % m_size] = p_bufferHandle;
@@ -215,9 +228,9 @@ public class MessageCreator extends Thread {
             m_lock.unlock();
         }
 
-        if (wakeup) {
-            LockSupport.unpark(this);
-        }
+        // #ifdef STATISTICS
+        SOP_PUSH.leave();
+        // #endif /* STATISTICS */
 
         return true;
     }

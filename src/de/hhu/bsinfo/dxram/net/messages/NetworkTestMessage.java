@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxram.net.messages;
 
+import java.util.Arrays;
+
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
@@ -49,6 +51,7 @@ public class NetworkTestMessage extends AbstractMessage {
         super(p_destination, DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE);
 
         m_data = new byte[p_messageSize];
+        Arrays.fill(m_data, (byte) 2);
     }
 
     @Override

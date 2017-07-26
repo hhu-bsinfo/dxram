@@ -45,19 +45,24 @@ class MessageImporterCollection {
         m_bytesCopied = 0;
     }
 
-    AbstractMessageImporter getImporter(final long p_addr, final int p_size, final int p_position, final boolean p_hasOverflow) {
+    AbstractMessageImporter getImporter(final long p_addr, final int p_position, final int p_bufferSize, final int p_payloadSize) {
         AbstractMessageImporter ret;
 
+        boolean hasOverflow = p_position + p_payloadSize - m_bytesCopied > p_bufferSize;
+
         if (m_bytesCopied != 0) {
-            // TODO: under-overflow
-            ret = m_importerUnderflow;
-        } else if (p_hasOverflow) {
+            if (hasOverflow) {
+                ret = m_importerUnderOverflow;
+            } else {
+                ret = m_importerUnderflow;
+            }
+        } else if (hasOverflow) {
             ret = m_importerOverflow;
         } else {
             ret = m_importer;
         }
         // mirror ByteBuffer position and limit (range) to importer
-        ret.setBuffer(p_addr, p_size, p_position);
+        ret.setBuffer(p_addr, p_bufferSize, p_position);
         ret.setNumberOfReadBytes(m_bytesCopied);
 
         return ret;

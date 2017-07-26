@@ -6,6 +6,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 import de.hhu.bsinfo.net.core.Messages;
 
@@ -16,6 +18,8 @@ import de.hhu.bsinfo.net.core.Messages;
  */
 final class DefaultMessageHandlerPool {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DefaultMessageHandlerPool.class.getSimpleName());
+    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Push");
+    private static final StatisticsOperation SOP_WAIT = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Wait");
 
     private static final int DEFAULT_MESSAGE_STORE_SIZE = 100;
 
@@ -41,7 +45,7 @@ final class DefaultMessageHandlerPool {
         DefaultMessageHandler t;
         m_threads = new DefaultMessageHandler[p_numMessageHandlerThreads];
         for (int i = 0; i < m_threads.length; i++) {
-            t = new DefaultMessageHandler(p_messageReceivers, m_defaultMessages, m_defaultMessagesLock);
+            t = new DefaultMessageHandler(i, p_messageReceivers, m_defaultMessages, m_defaultMessagesLock, this);
             t.setName("Network: DefaultMessageHandler " + (i + 1));
             m_threads[i] = t;
             t.start();
@@ -73,36 +77,49 @@ final class DefaultMessageHandlerPool {
     }
 
     /**
+     * Wake-up default message handlers. Is called by first message handler to get support.
+     */
+    void wakeupMessageHandlers() {
+        for (int i = 1; i < m_threads.length; i++) {
+            LockSupport.unpark(m_threads[i]);
+        }
+    }
+
+    /**
      * Enqueue a new message for delivering
      *
      * @param p_message
      *         the message
      */
     void newMessage(final AbstractMessage p_message) {
-        boolean wakeup = false;
+        // #ifdef STATISTICS
+        SOP_PUSH.enter();
+        // #endif /* STATISTICS */
 
         // Ignore network test messages (e.g. ping after response delay)
         if (!(p_message.getType() == Messages.NETWORK_MESSAGES_TYPE && p_message.getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
             m_defaultMessagesLock.lock();
-            if (m_defaultMessages.isEmpty()) {
-                wakeup = true;
-            }
-
             while (!m_defaultMessages.pushMessage(p_message)) {
                 m_defaultMessagesLock.unlock();
-                for (Thread thread : m_threads) {
-                    LockSupport.unpark(thread);
-                }
+
+                // #ifdef STATISTICS
+                SOP_WAIT.enter();
+                // #endif /* STATISTICS */
+
                 Thread.yield();
+
+                // #ifdef STATISTICS
+                SOP_WAIT.leave();
+                // #endif /* STATISTICS */
+
                 m_defaultMessagesLock.lock();
             }
             m_defaultMessagesLock.unlock();
-            if (wakeup) {
-                for (Thread thread : m_threads) {
-                    LockSupport.unpark(thread);
-                }
-            }
         }
+
+        // #ifdef STATISTICS
+        SOP_PUSH.leave();
+        // #endif /* STATISTICS */
     }
 
     /**
@@ -112,13 +129,11 @@ final class DefaultMessageHandlerPool {
      *         the messages
      */
     void newMessages(final AbstractMessage[] p_messages) {
-        boolean wakeup = false;
+        // #ifdef STATISTICS
+        SOP_PUSH.enter();
+        // #endif /* STATISTICS */
 
         m_defaultMessagesLock.lock();
-        if (m_defaultMessages.isEmpty()) {
-            wakeup = true;
-        }
-
         for (AbstractMessage message : p_messages) {
             if (message == null) {
                 break;
@@ -128,20 +143,25 @@ final class DefaultMessageHandlerPool {
             if (!(message.getType() == Messages.NETWORK_MESSAGES_TYPE && message.getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
                 while (!m_defaultMessages.pushMessage(message)) {
                     m_defaultMessagesLock.unlock();
-                    for (Thread thread : m_threads) {
-                        LockSupport.unpark(thread);
-                    }
+
+                    // #ifdef STATISTICS
+                    SOP_WAIT.enter();
+                    // #endif /* STATISTICS */
+
                     Thread.yield();
+
+                    // #ifdef STATISTICS
+                    SOP_WAIT.leave();
+                    // #endif /* STATISTICS */
+
                     m_defaultMessagesLock.lock();
                 }
             }
         }
         m_defaultMessagesLock.unlock();
 
-        if (wakeup) {
-            for (Thread thread : m_threads) {
-                LockSupport.unpark(thread);
-            }
-        }
+        // #ifdef STATISTICS
+        SOP_PUSH.leave();
+        // #endif /* STATISTICS */
     }
 }

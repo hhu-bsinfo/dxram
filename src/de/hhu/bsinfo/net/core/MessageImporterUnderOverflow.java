@@ -67,7 +67,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public boolean readBoolean(final boolean p_bool) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -86,7 +86,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public byte readByte(final byte p_byte) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -105,7 +105,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public short readShort(final short p_short) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -139,7 +139,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public int readInt(final int p_int) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -153,7 +153,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             for (int i = m_skipBytes - m_skippedBytes; i < Integer.BYTES; i++) {
                 if (m_currentPosition == m_bufferSize) {
                     // Overflow
-                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i + m_skipBytes);
+                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
                     m_unfinishedOperation.setPrimitive(ret);
                     throw m_exception;
                 }
@@ -170,7 +170,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             for (int i = 0; i < Integer.BYTES; i++) {
                 if (m_currentPosition == m_bufferSize) {
                     // Overflow
-                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i + m_skipBytes);
+                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
                     m_unfinishedOperation.setPrimitive(ret);
                     throw m_exception;
                 }
@@ -187,7 +187,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public long readLong(final long p_long) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -201,7 +201,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             for (int i = m_skipBytes - m_skippedBytes; i < Long.BYTES; i++) {
                 if (m_currentPosition == m_bufferSize) {
                     // Overflow
-                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i + m_skipBytes);
+                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
                     m_unfinishedOperation.setPrimitive(ret);
                     throw m_exception;
                 }
@@ -218,7 +218,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             for (int i = 0; i < Long.BYTES; i++) {
                 if (m_currentPosition == m_bufferSize) {
                     // Overflow
-                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i + m_skipBytes);
+                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
                     m_unfinishedOperation.setPrimitive(ret);
                     throw m_exception;
                 }
@@ -257,7 +257,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public int readCompactNumber(int p_int) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -271,7 +271,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             for (int i = m_skipBytes - m_skippedBytes; i < Integer.BYTES; i++) {
                 if (m_currentPosition == m_bufferSize) {
                     // Overflow
-                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i + m_skipBytes);
+                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
                     m_unfinishedOperation.setPrimitive(ret);
                     throw m_exception;
                 }
@@ -293,7 +293,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             for (int i = 0; i < Integer.BYTES; i++) {
                 if (m_currentPosition == m_bufferSize) {
                     // Overflow
-                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i + m_skipBytes);
+                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
                     m_unfinishedOperation.setPrimitive(ret);
                     throw m_exception;
                 }
@@ -320,7 +320,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public int readBytes(byte[] p_array) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -346,7 +346,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public int readBytes(byte[] p_array, int p_offset, int p_length) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -357,25 +357,26 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
         } else if (m_skippedBytes < m_skipBytes) {
             // Bytes were partly de-serialized -> continue
             int bytesCopied = m_skipBytes - m_skippedBytes;
-            UnsafeMemory.readBytes(m_bufferAddress + m_currentPosition, p_array, p_offset + bytesCopied, p_length - bytesCopied);
-            m_currentPosition += p_length - bytesCopied;
-            m_skippedBytes = m_skipBytes;
 
             if (m_currentPosition + p_length - bytesCopied >= m_bufferSize) {
                 // Overflow
                 UnsafeMemory.readBytes(m_bufferAddress + m_currentPosition, p_array, p_offset + bytesCopied, m_bufferSize - m_currentPosition);
-                m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
                 m_currentPosition = m_bufferSize;
                 m_skippedBytes = m_skipBytes;
                 throw m_exception;
             }
+
+            UnsafeMemory.readBytes(m_bufferAddress + m_currentPosition, p_array, p_offset + bytesCopied, p_length - bytesCopied);
+            m_currentPosition += p_length - bytesCopied;
+            m_skippedBytes = m_skipBytes;
 
             return p_length;
         } else {
             if (m_currentPosition + p_length >= m_bufferSize) {
                 // Overflow
                 UnsafeMemory.readBytes(m_bufferAddress + m_currentPosition, p_array, p_offset, m_bufferSize - m_currentPosition);
-                m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
                 m_currentPosition = m_bufferSize;
                 throw m_exception;
             }
@@ -392,7 +393,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public int readShorts(short[] p_array, int p_offset, int p_length) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -407,7 +408,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public int readInts(int[] p_array, int p_offset, int p_length) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -422,7 +423,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public int readLongs(long[] p_array, int p_offset, int p_length) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -437,7 +438,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public byte[] readByteArray(final byte[] p_array) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -461,7 +462,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 readBytes(arr);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 m_unfinishedOperation.setObject(arr);
                 throw e;
             }
@@ -473,7 +474,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 readBytes(arr);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 m_unfinishedOperation.setObject(arr);
                 throw e;
             }
@@ -485,7 +486,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public short[] readShortArray(final short[] p_array) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -509,7 +510,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 readShorts(arr);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 m_unfinishedOperation.setObject(arr);
                 throw e;
             }
@@ -521,7 +522,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 readShorts(arr);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 m_unfinishedOperation.setObject(arr);
                 throw e;
             }
@@ -533,7 +534,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public int[] readIntArray(final int[] p_array) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -557,7 +558,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 readInts(arr);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 m_unfinishedOperation.setObject(arr);
                 throw e;
             }
@@ -569,7 +570,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 readInts(arr);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 m_unfinishedOperation.setObject(arr);
                 throw e;
             }
@@ -581,7 +582,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public long[] readLongArray(final long[] p_array) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -605,7 +606,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 readLongs(arr);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 m_unfinishedOperation.setObject(arr);
                 throw e;
             }
@@ -617,7 +618,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 readLongs(arr);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 m_unfinishedOperation.setObject(arr);
                 throw e;
             }
@@ -629,7 +630,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     public String[] readStringArray(final String[] p_array) {
         if (m_currentPosition == m_bufferSize) {
             // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition + m_skipBytes);
+            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
             throw m_exception;
         }
 
@@ -655,7 +656,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 }
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 m_unfinishedOperation.setObject(arr);
                 throw e;
             }
@@ -669,7 +670,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 }
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition + m_skipBytes);
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 m_unfinishedOperation.setObject(arr);
                 throw e;
             }

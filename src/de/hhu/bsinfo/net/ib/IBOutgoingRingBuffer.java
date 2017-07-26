@@ -12,7 +12,7 @@ import de.hhu.bsinfo.net.core.NetworkException;
 /**
  * Created by nothaas on 7/17/17.
  */
-public class IBOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
+class IBOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBOutgoingRingBuffer.class.getSimpleName());
 
     private final long m_bufferAddr;

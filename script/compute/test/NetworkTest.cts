@@ -11,4 +11,7 @@
 			"m_isMessage": true
 		}
 	]
+},
+{
+    "m_task": "de.hhu.bsinfo.dxram.ms.tasks.PrintStatisticsToConsoleTask"
 }

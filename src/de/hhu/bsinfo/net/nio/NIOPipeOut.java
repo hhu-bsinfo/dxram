@@ -7,6 +7,8 @@ import java.nio.channels.SocketChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.net.NodeMap;
 import de.hhu.bsinfo.net.core.AbstractFlowControl;
 import de.hhu.bsinfo.net.core.AbstractOutgoingRingBuffer;
@@ -18,6 +20,8 @@ import de.hhu.bsinfo.net.core.NetworkException;
  */
 public class NIOPipeOut extends AbstractPipeOut {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NIOPipeOut.class.getSimpleName());
+    private static final StatisticsOperation SOP_WRITE = StatisticsRecorderManager.getOperation(NIOPipeOut.class, "NIOWrite");
+    private static final StatisticsOperation SOP_READ_FLOW_CONTROL = StatisticsRecorderManager.getOperation(NIOPipeOut.class, "NIOReadFlowControl");
 
     private final int m_bufferSize;
 
@@ -88,6 +92,10 @@ public class NIOPipeOut extends AbstractPipeOut {
         int bytes;
         ByteBuffer buffer;
 
+        // #ifdef STATISTICS
+        SOP_WRITE.enter();
+        // #endif /* STATISTICS */
+
         buffer = ((NIOOutgoingRingBuffer) getOutgoingQueue()).popFront();
         if (buffer != null) {
             while (buffer.remaining() > 0) {
@@ -104,6 +112,10 @@ public class NIOPipeOut extends AbstractPipeOut {
             getOutgoingQueue().shiftFront(writtenBytes);
         }
 
+        // #ifdef STATISTICS
+        SOP_WRITE.leave();
+        // #endif /* STATISTICS */
+
         return ret;
     }
 
@@ -113,6 +125,10 @@ public class NIOPipeOut extends AbstractPipeOut {
     void readFlowControlBytes() throws IOException {
         int readBytes;
         int readAllBytes;
+
+        // #ifdef STATISTICS
+        SOP_READ_FLOW_CONTROL.enter();
+        // #endif /* STATISTICS */
 
         // This is a flow control byte
         m_flowControlBytes.rewind();
@@ -129,6 +145,10 @@ public class NIOPipeOut extends AbstractPipeOut {
         }
 
         getFlowControl().handleFlowControlData(m_flowControlBytes.getInt(0));
+
+        // #ifdef STATISTICS
+        SOP_READ_FLOW_CONTROL.leave();
+        // #endif /* STATISTICS */
     }
 
     @Override

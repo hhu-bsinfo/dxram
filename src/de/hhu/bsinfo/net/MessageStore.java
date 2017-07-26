@@ -71,6 +71,15 @@ public class MessageStore {
     }
 
     /**
+     * Returns the maximum number of pending buffers.
+     *
+     * @return the capacity
+     */
+    public int capacity() {
+        return m_buffer.length;
+    }
+
+    /**
      * Adds a message at the end of the buffer.
      *
      * @param p_message

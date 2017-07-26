@@ -6,6 +6,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.net.core.AbstractMessage;
 
 /**
@@ -15,6 +17,11 @@ import de.hhu.bsinfo.net.core.AbstractMessage;
  */
 class ExclusiveMessageHandler extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ExclusiveMessageHandler.class.getSimpleName());
+    private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Pop");
+    private static final StatisticsOperation SOP_POP_WAIT = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Wait");
+    private static final StatisticsOperation SOP_EXECUTE = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Execute");
+    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Push");
+    private static final StatisticsOperation SOP_PUSH_WAIT = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Wait");
 
     private static final int EXCLUSIVE_MESSAGE_STORE_SIZE = 20;
 
@@ -41,17 +48,40 @@ class ExclusiveMessageHandler extends Thread {
 
     @Override
     public void run() {
-        long time;
+        int waitCounter = 0;
         AbstractMessage message = null;
         MessageReceiver messageReceiver;
 
         while (!m_shutdown) {
             while (message == null && !m_shutdown) {
+
+                // #ifdef STATISTICS
+                SOP_POP.enter();
+                // #endif /* STATISTICS */
+
                 m_exclusiveMessagesLock.lock();
                 if (m_exclusiveMessages.isEmpty()) {
                     m_exclusiveMessagesLock.unlock();
-                    LockSupport.park();
+
+                    // #ifdef STATISTICS
+                    SOP_POP_WAIT.enter();
+                    // #endif /* STATISTICS */
+
+                    if (waitCounter++ <= 10000) {
+                        // No new message at the moment -> sleep for xx µs and try again
+                        LockSupport.parkNanos(1);
+                    } else {
+                        // No new message for a longer period -> increase sleep to 1 ms to reduce cpu load
+                        LockSupport.parkNanos(1000 * 1000);
+                    }
+
+                    // #ifdef STATISTICS
+                    SOP_POP_WAIT.leave();
+                    // #endif /* STATISTICS */
+
                     m_exclusiveMessagesLock.lock();
+                } else {
+                    waitCounter = 0;
                 }
 
                 message = m_exclusiveMessages.popMessage();
@@ -62,10 +92,22 @@ class ExclusiveMessageHandler extends Thread {
                 break;
             }
 
+            // #ifdef STATISTICS
+            SOP_POP.leave();
+            // #endif /* STATISTICS */
+
             messageReceiver = m_messageReceivers.getReceiver(message.getType(), message.getSubtype());
 
             if (messageReceiver != null) {
+                // #ifdef STATISTICS
+                SOP_EXECUTE.enter();
+                // #endif /* STATISTICS */
+
                 messageReceiver.onIncomingMessage(message);
+
+                // #ifdef STATISTICS
+                SOP_EXECUTE.leave();
+                // #endif /* STATISTICS */
             } else {
                 // #if LOGGER >= ERROR
                 LOGGER.error("No message receiver was registered for %d, %d", message.getType(), message.getSubtype());
@@ -82,34 +124,41 @@ class ExclusiveMessageHandler extends Thread {
      *         the message
      */
     void newMessage(final AbstractMessage p_message) {
-        boolean wakeup = false;
+
+        // #ifdef STATISTICS
+        SOP_PUSH.enter();
+        // #endif /* STATISTICS */
 
         m_exclusiveMessagesLock.lock();
-        if (m_exclusiveMessages.isEmpty()) {
-            wakeup = true;
-        }
-
         while (!m_exclusiveMessages.pushMessage(p_message)) {
             m_exclusiveMessagesLock.unlock();
-            LockSupport.unpark(this);
+
+            // #ifdef STATISTICS
+            SOP_PUSH_WAIT.enter();
+            // #endif /* STATISTICS */
+
             Thread.yield();
+
+            // #ifdef STATISTICS
+            SOP_PUSH_WAIT.leave();
+            // #endif /* STATISTICS */
+
             m_exclusiveMessagesLock.lock();
         }
         m_exclusiveMessagesLock.unlock();
 
-        if (wakeup) {
-            LockSupport.unpark(this);
-        }
+        // #ifdef STATISTICS
+        SOP_PUSH.leave();
+        // #endif /* STATISTICS */
     }
 
     void newMessages(final AbstractMessage[] p_messages) {
-        boolean wakeup = false;
+
+        // #ifdef STATISTICS
+        SOP_PUSH.enter();
+        // #endif /* STATISTICS */
 
         m_exclusiveMessagesLock.lock();
-        if (m_exclusiveMessages.isEmpty()) {
-            wakeup = true;
-        }
-
         for (AbstractMessage message : p_messages) {
             if (message == null) {
                 break;
@@ -117,15 +166,24 @@ class ExclusiveMessageHandler extends Thread {
 
             while (!m_exclusiveMessages.pushMessage(message)) {
                 m_exclusiveMessagesLock.unlock();
-                LockSupport.unpark(this);
+
+                // #ifdef STATISTICS
+                SOP_PUSH_WAIT.enter();
+                // #endif /* STATISTICS */
+
                 Thread.yield();
+
+                // #ifdef STATISTICS
+                SOP_PUSH_WAIT.leave();
+                // #endif /* STATISTICS */
+
                 m_exclusiveMessagesLock.lock();
             }
         }
         m_exclusiveMessagesLock.unlock();
 
-        if (wakeup) {
-            LockSupport.unpark(this);
-        }
+        // #ifdef STATISTICS
+        SOP_PUSH.leave();
+        // #endif /* STATISTICS */
     }
 }

@@ -33,8 +33,6 @@ public abstract class AbstractRequest extends AbstractMessage {
     private volatile boolean m_fulfilled;
     private volatile boolean m_aborted;
 
-    private volatile Thread m_waitingThread;
-
     private boolean m_ignoreTimeout;
 
     private volatile AbstractResponse m_response;
@@ -177,8 +175,6 @@ public abstract class AbstractRequest extends AbstractMessage {
      *         Max amount of time to wait for response.
      */
     public final void waitForResponse(final int p_timeoutMs) throws NetworkException {
-        m_waitingThread = Thread.currentThread();
-
         long cur = System.nanoTime();
         long deadline = cur + p_timeoutMs * 1000 * 1000;
         while (!m_fulfilled) {
@@ -199,9 +195,11 @@ public abstract class AbstractRequest extends AbstractMessage {
 
                     throw new NetworkResponseDelayedException(getDestination());
                 }
-                LockSupport.parkNanos(p_timeoutMs * 1000 * 1000);
+
+                // Wait for a minimal time (around xx µs). There is no unpark() involved!
+                LockSupport.parkNanos(1);
             } else {
-                LockSupport.park();
+                LockSupport.parkNanos(1);
             }
         }
 
@@ -223,8 +221,6 @@ public abstract class AbstractRequest extends AbstractMessage {
 
         m_response = p_response;
         m_fulfilled = true;
-
-        LockSupport.unpark(m_waitingThread);
     }
 
 }

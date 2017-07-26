@@ -7,6 +7,8 @@ import java.nio.channels.SocketChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.net.core.AbstractFlowControl;
 import de.hhu.bsinfo.net.core.AbstractPipeIn;
 import de.hhu.bsinfo.net.core.DataReceiver;
@@ -19,6 +21,8 @@ import de.hhu.bsinfo.net.core.RequestMap;
  */
 class NIOPipeIn extends AbstractPipeIn {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeIn.class.getSimpleName());
+    private static final StatisticsOperation SOP_READ = StatisticsRecorderManager.getOperation(NIOPipeIn.class, "NIORead");
+    private static final StatisticsOperation SOP_WRITE_FLOW_CONTROL = StatisticsRecorderManager.getOperation(NIOPipeIn.class, "NIOWriteFlowControl");
 
     private SocketChannel m_incomingChannel;
     private final NIOBufferPool m_bufferPool;
@@ -75,6 +79,10 @@ class NIOPipeIn extends AbstractPipeIn {
         directBufferWrapper = m_bufferPool.getBuffer();
         buffer = directBufferWrapper.getBuffer();
 
+        // #ifdef STATISTICS
+        SOP_READ.enter();
+        // #endif /* STATISTICS */
+
         while (true) {
             readBytes = m_incomingChannel.read(buffer);
             if (readBytes == -1) {
@@ -104,6 +112,9 @@ class NIOPipeIn extends AbstractPipeIn {
                 break;
             }
         }
+        // #ifdef STATISTICS
+        SOP_READ.leave();
+        // #endif /* STATISTICS */
 
         return ret;
     }
@@ -114,6 +125,10 @@ class NIOPipeIn extends AbstractPipeIn {
     void writeFlowControlBytes() throws IOException {
         int bytes = 0;
         int tries = 0;
+
+        // #ifdef STATISTICS
+        SOP_WRITE_FLOW_CONTROL.enter();
+        // #endif /* STATISTICS */
 
         m_flowControlBytes.rewind();
         m_flowControlBytes.putInt(getFlowControl().getAndResetFlowControlData());
@@ -129,5 +144,9 @@ class NIOPipeIn extends AbstractPipeIn {
             LOGGER.error("Could not send flow control data!");
             // #endif /* LOGGER >= ERROR */
         }
+
+        // #ifdef STATISTICS
+        SOP_WRITE_FLOW_CONTROL.leave();
+        // #endif /* STATISTICS */
     }
 }

@@ -16,7 +16,6 @@ package de.hhu.bsinfo.dxram.ms.tasks;
 import java.io.PrintStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Collection;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
@@ -42,16 +41,16 @@ final class PrintStatistics {
      * Print the statistics to a stream.
      *
      * @param p_outputStream
-     *     Output stream to print to.
+     *         Output stream to print to.
      * @param p_bootService
-     *     BootService
+     *         BootService
      */
     static void printStatisticsToOutput(final PrintStream p_outputStream, final BootService p_bootService) {
         DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");
-        p_outputStream.println(dateFormat.format(Calendar.getInstance()));
+        //p_outputStream.println(dateFormat.format(Calendar.getInstance()));
         short nodeId = p_bootService.getNodeID();
         p_outputStream.println("NodeID: " + NodeID.toHexString(nodeId) + " (" + nodeId + ')');
         p_outputStream.println("Role: " + p_bootService.getNodeRole(nodeId));

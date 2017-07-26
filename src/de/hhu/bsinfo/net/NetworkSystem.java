@@ -20,6 +20,8 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.net.core.AbstractConnection;
 import de.hhu.bsinfo.net.core.AbstractConnectionManager;
 import de.hhu.bsinfo.net.core.AbstractMessage;
@@ -46,6 +48,8 @@ import de.hhu.bsinfo.utils.NodeID;
  */
 public final class NetworkSystem {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkSystem.class.getSimpleName());
+    private static final StatisticsOperation SOP_SEND = StatisticsRecorderManager.getOperation(NetworkSystem.class, "MessageSend");
+    private static final StatisticsOperation SOP_SEND_SYNC = StatisticsRecorderManager.getOperation(NetworkSystem.class, "MessageSendSync");
 
     private final NetworkSystemConfig m_config;
 
@@ -224,6 +228,10 @@ public final class NetworkSystem {
         LOGGER.trace("Entering sendMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */
 
+        // #ifdef STATISTICS
+        SOP_SEND.enter();
+        // #endif /* STATISTICS */
+
         if (p_message.getDestination() == m_config.getOwnNodeId()) {
             // #if LOGGER >= ERROR
             LOGGER.error("Invalid destination 0x%X. No loopback allowed.", p_message.getDestination());
@@ -259,6 +267,10 @@ public final class NetworkSystem {
             }
         }
 
+        // #ifdef STATISTICS
+        SOP_SEND.leave();
+        // #endif /* STATISTICS */
+
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting sendMessage");
         // #endif /* LOGGER == TRACE */
@@ -280,6 +292,10 @@ public final class NetworkSystem {
         // #if LOGGER == TRACE
         LOGGER.trace("Sending request (sync): %s", p_request);
         // #endif /* LOGGER == TRACE */
+
+        // #ifdef STATISTICS
+        SOP_SEND_SYNC.enter();
+        // #endif /* STATISTICS */
 
         try {
             m_requestMap.put(p_request);
@@ -313,6 +329,10 @@ public final class NetworkSystem {
 
             throw e;
         }
+
+        // #ifdef STATISTICS
+        SOP_SEND_SYNC.leave();
+        // #endif /* STATISTICS */
     }
 
     /**

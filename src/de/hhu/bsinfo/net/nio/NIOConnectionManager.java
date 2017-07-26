@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -123,7 +124,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
                 throw new NetworkException("Connection creation timeout occurred");
             }
             try {
-                cond.awaitNanos(1000);
+                cond.await(1, TimeUnit.MILLISECONDS);
             } catch (final InterruptedException e) { /* ignore */ }
         }
         condLock.unlock();

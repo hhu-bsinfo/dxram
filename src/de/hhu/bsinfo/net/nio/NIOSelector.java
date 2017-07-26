@@ -428,103 +428,103 @@ class NIOSelector extends Thread {
 
         connection = (NIOConnection) p_key.attachment();
         if (p_key.isValid()) {
-                if (p_key.isReadable()) {
-                    if (connection == null || !connection.isPipeInOpen()) {
-                        // Channel was accepted but not used yet -> Read NodeID, create NIOConnection and attach to key
-                        try {
-                            m_connectionManager.createConnection((SocketChannel) p_key.channel());
-                        } catch (final IOException e) {
-                            // #if LOGGER >= ERROR
-                            LOGGER.error("Connection could not be created!");
-                            // #endif /* LOGGER >= ERROR */
-                        }
-                    } else {
-                        if (p_key.channel() == connection.getPipeIn().getChannel()) {
-                            try {
-                                successful = connection.getPipeIn().read();
-                            } catch (final IOException e) {
-                                successful = false;
-                            }
-                            if (!successful) {
-                                // #if LOGGER >= DEBUG
-                                LOGGER.debug("Could not read from channel (0x%X)!", connection.getDestinationNodeID());
-                                // #endif /* LOGGER >= DEBUG */
-
-                                m_connectionManager.closeConnection(connection, true);
-                            }
-                        } else {
-                            try {
-                                connection.getPipeOut().readFlowControlBytes();
-                            } catch (final IOException e) {
-                                // #if LOGGER >= WARN
-                                LOGGER.warn("Failed to read flow control data!");
-                                // #endif /* LOGGER >= WARN */
-                            }
-                        }
-                    }
-                } else if (p_key.isWritable()) {
-                    if (connection == null) {
+            if (p_key.isReadable()) {
+                if (connection == null || !connection.isPipeInOpen()) {
+                    // Channel was accepted but not used yet -> Read NodeID, create NIOConnection and attach to key
+                    try {
+                        m_connectionManager.createConnection((SocketChannel) p_key.channel());
+                    } catch (final IOException e) {
                         // #if LOGGER >= ERROR
-                        LOGGER.error("If connection is null, key has to be either readable or connectable!");
+                        LOGGER.error("Connection could not be created!");
                         // #endif /* LOGGER >= ERROR */
-                        return;
                     }
-                    if (p_key.channel() == connection.getPipeOut().getChannel()) {
+                } else {
+                    if (p_key.channel() == connection.getPipeIn().getChannel()) {
                         try {
-                            complete = connection.getPipeOut().write();
-                        } catch (final IOException ignored) {
+                            successful = connection.getPipeIn().read();
+                        } catch (final IOException e) {
+                            successful = false;
+                        }
+                        if (!successful) {
                             // #if LOGGER >= DEBUG
-                            LOGGER.debug("Could not write to channel (0x%X)!", connection.getDestinationNodeID());
+                            LOGGER.debug("Could not read from channel (0x%X)!", connection.getDestinationNodeID());
                             // #endif /* LOGGER >= DEBUG */
 
                             m_connectionManager.closeConnection(connection, true);
-                            return;
-                        }
-
-                        // TODO: Check if this is faster
-                        /*if (!complete) {
-                            // If there is still data left to write on this connection, add another write request
-                            p_key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-                        } else if (!connection.dataLeftToWrite()) {
-                            // Set interest to READ after writing; do not if channel was blocked and data is left
-                            p_key.interestOps(SelectionKey.OP_READ);
-                        }*/
-                        if (!complete || !connection.getPipeOut().isOutgoingQueueEmpty()) {
-                            // If there is still data left to write on this connection, add another write request
-                            m_changeLock.lock();
-                            m_changeRequests.add(new ChangeOperationsRequest(connection, SelectionKey.OP_WRITE | SelectionKey.OP_READ));
-                            m_changeLock.unlock();
-                        }
-                        try {
-                            // Set interest to READ after writing; do not if channel was blocked and data is left
-                            p_key.interestOps(SelectionKey.OP_READ);
-                        } catch (final CancelledKeyException ignore) {
-                            // Ignore
                         }
                     } else {
                         try {
-                        connection.getPipeIn().writeFlowControlBytes();
+                            connection.getPipeOut().readFlowControlBytes();
                         } catch (final IOException e) {
                             // #if LOGGER >= WARN
-                            LOGGER.warn("Failed to write flow control data!");
+                            LOGGER.warn("Failed to read flow control data!");
                             // #endif /* LOGGER >= WARN */
                         }
-                        try {
-                            // Set interest to READ after writing
-                            p_key.interestOps(SelectionKey.OP_READ);
-                        } catch (final CancelledKeyException ignore) {
-                            // Ignores
-                        }
-                    }
-                } else if (p_key.isConnectable()) {
-                    try {
-                        connection.connect(p_key);
-                    } catch (final Exception e) {
-                        // #if LOGGER >= ERROR
-                        LOGGER.error("Establishing connection to %s failed", connection);
-                        // #endif /* LOGGER >= ERROR */
                     }
                 }
+            } else if (p_key.isWritable()) {
+                if (connection == null) {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("If connection is null, key has to be either readable or connectable!");
+                    // #endif /* LOGGER >= ERROR */
+                    return;
+                }
+                if (p_key.channel() == connection.getPipeOut().getChannel()) {
+                    try {
+                        complete = connection.getPipeOut().write();
+                    } catch (final IOException ignored) {
+                        // #if LOGGER >= DEBUG
+                        LOGGER.debug("Could not write to channel (0x%X)!", connection.getDestinationNodeID());
+                        // #endif /* LOGGER >= DEBUG */
+
+                        m_connectionManager.closeConnection(connection, true);
+                        return;
+                    }
+
+                    // TODO: Check!
+                    if (!complete) {
+                        // If there is still data left to write on this connection, add another write request
+                        p_key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+                    } else if (!connection.getPipeOut().isOutgoingQueueEmpty()) {
+                        // Set interest to READ after writing; do not if channel was blocked and data is left
+                        p_key.interestOps(SelectionKey.OP_READ);
+                    }
+                    /*if (!complete || !connection.getPipeOut().isOutgoingQueueEmpty()) {
+                        // If there is still data left to write on this connection, add another write request
+                        m_changeLock.lock();
+                        m_changeRequests.add(new ChangeOperationsRequest(connection, SelectionKey.OP_WRITE | SelectionKey.OP_READ));
+                        m_changeLock.unlock();
+                    }*/
+                    try {
+                        // Set interest to READ after writing; do not if channel was blocked and data is left
+                        p_key.interestOps(SelectionKey.OP_READ);
+                    } catch (final CancelledKeyException ignore) {
+                        // Ignore
+                    }
+                } else {
+                    try {
+                        connection.getPipeIn().writeFlowControlBytes();
+                    } catch (final IOException e) {
+                        // #if LOGGER >= WARN
+                        LOGGER.warn("Failed to write flow control data!");
+                        // #endif /* LOGGER >= WARN */
+                    }
+                    try {
+                        // Set interest to READ after writing
+                        p_key.interestOps(SelectionKey.OP_READ);
+                    } catch (final CancelledKeyException ignore) {
+                        // Ignores
+                    }
+                }
+            } else if (p_key.isConnectable()) {
+                try {
+                    connection.connect(p_key);
+                } catch (final Exception e) {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Establishing connection to %s failed", connection);
+                    // #endif /* LOGGER >= ERROR */
+                }
+            }
         }
     }
 }

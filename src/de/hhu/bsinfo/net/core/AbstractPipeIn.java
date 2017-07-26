@@ -5,6 +5,8 @@ import java.util.Arrays;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -12,6 +14,9 @@ import de.hhu.bsinfo.utils.NodeID;
  */
 public abstract class AbstractPipeIn {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeIn.class.getSimpleName());
+    private static final StatisticsOperation SOP_PROCESS = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "ProcessBuffer");
+    private static final StatisticsOperation SOP_DELIVER = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "DeliverMessage");
+    private static final StatisticsOperation SOP_FULFILL = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "FulfillRequest");
 
     private final short m_ownNodeID;
     private final short m_destinationNodeID;
@@ -87,6 +92,10 @@ public abstract class AbstractPipeIn {
         int counterNormal = 0;
         int counterExclusive = 0;
 
+        // #ifdef STATISTICS
+        SOP_PROCESS.enter();
+        // #endif /* STATISTICS */
+
         m_flowControl.dataReceived(p_bytesAvailable);
 
         m_currentPosition = 0;
@@ -137,29 +146,60 @@ public abstract class AbstractPipeIn {
             }
 
             if (m_currentMessage.isResponse()) {
+                // #ifdef STATISTICS
+                SOP_FULFILL.enter();
+                // #endif /* STATISTICS */
+
                 m_requestMap.fulfill((AbstractResponse) m_currentMessage);
+
+                // #ifdef STATISTICS
+                SOP_FULFILL.leave();
+                // #endif /* STATISTICS */
             } else {
                 if (!m_currentMessage.isExclusive()) {
                     m_normalMessages[counterNormal++] = m_currentMessage;
                     if (counterNormal == m_normalMessages.length) {
+
+                        // #ifdef STATISTICS
+                        SOP_DELIVER.enter();
+                        // #endif /* STATISTICS */
+
                         deliverMessages(m_normalMessages);
                         Arrays.fill(m_normalMessages, null);
                         counterNormal = 0;
+
+                        // #ifdef STATISTICS
+                        SOP_DELIVER.leave();
+                        // #endif /* STATISTICS */
+
                     }
                 } else {
                     m_exclusiveMessages[counterExclusive++] = m_currentMessage;
                     if (counterExclusive == m_exclusiveMessages.length) {
+
+                        // #ifdef STATISTICS
+                        SOP_DELIVER.enter();
+                        // #endif /* STATISTICS */
+
                         deliverMessages(m_exclusiveMessages);
                         Arrays.fill(m_exclusiveMessages, null);
                         counterExclusive = 0;
+
+                        // #ifdef STATISTICS
+                        SOP_DELIVER.leave();
+                        // #endif /* STATISTICS */
+
                     }
                 }
             }
-
             m_currentMessage = null;
             m_currentHeader.clear();
             m_receivedMessages++;
         }
+
+        // #ifdef STATISTICS
+        SOP_DELIVER.enter();
+        // #endif /* STATISTICS */
 
         if (counterNormal > 0) {
             deliverMessages(m_normalMessages);
@@ -170,6 +210,14 @@ public abstract class AbstractPipeIn {
             deliverMessages(m_exclusiveMessages);
             Arrays.fill(m_exclusiveMessages, 0, counterExclusive, null);
         }
+
+        // #ifdef STATISTICS
+        SOP_DELIVER.leave();
+        // #endif /* STATISTICS */
+
+        // #ifdef STATISTICS
+        SOP_PROCESS.leave();
+        // #endif /* STATISTICS */
     }
 
     private AbstractMessage createMessage() throws NetworkException {
@@ -195,8 +243,7 @@ public abstract class AbstractPipeIn {
     }
 
     private int readHeader(final long p_addr, final int p_bytesAvailable, final int p_bytesToRead) {
-        AbstractMessageImporter importer =
-                m_importers.getImporter(p_addr, p_bytesAvailable, m_currentPosition, m_currentPosition + p_bytesToRead > p_bytesAvailable);
+        AbstractMessageImporter importer = m_importers.getImporter(p_addr, m_currentPosition, p_bytesAvailable, p_bytesToRead);
 
         try {
             importer.importObject(m_currentHeader);
@@ -205,6 +252,7 @@ public abstract class AbstractPipeIn {
             m_currentPosition = importer.getPosition();
             return m_importers.returnImporter(importer, false);
         }
+
         m_currentPosition = importer.getPosition();
         return m_importers.returnImporter(importer, true);
     }
@@ -215,8 +263,7 @@ public abstract class AbstractPipeIn {
      * @return number of read bytes
      */
     private int readPayload(final long p_addr, final int p_bytesAvailable, final int p_bytesToRead) {
-        AbstractMessageImporter importer =
-                m_importers.getImporter(p_addr, p_bytesAvailable, m_currentPosition, m_currentPosition + p_bytesToRead > p_bytesAvailable);
+        AbstractMessageImporter importer = m_importers.getImporter(p_addr, m_currentPosition, p_bytesAvailable, p_bytesToRead);
 
         try {
             m_currentMessage.readPayload(importer, p_bytesToRead);

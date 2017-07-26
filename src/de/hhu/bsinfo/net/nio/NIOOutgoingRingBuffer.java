@@ -13,7 +13,7 @@ import de.hhu.bsinfo.utils.UnsafeMemory;
 /**
  * Created by nothaas on 7/17/17.
  */
-public class NIOOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
+class NIOOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
 
     private final long m_bufferAddr;
     private final int m_bufferSize;
@@ -54,6 +54,7 @@ public class NIOOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
         return true;
     }
 
+    @Override
     protected void serialize(final AbstractMessage p_message, final int p_start, final int p_messageSize, final boolean p_hasOverflow) throws NetworkException {
         AbstractMessageExporter exporter = ExporterPool.getInstance().getExporter(p_hasOverflow);
         exporter.setBuffer(m_bufferAddr, m_bufferSize);
