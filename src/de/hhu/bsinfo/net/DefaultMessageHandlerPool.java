@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.Messages;
 
 /**
@@ -86,55 +86,18 @@ final class DefaultMessageHandlerPool {
     }
 
     /**
-     * Enqueue a new message for delivering
-     *
-     * @param p_message
-     *         the message
-     */
-    void newMessage(final AbstractMessage p_message) {
-        // #ifdef STATISTICS
-        SOP_PUSH.enter();
-        // #endif /* STATISTICS */
-
-        // Ignore network test messages (e.g. ping after response delay)
-        if (!(p_message.getType() == Messages.NETWORK_MESSAGES_TYPE && p_message.getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
-            m_defaultMessagesLock.lock();
-            while (!m_defaultMessages.pushMessage(p_message)) {
-                m_defaultMessagesLock.unlock();
-
-                // #ifdef STATISTICS
-                SOP_WAIT.enter();
-                // #endif /* STATISTICS */
-
-                Thread.yield();
-
-                // #ifdef STATISTICS
-                SOP_WAIT.leave();
-                // #endif /* STATISTICS */
-
-                m_defaultMessagesLock.lock();
-            }
-            m_defaultMessagesLock.unlock();
-        }
-
-        // #ifdef STATISTICS
-        SOP_PUSH.leave();
-        // #endif /* STATISTICS */
-    }
-
-    /**
      * Enqueues a batch of new messages for delivering
      *
      * @param p_messages
      *         the messages
      */
-    void newMessages(final AbstractMessage[] p_messages) {
+    void newMessages(final Message[] p_messages) {
         // #ifdef STATISTICS
         SOP_PUSH.enter();
         // #endif /* STATISTICS */
 
         m_defaultMessagesLock.lock();
-        for (AbstractMessage message : p_messages) {
+        for (Message message : p_messages) {
             if (message == null) {
                 break;
             }

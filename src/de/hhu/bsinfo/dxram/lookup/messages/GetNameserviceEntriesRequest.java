@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request for getting the number of mappings
  *
  * @author Florian Klein, florian.klein@hhu.de, 26.03.2015
  */
-public class GetNameserviceEntriesRequest extends AbstractRequest {
+public class GetNameserviceEntriesRequest extends Request {
 
     // Constructors
 

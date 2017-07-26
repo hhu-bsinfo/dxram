@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.net.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Network request for running tests/benchmarks.
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 04.04.2017
  */
-public class NetworkTestRequest extends AbstractRequest {
+public class NetworkTestRequest extends Request {
     /**
      * Creates an instance of NetworkTestRequest.
      * This constructor is used when receiving this message.

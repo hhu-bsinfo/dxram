@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.ArrayListLong;
@@ -26,7 +26,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
-public class RemoveMessage extends AbstractMessage {
+public class RemoveMessage extends Message {
 
     private ArrayListLong m_chunkIDsOut;
     private long[] m_chunkIDs;

@@ -11,31 +11,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
-
-import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
-import de.hhu.bsinfo.net.core.Message;
+package de.hhu.bsinfo.net.core;
 
 /**
- * Created by nothaas on 6/10/16.
+ * Abstraction of an exporter pool.
+ *
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 07.07.2017
  */
-public class PingMessage extends Message {
-    /**
-     * Creates an instance of VerticesForNextFrontierRequest.
-     * This constructor is used when receiving this message.
-     */
-    public PingMessage() {
-        super();
-    }
+public abstract class AbstractExporterPool {
 
     /**
-     * Creates an instance of VerticesForNextFrontierRequest
+     * Gets a message exporter collection.
      *
-     * @param p_destination
-     *         the destination
+     * @return exporter collection
      */
-    public PingMessage(final short p_destination) {
-        super(p_destination, DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_PING_MESSAGE);
-
-    }
+    public abstract MessageExporterCollection getInstance();
 }

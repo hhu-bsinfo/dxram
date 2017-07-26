@@ -12,14 +12,17 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.net.MessageHandlers;
 import de.hhu.bsinfo.net.NodeMap;
 import de.hhu.bsinfo.net.core.AbstractConnection;
 import de.hhu.bsinfo.net.core.AbstractConnectionManager;
-import de.hhu.bsinfo.net.core.DataReceiver;
+import de.hhu.bsinfo.net.core.AbstractExporterPool;
+import de.hhu.bsinfo.net.core.DynamicExporterPool;
 import de.hhu.bsinfo.net.core.MessageCreator;
 import de.hhu.bsinfo.net.core.MessageDirectory;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.net.core.RequestMap;
+import de.hhu.bsinfo.net.core.StaticExporterPool;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -33,15 +36,17 @@ public class NIOConnectionManager extends AbstractConnectionManager {
     private final MessageDirectory m_messageDirectory;
     private final RequestMap m_requestMap;
     private final MessageCreator m_messageCreator;
-    private final DataReceiver m_dataReceiver;
+    private final MessageHandlers m_messageHandlers;
 
     private final NIOSelector m_nioSelector;
     private final NIOBufferPool m_bufferPool;
     private final NodeMap m_nodeMap;
     private final ConnectionCreatorHelperThread m_connectionCreatorHelperThread;
 
+    private AbstractExporterPool m_exporterPool;
+
     public NIOConnectionManager(final NIOConnectionManagerConfig p_config, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
-            final RequestMap p_requestMap, final MessageCreator p_messageCreator, final DataReceiver p_dataReciever) {
+            final RequestMap p_requestMap, final MessageCreator p_messageCreator, final MessageHandlers p_messageHandlers) {
         super(p_config);
 
         m_config = p_config;
@@ -50,13 +55,18 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         m_messageDirectory = p_messageDirectory;
         m_requestMap = p_requestMap;
         m_messageCreator = p_messageCreator;
-        m_dataReceiver = p_dataReciever;
+        m_messageHandlers = p_messageHandlers;
 
         // #if LOGGER >= INFO
         LOGGER.info("Starting NIOSelector...");
         // #endif /* LOGGER >= INFO */
 
         m_bufferPool = new NIOBufferPool(m_config.getBufferSize());
+        if (m_config.getExporterPoolType()) {
+            m_exporterPool = new StaticExporterPool();
+        } else {
+            m_exporterPool = new DynamicExporterPool();
+        }
 
         m_nioSelector =
                 new NIOSelector(this, p_nodeMap.getAddress(p_nodeMap.getOwnNodeID()).getPort(), m_config.getConnectionTimeout(), m_config.getBufferSize());
@@ -99,7 +109,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
 
         if (p_existingConnection == null) {
             ret = new NIOConnection(m_config.getOwnNodeId(), p_destination, m_config.getBufferSize(), m_config.getFlowControlWindow(), m_messageCreator,
-                    m_messageDirectory, m_requestMap, m_dataReceiver, m_bufferPool, m_nioSelector, m_nodeMap, condLock, cond);
+                    m_messageDirectory, m_requestMap, m_messageHandlers, m_bufferPool, m_exporterPool, m_nioSelector, m_nodeMap, condLock, cond);
         } else {
             ret = (NIOConnection) p_existingConnection;
         }
@@ -220,7 +230,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
      * @throws IOException
      *         if the connection could not be created
      */
-    private short readRemoteNodeID(final SocketChannel p_channel, final NIOSelector p_nioSelector) throws IOException {
+    private static short readRemoteNodeID(final SocketChannel p_channel, final NIOSelector p_nioSelector) throws IOException {
         short ret;
         int bytes;
         int counter = 0;
@@ -437,7 +447,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
             NIOConnection ret;
 
             ret = new NIOConnection(m_config.getOwnNodeId(), p_destination, m_config.getBufferSize(), m_config.getFlowControlWindow(), m_messageCreator,
-                    m_messageDirectory, m_requestMap, m_dataReceiver, m_bufferPool, m_nioSelector, m_nodeMap);
+                    m_messageDirectory, m_requestMap, m_messageHandlers, m_bufferPool, m_exporterPool, m_nioSelector, m_nodeMap);
             ret.getPipeIn().bindIncomingChannel(p_channel);
 
             // Register connection as attachment

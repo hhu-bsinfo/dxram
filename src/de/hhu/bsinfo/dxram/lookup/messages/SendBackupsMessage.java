@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 06.09.2012
  */
-public class SendBackupsMessage extends AbstractMessage {
+public class SendBackupsMessage extends Message {
 
     // Attributes
     private byte[] m_metadata;

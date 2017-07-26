@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request to get status information from a remote chunk service.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 07.04.2016
  */
-public class StatusRequest extends AbstractRequest {
+public class StatusRequest extends Request {
     /**
      * Creates an instance of StatusRequest.
      * This constructor is used when receiving this message.

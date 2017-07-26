@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
 import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 13.05.2016
  */
-public class VerticesForNextFrontierMessage extends AbstractMessage {
+public class VerticesForNextFrontierMessage extends Message {
 
     private int m_numOfVertices;
     private int m_batchSize;

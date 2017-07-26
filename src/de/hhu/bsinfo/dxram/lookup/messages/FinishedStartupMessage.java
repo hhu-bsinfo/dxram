@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 
 /**
  * Message to inform all nodes about finished startup.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.04.2017
  */
-public class FinishedStartupMessage extends AbstractMessage {
+public class FinishedStartupMessage extends Message {
 
     // Constructors
 

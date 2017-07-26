@@ -17,14 +17,14 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request to get data from the superpeer storage.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.2015
  */
-public class SuperpeerStorageGetRequest extends AbstractRequest {
+public class SuperpeerStorageGetRequest extends Request {
     // the data structure is stored for the sender of the request
     // to write the incoming data of the response to it
     // the requesting IDs are taken from the structures

@@ -1,7 +1,5 @@
 package de.hhu.bsinfo.utils;
 
-import sun.misc.Unsafe;
-
 /**
  * Access and (manually) manage memory on the non-jvm heap (unsafe)
  *
@@ -74,7 +72,7 @@ public class UnsafeMemory {
      * @return Number of read elements.
      */
     public static int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
-        ms_unsafeHandler.getUnsafe().copyMemory(null, p_ptr, p_array, Unsafe.ARRAY_BYTE_BASE_OFFSET + p_arrayOffset, p_length);
+        ms_unsafeHandler.getUnsafe().copyMemory(null, p_ptr, p_array, UnsafeHandler.getArrayByteOffset() + p_arrayOffset, p_length);
 
         return p_length;
     }
@@ -264,7 +262,7 @@ public class UnsafeMemory {
      * @return Number of written elements
      */
     public static int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
-        ms_unsafeHandler.getUnsafe().copyMemory(p_array, Unsafe.ARRAY_BYTE_BASE_OFFSET + p_arrayOffset, null, p_ptr, p_length);
+        ms_unsafeHandler.getUnsafe().copyMemory(p_array, UnsafeHandler.getArrayByteOffset() + p_arrayOffset, null, p_ptr, p_length);
 
         return p_length;
     }

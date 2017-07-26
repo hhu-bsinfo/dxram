@@ -17,14 +17,14 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request to get data from the superpeer storage (anonymous chunk).
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 04.04.2017
  */
-public class SuperpeerStorageGetAnonRequest extends AbstractRequest {
+public class SuperpeerStorageGetAnonRequest extends Request {
     // the chunk is stored for the sender of the request
     // to write the incoming data of the response to it
     // the requesting IDs are taken from the chunk

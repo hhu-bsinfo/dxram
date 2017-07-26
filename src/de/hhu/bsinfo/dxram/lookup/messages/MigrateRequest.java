@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -25,7 +25,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.06.2013
  */
-public class MigrateRequest extends AbstractRequest {
+public class MigrateRequest extends Request {
 
     // Attributes
     private long m_chunkID;

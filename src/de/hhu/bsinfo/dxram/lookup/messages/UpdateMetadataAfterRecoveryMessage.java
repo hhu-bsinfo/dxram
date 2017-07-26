@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.NodeID;
@@ -26,7 +26,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.10.2015
  */
-public class UpdateMetadataAfterRecoveryMessage extends AbstractMessage {
+public class UpdateMetadataAfterRecoveryMessage extends Message {
 
     // Attributes
     private short m_rangeID;

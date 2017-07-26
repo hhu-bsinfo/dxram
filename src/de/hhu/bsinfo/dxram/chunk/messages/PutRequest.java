@@ -18,7 +18,7 @@ import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
@@ -27,7 +27,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
-public class PutRequest extends AbstractRequest {
+public class PutRequest extends Request {
 
     // DataStructures used when sending the put request.
     private DataStructure[] m_dataStructures;

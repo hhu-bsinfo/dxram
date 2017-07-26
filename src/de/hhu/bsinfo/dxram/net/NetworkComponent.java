@@ -34,10 +34,10 @@ import de.hhu.bsinfo.net.NetworkDestinationUnreachableException;
 import de.hhu.bsinfo.net.NetworkResponseDelayedException;
 import de.hhu.bsinfo.net.NetworkSystem;
 import de.hhu.bsinfo.net.NetworkSystemConfig;
-import de.hhu.bsinfo.net.core.AbstractMessage;
-import de.hhu.bsinfo.net.core.AbstractRequest;
-import de.hhu.bsinfo.net.core.ConnectionManagerListener;
+import de.hhu.bsinfo.net.ConnectionManagerListener;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.NetworkException;
+import de.hhu.bsinfo.net.core.Request;
 import de.hhu.bsinfo.net.ib.IBConnectionManagerConfig;
 import de.hhu.bsinfo.net.nio.NIOConnectionManagerConfig;
 
@@ -109,7 +109,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * @throws NetworkException
      *         If sending the message failed
      */
-    public void sendMessage(final AbstractMessage p_message) throws NetworkException {
+    public void sendMessage(final Message p_message) throws NetworkException {
         // #if LOGGER == TRACE
         LOGGER.trace("Sending message %s", p_message);
         // #endif /* LOGGER == TRACE */
@@ -142,7 +142,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * @throws NetworkException
      *         If sending the message failed
      */
-    public void sendSync(final AbstractRequest p_request) throws NetworkException {
+    public void sendSync(final Request p_request) throws NetworkException {
         sendSync(p_request, true);
     }
 
@@ -156,7 +156,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * @throws NetworkException
      *         If sending the message failed
      */
-    public void sendSync(final AbstractRequest p_request, final int p_timeout) throws NetworkException {
+    public void sendSync(final Request p_request, final int p_timeout) throws NetworkException {
         try {
             m_networkSystem.sendSync(p_request, p_timeout, true);
         } catch (final NetworkDestinationUnreachableException e) {
@@ -180,7 +180,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      * @throws NetworkException
      *         If sending the message failed
      */
-    public void sendSync(final AbstractRequest p_request, final boolean p_waitForResponses) throws NetworkException {
+    public void sendSync(final Request p_request, final boolean p_waitForResponses) throws NetworkException {
 
         try {
             m_networkSystem.sendSync(p_request, -1, p_waitForResponses);
@@ -313,7 +313,8 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
                             .setRequestTimeOut((int) getConfig().getRequestTimeout().getMs()).setBufferSize((int) getConfig().getBufferSize().getBytes())
                             .setRequestMapSize(getConfig().getRequestMapEntryCount()).setMaxConnections(getConfig().getMaxConnections())
                             .setFlowControlWindow((int) getConfig().getFlowControlWindowSize().getBytes())
-                            .setConnectionTimeout((int) getConfig().getConnectionTimeout().getMs()).build();
+                            .setConnectionTimeout((int) getConfig().getConnectionTimeout().getMs()).setExporterPoolType(getConfig().getExporterPoolType())
+                            .build();
         } else {
             config = IBConnectionManagerConfig.builder().setOwnNodeId(m_boot.getNodeID()).setNumMessageHandlerThreads(getConfig().getNumMessageHandlerThreads())
                     .setRequestTimeOut((int) getConfig().getRequestTimeout().getMs()).setBufferSize((int) getConfig().getBufferSize().getBytes())
@@ -322,7 +323,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
                     .setConnectionTimeout((int) getConfig().getConnectionTimeout().getMs()).setMaxRecvReqs(getConfig().getIbMaxRecvReqs())
                     .setFlowControlMaxRecvReqs(getConfig().getIbFlowControlMaxRecvReqs()).setSendThreads(getConfig().getIbSendThreads())
                     .setRecvThreads(getConfig().getIbRecvThreads()).setEnableSignalHandler(getConfig().getIbEnableSignalHandler())
-                    .setEnableDebugThread(getConfig().getIbEnableDebugThread()).build();
+                    .setEnableDebugThread(getConfig().getIbEnableDebugThread()).setExporterPoolType(getConfig().getExporterPoolType()).build();
         }
 
         m_networkSystem = new NetworkSystem(config, new NodeMappings(m_boot));

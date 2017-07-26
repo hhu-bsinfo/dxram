@@ -11,8 +11,7 @@ public class NIOFlowControl extends AbstractFlowControl {
     private final NIOSelector m_nioSelector;
     private final ChangeOperationsRequest m_flowControlOperation;
 
-    protected NIOFlowControl(final short p_destinationNodeId, final int p_flowControlWindowSize, final NIOSelector p_nioSelector,
-            final NIOConnection p_connection) {
+    NIOFlowControl(final short p_destinationNodeId, final int p_flowControlWindowSize, final NIOSelector p_nioSelector, final NIOConnection p_connection) {
         super(p_destinationNodeId, p_flowControlWindowSize);
 
         m_nioSelector = p_nioSelector;

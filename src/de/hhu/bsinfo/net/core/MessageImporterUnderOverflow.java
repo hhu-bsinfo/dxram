@@ -35,7 +35,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     }
 
     @Override
-    protected int getPosition() {
+    public int getPosition() {
         return m_currentPosition;
     }
 
@@ -76,9 +76,9 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             m_skippedBytes++;
             return p_bool;
         } else {
-            boolean b = UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) == 1;
+            boolean ret = UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) == 1;
             m_currentPosition++;
-            return b;
+            return ret;
         }
     }
 

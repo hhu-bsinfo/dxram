@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to a GetLookupTreeRequest
  *
  * @author Michael Birkhoff, michael.birkhoff@hhu.de, 06.09.2016
  */
-public class GetLookupTreeResponse extends AbstractResponse {
+public class GetLookupTreeResponse extends Response {
 
     // Attributes
     private LookupTree m_tree;

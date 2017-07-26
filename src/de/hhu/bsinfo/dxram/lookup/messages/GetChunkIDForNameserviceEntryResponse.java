@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to a GetChunkIDRequest
  *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  */
-public class GetChunkIDForNameserviceEntryResponse extends AbstractResponse {
+public class GetChunkIDForNameserviceEntryResponse extends Response {
 
     // Attributes
     private long m_chunkID;

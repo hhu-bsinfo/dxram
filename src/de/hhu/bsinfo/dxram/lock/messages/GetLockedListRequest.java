@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.lock.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request to get a list of locked chunks from another node.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 19.04.2016
  */
-public class GetLockedListRequest extends AbstractRequest {
+public class GetLockedListRequest extends Request {
 
     /**
      * Creates an instance of GetLockedListRequest as a receiver.

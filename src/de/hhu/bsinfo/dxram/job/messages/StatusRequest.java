@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.job.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request the status of a the job service from a remote node.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 10.02.2016
  */
-public class StatusRequest extends AbstractRequest {
+public class StatusRequest extends Request {
     /**
      * Creates an instance of StatusRequest.
      * This constructor is used when receiving this message.

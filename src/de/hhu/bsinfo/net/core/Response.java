@@ -18,16 +18,16 @@ package de.hhu.bsinfo.net.core;
  *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  */
-public abstract class AbstractResponse extends AbstractMessage {
+public class Response extends Message {
 
-    private AbstractRequest m_correspondingRequest;
+    private Request m_correspondingRequest;
 
     // Constructors
 
     /**
      * Creates an instance of Response
      */
-    protected AbstractResponse() {
+    protected Response() {
         super();
     }
 
@@ -35,18 +35,13 @@ public abstract class AbstractResponse extends AbstractMessage {
      * Creates an instance of Response
      *
      * @param p_request
-     *     the corresponding Request
+     *         the corresponding Request
      * @param p_subtype
-     *     the message subtype
+     *         the message subtype
      */
-    protected AbstractResponse(final AbstractRequest p_request, final byte p_subtype) {
+    protected Response(final Request p_request, final byte p_subtype) {
         super(p_request.getMessageID(), p_request.getSource(), p_request.getType(), p_subtype);
 
-        m_correspondingRequest = p_request;
-    }
-
-    public void reuse(final AbstractRequest p_request) {
-        m_messageID = p_request.getMessageID();
         m_correspondingRequest = p_request;
     }
 
@@ -66,7 +61,7 @@ public abstract class AbstractResponse extends AbstractMessage {
      *
      * @return the corresponding request
      */
-    protected AbstractRequest getCorrespondingRequest() {
+    protected Request getCorrespondingRequest() {
         return m_correspondingRequest;
     }
 
@@ -74,9 +69,9 @@ public abstract class AbstractResponse extends AbstractMessage {
      * Sets the corresponding request
      *
      * @param p_correspondingRequest
-     *     the corresponding request
+     *         the corresponding request
      */
-    void setCorrespondingRequest(final AbstractRequest p_correspondingRequest) {
+    void setCorrespondingRequest(final Request p_correspondingRequest) {
         m_correspondingRequest = p_correspondingRequest;
     }
 

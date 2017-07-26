@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
@@ -26,7 +26,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 06.09.2012
  */
-public class AskAboutBackupsRequest extends AbstractRequest {
+public class AskAboutBackupsRequest extends Request {
 
     // Attributes
     private ArrayList<Short> m_peers;

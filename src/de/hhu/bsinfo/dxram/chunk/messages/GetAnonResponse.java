@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
@@ -25,7 +25,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 30.03.2017
  */
-public class GetAnonResponse extends AbstractResponse {
+public class GetAnonResponse extends Response {
 
     // The data of the chunk buffer objects here is used when sending the response only
     // when the response is received, the chunk objects from the request are

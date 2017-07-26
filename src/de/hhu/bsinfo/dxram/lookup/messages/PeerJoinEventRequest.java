@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Peer Join Event Request. Request to propagate a peer joining to all other peers (two-phase: 1. inform all superpeers 2. superpeers inform peers).
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.04.2017
  */
-public class PeerJoinEventRequest extends AbstractRequest {
+public class PeerJoinEventRequest extends Request {
 
     // Attributes
     private short m_nodeID;

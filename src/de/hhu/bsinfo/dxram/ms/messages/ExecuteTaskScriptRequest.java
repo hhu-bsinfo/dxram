@@ -18,14 +18,14 @@ import de.hhu.bsinfo.dxram.ms.TaskContextData;
 import de.hhu.bsinfo.dxram.ms.TaskScript;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request to execute a task script on another slave compute node.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class ExecuteTaskScriptRequest extends AbstractRequest {
+public class ExecuteTaskScriptRequest extends Request {
 
     private int m_barrierIdentifier = -1;
     private TaskContextData m_ctxData;

@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 
 /**
  * Executes incoming default messages
@@ -61,7 +61,7 @@ final class DefaultMessageHandler extends Thread {
         int messagesLeft = 0;
         int capacityThreshold = (int) (m_defaultMessages.capacity() * 0.9);
         int waitCounter = 0;
-        AbstractMessage message = null;
+        Message message = null;
         MessageReceiver messageReceiver;
 
         while (!m_shutdown) {

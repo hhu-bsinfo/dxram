@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.ms.messages;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService.StatusMaster;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to the request to get the status of a master compute node.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class GetMasterStatusResponse extends AbstractResponse {
+public class GetMasterStatusResponse extends Response {
     private StatusMaster m_statusMaster;
     private byte m_status;
 

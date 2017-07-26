@@ -15,14 +15,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to the sign on request with status code if successful.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.05.2016
  */
-public class BarrierSignOnResponse extends AbstractResponse {
+public class BarrierSignOnResponse extends Response {
     private int m_barrierIdentifier = -1;
     private byte m_status;
 

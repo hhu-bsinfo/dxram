@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
@@ -26,7 +26,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
-public class MigrationRequest extends AbstractRequest {
+public class MigrationRequest extends Request {
 
     // data structure is used when request is sent
     // chunks are created if data is received

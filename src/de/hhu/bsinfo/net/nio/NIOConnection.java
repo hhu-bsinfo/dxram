@@ -23,9 +23,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.net.MessageHandlers;
 import de.hhu.bsinfo.net.NodeMap;
 import de.hhu.bsinfo.net.core.AbstractConnection;
-import de.hhu.bsinfo.net.core.DataReceiver;
+import de.hhu.bsinfo.net.core.AbstractExporterPool;
 import de.hhu.bsinfo.net.core.MessageCreator;
 import de.hhu.bsinfo.net.core.MessageDirectory;
 import de.hhu.bsinfo.net.core.NetworkException;
@@ -47,14 +48,16 @@ public class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
     private volatile boolean m_connectionCreationAborted;
 
     NIOConnection(final short p_ownNodeId, final short p_destination, final int p_bufferSize, final int p_flowControlWindowSize,
-            final MessageCreator p_messageCreator, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver,
-            final NIOBufferPool p_bufferPool, final NIOSelector p_nioSelector, final NodeMap p_nodeMap, final ReentrantLock p_lock, final Condition p_cond) {
+            final MessageCreator p_messageCreator, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap,
+            final MessageHandlers p_messageHandlers, final NIOBufferPool p_bufferPool, final AbstractExporterPool p_exporterPool,
+            final NIOSelector p_nioSelector, final NodeMap p_nodeMap, final ReentrantLock p_lock, final Condition p_cond) {
         super(p_ownNodeId);
 
         NIOFlowControl flowControl = new NIOFlowControl(p_destination, p_flowControlWindowSize, p_nioSelector, this);
-        NIOOutgoingRingBuffer outgoingBuffer = new NIOOutgoingRingBuffer(p_bufferSize);
+        NIOOutgoingRingBuffer outgoingBuffer = new NIOOutgoingRingBuffer(p_bufferSize, p_exporterPool);
         NIOPipeIn pipeIn =
-                new NIOPipeIn(p_ownNodeId, p_destination, flowControl, p_messageDirectory, p_requestMap, p_dataReceiver, p_bufferPool, p_messageCreator, this);
+                new NIOPipeIn(p_ownNodeId, p_destination, flowControl, p_messageDirectory, p_requestMap, p_messageHandlers, p_bufferPool, p_messageCreator,
+                        this);
         NIOPipeOut pipeOut = new NIOPipeOut(p_ownNodeId, p_destination, p_bufferSize, flowControl, outgoingBuffer, p_nioSelector, p_nodeMap, this);
 
         setPipes(pipeIn, pipeOut);
@@ -66,14 +69,16 @@ public class NIOConnection extends AbstractConnection<NIOPipeIn, NIOPipeOut> {
     }
 
     NIOConnection(final short p_ownNodeId, final short p_destination, final int p_bufferSize, final int p_flowControlWindowSize,
-            final MessageCreator p_messageCreator, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver,
-            final NIOBufferPool p_bufferPool, final NIOSelector p_nioSelector, final NodeMap p_nodeMap) {
+            final MessageCreator p_messageCreator, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap,
+            final MessageHandlers p_messageHandlers, final NIOBufferPool p_bufferPool, final AbstractExporterPool p_exporterPool,
+            final NIOSelector p_nioSelector, final NodeMap p_nodeMap) {
         super(p_ownNodeId);
 
         NIOFlowControl flowControl = new NIOFlowControl(p_destination, p_flowControlWindowSize, p_nioSelector, this);
-        NIOOutgoingRingBuffer outgoingBuffer = new NIOOutgoingRingBuffer(p_bufferSize);
+        NIOOutgoingRingBuffer outgoingBuffer = new NIOOutgoingRingBuffer(p_bufferSize, p_exporterPool);
         NIOPipeIn pipeIn =
-                new NIOPipeIn(p_ownNodeId, p_destination, flowControl, p_messageDirectory, p_requestMap, p_dataReceiver, p_bufferPool, p_messageCreator, this);
+                new NIOPipeIn(p_ownNodeId, p_destination, flowControl, p_messageDirectory, p_requestMap, p_messageHandlers, p_bufferPool, p_messageCreator,
+                        this);
         NIOPipeOut pipeOut = new NIOPipeOut(p_ownNodeId, p_destination, p_bufferSize, flowControl, outgoingBuffer, p_nioSelector, p_nodeMap, this);
 
         setPipes(pipeIn, pipeOut);

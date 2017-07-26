@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.net.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 25.01.2017
  */
-public class NetworkTestMessage extends AbstractMessage {
+public class NetworkTestMessage extends Message {
 
     private byte[] m_data;
 

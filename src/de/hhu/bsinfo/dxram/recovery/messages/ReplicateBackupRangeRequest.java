@@ -17,14 +17,14 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Replicate Backup Range Message
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.06.2017
  */
-public class ReplicateBackupRangeRequest extends AbstractRequest {
+public class ReplicateBackupRangeRequest extends Request {
 
     // Attributes
     private short m_rangeID;

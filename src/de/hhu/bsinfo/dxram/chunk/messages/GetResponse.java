@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
@@ -26,7 +26,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
-public class GetResponse extends AbstractResponse {
+public class GetResponse extends Response {
 
     // The data of the chunk objects here is used when sending the response only
     // when the response is received, the chunk objects from the request are

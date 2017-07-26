@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.ArrayListLong;
@@ -25,7 +25,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 29.05.2017
  */
-public class ReuseIDMessage extends AbstractMessage {
+public class ReuseIDMessage extends Message {
 
     private ArrayListLong m_chunkIDsOut;
     private long[] m_chunkIDs;

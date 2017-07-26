@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.ms.messages;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response of the master to a join request by a slave.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class SlaveJoinResponse extends AbstractResponse {
+public class SlaveJoinResponse extends Response {
     private int m_executionBarrierId = BarrierID.INVALID_ID;
     private byte m_status;
 

@@ -20,7 +20,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -38,7 +37,7 @@ import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeResponse;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.net.MessageReceiver;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.utils.JNIFileRaw;
 import de.hhu.bsinfo.utils.NodeID;
@@ -71,7 +70,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
     }
 
     @Override
-    public void onIncomingMessage(final AbstractMessage p_message) {
+    public void onIncomingMessage(final Message p_message) {
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {

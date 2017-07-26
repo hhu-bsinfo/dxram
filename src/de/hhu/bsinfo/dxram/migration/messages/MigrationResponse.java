@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.migration.messages;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to a migration request.
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
-public class MigrationResponse extends AbstractResponse {
+public class MigrationResponse extends Response {
 
     private byte m_status;
 

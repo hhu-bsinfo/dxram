@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.05.2016
  */
-public class BarrierReleaseMessage extends AbstractMessage {
+public class BarrierReleaseMessage extends Message {
     private int m_barrierId = -1;
     private BarrierStatus m_results;
 

@@ -13,14 +13,14 @@
 
 package de.hhu.bsinfo.dxram.recovery.messages;
 
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to a ReplicateBackupRangeRequest
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.06.2017
  */
-public class ReplicateBackupRangeResponse extends AbstractResponse {
+public class ReplicateBackupRangeResponse extends Response {
 
     // Constructors
 

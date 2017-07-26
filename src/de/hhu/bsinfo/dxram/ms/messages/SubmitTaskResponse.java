@@ -15,14 +15,14 @@ package de.hhu.bsinfo.dxram.ms.messages;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response by the remote master to the submitted task.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class SubmitTaskResponse extends AbstractResponse {
+public class SubmitTaskResponse extends Response {
     private short m_assignedComputeGroupId;
     private int m_assignedPayloadId;
     private byte m_status;

@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.net;
 
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 
 /**
  * Ring buffer for messages
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.net.core.AbstractMessage;
 public class MessageStore {
 
     // Attributes
-    private AbstractMessage[] m_buffer;
+    private Message[] m_buffer;
     private int m_size;
 
     private int m_posFront;
@@ -35,9 +35,9 @@ public class MessageStore {
      * @param p_size
      *         the maximum number of messages to store
      */
-    public MessageStore(final int p_size) {
+    MessageStore(final int p_size) {
         m_size = p_size;
-        m_buffer = new AbstractMessage[m_size];
+        m_buffer = new Message[m_size];
 
         m_posFront = 0;
         m_posBack = 0;
@@ -86,7 +86,7 @@ public class MessageStore {
      *         the message
      * @return whether the job was added or not
      */
-    public boolean pushMessage(final AbstractMessage p_message) {
+    boolean pushMessage(final Message p_message) {
         if ((m_posBack + 1) % m_size == m_posFront % m_size) {
             // Return without adding the message if queue is full
             return false;
@@ -103,8 +103,8 @@ public class MessageStore {
      *
      * @return the message or null if empty
      */
-    public AbstractMessage popMessage() {
-        AbstractMessage ret;
+    Message popMessage() {
+        Message ret;
 
         if (m_posFront == m_posBack) {
             // Ring-buffer is empty.

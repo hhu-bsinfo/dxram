@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response with status information about the key value store memory
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 07.04.2016
  */
-public class StatusResponse extends AbstractResponse {
+public class StatusResponse extends Response {
 
     private MemoryManagerComponent.Status m_status;
 

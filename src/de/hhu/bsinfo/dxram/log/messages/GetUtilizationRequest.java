@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.log.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Get Utilization Request
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.04.2016
  */
-public class GetUtilizationRequest extends AbstractRequest {
+public class GetUtilizationRequest extends Request {
 
     // Constructors
 

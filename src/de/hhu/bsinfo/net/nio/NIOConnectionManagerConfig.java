@@ -28,6 +28,8 @@ public abstract class NIOConnectionManagerConfig extends ConnectionManagerConfig
 
         public abstract Builder setConnectionTimeout(final int p_val);
 
+        public abstract Builder setExporterPoolType(final boolean p_val);
+
         public abstract NIOConnectionManagerConfig build();
     }
 }

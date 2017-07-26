@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request to sign on at a barrier
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.05.2016
  */
-public class BarrierSignOnRequest extends AbstractRequest {
+public class BarrierSignOnRequest extends Request {
     private int m_barrierId = -1;
     private long m_customData = -1;
 

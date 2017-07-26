@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 06.09.2012
  */
-public class AskAboutSuccessorResponse extends AbstractResponse {
+public class AskAboutSuccessorResponse extends Response {
 
     // Attributes
     private short m_successor;

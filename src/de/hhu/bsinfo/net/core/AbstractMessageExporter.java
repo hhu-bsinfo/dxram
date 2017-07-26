@@ -33,15 +33,17 @@ public abstract class AbstractMessageExporter implements Exporter {
      *
      * @return number of written bytes
      */
-    protected abstract int getNumberOfWrittenBytes();
+    abstract int getNumberOfWrittenBytes();
 
     /**
-     * TODO
+     * Set buffer to export to.
      *
      * @param p_addr
+     *         the start address
      * @param p_size
+     *         the size
      */
-    public abstract void setBuffer(long p_addr, int p_size);
+    abstract void setBuffer(long p_addr, int p_size);
 
     /**
      * Set buffer offset
@@ -49,5 +51,5 @@ public abstract class AbstractMessageExporter implements Exporter {
      * @param p_position
      *         the offset
      */
-    public abstract void setPosition(int p_position);
+    abstract void setPosition(int p_position);
 }

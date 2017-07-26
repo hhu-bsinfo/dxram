@@ -17,7 +17,7 @@ import java.util.ArrayList;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
@@ -26,7 +26,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 06.09.2012
  */
-public class JoinResponse extends AbstractResponse {
+public class JoinResponse extends Response {
 
     // Attributes
     private short m_newContactSuperpeer;

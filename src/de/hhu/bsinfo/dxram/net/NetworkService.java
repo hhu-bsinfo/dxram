@@ -17,8 +17,8 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.net.MessageReceiver;
-import de.hhu.bsinfo.net.core.AbstractMessage;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Message;
+import de.hhu.bsinfo.net.core.Request;
 import de.hhu.bsinfo.net.core.NetworkException;
 
 /**
@@ -88,7 +88,7 @@ public class NetworkService extends AbstractDXRAMService<NetworkServiceConfig> {
      * @throws NetworkException
      *         If sending the message failed
      */
-    public void sendMessage(final AbstractMessage p_message) throws NetworkException {
+    public void sendMessage(final Message p_message) throws NetworkException {
         m_network.sendMessage(p_message);
     }
 
@@ -100,7 +100,7 @@ public class NetworkService extends AbstractDXRAMService<NetworkServiceConfig> {
      * @throws NetworkException
      *         If sending the message failed
      */
-    public void sendSync(final AbstractRequest p_request) throws NetworkException {
+    public void sendSync(final Request p_request) throws NetworkException {
         m_network.sendSync(p_request);
     }
 

@@ -2,18 +2,15 @@ package de.hhu.bsinfo.net.core;
 
 import java.util.Arrays;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.net.MessageHandlers;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Created by nothaas on 6/9/17.
  */
 public abstract class AbstractPipeIn {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeIn.class.getSimpleName());
     private static final StatisticsOperation SOP_PROCESS = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "ProcessBuffer");
     private static final StatisticsOperation SOP_DELIVER = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "DeliverMessage");
     private static final StatisticsOperation SOP_FULFILL = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "FulfillRequest");
@@ -23,7 +20,7 @@ public abstract class AbstractPipeIn {
     private volatile boolean m_isConnected;
     private final AbstractFlowControl m_flowControl;
 
-    private final DataReceiver m_listener;
+    private final MessageHandlers m_messageHandlers;
     private final MessageDirectory m_messageDirectory;
     private final RequestMap m_requestMap;
 
@@ -31,21 +28,21 @@ public abstract class AbstractPipeIn {
 
     private MessageImporterCollection m_importers;
     private int m_currentPosition;
-    private AbstractMessage m_currentMessage;
+    private Message m_currentMessage;
     private MessageHeader m_currentHeader = new MessageHeader();
 
-    private final AbstractMessage[] m_normalMessages = new AbstractMessage[25];
-    private final AbstractMessage[] m_exclusiveMessages = new AbstractMessage[25];
+    private final Message[] m_normalMessages = new Message[25];
+    private final Message[] m_exclusiveMessages = new Message[25];
 
     protected AbstractPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
-            final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final DataReceiver p_dataReceiver) {
+            final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final MessageHandlers p_messageHandlers) {
         m_ownNodeID = p_ownNodeId;
         m_destinationNodeID = p_destinationNodeId;
         m_flowControl = p_flowControl;
 
         m_importers = new MessageImporterCollection();
 
-        m_listener = p_dataReceiver;
+        m_messageHandlers = p_messageHandlers;
         m_messageDirectory = p_messageDirectory;
         m_requestMap = p_requestMap;
     }
@@ -101,9 +98,9 @@ public abstract class AbstractPipeIn {
         m_currentPosition = 0;
         while (p_bytesAvailable > m_currentPosition) {
             if (m_currentMessage == null) {
-                bytesRead = readHeader(p_addr, p_bytesAvailable, AbstractMessage.HEADER_SIZE);
+                bytesRead = readHeader(p_addr, p_bytesAvailable, Message.HEADER_SIZE);
 
-                if (bytesRead < AbstractMessage.HEADER_SIZE) {
+                if (bytesRead < Message.HEADER_SIZE) {
                     // end of current data stream in importer, incomplete header
                     break;
                 }
@@ -120,8 +117,8 @@ public abstract class AbstractPipeIn {
             // access to requests/responses. So we exploit the request map to get our corresponding request
             // before de-serializing the network buffer for every request.
             if (m_currentMessage.isResponse()) {
-                AbstractResponse response = (AbstractResponse) m_currentMessage;
-                AbstractRequest request = m_requestMap.getRequest(response);
+                Response response = (Response) m_currentMessage;
+                Request request = m_requestMap.getRequest(response);
                 if (request == null) {
                     System.out.println(
                             "Request null for " + m_currentMessage.getType() + ',' + m_currentHeader.getSubtype() + "; " + m_currentMessage.getMessageID() +
@@ -150,7 +147,7 @@ public abstract class AbstractPipeIn {
                 SOP_FULFILL.enter();
                 // #endif /* STATISTICS */
 
-                m_requestMap.fulfill((AbstractResponse) m_currentMessage);
+                m_requestMap.fulfill((Response) m_currentMessage);
 
                 // #ifdef STATISTICS
                 SOP_FULFILL.leave();
@@ -220,8 +217,8 @@ public abstract class AbstractPipeIn {
         // #endif /* STATISTICS */
     }
 
-    private AbstractMessage createMessage() throws NetworkException {
-        AbstractMessage ret;
+    private Message createMessage() throws NetworkException {
+        Message ret;
         byte type = m_currentHeader.getType();
         byte subtype = m_currentHeader.getSubtype();
 
@@ -289,7 +286,7 @@ public abstract class AbstractPipeIn {
      * @param p_messages
      *         the new messages
      */
-    private void deliverMessages(final AbstractMessage[] p_messages) {
-        m_listener.newMessages(p_messages);
+    private void deliverMessages(final Message[] p_messages) {
+        m_messageHandlers.newMessages(p_messages);
     }
 }

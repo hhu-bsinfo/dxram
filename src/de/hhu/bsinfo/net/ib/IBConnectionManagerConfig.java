@@ -40,6 +40,8 @@ public abstract class IBConnectionManagerConfig extends ConnectionManagerConfig 
 
         public abstract Builder setConnectionTimeout(final int p_val);
 
+        public abstract Builder setExporterPoolType(final boolean p_val);
+
         public abstract Builder setMaxRecvReqs(final int p_val);
 
         public abstract Builder setFlowControlMaxRecvReqs(final int p_val);

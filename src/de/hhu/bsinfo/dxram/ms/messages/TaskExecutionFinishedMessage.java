@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.ms.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class TaskExecutionFinishedMessage extends AbstractMessage {
+public class TaskExecutionFinishedMessage extends Message {
     private int m_taskPayloadId;
     private int[] m_executionReturnCodes;
 

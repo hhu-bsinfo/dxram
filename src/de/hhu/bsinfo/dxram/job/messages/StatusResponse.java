@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.job.messages;
 import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to the status request to get information about remote job systems.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class StatusResponse extends AbstractResponse {
+public class StatusResponse extends Response {
     private JobService.Status m_status;
 
     /**

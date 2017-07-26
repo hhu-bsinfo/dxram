@@ -26,8 +26,8 @@ import de.hhu.bsinfo.net.NetworkResponseDelayedException;
  *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  */
-public abstract class AbstractRequest extends AbstractMessage {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractRequest.class.getSimpleName());
+public abstract class Request extends Message {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(Request.class.getSimpleName());
 
     // Attributes
     private volatile boolean m_fulfilled;
@@ -35,14 +35,14 @@ public abstract class AbstractRequest extends AbstractMessage {
 
     private boolean m_ignoreTimeout;
 
-    private volatile AbstractResponse m_response;
+    private volatile Response m_response;
 
     // Constructors
 
     /**
      * Creates an instance of Request
      */
-    protected AbstractRequest() {
+    protected Request() {
         super();
 
         m_response = null;
@@ -58,7 +58,7 @@ public abstract class AbstractRequest extends AbstractMessage {
      * @param p_subtype
      *         the message subtype
      */
-    protected AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype) {
+    protected Request(final short p_destination, final byte p_type, final byte p_subtype) {
         this(p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE);
     }
 
@@ -74,7 +74,7 @@ public abstract class AbstractRequest extends AbstractMessage {
      * @param p_exclusivity
      *         whether this request type allows parallel execution
      */
-    protected AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
+    protected Request(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
         super(p_destination, p_type, p_subtype, p_exclusivity);
 
         m_response = null;
@@ -87,7 +87,7 @@ public abstract class AbstractRequest extends AbstractMessage {
      *
      * @return true if the timeout should be ignored, false otherwise
      */
-    public final boolean isIgnoreTimeout() {
+    public final boolean isTimeoutIgnored() {
         return m_ignoreTimeout;
     }
 
@@ -115,7 +115,7 @@ public abstract class AbstractRequest extends AbstractMessage {
      *
      * @return the Response
      */
-    public final AbstractResponse getResponse() {
+    public final Response getResponse() {
         return m_response;
     }
 
@@ -155,7 +155,7 @@ public abstract class AbstractRequest extends AbstractMessage {
      *         the Class of the Response
      * @return the Response
      */
-    public final <T extends AbstractResponse> T getResponse(final Class<T> p_class) {
+    public final <T extends Response> T getResponse(final Class<T> p_class) {
         T ret = null;
 
         assert p_class != null;
@@ -203,8 +203,6 @@ public abstract class AbstractRequest extends AbstractMessage {
             }
         }
 
-        // TODO statistics for req/resp latency?
-
         // #if LOGGER >= TRACE
         LOGGER.trace("Request %s fulfilled, response %s, latency %f ms", toString(), m_response, (System.nanoTime() - cur) / 1000.0 / 1000.0);
         // #endif /* LOGGER >= TRACE */
@@ -216,7 +214,7 @@ public abstract class AbstractRequest extends AbstractMessage {
      * @param p_response
      *         the Response
      */
-    final void fulfill(final AbstractResponse p_response) {
+    final void fulfill(final Response p_response) {
         assert p_response != null;
 
         m_response = p_response;

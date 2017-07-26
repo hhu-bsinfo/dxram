@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.job.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.job.JobID;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class JobEventTriggeredMessage extends AbstractMessage {
+public class JobEventTriggeredMessage extends Message {
     private long m_jobId = JobID.INVALID_ID;
     private byte m_eventID;
 

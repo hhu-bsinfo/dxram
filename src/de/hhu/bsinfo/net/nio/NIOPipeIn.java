@@ -9,9 +9,9 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.net.MessageHandlers;
 import de.hhu.bsinfo.net.core.AbstractFlowControl;
 import de.hhu.bsinfo.net.core.AbstractPipeIn;
-import de.hhu.bsinfo.net.core.DataReceiver;
 import de.hhu.bsinfo.net.core.MessageCreator;
 import de.hhu.bsinfo.net.core.MessageDirectory;
 import de.hhu.bsinfo.net.core.RequestMap;
@@ -32,9 +32,9 @@ class NIOPipeIn extends AbstractPipeIn {
     private final NIOConnection m_parentConnection;
 
     NIOPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl, final MessageDirectory p_messageDirectory,
-            final RequestMap p_requestMap, final DataReceiver p_dataReceiver, final NIOBufferPool p_bufferPool, final MessageCreator p_messageCreator,
+            final RequestMap p_requestMap, final MessageHandlers p_messageHandlers, final NIOBufferPool p_bufferPool, final MessageCreator p_messageCreator,
             final NIOConnection p_parentConnection) {
-        super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_messageDirectory, p_requestMap, p_dataReceiver);
+        super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_messageDirectory, p_requestMap, p_messageHandlers);
 
         m_incomingChannel = null;
         m_bufferPool = p_bufferPool;

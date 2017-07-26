@@ -13,14 +13,14 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to a PeerJoinEventRequest
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.04.2017
  */
-public class PeerJoinEventResponse extends AbstractResponse {
+public class PeerJoinEventResponse extends Response {
 
     // Constructors
 

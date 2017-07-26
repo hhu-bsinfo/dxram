@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to the status request.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.05.2015
  */
-public class SuperpeerStorageStatusResponse extends AbstractResponse {
+public class SuperpeerStorageStatusResponse extends Response {
     private SuperpeerStorage.Status m_status;
 
     /**

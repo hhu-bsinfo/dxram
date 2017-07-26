@@ -43,7 +43,7 @@ import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.net.MessageReceiver;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -440,7 +440,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
     }
 
     @Override
-    public void onIncomingMessage(final AbstractMessage p_message) {
+    public void onIncomingMessage(final Message p_message) {
         // #if LOGGER == TRACE
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */

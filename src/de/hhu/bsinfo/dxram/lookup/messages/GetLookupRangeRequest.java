@@ -17,14 +17,14 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Lookup Request
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 06.09.2012
  */
-public class GetLookupRangeRequest extends AbstractRequest {
+public class GetLookupRangeRequest extends Request {
 
     // Attributes
     private long m_chunkID;

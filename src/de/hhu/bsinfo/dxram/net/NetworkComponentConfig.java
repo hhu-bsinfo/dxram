@@ -35,6 +35,9 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
     private TimeUnit m_connectionTimeout = new TimeUnit(333, TimeUnit.MS);
 
     @Expose
+    private boolean m_useStaticExporterPool = true;
+
+    @Expose
     private boolean m_infiniband = false;
 
     @Expose
@@ -121,6 +124,13 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
      */
     public TimeUnit getConnectionTimeout() {
         return m_connectionTimeout;
+    }
+
+    /**
+     * The exporter pool type. True if static, false if dynamic. Static is recommended for less than 1000 actively message sending threads.
+     */
+    public boolean getExporterPoolType() {
+        return m_useStaticExporterPool;
     }
 
     /**

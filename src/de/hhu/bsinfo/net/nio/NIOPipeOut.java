@@ -11,7 +11,7 @@ import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.net.NodeMap;
 import de.hhu.bsinfo.net.core.AbstractFlowControl;
-import de.hhu.bsinfo.net.core.AbstractOutgoingRingBuffer;
+import de.hhu.bsinfo.net.core.OutgoingRingBuffer;
 import de.hhu.bsinfo.net.core.AbstractPipeOut;
 import de.hhu.bsinfo.net.core.NetworkException;
 
@@ -33,7 +33,7 @@ public class NIOPipeOut extends AbstractPipeOut {
     private final ByteBuffer m_flowControlBytes;
 
     NIOPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl,
-            final AbstractOutgoingRingBuffer p_outgoingBuffer, final NIOSelector p_nioSelector, final NodeMap p_nodeMap,
+            final OutgoingRingBuffer p_outgoingBuffer, final NIOSelector p_nioSelector, final NodeMap p_nodeMap,
             final NIOConnection p_parentConnection) {
         super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_outgoingBuffer);
 

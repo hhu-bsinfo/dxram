@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.logger.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 19.04.2016
  */
-public class SetLogLevelMessage extends AbstractMessage {
+public class SetLogLevelMessage extends Message {
 
     private String m_logLevel;
 

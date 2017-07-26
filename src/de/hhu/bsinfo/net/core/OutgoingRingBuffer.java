@@ -25,31 +25,45 @@ import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.05.2016
  */
-public abstract class AbstractOutgoingRingBuffer {
-    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(AbstractOutgoingRingBuffer.class, "RingBufferPush");
-    private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(AbstractOutgoingRingBuffer.class, "RingBufferPop");
+public class OutgoingRingBuffer {
+    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "RingBufferPush");
+    private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "RingBufferPop");
 
     // Attributes
     private volatile int m_posFront;
     protected final AtomicInteger m_posBack;
-    private final int m_bufferSize;
+
+    private long m_bufferAddr;
+    private int m_bufferSize;
 
     private final AtomicInteger m_producers;
     private volatile boolean m_consumerWaits;
 
+    private AbstractExporterPool m_exporterPool;
+
     /**
-     * Creates an instance of AbstractOutgoingRingBuffer
-     *
-     * @param p_bufferSize
-     *         the buffer size
+     * Creates an instance of OutgoingRingBuffer
      */
-    protected AbstractOutgoingRingBuffer(final int p_bufferSize) {
+    protected OutgoingRingBuffer(final AbstractExporterPool p_exporterPool) {
         m_posFront = 0;
         m_posBack = new AtomicInteger(0);
 
         m_producers = new AtomicInteger(0);
         m_consumerWaits = false;
 
+        m_exporterPool = p_exporterPool;
+    }
+
+    /**
+     * Set buffer address and size
+     *
+     * @param p_bufferAddr
+     *         the address in native memory
+     * @param p_bufferSize
+     *         the buffer size
+     */
+    protected void setBuffer(final long p_bufferAddr, final int p_bufferSize) {
+        m_bufferAddr = p_bufferAddr;
         m_bufferSize = p_bufferSize;
     }
 
@@ -82,7 +96,7 @@ public abstract class AbstractOutgoingRingBuffer {
      * @throws NetworkException
      *         if message could not be serialized
      */
-    void pushMessage(final AbstractMessage p_message, final int p_messageSize) throws NetworkException {
+    void pushMessage(final Message p_message, final int p_messageSize) throws NetworkException {
         int posBackUnlimited;
         int posBack;
         int posBackRelative;
@@ -173,13 +187,22 @@ public abstract class AbstractOutgoingRingBuffer {
      * @throws NetworkException
      *         if message could not be serialized
      */
-    protected abstract void serialize(final AbstractMessage p_message, final int p_start, final int p_messageSize, final boolean p_hasOverflow)
-            throws NetworkException;
+    protected void serialize(final Message p_message, final int p_start, final int p_messageSize, final boolean p_hasOverflow) throws NetworkException {
+        AbstractMessageExporter exporter = m_exporterPool.getInstance().getExporter(p_hasOverflow);
+        exporter.setBuffer(m_bufferAddr, m_bufferSize);
+        exporter.setPosition(p_start);
 
-    // empty if both back and front are equal
-    // this always returns pointers with front < back
-    // => if a wrap around is currently available on the buffer, this must be called twice:
-    // first call handles front up to end of buffer, second call buffer start up to back
+        p_message.serialize(exporter, p_messageSize);
+    }
+
+    /**
+     * Get area in ring buffer to send, split in start and end address within ring buffer.
+     * This always returns pointers with front < back => if a wrap around is currently available
+     * on the buffer, this must be called twice: first call handles front up to end of buffer,
+     * second call buffer start up to back
+     *
+     * @return the start and end address; empty if both back and front are equal
+     */
     protected long popFrontShift() {
         int posBack;
         int posBackRelative;

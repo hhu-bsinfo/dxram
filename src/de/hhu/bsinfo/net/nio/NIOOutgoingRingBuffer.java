@@ -2,31 +2,32 @@ package de.hhu.bsinfo.net.nio;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.net.core.AbstractMessage;
-import de.hhu.bsinfo.net.core.AbstractMessageExporter;
-import de.hhu.bsinfo.net.core.AbstractOutgoingRingBuffer;
-import de.hhu.bsinfo.net.core.ExporterPool;
-import de.hhu.bsinfo.net.core.NetworkException;
+import de.hhu.bsinfo.net.core.AbstractExporterPool;
+import de.hhu.bsinfo.net.core.OutgoingRingBuffer;
 import de.hhu.bsinfo.utils.ByteBufferHelper;
 import de.hhu.bsinfo.utils.UnsafeMemory;
 
 /**
  * Created by nothaas on 7/17/17.
  */
-class NIOOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
+class NIOOutgoingRingBuffer extends OutgoingRingBuffer {
 
-    private final long m_bufferAddr;
-    private final int m_bufferSize;
     private ByteBuffer m_sendByteBuffer;
+    private long m_bufferAddr;
 
-    NIOOutgoingRingBuffer(final int p_osBufferSize) {
-        super(p_osBufferSize * 2);
+    NIOOutgoingRingBuffer(final int p_osBufferSize, final AbstractExporterPool p_exporterPool) {
+        super(p_exporterPool);
 
-        m_sendByteBuffer = ByteBuffer.allocateDirect(p_osBufferSize * 2);
-        m_bufferSize = p_osBufferSize * 2;
+        m_sendByteBuffer = ByteBuffer.allocateDirect(2 * p_osBufferSize);
         m_bufferAddr = ByteBufferHelper.getDirectAddress(m_sendByteBuffer);
+        setBuffer(m_bufferAddr, 2 * p_osBufferSize);
     }
 
+    /**
+     * Get buffer from outgoing ring buffer.
+     *
+     * @return the ByteBuffer
+     */
     ByteBuffer popFront() {
         long tmp;
         int posBackRelative;
@@ -42,7 +43,13 @@ class NIOOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
         return m_sendByteBuffer;
     }
 
-    boolean pushNodeID(final ByteBuffer p_buffer) {
+    /**
+     * Write own NodeID directly after connection establishment.
+     *
+     * @param p_buffer
+     *         the byte buffer including own NodeID
+     */
+    void pushNodeID(final ByteBuffer p_buffer) {
         if (m_posBack.get() == 0) {
             UnsafeMemory.writeByte(m_bufferAddr, p_buffer.get());
             UnsafeMemory.writeByte(m_bufferAddr + 1, p_buffer.get());
@@ -50,16 +57,5 @@ class NIOOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
         } else {
             throw new IllegalStateException();
         }
-
-        return true;
-    }
-
-    @Override
-    protected void serialize(final AbstractMessage p_message, final int p_start, final int p_messageSize, final boolean p_hasOverflow) throws NetworkException {
-        AbstractMessageExporter exporter = ExporterPool.getInstance().getExporter(p_hasOverflow);
-        exporter.setBuffer(m_bufferAddr, m_bufferSize);
-        exporter.setPosition(p_start);
-
-        p_message.serialize(exporter, p_messageSize);
     }
 }

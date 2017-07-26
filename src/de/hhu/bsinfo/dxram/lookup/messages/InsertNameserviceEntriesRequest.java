@@ -17,14 +17,14 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request for storing an id to ChunkID mapping on a remote node
  *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  */
-public class InsertNameserviceEntriesRequest extends AbstractRequest {
+public class InsertNameserviceEntriesRequest extends Request {
 
     // Attributes
     private int m_id;

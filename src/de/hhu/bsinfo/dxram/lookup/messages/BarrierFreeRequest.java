@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Message to free an allocated barrier.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.05.2016
  */
-public class BarrierFreeRequest extends AbstractRequest {
+public class BarrierFreeRequest extends Request {
     private int m_barrierId;
     private boolean m_isReplicate;
 

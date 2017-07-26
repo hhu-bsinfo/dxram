@@ -27,7 +27,7 @@ public final class RequestMap {
     private static final Logger LOGGER = LogManager.getFormatterLogger(RequestMap.class.getSimpleName());
 
     // Attributes
-    private AbstractRequest[] m_pendingRequests;
+    private Request[] m_pendingRequests;
 
     private ReentrantReadWriteLock m_lock = new ReentrantReadWriteLock(false);
 
@@ -40,7 +40,7 @@ public final class RequestMap {
      *         the number of entries in request map
      */
     public RequestMap(final int p_size) {
-        m_pendingRequests = new AbstractRequest[p_size];
+        m_pendingRequests = new Request[p_size];
     }
 
     /**
@@ -49,7 +49,7 @@ public final class RequestMap {
      * @param p_request
      *         the Request
      */
-    public void put(final AbstractRequest p_request) {
+    public void put(final Request p_request) {
         int index;
 
         m_lock.readLock().lock();
@@ -70,8 +70,8 @@ public final class RequestMap {
      *         the requestID
      * @return the removed Request
      */
-    public AbstractRequest remove(final int p_requestID) {
-        AbstractRequest ret;
+    public Request remove(final int p_requestID) {
+        Request ret;
         int index;
 
         m_lock.readLock().lock();
@@ -90,7 +90,7 @@ public final class RequestMap {
      *         the NodeID
      */
     public void removeAll(final short p_nodeID) {
-        AbstractRequest request;
+        Request request;
 
         m_lock.writeLock().lock();
         for (int i = 0; i < m_pendingRequests.length; i++) {
@@ -110,8 +110,8 @@ public final class RequestMap {
      *         the response
      * @return the request
      */
-    AbstractRequest getRequest(final AbstractResponse p_response) {
-        AbstractRequest ret;
+    Request getRequest(final Response p_response) {
+        Request ret;
 
         m_lock.readLock().lock();
         ret = m_pendingRequests[p_response.getRequestID() % m_pendingRequests.length];
@@ -126,8 +126,8 @@ public final class RequestMap {
      * @param p_response
      *         the Response
      */
-    void fulfill(final AbstractResponse p_response) {
-        AbstractRequest request;
+    void fulfill(final Response p_response) {
+        Request request;
 
         if (p_response != null) {
             request = remove(p_response.getRequestID());

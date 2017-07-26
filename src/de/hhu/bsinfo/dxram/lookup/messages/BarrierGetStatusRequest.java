@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request the status of a barrier
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.05.2016
  */
-public class BarrierGetStatusRequest extends AbstractRequest {
+public class BarrierGetStatusRequest extends Request {
     private int m_barrierId = -1;
 
     /**

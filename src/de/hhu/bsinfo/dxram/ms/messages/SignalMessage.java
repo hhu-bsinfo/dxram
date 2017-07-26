@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.ms.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.ms.Signal;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
@@ -25,7 +25,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class SignalMessage extends AbstractMessage {
+public class SignalMessage extends Message {
     private Signal m_signal;
 
     /**

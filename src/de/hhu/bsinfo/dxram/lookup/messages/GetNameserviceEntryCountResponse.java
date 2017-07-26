@@ -15,14 +15,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to a GetMappingCountRequest
  *
  * @author Florian Klein, florian.klein@hhu.de, 26.03.2015
  */
-public class GetNameserviceEntryCountResponse extends AbstractResponse {
+public class GetNameserviceEntryCountResponse extends Response {
 
     // Attributes
     private int m_count;

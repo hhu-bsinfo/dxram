@@ -13,14 +13,14 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to a ReplaceBackupPeerRequest
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 21.10.2016
  */
-public class ReplaceBackupPeerResponse extends AbstractResponse {
+public class ReplaceBackupPeerResponse extends Response {
 
     // Constructors
 

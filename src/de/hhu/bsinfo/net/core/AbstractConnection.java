@@ -15,9 +15,6 @@ package de.hhu.bsinfo.net.core;
 
 import java.util.Objects;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 /**
  * Represents a network connections
  *
@@ -25,7 +22,6 @@ import org.apache.logging.log4j.Logger;
  * @author Marc Ewert, marc.ewert@hhu.de, 14.10.2014
  */
 public abstract class AbstractConnection<PipeIn extends AbstractPipeIn, PipeOut extends AbstractPipeOut> {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractConnection.class.getSimpleName());
 
     private final short m_ownNodeID;
     private PipeIn m_pipeIn;
@@ -47,7 +43,7 @@ public abstract class AbstractConnection<PipeIn extends AbstractPipeIn, PipeOut 
         return m_pipeIn.getDestinationNodeID();
     }
 
-    public final void postMessage(final AbstractMessage p_message) throws NetworkException {
+    public final void postMessage(final Message p_message) throws NetworkException {
         m_pipeOut.postMessage(p_message);
     }
 

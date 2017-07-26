@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 
 /**
  * Ping Superpeer Message
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 06.09.2012
  */
-public class PingSuperpeerMessage extends AbstractMessage {
+public class PingSuperpeerMessage extends Message {
 
     // Constructors
 

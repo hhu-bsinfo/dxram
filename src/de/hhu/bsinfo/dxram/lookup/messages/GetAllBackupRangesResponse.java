@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 08.10.2015
  */
-public class GetAllBackupRangesResponse extends AbstractResponse {
+public class GetAllBackupRangesResponse extends Response {
 
     // Attributes
     private BackupRange[] m_backupRanges;

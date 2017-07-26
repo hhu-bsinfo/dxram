@@ -15,8 +15,6 @@ package de.hhu.bsinfo.net;
 
 import java.util.concurrent.atomic.AtomicLongArray;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,14 +22,13 @@ import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.net.core.AbstractConnection;
 import de.hhu.bsinfo.net.core.AbstractConnectionManager;
-import de.hhu.bsinfo.net.core.AbstractMessage;
-import de.hhu.bsinfo.net.core.AbstractRequest;
-import de.hhu.bsinfo.net.core.ConnectionManagerListener;
 import de.hhu.bsinfo.net.core.DefaultMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.MessageCreator;
 import de.hhu.bsinfo.net.core.MessageDirectory;
 import de.hhu.bsinfo.net.core.Messages;
 import de.hhu.bsinfo.net.core.NetworkException;
+import de.hhu.bsinfo.net.core.Request;
 import de.hhu.bsinfo.net.core.RequestMap;
 import de.hhu.bsinfo.net.ib.IBConnectionManager;
 import de.hhu.bsinfo.net.ib.IBConnectionManagerConfig;
@@ -53,6 +50,7 @@ public final class NetworkSystem {
 
     private final NetworkSystemConfig m_config;
 
+    private final MessageReceiverStore m_messageReceivers;
     private final MessageHandlers m_messageHandlers;
     private final MessageDirectory m_messageDirectory;
     private final MessageCreator m_messageCreator;
@@ -68,7 +66,8 @@ public final class NetworkSystem {
     public NetworkSystem(final NetworkSystemConfig p_config, final NodeMap p_nodeMap) {
         m_config = p_config;
 
-        m_messageHandlers = new MessageHandlers(m_config.getNumMessageHandlerThreads(), m_config.getRequestTimeOut());
+        m_messageReceivers = new MessageReceiverStore(m_config.getRequestTimeOut());
+        m_messageHandlers = new MessageHandlers(m_config.getNumMessageHandlerThreads(), m_messageReceivers);
         m_messageDirectory = new MessageDirectory(m_config.getRequestTimeOut());
 
         m_messageDirectory.register(Messages.NETWORK_MESSAGES_TYPE, Messages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
@@ -93,7 +92,7 @@ public final class NetworkSystem {
                     m_messageHandlers);
             ((IBConnectionManager) m_connectionManager).init();
         } else {
-            throw new NotImplementedException();
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -167,7 +166,7 @@ public final class NetworkSystem {
      *         the receiver
      */
     public void register(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
-        m_messageHandlers.register(p_type, p_subtype, p_receiver);
+        m_messageReceivers.register(p_type, p_subtype, p_receiver);
     }
 
     /**
@@ -181,7 +180,7 @@ public final class NetworkSystem {
      *         the receiver
      */
     public void unregister(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
-        m_messageHandlers.unregister(p_type, p_subtype, p_receiver);
+        m_messageReceivers.unregister(p_type, p_subtype, p_receiver);
     }
 
     /**
@@ -221,7 +220,7 @@ public final class NetworkSystem {
      * @throws NetworkException
      *         If sending the message failed
      */
-    public void sendMessage(final AbstractMessage p_message) throws NetworkException {
+    public void sendMessage(final Message p_message) throws NetworkException {
         AbstractConnection connection;
 
         // #if LOGGER == TRACE
@@ -288,7 +287,7 @@ public final class NetworkSystem {
      * @throws NetworkException
      *         If sending the message failed
      */
-    public void sendSync(final AbstractRequest p_request, final int p_timeout, final boolean p_waitForResponses) throws NetworkException {
+    public void sendSync(final Request p_request, final int p_timeout, final boolean p_waitForResponses) throws NetworkException {
         // #if LOGGER == TRACE
         LOGGER.trace("Sending request (sync): %s", p_request);
         // #endif /* LOGGER == TRACE */

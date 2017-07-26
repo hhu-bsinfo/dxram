@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.migration.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
  *
  * @author Mike Birkhoff, michael.birkhoff@hhu.de, 15.07.2016
  */
-public class MigrationRemoteMessage extends AbstractMessage {
+public class MigrationRemoteMessage extends Message {
 
     // Attributes
     private long m_chunkID;

@@ -35,7 +35,7 @@ import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
 import de.hhu.bsinfo.net.core.DefaultMessage;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.net.MessageReceiver;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -169,7 +169,7 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
     }
 
     @Override
-    public void onIncomingMessage(final AbstractMessage p_message) {
+    public void onIncomingMessage(final Message p_message) {
 
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.FAILURE_MESSAGES_TYPE) {

@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to the get request.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.2015
  */
-public class SuperpeerStorageGetResponse extends AbstractResponse {
+public class SuperpeerStorageGetResponse extends Response {
     // The chunk objects here are used when sending the response only
     // when the response is received, the data structures from the request are
     // used to directly write the data to them and avoiding further copying

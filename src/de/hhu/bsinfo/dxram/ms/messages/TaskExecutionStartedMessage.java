@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.ms.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class TaskExecutionStartedMessage extends AbstractMessage {
+public class TaskExecutionStartedMessage extends Message {
     private int m_taskPayloadId;
 
     /**

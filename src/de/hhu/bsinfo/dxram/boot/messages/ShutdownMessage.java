@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.boot.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 02.05.2016
  */
-public class ShutdownMessage extends AbstractMessage {
+public class ShutdownMessage extends Message {
 
     private boolean m_hardShutdown;
 

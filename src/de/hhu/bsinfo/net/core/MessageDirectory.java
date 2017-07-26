@@ -108,8 +108,8 @@ public final class MessageDirectory {
      *         the subtype of the Message
      * @return a new Message instance
      */
-    public AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
-        AbstractMessage ret;
+    public Message getInstance(final byte p_type, final byte p_subtype) {
+        Message ret;
         long time;
         Constructor<?> constructor;
 
@@ -130,7 +130,7 @@ public final class MessageDirectory {
         }
 
         try {
-            ret = (AbstractMessage) constructor.newInstance();
+            ret = (Message) constructor.newInstance();
         } catch (final Exception e) {
             throw new NetworkRuntimeException("Could not create message instance", e);
         }

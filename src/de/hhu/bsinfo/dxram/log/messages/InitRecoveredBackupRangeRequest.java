@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -25,7 +25,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 20.04.2016
  */
-public class InitRecoveredBackupRangeRequest extends AbstractRequest {
+public class InitRecoveredBackupRangeRequest extends Request {
 
     // Attributes
     private short m_rangeID = RangeID.INVALID_ID;

@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.log.messages;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.04.2016
  */
-public class GetUtilizationResponse extends AbstractResponse {
+public class GetUtilizationResponse extends Response {
 
     // Attributes
     private String m_utilization;

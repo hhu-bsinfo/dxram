@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Message to get the current status of an active barrier.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 06.05.2016
  */
-public class BarrierGetStatusResponse extends AbstractResponse {
+public class BarrierGetStatusResponse extends Response {
     private int m_barrierId;
     private BarrierStatus m_barrierStatus;
     private byte m_status;

@@ -117,7 +117,7 @@ import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeResponse;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.net.MessageReceiver;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.CRC16;
@@ -297,7 +297,7 @@ public class OverlaySuperpeer implements MessageReceiver {
      *         the Message
      */
     @Override
-    public void onIncomingMessage(final AbstractMessage p_message) {
+    public void onIncomingMessage(final Message p_message) {
         // #if LOGGER == TRACE
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */

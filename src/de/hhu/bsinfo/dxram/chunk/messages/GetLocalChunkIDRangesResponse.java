@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to the request sending the chunk id ranges of all locally stored chunks.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class GetLocalChunkIDRangesResponse extends AbstractResponse {
+public class GetLocalChunkIDRangesResponse extends Response {
     private ChunkIDRanges m_chunkIDRanges = new ChunkIDRanges();
 
     /**

@@ -15,14 +15,14 @@ package de.hhu.bsinfo.dxram.ms.messages;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Reponse to the execute task script request with status code.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class ExecuteTaskScriptResponse extends AbstractResponse {
+public class ExecuteTaskScriptResponse extends Response {
 
     private byte m_status;
 

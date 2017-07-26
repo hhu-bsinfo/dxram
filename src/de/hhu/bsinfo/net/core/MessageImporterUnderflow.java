@@ -29,7 +29,7 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
     }
 
     @Override
-    protected int getPosition() {
+    public int getPosition() {
         return m_currentPosition;
     }
 

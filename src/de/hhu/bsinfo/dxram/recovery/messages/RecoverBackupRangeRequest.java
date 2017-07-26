@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -25,7 +25,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 08.10.2015
  */
-public class RecoverBackupRangeRequest extends AbstractRequest {
+public class RecoverBackupRangeRequest extends Request {
 
     // Attributes
     private short m_owner;

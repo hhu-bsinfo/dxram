@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request for locking Chunks on a remote node
@@ -25,7 +25,7 @@ import de.hhu.bsinfo.net.core.AbstractRequest;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 05.01.2016
  */
-public class LockRequest extends AbstractRequest {
+public class LockRequest extends Request {
 
     private long m_chunkID = ChunkID.INVALID_ID;
     private byte m_lockCode;

@@ -164,7 +164,6 @@ public class MessageCreator extends Thread {
     /**
      * Shutdown
      */
-
     public void shutdown() {
         // #if LOGGER == INFO
         LOGGER.info("Message creator shutdown...");

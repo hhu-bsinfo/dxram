@@ -98,7 +98,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.net.MessageReceiver;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.CRC16;
@@ -1314,7 +1314,7 @@ public class OverlayPeer implements MessageReceiver {
      *         the Message
      */
     @Override
-    public void onIncomingMessage(final AbstractMessage p_message) {
+    public void onIncomingMessage(final Message p_message) {
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {

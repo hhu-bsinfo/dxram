@@ -53,7 +53,7 @@ import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.net.MessageReceiver;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -742,7 +742,7 @@ public class GraphAlgorithmBFSTask implements Task {
         }
 
         @Override
-        public void onIncomingMessage(final AbstractMessage p_message) {
+        public void onIncomingMessage(final Message p_message) {
             if (p_message != null) {
                 if (p_message.getType() == DXGraphMessageTypes.BFS_MESSAGES_TYPE) {
                     switch (p_message.getSubtype()) {

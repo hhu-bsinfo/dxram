@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Change the size of an existing barrier.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 06.05.2016
  */
-public class BarrierChangeSizeRequest extends AbstractRequest {
+public class BarrierChangeSizeRequest extends Request {
     private int m_barrierId;
     private int m_size;
     private boolean m_isReplicate;

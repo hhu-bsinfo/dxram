@@ -18,14 +18,14 @@ import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request to put data into the superpeer storage.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 04.04.2017
  */
-public class SuperpeerStoragePutAnonRequest extends AbstractRequest {
+public class SuperpeerStoragePutAnonRequest extends Request {
     // chunk used when sending the put request.
     private ChunkAnon m_chunk;
 

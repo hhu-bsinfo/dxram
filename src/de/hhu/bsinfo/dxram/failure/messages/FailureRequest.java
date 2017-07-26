@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.failure.messages;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 18.10.2016
  */
-public class FailureRequest extends AbstractRequest {
+public class FailureRequest extends Request {
 
     // Attributes
     private short m_failedNode;

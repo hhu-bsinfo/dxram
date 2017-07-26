@@ -17,14 +17,14 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Message to notify peers about an update in the nameservice to update their local caches
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 19.04.2016
  */
-public class NameserviceUpdatePeerCachesMessage extends AbstractRequest {
+public class NameserviceUpdatePeerCachesMessage extends Request {
 
     // Attributes
     private int m_id;

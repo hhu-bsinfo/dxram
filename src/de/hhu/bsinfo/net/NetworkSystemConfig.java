@@ -10,4 +10,6 @@ public abstract class NetworkSystemConfig {
     public abstract int getBufferSize();
 
     public abstract int getRequestMapSize();
+
+    public abstract boolean getExporterPoolType();
 }

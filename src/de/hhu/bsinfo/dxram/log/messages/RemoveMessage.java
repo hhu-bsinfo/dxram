@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.ArrayListLong;
@@ -27,7 +27,7 @@ import de.hhu.bsinfo.utils.ArrayListLong;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 20.04.2016
  */
-public class RemoveMessage extends AbstractMessage {
+public class RemoveMessage extends Message {
 
     // Attributes
     private ArrayListLong m_chunkIDs;

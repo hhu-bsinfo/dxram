@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Message to allocate memory in the superpeer storage.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.2015
  */
-public class SuperpeerStorageCreateRequest extends AbstractRequest {
+public class SuperpeerStorageCreateRequest extends Request {
     private int m_storageId;
     private int m_size;
     private boolean m_replicate;

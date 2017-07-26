@@ -15,13 +15,13 @@ public abstract class AbstractPipeOut {
     private final short m_destinationNodeID;
     private volatile boolean m_isConnected;
     private final AbstractFlowControl m_flowControl;
-    private final AbstractOutgoingRingBuffer m_outgoing;
+    private final OutgoingRingBuffer m_outgoing;
 
     private AtomicLong m_sentMessages;
     private AtomicLong m_sentData;
 
     protected AbstractPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
-            final AbstractOutgoingRingBuffer p_outgoingBuffer) {
+            final OutgoingRingBuffer p_outgoingBuffer) {
         m_ownNodeID = p_ownNodeId;
         m_destinationNodeID = p_destinationNodeId;
 
@@ -64,7 +64,7 @@ public abstract class AbstractPipeOut {
         return m_outgoing.isEmpty();
     }
 
-    void postMessage(final AbstractMessage p_message) throws NetworkException {
+    void postMessage(final Message p_message) throws NetworkException {
         // #if LOGGER >= TRACE
         LOGGER.trace("Writing message %s to pipe out of dest 0x%X", p_message, m_destinationNodeID);
         // #endif /* LOGGER >= TRACE */
@@ -87,7 +87,7 @@ public abstract class AbstractPipeOut {
 
     protected abstract void bufferPosted(final int p_size);
 
-    protected AbstractOutgoingRingBuffer getOutgoingQueue() {
+    protected OutgoingRingBuffer getOutgoingQueue() {
         return m_outgoing;
     }
 }

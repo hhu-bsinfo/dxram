@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.ms.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Get the current status of a master compute node.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-public class GetMasterStatusRequest extends AbstractRequest {
+public class GetMasterStatusRequest extends Request {
     /**
      * Creates an instance of GetMasterStatusRequest.
      * This constructor is used when receiving this message.

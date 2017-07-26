@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
@@ -27,7 +27,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 20.04.2016
  */
-public class LogMessage extends AbstractMessage {
+public class LogMessage extends Message {
 
     // Attributes
     private short m_rangeID;

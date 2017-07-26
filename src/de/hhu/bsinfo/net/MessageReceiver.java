@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.net;
 
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 
 /**
  * Methods for reacting on incoming Messages
@@ -14,5 +14,5 @@ public interface MessageReceiver {
      * @param p_message
      *         the Message
      */
-    void onIncomingMessage(AbstractMessage p_message);
+    void onIncomingMessage(Message p_message);
 }

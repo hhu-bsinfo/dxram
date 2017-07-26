@@ -15,14 +15,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to the put request.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 04.04.2017
  */
-public class SuperpeerStoragePutAnonResponse extends AbstractResponse {
+public class SuperpeerStoragePutAnonResponse extends Response {
 
     private byte m_status;
 

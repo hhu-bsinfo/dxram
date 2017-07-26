@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Marc Ewert, marc.ewert@hhu.de, 18.09.2014
  */
-public abstract class AbstractMessage {
+public abstract class Message {
 
     static final boolean DEFAULT_EXCLUSIVITY_VALUE = false;
     /*- Header size:
@@ -66,7 +66,7 @@ public abstract class AbstractMessage {
      * @param p_subtype
      *         the message subtype
      */
-    protected AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype) {
+    protected Message(final short p_destination, final byte p_type, final byte p_subtype) {
         this(getNextMessageID(), p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE);
     }
 
@@ -82,14 +82,14 @@ public abstract class AbstractMessage {
      * @param p_exclusivity
      *         whether this message type allows parallel execution
      */
-    protected AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
+    protected Message(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
         this(getNextMessageID(), p_destination, p_type, p_subtype, p_exclusivity);
     }
 
     /**
      * Creates an instance of Message
      */
-    protected AbstractMessage() {
+    protected Message() {
         m_messageID = INVALID_MESSAGE_ID;
         m_source = NodeID.INVALID_ID;
         m_destination = NodeID.INVALID_ID;
@@ -112,7 +112,7 @@ public abstract class AbstractMessage {
      * @param p_subtype
      *         the message subtype
      */
-    protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype) {
+    protected Message(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype) {
         this(p_messageID, p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE);
 
         // Set message type to 1 for responses only
@@ -133,7 +133,7 @@ public abstract class AbstractMessage {
      * @param p_exclusivity
      *         whether this is an exclusive message or not
      */
-    private AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
+    private Message(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
         assert p_destination != NodeID.INVALID_ID;
 
         m_messageID = p_messageID;
@@ -233,8 +233,8 @@ public abstract class AbstractMessage {
     /**
      * Serialize the message into given byte buffer
      *
-     * @param p_buffer
-     *         the ByteBuffer to store serialized message
+     * @param p_exporter
+     *         the AbstractMessageExporter to export message with
      * @param p_messageSize
      *         the message to serialize
      * @throws NetworkException
@@ -271,7 +271,6 @@ public abstract class AbstractMessage {
     }
 
     // @formatter:off
-
     /**
      * Reads the message payload
      * This method might be interrupted on every operation as payload can be scattered over several packets (this is always
@@ -279,23 +278,25 @@ public abstract class AbstractMessage {
      * for one single message. Thus, every operation in overwritten methods must be idempotent (same result for repeated
      * execution). All available import methods from importer guarantee idempotence and work atomically (read all or nothing).
      * Spare other I/O accesses and prints.
+     *
      * Example implementation for data structures (importable, exportable objects):
-     * if (m_obj == null) {
-     * m_obj = new ImExObject();
-     * }
-     * p_importer.importObject(m_obj);
+     *  if (m_obj == null) {
+     *      m_obj = new ImExObject();
+     *  }
+     *  p_importer.importObject(m_obj);
+     *
      * Example implementation for array lists:
-     * m_size = p_importer.readInt(m_size);
-     * if (m_arrayList == null) {
-     * // Do not overwrite array list after overflow
-     * m_arrayList = new ArrayList<>(m_size);
-     * }
-     * for (int i = 0; i < m_size; i++) {
-     * long l = p_importer.readLong(0);
-     * if (m_arrayList.size() == i) {
-     * m_arrayList.add(l);
-     * }
-     * }
+     *  m_size = p_importer.readInt(m_size);
+     *  if (m_arrayList == null) {
+     *      // Do not overwrite array list after overflow
+     *      m_arrayList = new ArrayList<>(m_size);
+     *  }
+     *  for (int i = 0; i < m_size; i++) {
+     *      long l = p_importer.readLong(0);
+     *      if (m_arrayList.size() == i) {
+     *          m_arrayList.add(l);
+     *      }
+     *  }
      *
      * @param p_importer
      *         the importer
@@ -346,8 +347,8 @@ public abstract class AbstractMessage {
     /**
      * Fills a given ByteBuffer with the message
      *
-     * @param p_buffer
-     *         a given ByteBuffer
+     * @param p_exporter
+     *         the AbstractMessageExporter to export message with
      * @param p_payloadSize
      *         the payload size
      * @throws NetworkException
@@ -361,8 +362,8 @@ public abstract class AbstractMessage {
             }
 
             // Put message ID (default 3 byte)
-            for (int i = 0; i < AbstractMessage.MESSAGE_ID_LENGTH; i++) {
-                p_exporter.writeByte((byte) (m_messageID >> (AbstractMessage.MESSAGE_ID_LENGTH - 1 - i) * 8 & 0xFF));
+            for (int i = 0; i < Message.MESSAGE_ID_LENGTH; i++) {
+                p_exporter.writeByte((byte) (m_messageID >> (Message.MESSAGE_ID_LENGTH - 1 - i) * 8 & 0xFF));
             }
             p_exporter.writeByte(m_type);
             p_exporter.writeByte(m_subtype);

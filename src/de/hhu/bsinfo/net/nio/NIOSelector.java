@@ -134,7 +134,7 @@ class NIOSelector extends Thread {
     // Methods
     @Override
     public String toString() {
-        String ret = "Current keys: ";
+        StringBuilder ret = new StringBuilder("Current keys: ");
 
         try {
             if (m_selector != null && m_selector.isOpen()) {
@@ -143,8 +143,9 @@ class NIOSelector extends Thread {
                 while (iterator.hasNext()) {
                     SelectionKey key = iterator.next();
                     if (key.isValid() && key.attachment() != null) {
-                        ret += '[' + NodeID.toHexString(((NIOConnection) key.attachment()).getDestinationNodeID()) + ", " + key.interestOps() + "] ";
-                        ret += key.attachment().toString();
+                        ret.append('[').append(NodeID.toHexString(((NIOConnection) key.attachment()).getDestinationNodeID())).append(", ")
+                                .append(key.interestOps()).append("] ");
+                        ret.append(key.attachment());
                     }
                 }
             }
@@ -154,7 +155,7 @@ class NIOSelector extends Thread {
             // #endif /* LOGGER >= DEBUG */
         }
 
-        return ret;
+        return ret.toString();
     }
 
     @Override
@@ -442,7 +443,7 @@ class NIOSelector extends Thread {
                     if (p_key.channel() == connection.getPipeIn().getChannel()) {
                         try {
                             successful = connection.getPipeIn().read();
-                        } catch (final IOException e) {
+                        } catch (final IOException ignore) {
                             successful = false;
                         }
                         if (!successful) {

@@ -18,7 +18,7 @@ package de.hhu.bsinfo.net.core;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
-class MessageImporterCollection {
+public class MessageImporterCollection {
 
     private MessageImporterDefault m_importer;
     private MessageImporterOverflow m_importerOverflow;
@@ -32,7 +32,7 @@ class MessageImporterCollection {
     /**
      * Constructor
      */
-    MessageImporterCollection() {
+    public MessageImporterCollection() {
         super();
 
         m_unfinishedOperation = new UnfinishedImporterOperation();
@@ -45,7 +45,20 @@ class MessageImporterCollection {
         m_bytesCopied = 0;
     }
 
-    AbstractMessageImporter getImporter(final long p_addr, final int p_position, final int p_bufferSize, final int p_payloadSize) {
+    /**
+     * Get corresponding importer (default, overflow, underflow, under-overflow).
+     *
+     * @param p_addr
+     *         address of buffer to import from
+     * @param p_position
+     *         offset within import buffer
+     * @param p_bufferSize
+     *         length of import buffer
+     * @param p_payloadSize
+     *         size of message's payload
+     * @return the AbstractMessageImporter
+     */
+    public AbstractMessageImporter getImporter(final long p_addr, final int p_position, final int p_bufferSize, final int p_payloadSize) {
         AbstractMessageImporter ret;
 
         boolean hasOverflow = p_position + p_payloadSize - m_bytesCopied > p_bufferSize;
@@ -68,7 +81,16 @@ class MessageImporterCollection {
         return ret;
     }
 
-    int returnImporter(final AbstractMessageImporter p_importer, final boolean p_finished) {
+    /**
+     * Return importer.
+     *
+     * @param p_importer
+     *         the importer
+     * @param p_finished
+     *         whether the import could be completed
+     * @return number of imported bytes
+     */
+    public int returnImporter(final AbstractMessageImporter p_importer, final boolean p_finished) {
         if (p_finished) {
             m_bytesCopied = 0;
             m_unfinishedOperation.reset();

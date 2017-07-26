@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lock.messages;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to a LockRequest
@@ -23,7 +23,7 @@ import de.hhu.bsinfo.net.core.AbstractResponse;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 05.01.2016
  */
-public class LockResponse extends AbstractResponse {
+public class LockResponse extends Response {
 
     private byte m_lockStatus;
 

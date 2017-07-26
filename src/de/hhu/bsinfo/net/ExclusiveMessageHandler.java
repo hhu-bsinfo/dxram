@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 
 /**
  * Executes incoming exclusive messages
@@ -49,7 +49,7 @@ class ExclusiveMessageHandler extends Thread {
     @Override
     public void run() {
         int waitCounter = 0;
-        AbstractMessage message = null;
+        Message message = null;
         MessageReceiver messageReceiver;
 
         while (!m_shutdown) {
@@ -118,48 +118,19 @@ class ExclusiveMessageHandler extends Thread {
     }
 
     /**
-     * Enqueue a new message for delivering
+     * Enqueues a batch of new messages for delivering
      *
-     * @param p_message
-     *         the message
+     * @param p_messages
+     *         the messages
      */
-    void newMessage(final AbstractMessage p_message) {
+    void newMessages(final Message[] p_messages) {
 
         // #ifdef STATISTICS
         SOP_PUSH.enter();
         // #endif /* STATISTICS */
 
         m_exclusiveMessagesLock.lock();
-        while (!m_exclusiveMessages.pushMessage(p_message)) {
-            m_exclusiveMessagesLock.unlock();
-
-            // #ifdef STATISTICS
-            SOP_PUSH_WAIT.enter();
-            // #endif /* STATISTICS */
-
-            Thread.yield();
-
-            // #ifdef STATISTICS
-            SOP_PUSH_WAIT.leave();
-            // #endif /* STATISTICS */
-
-            m_exclusiveMessagesLock.lock();
-        }
-        m_exclusiveMessagesLock.unlock();
-
-        // #ifdef STATISTICS
-        SOP_PUSH.leave();
-        // #endif /* STATISTICS */
-    }
-
-    void newMessages(final AbstractMessage[] p_messages) {
-
-        // #ifdef STATISTICS
-        SOP_PUSH.enter();
-        // #endif /* STATISTICS */
-
-        m_exclusiveMessagesLock.lock();
-        for (AbstractMessage message : p_messages) {
+        for (Message message : p_messages) {
             if (message == null) {
                 break;
             }

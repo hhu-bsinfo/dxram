@@ -16,6 +16,9 @@ package de.hhu.bsinfo.net.core;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+/**
+ * Used to import message headers.
+ */
 class MessageHeader implements Importable {
 
     /* Header size:
@@ -71,10 +74,10 @@ class MessageHeader implements Importable {
     public void importObject(Importer p_importer) {
         // Read message ID (default 3 byte)
         int tmp;
-        for (int i = 0; i < AbstractMessage.MESSAGE_ID_LENGTH; i++) {
+        for (int i = 0; i < Message.MESSAGE_ID_LENGTH; i++) {
             tmp = p_importer.readByte((byte) 0);
             if (tmp != 0) {
-                m_messageID |= (tmp & 0xFF) << (AbstractMessage.MESSAGE_ID_LENGTH - 1 - i) * 8;
+                m_messageID |= (tmp & 0xFF) << (Message.MESSAGE_ID_LENGTH - 1 - i) * 8;
             }
         }
 
@@ -86,6 +89,6 @@ class MessageHeader implements Importable {
 
     @Override
     public int sizeofObject() {
-        return AbstractMessage.HEADER_SIZE;
+        return Message.HEADER_SIZE;
     }
 }

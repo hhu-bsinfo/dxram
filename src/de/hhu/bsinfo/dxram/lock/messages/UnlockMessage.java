@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.lock.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
@@ -25,7 +25,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 05.01.2016
  */
-public class UnlockMessage extends AbstractMessage {
+public class UnlockMessage extends Message {
 
     private long m_chunkID = ChunkID.INVALID_ID;
     private byte m_lockCode;

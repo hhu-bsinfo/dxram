@@ -33,23 +33,26 @@ public abstract class AbstractMessageImporter implements Importer {
      *
      * @return the position
      */
-    protected abstract int getPosition();
+    abstract int getPosition();
 
     /**
      * Get the number of de-serialized bytes.
      *
      * @return number of read bytes
      */
-    public abstract int getNumberOfReadBytes();
+    abstract int getNumberOfReadBytes();
 
     /**
-     * TODO
+     * Set buffer to import from.
      *
      * @param p_addr
+     *         the start address
      * @param p_size
+     *         the size
      * @param p_position
+     *         the offset
      */
-    public abstract void setBuffer(long p_addr, int p_size, int p_position);
+    abstract void setBuffer(long p_addr, int p_size, int p_position);
 
     /**
      * Set the number of read bytes. Only relevant for underflow importer to skip already finished operations.
@@ -57,5 +60,5 @@ public abstract class AbstractMessageImporter implements Importer {
      * @param p_numberOfReadBytes
      *         the number of read bytes
      */
-    public abstract void setNumberOfReadBytes(int p_numberOfReadBytes);
+    abstract void setNumberOfReadBytes(int p_numberOfReadBytes);
 }

@@ -13,14 +13,14 @@
 
 package de.hhu.bsinfo.dxram.failure.messages;
 
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to a FailureRequest
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 18.10.2016
  */
-public class FailureResponse extends AbstractResponse {
+public class FailureResponse extends Response {
 
     // Constructors
 

@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 04.042017
  */
-public class SuperpeerStorageGetAnonResponse extends AbstractResponse {
+public class SuperpeerStorageGetAnonResponse extends Response {
     // The data of the chunk buffer object here is used when sending the response only
     // when the response is received, the chunk objects from the request are
     // used to directly write the data to it to avoid further copying

@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.net.core;
+package de.hhu.bsinfo.net;
 
 /**
  * Created by nothaas on 6/13/17.

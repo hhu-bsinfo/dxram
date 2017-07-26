@@ -6,16 +6,19 @@ import java.nio.ByteBuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.net.MessageHandlers;
 import de.hhu.bsinfo.net.NetworkDestinationUnreachableException;
 import de.hhu.bsinfo.net.NodeMap;
 import de.hhu.bsinfo.net.core.AbstractConnection;
 import de.hhu.bsinfo.net.core.AbstractConnectionManager;
-import de.hhu.bsinfo.net.core.DataReceiver;
+import de.hhu.bsinfo.net.core.AbstractExporterPool;
+import de.hhu.bsinfo.net.core.DynamicExporterPool;
 import de.hhu.bsinfo.net.core.MessageCreator;
 import de.hhu.bsinfo.net.core.MessageDirectory;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.net.core.NetworkRuntimeException;
 import de.hhu.bsinfo.net.core.RequestMap;
+import de.hhu.bsinfo.net.core.StaticExporterPool;
 import de.hhu.bsinfo.utils.ByteBufferHelper;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -32,7 +35,9 @@ public class IBConnectionManager extends AbstractConnectionManager
     private final MessageDirectory m_messageDirectory;
     private final RequestMap m_requestMap;
     private final MessageCreator m_messageCreator;
-    private final DataReceiver m_dataReceiver;
+    private final MessageHandlers m_messageHandlers;
+
+    private AbstractExporterPool m_exporterPool;
 
     private final IBWriteInterestManager m_writeInterestManager;
 
@@ -48,7 +53,7 @@ public class IBConnectionManager extends AbstractConnectionManager
     private final IBSendWorkParameterPool m_sendWorkParameterPool;
 
     public IBConnectionManager(final IBConnectionManagerConfig p_config, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
-            final RequestMap p_requestMap, final MessageCreator p_messageCreator, final DataReceiver p_dataReciever) {
+            final RequestMap p_requestMap, final MessageCreator p_messageCreator, final MessageHandlers p_messageHandlers) {
         super(p_config);
 
         m_config = p_config;
@@ -57,7 +62,13 @@ public class IBConnectionManager extends AbstractConnectionManager
         m_messageDirectory = p_messageDirectory;
         m_requestMap = p_requestMap;
         m_messageCreator = p_messageCreator;
-        m_dataReceiver = p_dataReciever;
+        m_messageHandlers = p_messageHandlers;
+
+        if (m_config.getExporterPoolType()) {
+            m_exporterPool = new StaticExporterPool();
+        } else {
+            m_exporterPool = new DynamicExporterPool();
+        }
 
         m_writeInterestManager = new IBWriteInterestManager();
 
@@ -122,7 +133,7 @@ public class IBConnectionManager extends AbstractConnectionManager
 
         if (connection == null) {
             connection = new IBConnection(m_config.getOwnNodeId(), p_destination, m_config.getBufferSize(), m_config.getFlowControlWindow(), m_messageDirectory,
-                    m_requestMap, m_dataReceiver, m_writeInterestManager);
+                    m_requestMap, m_exporterPool, m_messageHandlers, m_writeInterestManager);
             m_connections[p_destination & 0xFFFF] = connection;
             m_openConnections++;
         }

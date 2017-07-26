@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Ask About Successor Request
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 06.09.2012
  */
-public class AskAboutSuccessorRequest extends AbstractRequest {
+public class AskAboutSuccessorRequest extends Request {
 
     // Constructors
 

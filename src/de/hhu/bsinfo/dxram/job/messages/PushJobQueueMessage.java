@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxram.job.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.job.AbstractJob;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
 
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.net.core.AbstractMessageImporter;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class PushJobQueueMessage extends AbstractMessage {
+public class PushJobQueueMessage extends Message {
     private AbstractJob m_job;
     private byte m_callbackJobEventBitMask;
 

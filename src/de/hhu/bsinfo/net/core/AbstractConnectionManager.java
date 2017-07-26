@@ -19,6 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.net.ConnectionManagerListener;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -29,7 +30,7 @@ import de.hhu.bsinfo.utils.NodeID;
 public abstract class AbstractConnectionManager {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractConnectionManager.class.getSimpleName());
 
-    protected final ConnectionManagerConfig m_configMan;
+    private final ConnectionManagerConfig m_configMan;
 
     protected final AbstractConnection[] m_connections;
     protected final ReentrantLock m_connectionCreationLock;
@@ -49,6 +50,12 @@ public abstract class AbstractConnectionManager {
         m_openConnections = 0;
     }
 
+    /**
+     * Set listener
+     *
+     * @param p_listener
+     *         the listener
+     */
     public void setListener(final ConnectionManagerListener p_listener) {
         m_listener = p_listener;
     }

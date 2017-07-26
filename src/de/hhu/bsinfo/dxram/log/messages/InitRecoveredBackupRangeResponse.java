@@ -15,14 +15,14 @@ package de.hhu.bsinfo.dxram.log.messages;
 
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to a InitBackupRangeRequest
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 20.04.2016
  */
-public class InitRecoveredBackupRangeResponse extends AbstractResponse {
+public class InitRecoveredBackupRangeResponse extends Response {
 
     // Attributes
     private boolean m_success;

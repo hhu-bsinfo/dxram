@@ -29,7 +29,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.net.MessageReceiver;
-import de.hhu.bsinfo.net.core.AbstractMessage;
+import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -288,7 +288,7 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
     }
 
     @Override
-    public void onIncomingMessage(final AbstractMessage p_message) {
+    public void onIncomingMessage(final Message p_message) {
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.BOOT_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {

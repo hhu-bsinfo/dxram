@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Requesting the status of the superpeer storage.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.05.2015
  */
-public class SuperpeerStorageStatusRequest extends AbstractRequest {
+public class SuperpeerStorageStatusRequest extends Request {
     /**
      * Creates an instance of SuperpeerStorageCreateRequest
      */

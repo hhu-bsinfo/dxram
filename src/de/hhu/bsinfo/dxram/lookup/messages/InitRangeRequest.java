@@ -17,14 +17,14 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Init Range Request
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.06.2013
  */
-public class InitRangeRequest extends AbstractRequest {
+public class InitRangeRequest extends Request {
 
     // Attributes
     private short m_rangeOwner;

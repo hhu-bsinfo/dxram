@@ -16,14 +16,14 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request for getting the ChunkID to corresponding id on a remote node
  *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  */
-public class GetChunkIDForNameserviceEntryRequest extends AbstractRequest {
+public class GetChunkIDForNameserviceEntryRequest extends Request {
 
     // Attributes
     private int m_id;

@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request for getting the a metadata summary
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.10.2016
  */
-public class GetMetadataSummaryRequest extends AbstractRequest {
+public class GetMetadataSummaryRequest extends Request {
 
     // Constructors
 

@@ -65,13 +65,22 @@ public final class UnsafeHandler {
         return Holder.INSTANCE;
     }
 
+    /**
+     * Get the offset of the byte array within the object byte[]
+     *
+     * @return the byte array offset
+     */
+    public static int getArrayByteOffset() {
+        return sun.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
+    }
+
     // Classes
 
     /**
      * Implements the SingeltonPattern for PropertyHelper
      *
      * @author Florian Klein
-     *         22.07.2013
+     * 22.07.2013
      */
     private static final class Holder {
 

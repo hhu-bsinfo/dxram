@@ -18,7 +18,7 @@ package de.hhu.bsinfo.net.core;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 06.10.2016
  */
-public class DefaultMessage extends AbstractMessage {
+public class DefaultMessage extends Message {
 
     /**
      * Creates an instance of DefaultMessage.

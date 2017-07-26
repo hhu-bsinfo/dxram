@@ -18,14 +18,14 @@ import java.util.ArrayList;
 import de.hhu.bsinfo.dxram.lock.LockedChunkEntry;
 import de.hhu.bsinfo.net.core.AbstractMessageExporter;
 import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.AbstractResponse;
+import de.hhu.bsinfo.net.core.Response;
 
 /**
  * Response to a LockedListRequest
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 19.04.2016
  */
-public class GetLockedListResponse extends AbstractResponse {
+public class GetLockedListResponse extends Response {
 
     private ArrayList<LockedChunkEntry> m_list;
 

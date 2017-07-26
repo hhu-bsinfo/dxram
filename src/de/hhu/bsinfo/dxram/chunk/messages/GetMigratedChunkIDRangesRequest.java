@@ -14,14 +14,14 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.AbstractRequest;
+import de.hhu.bsinfo.net.core.Request;
 
 /**
  * Request for getting the chunk id ranges of migrated locally stored chunk ids from another node.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class GetMigratedChunkIDRangesRequest extends AbstractRequest {
+public class GetMigratedChunkIDRangesRequest extends Request {
     /**
      * Creates an instance of GetMigratedChunkIDRangesRequest.
      * This constructor is used when receiving this message.
