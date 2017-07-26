@@ -68,25 +68,14 @@ class IBWriteInterest {
         return ret;
     }
 
-    int consumeDataInterests() {
-        int ret;
+    // lower 32-bit data, higher fc interests
+    long consumeInterests() {
+        long ret;
 
         m_interestLock.lock();
 
-        ret = m_dataInterestAvailable;
+        ret = (long) m_fcInterestAvailable << 32 | m_dataInterestAvailable;
         m_dataInterestAvailable = 0;
-
-        m_interestLock.unlock();
-
-        return ret;
-    }
-
-    int consumeFcInterests() {
-        int ret;
-
-        m_interestLock.lock();
-
-        ret = m_fcInterestAvailable;
         m_fcInterestAvailable = 0;
 
         m_interestLock.unlock();

@@ -240,8 +240,10 @@ public class IBConnectionManager extends AbstractConnectionManager
         ByteBuffer arguments = m_sendWorkParameterPool.getInstance();
         arguments.clear();
 
+        long interests = m_writeInterestManager.consumeInterests(nodeId);
+
         // process data interests
-        if (m_writeInterestManager.consumeDataInterests(nodeId)) {
+        if ((int) interests > 0) {
             long pos = connection.getPipeOut().getNextBuffer();
             int relPosBackRel = (int) (pos >> 32 & 0x7FFFFFFF);
             int relPosFrontRel = (int) (pos & 0x7FFFFFFF);
@@ -254,6 +256,12 @@ public class IBConnectionManager extends AbstractConnectionManager
             // #if LOGGER >= TRACE
             LOGGER.trace("Next data write on node 0x%X, posFrontRelative %d, posBackRelative %d", nodeId, relPosFrontRel, relPosBackRel);
             // #endif /* LOGGER >= TRACE */
+
+            // check if outgoing is empty or if we got the first part of a wrap around
+            // if wrap around -> push back a new interest to not forget the wrap around
+            if (!connection.getPipeOut().isOutgoingQueueEmpty()) {
+                m_writeInterestManager.pushBackDataInterest(nodeId);
+            }
         } else {
             // no data to write, fc only
             arguments.putInt(0);
@@ -261,7 +269,7 @@ public class IBConnectionManager extends AbstractConnectionManager
         }
 
         // process flow control interests
-        if (m_writeInterestManager.consumeFcInterests(nodeId)) {
+        if (interests >> 32 > 0) {
             int fcData = connection.getPipeOut().getFlowControlToWrite();
 
             arguments.putInt(fcData);

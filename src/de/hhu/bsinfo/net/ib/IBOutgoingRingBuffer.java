@@ -25,7 +25,6 @@ class IBOutgoingRingBuffer extends AbstractOutgoingRingBuffer {
         m_bufferSize = p_bufferSize;
     }
 
-    // 0 if nothing available, otherwise unsafe address with data to send stored there
     long popFront() {
         return popFrontShift();
     }

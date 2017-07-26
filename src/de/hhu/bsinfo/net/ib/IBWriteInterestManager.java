@@ -62,16 +62,8 @@ class IBWriteInterestManager {
         return nodeId;
     }
 
-    boolean consumeDataInterests(final short p_nodeId) {
-        // consume current interest count
-        // everything that's in the buffer up to this point is going to get sent
-        return m_writeInterests[p_nodeId & 0xFFFF].consumeDataInterests() > 0;
-    }
-
-    boolean consumeFcInterests(final short p_nodeId) {
-        // consume current interest count
-        // everything that's in the buffer up to this point is going to get sent
-        return m_writeInterests[p_nodeId & 0xFFFF].consumeFcInterests() > 0;
+    long consumeInterests(final short p_nodeId) {
+        return m_writeInterests[p_nodeId & 0xFFFF].consumeInterests();
     }
 
     void finishedProcessingInterests(final short p_nodeId) {

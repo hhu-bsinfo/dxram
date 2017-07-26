@@ -177,6 +177,9 @@ public abstract class AbstractOutgoingRingBuffer {
             throws NetworkException;
 
     // empty if both back and front are equal
+    // this always returns pointers with front < back
+    // => if a wrap around is currently available on the buffer, this must be called twice:
+    // first call handles front up to end of buffer, second call buffer start up to back
     protected long popFrontShift() {
         int posBack;
         int posBackRelative;
