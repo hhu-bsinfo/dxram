@@ -481,23 +481,14 @@ class NIOSelector extends Thread {
                         return;
                     }
 
-                    // TODO: Check!
-                    if (!complete) {
-                        // If there is still data left to write on this connection, add another write request
-                        p_key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-                    } else if (!connection.getPipeOut().isOutgoingQueueEmpty()) {
-                        // Set interest to READ after writing; do not if channel was blocked and data is left
-                        p_key.interestOps(SelectionKey.OP_READ);
-                    }
-                    /*if (!complete || !connection.getPipeOut().isOutgoingQueueEmpty()) {
-                        // If there is still data left to write on this connection, add another write request
-                        m_changeLock.lock();
-                        m_changeRequests.add(new ChangeOperationsRequest(connection, SelectionKey.OP_WRITE | SelectionKey.OP_READ));
-                        m_changeLock.unlock();
-                    }*/
                     try {
-                        // Set interest to READ after writing; do not if channel was blocked and data is left
-                        p_key.interestOps(SelectionKey.OP_READ);
+                        if (!complete || !connection.getPipeOut().isOutgoingQueueEmpty()) {
+                            // If there is still data left to write on this connection, add another write request
+                            p_key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+                        } else {
+                            // Set interest to READ after writing; do not if channel was blocked and data is left
+                            p_key.interestOps(SelectionKey.OP_READ);
+                        }
                     } catch (final CancelledKeyException ignore) {
                         // Ignore
                     }
