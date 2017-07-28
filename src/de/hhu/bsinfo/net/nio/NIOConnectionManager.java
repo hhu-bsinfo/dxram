@@ -17,6 +17,7 @@ import de.hhu.bsinfo.net.NodeMap;
 import de.hhu.bsinfo.net.core.AbstractConnection;
 import de.hhu.bsinfo.net.core.AbstractConnectionManager;
 import de.hhu.bsinfo.net.core.AbstractExporterPool;
+import de.hhu.bsinfo.net.core.CoreConfig;
 import de.hhu.bsinfo.net.core.DynamicExporterPool;
 import de.hhu.bsinfo.net.core.MessageCreator;
 import de.hhu.bsinfo.net.core.MessageDirectory;
@@ -31,7 +32,8 @@ import de.hhu.bsinfo.utils.NodeID;
 public class NIOConnectionManager extends AbstractConnectionManager {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NIOConnectionManager.class.getSimpleName());
 
-    private final NIOConnectionManagerConfig m_config;
+    private final CoreConfig m_coreConfig;
+    private final NIOConfig m_config;
 
     private final MessageDirectory m_messageDirectory;
     private final RequestMap m_requestMap;
@@ -45,11 +47,12 @@ public class NIOConnectionManager extends AbstractConnectionManager {
 
     private AbstractExporterPool m_exporterPool;
 
-    public NIOConnectionManager(final NIOConnectionManagerConfig p_config, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
+    public NIOConnectionManager(final CoreConfig p_coreConfig, final NIOConfig p_nioConfig, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
             final RequestMap p_requestMap, final MessageCreator p_messageCreator, final MessageHandlers p_messageHandlers) {
-        super(p_config);
+        super(p_nioConfig.getMaxConnections());
 
-        m_config = p_config;
+        m_coreConfig = p_coreConfig;
+        m_config = p_nioConfig;
 
         m_nodeMap = p_nodeMap;
         m_messageDirectory = p_messageDirectory;
@@ -61,15 +64,15 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         LOGGER.info("Starting NIOSelector...");
         // #endif /* LOGGER >= INFO */
 
-        m_bufferPool = new NIOBufferPool(m_config.getBufferSize());
-        if (m_config.getExporterPoolType()) {
+        m_bufferPool = new NIOBufferPool((int) m_config.getOugoingRingBufferSize().getBytes());
+        if (p_coreConfig.getExporterPoolType()) {
             m_exporterPool = new StaticExporterPool();
         } else {
             m_exporterPool = new DynamicExporterPool();
         }
 
-        m_nioSelector =
-                new NIOSelector(this, p_nodeMap.getAddress(p_nodeMap.getOwnNodeID()).getPort(), m_config.getConnectionTimeout(), m_config.getBufferSize());
+        m_nioSelector = new NIOSelector(this, p_nodeMap.getAddress(p_nodeMap.getOwnNodeID()).getPort(), (int) p_nioConfig.getConnectionTimeOut().getMs(),
+                (int) m_config.getOugoingRingBufferSize().getBytes());
         m_nioSelector.setName("Network-NIOSelector");
         m_nioSelector.start();
 
@@ -108,8 +111,9 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         cond = condLock.newCondition();
 
         if (p_existingConnection == null) {
-            ret = new NIOConnection(m_config.getOwnNodeId(), p_destination, m_config.getBufferSize(), m_config.getFlowControlWindow(), m_messageCreator,
-                    m_messageDirectory, m_requestMap, m_messageHandlers, m_bufferPool, m_exporterPool, m_nioSelector, m_nodeMap, condLock, cond);
+            ret = new NIOConnection(m_coreConfig.getOwnNodeId(), p_destination, (int) m_config.getOugoingRingBufferSize().getBytes(),
+                    (int) m_config.getFlowControlWindow().getBytes(), m_messageCreator, m_messageDirectory, m_requestMap, m_messageHandlers, m_bufferPool,
+                    m_exporterPool, m_nioSelector, m_nodeMap, condLock, cond);
         } else {
             ret = (NIOConnection) p_existingConnection;
         }
@@ -117,7 +121,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         ret.getPipeOut().createOutgoingChannel(p_destination);
         ret.connect();
 
-        deadline = System.currentTimeMillis() + m_config.getConnectionTimeout();
+        deadline = System.currentTimeMillis() + m_config.getConnectionTimeOut().getMs();
         condLock.lock();
         while (!ret.getPipeOut().isConnected()) {
             if (ret.isConnectionCreationAborted()) {
@@ -127,7 +131,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
 
             if (System.currentTimeMillis() > deadline) {
                 // #if LOGGER >= DEBUG
-                LOGGER.debug("Connection creation time-out. Interval %d ms might be to small", m_config.getConnectionTimeout());
+                LOGGER.debug("Connection creation time-out. Interval %d ms might be to small", m_config.getConnectionTimeOut());
                 // #endif /* LOGGER >= DEBUG */
 
                 condLock.unlock();
@@ -446,9 +450,9 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         private NIOConnection createConnection(final short p_destination, final SocketChannel p_channel) {
             NIOConnection ret;
 
-            ret = new NIOConnection(m_config.getOwnNodeId(), p_destination, m_config.getBufferSize(), m_config.getFlowControlWindow(), m_messageCreator,
-                    m_messageDirectory, m_requestMap, m_messageHandlers, m_bufferPool, m_exporterPool, m_nioSelector, m_nodeMap);
-            ret.getPipeIn().bindIncomingChannel(p_channel);
+            ret = new NIOConnection(m_coreConfig.getOwnNodeId(), p_destination, (int) m_config.getOugoingRingBufferSize().getBytes(),
+                    (int) m_config.getFlowControlWindow().getBytes(), m_messageCreator, m_messageDirectory, m_requestMap, m_messageHandlers, m_bufferPool,
+                    m_exporterPool, m_nioSelector, m_nodeMap);
 
             // Register connection as attachment
             m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(ret, NIOSelector.READ));

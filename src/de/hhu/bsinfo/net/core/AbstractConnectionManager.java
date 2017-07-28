@@ -30,8 +30,7 @@ import de.hhu.bsinfo.utils.NodeID;
 public abstract class AbstractConnectionManager {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractConnectionManager.class.getSimpleName());
 
-    private final ConnectionManagerConfig m_configMan;
-
+    protected final int m_maxConnections;
     protected final AbstractConnection[] m_connections;
     protected final ReentrantLock m_connectionCreationLock;
 
@@ -42,8 +41,8 @@ public abstract class AbstractConnectionManager {
     /**
      * Creates an instance of ConnectionStore
      */
-    protected AbstractConnectionManager(final ConnectionManagerConfig p_config) {
-        m_configMan = p_config;
+    protected AbstractConnectionManager(final int p_maxConnections) {
+        m_maxConnections = p_maxConnections;
         m_connections = new AbstractConnection[65536];
         m_connectionCreationLock = new ReentrantLock(false);
 
@@ -99,7 +98,7 @@ public abstract class AbstractConnectionManager {
 
             ret = m_connections[p_destination & 0xFFFF];
             if (ret == null || !ret.getPipeOut().isConnected()) {
-                if (m_openConnections == m_configMan.getMaxConnections()) {
+                if (m_openConnections == m_maxConnections) {
                     dismissRandomConnection();
                 }
 

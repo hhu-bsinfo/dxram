@@ -29,17 +29,14 @@ import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
+import de.hhu.bsinfo.net.ConnectionManagerListener;
 import de.hhu.bsinfo.net.MessageReceiver;
 import de.hhu.bsinfo.net.NetworkDestinationUnreachableException;
 import de.hhu.bsinfo.net.NetworkResponseDelayedException;
 import de.hhu.bsinfo.net.NetworkSystem;
-import de.hhu.bsinfo.net.NetworkSystemConfig;
-import de.hhu.bsinfo.net.ConnectionManagerListener;
 import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.net.core.Request;
-import de.hhu.bsinfo.net.ib.IBConnectionManagerConfig;
-import de.hhu.bsinfo.net.nio.NIOConnectionManagerConfig;
 
 /**
  * Access to the network interface to send messages or requests
@@ -268,7 +265,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
-        if (!getConfig().isInfiniband()) {
+        if (!getConfig().getCoreConfig().getInfiniband()) {
             // Check if given ip address is bound to one of this node's network interfaces
             boolean found = false;
             InetAddress myAddress = m_boot.getNodeAddress(m_boot.getNodeID()).getAddress();
@@ -305,28 +302,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
             DXRAMJNIManager.loadJNIModule("JNIIbdxnet");
         }
 
-        NetworkSystemConfig config;
-
-        if (!getConfig().isInfiniband()) {
-            config =
-                    NIOConnectionManagerConfig.builder().setOwnNodeId(m_boot.getNodeID()).setNumMessageHandlerThreads(getConfig().getNumMessageHandlerThreads())
-                            .setRequestTimeOut((int) getConfig().getRequestTimeout().getMs()).setBufferSize((int) getConfig().getBufferSize().getBytes())
-                            .setRequestMapSize(getConfig().getRequestMapEntryCount()).setMaxConnections(getConfig().getMaxConnections())
-                            .setFlowControlWindow((int) getConfig().getFlowControlWindowSize().getBytes())
-                            .setConnectionTimeout((int) getConfig().getConnectionTimeout().getMs()).setExporterPoolType(getConfig().getExporterPoolType())
-                            .build();
-        } else {
-            config = IBConnectionManagerConfig.builder().setOwnNodeId(m_boot.getNodeID()).setNumMessageHandlerThreads(getConfig().getNumMessageHandlerThreads())
-                    .setRequestTimeOut((int) getConfig().getRequestTimeout().getMs()).setBufferSize((int) getConfig().getBufferSize().getBytes())
-                    .setRequestMapSize(getConfig().getRequestMapEntryCount()).setMaxConnections(getConfig().getMaxConnections())
-                    .setFlowControlWindow((int) getConfig().getFlowControlWindowSize().getBytes())
-                    .setConnectionTimeout((int) getConfig().getConnectionTimeout().getMs()).setMaxRecvReqs(getConfig().getIbMaxRecvReqs())
-                    .setFlowControlMaxRecvReqs(getConfig().getIbFlowControlMaxRecvReqs()).setSendThreads(getConfig().getIbSendThreads())
-                    .setRecvThreads(getConfig().getIbRecvThreads()).setEnableSignalHandler(getConfig().getIbEnableSignalHandler())
-                    .setEnableDebugThread(getConfig().getIbEnableDebugThread()).setExporterPoolType(getConfig().getExporterPoolType()).build();
-        }
-
-        m_networkSystem = new NetworkSystem(config, new NodeMappings(m_boot));
+        m_networkSystem = new NetworkSystem(getConfig().getCoreConfig(), getConfig().getNIOConfig(), getConfig().getIBConfig(), new NodeMappings(m_boot));
 
         m_networkSystem.setConnectionManagerListener(this);
 

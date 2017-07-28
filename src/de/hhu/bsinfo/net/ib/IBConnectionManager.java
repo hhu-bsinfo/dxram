@@ -12,6 +12,7 @@ import de.hhu.bsinfo.net.NodeMap;
 import de.hhu.bsinfo.net.core.AbstractConnection;
 import de.hhu.bsinfo.net.core.AbstractConnectionManager;
 import de.hhu.bsinfo.net.core.AbstractExporterPool;
+import de.hhu.bsinfo.net.core.CoreConfig;
 import de.hhu.bsinfo.net.core.DynamicExporterPool;
 import de.hhu.bsinfo.net.core.MessageCreator;
 import de.hhu.bsinfo.net.core.MessageDirectory;
@@ -29,7 +30,8 @@ public class IBConnectionManager extends AbstractConnectionManager
         implements JNIIbdxnet.SendHandler, JNIIbdxnet.RecvHandler, JNIIbdxnet.DiscoveryHandler, JNIIbdxnet.ConnectionHandler {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBConnectionManager.class.getSimpleName());
 
-    private final IBConnectionManagerConfig m_config;
+    private final CoreConfig m_coreConfig;
+    private final IBConfig m_config;
     private final NodeMap m_nodeMap;
 
     private final MessageDirectory m_messageDirectory;
@@ -52,10 +54,11 @@ public class IBConnectionManager extends AbstractConnectionManager
     //    } __attribute__((packed));
     private final IBSendWorkParameterPool m_sendWorkParameterPool;
 
-    public IBConnectionManager(final IBConnectionManagerConfig p_config, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
+    public IBConnectionManager(final CoreConfig p_coreConfig, final IBConfig p_config, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
             final RequestMap p_requestMap, final MessageCreator p_messageCreator, final MessageHandlers p_messageHandlers) {
-        super(p_config);
+        super(p_config.getMaxConnections());
 
+        m_coreConfig = p_coreConfig;
         m_config = p_config;
         m_nodeMap = p_nodeMap;
 
@@ -64,7 +67,7 @@ public class IBConnectionManager extends AbstractConnectionManager
         m_messageCreator = p_messageCreator;
         m_messageHandlers = p_messageHandlers;
 
-        if (m_config.getExporterPoolType()) {
+        if (p_coreConfig.getExporterPoolType()) {
             m_exporterPool = new StaticExporterPool();
         } else {
             m_exporterPool = new DynamicExporterPool();
@@ -79,9 +82,11 @@ public class IBConnectionManager extends AbstractConnectionManager
 
     public void init() {
         // can't call this in the constructor because it relies on the implemented interfaces for callbacks
-        if (!JNIIbdxnet.init(m_config.getOwnNodeId(), m_config.getBufferSize(), m_config.getMaxRecvReqs(), m_config.getFlowControlMaxRecvReqs(),
-                m_config.getSendThreads(), m_config.getRecvThreads(), m_config.getMaxConnections(), this, this, this, this, m_config.getEnableSignalHandler(),
-                m_config.getEnableDebugThread())) {
+        if (!JNIIbdxnet
+                .init(m_coreConfig.getOwnNodeId(), (int) m_config.getIncomingBufferSize().getBytes(), (int) m_config.getOugoingRingBufferSize().getBytes(),
+                        (int) m_config.getIncomingBufferPoolTotalSize().getBytes(), m_config.getMaxRecvReqs(), m_config.getMaxSendReqs(),
+                        m_config.getFlowControlMaxRecvReqs(), m_config.getSendThreads(), m_config.getRecvThreads(), m_config.getMaxConnections(), this, this,
+                        this, this, m_config.getEnableSignalHandler(), m_config.getEnableDebugThread())) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("Initializing ibnet failed, check ibnet logs");
             // #endif /* LOGGER >= DEBUG */
@@ -91,7 +96,7 @@ public class IBConnectionManager extends AbstractConnectionManager
 
         // TODO ugly (temporary) workaround
         for (int i = 0; i < NodeID.MAX_ID; i++) {
-            if (i == (m_config.getOwnNodeId() & 0xFFFF)) {
+            if (i == (m_coreConfig.getOwnNodeId() & 0xFFFF)) {
                 continue;
             }
 
@@ -132,9 +137,9 @@ public class IBConnectionManager extends AbstractConnectionManager
         connection = (IBConnection) m_connections[p_destination & 0xFFFF];
 
         if (connection == null) {
-            connection = new IBConnection(m_config.getOwnNodeId(), p_destination, m_config.getBufferSize(), m_config.getFlowControlWindow(), m_messageDirectory,
-                    m_requestMap, m_exporterPool, m_messageHandlers, m_writeInterestManager);
-            m_connections[p_destination & 0xFFFF] = connection;
+            connection = new IBConnection(m_coreConfig.getOwnNodeId(), p_destination, (int) m_config.getOugoingRingBufferSize().getBytes(),
+                    (int) m_config.getFlowControlWindow().getBytes(), m_messageDirectory, m_requestMap, m_exporterPool, m_messageHandlers,
+                    m_writeInterestManager);
             m_openConnections++;
         }
 

@@ -22,6 +22,7 @@ import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.net.core.AbstractConnection;
 import de.hhu.bsinfo.net.core.AbstractConnectionManager;
+import de.hhu.bsinfo.net.core.CoreConfig;
 import de.hhu.bsinfo.net.core.DefaultMessage;
 import de.hhu.bsinfo.net.core.Message;
 import de.hhu.bsinfo.net.core.MessageCreator;
@@ -30,10 +31,10 @@ import de.hhu.bsinfo.net.core.Messages;
 import de.hhu.bsinfo.net.core.NetworkException;
 import de.hhu.bsinfo.net.core.Request;
 import de.hhu.bsinfo.net.core.RequestMap;
+import de.hhu.bsinfo.net.ib.IBConfig;
 import de.hhu.bsinfo.net.ib.IBConnectionManager;
-import de.hhu.bsinfo.net.ib.IBConnectionManagerConfig;
+import de.hhu.bsinfo.net.nio.NIOConfig;
 import de.hhu.bsinfo.net.nio.NIOConnectionManager;
-import de.hhu.bsinfo.net.nio.NIOConnectionManagerConfig;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -48,7 +49,9 @@ public final class NetworkSystem {
     private static final StatisticsOperation SOP_SEND = StatisticsRecorderManager.getOperation(NetworkSystem.class, "MessageSend");
     private static final StatisticsOperation SOP_SEND_SYNC = StatisticsRecorderManager.getOperation(NetworkSystem.class, "MessageSendSync");
 
-    private final NetworkSystemConfig m_config;
+    private final CoreConfig m_config;
+    private final NIOConfig m_nioConfig;
+    private final IBConfig m_ibConfig;
 
     private final MessageReceiverStore m_messageReceivers;
     private final MessageHandlers m_messageHandlers;
@@ -63,36 +66,39 @@ public final class NetworkSystem {
     private final AbstractConnectionManager m_connectionManager;
 
     // TODO doc
-    public NetworkSystem(final NetworkSystemConfig p_config, final NodeMap p_nodeMap) {
+    public NetworkSystem(final CoreConfig p_config, final NIOConfig p_nioConfig, final IBConfig p_ibConfig, final NodeMap p_nodeMap) {
         m_config = p_config;
+        m_nioConfig = p_nioConfig;
+        m_ibConfig = p_ibConfig;
 
-        m_messageReceivers = new MessageReceiverStore(m_config.getRequestTimeOut());
+        // TODO we need split request timeouts for nio and infiniband (ib has way lower latencies than nio)
+        m_messageReceivers = new MessageReceiverStore((int) m_nioConfig.getRequestTimeOut().getMs());
         m_messageHandlers = new MessageHandlers(m_config.getNumMessageHandlerThreads(), m_messageReceivers);
-        m_messageDirectory = new MessageDirectory(m_config.getRequestTimeOut());
+        m_messageDirectory = new MessageDirectory((int) m_nioConfig.getRequestTimeOut().getMs());
 
         m_messageDirectory.register(Messages.NETWORK_MESSAGES_TYPE, Messages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
 
         // #if LOGGER >= INFO
         LOGGER.info("Network: MessageCreator");
         // #endif /* LOGGER >= INFO */
-        m_messageCreator = new MessageCreator(m_config.getBufferSize());
+
+        // TODO split parameters for nio and ib necessary here
+        m_messageCreator = new MessageCreator((int) m_nioConfig.getOugoingRingBufferSize().getBytes());
         m_messageCreator.setName("Network: MessageCreator");
         m_messageCreator.start();
 
         m_lastFailures = new AtomicLongArray(65536);
 
         m_requestMap = new RequestMap(m_config.getRequestMapSize());
-        m_timeOut = m_config.getRequestTimeOut();
+        m_timeOut = (int) m_nioConfig.getRequestTimeOut().getMs();
 
-        if (p_config instanceof NIOConnectionManagerConfig) {
-            m_connectionManager = new NIOConnectionManager((NIOConnectionManagerConfig) m_config, p_nodeMap, m_messageDirectory, m_requestMap, m_messageCreator,
-                    m_messageHandlers);
-        } else if (p_config instanceof IBConnectionManagerConfig) {
-            m_connectionManager = new IBConnectionManager((IBConnectionManagerConfig) m_config, p_nodeMap, m_messageDirectory, m_requestMap, m_messageCreator,
-                    m_messageHandlers);
-            ((IBConnectionManager) m_connectionManager).init();
+        if (!p_config.getInfiniband()) {
+            m_connectionManager =
+                    new NIOConnectionManager(m_config, m_nioConfig, p_nodeMap, m_messageDirectory, m_requestMap, m_messageCreator, m_messageHandlers);
         } else {
-            throw new UnsupportedOperationException();
+            m_connectionManager =
+                    new IBConnectionManager(m_config, m_ibConfig, p_nodeMap, m_messageDirectory, m_requestMap, m_messageCreator, m_messageHandlers);
+            ((IBConnectionManager) m_connectionManager).init();
         }
     }
 
