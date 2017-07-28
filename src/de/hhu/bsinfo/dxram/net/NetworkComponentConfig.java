@@ -68,7 +68,7 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
             return false;
         }
 
-        if (m_ib.getIncomingBufferSize().getBytes() <= m_ib.getOugoingRingBufferSize().getBytes()) {
+        if (m_ib.getIncomingBufferSize().getBytes() > m_ib.getOugoingRingBufferSize().getBytes()) {
             // #if LOGGER >= ERROR
             LOGGER.error("IB in buffer size must be <= outgoing ring buffer size");
             // #endif /* LOGGER >= ERROR */
@@ -79,14 +79,12 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
             // #if LOGGER >= WARN
             LOGGER.warn("IB m_ibFlowControlMaxRecvReqs < m_maxConnections: This may result in performance penalties when too many nodes are active");
             // #endif /* LOGGER >= WARN */
-            return false;
         }
 
         if (m_ib.getMaxRecvReqs() < m_ib.getMaxConnections()) {
             // #if LOGGER >= WARN
             LOGGER.warn("IB m_ibMaxRecvReqs < m_maxConnections: This may result in performance penalties when too many nodes are active");
             // #endif /* LOGGER >= WARN */
-            return false;
         }
 
         return true;

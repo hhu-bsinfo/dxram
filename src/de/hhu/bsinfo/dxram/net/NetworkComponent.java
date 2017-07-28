@@ -265,6 +265,9 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
+        // node id is not loaded from config
+        getConfig().getCoreConfig().setOwnNodeId(m_boot.getNodeID());
+
         if (!getConfig().getCoreConfig().getInfiniband()) {
             // Check if given ip address is bound to one of this node's network interfaces
             boolean found = false;
