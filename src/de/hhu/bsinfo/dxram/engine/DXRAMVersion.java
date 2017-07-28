@@ -1,16 +1,19 @@
 package de.hhu.bsinfo.dxram.engine;
 
-import com.google.auto.value.AutoValue;
-
 /**
  * DXRAM version object
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.2017
  */
-@AutoValue
-public abstract class DXRAMVersion {
-    public static Builder builder() {
-        return new AutoValue_DXRAMVersion.Builder();
+public class DXRAMVersion {
+    private final int m_major;
+    private final int m_minor;
+    private final int m_revision;
+
+    public DXRAMVersion(final int p_major, final int p_minor, final int p_revision) {
+        m_major = p_major;
+        m_minor = p_minor;
+        m_revision = p_revision;
     }
 
     /**
@@ -18,56 +21,30 @@ public abstract class DXRAMVersion {
      *
      * @return Major version number
      */
-    public abstract int getMajor();
+    public int getMajor() {
+        return m_major;
+    }
 
     /**
      * Get the minor version number
      *
      * @return Minor version number
      */
-    public abstract int getMinor();
+    public int getMinor() {
+        return m_minor;
+    }
 
     /**
      * Get the revision number
      *
      * @return Revision number
      */
-    public abstract int getRevision();
+    public int getRevision() {
+        return m_revision;
+    }
 
-    @AutoValue.Builder
-    public abstract static class Builder {
-        /**
-         * Set the major version number
-         *
-         * @param p_val
-         *         Major version number to set
-         * @return Builder
-         */
-        public abstract Builder setMajor(final int p_val);
-
-        /**
-         * Set the minor version number
-         *
-         * @param p_val
-         *         Minor version number to set
-         * @return Builder
-         */
-        public abstract Builder setMinor(final int p_val);
-
-        /**
-         * Set the revision number
-         *
-         * @param p_val
-         *         Revision number to set
-         * @return Builder
-         */
-        public abstract Builder setRevision(final int p_val);
-
-        /**
-         * Build the object
-         *
-         * @return Instance
-         */
-        public abstract DXRAMVersion build();
+    @Override
+    public String toString() {
+        return "DXRAMVersion " + m_major + '.' + m_minor + '.' + m_revision;
     }
 }
