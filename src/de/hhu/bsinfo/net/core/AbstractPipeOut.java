@@ -5,10 +5,16 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+
 /**
  * Created by nothaas on 6/9/17.
  */
 public abstract class AbstractPipeOut {
+    private static final StatisticsOperation SOP_BUFFER_POSTED = StatisticsRecorderManager.getOperation(AbstractPipeOut.class, "BufferPosted");
+    private static final StatisticsOperation SOP_FC_DATA_TO_SEND = StatisticsRecorderManager.getOperation(AbstractPipeOut.class, "FCDataToSend");
+
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeOut.class.getSimpleName());
 
     private final short m_ownNodeID;
@@ -70,13 +76,31 @@ public abstract class AbstractPipeOut {
         // #endif /* LOGGER >= TRACE */
 
         int messageTotalSize = p_message.getTotalSize();
+
+        // #ifdef STATISTICS
+        SOP_FC_DATA_TO_SEND.enter();
+        // #endif /* STATISTICS */
+
         m_flowControl.dataToSend(messageTotalSize);
+
+        // #ifdef STATISTICS
+        SOP_FC_DATA_TO_SEND.leave();
+        // #endif /* STATISTICS */
+
         m_sentMessages.incrementAndGet();
         m_sentData.addAndGet(messageTotalSize);
 
         m_outgoing.pushMessage(p_message, messageTotalSize);
 
+        // #ifdef STATISTICS
+        SOP_BUFFER_POSTED.enter();
+        // #endif /* STATISTICS */
+
         bufferPosted(messageTotalSize);
+
+        // #ifdef STATISTICS
+        SOP_BUFFER_POSTED.leave();
+        // #endif /* STATISTICS */
     }
 
     public void dataProcessed(final int p_writtenBytes) {
