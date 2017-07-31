@@ -1,7 +1,7 @@
 package de.hhu.bsinfo.net.ib;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,22 +12,19 @@ class IBWriteInterest {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBWriteInterest.class.getSimpleName());
 
     private final short m_nodeId;
-    private ReentrantLock m_interestLock;
-    private int m_dataInterestAvailable;
-    private int m_fcInterestAvailable;
+    private AtomicLong m_interestsAvailable;
     private AtomicBoolean m_interestAcquired;
 
     IBWriteInterest(final short p_nodeId) {
         m_nodeId = p_nodeId;
-        m_interestLock = new ReentrantLock(false);
-        m_dataInterestAvailable = 0;
-        m_fcInterestAvailable = 0;
+        m_interestsAvailable = new AtomicLong(0);
         m_interestAcquired = new AtomicBoolean(false);
     }
 
     @Override
     public String toString() {
-        return NodeID.toHexString(m_nodeId) + ", " + m_dataInterestAvailable + ", " + m_dataInterestAvailable + ", " + m_interestAcquired.get();
+        long tmp = m_interestsAvailable.get();
+        return NodeID.toHexString(m_nodeId) + ", " + (tmp & 0x7FFFFFFF) + ", " + (tmp >> 32) + ", " + m_interestAcquired.get();
     }
 
     short getNodeId() {
@@ -43,53 +40,45 @@ class IBWriteInterest {
     }
 
     boolean addDataInterest() {
+        long tmp;
         boolean ret;
 
-        m_interestLock.lock();
+        while (true) {
+            tmp = m_interestsAvailable.get();
+            ret = tmp == 0;
 
-        ret = m_dataInterestAvailable == 0 && m_fcInterestAvailable == 0;
-        m_dataInterestAvailable++;
-
-        m_interestLock.unlock();
+            if (m_interestsAvailable.weakCompareAndSet(tmp, tmp + 1)) {
+                break;
+            }
+        }
 
         return ret;
     }
 
     boolean addFcInterest() {
+        long tmp;
         boolean ret;
 
-        m_interestLock.lock();
+        while (true) {
+            tmp = m_interestsAvailable.get();
+            ret = tmp == 0;
 
-        ret = m_fcInterestAvailable == 0 && m_dataInterestAvailable == 0;
-        m_fcInterestAvailable++;
-
-        m_interestLock.unlock();
+            if (m_interestsAvailable.weakCompareAndSet(tmp, tmp + (1L << 32))) {
+                break;
+            }
+        }
 
         return ret;
     }
 
     // lower 32-bit data, higher fc interests
     long consumeInterests() {
-        long ret;
-
-        m_interestLock.lock();
-
-        ret = (long) m_fcInterestAvailable << 32 | m_dataInterestAvailable;
-        m_dataInterestAvailable = 0;
-        m_fcInterestAvailable = 0;
-
-        m_interestLock.unlock();
-
-        return ret;
+        return m_interestsAvailable.getAndSet(0);
     }
 
     // on node disconnect, only
     void reset() {
-        m_interestLock.lock();
-        m_dataInterestAvailable = 0;
-        m_fcInterestAvailable = 0;
-        m_interestLock.unlock();
-
+        m_interestsAvailable.set(0);
         m_interestAcquired.set(false);
     }
 }
