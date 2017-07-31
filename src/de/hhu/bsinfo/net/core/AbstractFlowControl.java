@@ -1,8 +1,7 @@
 package de.hhu.bsinfo.net.core;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,17 +15,16 @@ public abstract class AbstractFlowControl {
     private final short m_destinationNodeID;
 
     private final int m_flowControlWindowSize;
-    private final ReentrantLock m_flowControlCondLock;
-    private final Condition m_flowControlCond;
 
-    private int m_unconfirmedBytes;
-    private int m_receivedBytes;
+    private AtomicInteger m_unconfirmedBytes;
+    private AtomicInteger m_receivedBytes;
 
     protected AbstractFlowControl(final short p_destinationNodeID, final int p_flowControlWindowSize) {
         m_destinationNodeID = p_destinationNodeID;
         m_flowControlWindowSize = p_flowControlWindowSize;
-        m_flowControlCondLock = new ReentrantLock(false);
-        m_flowControlCond = m_flowControlCondLock.newCondition();
+
+        m_unconfirmedBytes = new AtomicInteger(0);
+        m_receivedBytes = new AtomicInteger(0);
     }
 
     protected short getDestinationNodeId() {
@@ -34,7 +32,7 @@ public abstract class AbstractFlowControl {
     }
 
     public boolean isCongested() {
-        return m_unconfirmedBytes > m_flowControlWindowSize;
+        return m_unconfirmedBytes.get() > m_flowControlWindowSize;
     }
 
     /**
@@ -51,18 +49,11 @@ public abstract class AbstractFlowControl {
         LOGGER.trace("flowControlDataToSend (%X): %d", m_destinationNodeID, p_writtenBytes);
         // #endif /* LOGGER >= TRACE */
 
-        m_flowControlCondLock.lock();
-        while (m_unconfirmedBytes > m_flowControlWindowSize) {
-            try {
-                if (!m_flowControlCond.await(1000, TimeUnit.MILLISECONDS)) {
-                    // #if LOGGER >= WARN
-                    LOGGER.warn("Flow control message is overdue for node: 0x%X, unconfirmed bytes: %d", m_destinationNodeID, m_unconfirmedBytes);
-                    // #endif /* LOGGER >= WARN */
-                }
-            } catch (final InterruptedException e) { /* ignore */ }
+        while (m_unconfirmedBytes.get() > m_flowControlWindowSize) {
+            LockSupport.parkNanos(1);
         }
-        m_unconfirmedBytes += p_writtenBytes;
-        m_flowControlCondLock.unlock();
+        
+        m_unconfirmedBytes.addAndGet(p_writtenBytes);
     }
 
     // call when data was received on a connection
@@ -71,9 +62,8 @@ public abstract class AbstractFlowControl {
         LOGGER.trace("flowControlDataReceived (%X): %d", m_destinationNodeID, p_receivedBytes);
         // #endif /* LOGGER >= TRACE */
 
-        m_flowControlCondLock.lock();
-        m_receivedBytes += p_receivedBytes;
-        if (m_receivedBytes > m_flowControlWindowSize * 0.8) {
+        int receivedBytes = m_receivedBytes.addAndGet(p_receivedBytes);
+        if (receivedBytes > m_flowControlWindowSize * 0.8) {
             try {
                 flowControlWrite();
             } catch (final NetworkException e) {
@@ -82,7 +72,6 @@ public abstract class AbstractFlowControl {
                 // #endif /* LOGGER >= ERROR */
             }
         }
-        m_flowControlCondLock.unlock();
     }
 
     // call when a flow control message was received
@@ -91,11 +80,7 @@ public abstract class AbstractFlowControl {
         LOGGER.trace("handleFlowControlData (%X): %d", m_destinationNodeID, p_confirmedBytes);
         // #endif /* LOGGER >= TRACE */
 
-        m_flowControlCondLock.lock();
-        m_unconfirmedBytes -= p_confirmedBytes;
-
-        m_flowControlCond.signalAll();
-        m_flowControlCondLock.unlock();
+        m_unconfirmedBytes.addAndGet(-p_confirmedBytes);
     }
 
     // call when writing flow control data
@@ -108,16 +93,11 @@ public abstract class AbstractFlowControl {
     public int getAndResetFlowControlData() {
         int ret;
 
-        m_flowControlCondLock.lock();
-        ret = m_receivedBytes;
+        ret = m_receivedBytes.getAndSet(0);
 
         // #if LOGGER >= TRACE
         LOGGER.trace("getAndResetFlowControlData (%X): %d", m_destinationNodeID, ret);
         // #endif /* LOGGER >= TRACE */
-
-        // Reset received bytes counter
-        m_receivedBytes = 0;
-        m_flowControlCondLock.unlock();
 
         return ret;
     }
@@ -126,10 +106,8 @@ public abstract class AbstractFlowControl {
     public String toString() {
         String str;
 
-        m_flowControlCondLock.lock();
         str = "FlowControl[m_flowControlWindowSize " + m_flowControlWindowSize + ", m_unconfirmedBytes " + m_unconfirmedBytes + ", m_receivedBytes " +
                 m_receivedBytes + ']';
-        m_flowControlCondLock.unlock();
 
         return str;
     }
