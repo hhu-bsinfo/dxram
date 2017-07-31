@@ -87,6 +87,20 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
             // #endif /* LOGGER >= WARN */
         }
 
+        if (m_nio.getFlowControlWindow().getBytes() > Integer.MAX_VALUE) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("NIO: Flow control window size exceeding 2 GB, not allowed");
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        if (m_ib.getFlowControlWindow().getBytes() > Integer.MAX_VALUE) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("IB: Flow control window size exceeding 2 GB, not allowed");
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
         return true;
     }
 }
