@@ -26,8 +26,9 @@ import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.05.2016
  */
 public class OutgoingRingBuffer {
-    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "RingBufferPush");
-    private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "RingBufferPop");
+    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "Push");
+    private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "Pop");
+    private static final StatisticsOperation SOP_SHIFT_FRONT = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "ShiftFront");
 
     // Attributes
     private volatile int m_posFront;
@@ -83,7 +84,15 @@ public class OutgoingRingBuffer {
      *         the number of written bytes
      */
     public void shiftFront(final int p_writtenBytes) {
+        // #ifdef STATISTICS
+        SOP_SHIFT_FRONT.enter(p_writtenBytes);
+        // #endif /* STATISTICS */
+
         m_posFront += p_writtenBytes;
+
+        // #ifdef STATISTICS
+        SOP_SHIFT_FRONT.leave();
+        // #endif /* STATISTICS */
     }
 
     /**
