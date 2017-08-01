@@ -39,12 +39,6 @@ public class IBConfig {
     private int m_flowControlMaxRecvReqs = 100;
 
     @Expose
-    private int m_sendThreads = 1;
-
-    @Expose
-    private int m_recvThreads = 1;
-
-    @Expose
     private boolean m_enableSignalHandler = false;
 
     @Expose
@@ -118,20 +112,6 @@ public class IBConfig {
      */
     public int getFlowControlMaxRecvReqs() {
         return m_flowControlMaxRecvReqs;
-    }
-
-    /**
-     * Number of send threads to use inside the IB subsystem to put data from the outgoing ring buffer to the queues
-     */
-    public int getSendThreads() {
-        return m_sendThreads;
-    }
-
-    /**
-     * Number of recv threads to use to grab data from the incoming queue in the IB subsystem
-     */
-    public int getRecvThreads() {
-        return m_recvThreads;
     }
 
     /**
