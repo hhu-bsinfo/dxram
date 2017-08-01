@@ -1,7 +1,6 @@
 package de.hhu.bsinfo.net;
 
 import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,7 +26,6 @@ class ExclusiveMessageHandler extends Thread {
 
     private final MessageReceiverStore m_messageReceivers;
     private final MessageStore m_exclusiveMessages;
-    private final ReentrantLock m_exclusiveMessagesLock;
     private volatile boolean m_shutdown;
 
     /**
@@ -36,7 +34,6 @@ class ExclusiveMessageHandler extends Thread {
     ExclusiveMessageHandler(final MessageReceiverStore p_messageReceivers) {
         m_messageReceivers = p_messageReceivers;
         m_exclusiveMessages = new MessageStore(EXCLUSIVE_MESSAGE_STORE_SIZE);
-        m_exclusiveMessagesLock = new ReentrantLock(false);
     }
 
     /**
@@ -59,10 +56,7 @@ class ExclusiveMessageHandler extends Thread {
                 SOP_POP.enter();
                 // #endif /* STATISTICS */
 
-                m_exclusiveMessagesLock.lock();
                 if (m_exclusiveMessages.isEmpty()) {
-                    m_exclusiveMessagesLock.unlock();
-
                     // #ifdef STATISTICS
                     SOP_POP_WAIT.enter();
                     // #endif /* STATISTICS */
@@ -78,14 +72,11 @@ class ExclusiveMessageHandler extends Thread {
                     // #ifdef STATISTICS
                     SOP_POP_WAIT.leave();
                     // #endif /* STATISTICS */
-
-                    m_exclusiveMessagesLock.lock();
                 } else {
                     waitCounter = 0;
                 }
 
                 message = m_exclusiveMessages.popMessage();
-                m_exclusiveMessagesLock.unlock();
             }
 
             if (m_shutdown) {
@@ -129,15 +120,12 @@ class ExclusiveMessageHandler extends Thread {
         SOP_PUSH.enter();
         // #endif /* STATISTICS */
 
-        m_exclusiveMessagesLock.lock();
         for (Message message : p_messages) {
             if (message == null) {
                 break;
             }
 
             while (!m_exclusiveMessages.pushMessage(message)) {
-                m_exclusiveMessagesLock.unlock();
-
                 // #ifdef STATISTICS
                 SOP_PUSH_WAIT.enter();
                 // #endif /* STATISTICS */
@@ -147,11 +135,8 @@ class ExclusiveMessageHandler extends Thread {
                 // #ifdef STATISTICS
                 SOP_PUSH_WAIT.leave();
                 // #endif /* STATISTICS */
-
-                m_exclusiveMessagesLock.lock();
             }
         }
-        m_exclusiveMessagesLock.unlock();
 
         // #ifdef STATISTICS
         SOP_PUSH.leave();
