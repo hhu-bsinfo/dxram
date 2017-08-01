@@ -18,16 +18,16 @@ public class IBConfig {
     private TimeUnit m_requestTimeOut = new TimeUnit(100, TimeUnit.MS);
 
     @Expose
-    private StorageUnit m_flowControlWindow = new StorageUnit(512, StorageUnit.KB);
+    private StorageUnit m_flowControlWindow = new StorageUnit(8, StorageUnit.MB);
 
     @Expose
-    private StorageUnit m_outgoingRingBufferSize = new StorageUnit(2, StorageUnit.MB);
+    private StorageUnit m_outgoingRingBufferSize = new StorageUnit(1, StorageUnit.MB);
 
     @Expose
-    private StorageUnit m_incomingBufferSize = new StorageUnit(4, StorageUnit.KB);
+    private StorageUnit m_incomingBufferSize = new StorageUnit(1, StorageUnit.MB);
 
     @Expose
-    private StorageUnit m_incomingBufferPoolTotalSize = new StorageUnit(100, StorageUnit.MB);
+    private StorageUnit m_incomingBufferPoolTotalSize = new StorageUnit(2, StorageUnit.GB);
 
     @Expose
     private int m_maxSendReqs = 10;
