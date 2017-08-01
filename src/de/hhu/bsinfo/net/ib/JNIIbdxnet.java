@@ -41,7 +41,7 @@ public final class JNIIbdxnet {
 
     }
 
-    public static native boolean init(final short p_ownNodeId, final int p_inBufferSize, final int p_outBufferSize, final int p_recvPoolSizeBytes,
+    public static native boolean init(final short p_ownNodeId, final int p_inBufferSize, final int p_outBufferSize, final long p_recvPoolSizeBytes,
             final int p_maxRecvReqs, final int p_maxSendReqs, final int p_flowControlMaxRecvReqs, final int p_maxNumConnections,
             final SendHandler p_sendHandler, final RecvHandler p_recvHandler, final DiscoveryHandler p_discoveryHandler,
             final ConnectionHandler p_connectionHandler, final boolean p_enableSignalHandler, final boolean p_enableDebugThread);
