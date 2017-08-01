@@ -101,6 +101,20 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
             return false;
         }
 
+        if (m_ib.getIncomingBufferSize().getGBDouble() > 2.0) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("IB: Exceeding max incoming buffer size of 2GB");
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
+        if (m_ib.getOugoingRingBufferSize().getGBDouble() > 2.0) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("IB: Exceeding max outgoing buffer size of 2GB");
+            // #endif /* LOGGER >= ERROR */
+            return false;
+        }
+
         return true;
     }
 }
