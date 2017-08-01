@@ -120,15 +120,21 @@ close()
 		local role=`echo $node | cut -d ',' -f 2`
 		local ip=`resolve $hostname`
 
+		if [ "`echo $node | grep "root=1"`" != "" ]; then
+			root="sudo -P"
+		else
+			root=""
+		fi
+
 		if [ "$role" = "Z" ]; then
 			# Stop ZooKeeper?
 			echo "ZooKeeper might stay alive"
 		else
 			echo "Killing instance on $ip..."
 			if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ]; then
-				pkill -9 -f "dxramdeployscript"
+				`$root pkill -9 -f "dxramdeployscript"`
 			else
-				ssh $hostname -n "pkill -9 -f dxramdeployscript"
+				ssh $hostname -n "$root pkill -9 -f dxramdeployscript"
 			fi
 		fi
 	done <<< "$NODES"

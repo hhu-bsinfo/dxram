@@ -17,6 +17,8 @@ compile_vm_options_string_superpeer()
 	local debug="$4"
 
 	VM_OPTS=""
+	# Required to fix JNI crashing with libIbdxnet (see JNINotes.md in ibnet repository)
+	VM_OPTS="-XX:+UseMembar"
 	VM_OPTS="$VM_OPTS -Dlog4j.configurationFile=config/log4j.xml"
 	VM_OPTS="$VM_OPTS -Ddxram.config=config/dxram.json"
 	VM_OPTS="$VM_OPTS -Ddxram.m_config.m_engineConfig.m_address.m_ip=$ip"
@@ -41,6 +43,7 @@ compile_vm_options_string_superpeer()
 #   hostname - The hostname
 #   vm_options - The VM options
 #   additional_shell_cmds - Shell commands to execute before execution dxram
+#   run_as_root - Run the peer as root user (necessary for infiniband)
 ######################################################
 start_remote_superpeer()
 {
@@ -50,13 +53,18 @@ start_remote_superpeer()
 	local vm_options="$4"
 	local additional_shell_cmds="$5"
 	local debug="$6"
+	local run_as_root="$7"
 
 	compile_vm_options_string_superpeer "$ip" "$port" "$vm_options" "$debug"
 
+	if [ "$run_as_root" != "" ] || [ "$run_as_root" == "1" ]; then
+		root="sudo -P"
+	fi
+
 	if [ "$additional_shell_cmds" != "" ]; then
-		ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
+		ssh $hostname -n "$additional_shell_cmds && cd $DXRAM_PATH && $root java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
 	else
-		ssh $hostname -n "cd $DXRAM_PATH && java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
+		ssh $hostname -n "cd $DXRAM_PATH && $root java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS"
 	fi
 }
 
@@ -71,6 +79,7 @@ start_remote_superpeer()
 #   port - The port of Superpeer
 #   vm_options - The VM options
 #   additional_shell_cmds - Shell commands to execute before execution dxram
+#   run_as_root - Run the peer as root user (necessary for infiniband)
 ######################################################
 start_local_superpeer()
 {
@@ -79,15 +88,20 @@ start_local_superpeer()
 	local vm_options="$3"
 	local additional_shell_cmds="$4"
 	local debug="$5"
+	local run_as_root="$6"
 
 	compile_vm_options_string_superpeer "$ip" "$port" "$vm_options" "$debug"
 
 	if [ "$additional_shell_cmds" != "" ]; then
 		eval $additional_shell_cmds
 	fi
+	
+	if [ "$run_as_root" != "" ] || [ "$run_as_root" == "1" ]; then
+		root="sudo -P"
+	fi
 
 	cd "$DXRAM_PATH"
-	java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS
+	$root java -Ddxramdeployscript $VM_OPTS -cp $LIBRARIES $DEFAULT_CLASS
 	cd "$EXECUTION_DIR"
 }
 
@@ -157,21 +171,23 @@ while true; do
 			additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
 	elif [ "$arg_type" = "debug" ]; then
 		debug=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "root" ]; then
+		run_as_root=`echo $tmp | cut -d '=' -f 2`	
 	else
 		echo "ERROR: Unknown parameter type $arg_type"
 	fi
 done
 
-print=`echo "Superpeer ($ip $port $vm_options $additional_shell_cmds $debug): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
+print=`echo "Superpeer ($ip $port $vm_options $additional_shell_cmds $debug $run_as_root): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
 echo -n "$print"
 
 if [ "$is_remote" = false ]; then
 	echo -n "."
-	start_local_superpeer "$ip" "$port" "$vm_options" "$additional_shell_cmds" "$debug" > "${LOG_DIR}/${hostname}_${port}_superpeer" 2>&1 &
+	start_local_superpeer "$ip" "$port" "$vm_options" "$additional_shell_cmds" "$debug" "$run_as_root" > "${LOG_DIR}/${hostname}_${port}_superpeer" 2>&1 &
 	echo -n "."
 else
 	echo -n "."
-	start_remote_superpeer "$ip" "$port" "$hostname" "$vm_options" "$additional_shell_cmds" "$debug" > "${LOG_DIR}/${hostname}_${port}_superpeer" 2>&1 &
+	start_remote_superpeer "$ip" "$port" "$hostname" "$vm_options" "$additional_shell_cmds" "$debug" "$run_as_root" > "${LOG_DIR}/${hostname}_${port}_superpeer" 2>&1 &
 	echo -n "."
 fi
 
