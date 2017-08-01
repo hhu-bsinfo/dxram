@@ -52,7 +52,7 @@ public abstract class AbstractFlowControl {
         while (m_unconfirmedBytes.get() > m_flowControlWindowSize) {
             LockSupport.parkNanos(1);
         }
-        
+
         m_unconfirmedBytes.addAndGet(p_writtenBytes);
     }
 
