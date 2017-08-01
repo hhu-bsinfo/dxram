@@ -13,10 +13,12 @@
 
 package de.hhu.bsinfo.net;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import de.hhu.bsinfo.net.core.Message;
 
 /**
- * Ring buffer for messages
+ * Lock-free ring buffer for messages (single producer, multiple consumers)
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 01.05.2017
  */
@@ -26,8 +28,8 @@ public class MessageStore {
     private Message[] m_buffer;
     private int m_size;
 
-    private int m_posFront;
-    private int m_posBack;
+    private AtomicInteger m_posFront;
+    private AtomicInteger m_posBack;
 
     /**
      * Creates an instance of MessageStore
@@ -39,8 +41,8 @@ public class MessageStore {
         m_size = p_size;
         m_buffer = new Message[m_size];
 
-        m_posFront = 0;
-        m_posBack = 0;
+        m_posFront = new AtomicInteger(0);
+        m_posBack = new AtomicInteger(0);
     }
 
     /**
@@ -49,7 +51,7 @@ public class MessageStore {
      * @return whether the ring-buffer is empty or not
      */
     public boolean isEmpty() {
-        return m_posFront == m_posBack;
+        return m_posFront.get() == m_posBack.get();
     }
 
     /**
@@ -58,7 +60,7 @@ public class MessageStore {
      * @return whether the ring-buffer is full or not
      */
     public boolean isFull() {
-        return (m_posBack + 1) % m_size == m_posFront % m_size;
+        return (m_posBack.get() + 1) % m_size == m_posFront.get() % m_size;
     }
 
     /**
@@ -67,7 +69,7 @@ public class MessageStore {
      * @return the number of pending buffers
      */
     public int size() {
-        return m_posBack - m_posFront;
+        return m_posBack.get() - m_posFront.get();
     }
 
     /**
@@ -87,13 +89,16 @@ public class MessageStore {
      * @return whether the job was added or not
      */
     boolean pushMessage(final Message p_message) {
-        if ((m_posBack + 1) % m_size == m_posFront % m_size) {
+        int posBack = m_posBack.get();
+        int posFront = m_posFront.get();
+
+        if ((posBack + 1) % m_size == posFront % m_size) {
             // Return without adding the message if queue is full
             return false;
         }
 
-        m_buffer[m_posBack % m_size] = p_message;
-        m_posBack++;
+        m_buffer[posBack % m_size] = p_message;
+        m_posBack.incrementAndGet();
 
         return true;
     }
@@ -106,13 +111,21 @@ public class MessageStore {
     Message popMessage() {
         Message ret;
 
-        if (m_posFront == m_posBack) {
-            // Ring-buffer is empty.
-            return null;
-        }
+        while (true) {
+            int posBack = m_posBack.get();
 
-        ret = m_buffer[m_posFront % m_size];
-        m_posFront++;
+            int posFront = m_posFront.get();
+
+            if (posFront == posBack) {
+                // Ring-buffer is empty.
+                return null;
+            }
+
+            ret = m_buffer[posFront % m_size];
+            if (m_posFront.compareAndSet(posFront, posFront + 1)) {
+                break;
+            }
+        }
 
         return ret;
     }

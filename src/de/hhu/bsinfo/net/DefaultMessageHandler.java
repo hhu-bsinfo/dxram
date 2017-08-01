@@ -1,7 +1,6 @@
 package de.hhu.bsinfo.net;
 
 import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,7 +24,6 @@ final class DefaultMessageHandler extends Thread {
     private final int m_id;
     private final MessageReceiverStore m_messageReceivers;
     private final MessageStore m_defaultMessages;
-    private final ReentrantLock m_defaultMessagesLock;
     private final DefaultMessageHandlerPool m_pool;
     private volatile boolean m_shutdown;
 
@@ -36,15 +34,11 @@ final class DefaultMessageHandler extends Thread {
      *
      * @param p_queue
      *         the message queue
-     * @param p_lock
-     *         the lock for accessing message queue
      */
-    DefaultMessageHandler(final int p_id, final MessageReceiverStore p_messageReceivers, final MessageStore p_queue, final ReentrantLock p_lock,
-            final DefaultMessageHandlerPool p_pool) {
+    DefaultMessageHandler(final int p_id, final MessageReceiverStore p_messageReceivers, final MessageStore p_queue, final DefaultMessageHandlerPool p_pool) {
         m_id = p_id;
         m_messageReceivers = p_messageReceivers;
         m_defaultMessages = p_queue;
-        m_defaultMessagesLock = p_lock;
         m_pool = p_pool;
     }
 
@@ -71,10 +65,7 @@ final class DefaultMessageHandler extends Thread {
             // #endif /* STATISTICS */
 
             while (message == null && !m_shutdown) {
-                m_defaultMessagesLock.lock();
                 if (m_defaultMessages.isEmpty()) {
-                    m_defaultMessagesLock.unlock();
-
                     // #ifdef STATISTICS
                     SOP_WAIT.enter();
                     // #endif /* STATISTICS */
@@ -96,15 +87,12 @@ final class DefaultMessageHandler extends Thread {
                     // #ifdef STATISTICS
                     SOP_WAIT.leave();
                     // #endif /* STATISTICS */
-
-                    m_defaultMessagesLock.lock();
                 } else {
                     waitCounter = 0;
                 }
 
                 message = m_defaultMessages.popMessage();
                 messagesLeft = m_defaultMessages.size();
-                m_defaultMessagesLock.unlock();
             }
 
             if (m_shutdown) {

@@ -1,7 +1,6 @@
 package de.hhu.bsinfo.net;
 
 import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,12 +20,11 @@ final class DefaultMessageHandlerPool {
     private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Push");
     private static final StatisticsOperation SOP_WAIT = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Wait");
 
-    private static final int DEFAULT_MESSAGE_STORE_SIZE = 100;
+    private static final int DEFAULT_MESSAGE_STORE_SIZE = 10000;
 
     private final MessageStore m_defaultMessages;
 
     private final DefaultMessageHandler[] m_threads;
-    private final ReentrantLock m_defaultMessagesLock;
 
     /**
      * Creates an instance of DefaultMessageHandlerPool
@@ -36,7 +34,6 @@ final class DefaultMessageHandlerPool {
      */
     DefaultMessageHandlerPool(final MessageReceiverStore p_messageReceivers, final int p_numMessageHandlerThreads) {
         m_defaultMessages = new MessageStore(DEFAULT_MESSAGE_STORE_SIZE);
-        m_defaultMessagesLock = new ReentrantLock(false);
 
         // #if LOGGER >= INFO
         LOGGER.info("Network: DefaultMessageHandlerPool: Initialising %d threads", p_numMessageHandlerThreads);
@@ -45,7 +42,7 @@ final class DefaultMessageHandlerPool {
         DefaultMessageHandler t;
         m_threads = new DefaultMessageHandler[p_numMessageHandlerThreads];
         for (int i = 0; i < m_threads.length; i++) {
-            t = new DefaultMessageHandler(i, p_messageReceivers, m_defaultMessages, m_defaultMessagesLock, this);
+            t = new DefaultMessageHandler(i, p_messageReceivers, m_defaultMessages, this);
             t.setName("Network: DefaultMessageHandler " + (i + 1));
             m_threads[i] = t;
             t.start();
@@ -96,7 +93,6 @@ final class DefaultMessageHandlerPool {
         SOP_PUSH.enter();
         // #endif /* STATISTICS */
 
-        m_defaultMessagesLock.lock();
         for (Message message : p_messages) {
             if (message == null) {
                 break;
@@ -105,8 +101,6 @@ final class DefaultMessageHandlerPool {
             // Ignore network test messages (e.g. ping after response delay)
             if (!(message.getType() == Messages.NETWORK_MESSAGES_TYPE && message.getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
                 while (!m_defaultMessages.pushMessage(message)) {
-                    m_defaultMessagesLock.unlock();
-
                     // #ifdef STATISTICS
                     SOP_WAIT.enter();
                     // #endif /* STATISTICS */
@@ -116,12 +110,9 @@ final class DefaultMessageHandlerPool {
                     // #ifdef STATISTICS
                     SOP_WAIT.leave();
                     // #endif /* STATISTICS */
-
-                    m_defaultMessagesLock.lock();
                 }
             }
         }
-        m_defaultMessagesLock.unlock();
 
         // #ifdef STATISTICS
         SOP_PUSH.leave();
