@@ -74,7 +74,7 @@ public class NetworkTask implements Task, MessageReceiver {
         short ownSlaveID = p_ctx.getCtxData().getSlaveId();
 
         if (m_pattern == 1 && slaveNodeIds.length <= 1) {
-            System.out.println("The number of slave have to be at least two!");
+            System.out.println("Required number of slaves: >= 2");
             return -1;
         }
 
