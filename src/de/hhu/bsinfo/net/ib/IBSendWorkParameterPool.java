@@ -4,19 +4,34 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * Created by nothaas on 7/11/17.
+ * A pool of DirectByteBuffers to allow returning of multiple parameters to JNI on send calls
+ * (originating from the send thread living in the jni ibdxnet subsystem). The data passed
+ * down to the C/C++ code is mapped to plain structs.
+ * Pool one buffer for each thread to avoid allocation and synchronization between threads
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.07.2017
  */
-// a pool of direct buffers to enable returning of multiple parameters to jni on send calls from jni
-public class IBSendWorkParameterPool {
+class IBSendWorkParameterPool {
     private static final int INITIAL_POOL_SIZE = 100;
 
     private final int m_dataSize;
     private ByteBuffer[] m_pool = new ByteBuffer[INITIAL_POOL_SIZE];
 
-    public IBSendWorkParameterPool(final int p_dataSize) {
+    /**
+     * Constructor
+     *
+     * @param p_dataSize
+     *         Size of the data/struct to map to C/C++ using DirectByteBuffers
+     */
+    IBSendWorkParameterPool(final int p_dataSize) {
         m_dataSize = p_dataSize;
     }
 
+    /**
+     * Get an instance of a (Direct)ByteBuffer for the current thread
+     *
+     * @return Allocated (Direct)ByteBuffer
+     */
     public ByteBuffer getInstance() {
         int threadId = (int) Thread.currentThread().getId();
 

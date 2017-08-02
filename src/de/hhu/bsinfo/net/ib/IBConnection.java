@@ -10,13 +10,39 @@ import de.hhu.bsinfo.net.core.MessageDirectory;
 import de.hhu.bsinfo.net.core.RequestMap;
 
 /**
- * Created by nothaas on 6/13/17.
+ * Implementation of an infiniband connection
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 13.06.2017
  */
-public class IBConnection extends AbstractConnection<IBPipeIn, IBPipeOut> {
+class IBConnection extends AbstractConnection<IBPipeIn, IBPipeOut> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBConnection.class.getSimpleName());
 
     private final IBWriteInterestManager m_interestManager;
 
+    /**
+     * Constructor
+     *
+     * @param p_ownNodeId
+     *         Node id of the current node
+     * @param p_destinationNodeId
+     *         Node id of the destination connected to with this connection
+     * @param p_outBufferSize
+     *         Size of the outgoing (ring) buffer
+     * @param p_flowControlWindowSize
+     *         Size of the flow control window
+     * @param p_flowControlWindowThreshold
+     *         Threshold of the flow control window
+     * @param p_messageDirectory
+     *         Message directory instance
+     * @param p_requestMap
+     *         Request map instance
+     * @param p_exporterPool
+     *         Exporter pool instance
+     * @param p_messageHandlers
+     *         Message handlers instance
+     * @param p_writeInterestManager
+     *         Write interest manager instance
+     */
     IBConnection(final short p_ownNodeId, final short p_destinationNodeId, final int p_outBufferSize, final int p_flowControlWindowSize,
             final float p_flowControlWindowThreshold, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap,
             final AbstractExporterPool p_exporterPool, final MessageHandlers p_messageHandlers, final IBWriteInterestManager p_writeInterestManager) {

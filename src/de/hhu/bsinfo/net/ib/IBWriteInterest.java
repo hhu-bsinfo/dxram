@@ -8,6 +8,12 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.utils.NodeID;
 
+/**
+ * Write interests for a single connection. This keeps track of available data on the outgoing buffer
+ * to tell the (IB) send thread if there is data to send on any connection.
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 02.08.2017
+ */
 class IBWriteInterest {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBWriteInterest.class.getSimpleName());
 

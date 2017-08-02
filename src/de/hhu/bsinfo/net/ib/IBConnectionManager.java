@@ -24,7 +24,9 @@ import de.hhu.bsinfo.utils.ByteBufferHelper;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
- * Created by nothaas on 6/13/17.
+ * Connection manager for infiniband (note: this is the main class for the IB subsystem in the java space)
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 13.06.2017
  */
 public class IBConnectionManager extends AbstractConnectionManager
         implements JNIIbdxnet.SendHandler, JNIIbdxnet.RecvHandler, JNIIbdxnet.DiscoveryHandler, JNIIbdxnet.ConnectionHandler {
@@ -54,6 +56,24 @@ public class IBConnectionManager extends AbstractConnectionManager
     //    } __attribute__((packed));
     private final IBSendWorkParameterPool m_sendWorkParameterPool;
 
+    /**
+     * Constructor
+     *
+     * @param p_coreConfig
+     *         Core configuration instance with core config values
+     * @param p_config
+     *         IB configuration instance with IB specific config values
+     * @param p_nodeMap
+     *         Node map instance
+     * @param p_messageDirectory
+     *         Message directory instance
+     * @param p_requestMap
+     *         Request map instance
+     * @param p_messageCreator
+     *         Message creator instance
+     * @param p_messageHandlers
+     *         Message handlers instance
+     */
     public IBConnectionManager(final CoreConfig p_coreConfig, final IBConfig p_config, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
             final RequestMap p_requestMap, final MessageCreator p_messageCreator, final MessageHandlers p_messageHandlers) {
         super(p_config.getMaxConnections());
@@ -80,6 +100,9 @@ public class IBConnectionManager extends AbstractConnectionManager
         m_sendWorkParameterPool = new IBSendWorkParameterPool(Long.BYTES + Integer.BYTES + Integer.BYTES + Short.BYTES);
     }
 
+    /**
+     * Initialize the infiniband subsystem. This calls to the underlying Ibdxnet subsystem and requires the respective library to be loaded
+     */
     public void init() {
         // can't call this in the constructor because it relies on the implemented interfaces for callbacks
         if (!JNIIbdxnet
@@ -246,7 +269,7 @@ public class IBConnectionManager extends AbstractConnectionManager
         IBConnection connection;
         try {
             connection = (IBConnection) getConnection(nodeId);
-        } catch (final NetworkException e) {
+        } catch (final NetworkException ignored) {
             m_writeInterestManager.nodeDisconnected(nodeId);
             return 0;
         }
