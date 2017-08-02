@@ -1,5 +1,8 @@
 package de.hhu.bsinfo.net.ib;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.net.MessageHandlers;
 import de.hhu.bsinfo.net.core.AbstractConnection;
 import de.hhu.bsinfo.net.core.AbstractExporterPool;
@@ -10,6 +13,10 @@ import de.hhu.bsinfo.net.core.RequestMap;
  * Created by nothaas on 6/13/17.
  */
 public class IBConnection extends AbstractConnection<IBPipeIn, IBPipeOut> {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(IBConnection.class.getSimpleName());
+
+    private final IBWriteInterestManager m_interestManager;
+
     IBConnection(final short p_ownNodeId, final short p_destinationNodeId, final int p_outBufferSize, final int p_flowControlWindowSize,
             final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final AbstractExporterPool p_exporterPool,
             final MessageHandlers p_messageHandlers, final IBWriteInterestManager p_writeInterestManager) {
@@ -27,15 +34,35 @@ public class IBConnection extends AbstractConnection<IBPipeIn, IBPipeOut> {
         IBPipeOut pipeOut = new IBPipeOut(p_ownNodeId, p_destinationNodeId, flowControl, outgoingBuffer, p_writeInterestManager);
 
         setPipes(pipeIn, pipeOut);
+
+        m_interestManager = p_writeInterestManager;
     }
 
     @Override
     public void close(final boolean p_force) {
         setClosingTimestamp();
 
-        // TODO writeInterestManager needs a force/non force way to flush?
+        if (!p_force) {
+            if (!getPipeOut().isOutgoingQueueEmpty()) {
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Waiting for all scheduled messages to be sent over to be closed connection!");
+                // #endif /* LOGGER >= DEBUG */
+                long start = System.currentTimeMillis();
+                while (!getPipeOut().isOutgoingQueueEmpty()) {
+                    Thread.yield();
 
-        // TODO needs hook to IBNet
+                    if (System.currentTimeMillis() - start > 2000) {
+                        // #if LOGGER >= ERROR
+                        LOGGER.debug("Waiting for all scheduled messages to be sent over aborted, timeout");
+                        // #endif /* LOGGER >= ERROR */
+                        break;
+                    }
+                }
+            }
+        }
+
+        // flush any remaining interests
+        m_interestManager.nodeDisconnected(getOwnNodeID());
     }
 
     @Override

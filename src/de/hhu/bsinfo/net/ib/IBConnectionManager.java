@@ -163,6 +163,7 @@ public class IBConnectionManager extends AbstractConnectionManager
         m_connectionCreationLock.lock();
         AbstractConnection tmp = m_connections[p_connection.getDestinationNodeID() & 0xFFFF];
         if (p_connection.equals(tmp)) {
+            p_connection.close(p_removeConnection);
             m_connections[p_connection.getDestinationNodeID() & 0xFFFF] = null;
             m_openConnections--;
         }
@@ -188,9 +189,6 @@ public class IBConnectionManager extends AbstractConnectionManager
         // #endif /* LOGGER >= DEBUG */
 
         m_nodeConnected[p_nodeId & 0xFFFF] = false;
-
-        // TODO correct spot?
-        m_writeInterestManager.nodeDisconnected(p_nodeId);
     }
 
     @Override
@@ -205,6 +203,8 @@ public class IBConnectionManager extends AbstractConnectionManager
         // #if LOGGER >= DEBUG
         LOGGER.debug("Node disconnected 0x%X", p_nodeId);
         // #endif /* LOGGER >= DEBUG */
+
+        closeConnection(m_connections[p_nodeId], true);
     }
 
     @Override
