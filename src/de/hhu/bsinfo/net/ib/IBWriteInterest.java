@@ -9,7 +9,7 @@ import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Write interests for a single connection. This keeps track of available data on the outgoing buffer
- * to tell the (IB) send thread if there is data to send on any connection.
+ * as well as on flow control to tell the (IB) send thread if there is data to send on any connection.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 02.08.2017
  */
@@ -19,6 +19,12 @@ class IBWriteInterest {
     private final short m_nodeId;
     private AtomicLong m_interestsAvailable;
 
+    /**
+     * Constructor
+     *
+     * @param p_nodeId
+     *         Node id of the current node
+     */
     IBWriteInterest(final short p_nodeId) {
         m_nodeId = p_nodeId;
         m_interestsAvailable = new AtomicLong(0);
@@ -30,10 +36,18 @@ class IBWriteInterest {
         return NodeID.toHexString(m_nodeId) + ", " + (tmp & 0x7FFFFFFF) + ", " + (tmp >> 32);
     }
 
+    /**
+     * Get the node id of the interest buffer
+     */
     short getNodeId() {
         return m_nodeId;
     }
 
+    /**
+     * Add a new data interest
+     *
+     * @return True if no interest was available before adding this one, false otherwise
+     */
     boolean addDataInterest() {
         long tmp;
         boolean ret;
@@ -50,6 +64,11 @@ class IBWriteInterest {
         return ret;
     }
 
+    /**
+     * Add a new FC interest
+     *
+     * @return True if no interest was available before adding this one, false otherwise
+     */
     boolean addFcInterest() {
         long tmp;
         boolean ret;
@@ -66,12 +85,19 @@ class IBWriteInterest {
         return ret;
     }
 
-    // lower 32-bit data, higher fc interests
+    /**
+     * Consume all currently available interests (data and FC)
+     *
+     * @return Long value holding the number of data interests
+     * (lower 32-bit) and FC interests (higher 32-bit)
+     */
     long consumeInterests() {
         return m_interestsAvailable.getAndSet(0);
     }
 
-    // on node disconnect, only
+    /**
+     * Reset all interests, necessary on node disconnect, only
+     */
     void reset() {
         m_interestsAvailable.set(0);
     }
