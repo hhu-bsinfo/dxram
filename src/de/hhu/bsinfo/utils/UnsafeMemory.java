@@ -22,7 +22,7 @@ public class UnsafeMemory {
      *         Size of memory area to allocate
      * @return Start address of the allocated memory area
      */
-    public static long allocate(final int p_size) {
+    public static long allocate(final long p_size) {
         try {
             return ms_unsafeHandler.getUnsafe().allocateMemory(p_size);
         } catch (final Throwable ignored) {

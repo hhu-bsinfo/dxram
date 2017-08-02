@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.soh;
 
-import de.hhu.bsinfo.utils.UnsafeHandler;
+import de.hhu.bsinfo.utils.UnsafeMemory;
 
 /**
  * Implementation of a storage based on an unsafe allocated
@@ -22,9 +22,6 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
 public class StorageUnsafeMemory implements Storage {
-    @SuppressWarnings("sunapi")
-    private static final sun.misc.Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
-
     private long m_memoryBase = -1;
     private long m_memorySize = -1;
 
@@ -45,7 +42,7 @@ public class StorageUnsafeMemory implements Storage {
         assert p_size > 0;
 
         try {
-            m_memoryBase = UNSAFE.allocateMemory(p_size);
+            m_memoryBase = UnsafeMemory.allocate(p_size);
         } catch (final Throwable e) {
             throw new MemoryRuntimeException("Could not initialize memory", e);
         }
@@ -60,10 +57,11 @@ public class StorageUnsafeMemory implements Storage {
         }
 
         try {
-            UNSAFE.freeMemory(m_memoryBase);
+            UnsafeMemory.free(m_memoryBase);
         } catch (final Throwable e) {
             throw new MemoryRuntimeException("Could not free memory", e);
         }
+
         m_memorySize = 0;
     }
 
@@ -76,151 +74,119 @@ public class StorageUnsafeMemory implements Storage {
     public void set(final long p_ptr, final long p_size, final byte p_value) {
         assert assertMemoryBounds(p_ptr, Byte.BYTES * p_size);
 
-        UNSAFE.setMemory(m_memoryBase + p_ptr, p_size, p_value);
+        UnsafeMemory.set(m_memoryBase + p_ptr, p_size, p_value);
     }
 
     @Override
     public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
         assert assertMemoryBounds(p_ptr, Byte.BYTES * p_length);
 
-        for (int i = 0; i < p_length; i++) {
-            p_array[p_arrayOffset + i] = UNSAFE.getByte(m_memoryBase + p_ptr + i);
-        }
-
-        return p_length;
+        return UnsafeMemory.readBytes(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
     }
 
     @Override
-    public int readShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
+    public int readShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
         assert assertMemoryBounds(p_ptr, Short.BYTES * p_length);
 
-        for (int i = 0; i < p_length; i++) {
-            p_array[i + p_arrayOffset] = UNSAFE.getShort(m_memoryBase + p_ptr + i * Short.BYTES);
-        }
-
-        return p_length;
+        return UnsafeMemory.readShorts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
     }
 
     @Override
-    public int readInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length) {
+    public int readInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
         assert assertMemoryBounds(p_ptr, Integer.BYTES * p_length);
 
-        for (int i = 0; i < p_length; i++) {
-            p_array[i + p_arrayOffset] = UNSAFE.getInt(m_memoryBase + p_ptr + i * Integer.BYTES);
-        }
-
-        return p_length;
+        return UnsafeMemory.readInts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
     }
 
     @Override
-    public int readLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length) {
+    public int readLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
         assert assertMemoryBounds(p_ptr, Long.BYTES * p_length);
 
-        for (int i = 0; i < p_length; i++) {
-            p_array[i + p_arrayOffset] = UNSAFE.getLong(m_memoryBase + p_ptr + i * Long.BYTES);
-        }
-
-        return p_length;
+        return UnsafeMemory.readLongs(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
     }
 
     @Override
     public byte readByte(final long p_ptr) {
         assert assertMemoryBounds(p_ptr, Byte.BYTES);
 
-        return UNSAFE.getByte(m_memoryBase + p_ptr);
+        return UnsafeMemory.readByte(m_memoryBase + p_ptr);
     }
 
     @Override
     public short readShort(final long p_ptr) {
         assert assertMemoryBounds(p_ptr, Short.BYTES);
 
-        return UNSAFE.getShort(m_memoryBase + p_ptr);
+        return UnsafeMemory.readShort(m_memoryBase + p_ptr);
     }
 
     @Override
     public int readInt(final long p_ptr) {
         assert assertMemoryBounds(p_ptr, Integer.BYTES);
 
-        return UNSAFE.getInt(m_memoryBase + p_ptr);
+        return UnsafeMemory.readInt(m_memoryBase + p_ptr);
     }
 
     @Override
     public long readLong(final long p_ptr) {
         assert assertMemoryBounds(p_ptr, Long.BYTES);
 
-        return UNSAFE.getLong(m_memoryBase + p_ptr);
+        return UnsafeMemory.readLong(m_memoryBase + p_ptr);
     }
 
     @Override
     public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
         assert assertMemoryBounds(p_ptr, Byte.BYTES * p_length);
 
-        for (int i = 0; i < p_length; i++) {
-            UNSAFE.putByte(m_memoryBase + p_ptr + i, p_array[p_arrayOffset + i]);
-        }
-
-        return p_length;
+        return UnsafeMemory.writeBytes(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
     }
 
     @Override
-    public int writeShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
+    public int writeShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
         assert assertMemoryBounds(p_ptr, Short.BYTES * p_length);
 
-        for (int i = 0; i < p_length; i++) {
-            UNSAFE.putShort(m_memoryBase + p_ptr + i * Short.BYTES, p_array[i + p_arrayOffset]);
-        }
-
-        return p_length;
+        return UnsafeMemory.writeShorts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
     }
 
     @Override
-    public int writeInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length) {
+    public int writeInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
         assert assertMemoryBounds(p_ptr, Integer.BYTES * p_length);
 
-        for (int i = 0; i < p_length; i++) {
-            UNSAFE.putInt(m_memoryBase + p_ptr + i * Integer.BYTES, p_array[i + p_arrayOffset]);
-        }
-
-        return p_length;
+        return UnsafeMemory.writeInts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
     }
 
     @Override
-    public int writeLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length) {
+    public int writeLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
         assert assertMemoryBounds(p_ptr, Long.BYTES * p_length);
 
-        for (int i = 0; i < p_length; i++) {
-            UNSAFE.putLong(m_memoryBase + p_ptr + i * Long.BYTES, p_array[i + p_arrayOffset]);
-        }
-
-        return p_length;
+        return UnsafeMemory.writeLongs(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
     }
 
     @Override
     public void writeByte(final long p_ptr, final byte p_value) {
         assert assertMemoryBounds(p_ptr, Byte.BYTES);
 
-        UNSAFE.putByte(m_memoryBase + p_ptr, p_value);
+        UnsafeMemory.writeByte(m_memoryBase + p_ptr, p_value);
     }
 
     @Override
     public void writeShort(final long p_ptr, final short p_value) {
         assert assertMemoryBounds(p_ptr, Short.BYTES);
 
-        UNSAFE.putShort(m_memoryBase + p_ptr, p_value);
+        UnsafeMemory.writeShort(m_memoryBase + p_ptr, p_value);
     }
 
     @Override
     public void writeInt(final long p_ptr, final int p_value) {
         assert assertMemoryBounds(p_ptr, Integer.BYTES);
 
-        UNSAFE.putInt(m_memoryBase + p_ptr, p_value);
+        UnsafeMemory.writeInt(m_memoryBase + p_ptr, p_value);
     }
 
     @Override
     public void writeLong(final long p_ptr, final long p_value) {
         assert assertMemoryBounds(p_ptr, Long.BYTES);
 
-        UNSAFE.putLong(m_memoryBase + p_ptr, p_value);
+        UnsafeMemory.writeLong(m_memoryBase + p_ptr, p_value);
     }
 
     @Override
@@ -231,7 +197,7 @@ public class StorageUnsafeMemory implements Storage {
 
         for (int i = 0; i < p_count; i++) {
             // kill the sign by & 0xFF
-            val |= (long) (UNSAFE.getByte(m_memoryBase + p_ptr + i) & 0xFF) << 8 * i;
+            val |= (long) (UnsafeMemory.readByte(m_memoryBase + p_ptr + i) & 0xFF) << 8 * i;
         }
 
         return val;
@@ -242,7 +208,7 @@ public class StorageUnsafeMemory implements Storage {
         assert assertMemoryBounds(p_ptr, p_count);
 
         for (int i = 0; i < p_count; i++) {
-            UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) (p_val >> 8 * i & 0xFF));
+            UnsafeMemory.writeByte(m_memoryBase + p_ptr + i, (byte) (p_val >> 8 * i & 0xFF));
         }
     }
 
@@ -253,7 +219,7 @@ public class StorageUnsafeMemory implements Storage {
 
         if (p_ptr + p_length > m_memorySize || p_ptr + p_length < 0) {
             throw new MemoryRuntimeException(
-                "Accessing memory at " + p_ptr + ", length " + p_length + " out of bounds: base " + m_memoryBase + ", size " + m_memorySize);
+                    "Accessing memory at " + p_ptr + ", length " + p_length + " out of bounds: base " + m_memoryBase + ", size " + m_memorySize);
         }
 
         return true;
