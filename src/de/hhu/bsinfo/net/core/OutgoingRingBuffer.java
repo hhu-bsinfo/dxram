@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.net.core;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
@@ -29,6 +30,7 @@ public class OutgoingRingBuffer {
     private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "Push");
     private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "Pop");
     private static final StatisticsOperation SOP_SHIFT_FRONT = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "ShiftFront");
+    private static final StatisticsOperation SOP_BUFFER_POSTED = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "BufferPosted");
 
     // Attributes
     private volatile int m_posFront;
@@ -36,6 +38,8 @@ public class OutgoingRingBuffer {
 
     private long m_bufferAddr;
     private int m_bufferSize;
+
+    private final AtomicBoolean m_largeMessageInProgress;
 
     private final AtomicInteger m_producers;
     private volatile boolean m_consumerWaits;
@@ -49,6 +53,7 @@ public class OutgoingRingBuffer {
         m_posFront = 0;
         m_posBack = new AtomicInteger(0);
 
+        m_largeMessageInProgress = new AtomicBoolean(false);
         m_producers = new AtomicInteger(0);
         m_consumerWaits = false;
 
@@ -56,16 +61,25 @@ public class OutgoingRingBuffer {
     }
 
     /**
-     * Set buffer address and size
+     * Set buffer address and bytesAvailable
      *
      * @param p_bufferAddr
      *         the address in native memory
      * @param p_bufferSize
-     *         the buffer size
+     *         the buffer bytesAvailable
      */
     protected void setBuffer(final long p_bufferAddr, final int p_bufferSize) {
         m_bufferAddr = p_bufferAddr;
         m_bufferSize = p_bufferSize;
+    }
+
+    /**
+     * Returns the capacity
+     *
+     * @return the capacity
+     */
+    public int capacity() {
+        return m_bufferSize;
     }
 
     /**
@@ -101,11 +115,11 @@ public class OutgoingRingBuffer {
      * @param p_message
      *         the outgoing message
      * @param p_messageSize
-     *         the message's size including message header
+     *         the message's bytesAvailable including message header
      * @throws NetworkException
      *         if message could not be serialized
      */
-    void pushMessage(final Message p_message, final int p_messageSize) throws NetworkException {
+    void pushMessage(final Message p_message, final int p_messageSize, final AbstractPipeOut p_pipeOut) throws NetworkException {
         int posBackUnlimited;
         int posBack;
         int posBackRelative;
@@ -137,10 +151,14 @@ public class OutgoingRingBuffer {
 
             if (p_messageSize <= m_bufferSize) {
                 // Small message -> reserve space if message fits in free space
-                if (posBack == posFront /* empty */ || !multiOverflow(posBack, posFront) && fits(posBackRelative, posFrontRelative, p_messageSize)) {
+                if (!m_largeMessageInProgress.get() && fits(posBackRelative, posFrontRelative, p_messageSize)) {
                     // Optimistic increase
                     if (m_posBack.compareAndSet(posBackUnlimited, posBackUnlimited + p_messageSize)) {
                         // Position back could be set
+
+                        // Serialize complete message into ring buffer
+                        serialize(p_message, posBackRelative, p_messageSize, p_messageSize > m_bufferSize - posBackRelative /* with overflow */);
+
                         break;
                     }
                     // Try again
@@ -153,25 +171,28 @@ public class OutgoingRingBuffer {
                     m_producers.incrementAndGet();
                 }
             } else {
-                // Large messages -> reserve space for complete message to avoid interruption
-                // Optimistic increase
-                if (m_posBack.compareAndSet(posBackUnlimited, posBackUnlimited + p_messageSize)) {
-                    // Position back could be set
-                    break;
+                // Large messages -> reserve all space available
+                if (m_largeMessageInProgress.compareAndSet(false, true)) {
+
+                    // Optimistic increase
+                    if (m_posBack.compareAndSet(posBackUnlimited, posBackUnlimited + bytesAvailable(posBackRelative, posFrontRelative))) {
+                        // Position back could be set
+
+                        // Fill free space with message and continue as soon as more space is available
+                        serializeLargeMessage(p_message, p_messageSize, posBackUnlimited, p_pipeOut);
+
+                        break;
+                    }
+                } else {
+                    // A large message is being written already -> wait
+                    m_producers.decrementAndGet();
+
+                    LockSupport.parkNanos(1);
+
+                    m_producers.incrementAndGet();
                 }
                 // Try again
             }
-        }
-
-        if (p_messageSize <= m_bufferSize) {
-            // Small message ->  serialize complete message into ring buffer
-            serialize(p_message, posBackRelative, p_messageSize, p_messageSize > m_bufferSize - posBackRelative /* with overflow */);
-        } else {
-            // Large message -> fill free space with message and continue as soon as more space is available
-
-            // TODO: Serialize iteratively
-
-            // TODO: Release "lock" if buffer is full and acquire it to continue
         }
 
         // Leave
@@ -179,6 +200,16 @@ public class OutgoingRingBuffer {
 
         // #ifdef STATISTICS
         SOP_PUSH.leave();
+        // #endif /* STATISTICS */
+
+        // #ifdef STATISTICS
+        SOP_BUFFER_POSTED.enter();
+        // #endif /* STATISTICS */
+
+        p_pipeOut.bufferPosted(p_messageSize);
+
+        // #ifdef STATISTICS
+        SOP_BUFFER_POSTED.leave();
         // #endif /* STATISTICS */
     }
 
@@ -190,18 +221,113 @@ public class OutgoingRingBuffer {
      * @param p_start
      *         the start offset
      * @param p_messageSize
-     *         the message size
+     *         the message bytesAvailable
      * @param p_hasOverflow
      *         whether there is an overflow or not
      * @throws NetworkException
      *         if message could not be serialized
      */
-    protected void serialize(final Message p_message, final int p_start, final int p_messageSize, final boolean p_hasOverflow) throws NetworkException {
-        AbstractMessageExporter exporter = m_exporterPool.getInstance().getExporter(p_hasOverflow);
+    private void serialize(final Message p_message, final int p_start, final int p_messageSize, final boolean p_hasOverflow) throws NetworkException {
+
+        // Get exporter (default or overflow). Small messages are written at once, but might be split into two parts if ring buffer overflows during writing.
+        MessageExporterCollection exporterCollection = m_exporterPool.getInstance();
+        AbstractMessageExporter exporter = exporterCollection.getLargeMessageExporter(p_hasOverflow);
         exporter.setBuffer(m_bufferAddr, m_bufferSize);
         exporter.setPosition(p_start);
 
         p_message.serialize(exporter, p_messageSize);
+    }
+
+    /**
+     * Initialize exporter and write message iteratively into native memory.
+     *
+     * @param p_message
+     *         the message to send
+     * @param p_messageSize
+     *         the message bytesAvailable
+     * @throws NetworkException
+     *         if message could not be serialized
+     */
+    private void serializeLargeMessage(final Message p_message, final int p_messageSize, final int p_oldPosBack, final AbstractPipeOut p_pipeOut)
+            throws NetworkException {
+        int posBackUnlimited;
+        int posBackRelative;
+        int posFront = (int) (m_posFront & 0x7FFFFFFFL);
+        int posFrontRelative;
+        int oldPosBackUnlimited = p_oldPosBack;
+        int allWrittenBytes = 0;
+        int startPosition;
+        int limit;
+        MessageExporterCollection exporterCollection;
+        LargeMessageExporter exporter;
+
+        // Get exporter pool and large message exporter
+        exporterCollection = m_exporterPool.getInstance();
+        exporter = exporterCollection.getLargeMessageExporter();
+        exporter.setBuffer(m_bufferAddr, m_bufferSize);
+
+        while (true) {
+            // Calculate start and limit (might not be reached) for next write and configure exporter
+            startPosition = (int) (oldPosBackUnlimited & 0x7FFFFFFFL) % m_bufferSize;
+            limit = (posFront - 1) % m_bufferSize;
+            exporter.setPosition(startPosition);
+            exporter.setLimit(limit);
+            exporter.setNumberOfWrittenBytes(allWrittenBytes);
+
+            // Serialize as far as possible (from startPosition to limit)
+            try {
+                p_message.serialize(exporter, p_messageSize);
+
+                // Break if all bytes have been written. Cannot be here if not as ArrayIndexOutOfBoundsException would have been thrown.
+                exporterCollection.deleteUnfinishedOperation();
+                break;
+            } catch (final ArrayIndexOutOfBoundsException ignore) {
+            }
+
+            // Update exporter and inform consumer
+            int previouslyWrittenBytes = allWrittenBytes;
+            allWrittenBytes = exporter.getNumberOfWrittenBytes();
+
+            // #ifdef STATISTICS
+            SOP_BUFFER_POSTED.enter();
+            // #endif /* STATISTICS */
+
+            p_pipeOut.bufferPosted(allWrittenBytes - previouslyWrittenBytes);
+
+            // #ifdef STATISTICS
+            SOP_BUFFER_POSTED.leave();
+            // #endif /* STATISTICS */
+
+            // Buffer is full now - > wait for consumer
+            m_producers.decrementAndGet();
+
+            // Wait for consumer to finish writing
+            while (m_posFront == posFront) {
+                LockSupport.parkNanos(1);
+            }
+
+            // Synchronize with consumer
+            m_producers.incrementAndGet();
+            while (m_consumerWaits) {
+                m_producers.decrementAndGet();
+                while (m_consumerWaits) {
+                    LockSupport.parkNanos(1);
+                }
+                m_producers.incrementAndGet();
+            }
+
+            // Get new values
+            posFront = (int) (m_posFront & 0x7FFFFFFFL);
+            posFrontRelative = posFront % m_bufferSize;
+            posBackUnlimited = m_posBack.get();
+            posBackRelative = (int) (posBackUnlimited & 0x7FFFFFFFL) % m_bufferSize;
+
+            // Reserve space for next write
+            oldPosBackUnlimited = posBackUnlimited;
+            m_posBack.set(posBackUnlimited + Math.min(bytesAvailable(posBackRelative, posFrontRelative), p_messageSize - allWrittenBytes));
+        }
+
+        m_largeMessageInProgress.set(false);
     }
 
     /**
@@ -249,16 +375,20 @@ public class OutgoingRingBuffer {
     }
 
     /**
-     * Helper method to determine free space. Multiple overflow occurs for large messages.
+     * Helper method to determine if given message fits
      *
-     * @param p_posBack
-     *         absolute unsigned int (31 bit) offset back
-     * @param p_posFront
-     *         absolute unsigned int (31 bit) offset front
-     * @return whether there is a multiple overflow or not
+     * @param p_posBackRelative
+     *         relative offset back
+     * @param p_posFrontRelative
+     *         relative offset front
+     * @param p_messageSize
+     *         the message bytesAvailable
+     * @return whether the message fits or not
      */
-    private boolean multiOverflow(final int p_posBack, final int p_posFront) {
-        return p_posBack > p_posFront + m_bufferSize || p_posBack < p_posFront && 0x7FFFFFFFL - p_posFront + p_posBack > m_bufferSize;
+    private boolean fits(final int p_posBackRelative, final int p_posFrontRelative, final int p_messageSize) {
+        // Compare with > instead of >= to let one byte unused at the end in order to avoid posBackRelative == posFrontRelative with posBack != posFront
+        return p_posBackRelative >= p_posFrontRelative && m_bufferSize - p_posBackRelative + p_posFrontRelative > p_messageSize /* without overflow */ ||
+                p_posBackRelative < p_posFrontRelative && p_posFrontRelative - p_posBackRelative > p_messageSize /* with overflow */;
     }
 
     /**
@@ -268,12 +398,16 @@ public class OutgoingRingBuffer {
      *         relative offset back
      * @param p_posFrontRelative
      *         relative offset front
-     * @param p_messageSize
-     *         the message size
      * @return whether the message fits or not
      */
-    private boolean fits(final int p_posBackRelative, final int p_posFrontRelative, final int p_messageSize) {
-        return p_posBackRelative > p_posFrontRelative && m_bufferSize - p_posBackRelative + p_posFrontRelative > p_messageSize /* without overflow */ ||
-                p_posBackRelative < p_posFrontRelative && p_posFrontRelative - p_posBackRelative > p_messageSize /* with overflow */;
+    private int bytesAvailable(final int p_posBackRelative, final int p_posFrontRelative) {
+        // -1 in both cases to let one byte unused at the end in order to avoid posBackRelative == posFrontRelative with posBack != posFront
+        if (p_posBackRelative >= p_posFrontRelative) {
+            // Without overflow
+            return m_bufferSize - p_posBackRelative + p_posFrontRelative - 1;
+        } else {
+            // With overflow
+            return p_posFrontRelative - p_posBackRelative - 1;
+        }
     }
 }

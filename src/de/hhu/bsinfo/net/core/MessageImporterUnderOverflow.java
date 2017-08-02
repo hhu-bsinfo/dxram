@@ -21,7 +21,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     private int m_skippedBytes;
 
     // The unfinished operation from last read (if there is one) and object to store the new unfinished operation in (if there is one)
-    private UnfinishedImporterOperation m_unfinishedOperation;
+    private UnfinishedImExporterOperation m_unfinishedOperation;
 
     // Re-use exception to avoid "new"
     private ArrayIndexOutOfBoundsException m_exception;
@@ -29,7 +29,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
     /**
      * Constructor
      */
-    MessageImporterUnderOverflow(final UnfinishedImporterOperation p_unfinishedOperation) {
+    MessageImporterUnderOverflow(final UnfinishedImExporterOperation p_unfinishedOperation) {
         m_unfinishedOperation = p_unfinishedOperation;
         m_exception = new ArrayIndexOutOfBoundsException();
     }

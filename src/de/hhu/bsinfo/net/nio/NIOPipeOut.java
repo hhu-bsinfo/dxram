@@ -11,9 +11,9 @@ import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.net.NodeMap;
 import de.hhu.bsinfo.net.core.AbstractFlowControl;
-import de.hhu.bsinfo.net.core.OutgoingRingBuffer;
 import de.hhu.bsinfo.net.core.AbstractPipeOut;
 import de.hhu.bsinfo.net.core.NetworkException;
+import de.hhu.bsinfo.net.core.OutgoingRingBuffer;
 
 /**
  * Created by nothaas on 6/9/17.
@@ -33,8 +33,7 @@ public class NIOPipeOut extends AbstractPipeOut {
     private final ByteBuffer m_flowControlBytes;
 
     NIOPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final int p_bufferSize, final AbstractFlowControl p_flowControl,
-            final OutgoingRingBuffer p_outgoingBuffer, final NIOSelector p_nioSelector, final NodeMap p_nodeMap,
-            final NIOConnection p_parentConnection) {
+            final OutgoingRingBuffer p_outgoingBuffer, final NIOSelector p_nioSelector, final NodeMap p_nodeMap, final NIOConnection p_parentConnection) {
         super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_outgoingBuffer);
 
         m_bufferSize = p_bufferSize;
@@ -74,7 +73,6 @@ public class NIOPipeOut extends AbstractPipeOut {
 
     // for NIO (initial message sending node id)
     void postBuffer(final ByteBuffer p_buffer) throws NetworkException {
-        System.out.println("Warning: Large messages currently not supported!");
         ((NIOOutgoingRingBuffer) getOutgoingQueue()).pushNodeID(p_buffer);
         bufferPosted(p_buffer.remaining());
     }
@@ -97,7 +95,7 @@ public class NIOPipeOut extends AbstractPipeOut {
         // #endif /* STATISTICS */
 
         buffer = ((NIOOutgoingRingBuffer) getOutgoingQueue()).popFront();
-        if (buffer != null) {
+        if (buffer != null && buffer.position() != buffer.limit()) {
             while (buffer.remaining() > 0) {
 
                 bytes = m_outgoingChannel.write(buffer);
@@ -108,7 +106,6 @@ public class NIOPipeOut extends AbstractPipeOut {
                 }
                 writtenBytes += bytes;
             }
-            // ThroughputStatistic.getInstance().outgoingExtern(writtenBytes - length);
             getOutgoingQueue().shiftFront(writtenBytes);
         }
 

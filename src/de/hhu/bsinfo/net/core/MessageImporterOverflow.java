@@ -16,12 +16,12 @@ class MessageImporterOverflow extends AbstractMessageImporter {
     private int m_startPosition;
 
     // Object to store the unfinished operation in (if there is one)
-    private UnfinishedImporterOperation m_unfinishedOperation;
+    private UnfinishedImExporterOperation m_unfinishedOperation;
 
     // Re-use exception to avoid "new"
     private ArrayIndexOutOfBoundsException m_exception;
 
-    MessageImporterOverflow(final UnfinishedImporterOperation p_unfinishedOperation) {
+    MessageImporterOverflow(final UnfinishedImExporterOperation p_unfinishedOperation) {
         m_unfinishedOperation = p_unfinishedOperation;
         m_exception = new ArrayIndexOutOfBoundsException();
     }

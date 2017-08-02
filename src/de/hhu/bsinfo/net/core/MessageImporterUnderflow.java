@@ -19,12 +19,12 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
     private int m_skippedBytes;
 
     // The unfinished operation from last read (if there is one)
-    private UnfinishedImporterOperation m_unfinishedOperation;
+    private UnfinishedImExporterOperation m_unfinishedOperation;
 
     /**
      * Constructor
      */
-    MessageImporterUnderflow(final UnfinishedImporterOperation p_unfinishedOperation) {
+    MessageImporterUnderflow(final UnfinishedImExporterOperation p_unfinishedOperation) {
         m_unfinishedOperation = p_unfinishedOperation;
     }
 

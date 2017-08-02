@@ -18,18 +18,25 @@ package de.hhu.bsinfo.net.core;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
-public class MessageExporterCollection {
+class MessageExporterCollection {
 
-    private AbstractMessageExporter m_exporter;
-    private AbstractMessageExporter m_exporterOverflow;
+    private MessageExporterDefault m_exporter;
+    private MessageExporterOverflow m_exporterOverflow;
+    private LargeMessageExporter m_exporterLargeMessage;
+
+    private UnfinishedImExporterOperation m_unfinishedOperation;
 
     /**
      * Constructor
      */
     MessageExporterCollection() {
         super();
+
         m_exporter = new MessageExporterDefault();
         m_exporterOverflow = new MessageExporterOverflow();
+
+        m_unfinishedOperation = new UnfinishedImExporterOperation();
+        m_exporterLargeMessage = new LargeMessageExporter(m_unfinishedOperation);
     }
 
     /**
@@ -39,11 +46,27 @@ public class MessageExporterCollection {
      *         whether all bytes to export fit in buffer
      * @return the AbstractMessageExporter
      */
-    public AbstractMessageExporter getExporter(final boolean p_hasOverflow) {
+    AbstractMessageExporter getLargeMessageExporter(final boolean p_hasOverflow) {
         if (!p_hasOverflow) {
             return m_exporter;
         } else {
             return m_exporterOverflow;
         }
+    }
+
+    /**
+     * Get corresponding exporter for large messages
+     *
+     * @return the LargeMessageExporter
+     */
+    LargeMessageExporter getLargeMessageExporter() {
+        return m_exporterLargeMessage;
+    }
+
+    /**
+     * Reset unfinished operation for next large message.
+     */
+    void deleteUnfinishedOperation() {
+        m_unfinishedOperation.reset();
     }
 }

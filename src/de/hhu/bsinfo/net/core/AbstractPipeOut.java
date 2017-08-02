@@ -12,7 +12,6 @@ import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
  * Created by nothaas on 6/9/17.
  */
 public abstract class AbstractPipeOut {
-    private static final StatisticsOperation SOP_BUFFER_POSTED = StatisticsRecorderManager.getOperation(AbstractPipeOut.class, "BufferPosted");
     private static final StatisticsOperation SOP_FC_DATA_TO_SEND = StatisticsRecorderManager.getOperation(AbstractPipeOut.class, "FCDataToSend");
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeOut.class.getSimpleName());
@@ -90,17 +89,7 @@ public abstract class AbstractPipeOut {
         m_sentMessages.incrementAndGet();
         m_sentData.addAndGet(messageTotalSize);
 
-        m_outgoing.pushMessage(p_message, messageTotalSize);
-
-        // #ifdef STATISTICS
-        SOP_BUFFER_POSTED.enter();
-        // #endif /* STATISTICS */
-
-        bufferPosted(messageTotalSize);
-
-        // #ifdef STATISTICS
-        SOP_BUFFER_POSTED.leave();
-        // #endif /* STATISTICS */
+        m_outgoing.pushMessage(p_message, messageTotalSize, this);
     }
 
     public void dataProcessed(final int p_writtenBytes) {

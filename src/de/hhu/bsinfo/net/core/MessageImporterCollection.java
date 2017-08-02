@@ -18,24 +18,24 @@ package de.hhu.bsinfo.net.core;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
-public class MessageImporterCollection {
+class MessageImporterCollection {
 
     private MessageImporterDefault m_importer;
     private MessageImporterOverflow m_importerOverflow;
     private MessageImporterUnderflow m_importerUnderflow;
     private MessageImporterUnderOverflow m_importerUnderOverflow;
 
-    private UnfinishedImporterOperation m_unfinishedOperation;
+    private UnfinishedImExporterOperation m_unfinishedOperation;
 
     private int m_bytesCopied;
 
     /**
      * Constructor
      */
-    public MessageImporterCollection() {
+    MessageImporterCollection() {
         super();
 
-        m_unfinishedOperation = new UnfinishedImporterOperation();
+        m_unfinishedOperation = new UnfinishedImExporterOperation();
 
         m_importer = new MessageImporterDefault();
         m_importerOverflow = new MessageImporterOverflow(m_unfinishedOperation);
@@ -58,7 +58,7 @@ public class MessageImporterCollection {
      *         size of message's payload
      * @return the AbstractMessageImporter
      */
-    public AbstractMessageImporter getImporter(final long p_addr, final int p_position, final int p_bufferSize, final int p_payloadSize) {
+    AbstractMessageImporter getImporter(final long p_addr, final int p_position, final int p_bufferSize, final int p_payloadSize) {
         AbstractMessageImporter ret;
 
         boolean hasOverflow = p_position + p_payloadSize - m_bytesCopied > p_bufferSize;
@@ -90,7 +90,7 @@ public class MessageImporterCollection {
      *         whether the import could be completed
      * @return number of imported bytes
      */
-    public int returnImporter(final AbstractMessageImporter p_importer, final boolean p_finished) {
+    int returnImporter(final AbstractMessageImporter p_importer, final boolean p_finished) {
         if (p_finished) {
             m_bytesCopied = 0;
             m_unfinishedOperation.reset();
