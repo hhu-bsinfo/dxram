@@ -33,7 +33,7 @@ public final class DynamicMultiByteUnsignedInteger {
      * Convert a value to a multi byte array representation.
      *
      * @param p_val
-     *     Value to convert.
+     *         Value to convert.
      * @return Allocated byte array with converted value.
      */
     public static byte[] toMultiByte(final byte p_val) {
@@ -44,7 +44,7 @@ public final class DynamicMultiByteUnsignedInteger {
      * Convert a value to a multi byte array representation.
      *
      * @param p_val
-     *     Value to convert.
+     *         Value to convert.
      * @return Allocated byte array with converted value.
      */
     public static byte[] toMultiByte(final short p_val) {
@@ -55,7 +55,7 @@ public final class DynamicMultiByteUnsignedInteger {
      * Convert a value to a multi byte array representation.
      *
      * @param p_val
-     *     Value to convert.
+     *         Value to convert.
      * @return Allocated byte array with converted value.
      */
     public static byte[] toMultiByte(final int p_val) {
@@ -66,7 +66,7 @@ public final class DynamicMultiByteUnsignedInteger {
      * Convert a value to a multi byte array representation.
      *
      * @param p_val
-     *     Value to convert.
+     *         Value to convert.
      * @return Allocated byte array with converted value.
      */
     public static byte[] toMultiByte(final long p_val) {
@@ -83,11 +83,11 @@ public final class DynamicMultiByteUnsignedInteger {
      * there is enough space reserved to avoid creating invalid data.
      *
      * @param p_val
-     *     Value to convert.
+     *         Value to convert.
      * @param p_array
-     *     Array to store the converted value to.
+     *         Array to store the converted value to.
      * @param p_arrayOffset
-     *     Position in array to start writing the value to.
+     *         Position in array to start writing the value to.
      * @return Size of multi byte representation.
      */
     public static int toMultiByte(final byte p_val, final byte[] p_array, final int p_arrayOffset) {
@@ -100,11 +100,11 @@ public final class DynamicMultiByteUnsignedInteger {
      * there is enough space reserved to avoid creating invalid data.
      *
      * @param p_val
-     *     Value to convert.
+     *         Value to convert.
      * @param p_array
-     *     Array to store the converted value to.
+     *         Array to store the converted value to.
      * @param p_arrayOffset
-     *     Position in array to start writing the value to.
+     *         Position in array to start writing the value to.
      * @return Size of multi byte representation.
      */
     public static int toMultiByte(final short p_val, final byte[] p_array, final int p_arrayOffset) {
@@ -117,11 +117,11 @@ public final class DynamicMultiByteUnsignedInteger {
      * there is enough space reserved to avoid creating invalid data.
      *
      * @param p_val
-     *     Value to convert.
+     *         Value to convert.
      * @param p_array
-     *     Array to store the converted value to.
+     *         Array to store the converted value to.
      * @param p_arrayOffset
-     *     Position in array to start writing the value to.
+     *         Position in array to start writing the value to.
      * @return Size of multi byte representation.
      */
     public static int toMultiByte(final int p_val, final byte[] p_array, final int p_arrayOffset) {
@@ -134,11 +134,11 @@ public final class DynamicMultiByteUnsignedInteger {
      * there is enough space reserved to avoid creating invalid data.
      *
      * @param p_val
-     *     Value to convert.
+     *         Value to convert.
      * @param p_array
-     *     Array to store the converted value to.
+     *         Array to store the converted value to.
      * @param p_arrayOffset
-     *     Position in array to start writing the value to.
+     *         Position in array to start writing the value to.
      * @return Size of multi byte representation.
      */
     public static int toMultiByte(final long p_val, final byte[] p_array, final int p_arrayOffset) {
@@ -159,9 +159,9 @@ public final class DynamicMultiByteUnsignedInteger {
      * Extract a multi byte value from the specified array.
      *
      * @param p_array
-     *     Array to extract the value from.
+     *         Array to extract the value from.
      * @param p_arrayOffset
-     *     Start offset of the multi byte value.
+     *         Start offset of the multi byte value.
      * @return Extracted multi byte value.
      */
     public static long fromMultiByte(final byte[] p_array, final int p_arrayOffset) {
@@ -182,7 +182,7 @@ public final class DynamicMultiByteUnsignedInteger {
      * Get the size of a value if it is converted into a multi byte value.
      *
      * @param p_val
-     *     Value to get the size of.
+     *         Value to get the size of.
      * @return Number of bytes needed to store this value as a multi byte value.
      */
     public static int getMultiByteCount(final long p_val) {
