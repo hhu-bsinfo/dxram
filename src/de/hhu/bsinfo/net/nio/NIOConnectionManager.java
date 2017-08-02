@@ -453,6 +453,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
             ret = new NIOConnection(m_coreConfig.getOwnNodeId(), p_destination, (int) m_config.getOugoingRingBufferSize().getBytes(),
                     (int) m_config.getFlowControlWindow().getBytes(), m_config.getFlowControlWindowThreshold(), m_messageCreator, m_messageDirectory,
                     m_requestMap, m_messageHandlers, m_bufferPool, m_exporterPool, m_nioSelector, m_nodeMap);
+            ret.getPipeIn().bindIncomingChannel(p_channel);
 
             // Register connection as attachment
             m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(ret, NIOSelector.READ));
