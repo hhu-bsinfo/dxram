@@ -120,9 +120,9 @@ public abstract class AbstractPipeIn {
                 Response response = (Response) m_currentMessage;
                 Request request = m_requestMap.getRequest(response);
                 if (request == null) {
-                    System.out.println(
-                            "Request null for " + m_currentMessage.getType() + ',' + m_currentHeader.getSubtype() + "; " + m_currentMessage.getMessageID() +
-                                    ", " + m_currentMessage.isResponse() + ", " + m_currentMessage.isExclusive());
+                    // System.out.println(
+                    //        "Request null for " + m_currentMessage.getType() + ',' + m_currentHeader.getSubtype() + "; " + m_currentMessage.getMessageID() +
+                    //                ", " + m_currentMessage.isResponse() + ", " + m_currentMessage.isExclusive());
 
                     // Request is not available, probably because of a time-out
                     // Skip payload and throw away the (now) useless response
