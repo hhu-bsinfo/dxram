@@ -24,7 +24,7 @@ public class IBConnection extends AbstractConnection<IBPipeIn, IBPipeOut> {
 
         long sendBufferAddr = JNIIbdxnet.getSendBufferAddress(p_destinationNodeId);
         if (sendBufferAddr == -1) {
-            // TODO happens on disconnect or if connection is not established in the ibnet subsystem
+            // might happen on disconnect or if connection is not established in the ibnet subsystem
             throw new IllegalStateException();
         }
 

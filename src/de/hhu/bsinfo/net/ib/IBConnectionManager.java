@@ -94,7 +94,9 @@ public class IBConnectionManager extends AbstractConnectionManager
             throw new NetworkRuntimeException("Initializing ibnet failed");
         }
 
-        // TODO ugly (temporary) workaround
+        // this is an ugly way of figuring out which nodes are available on startup. the ib subsystem needs that kind of information to
+        // contact the nodes using an ethernet connection to exchange ib connection information
+        // if you know a better/faster way of doing this here, be my guest and fix it
         for (int i = 0; i < NodeID.MAX_ID; i++) {
             if (i == (m_coreConfig.getOwnNodeId() & 0xFFFF)) {
                 continue;
@@ -222,7 +224,6 @@ public class IBConnectionManager extends AbstractConnectionManager
                 IBConnection prevConnection = (IBConnection) getConnection(p_prevNodeIdWritten);
                 prevConnection.getPipeOut().dataProcessed(p_prevDataWrittenLen);
             } catch (final NetworkException e) {
-                // TODO ignore ?
                 // #if LOGGER >= ERROR
                 LOGGER.trace("Getting connection 0x%X for previous data written failed", p_prevNodeIdWritten);
                 // #endif /* LOGGER >= ERROR */
@@ -246,8 +247,6 @@ public class IBConnectionManager extends AbstractConnectionManager
         try {
             connection = (IBConnection) getConnection(nodeId);
         } catch (final NetworkException e) {
-            // TODO ?
-
             m_writeInterestManager.nodeDisconnected(nodeId);
             return 0;
         }
