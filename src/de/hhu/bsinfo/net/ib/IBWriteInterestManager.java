@@ -48,26 +48,11 @@ class IBWriteInterestManager {
             return NodeID.INVALID_ID;
         }
 
-        // got interest token but the queue is already acquired
-        // put interest back
-        if (!m_writeInterests[nodeId & 0xFFFF].acquire()) {
-            // force push back, don't lose interest token
-            while (!m_interestQueue.pushBack(nodeId)) {
-                Thread.yield();
-            }
-
-            return NodeID.INVALID_ID;
-        }
-
         return nodeId;
     }
 
     long consumeInterests(final short p_nodeId) {
         return m_writeInterests[p_nodeId & 0xFFFF].consumeInterests();
-    }
-
-    void finishedProcessingInterests(final short p_nodeId) {
-        m_writeInterests[p_nodeId & 0xFFFF].release();
     }
 
     void nodeDisconnected(final short p_nodeId) {

@@ -240,8 +240,6 @@ public class IBConnectionManager extends AbstractConnectionManager
             LOGGER.trace("getNextDataToSend, p_prevNodeIdWritten 0x%X, p_prevDataWrittenLen %d", p_prevNodeIdWritten, p_prevDataWrittenLen);
             // #endif /* LOGGER >= TRACE */
 
-            m_writeInterestManager.finishedProcessingInterests(p_prevNodeIdWritten);
-
             // also notify that previous data has been processed (if connection is still available)
             try {
                 IBConnection prevConnection = (IBConnection) getConnection(p_prevNodeIdWritten);
