@@ -24,6 +24,9 @@ public class NIOConfig {
     private StorageUnit m_flowControlWindow = new StorageUnit(512, StorageUnit.KB);
 
     @Expose
+    private float m_flowControlWindowThreshold = 0.8f;
+
+    @Expose
     private StorageUnit m_outgoingRingBufferSize = new StorageUnit(2, StorageUnit.MB);
 
     /**
@@ -59,6 +62,13 @@ public class NIOConfig {
      */
     public StorageUnit getFlowControlWindow() {
         return m_flowControlWindow;
+    }
+
+    /**
+     * Get the threshold determining when a flow control message is sent (receivedBytes > m_flowControlWindow * m_flowControlWindowThreshold)
+     */
+    public float getFlowControlWindowThreshold() {
+        return m_flowControlWindowThreshold;
     }
 
     /**

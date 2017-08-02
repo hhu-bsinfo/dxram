@@ -15,13 +15,15 @@ public abstract class AbstractFlowControl {
     private final short m_destinationNodeID;
 
     private final int m_flowControlWindowSize;
+    private final float m_flowControlWindowThreshold;
 
     private AtomicInteger m_unconfirmedBytes;
     private AtomicInteger m_receivedBytes;
 
-    protected AbstractFlowControl(final short p_destinationNodeID, final int p_flowControlWindowSize) {
+    protected AbstractFlowControl(final short p_destinationNodeID, final int p_flowControlWindowSize, final float p_flowControlWindowThreshold) {
         m_destinationNodeID = p_destinationNodeID;
         m_flowControlWindowSize = p_flowControlWindowSize;
+        m_flowControlWindowThreshold = p_flowControlWindowThreshold;
 
         m_unconfirmedBytes = new AtomicInteger(0);
         m_receivedBytes = new AtomicInteger(0);
@@ -63,7 +65,7 @@ public abstract class AbstractFlowControl {
         // #endif /* LOGGER >= TRACE */
 
         int receivedBytes = m_receivedBytes.addAndGet(p_receivedBytes);
-        if (receivedBytes > m_flowControlWindowSize * 0.8) {
+        if (receivedBytes > m_flowControlWindowSize * m_flowControlWindowThreshold) {
             try {
                 flowControlWrite();
             } catch (final NetworkException e) {

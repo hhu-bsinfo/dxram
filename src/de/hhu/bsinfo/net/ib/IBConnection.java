@@ -18,8 +18,8 @@ public class IBConnection extends AbstractConnection<IBPipeIn, IBPipeOut> {
     private final IBWriteInterestManager m_interestManager;
 
     IBConnection(final short p_ownNodeId, final short p_destinationNodeId, final int p_outBufferSize, final int p_flowControlWindowSize,
-            final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final AbstractExporterPool p_exporterPool,
-            final MessageHandlers p_messageHandlers, final IBWriteInterestManager p_writeInterestManager) {
+            final float p_flowControlWindowThreshold, final MessageDirectory p_messageDirectory, final RequestMap p_requestMap,
+            final AbstractExporterPool p_exporterPool, final MessageHandlers p_messageHandlers, final IBWriteInterestManager p_writeInterestManager) {
         super(p_ownNodeId);
 
         long sendBufferAddr = JNIIbdxnet.getSendBufferAddress(p_destinationNodeId);
@@ -28,7 +28,7 @@ public class IBConnection extends AbstractConnection<IBPipeIn, IBPipeOut> {
             throw new IllegalStateException();
         }
 
-        IBFlowControl flowControl = new IBFlowControl(p_destinationNodeId, p_flowControlWindowSize, p_writeInterestManager);
+        IBFlowControl flowControl = new IBFlowControl(p_destinationNodeId, p_flowControlWindowSize, p_flowControlWindowThreshold, p_writeInterestManager);
         IBOutgoingRingBuffer outgoingBuffer = new IBOutgoingRingBuffer(sendBufferAddr, p_outBufferSize, p_exporterPool);
         IBPipeIn pipeIn = new IBPipeIn(p_ownNodeId, p_destinationNodeId, flowControl, p_messageDirectory, p_requestMap, p_messageHandlers);
         IBPipeOut pipeOut = new IBPipeOut(p_ownNodeId, p_destinationNodeId, flowControl, outgoingBuffer, p_writeInterestManager);

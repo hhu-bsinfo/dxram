@@ -21,6 +21,9 @@ public class IBConfig {
     private StorageUnit m_flowControlWindow = new StorageUnit(8, StorageUnit.MB);
 
     @Expose
+    private float m_flowControlWindowThreshold = 0.8f;
+
+    @Expose
     private StorageUnit m_outgoingRingBufferSize = new StorageUnit(1, StorageUnit.MB);
 
     @Expose
@@ -70,6 +73,13 @@ public class IBConfig {
      */
     public StorageUnit getFlowControlWindow() {
         return m_flowControlWindow;
+    }
+
+    /**
+     * Get the threshold determining when a flow control message is sent (receivedBytes > m_flowControlWindow * m_flowControlWindowThreshold)
+     */
+    public float getFlowControlWindowThreshold() {
+        return m_flowControlWindowThreshold;
     }
 
     /**

@@ -14,8 +14,9 @@ public class IBFlowControl extends AbstractFlowControl {
 
     private final IBWriteInterestManager m_writeInterestManager;
 
-    protected IBFlowControl(final short p_destinationNodeId, final int p_flowControlWindowSize, final IBWriteInterestManager p_writeInterestManager) {
-        super(p_destinationNodeId, p_flowControlWindowSize);
+    protected IBFlowControl(final short p_destinationNodeId, final int p_flowControlWindowSize, final float p_flowControlWindowThreshold,
+            final IBWriteInterestManager p_writeInterestManager) {
+        super(p_destinationNodeId, p_flowControlWindowSize, p_flowControlWindowThreshold);
         m_writeInterestManager = p_writeInterestManager;
     }
 

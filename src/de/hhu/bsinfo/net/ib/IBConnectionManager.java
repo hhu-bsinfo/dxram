@@ -138,8 +138,8 @@ public class IBConnectionManager extends AbstractConnectionManager
 
         if (connection == null) {
             connection = new IBConnection(m_coreConfig.getOwnNodeId(), p_destination, (int) m_config.getOugoingRingBufferSize().getBytes(),
-                    (int) m_config.getFlowControlWindow().getBytes(), m_messageDirectory, m_requestMap, m_exporterPool, m_messageHandlers,
-                    m_writeInterestManager);
+                    (int) m_config.getFlowControlWindow().getBytes(), m_config.getFlowControlWindowThreshold(), m_messageDirectory, m_requestMap,
+                    m_exporterPool, m_messageHandlers, m_writeInterestManager);
             m_openConnections++;
         }
 

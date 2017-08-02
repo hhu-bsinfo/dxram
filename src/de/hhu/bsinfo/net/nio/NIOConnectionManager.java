@@ -112,8 +112,8 @@ public class NIOConnectionManager extends AbstractConnectionManager {
 
         if (p_existingConnection == null) {
             ret = new NIOConnection(m_coreConfig.getOwnNodeId(), p_destination, (int) m_config.getOugoingRingBufferSize().getBytes(),
-                    (int) m_config.getFlowControlWindow().getBytes(), m_messageCreator, m_messageDirectory, m_requestMap, m_messageHandlers, m_bufferPool,
-                    m_exporterPool, m_nioSelector, m_nodeMap, condLock, cond);
+                    (int) m_config.getFlowControlWindow().getBytes(), m_config.getFlowControlWindowThreshold(), m_messageCreator, m_messageDirectory,
+                    m_requestMap, m_messageHandlers, m_bufferPool, m_exporterPool, m_nioSelector, m_nodeMap, condLock, cond);
         } else {
             ret = (NIOConnection) p_existingConnection;
         }
@@ -451,8 +451,8 @@ public class NIOConnectionManager extends AbstractConnectionManager {
             NIOConnection ret;
 
             ret = new NIOConnection(m_coreConfig.getOwnNodeId(), p_destination, (int) m_config.getOugoingRingBufferSize().getBytes(),
-                    (int) m_config.getFlowControlWindow().getBytes(), m_messageCreator, m_messageDirectory, m_requestMap, m_messageHandlers, m_bufferPool,
-                    m_exporterPool, m_nioSelector, m_nodeMap);
+                    (int) m_config.getFlowControlWindow().getBytes(), m_config.getFlowControlWindowThreshold(), m_messageCreator, m_messageDirectory,
+                    m_requestMap, m_messageHandlers, m_bufferPool, m_exporterPool, m_nioSelector, m_nodeMap);
 
             // Register connection as attachment
             m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(ret, NIOSelector.READ));
