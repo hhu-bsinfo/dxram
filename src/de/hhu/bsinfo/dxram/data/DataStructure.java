@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.serialization.Importable;
  */
 public abstract class DataStructure implements Importable, Exportable {
     private long m_id = ChunkID.INVALID_ID;
-    private ChunkState m_state = ChunkState.OK;
+    private ChunkState m_state = ChunkState.UNDEFINED;
 
     /**
      * Default constructor
@@ -37,7 +37,7 @@ public abstract class DataStructure implements Importable, Exportable {
      * Constructor
      *
      * @param p_chunkID
-     *     Chunk ID to assign
+     *         Chunk ID to assign
      */
     public DataStructure(final long p_chunkID) {
         m_id = p_chunkID;
@@ -56,7 +56,7 @@ public abstract class DataStructure implements Importable, Exportable {
      * Set the unique identifier of this data structure.
      *
      * @param p_id
-     *     ID to set.
+     *         ID to set.
      */
     public void setID(final long p_id) {
         m_id = p_id;
@@ -77,7 +77,7 @@ public abstract class DataStructure implements Importable, Exportable {
      * Applications built on top of DXRAM do not need this call.
      *
      * @param p_state
-     *     State to set.
+     *         State to set.
      */
     public void setState(final ChunkState p_state) {
         m_state = p_state;

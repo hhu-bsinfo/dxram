@@ -21,6 +21,11 @@ package de.hhu.bsinfo.dxram.data;
  */
 public enum ChunkState {
     /**
+     * When chunk object is created but wasn't used with any call to a chunk service, yet
+     */
+    UNDEFINED,
+
+    /**
      * The recently executed operation by DXRAM involving the chunk/data structure was successful
      */
     OK,
