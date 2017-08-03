@@ -62,19 +62,7 @@ class IBWriteInterest {
      * @return True if no interest was available before adding this one, false otherwise
      */
     boolean addDataInterest() {
-        long tmp;
-        boolean ret;
-
-        while (true) {
-            tmp = m_interestsAvailable.get();
-            ret = tmp == 0;
-
-            if (m_interestsAvailable.weakCompareAndSet(tmp, tmp + 1)) {
-                break;
-            }
-        }
-
-        return ret;
+        return m_interestsAvailable.getAndAdd(1) == 0;
     }
 
     /**
@@ -83,19 +71,7 @@ class IBWriteInterest {
      * @return True if no interest was available before adding this one, false otherwise
      */
     boolean addFcInterest() {
-        long tmp;
-        boolean ret;
-
-        while (true) {
-            tmp = m_interestsAvailable.get();
-            ret = tmp == 0;
-
-            if (m_interestsAvailable.weakCompareAndSet(tmp, tmp + (1L << 32))) {
-                break;
-            }
-        }
-
-        return ret;
+        return m_interestsAvailable.getAndAdd(1L << 32) == 0;
     }
 
     /**
