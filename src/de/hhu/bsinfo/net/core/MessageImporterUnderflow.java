@@ -255,22 +255,19 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
         if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
             // Bytes were read before
             m_skippedBytes += p_length;
-            return p_length;
         } else if (m_skippedBytes < m_skipBytes) {
             // Bytes were partly de-serialized -> continue
             int bytesCopied = m_skipBytes - m_skippedBytes;
             UnsafeMemory.readBytes(m_bufferAddress + m_currentPosition, p_array, p_offset + bytesCopied, p_length - bytesCopied);
             m_currentPosition += p_length - bytesCopied;
             m_skippedBytes = m_skipBytes;
-
-            return p_length;
         } else {
             // Read bytes normally as all previously read bytes have been skipped already
             UnsafeMemory.readBytes(m_bufferAddress + m_currentPosition, p_array, p_offset, p_length);
             m_currentPosition += p_length;
-
-            return p_length;
         }
+
+        return p_length;
     }
 
     @Override
