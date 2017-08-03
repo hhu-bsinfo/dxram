@@ -582,6 +582,8 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                     }
 
                     if (location.getState() == LookupState.OK) {
+                        // currently undefined because we still have to get it from remote
+                        p_chunks[i + p_offset].setState(ChunkState.UNDEFINED);
                         short peer = location.getPrimaryPeer();
 
                         ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
@@ -639,6 +641,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                 PutResponse response = request.getResponse(PutResponse.class);
 
                 byte[] statusCodes = response.getStatusCodes();
+
                 // try short cut, i.e. all puts successful
                 if (statusCodes.length == 1 && statusCodes[0] == ChunkState.OK.ordinal()) {
                     totalChunksPut += chunksToPut.size();
@@ -762,6 +765,8 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                     }
 
                     if (location.getState() == LookupState.OK) {
+                        // currently undefined because we still have to get it from remote
+                        p_chunks[i + p_offset].setState(ChunkState.UNDEFINED);
                         short peer = location.getPrimaryPeer();
 
                         ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());

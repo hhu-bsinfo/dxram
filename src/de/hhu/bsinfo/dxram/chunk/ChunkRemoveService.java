@@ -20,6 +20,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
@@ -126,12 +127,18 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                         remoteChunkIDsOfBackupPeers.add(p_chunkIDs[i]);
                     }
                 } else {
-                    // remote chunks, figure out location and sort by peers
-                    LookupRange lookupRange;
+                    // remote or migrated, figure out location and sort by peers
+                    LookupRange location = m_lookup.getLookupRange(p_chunkIDs[i]);
+                    while (location.getState() == LookupState.DATA_TEMPORARY_UNAVAILABLE) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (final InterruptedException ignore) {
+                        }
+                        location = m_lookup.getLookupRange(p_chunkIDs[i]);
+                    }
 
-                    lookupRange = m_lookup.getLookupRange(p_chunkIDs[i]);
-                    if (lookupRange != null) {
-                        short peer = lookupRange.getPrimaryPeer();
+                    if (location.getState() == LookupState.OK) {
+                        short peer = location.getPrimaryPeer();
 
                         ArrayListLong remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayListLong());
                         remoteChunksOfPeer.add(p_chunkIDs[i]);

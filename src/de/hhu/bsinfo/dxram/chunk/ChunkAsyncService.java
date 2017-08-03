@@ -24,6 +24,7 @@ import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.PutMessage;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
+import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -31,6 +32,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
@@ -129,15 +131,27 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
                 }
             } else {
                 // remote or migrated, figure out location and sort by peers
-                LookupRange lookupRange = m_lookup.getLookupRange(dataStructure.getID());
-                if (lookupRange == null) {
-                    continue;
+                LookupRange location = m_lookup.getLookupRange(dataStructure.getID());
+                while (location.getState() == LookupState.DATA_TEMPORARY_UNAVAILABLE) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (final InterruptedException ignore) {
+                    }
+                    location = m_lookup.getLookupRange(dataStructure.getID());
                 }
 
-                short peer = lookupRange.getPrimaryPeer();
+                if (location.getState() == LookupState.OK) {
+                    // currently undefined because we still have to get it from remote
+                    dataStructure.setState(ChunkState.UNDEFINED);
+                    short peer = location.getPrimaryPeer();
 
-                ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
-                remoteChunksOfPeer.add(dataStructure);
+                    ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
+                    remoteChunksOfPeer.add(dataStructure);
+                } else if (location.getState() == LookupState.DOES_NOT_EXIST) {
+                    dataStructure.setState(ChunkState.DOES_NOT_EXIST);
+                } else if (location.getState() == LookupState.DATA_LOST) {
+                    dataStructure.setState(ChunkState.DATA_LOST);
+                }
             }
         }
 

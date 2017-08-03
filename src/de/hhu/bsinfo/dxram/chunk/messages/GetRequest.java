@@ -96,13 +96,6 @@ public class GetRequest extends Request {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        int length = p_importer.readCompactNumber(0);
-        if (m_chunkIDs == null) {
-            // Do not overwrite existing array
-            m_chunkIDs = new long[length];
-        }
-        for (int i = 0; i < m_chunkIDs.length; i++) {
-            m_chunkIDs[i] = p_importer.readLong(m_chunkIDs[i]);
-        }
+        m_chunkIDs = p_importer.readLongArray(m_chunkIDs);
     }
 }

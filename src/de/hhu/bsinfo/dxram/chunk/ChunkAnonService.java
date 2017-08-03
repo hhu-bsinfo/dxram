@@ -37,6 +37,7 @@ import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogAnonMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
@@ -113,7 +114,15 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                     LookupRange lookupRange;
 
                     lookupRange = m_lookup.getLookupRange(p_chunkIDs[i]);
-                    if (lookupRange != null) {
+                    while (lookupRange.getState() == LookupState.DATA_TEMPORARY_UNAVAILABLE) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (final InterruptedException ignore) {
+                        }
+                        lookupRange = m_lookup.getLookupRange(p_chunkIDs[i]);
+                    }
+
+                    if (lookupRange.getState() == LookupState.OK) {
                         short peer = lookupRange.getPrimaryPeer();
 
                         ArrayList<Integer> remoteChunkIDsOfPeer = remoteChunkIDsByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
@@ -324,13 +333,25 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                 } else {
                     // remote or migrated, figure out location and sort by peers
                     LookupRange location = m_lookup.getLookupRange(p_chunks[i + p_offset].getID());
-                    if (location != null) {
+                    while (location.getState() == LookupState.DATA_TEMPORARY_UNAVAILABLE) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (final InterruptedException ignore) {
+                        }
+                        location = m_lookup.getLookupRange(p_chunks[i + p_offset].getID());
+                    }
+
+                    if (location.getState() == LookupState.OK) {
+                        // currently undefined because we still have to get it from remote
+                        p_chunks[i + p_offset].setState(ChunkState.UNDEFINED);
                         short peer = location.getPrimaryPeer();
 
                         ArrayList<ChunkAnon> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
                         remoteChunksOfPeer.add(p_chunks[i + p_offset]);
-                    } else {
+                    } else if (location.getState() == LookupState.DOES_NOT_EXIST) {
                         p_chunks[i + p_offset].setState(ChunkState.DOES_NOT_EXIST);
+                    } else if (location.getState() == LookupState.DATA_LOST) {
+                        p_chunks[i + p_offset].setState(ChunkState.DATA_LOST);
                     }
                 }
             }

@@ -115,15 +115,16 @@ public class PutRequest extends Request {
         if (m_dataStructures != null) {
             size += ObjectSizeUtil.sizeofCompactedNumber(m_dataStructures.length);
             size += m_dataStructures.length * Long.BYTES;
-            size += m_dataStructures.length * Integer.BYTES;
 
             for (DataStructure dataStructure : m_dataStructures) {
-                size += dataStructure.sizeofObject();
+                int tmp = dataStructure.sizeofObject();
+
+                size += ObjectSizeUtil.sizeofCompactedNumber(tmp);
+                size += tmp;
             }
         } else {
             size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length);
             size += m_chunkIDs.length * Long.BYTES;
-            size += m_chunkIDs.length * Integer.BYTES;
 
             for (int i = 0; i < m_data.length; i++) {
                 size += ObjectSizeUtil.sizeofByteArray(m_data[i]);
@@ -143,7 +144,7 @@ public class PutRequest extends Request {
             int size = dataStructure.sizeofObject();
 
             p_exporter.writeLong(dataStructure.getID());
-            p_exporter.writeInt(size);
+            p_exporter.writeCompactNumber(size);
             p_exporter.exportObject(dataStructure);
         }
     }
