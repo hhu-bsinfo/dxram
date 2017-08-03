@@ -321,7 +321,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long[] lids;
 
         // #if LOGGER == TRACE
-        LOGGER.trace("ENTER createMultiSizes p_consecutive %d, p_sizes %d", p_consecutive, p_sizes.length);
+        LOGGER.trace("ENTER createMultiSizes p_consecutive %b, p_sizes %d", p_consecutive, p_sizes.length);
         // #endif /* LOGGER == TRACE */
 
         try {
@@ -378,7 +378,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         }
 
         // #if LOGGER == TRACE
-        LOGGER.trace("EXIT createMultiSizes p_consecutive %d, p_sizes %d", p_consecutive, p_sizes.length);
+        LOGGER.trace("EXIT createMultiSizes p_consecutive %b, p_sizes %d", p_consecutive, p_sizes.length);
         // #endif /* LOGGER == TRACE */
 
         return lids;
@@ -445,7 +445,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long[] lids;
 
         // #if LOGGER == TRACE
-        LOGGER.trace("ENTER createMultiSizes p_size %d, p_count %d, p_consecutive %d", p_size, p_count, p_consecutive);
+        LOGGER.trace("ENTER createMultiSizes p_size %d, p_count %d, p_consecutive %b", p_size, p_count, p_consecutive);
         // #endif /* LOGGER == TRACE */
 
         try {
@@ -503,7 +503,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         }
 
         // #if LOGGER == TRACE
-        LOGGER.trace("EXIT createMultiSizes p_size %d, p_count %d, p_consecutive %d", p_size, p_count, p_consecutive);
+        LOGGER.trace("EXIT createMultiSizes p_size %d, p_count %d, p_consecutive %b", p_size, p_count, p_consecutive);
         // #endif /* LOGGER == TRACE */
 
         return lids;

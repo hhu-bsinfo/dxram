@@ -203,7 +203,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         assert p_size > 0 && p_count > 0;
 
         // #if LOGGER == TRACE
-        LOGGER.trace("create[size %d, count %d, consecutive %d]", p_size, p_count, p_consecutive);
+        LOGGER.trace("create[size %d, count %d, consecutive %b]", p_size, p_count, p_consecutive);
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
@@ -244,7 +244,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
-        LOGGER.trace("create[size %d, count %d, consecutive %d] -> %s, ...", p_size, p_count, p_consecutive, ChunkID.toHexString(chunkIDs[0]));
+        LOGGER.trace("create[size %d, count %d, consecutive %b] -> %s, ...", p_size, p_count, p_consecutive, ChunkID.toHexString(chunkIDs[0]));
         // #endif /* LOGGER == TRACE */
 
         return chunkIDs;
@@ -279,7 +279,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         }
 
         // #if LOGGER == TRACE
-        LOGGER.trace("create[p_consecutive %d, numDataStructures %d...]", p_consecutive, p_dataStructures.length);
+        LOGGER.trace("create[p_consecutive %b, numDataStructures %d...]", p_consecutive, p_dataStructures.length);
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
