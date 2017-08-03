@@ -184,7 +184,7 @@ class MessageExporterOverflow extends AbstractMessageExporter {
         } else {
             UnsafeMemory.writeBytes(m_bufferAddress + m_currentPosition, p_array, p_offset, m_bufferSize - m_currentPosition);
             UnsafeMemory.writeBytes(m_bufferAddress, p_array, p_offset + m_bufferSize - m_currentPosition, p_length - (m_bufferSize - m_currentPosition));
-            m_currentPosition = p_length - (m_bufferSize - m_currentPosition) + 1;
+            m_currentPosition = p_length - (m_bufferSize - m_currentPosition);
         }
 
         return p_length;

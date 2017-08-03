@@ -121,7 +121,6 @@ public class GetResponse extends Response {
         // the chunk objects provided by the request to avoid further copying of data
         GetRequest request = (GetRequest) getCorrespondingRequest();
 
-        int i = 0;
         for (DataStructure chunk : request.getChunks()) {
             if (p_importer.readByte((byte) (chunk.getState() == ChunkState.OK ? 1 : 0)) == 1) {
                 chunk.setState(ChunkState.OK);
