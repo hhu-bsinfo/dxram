@@ -39,8 +39,7 @@ public final class CompactNumber {
         } else if (p_number <= 0xFFFFFFF) {
             return 4;
         } else {
-            System.out.println("Number to large to compact. Maximum is " + Math.pow(2, 28));
-            return 0;
+            throw new RuntimeException("Number to large to compact. Maximum is " + Math.pow(2, 28));
         }
     }
 
