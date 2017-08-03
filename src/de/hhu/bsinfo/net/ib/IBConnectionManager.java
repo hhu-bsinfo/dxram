@@ -15,6 +15,7 @@ package de.hhu.bsinfo.net.ib;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -67,7 +68,7 @@ public class IBConnectionManager extends AbstractConnectionManager
     //        uint32_t m_flowControlData;
     //        uint16_t m_nodeId;
     //    } __attribute__((packed));
-    private final IBSendWorkParameterPool m_sendWorkParameterPool;
+    private final ByteBuffer m_sendThreadRetArgs;
 
     /**
      * Constructor
@@ -110,7 +111,9 @@ public class IBConnectionManager extends AbstractConnectionManager
 
         m_nodeConnected = new boolean[NodeID.MAX_ID];
 
-        m_sendWorkParameterPool = new IBSendWorkParameterPool(Long.BYTES + Integer.BYTES + Integer.BYTES + Short.BYTES);
+        m_sendThreadRetArgs = ByteBuffer.allocateDirect(Long.BYTES + Integer.BYTES + Integer.BYTES + Short.BYTES);
+        // consider native byte order (most likely little endian)
+        m_sendThreadRetArgs.order(ByteOrder.nativeOrder());
     }
 
     /**
@@ -286,8 +289,7 @@ public class IBConnectionManager extends AbstractConnectionManager
         }
 
         // assemble arguments for struct to pass back to jni
-        ByteBuffer arguments = m_sendWorkParameterPool.getInstance();
-        arguments.clear();
+        m_sendThreadRetArgs.clear();
 
         long interests = m_writeInterestManager.consumeInterests(nodeId);
 
@@ -298,9 +300,9 @@ public class IBConnectionManager extends AbstractConnectionManager
             int relPosFrontRel = (int) (pos & 0x7FFFFFFF);
 
             // relative position of data start in buffer
-            arguments.putInt(relPosFrontRel);
+            m_sendThreadRetArgs.putInt(relPosFrontRel);
             // relative position of data end in buffer
-            arguments.putInt(relPosBackRel);
+            m_sendThreadRetArgs.putInt(relPosBackRel);
 
             // #if LOGGER >= TRACE
             LOGGER.trace("Next data write on node 0x%X, posFrontRelative %d, posBackRelative %d", nodeId, relPosFrontRel, relPosBackRel);
@@ -313,28 +315,28 @@ public class IBConnectionManager extends AbstractConnectionManager
             }
         } else {
             // no data to write, fc only
-            arguments.putInt(0);
-            arguments.putInt(0);
+            m_sendThreadRetArgs.putInt(0);
+            m_sendThreadRetArgs.putInt(0);
         }
 
         // process flow control interests
         if (interests >> 32 > 0) {
             int fcData = connection.getPipeOut().getFlowControlToWrite();
 
-            arguments.putInt(fcData);
+            m_sendThreadRetArgs.putInt(fcData);
 
             // #if LOGGER >= TRACE
             LOGGER.trace("Next flow control write on node 0x%X, fc data %d", nodeId, fcData);
             // #endif /* LOGGER >= TRACE */
         } else {
             // data only, no fc
-            arguments.putInt(0);
+            m_sendThreadRetArgs.putInt(0);
         }
 
         // node id
-        arguments.putShort(nodeId);
+        m_sendThreadRetArgs.putShort(nodeId);
 
-        return ByteBufferHelper.getDirectAddress(arguments);
+        return ByteBufferHelper.getDirectAddress(m_sendThreadRetArgs);
     }
 
     @Override
