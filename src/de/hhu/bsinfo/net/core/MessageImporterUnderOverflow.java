@@ -109,23 +109,31 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             throw m_exception;
         }
 
-        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            m_skippedBytes += Short.BYTES;
-            // Short was read before, return passed value
-            return p_short;
-        } else if (m_skippedBytes < m_skipBytes) {
-            // Short was partly de-serialized -> continue
-            // Number of bytes to skip might be larger than Short.Bytes for reading a short array
+        if (m_skippedBytes < m_skipBytes) {
+            // Number of bytes to skip might be larger than Short.Bytes if this short was read before
             int count = 0;
             short ret = (short) m_unfinishedOperation.getPrimitive();
             for (int i = m_skipBytes - m_skippedBytes; i < Short.BYTES; i++) {
+                if (m_currentPosition == m_bufferSize) {
+                    // Overflow
+                    m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition - i);
+                    m_unfinishedOperation.setPrimitive(ret);
+                    throw m_exception;
+                }
+
                 // read little endian byte order to big endian
                 ret |= (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
                 m_currentPosition++;
                 count++;
             }
             m_skippedBytes += Short.BYTES - count;
-            return ret;
+
+            if (count == 0) {
+                // Short was read before, return passed value
+                return p_short;
+            } else {
+                return ret;
+            }
         } else {
             // Read short normally as all previously read bytes have been skipped already
             short ret = 0;
@@ -146,13 +154,8 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             throw m_exception;
         }
 
-        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            m_skippedBytes += Integer.BYTES;
-            // Int was read before, return passed value
-            return p_int;
-        } else if (m_skippedBytes < m_skipBytes) {
-            // Int was partly de-serialized -> continue
-            // Number of bytes to skip might be larger than Integer.Bytes for reading an int array
+        if (m_skippedBytes < m_skipBytes) {
+            // Number of bytes to skip might be larger than Integer.Bytes if this int was read before
             int count = 0;
             int ret = (int) m_unfinishedOperation.getPrimitive();
             for (int i = m_skipBytes - m_skippedBytes; i < Integer.BYTES; i++) {
@@ -169,7 +172,13 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 count++;
             }
             m_skippedBytes += Integer.BYTES - count;
-            return ret;
+
+            if (count == 0) {
+                // Int was read before, return passed value
+                return p_int;
+            } else {
+                return ret;
+            }
         } else {
             // Read int normally as all previously read bytes have been skipped already
             int ret = 0;
@@ -197,13 +206,8 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             throw m_exception;
         }
 
-        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            m_skippedBytes += Long.BYTES;
-            // Long was read before, return passed value
-            return p_long;
-        } else if (m_skippedBytes < m_skipBytes) {
-            // Long was partly de-serialized -> continue
-            // Number of bytes to skip might be larger than Long.Bytes for reading a long array
+        if (m_skippedBytes < m_skipBytes) {
+            // Number of bytes to skip might be larger than Long.Bytes if this long was read before
             int count = 0;
             long ret = m_unfinishedOperation.getPrimitive();
             for (int i = m_skipBytes - m_skippedBytes; i < Long.BYTES; i++) {
@@ -220,7 +224,13 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 count++;
             }
             m_skippedBytes += Long.BYTES - count;
-            return ret;
+
+            if (count == 0) {
+                // Long was read before, return passed value
+                return p_long;
+            } else {
+                return ret;
+            }
         } else {
             // Read long normally as all previously read bytes have been skipped already
             long ret = 0;
