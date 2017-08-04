@@ -146,7 +146,7 @@ class MessageImporterOverflow extends AbstractMessageImporter {
             }
 
             // read little endian byte order to big endian
-            ret |= (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
+            ret |= (long) (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
             m_currentPosition++;
         }
 

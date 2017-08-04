@@ -6,6 +6,7 @@ import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.net.MessageHandlers;
 import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.utils.UnsafeMemory;
 
 /**
  * Created by nothaas on 6/9/17.
@@ -104,7 +105,7 @@ public abstract class AbstractPipeIn {
                     // end of current data stream in importer, incomplete header
                     break;
                 }
-                m_currentMessage = createMessage();
+                m_currentMessage = createMessage(p_addr, p_bytesAvailable);
             }
 
             // hack:
@@ -217,19 +218,45 @@ public abstract class AbstractPipeIn {
         // #endif /* STATISTICS */
     }
 
-    private Message createMessage() throws NetworkException {
+    private Message createMessage(final long p_addr, final int p_bytesAvailable) throws NetworkException {
         Message ret;
         byte type = m_currentHeader.getType();
         byte subtype = m_currentHeader.getSubtype();
 
         if (type == Messages.NETWORK_MESSAGES_TYPE && subtype == Messages.SUBTYPE_INVALID_MESSAGE) {
-            throw new NetworkException("Invalid message type 0, subtype 0, most likely corrupted message/buffer");
+            StringBuilder builder = new StringBuilder();
+            int len = p_bytesAvailable;
+
+            if (len > 1024) {
+                len = 1024;
+            }
+
+            for (int i = m_currentPosition - 10; i < m_currentPosition - 10 + len; i++) {
+                builder.append(Integer.toHexString(UnsafeMemory.readByte(p_addr + i) & 0xFF));
+                builder.append(' ');
+            }
+
+            throw new NetworkException("Invalid message type 0, subtype 0, most likely corrupted message/buffer. Buffer section: " + builder);
         }
 
         try {
             ret = m_messageDirectory.getInstance(type, subtype);
         } catch (final Exception e) {
-            throw new NetworkException("Unable to create message of type " + type + ", subtype " + subtype + ". Type is missing in message directory", e);
+            StringBuilder builder = new StringBuilder();
+            int len = p_bytesAvailable;
+
+            if (len > 1024) {
+                len = 1024;
+            }
+
+            for (int i = m_currentPosition - 10; i < m_currentPosition - 10 + len; i++) {
+                builder.append(Integer.toHexString(UnsafeMemory.readByte(p_addr + i) & 0xFF));
+                builder.append(' ');
+            }
+
+            throw new NetworkException(
+                    "Unable to create message of type " + type + ", subtype " + subtype + ". Type is missing in message directory. Buffer section: " + builder,
+                    e);
         }
 
         ret.initialize(m_currentHeader);

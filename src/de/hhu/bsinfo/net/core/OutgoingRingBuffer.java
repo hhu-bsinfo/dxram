@@ -231,7 +231,7 @@ public class OutgoingRingBuffer {
 
         // Get exporter (default or overflow). Small messages are written at once, but might be split into two parts if ring buffer overflows during writing.
         MessageExporterCollection exporterCollection = m_exporterPool.getInstance();
-        AbstractMessageExporter exporter = exporterCollection.getLargeMessageExporter(p_hasOverflow);
+        AbstractMessageExporter exporter = exporterCollection.getMessageExporter(p_hasOverflow);
         exporter.setBuffer(m_bufferAddr, m_bufferSize);
         exporter.setPosition(p_start);
 

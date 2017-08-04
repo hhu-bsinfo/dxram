@@ -46,7 +46,7 @@ class MessageExporterCollection {
      *         whether all bytes to export fit in buffer
      * @return the AbstractMessageExporter
      */
-    AbstractMessageExporter getLargeMessageExporter(final boolean p_hasOverflow) {
+    AbstractMessageExporter getMessageExporter(final boolean p_hasOverflow) {
         if (!p_hasOverflow) {
             return m_exporter;
         } else {

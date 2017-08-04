@@ -148,7 +148,7 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
             long ret = m_unfinishedOperation.getPrimitive();
             for (int i = m_skipBytes - m_skippedBytes; i < Long.BYTES; i++) {
                 // read little endian byte order to big endian
-                ret |= (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
+                ret |= (long) (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
                 m_currentPosition++;
             }
             m_skippedBytes = m_skipBytes;
@@ -158,7 +158,7 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
             long ret = 0;
             for (int i = 0; i < Long.BYTES; i++) {
                 // read little endian byte order to big endian
-                ret |= (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
+                ret |= (long) (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
                 m_currentPosition++;
             }
             return ret;
