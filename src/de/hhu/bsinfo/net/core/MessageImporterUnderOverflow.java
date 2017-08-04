@@ -115,13 +115,16 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             return p_short;
         } else if (m_skippedBytes < m_skipBytes) {
             // Short was partly de-serialized -> continue
+            // Number of bytes to skip might be larger than Short.Bytes for reading a short array
+            int count = 0;
             short ret = (short) m_unfinishedOperation.getPrimitive();
             for (int i = m_skipBytes - m_skippedBytes; i < Short.BYTES; i++) {
                 // read little endian byte order to big endian
                 ret |= (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
                 m_currentPosition++;
+                count++;
             }
-            m_skippedBytes = m_skipBytes;
+            m_skippedBytes += Short.BYTES - count;
             return ret;
         } else {
             // Read short normally as all previously read bytes have been skipped already
@@ -149,6 +152,8 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             return p_int;
         } else if (m_skippedBytes < m_skipBytes) {
             // Int was partly de-serialized -> continue
+            // Number of bytes to skip might be larger than Integer.Bytes for reading an int array
+            int count = 0;
             int ret = (int) m_unfinishedOperation.getPrimitive();
             for (int i = m_skipBytes - m_skippedBytes; i < Integer.BYTES; i++) {
                 if (m_currentPosition == m_bufferSize) {
@@ -161,8 +166,9 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 // read little endian byte order to big endian
                 ret |= (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
                 m_currentPosition++;
+                count++;
             }
-            m_skippedBytes = m_skipBytes;
+            m_skippedBytes += Integer.BYTES - count;
             return ret;
         } else {
             // Read int normally as all previously read bytes have been skipped already
@@ -197,6 +203,8 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             return p_long;
         } else if (m_skippedBytes < m_skipBytes) {
             // Long was partly de-serialized -> continue
+            // Number of bytes to skip might be larger than Long.Bytes for reading a long array
+            int count = 0;
             long ret = m_unfinishedOperation.getPrimitive();
             for (int i = m_skipBytes - m_skippedBytes; i < Long.BYTES; i++) {
                 if (m_currentPosition == m_bufferSize) {
@@ -209,8 +217,9 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
                 // read little endian byte order to big endian
                 ret |= (long) (UnsafeMemory.readByte(m_bufferAddress + m_currentPosition) & 0xFF) << i * 8;
                 m_currentPosition++;
+                count++;
             }
-            m_skippedBytes = m_skipBytes;
+            m_skippedBytes += Long.BYTES - count;
             return ret;
         } else {
             // Read long normally as all previously read bytes have been skipped already
