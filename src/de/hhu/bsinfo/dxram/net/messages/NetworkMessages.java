@@ -22,6 +22,7 @@ public final class NetworkMessages {
     public static final byte SUBTYPE_TEST_MESSAGE = 0;
     public static final byte SUBTYPE_TEST_REQUEST = 1;
     public static final byte SUBTYPE_TEST_RESPONSE = 2;
+    public static final byte SUBTYPE_DEBUG_MESSAGE = 3;
 
     /**
      * Hidden constructor

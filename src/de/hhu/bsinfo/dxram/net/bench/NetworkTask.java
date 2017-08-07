@@ -26,6 +26,7 @@ import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxram.net.NetworkService;
+import de.hhu.bsinfo.dxram.net.messages.NetworkDebugMessage;
 import de.hhu.bsinfo.dxram.net.messages.NetworkMessages;
 import de.hhu.bsinfo.dxram.net.messages.NetworkTestMessage;
 import de.hhu.bsinfo.dxram.net.messages.NetworkTestRequest;
@@ -66,6 +67,8 @@ public class NetworkTask implements Task, MessageReceiver {
     private int m_pattern = PATTERN_END_TO_END;
     @Expose
     private boolean m_isMessage = true;
+    @Expose
+    private boolean m_debugMessage = false;
 
     @Override
     public int execute(final TaskContext p_ctx) {
@@ -94,9 +97,13 @@ public class NetworkTask implements Task, MessageReceiver {
         }
 
         // pre create messages/requests to use pooling
-        NetworkTestMessage[] messages = new NetworkTestMessage[m_slaveCnt];
+        Message[] messages = new Message[m_slaveCnt];
         for (int i = 0; i < m_slaveCnt; i++) {
-            messages[i] = new NetworkTestMessage(slaveNodeIds[i], m_messageSize);
+            if (m_debugMessage) {
+                messages[i] = new NetworkDebugMessage(slaveNodeIds[i]);
+            } else {
+                messages[i] = new NetworkTestMessage(slaveNodeIds[i], m_messageSize);
+            }
         }
 
         // get Messages per Thread and destination node id
@@ -105,9 +112,12 @@ public class NetworkTask implements Task, MessageReceiver {
         Thread[] threads = new Thread[m_threadCnt];
         LatencyStatistics latencyStatistics = new LatencyStatistics(m_threadCnt);
 
-        System.out
-                .printf("Network benchmark, pattern %d, message count %d, message size %d byte, isMessages %b with %d thread(s)...\n", m_pattern, m_messageCnt,
-                        m_messageSize, m_isMessage, m_threadCnt);
+        if (m_debugMessage) {
+            System.out.printf("!!! DEBUG !!! Network benchmark, pattern %d, message count %d, %d thread(s)...\n", m_pattern, m_messageCnt, m_threadCnt);
+        } else {
+            System.out.printf("Network benchmark, pattern %d, message count %d, message size %d byte, isMessages %b with %d thread(s)...\n", m_pattern,
+                    m_messageCnt, m_messageSize, m_isMessage, m_threadCnt);
+        }
 
         // thread runnables
         for (int i = 0; i < threads.length; i++) {
@@ -244,6 +254,7 @@ public class NetworkTask implements Task, MessageReceiver {
         p_exporter.writeInt(m_threadCnt);
         p_exporter.writeInt(m_pattern);
         p_exporter.writeBoolean(m_isMessage);
+        p_exporter.writeBoolean(m_debugMessage);
     }
 
     @Override
@@ -253,11 +264,12 @@ public class NetworkTask implements Task, MessageReceiver {
         m_threadCnt = p_importer.readInt(m_threadCnt);
         m_pattern = p_importer.readInt(m_pattern);
         m_isMessage = p_importer.readBoolean(m_isMessage);
+        m_debugMessage = p_importer.readBoolean(m_debugMessage);
     }
 
     @Override
     public int sizeofObject() {
-        return Long.BYTES + 3 * Integer.BYTES + ObjectSizeUtil.sizeofBoolean();
+        return Long.BYTES + 3 * Integer.BYTES + ObjectSizeUtil.sizeofBoolean() * 2;
     }
 
     @Override
@@ -273,6 +285,9 @@ public class NetworkTask implements Task, MessageReceiver {
                         break;
                     case NetworkMessages.SUBTYPE_TEST_REQUEST:
                         incomingNetworkTestRequest((NetworkTestRequest) p_message);
+                        break;
+                    case NetworkMessages.SUBTYPE_DEBUG_MESSAGE:
+                        incomingNetworkDebugMessage((NetworkDebugMessage) p_message);
                         break;
                     default:
                         break;
@@ -316,16 +331,30 @@ public class NetworkTask implements Task, MessageReceiver {
         }
     }
 
+    private void incomingNetworkDebugMessage(final NetworkDebugMessage p_message) {
+        m_receiveTimeStart.compareAndSet(0, System.nanoTime());
+
+        m_receivedCnt.incrementAndGet();
+
+        long numOfMessagesToReceive = m_pattern == 0 ? m_messageCnt : m_messageCnt * (m_slaveCnt - 1);
+        if (m_receivedCnt.get() == numOfMessagesToReceive) {
+            m_receiveTimeEnd.compareAndSet(0, System.nanoTime());
+        }
+    }
+
     private void registerReceiverAndMessageTypes() {
         m_networkService.registerReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE, this);
         m_networkService.registerReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST, this);
+        m_networkService.registerReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEBUG_MESSAGE, this);
         m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE, NetworkTestMessage.class);
         m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST, NetworkTestRequest.class);
         m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_RESPONSE, NetworkTestResponse.class);
+        m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEBUG_MESSAGE, NetworkDebugMessage.class);
     }
 
     private void unregisterReceiver() {
         m_networkService.unregisterReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE, this);
         m_networkService.unregisterReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST, this);
+        m_networkService.unregisterReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEBUG_MESSAGE, this);
     }
 }
