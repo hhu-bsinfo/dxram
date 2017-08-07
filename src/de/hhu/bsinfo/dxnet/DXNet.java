@@ -18,8 +18,6 @@ import java.util.concurrent.atomic.AtomicLongArray;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxnet.core.AbstractConnection;
 import de.hhu.bsinfo.dxnet.core.AbstractConnectionManager;
 import de.hhu.bsinfo.dxnet.core.CoreConfig;
@@ -35,6 +33,8 @@ import de.hhu.bsinfo.dxnet.ib.IBConfig;
 import de.hhu.bsinfo.dxnet.ib.IBConnectionManager;
 import de.hhu.bsinfo.dxnet.nio.NIOConfig;
 import de.hhu.bsinfo.dxnet.nio.NIOConnectionManager;
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
@@ -44,10 +44,10 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Marc Ewert, marc.ewert@hhu.de, 14.08.2014
  * @author Kevin Beineke, kevin.beineke@hhu.de, 20.11.2015
  */
-public final class NetworkSystem {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkSystem.class.getSimpleName());
-    private static final StatisticsOperation SOP_SEND = StatisticsRecorderManager.getOperation(NetworkSystem.class, "MessageSend");
-    private static final StatisticsOperation SOP_SEND_SYNC = StatisticsRecorderManager.getOperation(NetworkSystem.class, "MessageSendSync");
+public final class DXNet {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(DXNet.class.getSimpleName());
+    private static final StatisticsOperation SOP_SEND = StatisticsRecorderManager.getOperation(DXNet.class, "MessageSend");
+    private static final StatisticsOperation SOP_SEND_SYNC = StatisticsRecorderManager.getOperation(DXNet.class, "MessageSendSync");
 
     private final CoreConfig m_config;
     private final NIOConfig m_nioConfig;
@@ -66,7 +66,7 @@ public final class NetworkSystem {
     private final AbstractConnectionManager m_connectionManager;
 
     // TODO doc
-    public NetworkSystem(final CoreConfig p_config, final NIOConfig p_nioConfig, final IBConfig p_ibConfig, final NodeMap p_nodeMap) {
+    public DXNet(final CoreConfig p_config, final NIOConfig p_nioConfig, final IBConfig p_ibConfig, final NodeMap p_nodeMap) {
         m_config = p_config;
         m_nioConfig = p_nioConfig;
         m_ibConfig = p_ibConfig;

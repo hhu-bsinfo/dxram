@@ -18,6 +18,14 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
+import de.hhu.bsinfo.dxnet.ConnectionManagerListener;
+import de.hhu.bsinfo.dxnet.DXNet;
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.NetworkDestinationUnreachableException;
+import de.hhu.bsinfo.dxnet.NetworkResponseDelayedException;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
+import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -29,14 +37,6 @@ import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
-import de.hhu.bsinfo.dxnet.ConnectionManagerListener;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.NetworkDestinationUnreachableException;
-import de.hhu.bsinfo.dxnet.NetworkResponseDelayedException;
-import de.hhu.bsinfo.dxnet.NetworkSystem;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.dxnet.core.Request;
 
 /**
  * Access to the network interface to send messages or requests
@@ -50,7 +50,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     private EventComponent m_event;
 
     // Attributes
-    private NetworkSystem m_networkSystem;
+    private DXNet m_dxnet;
 
     /**
      * Constructor
@@ -72,7 +72,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      *         the calling class
      */
     public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
-        m_networkSystem.registerMessageType(p_type, p_subtype, p_class);
+        m_dxnet.registerMessageType(p_type, p_subtype, p_class);
     }
 
     /**
@@ -89,7 +89,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
         // #endif /* LOGGER == TRACE */
 
         try {
-            m_networkSystem.connectNode(p_nodeID);
+            m_dxnet.connectNode(p_nodeID);
         } catch (final NetworkDestinationUnreachableException e) {
             // #if LOGGER >= ERROR
             LOGGER.error("Connecting node 0x%X failed: %s", p_nodeID, e);
@@ -112,7 +112,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
         // #endif /* LOGGER == TRACE */
 
         try {
-            m_networkSystem.sendMessage(p_message);
+            m_dxnet.sendMessage(p_message);
         } catch (final NetworkDestinationUnreachableException e) {
             // #if LOGGER >= ERROR
             LOGGER.error("Sending message %s failed: %s", p_message.getClass().getSimpleName(), e);
@@ -155,7 +155,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      */
     public void sendSync(final Request p_request, final int p_timeout) throws NetworkException {
         try {
-            m_networkSystem.sendSync(p_request, p_timeout, true);
+            m_dxnet.sendSync(p_request, p_timeout, true);
         } catch (final NetworkDestinationUnreachableException e) {
             m_event.fireEvent(new ConnectionLostEvent(getClass().getSimpleName(), p_request.getDestination()));
 
@@ -180,7 +180,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     public void sendSync(final Request p_request, final boolean p_waitForResponses) throws NetworkException {
 
         try {
-            m_networkSystem.sendSync(p_request, -1, p_waitForResponses);
+            m_dxnet.sendSync(p_request, -1, p_waitForResponses);
         } catch (final NetworkDestinationUnreachableException e) {
             m_event.fireEvent(new ConnectionLostEvent(getClass().getSimpleName(), p_request.getDestination()));
 
@@ -203,7 +203,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      *         the receiver
      */
     public void register(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
-        m_networkSystem.register(p_type, p_subtype, p_receiver);
+        m_dxnet.register(p_type, p_subtype, p_receiver);
     }
 
     /**
@@ -217,7 +217,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      *         the receiver
      */
     public void unregister(final byte p_type, final byte p_subtype, final MessageReceiver p_receiver) {
-        m_networkSystem.unregister(p_type, p_subtype, p_receiver);
+        m_dxnet.unregister(p_type, p_subtype, p_receiver);
     }
 
     // --------------------------------------------------------------------------------------
@@ -228,7 +228,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
         LOGGER.debug("Connection to peer 0x%X lost, aborting and removing all pending requests", p_event.getNodeID());
         // #endif /* LOGGER >= DEBUG */
 
-        m_networkSystem.cancelAllRequests(p_event.getNodeID());
+        m_dxnet.cancelAllRequests(p_event.getNodeID());
     }
 
     @Override
@@ -305,9 +305,9 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
             DXRAMJNIManager.loadJNIModule("JNIIbdxnet");
         }
 
-        m_networkSystem = new NetworkSystem(getConfig().getCoreConfig(), getConfig().getNIOConfig(), getConfig().getIBConfig(), new NodeMappings(m_boot));
+        m_dxnet = new DXNet(getConfig().getCoreConfig(), getConfig().getNIOConfig(), getConfig().getIBConfig(), new NodeMappings(m_boot));
 
-        m_networkSystem.setConnectionManagerListener(this);
+        m_dxnet.setConnectionManagerListener(this);
 
         m_event.registerListener(this, NodeFailureEvent.class);
 
@@ -316,9 +316,9 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
 
     @Override
     protected boolean shutdownComponent() {
-        m_networkSystem.close();
+        m_dxnet.close();
 
-        m_networkSystem = null;
+        m_dxnet = null;
 
         return true;
     }
