@@ -16,9 +16,9 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.net.core.Message;
-import de.hhu.bsinfo.net.core.AbstractMessageExporter;
-import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**

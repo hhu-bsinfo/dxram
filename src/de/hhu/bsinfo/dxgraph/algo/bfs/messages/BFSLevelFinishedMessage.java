@@ -14,9 +14,9 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
 import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
-import de.hhu.bsinfo.net.core.Message;
-import de.hhu.bsinfo.net.core.AbstractMessageExporter;
-import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 
 /**
  * Message broadcasted by one bfs peer to all other participating peers when

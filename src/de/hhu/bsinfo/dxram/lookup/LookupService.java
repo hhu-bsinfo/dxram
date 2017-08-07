@@ -27,9 +27,9 @@ import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.LookupMessages;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.net.MessageReceiver;
-import de.hhu.bsinfo.net.core.Message;
-import de.hhu.bsinfo.net.core.NetworkException;
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 
 /**
  * Look up service providing look ups for e.g. use in TCMDs

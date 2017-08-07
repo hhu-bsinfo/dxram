@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.Request;
+import de.hhu.bsinfo.dxnet.core.Request;
 
 /**
  * Request for getting the chunk id ranges of locally stored chunk ids from another node.

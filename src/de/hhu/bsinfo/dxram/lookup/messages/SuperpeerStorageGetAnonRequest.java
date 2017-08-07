@@ -15,9 +15,9 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.net.core.AbstractMessageExporter;
-import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.Request;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Request;
 
 /**
  * Request to get data from the superpeer storage (anonymous chunk).

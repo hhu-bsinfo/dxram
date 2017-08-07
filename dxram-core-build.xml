@@ -91,7 +91,7 @@
             <compilerarg line="-Xlint:sunapi -XDenableSunApiLintControl"/>
             <include name="de/hhu/bsinfo/dxgraph/**/*.java"/>
             <include name="de/hhu/bsinfo/dxram/**/*.java"/>
-            <include name="de/hhu/bsinfo/net/**/*.java"/>
+            <include name="de/hhu/bsinfo/dxnet/**/*.java"/>
             <include name="de/hhu/bsinfo/soh/**/*.java"/>
             <include name="de/hhu/bsinfo/utils/**/*.java"/>
             <classpath>

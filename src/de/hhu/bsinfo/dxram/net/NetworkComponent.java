@@ -29,14 +29,14 @@ import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
-import de.hhu.bsinfo.net.ConnectionManagerListener;
-import de.hhu.bsinfo.net.MessageReceiver;
-import de.hhu.bsinfo.net.NetworkDestinationUnreachableException;
-import de.hhu.bsinfo.net.NetworkResponseDelayedException;
-import de.hhu.bsinfo.net.NetworkSystem;
-import de.hhu.bsinfo.net.core.Message;
-import de.hhu.bsinfo.net.core.NetworkException;
-import de.hhu.bsinfo.net.core.Request;
+import de.hhu.bsinfo.dxnet.ConnectionManagerListener;
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.NetworkDestinationUnreachableException;
+import de.hhu.bsinfo.dxnet.NetworkResponseDelayedException;
+import de.hhu.bsinfo.dxnet.NetworkSystem;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
+import de.hhu.bsinfo.dxnet.core.Request;
 
 /**
  * Access to the network interface to send messages or requests

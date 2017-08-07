@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.Message;
+import de.hhu.bsinfo.dxnet.core.Message;
 
 /**
  * Reset the memory on a peer

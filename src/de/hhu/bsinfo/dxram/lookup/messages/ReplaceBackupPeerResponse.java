@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.net.core.Response;
+import de.hhu.bsinfo.dxnet.core.Response;
 
 /**
  * Response to a ReplaceBackupPeerRequest

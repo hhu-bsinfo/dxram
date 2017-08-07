@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.net.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.Request;
+import de.hhu.bsinfo.dxnet.core.Request;
 
 /**
  * Network request for running tests/benchmarks.

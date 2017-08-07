@@ -19,7 +19,7 @@ package de.hhu.bsinfo.dxram;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 19.10.2016
  */
 public final class DXRAMMessageTypes {
-    // 0 is reserved in net subsystem
+    // 0 is reserved in dxnet subsystem
     public static final byte BOOT_MESSAGES_TYPE = 1;
     public static final byte LOOKUP_MESSAGES_TYPE = 2;
     public static final byte CHUNK_MESSAGES_TYPE = 3;

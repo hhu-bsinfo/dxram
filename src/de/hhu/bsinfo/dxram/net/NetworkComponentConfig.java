@@ -4,9 +4,9 @@ import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.net.core.CoreConfig;
-import de.hhu.bsinfo.net.ib.IBConfig;
-import de.hhu.bsinfo.net.nio.NIOConfig;
+import de.hhu.bsinfo.dxnet.core.CoreConfig;
+import de.hhu.bsinfo.dxnet.ib.IBConfig;
+import de.hhu.bsinfo.dxnet.nio.NIOConfig;
 
 /**
  * Config for the NetworkComponent

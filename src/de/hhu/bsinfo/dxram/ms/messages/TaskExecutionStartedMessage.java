@@ -14,9 +14,9 @@
 package de.hhu.bsinfo.dxram.ms.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.Message;
-import de.hhu.bsinfo.net.core.AbstractMessageExporter;
-import de.hhu.bsinfo.net.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 
 /**
  * Notify all remote listeners about a task that started execution.

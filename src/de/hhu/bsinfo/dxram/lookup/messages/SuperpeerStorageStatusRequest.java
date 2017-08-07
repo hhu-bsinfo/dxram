@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.Request;
+import de.hhu.bsinfo.dxnet.core.Request;
 
 /**
  * Requesting the status of the superpeer storage.

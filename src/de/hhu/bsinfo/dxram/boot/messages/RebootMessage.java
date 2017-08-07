@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.boot.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.Message;
+import de.hhu.bsinfo.dxnet.core.Message;
 
 /**
  * Message to trigger a soft reboot of DXRAM

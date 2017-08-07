@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.ms.messages;
 
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.net.core.Request;
+import de.hhu.bsinfo.dxnet.core.Request;
 
 /**
  * Request of the slave to a master to join a compute group.

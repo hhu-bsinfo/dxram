@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
 import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
-import de.hhu.bsinfo.net.core.Message;
+import de.hhu.bsinfo.dxnet.core.Message;
 
 /**
  * Created by nothaas on 6/10/16.

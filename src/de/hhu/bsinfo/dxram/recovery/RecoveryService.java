@@ -36,9 +36,9 @@ import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
 import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeResponse;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
-import de.hhu.bsinfo.net.MessageReceiver;
-import de.hhu.bsinfo.net.core.Message;
-import de.hhu.bsinfo.net.core.NetworkException;
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.utils.JNIFileRaw;
 import de.hhu.bsinfo.utils.NodeID;
 

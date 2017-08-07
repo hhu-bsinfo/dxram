@@ -13,9 +13,9 @@
 
 package de.hhu.bsinfo.dxram.net.messages;
 
-import de.hhu.bsinfo.net.core.AbstractMessageExporter;
-import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.Response;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Response;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**

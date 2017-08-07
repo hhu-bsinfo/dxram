@@ -14,9 +14,9 @@
 package de.hhu.bsinfo.dxram.ms.messages;
 
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
-import de.hhu.bsinfo.net.core.AbstractMessageExporter;
-import de.hhu.bsinfo.net.core.AbstractMessageImporter;
-import de.hhu.bsinfo.net.core.Response;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Response;
 
 /**
  * Response of the master to a join request by a slave.

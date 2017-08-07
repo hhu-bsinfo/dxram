@@ -728,7 +728,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     }
 
     /**
-     * Parses nodes.config and stores routing information in net for nodes
+     * Parses nodes.config and stores routing information in dxnet for nodes
      *
      * @param p_nodes
      *         the nodes to parse
