@@ -76,6 +76,13 @@ public abstract class AbstractPipeOut {
 
         int messageTotalSize = p_message.getTotalSize();
 
+        if (messageTotalSize > 1024 * 1024 * 128) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Performance warning: Sending very large (%d bytes) message. Consider splitting your data to send if possible to benefit from " +
+                    "parallelism when messages are received and processed", messageTotalSize);
+            // #endif /* LOGGER >= WARN */
+        }
+
         // #ifdef STATISTICS
         SOP_FC_DATA_TO_SEND.enter();
         // #endif /* STATISTICS */
