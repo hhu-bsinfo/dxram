@@ -231,15 +231,6 @@ public class ByteBufferImExporter implements Importer, Exporter {
     }
 
     @Override
-    public void writeStringArray(final String[] p_array) {
-        writeInt(p_array.length);
-
-        for (int i = 0; i < p_array.length; i++) {
-            writeString(p_array[i]);
-        }
-    }
-
-    @Override
     public int readShorts(final short[] p_array) {
         return readShorts(p_array, 0, p_array.length);
     }
@@ -308,16 +299,4 @@ public class ByteBufferImExporter implements Importer, Exporter {
         readLongs(arr);
         return arr;
     }
-
-    @Override
-    public String[] readStringArray(final String[] p_array) {
-        String[] strings = new String[readInt(0)];
-
-        for (int i = 0; i < strings.length; i++) {
-            strings[i] = readString(null);
-        }
-
-        return strings;
-    }
-
 }

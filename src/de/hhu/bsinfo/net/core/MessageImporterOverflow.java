@@ -396,27 +396,4 @@ class MessageImporterOverflow extends AbstractMessageImporter {
 
         return arr;
     }
-
-    @Override
-    public String[] readStringArray(final String[] p_array) {
-        if (m_currentPosition == m_bufferSize) {
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
-            throw m_exception;
-        }
-
-        int startPosition = m_currentPosition;
-        String[] strings = new String[readCompactNumber(0)];
-        try {
-            for (int i = 0; i < strings.length; i++) {
-                strings[i] = readString(null);
-            }
-        } catch (final ArrayIndexOutOfBoundsException e) {
-            // Store partly de-serialized array to be finished later
-            m_unfinishedOperation.setIndex(startPosition - m_startPosition);
-            m_unfinishedOperation.setObject(strings);
-            throw e;
-        }
-
-        return strings;
-    }
 }

@@ -258,17 +258,6 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
-    public String[] readStringArray(final String[] p_array) {
-        String[] str = new String[readInt(0)];
-
-        for (int i = 0; i < str.length; i++) {
-            str[i] = readString(null);
-        }
-
-        return str;
-    }
-
-    @Override
     public int writeShorts(final short[] p_array) {
         return writeShorts(p_array, 0, p_array.length);
     }
@@ -332,15 +321,6 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     public void writeLongArray(final long[] p_array) {
         writeInt(p_array.length);
         writeLongs(p_array);
-    }
-
-    @Override
-    public void writeStringArray(final String[] p_array) {
-        writeInt(p_array.length);
-
-        for (int i = 0; i < p_array.length; i++) {
-            writeString(p_array[i]);
-        }
     }
 
     @Override

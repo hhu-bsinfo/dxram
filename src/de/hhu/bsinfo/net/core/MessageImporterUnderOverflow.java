@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.net.core;
 
+import java.nio.charset.StandardCharsets;
+
 import de.hhu.bsinfo.utils.UnsafeMemory;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
@@ -332,7 +334,7 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
 
     @Override
     public String readString(final String p_string) {
-        return new String(readByteArray(p_string.getBytes()));
+        return new String(readByteArray(p_string.getBytes(StandardCharsets.US_ASCII)));
     }
 
     @Override
@@ -635,58 +637,6 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
             long[] arr = new long[readCompactNumber(0)];
             try {
                 readLongs(arr);
-            } catch (final ArrayIndexOutOfBoundsException e) {
-                // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
-                m_unfinishedOperation.setObject(arr);
-                throw e;
-            }
-            return arr;
-        }
-    }
-
-    @Override
-    public String[] readStringArray(final String[] p_array) {
-        if (m_currentPosition == m_bufferSize) {
-            // Overflow
-            m_unfinishedOperation.setIndex(m_currentPosition - m_startPosition);
-            throw m_exception;
-        }
-
-        int startPosition = m_currentPosition;
-        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            // Array length and array were read before, return passed array
-            m_skippedBytes += ObjectSizeUtil.sizeofStringArray(p_array);
-            return p_array;
-        } else if (m_skippedBytes < m_skipBytes) {
-            // String array was partly de-serialized -> continue
-            String[] arr;
-            if (m_unfinishedOperation.getObject() == null) {
-                // Array length has not been read completely
-                arr = new String[readCompactNumber(0)];
-            } else {
-                // Array was created before but is incomplete
-                arr = (String[]) m_unfinishedOperation.getObject();
-                m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(arr.length);
-            }
-            try {
-                for (int i = 0; i < arr.length; i++) {
-                    arr[i] = readString(arr[i]);
-                }
-            } catch (final ArrayIndexOutOfBoundsException e) {
-                // Store partly de-serialized array to be finished later
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
-                m_unfinishedOperation.setObject(arr);
-                throw e;
-            }
-            return arr;
-        } else {
-            // Read Strings normally as all previously read bytes have been skipped already
-            String[] arr = new String[readCompactNumber(0)];
-            try {
-                for (int i = 0; i < arr.length; i++) {
-                    arr[i] = readString(arr[i]);
-                }
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Store partly de-serialized array to be finished later
                 m_unfinishedOperation.setIndex(startPosition - m_startPosition);

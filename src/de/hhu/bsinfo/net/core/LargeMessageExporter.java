@@ -561,25 +561,4 @@ class LargeMessageExporter extends AbstractMessageExporter {
             }
         }
     }
-
-    @Override
-    public void writeStringArray(final String[] p_array) {
-        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            // Array length and array were written before
-            m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(p_array.length) + p_array.length;
-        } else {
-            int startPosition = m_currentPosition;
-            writeCompactNumber(p_array.length);
-            try {
-                for (int i = 0; i < p_array.length; i++) {
-                    writeString(p_array[i]);
-                }
-            } catch (final ArrayIndexOutOfBoundsException e) {
-                // Not enough space in buffer currently -> abort
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
-                throw e;
-            }
-        }
-    }
-
 }

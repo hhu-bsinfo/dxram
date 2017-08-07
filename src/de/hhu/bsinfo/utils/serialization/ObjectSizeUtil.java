@@ -99,23 +99,4 @@ public final class ObjectSizeUtil {
     public static int sizeofString(final String p_str) {
         return sizeofByteArray(p_str.getBytes());
     }
-
-    /**
-     * Get the serialization size for a full string array (including length fields)
-     *
-     * @param p_arr
-     *         Array to get the full serialization size for
-     * @return Serialization size
-     */
-    public static int sizeofStringArray(final String[] p_arr) {
-        int size = 0;
-
-        size += sizeofCompactedNumber(p_arr.length);
-        for (int i = 0; i < p_arr.length; i++) {
-            int length = p_arr[i].getBytes().length;
-            size += sizeofCompactedNumber(length) + length;
-        }
-
-        return size;
-    }
 }

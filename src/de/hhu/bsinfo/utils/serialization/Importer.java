@@ -257,13 +257,4 @@ public interface Importer {
      */
     long[] readLongArray(long[] p_array);
 
-    /**
-     * Read a string array from the target.
-     * The array to be read must be stored as self containing object,
-     * i.e. with length information
-     *
-     * @return New array with data read.
-     */
-    String[] readStringArray(String[] p_array);
-
 }

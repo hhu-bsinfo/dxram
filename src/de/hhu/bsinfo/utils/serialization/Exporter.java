@@ -268,14 +268,4 @@ public interface Exporter {
      *         Array to write
      */
     void writeLongArray(final long[] p_array);
-
-    /**
-     * Write a string array to the target.
-     * The array must be written as a self containing object,
-     * i.e. with length information
-     *
-     * @param p_array
-     *         Array to write
-     */
-    void writeStringArray(final String[] p_array);
 }

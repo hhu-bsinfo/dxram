@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.net.core;
 
+import java.nio.charset.StandardCharsets;
+
 import de.hhu.bsinfo.utils.UnsafeMemory;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
@@ -239,7 +241,7 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
 
     @Override
     public String readString(final String p_string) {
-        return new String(readByteArray(p_string.getBytes()));
+        return new String(readByteArray(p_string.getBytes(StandardCharsets.US_ASCII)));
     }
 
     @Override
@@ -414,36 +416,6 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
             long[] arr = new long[readCompactNumber(0)];
             readLongs(arr);
             return arr;
-        }
-    }
-
-    @Override
-    public String[] readStringArray(final String[] p_array) {
-        if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            // Array length and array were read before, return passed array
-            m_skippedBytes += ObjectSizeUtil.sizeofStringArray(p_array);
-            return p_array;
-        } else if (m_skippedBytes < m_skipBytes) {
-            // String array was partly de-serialized -> continue
-            String[] arr;
-            if (m_unfinishedOperation.getObject() == null) {
-                // Array length has not been read completely
-                arr = new String[readCompactNumber(0)];
-            } else {
-                // Array was created before but is incomplete
-                arr = (String[]) m_unfinishedOperation.getObject();
-                m_skippedBytes += ObjectSizeUtil.sizeofCompactedNumber(arr.length);
-            }
-            for (int i = 0; i < arr.length; i++) {
-                arr[i] = readString(arr[i]);
-            }
-            return arr;
-        } else {
-            // Read Strings normally as all previously read bytes have been skipped already
-            for (int i = 0; i < p_array.length; i++) {
-                p_array[i] = readString(p_array[i]);
-            }
-            return p_array;
         }
     }
 }

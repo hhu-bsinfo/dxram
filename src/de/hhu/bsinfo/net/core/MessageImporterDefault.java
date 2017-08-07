@@ -205,15 +205,4 @@ class MessageImporterDefault extends AbstractMessageImporter {
         readLongs(arr);
         return arr;
     }
-
-    @Override
-    public String[] readStringArray(final String[] p_array) {
-        String[] strings = new String[readCompactNumber(0)];
-
-        for (int i = 0; i < strings.length; i++) {
-            strings[i] = readString(null);
-        }
-
-        return strings;
-    }
 }

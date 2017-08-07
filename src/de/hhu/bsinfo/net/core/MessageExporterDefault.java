@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.net.core;
 
+import java.nio.charset.StandardCharsets;
+
 import de.hhu.bsinfo.utils.UnsafeMemory;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
@@ -101,7 +103,7 @@ class MessageExporterDefault extends AbstractMessageExporter {
 
     @Override
     public void writeString(final String p_str) {
-        writeByteArray(p_str.getBytes());
+        writeByteArray(p_str.getBytes(StandardCharsets.US_ASCII));
     }
 
     @Override
@@ -180,12 +182,4 @@ class MessageExporterDefault extends AbstractMessageExporter {
         writeLongs(p_array);
     }
 
-    @Override
-    public void writeStringArray(final String[] p_array) {
-        writeCompactNumber(p_array.length);
-
-        for (int i = 0; i < p_array.length; i++) {
-            writeString(p_array[i]);
-        }
-    }
 }

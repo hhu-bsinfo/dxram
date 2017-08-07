@@ -273,19 +273,6 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
     }
 
     @Override
-    public void writeStringArray(final String[] p_array) {
-        try {
-            m_file.writeInt(p_array.length);
-
-            for (int i = 0; i < p_array.length; i++) {
-                writeString(p_array[i]);
-            }
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
     public void importObject(final Importable p_object) {
         p_object.importObject(this);
     }
@@ -500,21 +487,6 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
         try {
             long[] arr = new long[m_file.readInt()];
             readLongs(arr);
-            return arr;
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public String[] readStringArray(final String[] p_array) {
-        try {
-            String[] arr = new String[m_file.readInt()];
-
-            for (int i = 0; i < arr.length; i++) {
-                arr[i] = readString(null);
-            }
-
             return arr;
         } catch (final IOException e) {
             throw new RuntimeException(e);
