@@ -97,8 +97,8 @@ public final class RequestMap {
             request = m_pendingRequests[i];
             if (request != null && request.getDestination() == p_nodeID) {
                 request.abort();
+                m_pendingRequests[i] = null;
             }
-            m_pendingRequests[i] = null;
         }
         m_lock.writeLock().unlock();
     }
