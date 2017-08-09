@@ -31,6 +31,12 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
     }
 
     @Override
+    public String toString() {
+        return "m_bufferAddress 0x" + Long.toHexString(m_bufferAddress) + ", m_currentPosition " + m_currentPosition + ", m_skipBytes " + m_skipBytes +
+                ", m_skippedBytes " + m_skippedBytes + ", m_unfinishedOperation " + m_unfinishedOperation;
+    }
+
+    @Override
     public int getPosition() {
         return m_currentPosition;
     }
@@ -267,7 +273,7 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
     @Override
     public int readBytes(byte[] p_array, int p_offset, int p_length) {
         if (m_skippedBytes < m_unfinishedOperation.getIndex()) {
-            // Bytes were read before
+            // Full skip, bytes were read before
             m_skippedBytes += p_length;
         } else if (m_skippedBytes < m_skipBytes) {
             // Bytes were partly de-serialized -> continue

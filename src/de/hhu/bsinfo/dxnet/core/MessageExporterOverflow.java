@@ -26,6 +26,12 @@ class MessageExporterOverflow extends AbstractMessageExporter {
     }
 
     @Override
+    public String toString() {
+        return "m_bufferAddress 0x" + Long.toHexString(m_bufferAddress) + ", m_bufferSize " + m_bufferSize + ", m_currentPosition " + m_currentPosition +
+                ", m_startPosition " + m_startPosition;
+    }
+
+    @Override
     public int getNumberOfWrittenBytes() {
         return m_bufferSize - m_startPosition + m_currentPosition;
     }

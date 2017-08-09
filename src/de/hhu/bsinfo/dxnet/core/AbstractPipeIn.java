@@ -2,9 +2,9 @@ package de.hhu.bsinfo.dxnet.core;
 
 import java.util.Arrays;
 
+import de.hhu.bsinfo.dxnet.MessageHandlers;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.dxnet.MessageHandlers;
 import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.UnsafeMemory;
 
@@ -297,11 +297,13 @@ public abstract class AbstractPipeIn {
             return m_importers.returnImporter(importer, false);
         }
 
-        int readBytes = m_importers.returnImporter(importer, true);
+        int readBytes = importer.getNumberOfReadBytes();
         if (readBytes < p_bytesToRead) {
             throw new NetworkRuntimeException("Message buffer is too large: " + p_bytesToRead + " > " + readBytes + " (payload in bytes), current Message: " +
-                    m_currentMessage.getClass().getName());
+                    m_currentMessage.getClass().getName() + ", importer type: " + importer.getClass().getSimpleName() + ", importer detail: " + importer);
         }
+
+        m_importers.returnImporter(importer, true);
 
         m_currentPosition = importer.getPosition();
 

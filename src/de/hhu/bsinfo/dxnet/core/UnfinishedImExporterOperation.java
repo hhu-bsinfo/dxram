@@ -9,11 +9,17 @@ class UnfinishedImExporterOperation {
     private int m_startIndex;
     private long m_primitive;
     private Object m_object;
+    private String m_prevImExporter = "";
 
     /**
      * Creates an instance of UnfinishedImExporterOperation
      */
     UnfinishedImExporterOperation() {
+    }
+
+    @Override
+    public String toString() {
+        return "m_startIndex " + m_startIndex + ", m_primitive " + m_primitive + ", m_object " + m_object + ", m_prevImExporter " + m_prevImExporter;
     }
 
     /**
@@ -49,8 +55,18 @@ class UnfinishedImExporterOperation {
      * @param p_index
      *         the index
      */
-    void setIndex(final int p_index) {
+    void setIndex(final int p_index, final String p_curImExporter) {
         m_startIndex = p_index;
+
+        // Leaving this here for debugging
+        // StringBuilder builder = new StringBuilder();
+        // for (StackTraceElement elem : Thread.currentThread().getStackTrace()) {
+        //     builder.append(elem);
+        //     builder.append('\n');
+        //}
+        // m_prevImExporter = p_curImExporter + ", index " + p_index + '\n' + builder;
+
+        m_prevImExporter = p_curImExporter + ", index " + p_index;
     }
 
     /**

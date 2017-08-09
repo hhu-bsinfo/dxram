@@ -22,6 +22,11 @@ class MessageImporterDefault extends AbstractMessageImporter {
     }
 
     @Override
+    public String toString() {
+        return "m_bufferAddress 0x" + Long.toHexString(m_bufferAddress) + ", m_currentPosition " + m_currentPosition + ", m_startPosition " + m_startPosition;
+    }
+
+    @Override
     public int getPosition() {
         return m_currentPosition;
     }
