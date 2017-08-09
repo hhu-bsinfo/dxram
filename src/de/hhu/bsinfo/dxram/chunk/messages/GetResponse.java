@@ -13,11 +13,12 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import de.hhu.bsinfo.dxram.data.ChunkState;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkState;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 
 /**
@@ -105,9 +106,9 @@ public class GetResponse extends Response {
         for (int i = 0; i < m_dataChunks.length; i++) {
             if (m_dataChunks[i] == null) {
                 // indicate no data available
-                p_exporter.writeByte((byte) 0);
+                p_exporter.writeByte((byte) ChunkState.DOES_NOT_EXIST.ordinal());
             } else {
-                p_exporter.writeByte((byte) 1);
+                p_exporter.writeByte((byte) ChunkState.OK.ordinal());
                 p_exporter.writeBytes(m_dataChunks[i]);
             }
         }
@@ -122,11 +123,15 @@ public class GetResponse extends Response {
         GetRequest request = (GetRequest) getCorrespondingRequest();
 
         for (DataStructure chunk : request.getChunks()) {
-            if (p_importer.readByte((byte) (chunk.getState() == ChunkState.OK ? 1 : 0)) == 1) {
-                chunk.setState(ChunkState.OK);
+            chunk.setState(ChunkState.values()[p_importer.readByte((byte) chunk.getState().ordinal())]);
+
+            if (chunk.getState() == ChunkState.OK) {
                 p_importer.importObject(chunk);
             } else {
-                chunk.setState(ChunkState.DOES_NOT_EXIST);
+                System.out.println("-----Chunk DOES_NOT_EXIST " + ChunkID.toHexString(chunk.getID()));
+                for (DataStructure chunk2 : request.getChunks()) {
+                    System.out.println(chunk2);
+                }
             }
         }
     }
