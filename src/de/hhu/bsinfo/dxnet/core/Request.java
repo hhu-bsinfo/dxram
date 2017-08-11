@@ -80,17 +80,6 @@ public abstract class Request extends Message {
         m_response = null;
     }
 
-    // Getters
-
-    /**
-     * Checks if the network timeout for the request should be ignored
-     *
-     * @return true if the timeout should be ignored, false otherwise
-     */
-    public final boolean isTimeoutIgnored() {
-        return m_ignoreTimeout;
-    }
-
     /**
      * Set the ignore timeout option
      *
@@ -120,31 +109,11 @@ public abstract class Request extends Message {
     }
 
     /**
-     * Checks if the Request is fulfilled
-     *
-     * @return true if the Request is fulfilled, false otherwise
-     */
-    public final boolean isFulfilled() {
-        return m_fulfilled;
-    }
-
-    /**
-     * Checks if the Request is aborted
-     *
-     * @return true if the Request is aborted, false otherwise
-     */
-    public final boolean isAborted() {
-        return m_aborted;
-    }
-
-    /**
      * Aborts waiting on response. Is called on failure detection
      */
     public final void abort() {
         m_aborted = true;
     }
-
-    // Setters
 
     /**
      * Get the Response

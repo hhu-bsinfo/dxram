@@ -19,9 +19,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxnet.nio.NIOBufferPool;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.dxnet.nio.NIOBufferPool;
 
 /**
  * The MessageCreator builds messages and forwards them to the MessageHandlers.
@@ -54,17 +54,17 @@ public class MessageCreator extends Thread {
     /**
      * Creates an instance of MessageCreator
      *
-     * @param p_osBufferSize
-     *         the incoming buffer size
+     * @param p_maxIncomingBufferSize
+     *         the max incoming buffer size
      */
-    public MessageCreator(final int p_osBufferSize) {
+    public MessageCreator(final int p_maxIncomingBufferSize) {
         m_size = 2 * (2 * 1024 + 1);
         m_connectionBuffer = new AbstractConnection[m_size];
         m_directBuffers = new NIOBufferPool.DirectBufferWrapper[m_size];
         m_bufferHandleBuffer = new long[m_size];
         m_addrBuffer = new long[m_size];
         m_sizeBuffer = new int[m_size];
-        m_maxBytes = p_osBufferSize * 8;
+        m_maxBytes = p_maxIncomingBufferSize * 8;
         m_currentBytes = 0;
 
         m_posFront = 0;
@@ -74,8 +74,6 @@ public class MessageCreator extends Thread {
 
     /**
      * Returns whether the ring-buffer is empty or not.
-     *
-     * @return whether the ring-buffer is empty or not
      */
     public boolean isEmpty() {
         return m_posFront == m_posBack;
@@ -83,8 +81,6 @@ public class MessageCreator extends Thread {
 
     /**
      * Returns whether the ring-buffer is full or not.
-     *
-     * @return whether the ring-buffer is full or not
      */
     public boolean isFull() {
         return (m_posBack + 2) % m_size == m_posFront % m_size;
@@ -92,22 +88,11 @@ public class MessageCreator extends Thread {
 
     /**
      * Returns the number of pending buffers.
-     *
-     * @return the number of pending buffers
      */
     public int size() {
         return (m_posBack - m_posFront) / 2;
     }
 
-    /**
-     * When an object implementing interface {@code Runnable} is used
-     * to create a thread, starting the thread causes the object's {@code run} method to be called in that
-     * separately executing
-     * thread.
-     * The general contract of the method {@code run} is that it may take any action whatsoever.
-     *
-     * @see java.lang.Thread#run()
-     */
     @Override
     public void run() {
         AbstractConnection connection;
@@ -162,7 +147,7 @@ public class MessageCreator extends Thread {
     }
 
     /**
-     * Shutdown
+     * Shutdown the message creator thread
      */
     public void shutdown() {
         // #if LOGGER == INFO
@@ -187,10 +172,18 @@ public class MessageCreator extends Thread {
     }
 
     /**
-     * Adds a job (connection and incoming buffer) at the end of the buffer.
+     * Adds a job with connection and incoming buffer to the end of the ring buffer.
      *
      * @param p_connection
      *         the connection associated with the buffer
+     * @param p_directBufferWrapper
+     *         Used on NIO to wrap an incoming buffer
+     * @param p_bufferHandle
+     *         Implementation dependent handle identifying the buffer
+     * @param p_addr
+     *         (Unsafe) address to the incoming buffer
+     * @param p_size
+     *         Size of the incoming buffer
      * @return whether the job was added or not
      */
     public boolean pushJob(final AbstractConnection p_connection, final NIOBufferPool.DirectBufferWrapper p_directBufferWrapper, final long p_bufferHandle,

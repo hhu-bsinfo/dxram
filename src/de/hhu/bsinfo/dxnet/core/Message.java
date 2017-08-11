@@ -23,6 +23,7 @@ import de.hhu.bsinfo.utils.NodeID;
  *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Marc Ewert, marc.ewert@hhu.de, 18.09.2014
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.08.2017
  */
 public abstract class Message {
 
@@ -53,8 +54,6 @@ public abstract class Message {
     private boolean m_exclusivity;
 
     private int m_oldMessageID = INVALID_MESSAGE_ID;
-
-    // Constructors
 
     /**
      * Creates an instance of Message
@@ -146,6 +145,12 @@ public abstract class Message {
         m_exclusivity = p_exclusivity;
     }
 
+    /**
+     * (Re-) initialize the message with a (new) header
+     *
+     * @param p_header
+     *         Message header to apply to the message
+     */
     void initialize(final MessageHeader p_header) {
         m_messageID = p_header.getMessageID();
         m_type = p_header.getType();
@@ -153,8 +158,6 @@ public abstract class Message {
         m_messageType = p_header.getMessageType();
         m_exclusivity = p_header.isExclusive();
     }
-
-    // Getters
 
     /**
      * Get the source
@@ -231,20 +234,18 @@ public abstract class Message {
     }
 
     /**
-     * Serialize the message into given byte buffer
+     * Serialize the message using the provided exporter
      *
      * @param p_exporter
      *         the AbstractMessageExporter to export message with
      * @param p_messageSize
-     *         the message to serialize
+     *         the size of the message to serialize
      * @throws NetworkException
      *         if message could not be serialized
      */
     public final void serialize(final AbstractMessageExporter p_exporter, final int p_messageSize) throws NetworkException {
-        fillBuffer(p_exporter, p_messageSize - HEADER_SIZE);
+        writeMessage(p_exporter, p_messageSize - HEADER_SIZE);
     }
-
-    // Setters
 
     @Override
     public final String toString() {
@@ -255,7 +256,12 @@ public abstract class Message {
         }
     }
 
-    // Methods
+    /**
+     * Get the total size of the message (header + payload)
+     */
+    int getTotalSize() {
+        return HEADER_SIZE + getPayloadLength();
+    }
 
     /**
      * Get the total number of bytes the payload requires to create a buffer.
@@ -266,11 +272,6 @@ public abstract class Message {
         return 0;
     }
 
-    int getTotalSize() {
-        return HEADER_SIZE + getPayloadLength();
-    }
-
-    // @formatter:off
     /**
      * Reads the message payload
      * This method might be interrupted on every operation as payload can be scattered over several packets (this is always
@@ -278,25 +279,23 @@ public abstract class Message {
      * for one single message. Thus, every operation in overwritten methods must be idempotent (same result for repeated
      * execution). All available import methods from importer guarantee idempotence and work atomically (read all or nothing).
      * Spare other I/O accesses and prints.
-     *
      * Example implementation for data structures (importable, exportable objects):
-     *  if (m_obj == null) {
-     *      m_obj = new ImExObject();
-     *  }
-     *  p_importer.importObject(m_obj);
-     *
+     * if (m_obj == null) {
+     * m_obj = new ImExObject();
+     * }
+     * p_importer.importObject(m_obj);
      * Example implementation for array lists:
-     *  m_size = p_importer.readInt(m_size);
-     *  if (m_arrayList == null) {
-     *      // Do not overwrite array list after overflow
-     *      m_arrayList = new ArrayList<>(m_size);
-     *  }
-     *  for (int i = 0; i < m_size; i++) {
-     *      long l = p_importer.readLong(0);
-     *      if (m_arrayList.size() == i) {
-     *          m_arrayList.add(l);
-     *      }
-     *  }
+     * m_size = p_importer.readInt(m_size);
+     * if (m_arrayList == null) {
+     * // Do not overwrite array list after overflow
+     * m_arrayList = new ArrayList<>(m_size);
+     * }
+     * for (int i = 0; i < m_size; i++) {
+     * long l = p_importer.readLong(0);
+     * if (m_arrayList.size() == i) {
+     * m_arrayList.add(l);
+     * }
+     * }
      *
      * @param p_importer
      *         the importer
@@ -345,16 +344,16 @@ public abstract class Message {
     }
 
     /**
-     * Fills a given ByteBuffer with the message
+     * Write the message using the provided exporter
      *
      * @param p_exporter
      *         the AbstractMessageExporter to export message with
      * @param p_payloadSize
-     *         the payload size
+     *         the payload size of the message
      * @throws NetworkException
-     *         if message buffer is too small
+     *         If writing the message failed
      */
-    private void fillBuffer(final AbstractMessageExporter p_exporter, final int p_payloadSize) throws NetworkException {
+    private void writeMessage(final AbstractMessageExporter p_exporter, final int p_payloadSize) throws NetworkException {
         try {
             // Message reused (probably pooled)
             if (m_messageID == m_oldMessageID) {

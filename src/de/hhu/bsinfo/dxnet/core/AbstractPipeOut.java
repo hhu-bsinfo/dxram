@@ -9,7 +9,9 @@ import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 
 /**
- * Created by nothaas on 6/9/17.
+ * Endpoint for outgoing data on a connection.
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 09.06.2017
  */
 public abstract class AbstractPipeOut {
     private static final StatisticsOperation SOP_FC_DATA_TO_SEND = StatisticsRecorderManager.getOperation(AbstractPipeOut.class, "FCDataToSend");
@@ -25,6 +27,18 @@ public abstract class AbstractPipeOut {
     private AtomicLong m_sentMessages;
     private AtomicLong m_sentData;
 
+    /**
+     * Constructor
+     *
+     * @param p_ownNodeId
+     *         Node id of the current instance (sender)
+     * @param p_destinationNodeId
+     *         Node id of the remote (receiver)
+     * @param p_flowControl
+     *         FlowControl instance of the connection
+     * @param p_outgoingBuffer
+     *         OutgoingRingBuffer instance of the connection
+     */
     protected AbstractPipeOut(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
             final OutgoingRingBuffer p_outgoingBuffer) {
         m_ownNodeID = p_ownNodeId;
@@ -37,38 +51,68 @@ public abstract class AbstractPipeOut {
         m_sentData = new AtomicLong(0);
     }
 
-    short getOwnNodeID() {
-        return m_ownNodeID;
-    }
-
+    /**
+     * Get the node id of the destination receiving sent data
+     */
     public short getDestinationNodeID() {
         return m_destinationNodeID;
     }
 
+    /**
+     * Check if the pipe is connected to the remote
+     */
     public boolean isConnected() {
         return m_isConnected;
     }
 
+    /**
+     * Set the pipe connected to the remote
+     */
     public void setConnected(final boolean p_connected) {
         m_isConnected = p_connected;
     }
 
-    public long getSentMessageCount() {
-        return m_sentMessages.get();
-    }
-
-    public long getSentDataBytes() {
-        return m_sentData.get();
-    }
-
+    /**
+     * Get the FlowControl instance connected to the pipe
+     */
     protected AbstractFlowControl getFlowControl() {
         return m_flowControl;
     }
 
+    /**
+     * Check if the outgoing buffer is currently empty
+     *
+     * @return True if empty, false otherwise
+     */
     public boolean isOutgoingQueueEmpty() {
         return m_outgoing.isEmpty();
     }
 
+    /**
+     * Call this when your transport finished sending out data
+     *
+     * @param p_writtenBytes
+     *         Number of bytes recently sent
+     */
+    public void dataProcessed(final int p_writtenBytes) {
+        m_outgoing.shiftFront(p_writtenBytes);
+    }
+
+    /**
+     * Get the node id of the current instance
+     */
+    short getOwnNodeID() {
+        return m_ownNodeID;
+    }
+
+    /**
+     * Post a message to this pipe
+     *
+     * @param p_message
+     *         Message to post
+     * @throws NetworkException
+     *         If deserializing the message to the buffer or posting a write request failed
+     */
     void postMessage(final Message p_message) throws NetworkException {
         // #if LOGGER >= TRACE
         LOGGER.trace("Writing message %s to pipe out of dest 0x%X", p_message, m_destinationNodeID);
@@ -99,14 +143,23 @@ public abstract class AbstractPipeOut {
         m_outgoing.pushMessage(p_message, messageTotalSize, this);
     }
 
-    public void dataProcessed(final int p_writtenBytes) {
-        m_outgoing.shiftFront(p_writtenBytes);
-    }
-
+    /**
+     * Check if the pipe is opened
+     */
     protected abstract boolean isOpen();
 
+    /**
+     * Callback when a message is deserialized to the outgoing buffer. Trigger your backend
+     * to send the data.
+     *
+     * @param p_size
+     *         Number of bytes posted and ready to send
+     */
     protected abstract void bufferPosted(final int p_size);
 
+    /**
+     * Get the OutgoingRingBuffer of this pipe/connection
+     */
     protected OutgoingRingBuffer getOutgoingQueue() {
         return m_outgoing;
     }

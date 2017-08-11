@@ -21,8 +21,9 @@ import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 
 /**
- * The MessageCreator builds messages and forwards them to the MessageHandlers.
- * Uses a ring-buffer implementation for incoming buffers.
+ * Lock-free ring buffer implementation for outgoing messages. The implementation allows many threads to
+ * serialize their messages to send directly into the buffer. The backends can use this (unsafe)
+ * buffer to write the contents directly to the implemented transport without creating any copies.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.05.2016
  */
@@ -48,6 +49,9 @@ public class OutgoingRingBuffer {
 
     /**
      * Creates an instance of OutgoingRingBuffer
+     *
+     * @param p_exporterPool
+     *         Pool with exporters to use for serializing messages
      */
     protected OutgoingRingBuffer(final AbstractExporterPool p_exporterPool) {
         m_posFront = 0;
@@ -116,6 +120,8 @@ public class OutgoingRingBuffer {
      *         the outgoing message
      * @param p_messageSize
      *         the message's bytesAvailable including message header
+     * @param p_pipeOut
+     *         Outgoing pipe of the connection this outgoing buffer is assigned to
      * @throws NetworkException
      *         if message could not be serialized
      */
@@ -245,6 +251,8 @@ public class OutgoingRingBuffer {
      *         the message to send
      * @param p_messageSize
      *         the message bytesAvailable
+     * @param p_pipeOut
+     *         Outgoing pipe of the connection this outgoing buffer is assigned to
      * @throws NetworkException
      *         if message could not be serialized
      */

@@ -23,14 +23,16 @@ import de.hhu.bsinfo.dxnet.ConnectionManagerListener;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
- * Manages the network connections
+ * Abstract class for a connection manager. Manage connections to keep only a max amount of connections
+ * opened to reduce the resource footprint. Furthermore, depending on the transport type implemented,
+ * handle connection creation, opening, closing and deletion.
  *
  * @author Florian Klein, florian.klein@hhu.de, 18.03.2012
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.08.2017
  */
 public abstract class AbstractConnectionManager {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractConnectionManager.class.getSimpleName());
 
-    protected final int m_maxConnections;
     protected final AbstractConnection[] m_connections;
     protected final ReentrantLock m_connectionCreationLock;
 
@@ -38,8 +40,13 @@ public abstract class AbstractConnectionManager {
 
     protected ConnectionManagerListener m_listener;
 
+    private final int m_maxConnections;
+
     /**
-     * Creates an instance of ConnectionStore
+     * Constructor
+     *
+     * @param p_maxConnections
+     *         Max number of connections to keep active simultaneously
      */
     protected AbstractConnectionManager(final int p_maxConnections) {
         m_maxConnections = p_maxConnections;
@@ -50,10 +57,7 @@ public abstract class AbstractConnectionManager {
     }
 
     /**
-     * Set listener
-     *
-     * @param p_listener
-     *         the listener
+     * Set connection manager listener to receive callbacks when a node connected or disconnected
      */
     public void setListener(final ConnectionManagerListener p_listener) {
         m_listener = p_listener;
@@ -62,7 +66,7 @@ public abstract class AbstractConnectionManager {
     /**
      * Returns the status of all connections
      *
-     * @return the statuses
+     * @return Status of all connections (debug string)
      */
     public String getConnectionStatuses() {
         StringBuilder ret = new StringBuilder();
@@ -82,10 +86,10 @@ public abstract class AbstractConnectionManager {
      * Get the connection for the given destination
      *
      * @param p_destination
-     *         the destination
-     * @return the connection
+     *         Node id of the destination
+     * @return A valid reference if the connection is available, null otherwise
      * @throws NetworkException
-     *         if the connection could not be get
+     *         If the connection does not exist and creating the connection failed
      */
     public AbstractConnection getConnection(final short p_destination) throws NetworkException {
         AbstractConnection ret;
@@ -130,7 +134,7 @@ public abstract class AbstractConnectionManager {
     }
 
     /**
-     * Closes the AbstractConnectionManager
+     * Closes all active connections and cleans up the connection manager
      */
     public void close() {
         closeAllConnections();
@@ -141,26 +145,30 @@ public abstract class AbstractConnectionManager {
     }
 
     /**
-     * Creates a new connection to the given destination and opens the outgoing socket channel
+     * Creates a new connection to the given destination
      *
      * @param p_destination
-     *         the destination
-     * @return a new connection
+     *         Node id of the destination
+     * @param p_existingConnection
+     *         Parameter required for NIO implementation
+     * @return New connection to the specified destination
      * @throws NetworkException
-     *         if the connection could not be created
+     *         If the connection could not be created
      */
     protected abstract AbstractConnection createConnection(final short p_destination, final AbstractConnection p_existingConnection) throws NetworkException;
 
     /**
-     * Closes the given connection
+     * Close an active connection
      *
      * @param p_connection
-     *         the connection
+     *         Connection to close
+     * @param p_removeConnection
+     *         True to remove the connection resources currently allocated as well or false to keep them to allow re-opening the connection quickly
      */
     protected abstract void closeConnection(final AbstractConnection p_connection, final boolean p_removeConnection);
 
     /**
-     * Closes all connections
+     * Close all connections
      */
     private void closeAllConnections() {
         AbstractConnection connection = null;
@@ -189,7 +197,7 @@ public abstract class AbstractConnectionManager {
     }
 
     /**
-     * Dismiss the connection randomly
+     * Dismiss a connection randomly
      */
     protected void dismissRandomConnection() {
         int random = -1;

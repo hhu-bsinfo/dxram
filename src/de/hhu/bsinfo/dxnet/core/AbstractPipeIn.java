@@ -9,7 +9,9 @@ import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.UnsafeMemory;
 
 /**
- * Created by nothaas on 6/9/17.
+ * Endpoint for incoming data on a connection.
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 09.06.2017
  */
 public abstract class AbstractPipeIn {
     private static final StatisticsOperation SOP_PROCESS = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "ProcessBuffer");
@@ -35,6 +37,22 @@ public abstract class AbstractPipeIn {
     private final Message[] m_normalMessages = new Message[25];
     private final Message[] m_exclusiveMessages = new Message[25];
 
+    /**
+     * Constructor
+     *
+     * @param p_ownNodeId
+     *         Node id of the current instance (receiver)
+     * @param p_destinationNodeId
+     *         Node id of the destination to receive data from
+     * @param p_flowControl
+     *         FlowControl instance of the connection
+     * @param p_messageDirectory
+     *         MessageDirectory instance
+     * @param p_requestMap
+     *         RequestMap instance
+     * @param p_messageHandlers
+     *         MessageHandlers instance
+     */
     protected AbstractPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl,
             final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final MessageHandlers p_messageHandlers) {
         m_ownNodeID = p_ownNodeId;
@@ -48,24 +66,25 @@ public abstract class AbstractPipeIn {
         m_requestMap = p_requestMap;
     }
 
-    short getOwnNodeID() {
-        return m_ownNodeID;
-    }
-
+    /**
+     * Get the node id of the destination to receive data from
+     */
     public short getDestinationNodeID() {
         return m_destinationNodeID;
     }
 
+    /**
+     * Check if the pipe is connected to the remote
+     */
     public boolean isConnected() {
         return m_isConnected;
     }
 
+    /**
+     * Set the pipe connected
+     */
     public void setConnected(final boolean p_connected) {
         m_isConnected = p_connected;
-    }
-
-    public long getReceivedMessageCount() {
-        return m_receivedMessages;
     }
 
     @Override
@@ -74,16 +93,42 @@ public abstract class AbstractPipeIn {
                 ", m_flowControl " + m_flowControl + ", m_receivedMessages " + m_receivedMessages + ']';
     }
 
+    /**
+     * Return a processed buffer (to a buffer pool)
+     *
+     * @param p_obj
+     *         Buffer object to return (implementation dependant)
+     * @param p_bufferHandle
+     *         Buffer handle to return (implementation dependant)
+     */
     public abstract void returnProcessedBuffer(final Object p_obj, final long p_bufferHandle);
 
+    /**
+     * Check if the pipe is opened
+     */
     public abstract boolean isOpen();
 
+    /**
+     * Get the FlowControl instance connected to the pipe
+     */
     protected AbstractFlowControl getFlowControl() {
         return m_flowControl;
     }
 
     /**
-     * Adds a buffer to byte stream and creates a message if all data was gathered.
+     * Get the node id of the current instance
+     */
+    short getOwnNodeID() {
+        return m_ownNodeID;
+    }
+
+    /**
+     * Process an incoming buffer.
+     *
+     * @param p_addr
+     *         (Unsafe) address to the buffer
+     * @param p_bytesAvailable
+     *         Number of bytes available for processing
      */
     void processBuffer(final long p_addr, final int p_bytesAvailable) throws NetworkException {
         int bytesRead;
@@ -162,7 +207,7 @@ public abstract class AbstractPipeIn {
                         SOP_DELIVER.enter();
                         // #endif /* STATISTICS */
 
-                        deliverMessages(m_normalMessages);
+                        m_messageHandlers.newMessages(m_normalMessages);
                         Arrays.fill(m_normalMessages, null);
                         counterNormal = 0;
 
@@ -179,7 +224,7 @@ public abstract class AbstractPipeIn {
                         SOP_DELIVER.enter();
                         // #endif /* STATISTICS */
 
-                        deliverMessages(m_exclusiveMessages);
+                        m_messageHandlers.newMessages(m_exclusiveMessages);
                         Arrays.fill(m_exclusiveMessages, null);
                         counterExclusive = 0;
 
@@ -200,12 +245,12 @@ public abstract class AbstractPipeIn {
         // #endif /* STATISTICS */
 
         if (counterNormal > 0) {
-            deliverMessages(m_normalMessages);
+            m_messageHandlers.newMessages(m_normalMessages);
             Arrays.fill(m_normalMessages, 0, counterNormal, null);
         }
 
         if (counterExclusive > 0) {
-            deliverMessages(m_exclusiveMessages);
+            m_messageHandlers.newMessages(m_exclusiveMessages);
             Arrays.fill(m_exclusiveMessages, 0, counterExclusive, null);
         }
 
@@ -218,6 +263,17 @@ public abstract class AbstractPipeIn {
         // #endif /* STATISTICS */
     }
 
+    /**
+     * Create a message from a given buffer
+     *
+     * @param p_addr
+     *         (Unsafe) address to buffer
+     * @param p_bytesAvailable
+     *         Number of bytes available in buffer
+     * @return New message instance created from the buffer(s)
+     * @throws NetworkException
+     *         If creating/reading/deserializing the message failed
+     */
     private Message createMessage(final long p_addr, final int p_bytesAvailable) throws NetworkException {
         Message ret;
         byte type = m_currentHeader.getType();
@@ -266,6 +322,17 @@ public abstract class AbstractPipeIn {
         return ret;
     }
 
+    /**
+     * Read the header of a message from a buffer
+     *
+     * @param p_addr
+     *         (Unsafe) address of the buffer
+     * @param p_bytesAvailable
+     *         Number of bytes available in the buffer
+     * @param p_bytesToRead
+     *         Number of bytes to read from the buffer
+     * @return Number of bytes actually read from the buffer
+     */
     private int readHeader(final long p_addr, final int p_bytesAvailable, final int p_bytesToRead) {
         AbstractMessageImporter importer = m_importers.getImporter(p_addr, m_currentPosition, p_bytesAvailable, p_bytesToRead);
 
@@ -282,9 +349,15 @@ public abstract class AbstractPipeIn {
     }
 
     /**
-     * Create a message from a given buffer
+     * Read the payload of a message from a buffer
      *
-     * @return number of read bytes
+     * @param p_addr
+     *         (Unsafe) address of a buffer
+     * @param p_bytesAvailable
+     *         Number of bytes available in the buffer
+     * @param p_bytesToRead
+     *         Number of bytes to read from the buffer
+     * @return Number of bytes actually read from the buffer
      */
     private int readPayload(final long p_addr, final int p_bytesAvailable, final int p_bytesToRead) {
         AbstractMessageImporter importer = m_importers.getImporter(p_addr, m_currentPosition, p_bytesAvailable, p_bytesToRead);
@@ -308,15 +381,5 @@ public abstract class AbstractPipeIn {
         m_currentPosition = importer.getPosition();
 
         return readBytes;
-    }
-
-    /**
-     * Informs the ConnectionListener about new messages
-     *
-     * @param p_messages
-     *         the new messages
-     */
-    private void deliverMessages(final Message[] p_messages) {
-        m_messageHandlers.newMessages(p_messages);
     }
 }

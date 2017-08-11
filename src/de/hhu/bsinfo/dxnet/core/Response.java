@@ -45,17 +45,6 @@ public class Response extends Message {
         m_correspondingRequest = p_request;
     }
 
-    // Getters
-
-    /**
-     * Get the responseID
-     *
-     * @return the responseID
-     */
-    public final int getResponseID() {
-        return getMessageID();
-    }
-
     /**
      * Returns the corresponding request
      *

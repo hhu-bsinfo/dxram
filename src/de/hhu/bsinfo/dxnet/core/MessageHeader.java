@@ -39,30 +39,51 @@ class MessageHeader implements Importable {
     MessageHeader() {
     }
 
+    /**
+     * ID of the message
+     */
     int getMessageID() {
         return m_messageID;
     }
 
+    /**
+     * Message type
+     */
     byte getType() {
         return m_type;
     }
 
+    /**
+     * Message subtype
+     */
     byte getSubtype() {
         return m_subtype;
     }
 
+    /**
+     * Type of message (normal message or request)
+     */
     byte getMessageType() {
         return (byte) (m_messageTypeExc >> 4);
     }
 
+    /**
+     * Check if message is exclusive
+     */
     boolean isExclusive() {
         return (m_messageTypeExc & 0xF) == 1;
     }
 
+    /**
+     * Payload size of the message
+     */
     int getPayloadSize() {
         return m_payloadSize;
     }
 
+    /**
+     * Clear message header attributes
+     */
     void clear() {
         m_messageID = 0;
         m_type = 0;

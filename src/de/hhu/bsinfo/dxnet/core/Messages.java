@@ -1,7 +1,9 @@
 package de.hhu.bsinfo.dxnet.core;
 
 /**
- * Created by nothaas on 7/5/17.
+ * Message types reserved for the network subsystem
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 05.07.2017
  */
 public final class Messages {
     public static final byte NETWORK_MESSAGES_TYPE = 0;
