@@ -6,7 +6,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Created by nothaas on 6/13/17.
+ * Storage that holds all registered message receivers
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 12.06.2017
  */
 class MessageReceiverStore {
     private static final Logger LOGGER = LogManager.getFormatterLogger(MessageHandlers.class.getSimpleName());
@@ -16,6 +18,12 @@ class MessageReceiverStore {
 
     private final int m_requestTimeOut;
 
+    /**
+     * Constructor
+     *
+     * @param p_requestTimeOut
+     *         Timeout in ms for requests
+     */
     MessageReceiverStore(final int p_requestTimeOut) {
         m_requestTimeOut = p_requestTimeOut;
 
@@ -23,6 +31,15 @@ class MessageReceiverStore {
         m_receiversLock = new ReentrantLock(false);
     }
 
+    /**
+     * Get a receiver
+     *
+     * @param p_type
+     *         Type of the message
+     * @param p_subtype
+     *         Subtype of the message
+     * @return Receiver for the specified type/subtype messages
+     */
     MessageReceiver getReceiver(final byte p_type, final byte p_subtype) {
         long deadline;
         MessageReceiver messageReceiver = m_receivers[p_type][p_subtype];

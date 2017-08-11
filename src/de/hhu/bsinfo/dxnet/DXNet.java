@@ -38,11 +38,14 @@ import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**
- * Access the network through Java NIO
+ * DXNet main class. The network subsystem supports different types of transport. Ethernet using Java NIO and InfiniBand using libibverbs through an
+ * additional JNI library (libJNIIbdxnet). The network allows you to easily send messages, requests or responses to requests to another destination, receive
+ * incoming messages or requests and process them in your application.
  *
  * @author Florian Klein, florian.klein@hhu.de, 18.03.2012
  * @author Marc Ewert, marc.ewert@hhu.de, 14.08.2014
  * @author Kevin Beineke, kevin.beineke@hhu.de, 20.11.2015
+ * @author Stefan Nothaas, kevin.beineke@hhu.de, 11.08.2017
  */
 public final class DXNet {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXNet.class.getSimpleName());
@@ -65,7 +68,18 @@ public final class DXNet {
 
     private final AbstractConnectionManager m_connectionManager;
 
-    // TODO doc
+    /**
+     * Constructor
+     *
+     * @param p_config
+     *         Configuration parameters for the core
+     * @param p_nioConfig
+     *         Configuration parameters for NIO
+     * @param p_ibConfig
+     *         Configuration parameters for InfiniBand
+     * @param p_nodeMap
+     *         NodeMap implementation to lookup node ids
+     */
     public DXNet(final CoreConfig p_config, final NIOConfig p_nioConfig, final IBConfig p_ibConfig, final NodeMap p_nodeMap) {
         m_config = p_config;
         m_nioConfig = p_nioConfig;
@@ -103,9 +117,7 @@ public final class DXNet {
     }
 
     /**
-     * Returns the status of the network module
-     *
-     * @return the status
+     * Get the status of the network system (debug string)
      */
     public String getStatus() {
         String str = "";
@@ -115,12 +127,15 @@ public final class DXNet {
         return str;
     }
 
+    /**
+     * Set the ConnectionManager listener
+     */
     public void setConnectionManagerListener(final ConnectionManagerListener p_listener) {
         m_connectionManager.setListener(p_listener);
     }
 
     /**
-     * Registers a message type
+     * Registers a new message type
      *
      * @param p_type
      *         the unique type
@@ -151,7 +166,7 @@ public final class DXNet {
     }
 
     /**
-     * Closes the network handler
+     * Closes the network
      */
     public void close() {
         m_messageHandlers.close();
@@ -190,12 +205,13 @@ public final class DXNet {
     }
 
     /**
-     * Connects a node.
+     * Try to force connect to a specific node. When sending messages, the system tries to connect to the destination first, if it is not connected,
+     * automatically. This call is mainly used to detect node failures.
      *
      * @param p_nodeID
-     *         Node to connect
+     *         Node to connect to
      * @throws NetworkException
-     *         If sending the message failed
+     *         If connecting to the node failed
      */
     public void connectNode(final short p_nodeID) throws NetworkException {
         // #if LOGGER == TRACE
@@ -282,7 +298,7 @@ public final class DXNet {
     }
 
     /**
-     * Send the Request and wait for fulfillment (wait for response).
+     * Send request and wait for fulfillment (wait for response).
      *
      * @param p_request
      *         The request to send.
@@ -291,7 +307,7 @@ public final class DXNet {
      * @param p_waitForResponses
      *         Set to false to not wait/block until the response arrived
      * @throws NetworkException
-     *         If sending the message failed
+     *         If sending the message failed or waiting for the response failed (timeout)
      */
     public void sendSync(final Request p_request, final int p_timeout, final boolean p_waitForResponses) throws NetworkException {
         // #if LOGGER == TRACE
@@ -341,7 +357,7 @@ public final class DXNet {
     }
 
     /**
-     * Cancel all pending requests waiting for a response
+     * Cancel all pending requests waiting for a response. Also used on node failure, only
      *
      * @param p_nodeId
      *         Node id of the target node the requests

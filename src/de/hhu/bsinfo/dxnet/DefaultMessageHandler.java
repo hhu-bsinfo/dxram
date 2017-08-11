@@ -5,14 +5,14 @@ import java.util.concurrent.locks.LockSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.dxnet.core.Message;
 
 /**
  * Executes incoming default messages
  *
- * @author Kevin Beineke 19.07.2016
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 19.07.2016
  */
 final class DefaultMessageHandler extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DefaultMessageHandler.class.getSimpleName());
