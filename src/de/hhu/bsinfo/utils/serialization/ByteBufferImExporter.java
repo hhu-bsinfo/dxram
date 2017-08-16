@@ -208,25 +208,25 @@ public class ByteBufferImExporter implements Importer, Exporter {
 
     @Override
     public void writeByteArray(final byte[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeBytes(p_array);
     }
 
     @Override
     public void writeShortArray(final short[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeShorts(p_array);
     }
 
     @Override
     public void writeIntArray(final int[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeInts(p_array);
     }
 
     @Override
     public void writeLongArray(final long[] p_array) {
-        writeInt(p_array.length);
+        writeCompactNumber(p_array.length);
         writeLongs(p_array);
     }
 
@@ -274,28 +274,28 @@ public class ByteBufferImExporter implements Importer, Exporter {
 
     @Override
     public byte[] readByteArray(final byte[] p_array) {
-        byte[] arr = new byte[readInt(0)];
+        byte[] arr = new byte[readCompactNumber(0)];
         readBytes(arr);
         return arr;
     }
 
     @Override
     public short[] readShortArray(final short[] p_array) {
-        short[] arr = new short[readInt(0)];
+        short[] arr = new short[readCompactNumber(0)];
         readShorts(arr);
         return arr;
     }
 
     @Override
     public int[] readIntArray(final int[] p_array) {
-        int[] arr = new int[readInt(0)];
+        int[] arr = new int[readCompactNumber(0)];
         readInts(arr);
         return arr;
     }
 
     @Override
     public long[] readLongArray(final long[] p_array) {
-        long[] arr = new long[readInt(0)];
+        long[] arr = new long[readCompactNumber(0)];
         readLongs(arr);
         return arr;
     }

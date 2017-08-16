@@ -234,42 +234,26 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
 
     @Override
     public void writeByteArray(final byte[] p_array) {
-        try {
-            m_file.writeInt(p_array.length);
-            writeBytes(p_array);
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeCompactNumber(p_array.length);
+        writeBytes(p_array);
     }
 
     @Override
     public void writeShortArray(final short[] p_array) {
-        try {
-            m_file.writeInt(p_array.length);
-            writeShorts(p_array);
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeCompactNumber(p_array.length);
+        writeShorts(p_array);
     }
 
     @Override
     public void writeIntArray(final int[] p_array) {
-        try {
-            m_file.writeInt(p_array.length);
-            writeInts(p_array);
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeCompactNumber(p_array.length);
+        writeInts(p_array);
     }
 
     @Override
     public void writeLongArray(final long[] p_array) {
-        try {
-            m_file.writeInt(p_array.length);
-            writeLongs(p_array);
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeCompactNumber(p_array.length);
+        writeLongs(p_array);
     }
 
     @Override
@@ -451,45 +435,29 @@ public class RandomAccessFileImExporter implements Importer, Exporter {
 
     @Override
     public byte[] readByteArray(final byte[] p_array) {
-        try {
-            byte[] arr = new byte[m_file.readInt()];
-            readBytes(arr);
-            return arr;
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        byte[] arr = new byte[readCompactNumber(0)];
+        readBytes(arr);
+        return arr;
     }
 
     @Override
     public short[] readShortArray(final short[] p_array) {
-        try {
-            short[] arr = new short[m_file.readInt()];
-            readShorts(arr);
-            return arr;
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        short[] arr = new short[readCompactNumber(0)];
+        readShorts(arr);
+        return arr;
     }
 
     @Override
     public int[] readIntArray(final int[] p_array) {
-        try {
-            int[] arr = new int[m_file.readInt()];
-            readInts(arr);
-            return arr;
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        int[] arr = new int[readCompactNumber(0)];
+        readInts(arr);
+        return arr;
     }
 
     @Override
     public long[] readLongArray(final long[] p_array) {
-        try {
-            long[] arr = new long[m_file.readInt()];
-            readLongs(arr);
-            return arr;
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        long[] arr = new long[readCompactNumber(0)];
+        readLongs(arr);
+        return arr;
     }
 }
