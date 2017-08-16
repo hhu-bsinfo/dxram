@@ -50,12 +50,11 @@ class ExclusiveMessageHandler extends Thread {
         MessageReceiver messageReceiver;
 
         while (!m_shutdown) {
+            // #ifdef STATISTICS
+            SOP_POP.enter();
+            // #endif /* STATISTICS */
+
             while (message == null && !m_shutdown) {
-
-                // #ifdef STATISTICS
-                SOP_POP.enter();
-                // #endif /* STATISTICS */
-
                 if (m_exclusiveMessages.isEmpty()) {
                     // #ifdef STATISTICS
                     SOP_POP_WAIT.enter();
@@ -79,13 +78,13 @@ class ExclusiveMessageHandler extends Thread {
                 message = m_exclusiveMessages.popMessage();
             }
 
-            if (m_shutdown) {
-                break;
-            }
-
             // #ifdef STATISTICS
             SOP_POP.leave();
             // #endif /* STATISTICS */
+
+            if (m_shutdown) {
+                break;
+            }
 
             messageReceiver = m_messageReceivers.getReceiver(message.getType(), message.getSubtype());
 
