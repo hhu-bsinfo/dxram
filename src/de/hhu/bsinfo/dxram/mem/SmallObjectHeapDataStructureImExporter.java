@@ -105,12 +105,12 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
 
     @Override
     public void writeFloat(final float p_v) {
-        throw new RuntimeException("Not supported.");
+        writeInt(Float.floatToIntBits(p_v));
     }
 
     @Override
     public void writeDouble(final double p_v) {
-        throw new RuntimeException("Not supported.");
+        writeLong(Double.doubleToLongBits(p_v));
     }
 
     @Override
@@ -185,12 +185,12 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
 
     @Override
     public float readFloat(final float p_float) {
-        throw new RuntimeException("Not supported.");
+        return Float.intBitsToFloat(readInt(0));
     }
 
     @Override
     public double readDouble(final double p_double) {
-        throw new RuntimeException("Not supported.");
+        return Double.longBitsToDouble(readLong(0));
     }
 
     @Override
