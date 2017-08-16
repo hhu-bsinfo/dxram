@@ -606,6 +606,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
                 address = m_cidTable.get(p_dataStructure.getID());
                 if (address > 0) {
+                    assert m_rawMemory.getSizeBlock(address) == p_dataStructure.sizeofObject();
+
                     // pool the im/exporters
                     SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
                     importer.importObject(p_dataStructure);
@@ -766,6 +768,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
                 address = m_cidTable.get(p_dataStructure.getID());
                 if (address > 0) {
+                    assert m_rawMemory.getSizeBlock(address) == p_dataStructure.sizeofObject();
+
                     // pool the im/exporters
                     SmallObjectHeapDataStructureImExporter exporter = getImExporter(address);
                     exporter.exportObject(p_dataStructure);
@@ -842,6 +846,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
                 address = m_cidTable.get(p_chunkID);
                 if (address > 0) {
+                    assert p_offset + p_length <= m_rawMemory.getSizeBlock(address);
+
                     m_rawMemory.writeBytes(address, 0, p_data, p_offset, p_length);
                 } else {
                     ret = false;
