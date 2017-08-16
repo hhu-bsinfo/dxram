@@ -54,6 +54,7 @@ public abstract class Message {
     private boolean m_exclusivity;
 
     private int m_oldMessageID = INVALID_MESSAGE_ID;
+    private long m_sendReceiveTimestamp;
 
     /**
      * Creates an instance of Message
@@ -261,6 +262,20 @@ public abstract class Message {
      */
     int getTotalSize() {
         return HEADER_SIZE + getPayloadLength();
+    }
+
+    /**
+     * Set the timestamp when the message is considered sent or received
+     */
+    void setSendReceiveTimestamp(final long p_timestampNs) {
+        m_sendReceiveTimestamp = p_timestampNs;
+    }
+
+    /**
+     * Get the timestamp when the message was sent or received
+     */
+    long getSendReceiveTimestamp() {
+        return m_sendReceiveTimestamp;
     }
 
     /**

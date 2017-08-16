@@ -138,6 +138,19 @@ public abstract class Request extends Message {
     }
 
     /**
+     * Get the time it took to send out the request and receive the response to it
+     *
+     * @return The time it took to send out the request and receive the response or -1 if request not sent, no response received or timeout.
+     */
+    public long getRoundTripTimeNs() {
+        if (m_response != null) {
+            return m_response.getSendReceiveTimestamp() - getSendReceiveTimestamp();
+        }
+
+        return -1;
+    }
+
+    /**
      * Wait until the Request is fulfilled or aborted
      *
      * @param p_timeoutMs
@@ -171,6 +184,8 @@ public abstract class Request extends Message {
                 LockSupport.parkNanos(1);
             }
         }
+
+        m_response.setSendReceiveTimestamp(System.nanoTime());
 
         // #if LOGGER >= TRACE
         LOGGER.trace("Request %s fulfilled, response %s, latency %f ms", toString(), m_response, (System.nanoTime() - cur) / 1000.0 / 1000.0);

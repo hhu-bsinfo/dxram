@@ -140,6 +140,9 @@ public abstract class AbstractPipeOut {
         m_sentMessages.incrementAndGet();
         m_sentData.addAndGet(messageTotalSize);
 
+        // at this point, we consider the message "sent"
+        p_message.setSendReceiveTimestamp(System.nanoTime());
+
         m_outgoing.pushMessage(p_message, messageTotalSize, this);
     }
 

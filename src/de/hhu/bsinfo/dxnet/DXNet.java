@@ -51,6 +51,8 @@ public final class DXNet {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXNet.class.getSimpleName());
     private static final StatisticsOperation SOP_SEND = StatisticsRecorderManager.getOperation(DXNet.class, "MessageSend");
     private static final StatisticsOperation SOP_SEND_SYNC = StatisticsRecorderManager.getOperation(DXNet.class, "MessageSendSync");
+    private static final StatisticsOperation SOP_WAIT_RESPONSE = StatisticsRecorderManager.getOperation(DXNet.class, "WaitForResponse");
+    private static final StatisticsOperation SOP_REQ_RESP_RTT = StatisticsRecorderManager.getOperation(DXNet.class, "ReqRespRTT");
 
     private final CoreConfig m_config;
     private final NIOConfig m_nioConfig;
@@ -333,9 +335,29 @@ public final class DXNet {
         int timeout = p_timeout != -1 ? p_timeout : m_timeOut;
         try {
             if (p_waitForResponses) {
+                // #ifdef STATISTICS
+                SOP_WAIT_RESPONSE.enter();
+                // #endif /* STATISTICS */
+
                 p_request.waitForResponse(timeout);
+
+                // #ifdef STATISTICS
+                SOP_WAIT_RESPONSE.leave();
+                // #endif /* STATISTICS */
+
+                // #ifdef STATISTICS
+                SOP_REQ_RESP_RTT.enter(p_request.getRoundTripTimeNs() / 1000);
+                // #endif /* STATISTICS */
+
+                // #ifdef STATISTICS
+                SOP_REQ_RESP_RTT.leave();
+                // #endif /* STATISTICS */
             }
         } catch (final NetworkResponseDelayedException e) {
+            // #ifdef STATISTICS
+            SOP_WAIT_RESPONSE.leave();
+            // #endif /* STATISTICS */
+
             // #if LOGGER >= ERROR
             LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
             // #endif /* LOGGER >= ERROR */
@@ -344,6 +366,10 @@ public final class DXNet {
 
             throw e;
         } catch (final NetworkResponseCancelledException e) {
+            // #ifdef STATISTICS
+            SOP_WAIT_RESPONSE.leave();
+            // #endif /* STATISTICS */
+
             // #if LOGGER >= TRACE
             LOGGER.trace("Sending sync, waiting for responses %s failed, cancelled", p_request);
             // #endif /* LOGGER >= TRACE */
