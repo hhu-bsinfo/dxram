@@ -30,6 +30,9 @@ import de.hhu.bsinfo.dxnet.NetworkResponseDelayedException;
 public abstract class Request extends Message {
     private static final Logger LOGGER = LogManager.getFormatterLogger(Request.class.getSimpleName());
 
+    private static AtomicInteger ms_threadsWaiting = new AtomicInteger(0);
+    private static final long ms_counterBase = 4096;
+
     // Attributes
     private volatile boolean m_fulfilled;
     private volatile boolean m_aborted;
@@ -150,9 +153,6 @@ public abstract class Request extends Message {
 
         return -1;
     }
-
-    private static AtomicInteger ms_threadsWaiting = new AtomicInteger(0);
-    private static final long ms_counterBase = 4096;
 
     /**
      * Wait until the Request is fulfilled or aborted

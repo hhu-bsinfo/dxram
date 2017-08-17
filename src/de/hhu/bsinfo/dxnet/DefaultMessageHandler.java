@@ -24,10 +24,8 @@ final class DefaultMessageHandler extends Thread {
     private static final int THRESHOLD_PARK = 100000;
     private static final int THRESHOLD_PARK_SLEEP = 1000;
 
-    private final int m_id;
     private final MessageReceiverStore m_messageReceivers;
     private final MessageStore m_defaultMessages;
-    private final DefaultMessageHandlerPool m_pool;
     private volatile boolean m_shutdown;
 
     // Constructors
@@ -38,11 +36,9 @@ final class DefaultMessageHandler extends Thread {
      * @param p_queue
      *         the message queue
      */
-    DefaultMessageHandler(final int p_id, final MessageReceiverStore p_messageReceivers, final MessageStore p_queue, final DefaultMessageHandlerPool p_pool) {
-        m_id = p_id;
+    DefaultMessageHandler(final MessageReceiverStore p_messageReceivers, final MessageStore p_queue) {
         m_messageReceivers = p_messageReceivers;
         m_defaultMessages = p_queue;
-        m_pool = p_pool;
     }
 
     /**
@@ -55,8 +51,6 @@ final class DefaultMessageHandler extends Thread {
     // Methods
     @Override
     public void run() {
-        int messagesLeft = 0;
-        int capacityThreshold = (int) (m_defaultMessages.capacity() * 0.9);
         int waitCounter = 0;
         int sleepCounter = 0;
         Message message;
