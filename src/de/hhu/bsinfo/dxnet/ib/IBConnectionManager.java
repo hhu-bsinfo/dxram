@@ -34,6 +34,8 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.NetworkRuntimeException;
 import de.hhu.bsinfo.dxnet.core.RequestMap;
 import de.hhu.bsinfo.dxnet.core.StaticExporterPool;
+import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.utils.ByteBufferHelper;
 import de.hhu.bsinfo.utils.NodeID;
 
@@ -45,6 +47,8 @@ import de.hhu.bsinfo.utils.NodeID;
 public class IBConnectionManager extends AbstractConnectionManager
         implements JNIIbdxnet.SendHandler, JNIIbdxnet.RecvHandler, JNIIbdxnet.DiscoveryHandler, JNIIbdxnet.ConnectionHandler {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBConnectionManager.class.getSimpleName());
+
+    private static final StatisticsOperation SOP_SEND_NEXT_DATA = StatisticsRecorderManager.getOperation(IBConnectionManager.class, "SendNextData");
 
     private final CoreConfig m_coreConfig;
     private final IBConfig m_config;
@@ -252,6 +256,10 @@ public class IBConnectionManager extends AbstractConnectionManager
     public long getNextDataToSend(final short p_prevNodeIdWritten, final int p_prevDataWrittenLen) {
         // return interest of previous call
         if (p_prevNodeIdWritten != NodeID.INVALID_ID) {
+            // #ifdef STATISTICS
+            SOP_SEND_NEXT_DATA.leave();
+            // #endif /* STATISTICS */
+
             // #if LOGGER >= TRACE
             LOGGER.trace("getNextDataToSend, p_prevNodeIdWritten 0x%X, p_prevDataWrittenLen %d", p_prevNodeIdWritten, p_prevDataWrittenLen);
             // #endif /* LOGGER >= TRACE */
@@ -335,6 +343,10 @@ public class IBConnectionManager extends AbstractConnectionManager
 
         // node id
         m_sendThreadRetArgs.putShort(nodeId);
+
+        // #ifdef STATISTICS
+        SOP_SEND_NEXT_DATA.enter();
+        // #endif /* STATISTICS */
 
         return ByteBufferHelper.getDirectAddress(m_sendThreadRetArgs);
     }
