@@ -22,7 +22,7 @@ class ExclusiveMessageHandler extends Thread {
     private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Push");
     private static final StatisticsOperation SOP_PUSH_WAIT = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Wait");
 
-    private static final int EXCLUSIVE_MESSAGE_STORE_SIZE = 20;
+    private static final int EXCLUSIVE_MESSAGE_STORE_SIZE = 32;
 
     private final MessageReceiverStore m_messageReceivers;
     private final MessageStore m_exclusiveMessages;
@@ -60,6 +60,7 @@ class ExclusiveMessageHandler extends Thread {
                     SOP_POP_WAIT.enter();
                     // #endif /* STATISTICS */
 
+                    // TODO fix this to match waiting/sleeping pattern on default msg handlers
                     if (waitCounter++ <= 10000) {
                         // No new message at the moment -> sleep for xx µs and try again
                         LockSupport.parkNanos(1);

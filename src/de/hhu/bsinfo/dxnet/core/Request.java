@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxnet.core;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 import org.apache.logging.log4j.LogManager;
@@ -150,6 +151,9 @@ public abstract class Request extends Message {
         return -1;
     }
 
+    private static AtomicInteger ms_threadsWaiting = new AtomicInteger(0);
+    private static final long ms_counterBase = 4096;
+
     /**
      * Wait until the Request is fulfilled or aborted
      *
@@ -159,9 +163,15 @@ public abstract class Request extends Message {
     public final void waitForResponse(final int p_timeoutMs) throws NetworkException {
         long cur = System.nanoTime();
         long deadline = cur + p_timeoutMs * 1000 * 1000;
+
+        int totalThreadsWaiting = ms_threadsWaiting.incrementAndGet();
+        int counter = 0;
+
         while (!m_fulfilled) {
 
             if (m_aborted) {
+                ms_threadsWaiting.decrementAndGet();
+
                 // #if LOGGER >= TRACE
                 LOGGER.trace("Response for request %s , aborted, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0 / 1000.0);
                 // #endif /* LOGGER >= TRACE */
@@ -171,19 +181,57 @@ public abstract class Request extends Message {
 
             if (!m_ignoreTimeout) {
                 if (System.nanoTime() > deadline) {
+                    ms_threadsWaiting.decrementAndGet();
+
                     // #if LOGGER >= TRACE
                     LOGGER.trace("Response for request %s , delayed, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0 / 1000.0);
                     // #endif /* LOGGER >= TRACE */
 
                     throw new NetworkResponseDelayedException(getDestination());
                 }
-
-                // Wait for a minimal time (around xx µs). There is no unpark() involved!
-                LockSupport.parkNanos(1);
-            } else {
-                LockSupport.parkNanos(1);
             }
+
+            // wait a bit, but increase waiting frequency with number of threads to reduce cpu load
+            // but keep a higher cpu load to ensure low latency for less threads
+            // (latency will increase with many threads anyway)
+            if (totalThreadsWaiting > 1) {
+                if (totalThreadsWaiting <= 2 && counter >= ms_counterBase * 512) {
+                    counter = 0;
+                    LockSupport.parkNanos(1);
+                } else if (totalThreadsWaiting <= 4 && counter >= ms_counterBase * 256) {
+                    counter = 0;
+                    LockSupport.parkNanos(1);
+                } else if (totalThreadsWaiting <= 8 && counter >= ms_counterBase * 128) {
+                    counter = 0;
+                    LockSupport.parkNanos(1);
+                } else if (totalThreadsWaiting <= 16 && counter >= ms_counterBase * 64) {
+                    counter = 0;
+                    LockSupport.parkNanos(1);
+                } else if (totalThreadsWaiting <= 32 && counter >= ms_counterBase * 32) {
+                    counter = 0;
+                    LockSupport.parkNanos(1);
+                } else if (totalThreadsWaiting <= 64 && counter >= ms_counterBase * 16) {
+                    counter = 0;
+                    LockSupport.parkNanos(1);
+                } else if (totalThreadsWaiting <= 128 && counter >= ms_counterBase * 8) {
+                    counter = 0;
+                    LockSupport.parkNanos(1);
+                } else if (totalThreadsWaiting <= 256 && counter >= ms_counterBase * 4) {
+                    counter = 0;
+                    LockSupport.parkNanos(1);
+                } else if (totalThreadsWaiting <= 512 && counter >= ms_counterBase * 2) {
+                    counter = 0;
+                    LockSupport.parkNanos(1);
+                } else if (totalThreadsWaiting <= 1024 && counter >= ms_counterBase) {
+                    counter = 0;
+                    LockSupport.parkNanos(1);
+                }
+            }
+
+            counter++;
         }
+
+        ms_threadsWaiting.decrementAndGet();
 
         m_response.setSendReceiveTimestamp(System.nanoTime());
 

@@ -23,21 +23,23 @@ import de.hhu.bsinfo.dxnet.core.Message;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 01.05.2017
  */
 public class MessageStore {
+    private final int m_size;
+    private final Message[] m_buffer;
 
-    // Attributes
-    private Message[] m_buffer;
-    private int m_size;
-
-    private AtomicInteger m_posFront;
-    private AtomicInteger m_posBack;
+    private final AtomicInteger m_posFront;
+    private final AtomicInteger m_posBack;
 
     /**
      * Creates an instance of MessageStore
      *
      * @param p_size
-     *         the maximum number of messages to store
+     *         Must be a power of two to handle wrap around
      */
     MessageStore(final int p_size) {
+        if (p_size % 2 != 0) {
+            throw new IllegalStateException("Message store size must be a power of two, invalid value " + p_size);
+        }
+
         m_size = p_size;
         m_buffer = new Message[m_size];
 
@@ -113,7 +115,6 @@ public class MessageStore {
 
         while (true) {
             int posBack = m_posBack.get();
-
             int posFront = m_posFront.get();
 
             if (posFront == posBack) {

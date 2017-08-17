@@ -20,7 +20,8 @@ final class DefaultMessageHandlerPool {
     private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Push");
     private static final StatisticsOperation SOP_WAIT = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Wait");
 
-    private static final int DEFAULT_MESSAGE_STORE_SIZE = 10000;
+    // must be a power of two to work with wrap around
+    private static final int SIZE_MESSAGE_STORE = 16 * 1024;
 
     private final MessageStore m_defaultMessages;
 
@@ -33,7 +34,7 @@ final class DefaultMessageHandlerPool {
      *         the number of default message handler
      */
     DefaultMessageHandlerPool(final MessageReceiverStore p_messageReceivers, final int p_numMessageHandlerThreads) {
-        m_defaultMessages = new MessageStore(DEFAULT_MESSAGE_STORE_SIZE);
+        m_defaultMessages = new MessageStore(SIZE_MESSAGE_STORE);
 
         // #if LOGGER >= INFO
         LOGGER.info("Network: DefaultMessageHandlerPool: Initialising %d threads", p_numMessageHandlerThreads);

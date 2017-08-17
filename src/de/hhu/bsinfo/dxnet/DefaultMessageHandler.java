@@ -18,9 +18,12 @@ final class DefaultMessageHandler extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DefaultMessageHandler.class.getSimpleName());
     private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Pop");
     private static final StatisticsOperation SOP_WAIT = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Wait");
+    private static final StatisticsOperation SOP_SLEEP = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Sleep");
     private static final StatisticsOperation SOP_EXECUTE = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Execute");
 
-    // Attributes
+    private static final int THRESHOLD_PARK = 100000;
+    private static final int THRESHOLD_PARK_SLEEP = 1000;
+
     private final int m_id;
     private final MessageReceiverStore m_messageReceivers;
     private final MessageStore m_defaultMessages;
@@ -55,58 +58,63 @@ final class DefaultMessageHandler extends Thread {
         int messagesLeft = 0;
         int capacityThreshold = (int) (m_defaultMessages.capacity() * 0.9);
         int waitCounter = 0;
-        Message message = null;
+        int sleepCounter = 0;
+        Message message;
         MessageReceiver messageReceiver;
 
         while (!m_shutdown) {
-
             // #ifdef STATISTICS
             SOP_POP.enter();
             // #endif /* STATISTICS */
 
-            while (message == null && !m_shutdown) {
-                if (m_defaultMessages.isEmpty()) {
+            message = m_defaultMessages.popMessage();
+
+            if (message == null) {
+                // keep latency low (especially on infiniband) but also keep cpu load low
+                // avoid parking on every iteration -> increases overall latency for messages
+                if (sleepCounter > THRESHOLD_PARK_SLEEP) {
                     // #ifdef STATISTICS
                     SOP_WAIT.enter();
                     // #endif /* STATISTICS */
 
-                    if (m_id == 0) {
-                        // First default message handler is always available
-                        if (waitCounter++ <= 10000) {
-                            // No new message at the moment -> sleep for xx µs and try again
-                            LockSupport.parkNanos(1);
-                        } else {
-                            // No new message for a longer period -> increase sleep to 1 ms to reduce cpu load
-                            LockSupport.parkNanos(1000 * 1000);
-                        }
-                    } else {
-                        // Other default message handlers idle until first message handler calls for support (see below)
-                        LockSupport.park();
-                    }
+                    // No new message for a longer period -> increase sleep to 1 ms to reduce cpu load
+                    // continue sleeping until new messages are available
+                    LockSupport.parkNanos(1000 * 1000);
 
                     // #ifdef STATISTICS
                     SOP_WAIT.leave();
                     // #endif /* STATISTICS */
-                } else {
+                } else if (waitCounter > THRESHOLD_PARK) {
+                    // #ifdef STATISTICS
+                    SOP_SLEEP.enter();
+                    // #endif /* STATISTICS */
+
+                    // No new message at the moment -> sleep for xx µs and try again
+                    LockSupport.parkNanos(1);
                     waitCounter = 0;
+                    sleepCounter++;
+
+                    // #ifdef STATISTICS
+                    SOP_SLEEP.leave();
+                    // #endif /* STATISTICS */
+                } else {
+                    waitCounter++;
                 }
 
-                message = m_defaultMessages.popMessage();
-                messagesLeft = m_defaultMessages.size();
-            }
+                // #ifdef STATISTICS
+                SOP_POP.leave();
+                // #endif /* STATISTICS */
 
-            if (m_shutdown) {
-                break;
-            }
-
-            if (m_id == 0 && messagesLeft > capacityThreshold) {
-                // Calling for support
-                m_pool.wakeupMessageHandlers();
+                continue;
             }
 
             // #ifdef STATISTICS
             SOP_POP.leave();
             // #endif /* STATISTICS */
+
+            // reset waits and sleeps
+            waitCounter = 0;
+            sleepCounter = 0;
 
             messageReceiver = m_messageReceivers.getReceiver(message.getType(), message.getSubtype());
 
@@ -125,7 +133,6 @@ final class DefaultMessageHandler extends Thread {
                 LOGGER.error("No message receiver was registered for %d, %d!", message.getType(), message.getSubtype());
                 // #endif /* LOGGER >= ERROR */
             }
-            message = null;
         }
     }
 }

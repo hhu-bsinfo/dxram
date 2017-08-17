@@ -14,7 +14,6 @@
 package de.hhu.bsinfo.dxnet.core;
 
 import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +33,10 @@ public class MessageCreator extends Thread {
     private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(MessageCreator.class, "MessageCreatorPush");
     private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(MessageCreator.class, "MessageCreatorPop");
 
-    // Attributes
+    // must be a power of two to work with wrap around
+    private static final int SIZE = 2 * 2 * 1024;
+    private static final int THRESHOLD_PARK = 10000;
+
     private volatile boolean m_shutdown;
 
     private AbstractConnection[] m_connectionBuffer;
@@ -43,13 +45,12 @@ public class MessageCreator extends Thread {
     private long[] m_addrBuffer;
     private int[] m_sizeBuffer;
 
-    private int m_size;
     private int m_maxBytes;
     private long m_currentBytes;
 
+    // single producer, single consumer lock free queue
     private volatile int m_posFront;
     private volatile int m_posBack;
-    private ReentrantLock m_lock;
 
     /**
      * Creates an instance of MessageCreator
@@ -58,18 +59,16 @@ public class MessageCreator extends Thread {
      *         the max incoming buffer size
      */
     public MessageCreator(final int p_maxIncomingBufferSize) {
-        m_size = 2 * (2 * 1024 + 1);
-        m_connectionBuffer = new AbstractConnection[m_size];
-        m_directBuffers = new NIOBufferPool.DirectBufferWrapper[m_size];
-        m_bufferHandleBuffer = new long[m_size];
-        m_addrBuffer = new long[m_size];
-        m_sizeBuffer = new int[m_size];
+        m_connectionBuffer = new AbstractConnection[SIZE];
+        m_directBuffers = new NIOBufferPool.DirectBufferWrapper[SIZE];
+        m_bufferHandleBuffer = new long[SIZE];
+        m_addrBuffer = new long[SIZE];
+        m_sizeBuffer = new int[SIZE];
         m_maxBytes = p_maxIncomingBufferSize * 8;
         m_currentBytes = 0;
 
         m_posFront = 0;
         m_posBack = 0;
-        m_lock = new ReentrantLock(false);
     }
 
     /**
@@ -83,7 +82,7 @@ public class MessageCreator extends Thread {
      * Returns whether the ring-buffer is full or not.
      */
     public boolean isFull() {
-        return (m_posBack + 2) % m_size == m_posFront % m_size;
+        return (m_posBack + 2) % SIZE == m_posFront % SIZE;
     }
 
     /**
@@ -102,32 +101,38 @@ public class MessageCreator extends Thread {
         long bufferHandle;
         long addr;
         int size;
+        int parkCounter = 0;
 
         while (!m_shutdown) {
-
             // #ifdef STATISTICS
             SOP_POP.enter();
             // #endif /* STATISTICS */
 
             // pop a job
-            m_lock.lock();
-
             if (m_posFront == m_posBack) {
                 // Ring-buffer is empty.
-                m_lock.unlock();
 
                 // Wait for a short period (~ xx µs) and continue
-                LockSupport.parkNanos(1);
+                // keep latency low (especially on infiniband) but also keep cpu load low
+                // avoid parking on every iteration -> increases overall latency for messages
+                if (parkCounter >= THRESHOLD_PARK) {
+                    LockSupport.parkNanos(1);
+                } else {
+                    parkCounter++;
+                }
             } else {
-                connection = m_connectionBuffer[m_posFront % m_size];
-                bufferHandle = m_bufferHandleBuffer[m_posFront % m_size];
-                buffer = m_directBuffers[m_posFront % m_size];
-                addr = m_addrBuffer[m_posFront % m_size];
-                size = m_sizeBuffer[m_posFront % m_size];
+                int front = m_posFront % SIZE;
+
+                parkCounter = 0;
+
+                connection = m_connectionBuffer[front];
+                bufferHandle = m_bufferHandleBuffer[front];
+                buffer = m_directBuffers[front];
+                addr = m_addrBuffer[front];
+                size = m_sizeBuffer[front];
 
                 m_currentBytes -= size;
-                m_posFront += 1;
-                m_lock.unlock();
+                m_posFront++;
 
                 // #ifdef STATISTICS
                 SOP_POP.leave();
@@ -188,37 +193,26 @@ public class MessageCreator extends Thread {
      */
     public boolean pushJob(final AbstractConnection p_connection, final NIOBufferPool.DirectBufferWrapper p_directBufferWrapper, final long p_bufferHandle,
             final long p_addr, final int p_size) {
-        boolean locked = false;
+        int back;
 
         // #ifdef STATISTICS
         SOP_PUSH.enter();
         // #endif /* STATISTICS */
 
-        if (m_posFront != m_posBack) {
-            m_lock.lock();
-            locked = true;
-        }
-
-        if ((m_posBack + 1) % m_size == m_posFront % m_size || m_currentBytes >= m_maxBytes) {
+        if ((m_posBack + 1) % SIZE == m_posFront % SIZE || m_currentBytes >= m_maxBytes) {
             // Return without adding the job if queue is full or too many bytes are pending
-            if (locked) {
-                m_lock.unlock();
-            }
-
             return false;
         }
 
-        m_connectionBuffer[m_posBack % m_size] = p_connection;
-        m_directBuffers[m_posBack % m_size] = p_directBufferWrapper;
-        m_bufferHandleBuffer[m_posBack % m_size] = p_bufferHandle;
-        m_addrBuffer[m_posBack % m_size] = p_addr;
-        m_sizeBuffer[m_posBack % m_size] = p_size;
-        m_currentBytes += p_size;
-        m_posBack += 1;
+        back = m_posBack % SIZE;
 
-        if (locked) {
-            m_lock.unlock();
-        }
+        m_connectionBuffer[back] = p_connection;
+        m_directBuffers[back] = p_directBufferWrapper;
+        m_bufferHandleBuffer[back] = p_bufferHandle;
+        m_addrBuffer[back] = p_addr;
+        m_sizeBuffer[back] = p_size;
+        m_currentBytes += p_size;
+        m_posBack++;
 
         // #ifdef STATISTICS
         SOP_PUSH.leave();
