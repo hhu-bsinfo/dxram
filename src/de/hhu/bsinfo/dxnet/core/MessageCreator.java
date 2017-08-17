@@ -138,14 +138,17 @@ public class MessageCreator extends Thread {
                 SOP_POP.leave();
                 // #endif /* STATISTICS */
 
+                pipeIn = connection.getPipeIn();
+
                 try {
-                    pipeIn = connection.getPipeIn();
                     pipeIn.processBuffer(addr, size);
-                    pipeIn.returnProcessedBuffer(buffer, bufferHandle);
                 } catch (final NetworkException e) {
                     // #if LOGGER == ERROR
                     LOGGER.error("Processing incoming buffer failed", e);
                     // #endif /* LOGGER == ERROR */
+                } finally {
+                    // always return buffer. otherwise, our pool will run dry after a while on infrequent errors
+                    pipeIn.returnProcessedBuffer(buffer, bufferHandle);
                 }
             }
         }
