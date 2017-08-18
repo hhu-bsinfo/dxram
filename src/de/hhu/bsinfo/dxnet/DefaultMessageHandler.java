@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxnet;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 import org.apache.logging.log4j.LogManager;
@@ -21,9 +22,10 @@ final class DefaultMessageHandler extends Thread {
     private static final StatisticsOperation SOP_SLEEP = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Sleep");
     private static final StatisticsOperation SOP_EXECUTE = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Execute");
 
-    private static final int THRESHOLD_PARK = 100000;
+    private static final int THRESHOLD_PARK = 10000;
     private static final int THRESHOLD_PARK_SLEEP = 1000;
 
+    private final int m_id;
     private final MessageReceiverStore m_messageReceivers;
     private final MessageStore m_defaultMessages;
     private volatile boolean m_shutdown;
@@ -36,7 +38,8 @@ final class DefaultMessageHandler extends Thread {
      * @param p_queue
      *         the message queue
      */
-    DefaultMessageHandler(final MessageReceiverStore p_messageReceivers, final MessageStore p_queue) {
+    DefaultMessageHandler(final int p_id, final MessageReceiverStore p_messageReceivers, final MessageStore p_queue) {
+        m_id = p_id;
         m_messageReceivers = p_messageReceivers;
         m_defaultMessages = p_queue;
     }
@@ -47,6 +50,8 @@ final class DefaultMessageHandler extends Thread {
     public void shutdown() {
         m_shutdown = true;
     }
+
+    private static AtomicReference<Message> m_message = new AtomicReference<>(null);
 
     // Methods
     @Override
@@ -60,6 +65,23 @@ final class DefaultMessageHandler extends Thread {
             // #ifdef STATISTICS
             SOP_POP.enter();
             // #endif /* STATISTICS */
+
+            // FIXME multiple message handlers are breaking buffers for whatever reason
+            // if a single thread is getting messages and passes them to another thread
+            // everything works fine (with two threads)
+            // as soon as more than a single thread are getting message from the queue
+            // stuff breaks on infiniband and ethernet
+
+            // "workaround" for testing
+            //            if (m_id == 0) {
+            //            message = m_defaultMessages.popMessage();
+            //
+            //                if (m_message.compareAndSet(null, message)) {
+            //                    message = m_defaultMessages.popMessage();
+            //                }
+            //            } else {
+            //            message = m_message.getAndSet(null);
+            //            }
 
             message = m_defaultMessages.popMessage();
 
