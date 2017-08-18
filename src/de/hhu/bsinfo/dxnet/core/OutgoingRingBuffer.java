@@ -33,7 +33,7 @@ public class OutgoingRingBuffer {
     private static final StatisticsOperation SOP_SHIFT_FRONT = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "ShiftFront");
     private static final StatisticsOperation SOP_BUFFER_POSTED = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "BufferPosted");
 
-    // Attributes
+    // multiple producer, single consumer
     private volatile int m_posFront;
     protected final AtomicInteger m_posBack;
 
@@ -310,7 +310,7 @@ public class OutgoingRingBuffer {
             m_producers.decrementAndGet();
 
             // Wait for consumer to finish writing
-            while (m_posFront == posFront) {
+            while ((int) (m_posFront & 0x7FFFFFFFL) == posFront) {
                 LockSupport.parkNanos(1);
             }
 
