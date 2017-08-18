@@ -172,9 +172,9 @@ public abstract class Request extends Message {
             if (m_aborted) {
                 ms_threadsWaiting.decrementAndGet();
 
-                // #if LOGGER >= TRACE
-                LOGGER.trace("Response for request %s , aborted, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0 / 1000.0);
-                // #endif /* LOGGER >= TRACE */
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Response for request %s , aborted, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0 / 1000.0);
+                // #endif /* LOGGER >= DEBUG */
 
                 throw new NetworkResponseCancelledException(getDestination());
             }
@@ -183,9 +183,9 @@ public abstract class Request extends Message {
                 if (System.nanoTime() > deadline) {
                     ms_threadsWaiting.decrementAndGet();
 
-                    // #if LOGGER >= TRACE
-                    LOGGER.trace("Response for request %s , delayed, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0 / 1000.0);
-                    // #endif /* LOGGER >= TRACE */
+                    // #if LOGGER >= DEBUG
+                    LOGGER.debug("Response for request %s , delayed, latency %f ms", toString(), (System.nanoTime() - cur) / 1000.0 / 1000.0);
+                    // #endif /* LOGGER >= DEBUG */
 
                     throw new NetworkResponseDelayedException(getDestination());
                 }
