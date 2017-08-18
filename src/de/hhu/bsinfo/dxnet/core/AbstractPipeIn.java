@@ -361,7 +361,7 @@ public abstract class AbstractPipeIn {
      *         Number of bytes to read from the buffer
      * @return Number of bytes actually read from the buffer
      */
-    private int readPayload(final long p_addr, final int p_bytesAvailable, final int p_bytesToRead) {
+    private int readPayload(final long p_addr, final int p_bytesAvailable, final int p_bytesToRead) throws NetworkException {
         AbstractMessageImporter importer = m_importers.getImporter(p_addr, m_currentPosition, p_bytesAvailable, p_bytesToRead);
 
         try {
@@ -374,7 +374,7 @@ public abstract class AbstractPipeIn {
 
         int readBytes = importer.getNumberOfReadBytes();
         if (readBytes < p_bytesToRead) {
-            throw new NetworkRuntimeException("Message buffer is too large: " + p_bytesToRead + " > " + readBytes + " (payload in bytes), current Message: " +
+            throw new NetworkException("Message buffer is too large: " + p_bytesToRead + " > " + readBytes + " (payload in bytes), current Message: " +
                     m_currentMessage.getClass().getName() + ", importer type: " + importer.getClass().getSimpleName() + ", importer detail: " + importer +
                     "\nImporterCollectionState:\n" + m_importers);
         }
