@@ -292,7 +292,9 @@ public abstract class AbstractPipeIn {
                 builder.append(' ');
             }
 
-            throw new NetworkException("Invalid message type 0, subtype 0, most likely corrupted message/buffer. Buffer section: " + builder);
+            throw new NetworkException(
+                    "Invalid message type 0, subtype 0, most likely corrupted message/buffer. Buffer section: " + builder + "\nImporterCollectionState:\n" +
+                            m_importers);
         }
 
         try {
@@ -311,8 +313,8 @@ public abstract class AbstractPipeIn {
             }
 
             throw new NetworkException(
-                    "Unable to create message of type " + type + ", subtype " + subtype + ". Type is missing in message directory. Buffer section: " + builder,
-                    e);
+                    "Unable to create message of type " + type + ", subtype " + subtype + ". Type is missing in message directory. Buffer section: " + builder +
+                            "\nImporterCollectionState:\n" + m_importers, e);
         }
 
         ret.initialize(m_currentHeader);
@@ -373,7 +375,8 @@ public abstract class AbstractPipeIn {
         int readBytes = importer.getNumberOfReadBytes();
         if (readBytes < p_bytesToRead) {
             throw new NetworkRuntimeException("Message buffer is too large: " + p_bytesToRead + " > " + readBytes + " (payload in bytes), current Message: " +
-                    m_currentMessage.getClass().getName() + ", importer type: " + importer.getClass().getSimpleName() + ", importer detail: " + importer);
+                    m_currentMessage.getClass().getName() + ", importer type: " + importer.getClass().getSimpleName() + ", importer detail: " + importer +
+                    "\nImporterCollectionState:\n" + m_importers);
         }
 
         m_importers.returnImporter(importer, true);

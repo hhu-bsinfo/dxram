@@ -386,7 +386,9 @@ public abstract class Message {
 
             writePayload(p_exporter);
         } catch (final BufferOverflowException e) {
-            throw new NetworkException("Could not create message " + this + ", because message buffer is too small, payload size " + p_payloadSize, e);
+            throw new NetworkException(
+                    "Could not create message " + this + ", because message buffer is too small, payload size " + p_payloadSize + "\nExporterState:\n" +
+                            p_exporter, e);
         }
 
         int numberOfWrittenBytes = p_exporter.getNumberOfWrittenBytes();
@@ -394,7 +396,7 @@ public abstract class Message {
         if (numberOfWrittenBytes < messageSize) {
             throw new NetworkException(
                     "Did not create message " + this + ", because message contents are smaller than expected payload size: " + numberOfWrittenBytes + " < " +
-                            messageSize);
+                            messageSize + "\nExporterState:\n" + p_exporter);
         }
 
         m_oldMessageID = m_messageID;

@@ -24,6 +24,9 @@ class MessageExporterCollection {
     private MessageExporterOverflow m_exporterOverflow;
     private LargeMessageExporter m_exporterLargeMessage;
 
+    // for debugging
+    private AbstractMessageExporter m_lastExporterUsed;
+
     private UnfinishedImExporterOperation m_unfinishedOperation;
 
     /**
@@ -39,6 +42,13 @@ class MessageExporterCollection {
         m_exporterLargeMessage = new LargeMessageExporter(m_unfinishedOperation);
     }
 
+    @Override
+    public String toString() {
+        return "m_lastExporterUsed(" + m_lastExporterUsed.getClass().getSimpleName() + "): " + m_lastExporterUsed + ", m_exporter " + m_exporter +
+                ", m_exporterOverflow " + m_exporterOverflow + ", m_exporterLargeMessage " + m_exporterLargeMessage + ", m_unfinishedOperation " +
+                m_unfinishedOperation;
+    }
+
     /**
      * Get corresponding exporter (default, overflow)
      *
@@ -48,8 +58,10 @@ class MessageExporterCollection {
      */
     AbstractMessageExporter getMessageExporter(final boolean p_hasOverflow) {
         if (!p_hasOverflow) {
+            m_lastExporterUsed = m_exporter;
             return m_exporter;
         } else {
+            m_lastExporterUsed = m_exporterOverflow;
             return m_exporterOverflow;
         }
     }

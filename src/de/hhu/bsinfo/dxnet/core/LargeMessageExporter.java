@@ -36,6 +36,13 @@ class LargeMessageExporter extends AbstractMessageExporter {
     }
 
     @Override
+    public String toString() {
+        return "m_bufferAddress 0x" + Long.toHexString(m_bufferAddress) + ", m_bufferSize " + m_bufferSize + ", m_currentPosition " + m_currentPosition +
+                ", m_startPosition " + m_startPosition + ", m_endPosition " + m_endPosition + ", m_skipBytes " + m_skipBytes + ", m_skippedBytes " +
+                m_skippedBytes + ", m_unfinishedOperation " + m_unfinishedOperation;
+    }
+
+    @Override
     public int getNumberOfWrittenBytes() {
         if (m_currentPosition >= m_startPosition) {
             return m_currentPosition - m_startPosition + m_skipBytes;
