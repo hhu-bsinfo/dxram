@@ -50,9 +50,9 @@ class MessageImporterCollection {
 
     @Override
     public String toString() {
-        return "m_lastImporterUsed (" + m_lastImporterUsed.getClass().getSimpleName() + "): " + m_lastImporterUsed + ", m_importer " + m_importer +
-                ", m_importerOverflow " + m_importerOverflow + ", m_importerUnderflow " + m_importerUnderflow + ", m_importerUnderOverflow " +
-                m_importerUnderOverflow + ", m_unfinishedOperation " + m_unfinishedOperation;
+        return "m_lastImporterUsed (" + m_lastImporterUsed.getClass().getSimpleName() + "): [" + m_lastImporterUsed + "], m_importer [" + m_importer +
+                "], m_importerOverflow [" + m_importerOverflow + "], m_importerUnderflow [" + m_importerUnderflow + "], m_importerUnderOverflow [" +
+                m_importerUnderOverflow + "], m_unfinishedOperation [" + m_unfinishedOperation + ']';
     }
 
     /**
