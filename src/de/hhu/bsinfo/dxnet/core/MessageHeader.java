@@ -31,12 +31,21 @@ class MessageHeader implements Importable {
     private byte m_subtype;
     private int m_payloadSize;
 
+    // just state, not part of actual header
+    private boolean m_isCompleted;
+
     // Constructors
 
     /**
      * Creates an instance of MessageHeader
      */
     MessageHeader() {
+    }
+
+    @Override
+    public String toString() {
+        return "m_messageID " + m_messageID + ", m_messageTypeExc " + m_messageTypeExc + ", m_type " + m_type + ", m_subtype " + m_subtype +
+                ", m_payloadSize " + m_payloadSize;
     }
 
     /**
@@ -89,6 +98,17 @@ class MessageHeader implements Importable {
         m_type = 0;
         m_subtype = 0;
         m_payloadSize = 0;
+
+        // also reset state
+        m_isCompleted = false;
+    }
+
+    void setComplete() {
+        m_isCompleted = true;
+    }
+
+    boolean isComplete() {
+        return m_isCompleted;
     }
 
     @Override

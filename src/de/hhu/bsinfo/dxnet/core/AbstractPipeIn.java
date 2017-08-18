@@ -144,12 +144,17 @@ public abstract class AbstractPipeIn {
         m_currentPosition = 0;
         while (p_bytesAvailable > m_currentPosition) {
             if (m_currentMessage == null) {
-                bytesRead = readHeader(p_addr, p_bytesAvailable, Message.HEADER_SIZE);
+                // if message header completed exactly on the last buffer and the message's
+                // payload starts in the next buffer, don't read another header that's not available
+                if (!m_currentHeader.isComplete()) {
+                    bytesRead = readHeader(p_addr, p_bytesAvailable, Message.HEADER_SIZE);
 
-                if (bytesRead < Message.HEADER_SIZE) {
-                    // end of current data stream in importer, incomplete header
-                    break;
+                    if (bytesRead < Message.HEADER_SIZE) {
+                        // end of current data stream in importer, incomplete header
+                        break;
+                    }
                 }
+
                 m_currentMessage = createMessage(p_addr, p_bytesAvailable);
             }
 
@@ -235,6 +240,7 @@ public abstract class AbstractPipeIn {
                     }
                 }
             }
+
             m_currentMessage = null;
             m_currentHeader.clear();
             m_receivedMessages++;
@@ -293,8 +299,8 @@ public abstract class AbstractPipeIn {
             }
 
             throw new NetworkException(
-                    "Invalid message type 0, subtype 0, most likely corrupted message/buffer. Buffer section: " + builder + "\nImporterCollectionState:\n" +
-                            m_importers);
+                    "Invalid message type 0, subtype 0, most likely corrupted message/buffer. Buffer section (first index is start of message header): " +
+                            builder + "\nImporterCollectionState:\n" + m_importers);
         }
 
         try {
@@ -312,9 +318,9 @@ public abstract class AbstractPipeIn {
                 builder.append(' ');
             }
 
-            throw new NetworkException(
-                    "Unable to create message of type " + type + ", subtype " + subtype + ". Type is missing in message directory. Buffer section: " + builder +
-                            "\nImporterCollectionState:\n" + m_importers, e);
+            throw new NetworkException("Unable to create message of type " + type + ", subtype " + subtype +
+                    ". Type is missing in message directory. Buffer section (first index is start of message header): " + builder +
+                    "\nImporterCollectionState:\n" + m_importers, e);
         }
 
         ret.initialize(m_currentHeader);
@@ -345,6 +351,8 @@ public abstract class AbstractPipeIn {
             m_currentPosition = importer.getPosition();
             return m_importers.returnImporter(importer, false);
         }
+
+        m_currentHeader.setComplete();
 
         m_currentPosition = importer.getPosition();
         return m_importers.returnImporter(importer, true);
