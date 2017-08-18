@@ -53,7 +53,7 @@ public class MessageStore {
      * @return whether the ring-buffer is empty or not
      */
     public boolean isEmpty() {
-        return m_posFront.get() == m_posBack.get();
+        return (m_posFront.get() & 0x7FFFFFFF) == (m_posBack.get() & 0x7FFFFFFF);
     }
 
     /**
@@ -62,16 +62,7 @@ public class MessageStore {
      * @return whether the ring-buffer is full or not
      */
     public boolean isFull() {
-        return (m_posBack.get() + 1) % m_size == m_posFront.get() % m_size;
-    }
-
-    /**
-     * Returns the number of pending buffers.
-     *
-     * @return the number of pending buffers
-     */
-    public int size() {
-        return m_posBack.get() - m_posFront.get();
+        return (m_posBack.get() + 1 & 0x7FFFFFFF) % m_size == (m_posFront.get() & 0x7FFFFFFF) % m_size;
     }
 
     /**
@@ -91,10 +82,11 @@ public class MessageStore {
      * @return whether the job was added or not
      */
     boolean pushMessage(final Message p_message) {
-        int posBack = m_posBack.get();
-        int posFront = m_posFront.get();
+        // & 0x7FFFFFFF to kill sign
+        int posBack = m_posBack.get() & 0x7FFFFFFF;
+        int posFront = m_posFront.get() & 0x7FFFFFFF;
 
-        if ((posBack + 1) % m_size == posFront % m_size) {
+        if ((posBack + 1 & 0x7FFFFFFF) % m_size == posFront % m_size) {
             // Return without adding the message if queue is full
             return false;
         }
@@ -114,8 +106,9 @@ public class MessageStore {
         Message ret;
 
         while (true) {
-            int posBack = m_posBack.get();
-            int posFront = m_posFront.get();
+            // & 0x7FFFFFFF to kill sign
+            int posBack = m_posBack.get() & 0x7FFFFFFF;
+            int posFront = m_posFront.get() & 0x7FFFFFFF;
 
             if (posFront == posBack) {
                 // Ring-buffer is empty.
@@ -123,7 +116,7 @@ public class MessageStore {
             }
 
             ret = m_buffer[posFront % m_size];
-            if (m_posFront.compareAndSet(posFront, posFront + 1)) {
+            if (m_posFront.compareAndSet(posFront, posFront + 1 & 0x7FFFFFFF)) {
                 break;
             }
         }
