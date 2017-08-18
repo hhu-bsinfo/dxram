@@ -82,7 +82,7 @@ public class MessageCreator extends Thread {
      * Returns whether the ring-buffer is full or not.
      */
     public boolean isFull() {
-        return (m_posBack + 2) % SIZE == m_posFront % SIZE;
+        return (m_posBack + 1) % SIZE == m_posFront % SIZE;
     }
 
     /**
@@ -120,6 +120,10 @@ public class MessageCreator extends Thread {
                 } else {
                     parkCounter++;
                 }
+
+                // #ifdef STATISTICS
+                SOP_POP.leave();
+                // #endif /* STATISTICS */
             } else {
                 int front = m_posFront % SIZE;
 
@@ -132,7 +136,8 @@ public class MessageCreator extends Thread {
                 size = m_sizeBuffer[front];
 
                 m_currentBytes -= size;
-                m_posFront++;
+                // & 0x7FFFFFFF kill sign
+                m_posFront = m_posFront + 1 & 0x7FFFFFFF;
 
                 // #ifdef STATISTICS
                 SOP_POP.leave();
@@ -215,7 +220,8 @@ public class MessageCreator extends Thread {
         m_addrBuffer[back] = p_addr;
         m_sizeBuffer[back] = p_size;
         m_currentBytes += p_size;
-        m_posBack++;
+        // & 0x7FFFFFFF kill sign
+        m_posBack = m_posBack + 1 & 0x7FFFFFFF;
 
         // #ifdef STATISTICS
         SOP_PUSH.leave();
