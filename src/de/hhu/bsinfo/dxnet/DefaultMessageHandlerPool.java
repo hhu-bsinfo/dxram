@@ -43,7 +43,7 @@ final class DefaultMessageHandlerPool {
         DefaultMessageHandler t;
         m_threads = new DefaultMessageHandler[p_numMessageHandlerThreads];
         for (int i = 0; i < m_threads.length; i++) {
-            t = new DefaultMessageHandler(i, p_messageReceivers, m_defaultMessages);
+            t = new DefaultMessageHandler(p_messageReceivers, m_defaultMessages);
             t.setName("Network: DefaultMessageHandler " + (i + 1));
             m_threads[i] = t;
             t.start();

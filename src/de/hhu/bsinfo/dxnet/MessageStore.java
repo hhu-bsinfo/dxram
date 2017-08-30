@@ -27,7 +27,7 @@ public class MessageStore {
     private final Message[] m_buffer;
 
     private final AtomicInteger m_posFront;
-    private final AtomicInteger m_posBack;
+    private volatile int m_posBack;
 
     /**
      * Creates an instance of MessageStore
@@ -44,7 +44,7 @@ public class MessageStore {
         m_buffer = new Message[m_size];
 
         m_posFront = new AtomicInteger(0);
-        m_posBack = new AtomicInteger(0);
+        m_posBack = 0;
     }
 
     /**
@@ -53,7 +53,7 @@ public class MessageStore {
      * @return whether the ring-buffer is empty or not
      */
     public boolean isEmpty() {
-        return (m_posFront.get() & 0x7FFFFFFF) == (m_posBack.get() & 0x7FFFFFFF);
+        return (m_posFront.get() & 0x7FFFFFFF) == (m_posBack & 0x7FFFFFFF);
     }
 
     /**
@@ -62,7 +62,7 @@ public class MessageStore {
      * @return whether the ring-buffer is full or not
      */
     public boolean isFull() {
-        return (m_posBack.get() + 1 & 0x7FFFFFFF) % m_size == (m_posFront.get() & 0x7FFFFFFF) % m_size;
+        return (m_posBack + 1 & 0x7FFFFFFF) % m_size == (m_posFront.get() & 0x7FFFFFFF) % m_size;
     }
 
     /**
@@ -83,7 +83,7 @@ public class MessageStore {
      */
     boolean pushMessage(final Message p_message) {
         // & 0x7FFFFFFF to kill sign
-        int posBack = m_posBack.get() & 0x7FFFFFFF;
+        int posBack = m_posBack & 0x7FFFFFFF;
         int posFront = m_posFront.get() & 0x7FFFFFFF;
 
         if ((posBack + 1 & 0x7FFFFFFF) % m_size == posFront % m_size) {
@@ -92,7 +92,7 @@ public class MessageStore {
         }
 
         m_buffer[posBack % m_size] = p_message;
-        m_posBack.incrementAndGet();
+        m_posBack++;
 
         return true;
     }
@@ -106,17 +106,21 @@ public class MessageStore {
         Message ret;
 
         while (true) {
+            // get front before back, otherwise front can overtake back when scheduler interrupts thread between get calls
+            int posFrontSigned = m_posFront.get();
             // & 0x7FFFFFFF to kill sign
-            int posBack = m_posBack.get() & 0x7FFFFFFF;
-            int posFront = m_posFront.get() & 0x7FFFFFFF;
+            int posBack = m_posBack & 0x7FFFFFFF;
+            int posFront = posFrontSigned & 0x7FFFFFFF;
 
             if (posFront == posBack) {
                 // Ring-buffer is empty.
-                return null;
+                ret = null;
+                break;
             }
 
             ret = m_buffer[posFront % m_size];
-            if (m_posFront.compareAndSet(posFront, posFront + 1 & 0x7FFFFFFF)) {
+
+            if (m_posFront.compareAndSet(posFrontSigned, posFrontSigned + 1)) {
                 break;
             }
         }
