@@ -1,7 +1,5 @@
 package de.hhu.bsinfo.dxnet;
 
-import java.util.concurrent.locks.LockSupport;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,11 +25,11 @@ public final class MessageHandlers {
      *         Provides all registered message receivers
      */
     MessageHandlers(final int p_numMessageHandlerThreads, final MessageReceiverStore p_messageReceivers) {
+        // default message handlers
         m_defaultMessageHandlerPool = new DefaultMessageHandlerPool(p_messageReceivers, p_numMessageHandlerThreads);
 
+        // and one exclusive
         m_exclusiveMessageHandler = new ExclusiveMessageHandler(p_messageReceivers);
-        m_exclusiveMessageHandler.setName("Network: ExclusiveMessageHandler");
-        m_exclusiveMessageHandler.start();
     }
 
     /**
@@ -61,17 +59,5 @@ public final class MessageHandlers {
 
         // Shutdown exclusive message handler
         m_exclusiveMessageHandler.shutdown();
-        LockSupport.unpark(m_exclusiveMessageHandler);
-        m_exclusiveMessageHandler.interrupt();
-        try {
-            m_exclusiveMessageHandler.join();
-            // #if LOGGER >= INFO
-            LOGGER.info("Shutdown of ExclusiveMessageHandler successful");
-            // #endif /* LOGGER >= INFO */
-        } catch (final InterruptedException e) {
-            // #if LOGGER >= WARN
-            LOGGER.warn("Could not wait for exclusive message handler to finish. Interrupted");
-            // #endif /* LOGGER >= WARN */
-        }
     }
 }

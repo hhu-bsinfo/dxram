@@ -25,7 +25,7 @@ final class DefaultMessageHandlerPool {
 
     private final MessageStore m_defaultMessages;
 
-    private final DefaultMessageHandler[] m_threads;
+    private final MessageHandler[] m_threads;
 
     /**
      * Creates an instance of DefaultMessageHandlerPool
@@ -40,11 +40,11 @@ final class DefaultMessageHandlerPool {
         LOGGER.info("Network: DefaultMessageHandlerPool: Initialising %d threads", p_numMessageHandlerThreads);
         // #endif /* LOGGER >= INFO */
 
-        DefaultMessageHandler t;
-        m_threads = new DefaultMessageHandler[p_numMessageHandlerThreads];
+        MessageHandler t;
+        m_threads = new MessageHandler[p_numMessageHandlerThreads];
         for (int i = 0; i < m_threads.length; i++) {
-            t = new DefaultMessageHandler(p_messageReceivers, m_defaultMessages);
-            t.setName("Network: DefaultMessageHandler " + (i + 1));
+            t = new MessageHandler(p_messageReceivers, m_defaultMessages);
+            t.setName("Network: MessageHandler " + (i + 1));
             m_threads[i] = t;
             t.start();
         }
@@ -54,7 +54,7 @@ final class DefaultMessageHandlerPool {
      * Closes all default message handler
      */
     void shutdown() {
-        DefaultMessageHandler t;
+        MessageHandler t;
         for (int i = 0; i < m_threads.length; i++) {
             t = m_threads[i];
             t.shutdown();
@@ -64,22 +64,13 @@ final class DefaultMessageHandlerPool {
             try {
                 t.join();
                 // #if LOGGER >= INFO
-                LOGGER.info("Shutdown of DefaultMessageHandler %d successful", i + 1);
+                LOGGER.info("Shutdown of MessageHandler %d successful", i + 1);
                 // #endif /* LOGGER >= INFO */
             } catch (final InterruptedException e) {
                 // #if LOGGER >= WARN
                 LOGGER.warn("Could not wait for default message handler to finish. Interrupted");
                 // #endif /* LOGGER >= WARN */
             }
-        }
-    }
-
-    /**
-     * Wake-up default message handlers. Is called by first message handler to get support.
-     */
-    void wakeupMessageHandlers() {
-        for (int i = 1; i < m_threads.length; i++) {
-            LockSupport.unpark(m_threads[i]);
         }
     }
 

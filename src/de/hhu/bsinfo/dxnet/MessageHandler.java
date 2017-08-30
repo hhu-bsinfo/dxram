@@ -14,12 +14,12 @@ import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 19.07.2016
  */
-final class DefaultMessageHandler extends Thread {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(DefaultMessageHandler.class.getSimpleName());
-    private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Pop");
-    private static final StatisticsOperation SOP_WAIT = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Wait");
-    private static final StatisticsOperation SOP_SLEEP = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Sleep");
-    private static final StatisticsOperation SOP_EXECUTE = StatisticsRecorderManager.getOperation(DefaultMessageHandler.class, "Execute");
+final class MessageHandler extends Thread {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(MessageHandler.class.getSimpleName());
+    private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(MessageHandler.class, "Pop");
+    private static final StatisticsOperation SOP_WAIT = StatisticsRecorderManager.getOperation(MessageHandler.class, "Wait");
+    private static final StatisticsOperation SOP_SLEEP = StatisticsRecorderManager.getOperation(MessageHandler.class, "Sleep");
+    private static final StatisticsOperation SOP_EXECUTE = StatisticsRecorderManager.getOperation(MessageHandler.class, "Execute");
 
     private static final int THRESHOLD_PARK = 10000;
     private static final int THRESHOLD_PARK_SLEEP = 1000;
@@ -31,12 +31,12 @@ final class DefaultMessageHandler extends Thread {
     // Constructors
 
     /**
-     * Creates an instance of DefaultMessageHandler
+     * Creates an instance of MessageHandler
      *
      * @param p_queue
      *         the message queue
      */
-    DefaultMessageHandler(final MessageReceiverStore p_messageReceivers, final MessageStore p_queue) {
+    MessageHandler(final MessageReceiverStore p_messageReceivers, final MessageStore p_queue) {
         m_messageReceivers = p_messageReceivers;
         m_defaultMessages = p_queue;
     }
