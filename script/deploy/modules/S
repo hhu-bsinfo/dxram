@@ -29,6 +29,7 @@ compile_vm_options_string_superpeer()
 	if [ "$debug" != "" ]; then
 		VM_OPTS="$VM_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$debug"
 		echo "Enabled remote debugging on port $debug"
+		echo "On your local machine: establish a tunnel using 'ssh <target_hostname> -L $debug:<target_hostname>:$debug' and connect your debugger to localhost, port $debug"
 	fi
 }
 
