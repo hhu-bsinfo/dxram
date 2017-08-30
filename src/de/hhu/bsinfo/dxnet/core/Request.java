@@ -31,6 +31,7 @@ public abstract class Request extends Message {
     private static final Logger LOGGER = LogManager.getFormatterLogger(Request.class.getSimpleName());
 
     private static AtomicInteger ms_threadsWaiting = new AtomicInteger(0);
+    // optimized value determined by experiments
     private static final long ms_counterBase = 1024;
 
     // Attributes

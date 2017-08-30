@@ -35,6 +35,7 @@ public class MessageCreator extends Thread {
 
     // must be a power of two to work with wrap around
     private static final int SIZE = 2 * 2 * 1024;
+    // optimized values determined by experiments
     private static final int THRESHOLD_PARK = 10000;
 
     private volatile boolean m_shutdown;

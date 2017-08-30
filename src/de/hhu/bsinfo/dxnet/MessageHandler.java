@@ -21,6 +21,7 @@ final class MessageHandler extends Thread {
     private static final StatisticsOperation SOP_SLEEP = StatisticsRecorderManager.getOperation(MessageHandler.class, "Sleep");
     private static final StatisticsOperation SOP_EXECUTE = StatisticsRecorderManager.getOperation(MessageHandler.class, "Execute");
 
+    // optimized values determined by experiments
     private static final int THRESHOLD_PARK = 10000;
     private static final int THRESHOLD_PARK_SLEEP = 1000;
 
