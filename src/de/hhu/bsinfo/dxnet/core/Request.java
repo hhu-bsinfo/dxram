@@ -31,7 +31,7 @@ public abstract class Request extends Message {
     private static final Logger LOGGER = LogManager.getFormatterLogger(Request.class.getSimpleName());
 
     private static AtomicInteger ms_threadsWaiting = new AtomicInteger(0);
-    private static final long ms_counterBase = 4096;
+    private static final long ms_counterBase = 1024;
 
     // Attributes
     private volatile boolean m_fulfilled;
@@ -164,7 +164,7 @@ public abstract class Request extends Message {
         long cur = System.nanoTime();
         long deadline = cur + p_timeoutMs * 1000 * 1000;
 
-        int totalThreadsWaiting = ms_threadsWaiting.incrementAndGet();
+        ms_threadsWaiting.incrementAndGet();
         int counter = 0;
 
         while (!m_fulfilled) {
@@ -194,41 +194,12 @@ public abstract class Request extends Message {
             // wait a bit, but increase waiting frequency with number of threads to reduce cpu load
             // but keep a higher cpu load to ensure low latency for less threads
             // (latency will increase with many threads anyway)
-            if (totalThreadsWaiting > 1) {
-                if (totalThreadsWaiting <= 2 && counter >= ms_counterBase * 512) {
-                    counter = 0;
-                    LockSupport.parkNanos(1);
-                } else if (totalThreadsWaiting <= 4 && counter >= ms_counterBase * 256) {
-                    counter = 0;
-                    LockSupport.parkNanos(1);
-                } else if (totalThreadsWaiting <= 8 && counter >= ms_counterBase * 128) {
-                    counter = 0;
-                    LockSupport.parkNanos(1);
-                } else if (totalThreadsWaiting <= 16 && counter >= ms_counterBase * 64) {
-                    counter = 0;
-                    LockSupport.parkNanos(1);
-                } else if (totalThreadsWaiting <= 32 && counter >= ms_counterBase * 32) {
-                    counter = 0;
-                    LockSupport.parkNanos(1);
-                } else if (totalThreadsWaiting <= 64 && counter >= ms_counterBase * 16) {
-                    counter = 0;
-                    LockSupport.parkNanos(1);
-                } else if (totalThreadsWaiting <= 128 && counter >= ms_counterBase * 8) {
-                    counter = 0;
-                    LockSupport.parkNanos(1);
-                } else if (totalThreadsWaiting <= 256 && counter >= ms_counterBase * 4) {
-                    counter = 0;
-                    LockSupport.parkNanos(1);
-                } else if (totalThreadsWaiting <= 512 && counter >= ms_counterBase * 2) {
-                    counter = 0;
-                    LockSupport.parkNanos(1);
-                } else if (totalThreadsWaiting <= 1024 && counter >= ms_counterBase) {
-                    counter = 0;
-                    LockSupport.parkNanos(1);
-                }
+            if (counter > ms_counterBase / ms_threadsWaiting.get()) {
+                counter = 0;
+                LockSupport.parkNanos(1);
+            } else {
+                counter++;
             }
-
-            counter++;
         }
 
         ms_threadsWaiting.decrementAndGet();
