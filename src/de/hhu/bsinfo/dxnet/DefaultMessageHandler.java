@@ -85,7 +85,6 @@ final class DefaultMessageHandler extends Thread {
 
                     // No new message at the moment -> sleep for xx µs and try again
                     LockSupport.parkNanos(1);
-                    waitCounter = 0;
                     sleepCounter++;
 
                     // #ifdef STATISTICS
