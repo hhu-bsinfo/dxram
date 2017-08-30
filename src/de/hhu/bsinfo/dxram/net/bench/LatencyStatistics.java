@@ -10,8 +10,8 @@ public class LatencyStatistics {
     private static final int MAX_THREADS = 1000;
 
     private static final String[] MS_LATENCY_UNITS =
-            new String[] {"< 1 us", "< 2 us", "< 5 us", "< 10 us", "< 25 us", "< 50 us", "< 100 us", "< 250 us", "< 500 us", "< 1 ms", "< 2 ms", "< 5 ms",
-                    "< 10 ms", "< 25 ms", "< 50 ms", "< 100 ms", "< 250 ms", "< 500 ms", "< 1 sec", ">= 1 sec"};
+            new String[] {"< 1 us", "< 2 us", "< 5 us", "< 10 us", "< 15 us", "< 20 us", "< 25 us", "< 50 us", "< 100 us", "< 250 us", "< 500 us", "< 1 ms",
+                    "< 2 ms", "< 5 ms", "< 10 ms", "< 25 ms", "< 50 ms", "< 100 ms", "< 250 ms", "< 500 ms", "< 1 sec", ">= 1 sec"};
 
     private final Stopwatch[] m_stopwatch;
     private final long[][] m_latencyCounts;
@@ -91,24 +91,30 @@ public class LatencyStatistics {
             } else if (tmp < 10) {
                 // less than 10 us
                 m_latencyCounts[p_threadId][3]++;
+            } else if (tmp < 15) {
+                // less than 10 us
+                m_latencyCounts[p_threadId][4]++;
+            } else if (tmp < 20) {
+                // less than 10 us
+                m_latencyCounts[p_threadId][5]++;
             } else if (tmp < 25) {
                 // less than 25 us
-                m_latencyCounts[p_threadId][4]++;
+                m_latencyCounts[p_threadId][6]++;
             } else if (tmp < 50) {
                 // less than 50 us
-                m_latencyCounts[p_threadId][5]++;
+                m_latencyCounts[p_threadId][7]++;
             } else if (tmp < 100) {
                 // less than 100 us
-                m_latencyCounts[p_threadId][6]++;
+                m_latencyCounts[p_threadId][8]++;
             } else if (tmp < 250) {
                 // less than 250 us
-                m_latencyCounts[p_threadId][7]++;
+                m_latencyCounts[p_threadId][9]++;
             } else if (tmp < 500) {
                 // less than 500 us
-                m_latencyCounts[p_threadId][8]++;
+                m_latencyCounts[p_threadId][10]++;
             } else {
                 // less than 1000 us/1 ms
-                m_latencyCounts[p_threadId][9]++;
+                m_latencyCounts[p_threadId][11]++;
             }
         }
         // less than 1 sec
@@ -117,36 +123,36 @@ public class LatencyStatistics {
 
             if (tmp < 2) {
                 // less than 2 ms
-                m_latencyCounts[p_threadId][10]++;
+                m_latencyCounts[p_threadId][12]++;
             } else if (tmp < 5) {
                 // less than 5 ms
-                m_latencyCounts[p_threadId][11]++;
+                m_latencyCounts[p_threadId][13]++;
             } else if (tmp < 10) {
                 // less than 10 ms
-                m_latencyCounts[p_threadId][12]++;
+                m_latencyCounts[p_threadId][14]++;
             } else if (tmp < 25) {
                 // less than 25 ms
-                m_latencyCounts[p_threadId][13]++;
+                m_latencyCounts[p_threadId][15]++;
             } else if (tmp < 50) {
                 // less than 50 ms
-                m_latencyCounts[p_threadId][14]++;
+                m_latencyCounts[p_threadId][16]++;
             } else if (tmp < 100) {
                 // less than 100 ms
-                m_latencyCounts[p_threadId][15]++;
+                m_latencyCounts[p_threadId][17]++;
             } else if (tmp < 250) {
                 // less than 250 ms
-                m_latencyCounts[p_threadId][16]++;
+                m_latencyCounts[p_threadId][18]++;
             } else if (tmp < 500) {
                 // less than 500 ms
-                m_latencyCounts[p_threadId][17]++;
+                m_latencyCounts[p_threadId][19]++;
             } else {
                 // less than 1000 ms/1 sec
-                m_latencyCounts[p_threadId][18]++;
+                m_latencyCounts[p_threadId][20]++;
             }
         }
         // 1 sec+
         else {
-            m_latencyCounts[p_threadId][19]++;
+            m_latencyCounts[p_threadId][21]++;
         }
     }
 }
