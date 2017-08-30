@@ -27,12 +27,12 @@ import de.hhu.bsinfo.dxnet.NetworkResponseDelayedException;
  *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  */
-public abstract class Request extends Message {
+public class Request extends Message {
     private static final Logger LOGGER = LogManager.getFormatterLogger(Request.class.getSimpleName());
 
-    private static AtomicInteger ms_threadsWaiting = new AtomicInteger(0);
     // optimized value determined by experiments
-    private static final long ms_counterBase = 1024;
+    private static final long COUNTER_BASE = 1024;
+    private static AtomicInteger ms_threadsWaiting = new AtomicInteger(0);
 
     // Attributes
     private volatile boolean m_fulfilled;
@@ -195,7 +195,7 @@ public abstract class Request extends Message {
             // wait a bit, but increase waiting frequency with number of threads to reduce cpu load
             // but keep a higher cpu load to ensure low latency for less threads
             // (latency will increase with many threads anyway)
-            if (counter > ms_counterBase / ms_threadsWaiting.get()) {
+            if (counter > COUNTER_BASE / ms_threadsWaiting.get()) {
                 counter = 0;
                 LockSupport.parkNanos(1);
             } else {

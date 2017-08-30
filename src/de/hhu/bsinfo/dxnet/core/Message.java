@@ -25,7 +25,7 @@ import de.hhu.bsinfo.utils.NodeID;
  * @author Marc Ewert, marc.ewert@hhu.de, 18.09.2014
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.08.2017
  */
-public abstract class Message {
+public class Message {
 
     static final boolean DEFAULT_EXCLUSIVITY_VALUE = false;
     /*- Header size:
@@ -43,7 +43,7 @@ public abstract class Message {
 
     // Attributes
     // (!) MessageID occupies only 3 byte in message header
-    int m_messageID = INVALID_MESSAGE_ID;
+    private int m_messageID = INVALID_MESSAGE_ID;
     private short m_source;
     private short m_destination;
     // Message type: message and requests -> 0, responses -> 1; used to avoid instanceof in message processing
