@@ -87,8 +87,12 @@ public final class DXNet {
         m_nioConfig = p_nioConfig;
         m_ibConfig = p_ibConfig;
 
-        // TODO we need split request timeouts for nio and infiniband (ib has way lower latencies than nio)
-        m_messageReceivers = new MessageReceiverStore((int) m_nioConfig.getRequestTimeOut().getMs());
+        if (p_config.getInfiniband()) {
+            m_messageReceivers = new MessageReceiverStore((int) m_ibConfig.getRequestTimeOut().getMs());
+        } else {
+            m_messageReceivers = new MessageReceiverStore((int) m_nioConfig.getRequestTimeOut().getMs());
+        }
+
         m_messageHandlers = new MessageHandlers(m_config.getNumMessageHandlerThreads(), m_messageReceivers);
         m_messageDirectory = new MessageDirectory((int) m_nioConfig.getRequestTimeOut().getMs());
 
@@ -98,8 +102,12 @@ public final class DXNet {
         LOGGER.info("Network: MessageCreator");
         // #endif /* LOGGER >= INFO */
 
-        // TODO split parameters for nio and ib necessary here
-        m_messageCreator = new MessageCreator((int) m_nioConfig.getOugoingRingBufferSize().getBytes());
+        if (p_config.getInfiniband()) {
+            m_messageCreator = new MessageCreator((int) m_ibConfig.getOugoingRingBufferSize().getBytes());
+        } else {
+            m_messageCreator = new MessageCreator((int) m_nioConfig.getOugoingRingBufferSize().getBytes());
+        }
+
         m_messageCreator.setName("Network: MessageCreator");
         m_messageCreator.start();
 
