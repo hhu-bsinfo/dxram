@@ -17,8 +17,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
-import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
 /**
  * Lock-free ring buffer implementation for outgoing messages. The implementation allows many threads to

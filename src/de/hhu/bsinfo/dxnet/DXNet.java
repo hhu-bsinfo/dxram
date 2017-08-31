@@ -33,8 +33,8 @@ import de.hhu.bsinfo.dxnet.ib.IBConfig;
 import de.hhu.bsinfo.dxnet.ib.IBConnectionManager;
 import de.hhu.bsinfo.dxnet.nio.NIOConfig;
 import de.hhu.bsinfo.dxnet.nio.NIOConnectionManager;
-import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**

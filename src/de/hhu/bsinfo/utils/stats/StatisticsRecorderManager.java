@@ -11,7 +11,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.stats;
+package de.hhu.bsinfo.utils.stats;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -40,7 +40,7 @@ public final class StatisticsRecorderManager {
      *
      * @return the recorders
      */
-    static Collection<StatisticsRecorder> getRecorders() {
+    public static Collection<StatisticsRecorder> getRecorders() {
         return ms_recorders.values();
     }
 
@@ -48,9 +48,9 @@ public final class StatisticsRecorderManager {
      * Returns the operation
      *
      * @param p_class
-     *     the class
+     *         the class
      * @param p_operationName
-     *     the operation name
+     *         the operation name
      * @return the operation
      */
     public static StatisticsOperation getOperation(final Class<?> p_class, final String p_operationName) {
@@ -61,10 +61,10 @@ public final class StatisticsRecorderManager {
      * Returns the recorder
      *
      * @param p_name
-     *     Get the recorder by its name
+     *         Get the recorder by its name
      * @return the recorder
      */
-    static StatisticsRecorder getRecorder(final String p_name) {
+    public static StatisticsRecorder getRecorder(final String p_name) {
         StatisticsRecorder recorder = ms_recorders.get(p_name);
         if (recorder == null) {
             ms_mapLock.lock();
@@ -79,7 +79,7 @@ public final class StatisticsRecorderManager {
      * Returns the recorder
      *
      * @param p_class
-     *     the class
+     *         the class
      * @return the recorder
      */
     private static StatisticsRecorder getRecorder(final Class<?> p_class) {

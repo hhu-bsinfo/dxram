@@ -19,8 +19,8 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.stats.Statistics;
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
+import de.hhu.bsinfo.utils.stats.Statistics;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorder;
 import de.hhu.bsinfo.utils.NodeID;
 
 /**

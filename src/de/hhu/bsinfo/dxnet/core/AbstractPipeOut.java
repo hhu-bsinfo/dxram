@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
 /**
  * Endpoint for outgoing data on a connection.

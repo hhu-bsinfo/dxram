@@ -19,8 +19,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxnet.nio.NIOBufferPool;
-import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
 /**
  * The MessageCreator builds messages and forwards them to the MessageHandlers.

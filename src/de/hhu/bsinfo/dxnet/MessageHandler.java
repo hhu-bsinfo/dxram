@@ -6,8 +6,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
 /**
  * Executes incoming default messages

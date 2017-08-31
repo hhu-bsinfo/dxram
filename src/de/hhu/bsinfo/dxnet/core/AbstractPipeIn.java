@@ -3,8 +3,8 @@ package de.hhu.bsinfo.dxnet.core;
 import java.util.Arrays;
 
 import de.hhu.bsinfo.dxnet.MessageHandlers;
-import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.UnsafeMemory;
 

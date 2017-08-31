@@ -5,6 +5,8 @@ import java.util.Collection;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorder;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
 /**
  * Service for internal statistics

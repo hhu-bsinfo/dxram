@@ -7,8 +7,8 @@ import java.nio.channels.SocketChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxnet.NodeMap;
 import de.hhu.bsinfo.dxnet.core.AbstractFlowControl;
 import de.hhu.bsinfo.dxnet.core.AbstractPipeOut;

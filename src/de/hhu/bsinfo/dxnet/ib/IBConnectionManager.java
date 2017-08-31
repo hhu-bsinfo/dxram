@@ -34,8 +34,8 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.NetworkRuntimeException;
 import de.hhu.bsinfo.dxnet.core.RequestMap;
 import de.hhu.bsinfo.dxnet.core.StaticExporterPool;
-import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.utils.ByteBufferHelper;
 import de.hhu.bsinfo.utils.NodeID;
 

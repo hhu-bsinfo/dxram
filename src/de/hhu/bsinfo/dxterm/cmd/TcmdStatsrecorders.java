@@ -17,7 +17,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;

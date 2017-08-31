@@ -11,7 +11,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.stats;
+package de.hhu.bsinfo.utils.stats;
 
 import java.util.Collection;
 

@@ -18,8 +18,8 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
-import de.hhu.bsinfo.dxram.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxram.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.utils.ArrayListLong;
 
