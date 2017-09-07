@@ -25,7 +25,7 @@ compile_ycsb_application_options_string_peer()
 
 	YCSB_PARAMS=""
 
-	YCSB_PARAMS="$YCSB_PARAMS -p dxramdeployscript"
+	YCSB_PARAMS="$YCSB_PARAMS -p dxramdeployscript=1"
 	YCSB_PARAMS="$YCSB_PARAMS -p log4j.configurationFile=config/log4j.xml"
 	YCSB_PARAMS="$YCSB_PARAMS -p dxram.config=config/dxram.json"
 	YCSB_PARAMS="$YCSB_PARAMS -p dxram.m_config.m_engineConfig.m_address.m_ip=$ip"
