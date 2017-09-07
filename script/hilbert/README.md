@@ -51,3 +51,24 @@ We can't specify hostnames because the job system will assign them for us. Thus,
 ## Working directory
 
 Once you deployed to HILBERT, a job is submitted to the job system. The working directory with the filled in job template file, DXRAM logs, configuration file and terminal stdout/sterr in a file is located in */scratch_gs/user/dxram_tmp*.
+
+## Terminal
+
+Simply run the terminal from the login node:
+```
+cd ~/dxram
+./dxterm-client hilbert65
+```
+
+Replace *hilbert65* with one of the assigned hilbert nodes. You can check the log file names to get a list of nodes assigned.
+
+If you are in interactive mode, you can run the terminal on one of the hilbert nodes. Ensure that you have loaded Java, first:
+```
+module load Java/1.8.0
+```
+
+Then run the terminal:
+```
+cd ~/dxram
+./dxterm-client hilbert65
+```
