@@ -596,6 +596,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                         m_zookeeper.close(true);
                         return false;
                     }
+
+                    if (p_nodes == null) {
+                        // #if LOGGER >= ERROR
+                        LOGGER.error("Missing nodes configuration or reading nodes configuration from config file failed");
+                        // #endif /* LOGGER >= ERROR */
+                        m_zookeeper.close(true);
+                        return false;
+                    }
+
                     // Load nodes routing information
                     ret = parseNodesBootstrap(p_nodes);
                     parsed = true;

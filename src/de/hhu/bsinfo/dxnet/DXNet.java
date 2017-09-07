@@ -272,7 +272,7 @@ public final class DXNet {
                 connection = m_connectionManager.getConnection(p_message.getDestination());
             } catch (final NetworkException e) {
                 // #if LOGGER >= DEBUG
-                LOGGER.debug("Connection could not be established!", p_message.getDestination());
+                LOGGER.debug("Connection to 0x%X could not be established!", p_message.getDestination());
                 // #endif /* LOGGER >= DEBUG */
                 throw new NetworkDestinationUnreachableException(p_message.getDestination());
             }
