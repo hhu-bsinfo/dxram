@@ -78,3 +78,8 @@ bootstrap
 get_reserved_nodes
 generate_hilbert_deploy_config
 run_deploy_dxram
+
+echo "Deployment finished, entering infinite loop (avoid job ending too early)..."
+while true; do
+	sleep 10
+done
