@@ -149,7 +149,7 @@ public class IBConnectionManager extends AbstractConnectionManager
 
             if (!"/255.255.255.255".equals(addr.getAddress().toString())) {
                 byte[] bytes = addr.getAddress().getAddress();
-                int val = (int) (((long) bytes[0] & 0xFF) << 24 | bytes[1] & 0xFF << 16 | bytes[2] & 0xFF << 8 | bytes[3] & 0xFF);
+                int val = (int) (((long) bytes[0] & 0xFF) << 24 | ((long) bytes[1] & 0xFF) << 16 | ((long) bytes[2] & 0xFF) << 8 | bytes[3] & 0xFF);
                 JNIIbdxnet.addNode(val);
             }
         }
