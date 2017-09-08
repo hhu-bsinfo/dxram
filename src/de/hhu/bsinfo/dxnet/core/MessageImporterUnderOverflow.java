@@ -56,7 +56,6 @@ class MessageImporterUnderOverflow extends AbstractMessageImporter {
         m_bufferAddress = p_addr;
         m_bufferSize = p_size;
         m_currentPosition = p_position;
-        System.out.println(">>>>> " + m_currentPosition);
 
         if (p_position != 0) {
             throw new IllegalStateException("Position != 0: " + p_position);
