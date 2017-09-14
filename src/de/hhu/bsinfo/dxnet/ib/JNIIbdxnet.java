@@ -67,9 +67,9 @@ final class JNIIbdxnet {
     }
 
     /**
-     * Interface for callbacks from the subsystem to the java space (node discovery operations)
+     * Interface for callbacks from the subsystem to the java space (node connect operations)
      */
-    public interface DiscoveryHandler {
+    public interface ConnectionHandler {
         /**
          * Called when a new node was discovered (but not connection established, yet)
          *
@@ -85,12 +85,7 @@ final class JNIIbdxnet {
          *         Node id of invalidated node
          */
         void nodeInvalidated(final short p_nodeId);
-    }
 
-    /**
-     * Interface for callbacks from the subsystem to the java space (node connect operations)
-     */
-    public interface ConnectionHandler {
         /**
          * Called when a node is connected, i.e. an actual infiniband connection was established
          *
@@ -135,12 +130,12 @@ final class JNIIbdxnet {
      *         Max number of WRQs in the (shared) FC recv queue
      * @param p_maxNumConnections
      *         Max number of connections
+     * @param p_connectionCreationTimeoutMs
+     *         Max time to wait for a connection to be created
      * @param p_sendHandler
      *         Reference to a send handler
      * @param p_recvHandler
      *         Reference to a recv handler
-     * @param p_discoveryHandler
-     *         Reference to a discovery handler
      * @param p_connectionHandler
      *         Reference to a connection handler
      * @param p_enableSignalHandler
@@ -153,7 +148,7 @@ final class JNIIbdxnet {
      */
     public static native boolean init(final short p_ownNodeId, final int p_inBufferSize, final int p_outBufferSize, final long p_recvPoolSizeBytes,
             final int p_maxRecvReqs, final int p_maxSendReqs, final int p_flowControlMaxRecvReqs, final int p_maxNumConnections,
-            final SendHandler p_sendHandler, final RecvHandler p_recvHandler, final DiscoveryHandler p_discoveryHandler,
+            final int p_connectionCreationTimeoutMs, final SendHandler p_sendHandler, final RecvHandler p_recvHandler,
             final ConnectionHandler p_connectionHandler, final boolean p_enableSignalHandler, final boolean p_enableDebugThread);
 
     /**

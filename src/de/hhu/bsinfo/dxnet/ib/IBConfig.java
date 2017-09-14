@@ -28,6 +28,9 @@ public class IBConfig {
     private int m_maxConnections = 100;
 
     @Expose
+    private TimeUnit m_connectionCreationTimeout = new TimeUnit(1, TimeUnit.SEC);
+
+    @Expose
     private TimeUnit m_requestTimeOut = new TimeUnit(100, TimeUnit.MS);
 
     @Expose
@@ -72,6 +75,13 @@ public class IBConfig {
      */
     public int getMaxConnections() {
         return m_maxConnections;
+    }
+
+    /**
+     * Get the max time to wait for a new connection to be created
+     */
+    public TimeUnit getConnectionCreationTimeout() {
+        return m_connectionCreationTimeout;
     }
 
     /**

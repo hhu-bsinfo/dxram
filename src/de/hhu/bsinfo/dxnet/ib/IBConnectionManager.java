@@ -34,18 +34,17 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.NetworkRuntimeException;
 import de.hhu.bsinfo.dxnet.core.RequestMap;
 import de.hhu.bsinfo.dxnet.core.StaticExporterPool;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.utils.ByteBufferHelper;
 import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
 /**
  * Connection manager for infiniband (note: this is the main class for the IB subsystem in the java space)
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 13.06.2017
  */
-public class IBConnectionManager extends AbstractConnectionManager
-        implements JNIIbdxnet.SendHandler, JNIIbdxnet.RecvHandler, JNIIbdxnet.DiscoveryHandler, JNIIbdxnet.ConnectionHandler {
+public class IBConnectionManager extends AbstractConnectionManager implements JNIIbdxnet.SendHandler, JNIIbdxnet.RecvHandler, JNIIbdxnet.ConnectionHandler {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBConnectionManager.class.getSimpleName());
 
     private static final StatisticsOperation SOP_SEND_NEXT_DATA = StatisticsRecorderManager.getOperation(IBConnectionManager.class, "SendNextData");
@@ -128,8 +127,8 @@ public class IBConnectionManager extends AbstractConnectionManager
         if (!JNIIbdxnet
                 .init(m_coreConfig.getOwnNodeId(), (int) m_config.getIncomingBufferSize().getBytes(), (int) m_config.getOugoingRingBufferSize().getBytes(),
                         m_config.getIncomingBufferPoolTotalSize().getBytes(), m_config.getMaxRecvReqs(), m_config.getMaxSendReqs(),
-                        m_config.getFlowControlMaxRecvReqs(), m_config.getMaxConnections(), this, this, this, this, m_config.getEnableSignalHandler(),
-                        m_config.getEnableDebugThread())) {
+                        m_config.getFlowControlMaxRecvReqs(), m_config.getMaxConnections(), (int) m_config.getConnectionCreationTimeout().getMs(), this, this,
+                        this, m_config.getEnableSignalHandler(), m_config.getEnableDebugThread())) {
             // #if LOGGER >= DEBUG
             LOGGER.debug("Initializing ibnet failed, check ibnet logs");
             // #endif /* LOGGER >= DEBUG */
