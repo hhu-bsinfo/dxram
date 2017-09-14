@@ -28,7 +28,7 @@ public class IBConfig {
     private int m_maxConnections = 100;
 
     @Expose
-    private TimeUnit m_connectionCreationTimeout = new TimeUnit(1, TimeUnit.SEC);
+    private TimeUnit m_connectionCreationTimeout = new TimeUnit(5, TimeUnit.SEC);
 
     @Expose
     private TimeUnit m_requestTimeOut = new TimeUnit(100, TimeUnit.MS);
