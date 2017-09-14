@@ -228,6 +228,7 @@ public final class DXRAM {
      */
     private void printNodeInfo() {
         String str = ">>> DXRAM Node <<<\n";
+        str += VERSION + "\n";
         String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
         if (buildDate != null) {
             str += "BuildDate: " + buildDate + '\n';
