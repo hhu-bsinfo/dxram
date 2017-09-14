@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# job attributes
+#PBS -l select=1:ncpus=4:mem=2GB:arch=ivybridge
+#PBS -l place=scatter
+#PBS -l walltime=00:05:00
+#PBS -r n
+#PBS -N ibdxnet_cc
+#PBS -A dxram
+
+module load gcc/6.1.0
+module load cmake/3.5.1
+module load Java/1.8.0
+
+cd ~/ibdxnet
+rm -r build
+mkdir build
+cd build/
+echo "Cmake..."
+cmake ..
+echo "Make..."
+make -j 4
+echo "Done"

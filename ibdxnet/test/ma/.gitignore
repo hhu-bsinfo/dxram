@@ -1,0 +1,3 @@
+*.o
+ib_server
+ib_client
