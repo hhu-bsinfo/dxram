@@ -11,6 +11,7 @@
     </taskdef>
 
     <target name="debug" description="builds dxram-debug.jar (contains all logger calls)">
+        <antcall target="update-git-rev-in-code"/>
         <antcall target="compile">
             <param name="buildtype" value="debug"/>
         </antcall>
@@ -23,6 +24,8 @@
         <exec dir="util/" executable="/bin/bash">
             <arg line="preprocessor.sh INFO ENABLED DISABLED"/>
         </exec>
+
+        <antcall target="update-git-rev-in-code"/>
 
         <trycatch>
             <try>
@@ -48,6 +51,8 @@
         <exec dir="util/" executable="/bin/bash">
             <arg line="preprocessor.sh DISABLED DISABLED DISABLED"/>
         </exec>
+
+        <antcall target="update-git-rev-in-code"/>
 
         <trycatch>
             <try>
@@ -115,5 +120,33 @@
         </jar>
 
         <delete dir="${build_proj_dir}/classes"/>
+    </target>
+
+
+    <available file=".git" type="dir" property="git.present"/>
+
+    <target name="update-git-rev-in-code" depends="replace-tokens"/>
+
+    <target name="git.revision" description="Store git revision in ${repository.version}" if="git.present">
+        <echo level="info" message="git.present is set ${git.present}"/>
+        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="">
+            <arg value="log"/>
+            <arg value="-1"/>
+            <arg value="--format=%h"/>
+            <arg value="--date=short"/>
+            <arg value="HEAD"/>
+        </exec>
+        <echo level="info" message="git.revision is set ${git.revision}"/>
+        <condition property="repository.version" value="${git.revision}" else="unknown">
+            <and>
+                <isset property="git.revision"/>
+                <length string="${git.revision}" trim="yes" length="0" when="greater"/>
+            </and>
+        </condition>
+        <echo level="info" message="repository.version is set ${repository.version}"/>
+    </target>
+
+    <target name="replace-tokens" depends="git.revision">
+        <replace dir="${source_dir}" token="@GITCOMMIT@" value="${repository.version}"/>
     </target>
 </project>
