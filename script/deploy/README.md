@@ -1,32 +1,43 @@
 # Deployment script
 
-The deployment script (*deploy.sh*) allows quick deployment of multiple DXRAM instances with minimal effort to a cluster or localhost for testing.
+The deployment script (*deploy.sh*) allows quick deployment of multiple DXRAM
+instances with minimal effort to a cluster or localhost for testing.
 
 # How to deploy
 
-A dedicated configuration file specifies the number of instances as well as parameters for each instance to run. Examples are provided in the subfolder *conf/examples*.
+A dedicated configuration file specifies the number of instances as well as
+parameters for each instance to run. Examples are provided in the subfolder
+*conf/examples*.
 
 To execute deployment, run the deploy script with a configuration:
 ```
 ./deploy.sh conf/example/SimpleTest.conf
 ```
 
-You can also run it from other locations as long as you have it located inside the *script/deploy* folder, e.g. from the DXRAM root folder:
+You can also run it from other locations as long as you have it located inside
+the *script/deploy* folder, e.g. from the DXRAM root folder:
 ```
 ./script/deploy/deploy.sh ./script/deploy/conf/example/SimpleTest.conf
 ````
+
+However, we recommend using the *dxram-deploy* command, instead. This command
+is available after the environment is set up using the *env.sh* script.
 
 # Configuration
 
 ## Execution paths
 
-Deploying a minimal DXRAM setup is very easy and requires a few parameters, only. Referring to the *conf/example/SimpleTest.conf*, two paths must be specified at the top of the configuration
+Deploying a minimal DXRAM setup is very easy and requires a few parameters,
+only. Referring to the *conf/example/SimpleTest.conf*, one path must be
+specified at the top of the configuration
 ```
-DXRAM_PATH=~/dxram
 ZOOKEEPER_PATH=~/zookeeper
 ```
 
-Relative paths (relative to the location of the configuration file) as well as ~ to reference the current user's home are supported as well as absolute paths. Make sure *DXRAM_PATH* points to the root *dxram* folder and *ZOOKEEPER_PATH* to the root of your ZooKeeper installation.
+Relative paths (relative to the location of the configuration file) as well
+as ~ to reference the current user's home are supported as well as absolute
+paths. Make sure tat *ZOOKEEPER_PATH* to the root of your ZooKeeper
+installation.
 
 ## DXRAM instances/nodes (localhost)
 
