@@ -107,7 +107,7 @@ resolve()
 ######################################################
 close()
 {
-	echo "Closing all dxram instances..."
+	echo "Closing all DXRAM instances..."
 	local node=""
 
 	while read node || [[ -n "$node" ]]; do
@@ -130,7 +130,7 @@ close()
 			# Stop ZooKeeper?
 			echo "ZooKeeper might stay alive"
 		else
-			echo "Killing instance on $ip..."
+			echo "Killing DXRAM instance(s) on $ip..."
 			if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ]; then
 				`$root pkill -9 -f "dxramdeployscript"`
 			else
@@ -139,7 +139,7 @@ close()
 		fi
 	done <<< "$NODES"
 
-	echo "Exiting..."
+	echo "Done"
 	exit
 }
 

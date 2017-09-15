@@ -127,7 +127,8 @@ check_superpeer_startup()
 		local success=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "$DEFAULT_CONDITION"`
 		local fail=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep "^Initializing DXRAM failed.$"`
 		if [ "$success" != "" ] ; then
-			echo " SUCCESS"
+			pid=$(ssh ${hostname} "pgrep -f \"^java \-Ddxramdeployscript\"")
+			echo " SUCCESS (pid: $pid)"
 		 break
 		elif [ "$fail" != "" ] ; then
 			echo " ERROR: Superpeer could not be started. See log file $logfile"
@@ -166,10 +167,10 @@ while true; do
 	if [ "$arg_type" = "" ]; then
 		break
 	elif [ "$arg_type" = "vmopts" ]; then
-			vm_options=`echo $tmp | cut -d '=' -f 2`
-			vm_options=`echo "-$vm_options" | sed 's/\^/ -/'`
+		vm_options=`echo $tmp | cut -d '=' -f 2`
+		vm_options=`echo "-$vm_options" | sed 's/\^/ -/'`
 	elif [ "$arg_type" = "shellcmd" ]; then
-			additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
+		additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
 	elif [ "$arg_type" = "debug" ]; then
 		debug=`echo $tmp | cut -d '=' -f 2`
 	elif [ "$arg_type" = "root" ]; then
@@ -179,7 +180,7 @@ while true; do
 	fi
 done
 
-print=`echo "Superpeer ($ip $port $vm_options $additional_shell_cmds $debug $run_as_root): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
+print=`echo "Superpeer $ip:$port (vm_options{$vm_options} add_shell_cmds{$additional_shell_cmds} debug{$debug} run_root{$run_as_root}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
 echo -n "$print"
 
 if [ "$is_remote" = false ]; then

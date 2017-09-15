@@ -197,7 +197,8 @@ check_peer_startup()
 		# Abort execution after an exception was thrown (every exception but NetworkResponseCancelledException)
 		local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseCancelledException"`
 		if [ "$success" != "" ] ; then
-			echo " SUCCESS"
+			pid=$(ssh ${hostname} "pgrep -f \"^java \-Ddxramdeployscript\"")
+			echo " SUCCESS (pid: $pid)"
 			break
 		elif [ "$fail_init" != "" ] ; then
 			echo " ERROR: BG Peer could not be started. See log file $logfile"
@@ -278,7 +279,7 @@ if [ "$condition" = "" ]; then
 	condition=$DEFAULT_CONDITION
 fi
 
-print=`echo "BG Peer ($ip $port $ram_size_in_mb  $bg_nodes $bg_useroffset $bg_usercount $bg_type $bg_load_threads $bg_exec_threads $bg_workload $additional_shell_cmds): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
+print=`echo "BG Peer $ip:$port (kvsm{$ram_size_in_mb} nodes{$bg_nodes} useroffset{$bg_useroffset} usercnt{$bg_usercount} type{$bg_type} load_threads{$bg_load_threads} exec_threads{$bg_exec_threads} workload{$bg_workload} add_shell_cmds{$additional_shell_cmds}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
 echo -n "$print"
 
 if [ "$is_remote" = false ]; then

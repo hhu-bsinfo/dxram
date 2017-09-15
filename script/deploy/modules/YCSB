@@ -177,7 +177,8 @@ check_peer_startup()
 		# Abort execution after an exception was thrown (every exception but NetworkResponseCancelledException)
 		local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseCancelledException"`
 		if [ "$success" != "" ] ; then
-			echo " SUCCESS"
+			pid=$(ssh ${hostname} "pgrep -f \"^java \-Ddxramdeployscript\"")
+			echo " SUCCESS (pid: $pid)"
 			break
 		elif [ "$fail_init" != "" ] ; then
 			echo " ERROR: YCSB Peer could not be started. See log file $logfile"
@@ -256,7 +257,7 @@ if [ "$condition" = "" ]; then
 	condition=$DEFAULT_CONDITION
 fi
 
-print=`echo "YCSB Peer ($ip $port $ram_size_in_mb  $ycsb_nodes ${zookeeper_ip}:${zookeeper_port} $ycsb_insertstart $ycsb_recordcount $ycsb_type $ycsb_threads $ycsb_workload $additional_shell_cmds): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
+print=`echo "YCSB Peer $ip:$port (kvsm{$ram_size_in_mb} nodes{$ycsb_nodes} zk{${zookeeper_ip}:${zookeeper_port}} insertstart{$ycsb_insertstart} recordcnt{$ycsb_recordcount} type{$ycsb_type} threads{$ycsb_threads} workload{$ycsb_workload} add_shell_cmds{$additional_shell_cmds}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
 echo -n "$print"
 
 if [ "$is_remote" = false ]; then

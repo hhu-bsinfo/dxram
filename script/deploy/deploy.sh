@@ -458,7 +458,8 @@ check_zookeeper_startup()
 			export PATH=$ZOOKEEPER_PATH/bin:$PATH
 		fi
 		if [ "$success_started" != "" -o "$success_running" != "" ]; then
-			echo "ZooKeeper ($ip $port) started"
+			pid=$(ssh ${hostname} "pgrep -f \"^java \-Dzookeeper.log.dir\"")
+			echo "ZooKeeper ($ip:$port) started (pid: $pid)"
 
 			if [ "$ip" = "$LOCALHOST" -o "$ip" = "$THIS_HOST" ]; then
 				# Remove all dxram related entries

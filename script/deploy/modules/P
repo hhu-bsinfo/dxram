@@ -190,7 +190,8 @@ check_peer_startup()
 		local fail_error=`cat "$logfile" 2> /dev/null | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | grep -i "exception" | grep -v "NetworkResponseCancelledException"`
 
 		if [ "$success" != "" ]; then
-			echo " SUCCESS"
+			pid=$(ssh ${hostname} "pgrep -f \"^java \-Ddxramdeployscript\"")
+			echo " SUCCESS (pid: $pid)"
 			break
 		elif [ "$fail_init" != "" ]; then
 			echo " ERROR: Peer could not be started. See log file $logfile"
@@ -275,7 +276,7 @@ if [ "$condition" = "" ]; then
 	condition=$DEFAULT_CONDITION
 fi
 
-print=`echo "Peer ($ip $port $ram_size_in_mb $compute_node_role $compute_group_id $class $arguments $vm_options $additional_shell_cmds $profile $debug $run_as_root): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
+print=`echo "Peer $ip:$port (kvsm{$ram_size_in_mb} comp_node_role{$compute_node_role} comp_grp_id{$compute_group_id} class{$class} args{$arguments} vm_options{$vm_options} add_shell_cmds{$additional_shell_cmds} profile{$profile} debug{$debug} run_root{$run_as_root}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
 echo -n "$print"
 
 if [ "$is_remote" = false ]; then
