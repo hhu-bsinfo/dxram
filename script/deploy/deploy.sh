@@ -26,11 +26,11 @@ check_shell()
 # Check if all neccessary programs are installed
 # Globals:
 # Arguments:
-#   node_file - The configuration file
+#   nodes - The nodes configuration (read file)
 ######################################################
 check_programs()
 {
-	local node_file=$1
+	local nodes=$1
 
 	if [ ! hash cat 2>/dev/null ]; then
 		echo "Please install coreutils. Used for cat, cut, mkdir, readlink, rm and sleep. Exiting..."
@@ -73,7 +73,7 @@ check_programs()
 	fi
 
 	if [ ! hash java 2>/dev/null ]; then
-		if [ "`cat $node_file | grep localhost`" != "" ]; then
+		if [ "`echo $nodes | grep localhost`" != "" ]; then
 			echo "Please install Java 8 for local execution of DXRAM. Exiting..."
 			exit
 		fi
@@ -88,7 +88,6 @@ check_programs()
 # Read paths from configuration or set default values
 # Globals:
 #   NODE_FILE_DIR
-#   DXRAM_PATH
 #   ZOOKEEPER_PATH
 #   NODES
 # Arguments:
@@ -96,29 +95,7 @@ check_programs()
 ######################################################
 determine_configurable_paths()
 {
-	local tmp=`echo "$NODES" | grep DXRAM_PATH`
-	if [ "$tmp" != "" ] ; then
-		local dxram_path=`echo "$tmp" | cut -d '=' -f 2`
-
-		if [[ "$dxram_path" = /* ]]; then
-			# Remove trailing /
-			readonly DXRAM_PATH=${dxram_path%/}
-		elif [[ "${dxram_path:0:1}" = "~" ]]; then
-			# Resolve ~ path to absolute
-			local tmp=$HOME${dxram_path:1}
-			readonly DXRAM_PATH=${tmp%/}
-		else
-			# Resolve relative path to absolute
-			readonly DXRAM_PATH="$(cd "${NODE_FILE_DIR}/$dxram_path"; pwd)"
-		fi
-
-		echo "DXRAM root folder path: $DXRAM_PATH"
-	else
-		readonly DXRAM_PATH="~/dxram"
-		echo "DXRAM root folder path undefined. Using default: $DXRAM_PATH"
-	fi
-
-	tmp=`echo "$NODES" | grep ZOOKEEPER_PATH`
+	local tmp=`echo "$NODES" | grep ZOOKEEPER_PATH`
 	if [ "$tmp" != "" ] ; then
 		local zookeeper_path=`echo "$tmp" | cut -d '=' -f 2`
 
@@ -135,7 +112,7 @@ determine_configurable_paths()
 
 		echo "ZooKeeper root folder path: $ZOOKEEPER_PATH"
 	else
-		readonly ZOOKEEPER_PATH="~/zookeeper"
+		readonly ZOOKEEPER_PATH="/home/$USER/zookeeper"
 		echo "ZooKeeper root folder path undefined. Using default: $ZOOKEEPER_PATH"
 	fi
 
@@ -658,6 +635,13 @@ close()
 	exit
 }
 
+remote_get_ram()
+{
+	local host=$1
+
+	ssh $host -n ""
+}
+
 ###################
 # SIGINT handler
 ###################
@@ -676,21 +660,49 @@ check_shell
 # Setup signal handler for SIGINT
 trap sigint_handler SIGINT 
 
-if [ "$1" = "" ] ; then
-	echo "Missing parameter: Configuration file"
-	echo "  Example: $0 SimpleTest.conf"
-	exit
+echo "#############################################################"
+echo "DXRAM deploy script"
+
+# Demo mode
+if [ "$1" = "" ]; then
+	echo "Demo mode"
+	echo "Deploying one superpeer and one peer (1 GB kvss) to localhost"
+	echo "#############################################################"
+	NODES=$(echo -e "localhost,Z\nlocalhost,S\nlocalhost,P,kvss=1024")
+elif [ "${1: -5}" != ".conf" ]; then
+	# Simple mode
+	num_superpeers="1"
+	num_peers=$(expr $# - 1)
+
+	echo "Simple mode"
+	echo "$num_superpeers superpeer(s) and $num_peers peer(s)"
+	echo "#############################################################"
+	
+	NODES=$(echo -e "$1,Z")
+
+	counter=0
+	for host in ${@:1}; do
+		remote_mem_avail=$(ssh $host -n "grep MemAvailable /proc/meminfo | awk '{print \$2}'")
+		# Reserve 1 GB for OS and 2 GB for JVM
+		remote_mem_avail=$(expr $remote_mem_avail / 1024 - 1024 - 2048)
+		
+		if [ $counter -ge $num_superpeers ]; then
+			NODES=$(echo -e "${NODES}\n${host},P,kvss=$remote_mem_avail")
+		else
+			NODES=$(echo -e "${NODES}\n${host},S")
+		fi
+		
+		counter=$((counter+1))
+	done
+else 
+	# Config file mode
+	echo "Config file mode"
+	echo "$1"
+	echo "#############################################################"
+	NODES=`cat "$1" | grep -v '#' | sed 's/, /,/g' | sed 's/,\t/,/g'`
 fi
 
-node_file="$1"
-if [ "${node_file: -5}" != ".conf" ] ; then
-	node_file="${node_file}.conf"
-fi
-
-check_programs "$node_file"
-
-# Trim node file
-NODES=`cat "$node_file" | grep -v '#' | sed 's/, /,/g' | sed 's/,\t/,/g'`
+check_programs "$NODES"
 
 # Set default values
 readonly LOCALHOST=`resolve "localhost"`
@@ -705,20 +717,18 @@ readonly LIBRARIES="lib/slf4j-api-1.6.1.jar:lib/zookeeper-3.4.3.jar:lib/gson-2.7
 readonly DEFAULT_CONDITION="!---ooo---!"
 readonly ZOOKEEPER_PORT="2181"
 
-echo "########################################"
-echo "Deploying $(echo $1 | cut -d '.' -f 1) on $THIS_HOST"
-echo "########################################"
 echo ""
 
 # Set execution paths, all paths absolute
 readonly NODE_FILE_DIR="$(cd "$(dirname "$1")"; pwd)"
 readonly EXECUTION_DIR="`pwd`"
 readonly DEPLOY_SCRIPT_DIR=$(dirname "$0")
+readonly DXRAM_PATH=$(cd $DEPLOY_SCRIPT_DIR/../../ && pwd)
 determine_configurable_paths
 readonly DEPLOY_TMP_DIR="${EXECUTION_DIR}/deploy_log/"$(date +%s)
 readonly LOG_DIR="${DEPLOY_TMP_DIR}/logs"
 readonly CONFIG_FILE="${DXRAM_PATH}/config/dxram.json"
-echo -e "\n\n"
+echo ""
 
 # Detect NFS mounted FS
 if [ "$(df -P -T $DXRAM_PATH | tail -n +2 | awk '{print $2}' | grep "nfs")" = "" ]; then

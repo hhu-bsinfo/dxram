@@ -183,15 +183,22 @@ close_hostnames()
 
 check_shell
 
+echo "#############################################################"
+echo "DXRAM kill all instances script"
+
+# Kill for simple mode (local, only)
 if [ "$1" = "" ]; then
-	echo "Missing parameter: Configuration file or list of hostnames"
-	echo "  Example: $0 SimpleTest.conf"
-	echo "       or: $0 node50 node51 ..."
+	echo "Killing all LOCAL DXRAM instance(s)..."
+	echo "#############################################################"
+	pkill -9 -f "^java.*dxramdeployscript"
+	echo "Done"
 	exit
 fi
 
 node_file="./$1"
 if [ "${node_file: -5}" != ".conf" ]; then
+	echo "Killing DXRAM instance(s)..."
+	echo "#############################################################"
 	close_hostnames ${@:1}
 fi
 
@@ -210,9 +217,8 @@ if [ `echo $LOCALHOST | cut -d "." -f 1` != "127" ]; then
 fi
 readonly THIS_HOST=`resolve $(hostname)`
 
-echo "########################################"
-echo "Killing all DXRAM instances of $(echo $1 | cut -d '.' -f 1)"
-echo "########################################"
-echo -e "\n\n"
+echo "Killing all DXRAM instances of $1"
+echo "#############################################################"
+echo ""
 
 close
