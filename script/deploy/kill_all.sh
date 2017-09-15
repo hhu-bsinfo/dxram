@@ -143,6 +143,40 @@ close()
 	exit
 }
 
+######################################################
+# Close all instances
+# Globals:
+#   HOSTNAMES
+# Arguments:
+#   ...: Hostnames with instances to close
+######################################################
+close_hostnames()
+{
+	echo "Closing all DXRAM instances on selected hosts..."
+
+	for host in $@; do
+		echo "Killing DXRAM instance(s) on $host..."
+		if [ "$(hostname)" = "$host" ]; then
+			# Instance running as root
+			if [ "$(pgrep -f "^sudo.*dxramdeployscript")" != "" ]; then
+				`sudo -P pkill -9 -f "^java.*dxramdeployscript"`
+			else
+				pkill -9 -f "^java.*dxramdeployscript"
+			fi
+		else
+			# Instance running as root
+			if [ "$(ssh $host -n "pgrep -f "^sudo.*dxramdeployscript"")" != "" ]; then
+				ssh $host -n "sudo -P pkill -9 -f "^java.*dxramdeployscript""
+			else
+				ssh $host -n "pkill -9 -f "^java.*dxramdeployscript""
+			fi
+		fi
+	done
+
+	echo "Done"
+	exit
+}
+
 ###############
 # Entry point #
 ###############
@@ -150,14 +184,15 @@ close()
 check_shell
 
 if [ "$1" = "" ]; then
-	echo "Missing parameter: Configuration file"
+	echo "Missing parameter: Configuration file or list of hostnames"
 	echo "  Example: $0 SimpleTest.conf"
+	echo "       or: $0 node50 node51 ..."
 	exit
 fi
 
 node_file="./$1"
 if [ "${node_file: -5}" != ".conf" ]; then
-	node_file="${node_file}.conf"
+	close_hostnames ${@:1}
 fi
 
 check_programs "$node_file"
