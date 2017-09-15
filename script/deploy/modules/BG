@@ -94,6 +94,11 @@ start_remote_peer()
 
 	compile_bg_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$useroffset" "$usercount" "$bg_load_threads" "$bg_exec_threads"
 
+	# Check if an instance is already running
+	if [ "$(ssh ${hostname} "pgrep -f \"^java \-Ddxramdeployscript\"")" != "" ]; then
+		echo "WARNING: Detected active instance on ${hostname}"
+	fi
+
 	echo "Executing peer on $3 ($ip, $port):"
 
 	if [ "$additional_shell_cmds" != "" ]; then
@@ -277,6 +282,19 @@ done
 
 if [ "$condition" = "" ]; then
 	condition=$DEFAULT_CONDITION
+fi
+
+# Check if an instance is already running
+if [ "$is_remote" = false ]; then
+	if [ "$(ssh ${hostname} "pgrep -f "^java.*$(echo $ip | sed -r 's/\./\\\./g').*${port}"")" != "" ]; then
+		echo "ERROR: Detected active instance ${ip}:${port} on ${hostname}"
+		exit 1	
+	fi
+else
+	if [ "$(pgrep -f "^java.*$(echo $ip | sed -r 's/\./\\\./g').*${port}")" != "" ]; then
+		echo "ERROR: Detected active instance ${ip}:${port} on ${hostname}"
+		exit 1
+	fi
 fi
 
 print=`echo "BG Peer $ip:$port (kvsm{$ram_size_in_mb} nodes{$bg_nodes} useroffset{$bg_useroffset} usercnt{$bg_usercount} type{$bg_type} load_threads{$bg_load_threads} exec_threads{$bg_exec_threads} workload{$bg_workload} add_shell_cmds{$additional_shell_cmds}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`

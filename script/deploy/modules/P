@@ -104,6 +104,11 @@ start_remote_peer()
 		root="sudo -P"
 	fi
 
+	# Check if an instance is already running
+	if [ "$(ssh ${hostname} "pgrep -f \"^java \-Ddxramdeployscript\"")" != "" ]; then
+		echo "WARNING: Detected active instance on ${hostname}"
+	fi
+
 	echo "Executing peer on $3 ($ip, $port):"
 
 	if [ "$additional_shell_cmds" != "" ]; then
@@ -274,6 +279,19 @@ fi
 
 if [ "$condition" = "" ]; then
 	condition=$DEFAULT_CONDITION
+fi
+
+# Check if an instance is already running
+if [ "$is_remote" = false ]; then
+	if [ "$(ssh ${hostname} "pgrep -f "^java.*$(echo $ip | sed -r 's/\./\\\./g').*${port}"")" != "" ]; then
+		echo "ERROR: Detected active instance ${ip}:${port} on ${hostname}"
+		exit 1	
+	fi
+else
+	if [ "$(pgrep -f "^java.*$(echo $ip | sed -r 's/\./\\\./g').*${port}")" != "" ]; then
+		echo "ERROR: Detected active instance ${ip}:${port} on ${hostname}"
+		exit 1
+	fi
 fi
 
 print=`echo "Peer $ip:$port (kvsm{$ram_size_in_mb} comp_node_role{$compute_node_role} comp_grp_id{$compute_group_id} class{$class} args{$arguments} vm_options{$vm_options} add_shell_cmds{$additional_shell_cmds} profile{$profile} debug{$debug} run_root{$run_as_root}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`

@@ -180,6 +180,19 @@ while true; do
 	fi
 done
 
+# Check if an instance is already running
+if [ "$is_remote" = false ]; then
+	if [ "$(ssh ${hostname} "pgrep -f "^java.*$(echo $ip | sed -r 's/\./\\\./g').*${port}"")" != "" ]; then
+		echo "ERROR: Detected active instance ${ip}:${port} on ${hostname}"
+		exit 1	
+	fi
+else
+	if [ "$(pgrep -f "^java.*$(echo $ip | sed -r 's/\./\\\./g').*${port}")" != "" ]; then
+		echo "ERROR: Detected active instance ${ip}:${port} on ${hostname}"
+		exit 1
+	fi
+fi
+
 print=`echo "Superpeer $ip:$port (vm_options{$vm_options} add_shell_cmds{$additional_shell_cmds} debug{$debug} run_root{$run_as_root}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
 echo -n "$print"
 

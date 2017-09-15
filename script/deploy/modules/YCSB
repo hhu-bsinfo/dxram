@@ -85,11 +85,16 @@ start_remote_peer()
 
 	compile_ycsb_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$zookeeper_string" "$insertstart" "$recordcount"
 
-	echo "Executing peer on $3 ($ip, $port):"
-
 	if [ "$run_as_root" != "" ] || [ "$run_as_root" == "1" ]; then
 		root="sudo -P"
 	fi
+
+	# Check if an instance is already running
+	if [ "$(ssh ${hostname} "pgrep -f \"^java \-Ddxramdeployscript\"")" != "" ]; then
+		echo "WARNING: Detected active instance on ${hostname}"
+	fi
+
+	echo "Executing peer on $3 ($ip, $port):"
 
 	if [ "$additional_shell_cmds" != "" ]; then
 		ssh $hostname -n "$additional_shell_cmds && cd ${DXRAM_PATH} && $root ./bin/ycsb $ycsb_type dxram -threads $ycsb_threads -s -P workloads/$ycsb_workload $YCSB_PARAMS"
@@ -255,6 +260,19 @@ done
 
 if [ "$condition" = "" ]; then
 	condition=$DEFAULT_CONDITION
+fi
+
+# Check if an instance is already running
+if [ "$is_remote" = false ]; then
+	if [ "$(ssh ${hostname} "pgrep -f "^java.*$(echo $ip | sed -r 's/\./\\\./g').*${port}"")" != "" ]; then
+		echo "ERROR: Detected active instance ${ip}:${port} on ${hostname}"
+		exit 1	
+	fi
+else
+	if [ "$(pgrep -f "^java.*$(echo $ip | sed -r 's/\./\\\./g').*${port}")" != "" ]; then
+		echo "ERROR: Detected active instance ${ip}:${port} on ${hostname}"
+		exit 1
+	fi
 fi
 
 print=`echo "YCSB Peer $ip:$port (kvsm{$ram_size_in_mb} nodes{$ycsb_nodes} zk{${zookeeper_ip}:${zookeeper_port}} insertstart{$ycsb_insertstart} recordcnt{$ycsb_recordcount} type{$ycsb_type} threads{$ycsb_threads} workload{$ycsb_workload} add_shell_cmds{$additional_shell_cmds}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`

@@ -567,9 +567,17 @@ execute()
 				fi
 
 				$module "$EXECUTION_DIR" "$LOG_DIR" "$DXRAM_PATH" "$DEFAULT_CLASS" "$LIBRARIES" "$DEFAULT_CONDITION" "$ip" "$port" "$hostname" "$role" "$is_remote" "$node" "$zookeeper_ip" "$zookeeper_port"
-				if [ "$?" != "0" ]; then
-					close
-				fi
+				case $? in
+					-1)
+						close
+						;;
+					1)
+						echo "Aborting deployment not closing existing instances"
+						exit
+						;;
+					*)
+						;;
+				esac
 			else
 				echo "ERROR: Unknown role $role defined in deploy configuration"
 				close
