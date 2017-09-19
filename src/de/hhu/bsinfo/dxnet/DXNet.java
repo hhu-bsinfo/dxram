@@ -33,9 +33,9 @@ import de.hhu.bsinfo.dxnet.ib.IBConfig;
 import de.hhu.bsinfo.dxnet.ib.IBConnectionManager;
 import de.hhu.bsinfo.dxnet.nio.NIOConfig;
 import de.hhu.bsinfo.dxnet.nio.NIOConnectionManager;
+import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.stats.StatisticsOperation;
 import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * DXNet main class. The network subsystem supports different types of transport. Ethernet using Java NIO and InfiniBand using libibverbs through an
@@ -94,7 +94,12 @@ public final class DXNet {
         }
 
         m_messageHandlers = new MessageHandlers(m_config.getNumMessageHandlerThreads(), m_messageReceivers);
-        m_messageDirectory = new MessageDirectory((int) m_nioConfig.getRequestTimeOut().getMs());
+
+        if (p_config.getInfiniband()) {
+            m_messageDirectory = new MessageDirectory((int) m_ibConfig.getRequestTimeOut().getMs());
+        } else {
+            m_messageDirectory = new MessageDirectory((int) m_nioConfig.getRequestTimeOut().getMs());
+        }
 
         m_messageDirectory.register(Messages.NETWORK_MESSAGES_TYPE, Messages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
 
