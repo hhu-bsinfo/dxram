@@ -120,6 +120,7 @@ public abstract class AbstractConnectionManager {
                     // #endif /* LOGGER >= DEBUG */
 
                     m_connections[p_destination & 0xFFFF] = ret;
+                    // FIXME for NIO this needs to be doubled (see hilbert tests with many nodes)
                     m_openConnections++;
                 } else {
                     // #if LOGGER >= ERROR
