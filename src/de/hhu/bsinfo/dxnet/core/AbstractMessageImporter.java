@@ -55,6 +55,14 @@ public abstract class AbstractMessageImporter implements Importer {
     abstract void setBuffer(long p_addr, int p_size, int p_position);
 
     /**
+     * Set buffer to import from.
+     *
+     * @param p_unfinishedOperation
+     *         the container for unfinished operations
+     */
+    abstract void setUnfinishedOperation(UnfinishedImExporterOperation p_unfinishedOperation);
+
+    /**
      * Set the number of read bytes. Only relevant for underflow importer to skip already finished operations.
      *
      * @param p_numberOfReadBytes

@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxnet.nio;
 
 import java.io.IOException;
@@ -7,13 +20,13 @@ import java.nio.channels.SocketChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxnet.NodeMap;
 import de.hhu.bsinfo.dxnet.core.AbstractFlowControl;
 import de.hhu.bsinfo.dxnet.core.AbstractPipeOut;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.OutgoingRingBuffer;
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
 /**
  * Created by nothaas on 6/9/17.
@@ -91,7 +104,7 @@ public class NIOPipeOut extends AbstractPipeOut {
         ByteBuffer buffer;
 
         // #ifdef STATISTICS
-        SOP_WRITE.enter();
+        // SOP_WRITE.enter();
         // #endif /* STATISTICS */
 
         buffer = ((NIOOutgoingRingBuffer) getOutgoingQueue()).popFront();
@@ -110,7 +123,7 @@ public class NIOPipeOut extends AbstractPipeOut {
         }
 
         // #ifdef STATISTICS
-        SOP_WRITE.leave();
+        // SOP_WRITE.leave();
         // #endif /* STATISTICS */
 
         return ret;
@@ -124,7 +137,7 @@ public class NIOPipeOut extends AbstractPipeOut {
         int readAllBytes;
 
         // #ifdef STATISTICS
-        SOP_READ_FLOW_CONTROL.enter();
+        // SOP_READ_FLOW_CONTROL.enter();
         // #endif /* STATISTICS */
 
         // This is a flow control byte
@@ -144,7 +157,7 @@ public class NIOPipeOut extends AbstractPipeOut {
         getFlowControl().handleFlowControlData(m_flowControlBytes.getInt(0));
 
         // #ifdef STATISTICS
-        SOP_READ_FLOW_CONTROL.leave();
+        // SOP_READ_FLOW_CONTROL.leave();
         // #endif /* STATISTICS */
     }
 

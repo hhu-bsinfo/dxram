@@ -113,6 +113,7 @@ public final class RequestMap {
     Request getRequest(final Response p_response) {
         Request ret;
 
+        // TODO: DO we really need a lock here?
         m_lock.readLock().lock();
         ret = m_pendingRequests[p_response.getRequestID() % m_pendingRequests.length];
         m_lock.readLock().unlock();

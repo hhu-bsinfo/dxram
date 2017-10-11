@@ -24,7 +24,7 @@ fi
 
 ##########
 # LOGGER #
-########## 
+##########
 # Determine logger command
 if [ "$LOGGER_LEVEL" == "TRACE" ];
 then

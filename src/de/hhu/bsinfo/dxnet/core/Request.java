@@ -192,6 +192,7 @@ public class Request extends Message {
                 }
             }
 
+            // TODO:
             // wait a bit, but increase waiting frequency with number of threads to reduce cpu load
             // but keep a higher cpu load to ensure low latency for less threads
             // (latency will increase with many threads anyway)

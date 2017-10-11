@@ -19,16 +19,16 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.utils.NodeID;
 import de.hhu.bsinfo.utils.stats.Statistics;
 import de.hhu.bsinfo.utils.stats.StatisticsRecorder;
-import de.hhu.bsinfo.utils.NodeID;
 
 /**
  * Helper class to print statistics.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-final class PrintStatistics {
+public final class PrintStatistics {
 
     /**
      * Static class
@@ -54,6 +54,28 @@ final class PrintStatistics {
         short nodeId = p_bootService.getNodeID();
         p_outputStream.println("NodeID: " + NodeID.toHexString(nodeId) + " (" + nodeId + ')');
         p_outputStream.println("Role: " + p_bootService.getNodeRole(nodeId));
+        p_outputStream.println("---------------------------------------------------------");
+
+        Collection<StatisticsRecorder> recorders = Statistics.getRecorders();
+        for (StatisticsRecorder recorder : recorders) {
+            p_outputStream.println(recorder);
+            p_outputStream.println("---------------------------------------------------------");
+        }
+
+        p_outputStream.println("---------------------------------------------------------");
+        p_outputStream.println("---------------------------------------------------------");
+    }
+
+    /**
+     * Print the statistics to a stream.
+     *
+     * @param p_outputStream
+     *         Output stream to print to.
+     */
+    public static void printStatisticsToOutput(final PrintStream p_outputStream) {
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        p_outputStream.println("---------------------------------------------------------");
+        p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");
 
         Collection<StatisticsRecorder> recorders = Statistics.getRecorders();

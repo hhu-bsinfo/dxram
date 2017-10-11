@@ -49,7 +49,7 @@ class IBWriteInterestManager {
      */
     void pushBackDataInterest(final short p_nodeId) {
         // #if LOGGER == TRACE
-        LOGGER.trace("pushBackDataInterest: 0x%X", p_nodeId);
+        // LOGGER.trace("pushBackDataInterest: 0x%X", p_nodeId);
         // #endif /* LOGGER == TRACE */
 
         if (m_writeInterests[p_nodeId & 0xFFFF].addDataInterest()) {
@@ -65,7 +65,7 @@ class IBWriteInterestManager {
      */
     void pushBackFcInterest(final short p_nodeId) {
         // #if LOGGER == TRACE
-        LOGGER.trace("pushBackDataInterest: 0x%X", p_nodeId);
+        // LOGGER.trace("pushBackDataInterest: 0x%X", p_nodeId);
         // #endif /* LOGGER == TRACE */
 
         if (m_writeInterests[p_nodeId & 0xFFFF].addFcInterest()) {

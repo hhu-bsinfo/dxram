@@ -13,9 +13,9 @@ public class JobEventEntry {
      * Constructor
      *
      * @param p_eventId
-     *     Event id
+     *         Event id
      * @param p_job
-     *     Job to connect to the event id
+     *         Job to connect to the event id
      */
     public JobEventEntry(final byte p_eventId, final AbstractJob p_job) {
         m_eventId = p_eventId;

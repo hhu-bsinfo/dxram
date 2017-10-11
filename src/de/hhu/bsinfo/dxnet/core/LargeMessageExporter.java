@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxnet.core;
 
 import de.hhu.bsinfo.utils.UnsafeMemory;
@@ -88,7 +101,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                 if (m_endPosition == 0) {
                     // Message overflow
                     // Not enough space in buffer currently -> abort
-                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes(), getClass().getSimpleName());
+                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes());
                     throw m_exception;
                 }
                 // No message overflow
@@ -99,7 +112,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                 if (m_currentPosition == m_endPosition) {
                     // Message overflow
                     // Not enough space in buffer currently -> abort
-                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes(), getClass().getSimpleName());
+                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes());
                     throw m_exception;
                 }
                 // No message overflow
@@ -120,7 +133,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                 if (m_endPosition == 0) {
                     // Message overflow
                     // Not enough space in buffer currently -> abort
-                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes(), getClass().getSimpleName());
+                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes());
                     throw m_exception;
                 }
                 // No message overflow
@@ -131,7 +144,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                 if (m_currentPosition == m_endPosition) {
                     // Message overflow
                     // Not enough space in buffer currently -> abort
-                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes(), getClass().getSimpleName());
+                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes());
                     throw m_exception;
                 }
                 // No message overflow
@@ -161,7 +174,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     if (m_currentPosition == m_endPosition) {
                         // Message overflow
                         // Not enough space in buffer currently -> abort
-                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i, getClass().getSimpleName());
+                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i);
                         throw m_exception;
                     }
 
@@ -177,7 +190,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     if (m_currentPosition == m_endPosition) {
                         // Message overflow
                         // Not enough space in buffer currently -> abort
-                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i, getClass().getSimpleName());
+                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i);
                         throw m_exception;
                     }
 
@@ -192,7 +205,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     if (m_currentPosition == m_endPosition) {
                         // Message overflow
                         // Not enough space in buffer currently -> abort
-                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i, getClass().getSimpleName());
+                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i);
                         throw m_exception;
                     }
 
@@ -224,7 +237,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     if (m_currentPosition == m_endPosition) {
                         // Message overflow
                         // Not enough space in buffer currently -> abort
-                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i, getClass().getSimpleName());
+                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i);
                         throw m_exception;
                     }
 
@@ -240,7 +253,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     if (m_currentPosition == m_endPosition) {
                         // Message overflow
                         // Not enough space in buffer currently -> abort
-                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i, getClass().getSimpleName());
+                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i);
                         throw m_exception;
                     }
 
@@ -255,7 +268,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     if (m_currentPosition == m_endPosition) {
                         // Message overflow
                         // Not enough space in buffer currently -> abort
-                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i, getClass().getSimpleName());
+                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i);
                         throw m_exception;
                     }
 
@@ -287,7 +300,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     if (m_currentPosition == m_endPosition) {
                         // Message overflow
                         // Not enough space in buffer currently -> abort
-                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i, getClass().getSimpleName());
+                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i);
                         throw m_exception;
                     }
 
@@ -303,7 +316,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     if (m_currentPosition == m_endPosition) {
                         // Message overflow
                         // Not enough space in buffer currently -> abort
-                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i, getClass().getSimpleName());
+                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i);
                         throw m_exception;
                     }
 
@@ -318,7 +331,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     if (m_currentPosition == m_endPosition) {
                         // Message overflow
                         // Not enough space in buffer currently -> abort
-                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i, getClass().getSimpleName());
+                        m_unfinishedOperation.setIndex(getNumberOfWrittenBytes() - i);
                         throw m_exception;
                     }
 
@@ -375,7 +388,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                 writeByte((byte) ((byte) (p_v >> 7 * i) & 0x7F));
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Not enough space in buffer currently -> abort
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition, getClass().getSimpleName());
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 throw e;
             }
         }
@@ -433,7 +446,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     // Message overflow
                     int ret = UnsafeMemory.writeBytes(m_bufferAddress + m_currentPosition, p_array, offset, m_endPosition - m_currentPosition);
                     // Not enough space in buffer currently -> abort
-                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes(), getClass().getSimpleName());
+                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes());
                     m_currentPosition += Byte.BYTES * ret;
                     throw m_exception;
                 }
@@ -446,7 +459,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     // Message overflow
                     int ret = UnsafeMemory.writeBytes(m_bufferAddress + m_currentPosition, p_array, offset, m_endPosition - m_currentPosition);
                     // Not enough space in buffer currently -> abort
-                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes(), getClass().getSimpleName());
+                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes());
                     m_currentPosition += Byte.BYTES * ret;
                     throw m_exception;
                 }
@@ -459,7 +472,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                     // Message overflow
                     int ret = UnsafeMemory.writeBytes(m_bufferAddress, p_array, offset + m_bufferSize - m_currentPosition, m_endPosition);
                     // Not enough space in buffer currently -> abort
-                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes(), getClass().getSimpleName());
+                    m_unfinishedOperation.setIndex(getNumberOfWrittenBytes());
                     m_currentPosition = Byte.BYTES * ret;
                     throw m_exception;
                 }
@@ -509,7 +522,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                 writeBytes(p_array);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Not enough space in buffer currently -> abort
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition, getClass().getSimpleName());
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 throw e;
             }
         }
@@ -527,7 +540,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                 writeShorts(p_array);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Not enough space in buffer currently -> abort
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition, getClass().getSimpleName());
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 throw e;
             }
         }
@@ -545,7 +558,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                 writeInts(p_array);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Not enough space in buffer currently -> abort
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition, getClass().getSimpleName());
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 throw e;
             }
         }
@@ -563,7 +576,7 @@ class LargeMessageExporter extends AbstractMessageExporter {
                 writeLongs(p_array);
             } catch (final ArrayIndexOutOfBoundsException e) {
                 // Not enough space in buffer currently -> abort
-                m_unfinishedOperation.setIndex(startPosition - m_startPosition, getClass().getSimpleName());
+                m_unfinishedOperation.setIndex(startPosition - m_startPosition);
                 throw e;
             }
         }

@@ -1,9 +1,23 @@
+/*
+ * Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxnet;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.MessageHeader;
+import de.hhu.bsinfo.dxnet.core.MessageHeaderPool;
 
 /**
  * Provides message handlers for incoming messages
@@ -13,8 +27,15 @@ import de.hhu.bsinfo.dxnet.core.Message;
 public final class MessageHandlers {
     private static final Logger LOGGER = LogManager.getFormatterLogger(MessageHandlers.class.getSimpleName());
 
+    private static final int POOL_SIZE = 25;
+
     private final DefaultMessageHandlerPool m_defaultMessageHandlerPool;
     private final ExclusiveMessageHandler m_exclusiveMessageHandler;
+
+    private MessageHeader[] m_defaultMessageHeaders;
+    private MessageHeader[] m_exclusiveMessageHeaders;
+    private int m_numberOfDefaultMessageHeaders;
+    private int m_numberOfExclusiveMessageHeaders;
 
     /**
      * Constructor
@@ -24,29 +45,68 @@ public final class MessageHandlers {
      * @param p_messageReceivers
      *         Provides all registered message receivers
      */
-    MessageHandlers(final int p_numMessageHandlerThreads, final MessageReceiverStore p_messageReceivers) {
+    MessageHandlers(final int p_numMessageHandlerThreads, final MessageReceiverStore p_messageReceivers, final MessageHeaderPool p_messageHeaderPool) {
         // default message handlers
-        m_defaultMessageHandlerPool = new DefaultMessageHandlerPool(p_messageReceivers, p_numMessageHandlerThreads);
+        m_defaultMessageHandlerPool = new DefaultMessageHandlerPool(p_messageReceivers, p_messageHeaderPool, p_numMessageHandlerThreads);
 
         // and one exclusive
-        m_exclusiveMessageHandler = new ExclusiveMessageHandler(p_messageReceivers);
+        m_exclusiveMessageHandler = new ExclusiveMessageHandler(p_messageReceivers, p_messageHeaderPool);
+
+        m_defaultMessageHeaders = new MessageHeader[POOL_SIZE];
+        m_exclusiveMessageHeaders = new MessageHeader[POOL_SIZE];
+        m_numberOfDefaultMessageHeaders = 0;
+        m_numberOfExclusiveMessageHeaders = 0;
+    }
+
+    public int getPoolSize() {
+        return POOL_SIZE;
     }
 
     /**
-     * Called when new messages arrived
-     *
-     * @param p_messages
-     *         Array with new incoming messages to handle
      */
-    public void newMessages(final Message[] p_messages) {
-        // #if LOGGER == TRACE
-        LOGGER.trace("Received new messages (%d): %s ...", p_messages.length, p_messages[0]);
-        // #endif /* LOGGER == TRACE */
+    public boolean newHeader(final de.hhu.bsinfo.dxnet.core.MessageHeader p_header) {
 
-        if (!p_messages[0].isExclusive()) {
-            m_defaultMessageHandlerPool.newMessages(p_messages);
+        if (!p_header.isExclusive()) {
+            m_defaultMessageHeaders[m_numberOfDefaultMessageHeaders] = p_header;
+            if (++m_numberOfDefaultMessageHeaders == m_defaultMessageHeaders.length) {
+                m_defaultMessageHandlerPool.newHeaders(m_defaultMessageHeaders, m_defaultMessageHeaders.length);
+                m_numberOfDefaultMessageHeaders = 0;
+                return true;
+            }
         } else {
-            m_exclusiveMessageHandler.newMessages(p_messages);
+            m_exclusiveMessageHeaders[m_numberOfExclusiveMessageHeaders] = p_header;
+            if (++m_numberOfExclusiveMessageHeaders == m_exclusiveMessageHeaders.length) {
+                m_exclusiveMessageHandler.newHeaders(m_exclusiveMessageHeaders, m_exclusiveMessageHeaders.length);
+                m_numberOfExclusiveMessageHeaders = 0;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public int pushLeftHeaders() {
+        int ret = 0;
+
+        if (m_numberOfDefaultMessageHeaders > 0) {
+            ret += m_numberOfDefaultMessageHeaders;
+            m_defaultMessageHandlerPool.newHeaders(m_defaultMessageHeaders, m_numberOfDefaultMessageHeaders);
+            m_numberOfDefaultMessageHeaders = 0;
+        }
+
+        if (m_numberOfExclusiveMessageHeaders > 0) {
+            ret += m_numberOfExclusiveMessageHeaders;
+            m_exclusiveMessageHandler.newHeaders(m_exclusiveMessageHeaders, m_numberOfExclusiveMessageHeaders);
+            m_numberOfExclusiveMessageHeaders = 0;
+        }
+
+        return ret;
+    }
+
+    public boolean finished() {
+        if (m_defaultMessageHandlerPool.isEmpty() && m_exclusiveMessageHandler.isEmpty()) {
+            return true;
+        } else {
+            return false;
         }
     }
 

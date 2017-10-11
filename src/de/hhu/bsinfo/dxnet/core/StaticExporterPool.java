@@ -13,6 +13,8 @@
 
 package de.hhu.bsinfo.dxnet.core;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,6 +31,7 @@ public final class StaticExporterPool extends AbstractExporterPool {
 
     // Attributes
     private MessageExporterCollection[] m_exporters = new MessageExporterCollection[SLOT_SIZE];
+    private ReentrantLock m_lock = new ReentrantLock(false);
 
     /**
      * Creates an instance of StaticExporterPool
@@ -42,16 +45,20 @@ public final class StaticExporterPool extends AbstractExporterPool {
         long threadID = Thread.currentThread().getId();
 
         if (threadID >= m_exporters.length) {
-            if (m_exporters.length >= 10 * SLOT_SIZE) {
-                // #if LOGGER >= DEBUG
-                LOGGER.debug("Many threads actively sending messages (>%d). You might consider switching to dynamic exporter pool (configuration).",
-                        m_exporters.length);
-                // #endif /* LOGGER >= DEBUG */
+            m_lock.lock();
+            if (threadID >= m_exporters.length) {
+                if (m_exporters.length >= 10 * SLOT_SIZE) {
+                    // #if LOGGER >= WARN
+                    LOGGER.warn("Many threads actively sending messages (>%d). You might consider switching to dynamic exporter pool (configuration).",
+                            m_exporters.length);
+                    // #endif /* LOGGER >= WARN */
+                }
+                // Copying without lock might result in lost allocations but this can be ignored
+                MessageExporterCollection[] tmp = new MessageExporterCollection[m_exporters.length + SLOT_SIZE];
+                System.arraycopy(m_exporters, 0, tmp, 0, m_exporters.length);
+                m_exporters = tmp;
             }
-            // Copying without lock might result in lost allocations but this can be ignored
-            MessageExporterCollection[] tmp = new MessageExporterCollection[m_exporters.length + SLOT_SIZE];
-            System.arraycopy(m_exporters, 0, tmp, 0, m_exporters.length);
-            m_exporters = tmp;
+            m_lock.unlock();
         }
 
         ret = m_exporters[(int) threadID];

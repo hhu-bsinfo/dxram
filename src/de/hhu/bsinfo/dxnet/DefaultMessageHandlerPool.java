@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxnet;
 
 import java.util.concurrent.locks.LockSupport;
@@ -5,8 +18,9 @@ import java.util.concurrent.locks.LockSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.Messages;
+import de.hhu.bsinfo.dxnet.core.MessageHeader;
+import de.hhu.bsinfo.dxnet.core.MessageHeaderPool;
+import de.hhu.bsinfo.dxnet.core.messages.Messages;
 import de.hhu.bsinfo.utils.stats.StatisticsOperation;
 import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
@@ -23,7 +37,7 @@ final class DefaultMessageHandlerPool {
     // must be a power of two to work with wrap around
     private static final int SIZE_MESSAGE_STORE = 16 * 1024;
 
-    private final MessageStore m_defaultMessages;
+    private final MessageHeaderStore m_defaultMessageHeaders;
 
     private final MessageHandler[] m_threads;
 
@@ -33,8 +47,9 @@ final class DefaultMessageHandlerPool {
      * @param p_numMessageHandlerThreads
      *         the number of default message handler
      */
-    DefaultMessageHandlerPool(final MessageReceiverStore p_messageReceivers, final int p_numMessageHandlerThreads) {
-        m_defaultMessages = new MessageStore(SIZE_MESSAGE_STORE);
+    DefaultMessageHandlerPool(final MessageReceiverStore p_messageReceivers, final MessageHeaderPool p_messageHeaderPool,
+            final int p_numMessageHandlerThreads) {
+        m_defaultMessageHeaders = new MessageHeaderStore(SIZE_MESSAGE_STORE);
 
         // #if LOGGER >= INFO
         LOGGER.info("Network: DefaultMessageHandlerPool: Initialising %d threads", p_numMessageHandlerThreads);
@@ -43,7 +58,7 @@ final class DefaultMessageHandlerPool {
         MessageHandler t;
         m_threads = new MessageHandler[p_numMessageHandlerThreads];
         for (int i = 0; i < m_threads.length; i++) {
-            t = new MessageHandler(p_messageReceivers, m_defaultMessages);
+            t = new MessageHandler(p_messageReceivers, m_defaultMessageHeaders, p_messageHeaderPool);
             t.setName("Network: MessageHandler " + (i + 1));
             m_threads[i] = t;
             t.start();
@@ -75,39 +90,66 @@ final class DefaultMessageHandlerPool {
     }
 
     /**
-     * Enqueues a batch of new messages for delivering
+     * Enqueue a message header
      *
-     * @param p_messages
-     *         the messages
+     * @param p_header
+     *         the message header
      */
-    void newMessages(final Message[] p_messages) {
+    void newHeader(final MessageHeader p_header) {
         // #ifdef STATISTICS
-        SOP_PUSH.enter();
+        // SOP_PUSH.enter();
         // #endif /* STATISTICS */
 
-        for (Message message : p_messages) {
-            if (message == null) {
-                break;
+        // Ignore network test messages (e.g. ping after response delay)
+        if (!(p_header.getType() == Messages.DEFAULT_MESSAGES_TYPE && p_header.getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
+            while (!m_defaultMessageHeaders.pushMessageHeader(p_header)) {
+                // #ifdef STATISTICS
+                // SOP_WAIT.enter();
+                // #endif /* STATISTICS */
+
+                LockSupport.parkNanos(100);
+
+                // #ifdef STATISTICS
+                // SOP_WAIT.leave();
+                // #endif /* STATISTICS */
             }
+        }
 
-            // Ignore network test messages (e.g. ping after response delay)
-            if (!(message.getType() == Messages.NETWORK_MESSAGES_TYPE && message.getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
-                while (!m_defaultMessages.pushMessage(message)) {
-                    // #ifdef STATISTICS
-                    SOP_WAIT.enter();
-                    // #endif /* STATISTICS */
+        // #ifdef STATISTICS
+        // SOP_PUSH.leave();
+        // #endif /* STATISTICS */
+    }
 
-                    Thread.yield();
+    void newHeaders(final MessageHeader[] p_headers, final int p_messages) {
+        // #ifdef STATISTICS
+        // SOP_PUSH.enter();
+        // #endif /* STATISTICS */
 
-                    // #ifdef STATISTICS
-                    SOP_WAIT.leave();
-                    // #endif /* STATISTICS */
+        if (!m_defaultMessageHeaders.pushMessageHeaders(p_headers, p_messages)) {
+            for (int i = 0; i < p_messages; i++) {
+                // Ignore network test messages (e.g. ping after response delay)
+                if (!(p_headers[i].getType() == Messages.DEFAULT_MESSAGES_TYPE && p_headers[i].getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
+                    while (!m_defaultMessageHeaders.pushMessageHeader(p_headers[i])) {
+                        // #ifdef STATISTICS
+                        // SOP_WAIT.enter();
+                        // #endif /* STATISTICS */
+
+                        LockSupport.parkNanos(100);
+
+                        // #ifdef STATISTICS
+                        // SOP_WAIT.leave();
+                        // #endif /* STATISTICS */
+                    }
                 }
             }
         }
 
         // #ifdef STATISTICS
-        SOP_PUSH.leave();
+        // SOP_PUSH.leave();
         // #endif /* STATISTICS */
+    }
+
+    boolean isEmpty() {
+        return m_defaultMessageHeaders.isEmpty();
     }
 }

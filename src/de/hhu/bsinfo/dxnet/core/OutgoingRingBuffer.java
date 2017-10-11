@@ -30,6 +30,7 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 public class OutgoingRingBuffer {
     private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "Push");
     private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "Pop");
+    private static final StatisticsOperation SOP_WAIT_FULL = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "WaitFull");
     private static final StatisticsOperation SOP_SHIFT_FRONT = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "ShiftFront");
     private static final StatisticsOperation SOP_BUFFER_POSTED = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "BufferPosted");
 
@@ -103,13 +104,13 @@ public class OutgoingRingBuffer {
      */
     public void shiftFront(final int p_writtenBytes) {
         // #ifdef STATISTICS
-        SOP_SHIFT_FRONT.enter(p_writtenBytes);
+        // SOP_SHIFT_FRONT.enter(p_writtenBytes);
         // #endif /* STATISTICS */
 
         m_posFront += p_writtenBytes;
 
         // #ifdef STATISTICS
-        SOP_SHIFT_FRONT.leave();
+        // SOP_SHIFT_FRONT.leave();
         // #endif /* STATISTICS */
     }
 
@@ -133,7 +134,7 @@ public class OutgoingRingBuffer {
         int posFrontRelative;
 
         // #ifdef STATISTICS
-        SOP_PUSH.enter();
+        // SOP_PUSH.enter();
         // #endif /* STATISTICS */
 
         m_producers.incrementAndGet();
@@ -142,10 +143,15 @@ public class OutgoingRingBuffer {
             m_producers.decrementAndGet();
             while (m_consumerWaits) {
                 // Wait for a minimal time (around xx µs). There is no unpark() involved!
-                LockSupport.parkNanos(1);
+                //LockSupport.parkNanos(1);
+                Thread.yield();
             }
             m_producers.incrementAndGet();
         }
+
+        // #ifdef STATISTICS
+        // boolean waited = false;
+        // #endif /* STATISTICS */
 
         // Allocate space in ring buffer by incrementing position back
         while (true) {
@@ -158,6 +164,13 @@ public class OutgoingRingBuffer {
             if (p_messageSize <= m_bufferSize) {
                 // Small message -> reserve space if message fits in free space
                 if (!m_largeMessageInProgress.get() && fits(posBackRelative, posFrontRelative, p_messageSize)) {
+
+                    // #ifdef STATISTICS
+                    // if (waited) {
+                    // SOP_WAIT_FULL.leave();
+                    // }
+                    // #endif /* STATISTICS */
+
                     // Optimistic increase
                     if (m_posBack.compareAndSet(posBackUnlimited, posBackUnlimited + p_messageSize)) {
                         // Position back could be set
@@ -169,10 +182,17 @@ public class OutgoingRingBuffer {
                     }
                     // Try again
                 } else {
+                    // #ifdef STATISTICS
+                    // if (!waited) {
+                    // SOP_WAIT_FULL.enter();
+                    // waited = true;
+                    // }
+                    // #endif /* STATISTICS */
+
                     // Buffer is full -> wait
                     m_producers.decrementAndGet();
 
-                    LockSupport.parkNanos(1);
+                    LockSupport.parkNanos(100);
 
                     m_producers.incrementAndGet();
                 }
@@ -193,7 +213,7 @@ public class OutgoingRingBuffer {
                     // A large message is being written already -> wait
                     m_producers.decrementAndGet();
 
-                    LockSupport.parkNanos(1);
+                    LockSupport.parkNanos(100);
 
                     m_producers.incrementAndGet();
                 }
@@ -205,17 +225,17 @@ public class OutgoingRingBuffer {
         m_producers.decrementAndGet();
 
         // #ifdef STATISTICS
-        SOP_PUSH.leave();
+        // SOP_PUSH.leave();
         // #endif /* STATISTICS */
 
         // #ifdef STATISTICS
-        SOP_BUFFER_POSTED.enter();
+        // SOP_BUFFER_POSTED.enter();
         // #endif /* STATISTICS */
 
         p_pipeOut.bufferPosted(p_messageSize);
 
         // #ifdef STATISTICS
-        SOP_BUFFER_POSTED.leave();
+        // SOP_BUFFER_POSTED.leave();
         // #endif /* STATISTICS */
     }
 
@@ -297,13 +317,13 @@ public class OutgoingRingBuffer {
             allWrittenBytes = exporter.getNumberOfWrittenBytes();
 
             // #ifdef STATISTICS
-            SOP_BUFFER_POSTED.enter();
+            // SOP_BUFFER_POSTED.enter();
             // #endif /* STATISTICS */
 
             p_pipeOut.bufferPosted(allWrittenBytes - previouslyWrittenBytes);
 
             // #ifdef STATISTICS
-            SOP_BUFFER_POSTED.leave();
+            // SOP_BUFFER_POSTED.leave();
             // #endif /* STATISTICS */
 
             // Buffer is full now - > wait for consumer
@@ -311,7 +331,7 @@ public class OutgoingRingBuffer {
 
             // Wait for consumer to finish writing
             while ((int) (m_posFront & 0x7FFFFFFFL) == posFront) {
-                LockSupport.parkNanos(1);
+                LockSupport.parkNanos(100);
             }
 
             // Synchronize with consumer
@@ -319,7 +339,7 @@ public class OutgoingRingBuffer {
             while (m_consumerWaits) {
                 m_producers.decrementAndGet();
                 while (m_consumerWaits) {
-                    LockSupport.parkNanos(1);
+                    Thread.yield();
                 }
                 m_producers.incrementAndGet();
             }
@@ -353,7 +373,7 @@ public class OutgoingRingBuffer {
         int posFrontRelative;
 
         // #ifdef STATISTICS
-        SOP_POP.enter();
+        // SOP_POP.enter();
         // #endif /* STATISTICS */
 
         // Deny access to incoming producers
@@ -376,7 +396,7 @@ public class OutgoingRingBuffer {
         m_consumerWaits = false;
 
         // #ifdef STATISTICS
-        SOP_POP.leave();
+        // SOP_POP.leave();
         // #endif /* STATISTICS */
 
         return (long) posBackRelative << 32 | (long) posFrontRelative;

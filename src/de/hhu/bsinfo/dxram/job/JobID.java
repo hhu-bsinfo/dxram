@@ -15,6 +15,7 @@ package de.hhu.bsinfo.dxram.job;
 
 /**
  * Helper class to work with job IDs.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public final class JobID {
@@ -33,8 +34,9 @@ public final class JobID {
 
     /**
      * Get the CreatorID/NodeID part of the JobID.
+     *
      * @param p_jobID
-     *            JobID.
+     *         JobID.
      * @return The NodeID/CreatorID part.
      */
     public static short getCreatorID(final long p_jobID) {
@@ -45,8 +47,9 @@ public final class JobID {
 
     /**
      * Get the LocalID part of the JobID
+     *
      * @param p_jobID
-     *            the JobID
+     *         the JobID
      * @return the LocalID part
      */
     public static long getLocalID(final long p_jobID) {
@@ -57,10 +60,11 @@ public final class JobID {
 
     /**
      * Create a job id.
+     *
      * @param p_node
-     *            Node id part.
+     *         Node id part.
      * @param p_id
-     *            Local job id part.
+     *         Local job id part.
      * @return Job id.
      */
     public static long createJobID(final short p_node, final long p_id) {

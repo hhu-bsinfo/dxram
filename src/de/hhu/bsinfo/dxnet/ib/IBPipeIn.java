@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxnet.MessageHandlers;
 import de.hhu.bsinfo.dxnet.core.AbstractFlowControl;
 import de.hhu.bsinfo.dxnet.core.AbstractPipeIn;
 import de.hhu.bsinfo.dxnet.core.MessageDirectory;
+import de.hhu.bsinfo.dxnet.core.MessageHeaderPool;
 import de.hhu.bsinfo.dxnet.core.RequestMap;
 
 /**
@@ -42,9 +43,9 @@ class IBPipeIn extends AbstractPipeIn {
      * @param p_messageHandlers
      *         Message handlers instance
      */
-    IBPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final AbstractFlowControl p_flowControl, final MessageDirectory p_messageDirectory,
-            final RequestMap p_requestMap, final MessageHandlers p_messageHandlers) {
-        super(p_ownNodeId, p_destinationNodeId, p_flowControl, p_messageDirectory, p_requestMap, p_messageHandlers);
+    IBPipeIn(final short p_ownNodeId, final short p_destinationNodeId, final MessageHeaderPool p_messageHeaderPool, final AbstractFlowControl p_flowControl,
+            final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final MessageHandlers p_messageHandlers) {
+        super(p_ownNodeId, p_destinationNodeId, p_messageHeaderPool, p_flowControl, p_messageDirectory, p_requestMap, p_messageHandlers);
     }
 
     /**

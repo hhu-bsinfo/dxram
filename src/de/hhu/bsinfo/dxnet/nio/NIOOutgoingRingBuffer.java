@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxnet.nio;
 
 import java.nio.ByteBuffer;
@@ -18,9 +31,9 @@ class NIOOutgoingRingBuffer extends OutgoingRingBuffer {
     NIOOutgoingRingBuffer(final int p_osBufferSize, final AbstractExporterPool p_exporterPool) {
         super(p_exporterPool);
 
-        m_sendByteBuffer = ByteBuffer.allocateDirect(2 * p_osBufferSize);
+        m_sendByteBuffer = ByteBuffer.allocateDirect(p_osBufferSize);
         m_bufferAddr = ByteBufferHelper.getDirectAddress(m_sendByteBuffer);
-        setBuffer(m_bufferAddr, 2 * p_osBufferSize);
+        setBuffer(m_bufferAddr, p_osBufferSize);
     }
 
     /**
@@ -36,6 +49,10 @@ class NIOOutgoingRingBuffer extends OutgoingRingBuffer {
         tmp = popFrontShift();
         posBackRelative = (int) (tmp >> 32 & 0x7FFFFFFF);
         posFrontRelative = (int) (tmp & 0x7FFFFFFF);
+
+        if (posBackRelative == posFrontRelative) {
+            return null;
+        }
 
         m_sendByteBuffer.position(posFrontRelative);
         m_sendByteBuffer.limit(posBackRelative);

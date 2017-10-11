@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxnet.nio;
 
 import java.io.IOException;
@@ -17,10 +30,12 @@ import de.hhu.bsinfo.dxnet.NodeMap;
 import de.hhu.bsinfo.dxnet.core.AbstractConnection;
 import de.hhu.bsinfo.dxnet.core.AbstractConnectionManager;
 import de.hhu.bsinfo.dxnet.core.AbstractExporterPool;
+import de.hhu.bsinfo.dxnet.core.BufferPool;
 import de.hhu.bsinfo.dxnet.core.CoreConfig;
 import de.hhu.bsinfo.dxnet.core.DynamicExporterPool;
-import de.hhu.bsinfo.dxnet.core.MessageCreator;
+import de.hhu.bsinfo.dxnet.core.IncomingBufferQueue;
 import de.hhu.bsinfo.dxnet.core.MessageDirectory;
+import de.hhu.bsinfo.dxnet.core.MessageHeaderPool;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.RequestMap;
 import de.hhu.bsinfo.dxnet.core.StaticExporterPool;
@@ -37,18 +52,20 @@ public class NIOConnectionManager extends AbstractConnectionManager {
 
     private final MessageDirectory m_messageDirectory;
     private final RequestMap m_requestMap;
-    private final MessageCreator m_messageCreator;
+    private final IncomingBufferQueue m_incomingBufferQueue;
+    private final MessageHeaderPool m_messageHeaderPool;
     private final MessageHandlers m_messageHandlers;
 
     private final NIOSelector m_nioSelector;
-    private final NIOBufferPool m_bufferPool;
+    private final BufferPool m_bufferPool;
     private final NodeMap m_nodeMap;
     private final ConnectionCreatorHelperThread m_connectionCreatorHelperThread;
 
     private AbstractExporterPool m_exporterPool;
 
     public NIOConnectionManager(final CoreConfig p_coreConfig, final NIOConfig p_nioConfig, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
-            final RequestMap p_requestMap, final MessageCreator p_messageCreator, final MessageHandlers p_messageHandlers) {
+            final RequestMap p_requestMap, final IncomingBufferQueue p_incomingBufferQueue, final MessageHeaderPool p_messageHeaderPool,
+            final MessageHandlers p_messageHandlers) {
         super(p_nioConfig.getMaxConnections());
 
         m_coreConfig = p_coreConfig;
@@ -57,14 +74,15 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         m_nodeMap = p_nodeMap;
         m_messageDirectory = p_messageDirectory;
         m_requestMap = p_requestMap;
-        m_messageCreator = p_messageCreator;
+        m_incomingBufferQueue = p_incomingBufferQueue;
+        m_messageHeaderPool = p_messageHeaderPool;
         m_messageHandlers = p_messageHandlers;
 
         // #if LOGGER >= INFO
         LOGGER.info("Starting NIOSelector...");
         // #endif /* LOGGER >= INFO */
 
-        m_bufferPool = new NIOBufferPool((int) m_config.getOugoingRingBufferSize().getBytes());
+        m_bufferPool = new BufferPool((int) m_config.getOugoingRingBufferSize().getBytes());
         if (p_coreConfig.getExporterPoolType()) {
             m_exporterPool = new StaticExporterPool();
         } else {
@@ -112,8 +130,8 @@ public class NIOConnectionManager extends AbstractConnectionManager {
 
         if (p_existingConnection == null) {
             ret = new NIOConnection(m_coreConfig.getOwnNodeId(), p_destination, (int) m_config.getOugoingRingBufferSize().getBytes(),
-                    (int) m_config.getFlowControlWindow().getBytes(), m_config.getFlowControlWindowThreshold(), m_messageCreator, m_messageDirectory,
-                    m_requestMap, m_messageHandlers, m_bufferPool, m_exporterPool, m_nioSelector, m_nodeMap, condLock, cond);
+                    (int) m_config.getFlowControlWindow().getBytes(), m_config.getFlowControlWindowThreshold(), m_incomingBufferQueue, m_messageHeaderPool,
+                    m_messageDirectory, m_requestMap, m_messageHandlers, m_bufferPool, m_exporterPool, m_nioSelector, m_nodeMap, condLock, cond);
         } else {
             ret = (NIOConnection) p_existingConnection;
         }
@@ -269,7 +287,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
          * @param p_id
          *         the static job identification
          */
-        protected Job(final byte p_id) {
+        Job(final byte p_id) {
             m_id = p_id;
         }
 
@@ -293,7 +311,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         private SocketChannel m_channel;
 
         /**
-         * Creates an instance of Job
+         * Creates an instance of CreationJob
          *
          * @param p_destination
          *         the NodeID of destination
@@ -332,7 +350,7 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         private AbstractConnection m_connection;
 
         /**
-         * Creates an instance of Job
+         * Creates an instance of ClosureJob
          *
          * @param p_connection
          *         the AbstractConnection
@@ -451,8 +469,8 @@ public class NIOConnectionManager extends AbstractConnectionManager {
             NIOConnection ret;
 
             ret = new NIOConnection(m_coreConfig.getOwnNodeId(), p_destination, (int) m_config.getOugoingRingBufferSize().getBytes(),
-                    (int) m_config.getFlowControlWindow().getBytes(), m_config.getFlowControlWindowThreshold(), m_messageCreator, m_messageDirectory,
-                    m_requestMap, m_messageHandlers, m_bufferPool, m_exporterPool, m_nioSelector, m_nodeMap);
+                    (int) m_config.getFlowControlWindow().getBytes(), m_config.getFlowControlWindowThreshold(), m_incomingBufferQueue, m_messageHeaderPool,
+                    m_messageDirectory, m_requestMap, m_messageHandlers, m_bufferPool, m_exporterPool, m_nioSelector, m_nodeMap);
             ret.getPipeIn().bindIncomingChannel(p_channel);
 
             // Register connection as attachment

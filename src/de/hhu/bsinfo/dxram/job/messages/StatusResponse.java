@@ -13,10 +13,10 @@
 
 package de.hhu.bsinfo.dxram.job.messages;
 
-import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.job.JobService;
 
 /**
  * Response to the status request to get information about remote job systems.

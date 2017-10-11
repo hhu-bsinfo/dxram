@@ -11,7 +11,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxnet.core;
+package de.hhu.bsinfo.dxnet.core.messages;
+
+import de.hhu.bsinfo.dxnet.core.Message;
 
 /**
  * This is a default message which is never processed on the receiver.
@@ -34,7 +36,7 @@ public class DefaultMessage extends Message {
      *         the destination nodeID
      */
     public DefaultMessage(final short p_destination) {
-        super(p_destination, Messages.NETWORK_MESSAGES_TYPE, Messages.SUBTYPE_DEFAULT_MESSAGE);
+        super(p_destination, Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_DEFAULT_MESSAGE);
     }
 
 }

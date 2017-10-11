@@ -152,12 +152,14 @@ public class Message {
      * @param p_header
      *         Message header to apply to the message
      */
-    void initialize(final MessageHeader p_header) {
+    void initialize(final MessageHeader p_header, final short p_destination, final short p_source) {
         m_messageID = p_header.getMessageID();
         m_type = p_header.getType();
         m_subtype = p_header.getSubtype();
         m_messageType = p_header.getMessageType();
         m_exclusivity = p_header.isExclusive();
+        m_destination = p_destination;
+        m_source = p_source;
     }
 
     /**
@@ -170,32 +172,12 @@ public class Message {
     }
 
     /**
-     * Sets source of the message
-     *
-     * @param p_source
-     *         the source node ID
-     */
-    final void setSource(final short p_source) {
-        m_source = p_source;
-    }
-
-    /**
      * Get the destination
      *
      * @return the destination
      */
     public final short getDestination() {
         return m_destination;
-    }
-
-    /**
-     * Sets destination of the message
-     *
-     * @param p_destination
-     *         the destination node ID
-     */
-    final void setDestination(final short p_destination) {
-        m_destination = p_destination;
     }
 
     /**

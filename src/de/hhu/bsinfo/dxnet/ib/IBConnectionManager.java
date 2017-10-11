@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxnet.ib;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.concurrent.locks.LockSupport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,8 +29,9 @@ import de.hhu.bsinfo.dxnet.core.AbstractConnectionManager;
 import de.hhu.bsinfo.dxnet.core.AbstractExporterPool;
 import de.hhu.bsinfo.dxnet.core.CoreConfig;
 import de.hhu.bsinfo.dxnet.core.DynamicExporterPool;
-import de.hhu.bsinfo.dxnet.core.MessageCreator;
+import de.hhu.bsinfo.dxnet.core.IncomingBufferQueue;
 import de.hhu.bsinfo.dxnet.core.MessageDirectory;
+import de.hhu.bsinfo.dxnet.core.MessageHeaderPool;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.NetworkRuntimeException;
 import de.hhu.bsinfo.dxnet.core.RequestMap;
@@ -55,7 +57,8 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
 
     private final MessageDirectory m_messageDirectory;
     private final RequestMap m_requestMap;
-    private final MessageCreator m_messageCreator;
+    private final IncomingBufferQueue m_incomingBufferQueue;
+    private final MessageHeaderPool m_messageHeaderPool;
     private final MessageHandlers m_messageHandlers;
 
     private AbstractExporterPool m_exporterPool;
@@ -86,13 +89,14 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
      *         Message directory instance
      * @param p_requestMap
      *         Request map instance
-     * @param p_messageCreator
-     *         Message creator instance
+     * @param p_incomingBufferQueue
+     *         Incoming buffer queue instance
      * @param p_messageHandlers
      *         Message handlers instance
      */
     public IBConnectionManager(final CoreConfig p_coreConfig, final IBConfig p_config, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
-            final RequestMap p_requestMap, final MessageCreator p_messageCreator, final MessageHandlers p_messageHandlers) {
+            final RequestMap p_requestMap, final IncomingBufferQueue p_incomingBufferQueue, final MessageHeaderPool p_messageHeaderPool,
+            final MessageHandlers p_messageHandlers) {
         super(p_config.getMaxConnections());
 
         m_coreConfig = p_coreConfig;
@@ -101,7 +105,8 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
 
         m_messageDirectory = p_messageDirectory;
         m_requestMap = p_requestMap;
-        m_messageCreator = p_messageCreator;
+        m_incomingBufferQueue = p_incomingBufferQueue;
+        m_messageHeaderPool = p_messageHeaderPool;
         m_messageHandlers = p_messageHandlers;
 
         if (p_coreConfig.getExporterPoolType()) {
@@ -182,8 +187,8 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
 
         if (connection == null) {
             connection = new IBConnection(m_coreConfig.getOwnNodeId(), p_destination, (int) m_config.getOugoingRingBufferSize().getBytes(),
-                    (int) m_config.getFlowControlWindow().getBytes(), m_config.getFlowControlWindowThreshold(), m_messageDirectory, m_requestMap,
-                    m_exporterPool, m_messageHandlers, m_writeInterestManager);
+                    (int) m_config.getFlowControlWindow().getBytes(), m_config.getFlowControlWindowThreshold(), m_messageHeaderPool, m_messageDirectory,
+                    m_requestMap, m_exporterPool, m_messageHandlers, m_writeInterestManager);
             m_openConnections++;
         }
 
@@ -256,7 +261,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         // return interest of previous call
         if (p_prevNodeIdWritten != NodeID.INVALID_ID) {
             // #ifdef STATISTICS
-            SOP_SEND_NEXT_DATA.leave();
+            // SOP_SEND_NEXT_DATA.leave();
             // #endif /* STATISTICS */
 
             // #if LOGGER >= TRACE
@@ -344,7 +349,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         m_sendThreadRetArgs.putShort(nodeId);
 
         // #ifdef STATISTICS
-        SOP_SEND_NEXT_DATA.enter();
+        // SOP_SEND_NEXT_DATA.enter();
         // #endif /* STATISTICS */
 
         return ByteBufferHelper.getDirectAddress(m_sendThreadRetArgs);
@@ -367,12 +372,13 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         }
 
         // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
-        while (!m_messageCreator.pushJob(connection, null, p_bufferHandle, p_addr, p_length)) {
+        while (!m_incomingBufferQueue.pushBuffer(connection, null, p_bufferHandle, p_addr, p_length)) {
             // #if LOGGER == TRACE
-            LOGGER.trace("Message creator: Job queue is full!");
+            // LOGGER.trace("Message creator: IncomingBuffer queue is full!");
             // #endif /* LOGGER == TRACE */
 
-            Thread.yield();
+            //Thread.yield();
+            LockSupport.parkNanos(100);
         }
     }
 

@@ -18,8 +18,10 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Used to import message headers.
+ *
+ * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
-class MessageHeader implements Importable {
+public class MessageHeader implements Importable {
 
     /* Header size:
      *  messageID + type + subtype + messageType and exclusivity + payloadSize
@@ -31,8 +33,13 @@ class MessageHeader implements Importable {
     private byte m_subtype;
     private int m_payloadSize;
 
-    // just state, not part of actual header
-    private boolean m_isCompleted;
+    // Just state for message creation and de-serialization, not part of actual header
+    private volatile AbstractPipeIn m_pipeIn;
+    private volatile UnfinishedImExporterOperation m_unfinishedOperation;
+    private volatile long m_address;
+    private volatile int m_currentPosition;
+    private volatile int m_bytesAvailable;
+    private volatile int m_slot;
 
     // Constructors
 
@@ -58,14 +65,14 @@ class MessageHeader implements Importable {
     /**
      * Message type
      */
-    byte getType() {
+    public byte getType() {
         return m_type;
     }
 
     /**
      * Message subtype
      */
-    byte getSubtype() {
+    public byte getSubtype() {
         return m_subtype;
     }
 
@@ -79,7 +86,7 @@ class MessageHeader implements Importable {
     /**
      * Check if message is exclusive
      */
-    boolean isExclusive() {
+    public boolean isExclusive() {
         return (m_messageTypeExc & 0xF) == 1;
     }
 
@@ -95,20 +102,54 @@ class MessageHeader implements Importable {
      */
     void clear() {
         m_messageID = 0;
+        m_messageTypeExc = 0;
         m_type = 0;
         m_subtype = 0;
         m_payloadSize = 0;
 
-        // also reset state
-        m_isCompleted = false;
+        // State does not need to be cleared
     }
 
-    void setComplete() {
-        m_isCompleted = true;
+    /**
+     * Set all message information for creating and de-serializing the message
+     *
+     * @param p_pipeIn
+     *         the AbstractPipeIn
+     * @param p_unfinishedOperation
+     *         the unfinished operation
+     * @param p_currentPosition
+     *         the current position in buffer
+     * @param p_address
+     *         the buffer address
+     * @param p_bytesAvailable
+     *         the bytes available in buffer
+     * @param p_slot
+     *         the buffer slot in pipe
+     */
+    void setMessageInformation(final AbstractPipeIn p_pipeIn, final UnfinishedImExporterOperation p_unfinishedOperation, final long p_address,
+            final int p_currentPosition, final int p_bytesAvailable, final int p_slot) {
+        m_pipeIn = p_pipeIn;
+        m_unfinishedOperation = p_unfinishedOperation;
+        m_address = p_address;
+        m_currentPosition = p_currentPosition;
+        m_bytesAvailable = p_bytesAvailable;
+        m_slot = p_slot;
     }
 
-    boolean isComplete() {
-        return m_isCompleted;
+    /**
+     * Create and de-serialize a new message
+     *
+     * @param p_importerCollection
+     *         the importer collection
+     * @return the completed message
+     * @throws NetworkException
+     *         it the message type/subtype is invalid
+     */
+    public Message createAndFillMessage(final MessageImporterCollection p_importerCollection, final LocalMessageHeaderPool p_messageHeaderPool)
+            throws NetworkException {
+        return m_pipeIn
+                .createAndFillMessage(this, m_address, m_currentPosition, m_bytesAvailable, m_unfinishedOperation, p_importerCollection, p_messageHeaderPool,
+                        m_slot);
     }
 
     @Override

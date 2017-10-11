@@ -26,6 +26,7 @@ import de.hhu.bsinfo.dxnet.NetworkResponseDelayedException;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxnet.core.messages.Messages;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -72,6 +73,15 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      *         the calling class
      */
     public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
+
+        if (p_type == Messages.DEFAULT_MESSAGES_TYPE) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Registering network message %s for type %s and subtype %s failed, type 0 is used for internal messages and not allowed",
+                    p_class.getSimpleName(), p_type, p_subtype);
+            // #endif /* LOGGER >= ERROR */
+            return;
+        }
+
         m_dxnet.registerMessageType(p_type, p_subtype, p_class);
     }
 
@@ -268,7 +278,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
         // node id is not loaded from config
         getConfig().getCoreConfig().setOwnNodeId(m_boot.getNodeID());
 
-        if (!getConfig().getCoreConfig().getInfiniband()) {
+        if (!"Infiniband".equals(getConfig().getCoreConfig().getDevice())) {
             // Check if given ip address is bound to one of this node's network interfaces
             boolean found = false;
             InetAddress myAddress = m_boot.getNodeAddress(m_boot.getNodeID()).getAddress();
@@ -305,7 +315,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
             DXRAMJNIManager.loadJNIModule("JNIIbdxnet");
         }
 
-        m_dxnet = new DXNet(getConfig().getCoreConfig(), getConfig().getNIOConfig(), getConfig().getIBConfig(), new NodeMappings(m_boot));
+        m_dxnet = new DXNet(getConfig().getCoreConfig(), getConfig().getNIOConfig(), getConfig().getIBConfig(), null, new NodeMappings(m_boot));
 
         m_dxnet.setConnectionManagerListener(this);
 

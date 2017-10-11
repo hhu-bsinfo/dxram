@@ -15,33 +15,33 @@ package de.hhu.bsinfo.dxnet;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.MessageHeader;
 
 /**
- * Lock-free ring buffer for messages (single producer, multiple consumers)
+ * Lock-free ring buffer for message headers (single producer, multiple consumers)
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 01.05.2017
  */
-public class MessageStore {
+public class MessageHeaderStore {
     private final int m_size;
-    private final Message[] m_buffer;
+    private final MessageHeader[] m_buffer;
 
     private final AtomicInteger m_posFront;
     private volatile int m_posBack;
 
     /**
-     * Creates an instance of MessageStore
+     * Creates an instance of MessageHeaderStore
      *
      * @param p_size
      *         Must be a power of two to handle wrap around
      */
-    MessageStore(final int p_size) {
+    MessageHeaderStore(final int p_size) {
         if (p_size % 2 != 0) {
             throw new IllegalStateException("Message store size must be a power of two, invalid value " + p_size);
         }
 
         m_size = p_size;
-        m_buffer = new Message[m_size];
+        m_buffer = new MessageHeader[m_size];
 
         m_posFront = new AtomicInteger(0);
         m_posBack = 0;
@@ -66,7 +66,7 @@ public class MessageStore {
     }
 
     /**
-     * Returns the maximum number of pending buffers.
+     * Returns the maximum number of pending message headers.
      *
      * @return the capacity
      */
@@ -75,45 +75,61 @@ public class MessageStore {
     }
 
     /**
-     * Adds a message at the end of the buffer.
+     * Adds a message header at the end of the buffer.
      *
-     * @param p_message
+     * @param p_header
      *         the message
      * @return whether the job was added or not
      */
-    boolean pushMessage(final Message p_message) {
+    boolean pushMessageHeader(final MessageHeader p_header) {
         // & 0x7FFFFFFF to kill sign
         int posBack = m_posBack & 0x7FFFFFFF;
         int posFront = m_posFront.get() & 0x7FFFFFFF;
 
         if ((posBack + 1 & 0x7FFFFFFF) % m_size == posFront % m_size) {
-            // Return without adding the message if queue is full
+            // Return without adding the message header if queue is full
             return false;
         }
 
-        m_buffer[posBack % m_size] = p_message;
+        m_buffer[posBack % m_size] = p_header;
         m_posBack++;
 
         return true;
     }
 
+    boolean pushMessageHeaders(final MessageHeader[] p_headers, final int p_messages) {
+        // & 0x7FFFFFFF to kill sign
+        int posBack = m_posBack & 0x7FFFFFFF;
+        int posFront = m_posFront.get() & 0x7FFFFFFF;
+
+        if ((posBack + p_messages + 1 & 0x7FFFFFFF) >= posFront) {
+            // Return without adding the message headers if not all message header fit
+            return false;
+        }
+
+        for (int i = 0; i < p_messages; i++) {
+            m_buffer[(posBack + i) % m_size] = p_headers[i];
+        }
+        m_posBack += p_messages;
+
+        return true;
+    }
+
     /**
-     * Gets a message from the beginning of the buffer.
+     * Gets a message header from the beginning of the buffer.
      *
-     * @return the message or null if empty
+     * @return the message or null if isEmpty
      */
-    Message popMessage() {
-        Message ret;
+    MessageHeader popMessageHeader() {
+        MessageHeader ret;
 
         while (true) {
             // get front before back, otherwise front can overtake back when scheduler interrupts thread between get calls
             int posFrontSigned = m_posFront.get();
-            // & 0x7FFFFFFF to kill sign
-            int posBack = m_posBack & 0x7FFFFFFF;
             int posFront = posFrontSigned & 0x7FFFFFFF;
 
-            if (posFront == posBack) {
-                // Ring-buffer is empty.
+            if (posFront == (m_posBack & 0x7FFFFFFF)) {
+                // Ring-buffer is isEmpty.
                 ret = null;
                 break;
             }

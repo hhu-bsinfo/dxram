@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxnet.core;
 
 import java.nio.charset.StandardCharsets;
@@ -26,14 +39,13 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
     /**
      * Constructor
      */
-    MessageImporterUnderflow(final UnfinishedImExporterOperation p_unfinishedOperation) {
-        m_unfinishedOperation = p_unfinishedOperation;
+    MessageImporterUnderflow() {
     }
 
     @Override
     public String toString() {
         return "m_bufferAddress 0x" + Long.toHexString(m_bufferAddress) + ", m_currentPosition " + m_currentPosition + ", m_skipBytes " + m_skipBytes +
-                ", m_skippedBytes " + m_skippedBytes + ", m_unfinishedOperation " + m_unfinishedOperation;
+                ", m_skippedBytes " + m_skippedBytes + ", m_unfinishedOperation (" + m_unfinishedOperation + ')';
     }
 
     @Override
@@ -50,6 +62,11 @@ class MessageImporterUnderflow extends AbstractMessageImporter {
     public void setBuffer(final long p_addr, final int p_size, final int p_position) {
         m_bufferAddress = p_addr;
         m_currentPosition = p_position;
+    }
+
+    @Override
+    public void setUnfinishedOperation(final UnfinishedImExporterOperation p_unfinishedOperation) {
+        m_unfinishedOperation = p_unfinishedOperation;
     }
 
     @Override
