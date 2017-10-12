@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -36,6 +37,8 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.messages.BenchmarkMessage;
+import de.hhu.bsinfo.dxnet.core.messages.BenchmarkRequest;
+import de.hhu.bsinfo.dxnet.core.messages.BenchmarkResponse;
 import de.hhu.bsinfo.dxnet.core.messages.Messages;
 import de.hhu.bsinfo.dxram.ms.tasks.PrintStatistics;
 import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
@@ -49,6 +52,8 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
  */
 public final class DXNetMain implements MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXNetMain.class.getSimpleName());
+
+    private static DXNet ms_dxnet;
 
     private static long ms_messageCount;
     private static int ms_messageSize;
@@ -177,18 +182,33 @@ public final class DXNetMain implements MessageReceiver {
         // ((DXNetNodeMap) nodeMap).addNode((short) 7, new InetSocketAddress("255.255.255.255", 0xFFFF));
 
         // Initialize DXNet
-        DXNet dxnet = new DXNet(context.getCoreConfig(), context.getNIOConfig(), context.getIBConfig(), context.getLoopbackConfig(), nodeMap);
+        ms_dxnet = new DXNet(context.getCoreConfig(), context.getNIOConfig(), context.getIBConfig(), context.getLoopbackConfig(), nodeMap);
 
         // Register benchmark message in DXNet
-        dxnet.registerMessageType(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_MESSAGE, BenchmarkMessage.class);
-        dxnet.register(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_MESSAGE, new DXNetMain());
+        ms_dxnet.registerMessageType(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_MESSAGE, BenchmarkMessage.class);
+        ms_dxnet.registerMessageType(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_REQUEST, BenchmarkRequest.class);
+        ms_dxnet.registerMessageType(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_RESPONSE, BenchmarkResponse.class);
+        ms_dxnet.register(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_MESSAGE, new DXNetMain());
+        ms_dxnet.register(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_REQUEST, new DXNetMain());
+        ms_dxnet.register(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_RESPONSE, new DXNetMain());
 
         // Workload
-        Runnable task = () -> {
+        Runnable taskMessage = () -> {
             BenchmarkMessage message = new BenchmarkMessage((short) 7, ms_messageSize);
             for (int i = 0; i < ms_messageCount / threads; i++) {
                 try {
-                    dxnet.sendMessage(message);
+                    ms_dxnet.sendMessage(message);
+                } catch (NetworkException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        Runnable taskRequest = () -> {
+            for (int i = 0; i < ms_messageCount / threads; i++) {
+                try {
+                    BenchmarkRequest request = new BenchmarkRequest((short) 7, ms_messageSize);
+                    ms_dxnet.sendSync(request, -1, false);
                 } catch (NetworkException e) {
                     e.printStackTrace();
                 }
@@ -199,7 +219,8 @@ public final class DXNetMain implements MessageReceiver {
         LOGGER.info("Starting workload...");
         Thread[] threadArray = new Thread[threads];
         for (int i = 0; i < threads; i++) {
-            threadArray[i] = new Thread(task);
+            //threadArray[i] = new Thread(taskMessage);
+            threadArray[i] = new Thread(taskRequest);
             threadArray[i].start();
         }
 
@@ -211,7 +232,11 @@ public final class DXNetMain implements MessageReceiver {
         }
         LOGGER.info("Workload finished on sender.");
 
-        /*PrintStatistics.printStatisticsToOutput(System.out);
+        // Printing statistics (for sending requests, comment out for messages)
+        while (!ms_dxnet.isRequestMapEmpty()) {
+            LockSupport.parkNanos(100);
+        }
+        PrintStatistics.printStatisticsToOutput(System.out);
 
         long timeDiff = System.nanoTime() - timeStart;
         LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
@@ -220,25 +245,34 @@ public final class DXNetMain implements MessageReceiver {
         LOGGER.info("Throughput (with overhead): %d MB/s",
                 (int) ((double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
                         ((double) timeDiff / 1000 / 1000 / 1000)));
-        System.exit(0);*/
+        System.exit(0);
     }
 
     private AtomicLong m_messages = new AtomicLong(0);
 
     @Override
     public void onIncomingMessage(Message p_message) {
-        if (m_messages.incrementAndGet() == ms_messageCount) {
-            LOGGER.info("Workload finished on receiver.");
-            PrintStatistics.printStatisticsToOutput(System.out);
+        if (p_message.getSubtype() == Messages.SUBTYPE_BENCHMARK_REQUEST) {
+            BenchmarkResponse response = new BenchmarkResponse((BenchmarkRequest) p_message);
+            try {
+                ms_dxnet.sendMessage(response);
+            } catch (NetworkException e) {
+                e.printStackTrace();
+            }
+        } else {
+            if (m_messages.incrementAndGet() == ms_messageCount) {
+                LOGGER.info("Workload finished on receiver.");
+                PrintStatistics.printStatisticsToOutput(System.out);
 
-            long timeDiff = System.nanoTime() - m_timeStart;
-            LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
-            LOGGER.info("Time per message: %d ns", timeDiff / ms_messageCount);
-            LOGGER.info("Throughput: %d MB/s", (int) ((double) ms_messageCount * ms_messageSize / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000)));
-            LOGGER.info("Throughput (with overhead): %d MB/s",
-                    (int) ((double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
-                            ((double) timeDiff / 1000 / 1000 / 1000)));
-            System.exit(0);
+                long timeDiff = System.nanoTime() - m_timeStart;
+                LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
+                LOGGER.info("Time per message: %d ns", timeDiff / ms_messageCount);
+                LOGGER.info("Throughput: %d MB/s", (int) ((double) ms_messageCount * ms_messageSize / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000)));
+                LOGGER.info("Throughput (with overhead): %d MB/s",
+                        (int) ((double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
+                                ((double) timeDiff / 1000 / 1000 / 1000)));
+                System.exit(0);
+            }
         }
     }
 }

@@ -19,12 +19,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * The MessageCreator builds messages and forwards them to the MessageHandlers.
+ * The MessageCreationCoordinator builds messages and forwards them to the MessageHandlers.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.05.2016
  */
-public class MessageCreator extends Thread {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(MessageCreator.class.getSimpleName());
+public class MessageCreationCoordinator extends Thread {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(MessageCreationCoordinator.class.getSimpleName());
 
     // optimized values determined by experiments
     private static final int THRESHOLD_PARK = 10000;
@@ -34,12 +34,12 @@ public class MessageCreator extends Thread {
     private volatile boolean m_shutdown;
 
     /**
-     * Creates an instance of MessageCreator
+     * Creates an instance of MessageCreationCoordinator
      *
      * @param p_maxIncomingBufferSize
      *         the max incoming buffer size
      */
-    public MessageCreator(final int p_maxIncomingBufferSize) {
+    public MessageCreationCoordinator(final int p_maxIncomingBufferSize) {
         m_bufferQueue = new IncomingBufferQueue(p_maxIncomingBufferSize);
     }
 

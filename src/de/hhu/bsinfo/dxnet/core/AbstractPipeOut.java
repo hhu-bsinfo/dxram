@@ -144,7 +144,7 @@ public abstract class AbstractPipeOut {
         // SOP_FC_DATA_TO_SEND.enter();
         // #endif /* STATISTICS */
 
-        //m_flowControl.dataToSend(messageTotalSize);
+        m_flowControl.dataToSend(messageTotalSize);
 
         // #ifdef STATISTICS
         // SOP_FC_DATA_TO_SEND.leave();

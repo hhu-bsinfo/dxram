@@ -18,6 +18,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.utils.stats.StatisticsOperation;
+import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+
 /**
  * Manages pending requests
  *
@@ -25,6 +28,8 @@ import org.apache.logging.log4j.Logger;
  */
 public final class RequestMap {
     private static final Logger LOGGER = LogManager.getFormatterLogger(RequestMap.class.getSimpleName());
+
+    private static final StatisticsOperation SOP_REQ_RESP_RTT = StatisticsRecorderManager.getOperation(RequestMap.class, "ReqRespRTT");
 
     // Attributes
     private Request[] m_pendingRequests;
@@ -41,6 +46,27 @@ public final class RequestMap {
      */
     public RequestMap(final int p_size) {
         m_pendingRequests = new Request[p_size];
+    }
+
+    /**
+     * Returns whether the request map is empty or not.
+     * Is used for benchmarking (DXNetMain), only.
+     *
+     * @return whether the request map is empty or not
+     */
+    public boolean isEmpty() {
+        boolean ret = true;
+
+        m_lock.readLock().lock();
+        for (int i = 0; i < m_pendingRequests.length; i++) {
+            if (m_pendingRequests[i] != null) {
+                ret = false;
+                break;
+            }
+        }
+        m_lock.readLock().unlock();
+
+        return ret;
     }
 
     /**
@@ -134,6 +160,15 @@ public final class RequestMap {
             request = remove(p_response.getRequestID());
 
             if (request != null) {
+
+                // #ifdef STATISTICS
+                SOP_REQ_RESP_RTT.enter(request.getRoundTripTimeNs() / 1000);
+                // #endif /* STATISTICS */
+
+                // #ifdef STATISTICS
+                SOP_REQ_RESP_RTT.leave();
+                // #endif /* STATISTICS */
+
                 request.fulfill(p_response);
             }
         }

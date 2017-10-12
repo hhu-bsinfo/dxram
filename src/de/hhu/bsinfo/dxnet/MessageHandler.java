@@ -153,7 +153,6 @@ final class MessageHandler extends Thread {
 
             if (message != null) {
                 messageReceiver = m_messageReceivers.getReceiver(message.getType(), message.getSubtype());
-
                 if (messageReceiver != null) {
                     // #ifdef STATISTICS
                     // SOP_EXECUTE.enter();

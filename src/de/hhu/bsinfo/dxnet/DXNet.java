@@ -22,7 +22,7 @@ import de.hhu.bsinfo.dxnet.core.AbstractConnection;
 import de.hhu.bsinfo.dxnet.core.AbstractConnectionManager;
 import de.hhu.bsinfo.dxnet.core.CoreConfig;
 import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.MessageCreator;
+import de.hhu.bsinfo.dxnet.core.MessageCreationCoordinator;
 import de.hhu.bsinfo.dxnet.core.MessageDirectory;
 import de.hhu.bsinfo.dxnet.core.MessageHeaderPool;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
@@ -55,7 +55,6 @@ public final class DXNet {
     private static final StatisticsOperation SOP_SEND = StatisticsRecorderManager.getOperation(DXNet.class, "MessageSend");
     private static final StatisticsOperation SOP_SEND_SYNC = StatisticsRecorderManager.getOperation(DXNet.class, "MessageSendSync");
     private static final StatisticsOperation SOP_WAIT_RESPONSE = StatisticsRecorderManager.getOperation(DXNet.class, "WaitForResponse");
-    private static final StatisticsOperation SOP_REQ_RESP_RTT = StatisticsRecorderManager.getOperation(DXNet.class, "ReqRespRTT");
 
     private static final int MESSAGE_HEADER_POOL_SIZE = 1000 * 1000;
 
@@ -67,7 +66,7 @@ public final class DXNet {
     private final MessageReceiverStore m_messageReceivers;
     private final MessageHandlers m_messageHandlers;
     private final MessageDirectory m_messageDirectory;
-    private final MessageCreator m_messageCreator;
+    private final MessageCreationCoordinator m_messageCreationCoordinator;
 
     private final AtomicLongArray m_lastFailures;
 
@@ -117,19 +116,19 @@ public final class DXNet {
         m_messageDirectory.register(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
 
         // #if LOGGER >= INFO
-        LOGGER.info("Network: MessageCreator");
+        LOGGER.info("Network: MessageCreationCoordinator");
         // #endif /* LOGGER >= INFO */
 
         if ("Ethernet".equals(m_coreConfig.getDevice())) {
-            m_messageCreator = new MessageCreator((int) m_nioConfig.getOugoingRingBufferSize().getBytes());
+            m_messageCreationCoordinator = new MessageCreationCoordinator((int) m_nioConfig.getOugoingRingBufferSize().getBytes());
         } else if ("Infiniband".equals(m_coreConfig.getDevice())) {
-            m_messageCreator = new MessageCreator((int) m_ibConfig.getOugoingRingBufferSize().getBytes());
+            m_messageCreationCoordinator = new MessageCreationCoordinator((int) m_ibConfig.getOugoingRingBufferSize().getBytes());
         } else {
-            m_messageCreator = new MessageCreator((int) m_loopbackConfig.getOugoingRingBufferSize().getBytes());
+            m_messageCreationCoordinator = new MessageCreationCoordinator((int) m_loopbackConfig.getOugoingRingBufferSize().getBytes());
         }
 
-        m_messageCreator.setName("Network: MessageCreator");
-        m_messageCreator.start();
+        m_messageCreationCoordinator.setName("Network: MessageCreationCoordinator");
+        m_messageCreationCoordinator.start();
 
         m_lastFailures = new AtomicLongArray(65536);
 
@@ -137,17 +136,15 @@ public final class DXNet {
         m_timeOut = (int) m_nioConfig.getRequestTimeOut().getMs();
 
         if ("Ethernet".equals(m_coreConfig.getDevice())) {
-            m_connectionManager =
-                    new NIOConnectionManager(m_coreConfig, m_nioConfig, p_nodeMap, m_messageDirectory, m_requestMap, m_messageCreator.getIncomingBufferQueue(),
-                            headerPool, m_messageHandlers);
+            m_connectionManager = new NIOConnectionManager(m_coreConfig, m_nioConfig, p_nodeMap, m_messageDirectory, m_requestMap,
+                    m_messageCreationCoordinator.getIncomingBufferQueue(), headerPool, m_messageHandlers);
         } else if ("Infiniband".equals(m_coreConfig.getDevice())) {
-            m_connectionManager =
-                    new IBConnectionManager(m_coreConfig, m_ibConfig, p_nodeMap, m_messageDirectory, m_requestMap, m_messageCreator.getIncomingBufferQueue(),
-                            headerPool, m_messageHandlers);
+            m_connectionManager = new IBConnectionManager(m_coreConfig, m_ibConfig, p_nodeMap, m_messageDirectory, m_requestMap,
+                    m_messageCreationCoordinator.getIncomingBufferQueue(), headerPool, m_messageHandlers);
             ((IBConnectionManager) m_connectionManager).init();
         } else {
             m_connectionManager = new LoopbackConnectionManager(m_coreConfig, m_loopbackConfig, p_nodeMap, m_messageDirectory, m_requestMap,
-                    m_messageCreator.getIncomingBufferQueue(), headerPool, m_messageHandlers);
+                    m_messageCreationCoordinator.getIncomingBufferQueue(), headerPool, m_messageHandlers);
         }
     }
 
@@ -160,6 +157,16 @@ public final class DXNet {
         str += m_connectionManager.getConnectionStatuses();
 
         return str;
+    }
+
+    /**
+     * Returns whether the request map is empty or not.
+     * Is used for benchmarking (DXNetMain), only.
+     *
+     * @return whether the request map is empty or not
+     */
+    boolean isRequestMapEmpty() {
+        return m_requestMap.isEmpty();
     }
 
     /**
@@ -198,7 +205,7 @@ public final class DXNet {
     public void close() {
         m_messageHandlers.close();
 
-        m_messageCreator.shutdown();
+        m_messageCreationCoordinator.shutdown();
 
         m_connectionManager.close();
     }
@@ -342,7 +349,7 @@ public final class DXNet {
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
-        // SOP_SEND_SYNC.enter();
+        SOP_SEND_SYNC.enter();
         // #endif /* STATISTICS */
 
         try {
@@ -361,26 +368,18 @@ public final class DXNet {
         try {
             if (p_waitForResponses) {
                 // #ifdef STATISTICS
-                // SOP_WAIT_RESPONSE.enter();
+                SOP_WAIT_RESPONSE.enter();
                 // #endif /* STATISTICS */
 
                 p_request.waitForResponse(timeout);
 
                 // #ifdef STATISTICS
-                // SOP_WAIT_RESPONSE.leave();
-                // #endif /* STATISTICS */
-
-                // #ifdef STATISTICS
-                // SOP_REQ_RESP_RTT.enter(p_request.getRoundTripTimeNs() / 1000);
-                // #endif /* STATISTICS */
-
-                // #ifdef STATISTICS
-                // SOP_REQ_RESP_RTT.leave();
+                SOP_WAIT_RESPONSE.leave();
                 // #endif /* STATISTICS */
             }
         } catch (final NetworkResponseDelayedException e) {
             // #ifdef STATISTICS
-            // SOP_WAIT_RESPONSE.leave();
+            SOP_WAIT_RESPONSE.leave();
             // #endif /* STATISTICS */
 
             // #if LOGGER >= ERROR
@@ -392,7 +391,7 @@ public final class DXNet {
             throw e;
         } catch (final NetworkResponseCancelledException e) {
             // #ifdef STATISTICS
-            // SOP_WAIT_RESPONSE.leave();
+            SOP_WAIT_RESPONSE.leave();
             // #endif /* STATISTICS */
 
             // #if LOGGER >= TRACE
@@ -403,7 +402,7 @@ public final class DXNet {
         }
 
         // #ifdef STATISTICS
-        // SOP_SEND_SYNC.leave();
+        SOP_SEND_SYNC.leave();
         // #endif /* STATISTICS */
     }
 

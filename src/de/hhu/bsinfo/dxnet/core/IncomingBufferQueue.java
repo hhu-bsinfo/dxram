@@ -49,7 +49,7 @@ public class IncomingBufferQueue {
     private volatile int m_posBack;
 
     /**
-     * Creates an instance of MessageCreator
+     * Creates an instance of IncomingBufferQueue
      *
      * @param p_maxIncomingBufferSize
      *         the max incoming buffer size
