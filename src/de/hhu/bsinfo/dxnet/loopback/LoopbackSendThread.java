@@ -20,6 +20,8 @@ import java.util.concurrent.locks.LockSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.utils.UnsafeHandler;
+
 /**
  * Manages the network connections
  *
@@ -31,8 +33,12 @@ class LoopbackSendThread extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(LoopbackSendThread.class.getSimpleName());
 
     // Attributes
-    private AtomicBoolean m_send;
-    private volatile LoopbackConnection m_connection;
+    private final AtomicBoolean m_send1;
+    private final AtomicBoolean m_send2;
+    private LoopbackConnection m_connection1;
+    private LoopbackConnection m_connection2;
+
+    private boolean m_overprovisioining;
     private volatile boolean m_running;
 
     // Constructors
@@ -45,8 +51,12 @@ class LoopbackSendThread extends Thread {
      * @param p_osBufferSize
      *         the size of incoming and outgoing buffers
      */
-    LoopbackSendThread(final LoopbackConnectionManager p_connectionManager, final int p_connectionTimeout, final int p_osBufferSize) {
-        m_send = new AtomicBoolean(false);
+    LoopbackSendThread(final LoopbackConnectionManager p_connectionManager, final int p_connectionTimeout, final int p_osBufferSize,
+            final boolean p_overprovisioning) {
+        m_send1 = new AtomicBoolean(false);
+        m_send2 = new AtomicBoolean(false);
+
+        m_overprovisioining = p_overprovisioning;
         m_running = true;
     }
 
@@ -55,41 +65,102 @@ class LoopbackSendThread extends Thread {
         long time;
 
         // Wait until connection was created
-        while (m_connection == null) {
+        while (m_connection1 == null) { // Is updated by lfence below
             try {
                 Thread.sleep(0);
+                UnsafeHandler.getInstance().getUnsafe().loadFence();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
 
+        boolean sent = false;
         while (m_running) {
             time = System.nanoTime();
-            while (!m_send.compareAndSet(true, false)) {
-                //Thread.yield();
-                LockSupport.parkNanos(1);
+            while (m_running) {
+                if (m_send2.compareAndSet(true, false)) {
+                    try {
+                        m_connection2.getPipeOut().write();
+                    } catch (final IOException ignore) {
+
+                    }
+                    sent = true;
+                }
+
+                if (m_send1.compareAndSet(true, false)) {
+                    try {
+                        m_connection1.getPipeOut().write();
+                    } catch (final IOException ignore) {
+
+                    }
+                    sent = true;
+                }
+
+                if (sent) {
+                    sent = false;
+                    continue;
+                }
+
+                if (m_overprovisioining) {
+                    LockSupport.parkNanos(1);
+                } /*else {
+                    Thread.yield();
+                }*/
 
                 if (System.nanoTime() - time > 1000 * 1000) {
+                    try {
+                        if (m_connection2 != null) {
+                            m_connection2.getPipeOut().write();
+                        }
+
+                        m_connection1.getPipeOut().write();
+                    } catch (final IOException ignore) {
+
+                    }
                     break;
                 }
             }
 
-            try {
-                m_connection.getPipeOut().write();
-            } catch (final IOException ignore) {
-
-            }
         }
     }
 
     protected void trigger(LoopbackConnection p_connection) {
-        m_connection = p_connection;
-        m_send.set(true);
+        // Access m_connection1 and m_connection2 without synchronization as it set once (in synchronize block), only
+        if (p_connection == m_connection1) {
+            m_send1.set(true);
+            return;
+        }
+        if (p_connection == m_connection2) {
+            m_send2.set(true);
+            return;
+        }
+
+        synchronized (m_send1) {
+            if (m_connection1 == null) {
+                m_connection1 = p_connection;
+                m_send1.set(true);
+                return;
+            }
+            if (m_connection2 == null && p_connection != m_connection1) { // m_connection1 might have been set meanwhile
+                m_connection2 = p_connection;
+                m_send2.set(true);
+                return;
+            }
+
+            if (p_connection == m_connection1) {
+                m_send1.set(true);
+                return;
+            }
+            if (p_connection == m_connection2) {
+                m_send2.set(true);
+            }
+        }
     }
 
     /**
      * Closes the Worker
      */
+
     protected void close() {
         m_running = false;
     }

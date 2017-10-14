@@ -45,12 +45,13 @@ public final class MessageHandlers {
      * @param p_messageReceivers
      *         Provides all registered message receivers
      */
-    MessageHandlers(final int p_numMessageHandlerThreads, final MessageReceiverStore p_messageReceivers, final MessageHeaderPool p_messageHeaderPool) {
+    MessageHandlers(final int p_numMessageHandlerThreads, final boolean p_overprovisioning, final MessageReceiverStore p_messageReceivers,
+            final MessageHeaderPool p_messageHeaderPool) {
         // default message handlers
-        m_defaultMessageHandlerPool = new DefaultMessageHandlerPool(p_messageReceivers, p_messageHeaderPool, p_numMessageHandlerThreads);
+        m_defaultMessageHandlerPool = new DefaultMessageHandlerPool(p_messageReceivers, p_messageHeaderPool, p_numMessageHandlerThreads, p_overprovisioning);
 
         // and one exclusive
-        m_exclusiveMessageHandler = new ExclusiveMessageHandler(p_messageReceivers, p_messageHeaderPool);
+        m_exclusiveMessageHandler = new ExclusiveMessageHandler(p_messageReceivers, p_messageHeaderPool, p_overprovisioning);
 
         m_defaultMessageHeaders = new MessageHeader[POOL_SIZE];
         m_exclusiveMessageHeaders = new MessageHeader[POOL_SIZE];
@@ -58,11 +59,20 @@ public final class MessageHandlers {
         m_numberOfExclusiveMessageHeaders = 0;
     }
 
-    public int getPoolSize() {
+    /**
+     * Return local pool capacity.
+     *
+     * @return the pool size
+     */
+    public static int getPoolSize() {
         return POOL_SIZE;
     }
 
     /**
+     * Add a new message header. Pool locally first, write through when thread-local pool is full.
+     *
+     * @param p_header
+     *         the message header
      */
     public boolean newHeader(final de.hhu.bsinfo.dxnet.core.MessageHeader p_header) {
 
@@ -84,6 +94,11 @@ public final class MessageHandlers {
         return false;
     }
 
+    /**
+     * Write thread-locally pooled message headers to message header store.
+     *
+     * @return the number of pushed message headers
+     */
     public int pushLeftHeaders() {
         int ret = 0;
 
@@ -100,14 +115,6 @@ public final class MessageHandlers {
         }
 
         return ret;
-    }
-
-    public boolean finished() {
-        if (m_defaultMessageHandlerPool.isEmpty() && m_exclusiveMessageHandler.isEmpty()) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     /**

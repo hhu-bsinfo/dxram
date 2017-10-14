@@ -147,7 +147,7 @@ public class Request extends Message {
      *
      * @return The time it took to send out the request and receive the response or -1 if request not sent, no response received or timeout.
      */
-    public long getRoundTripTimeNs() {
+    long getRoundTripTimeNs() {
         if (m_response != null) {
             return m_response.getSendReceiveTimestamp() - getSendReceiveTimestamp();
         }
@@ -192,7 +192,6 @@ public class Request extends Message {
                 }
             }
 
-            // TODO:
             // wait a bit, but increase waiting frequency with number of threads to reduce cpu load
             // but keep a higher cpu load to ensure low latency for less threads
             // (latency will increase with many threads anyway)
@@ -205,8 +204,6 @@ public class Request extends Message {
         }
 
         ms_threadsWaiting.decrementAndGet();
-
-        m_response.setSendReceiveTimestamp(System.nanoTime());
 
         // #if LOGGER >= TRACE
         LOGGER.trace("Request %s fulfilled, response %s, latency %f ms", toString(), m_response, (System.nanoTime() - cur) / 1000.0 / 1000.0);

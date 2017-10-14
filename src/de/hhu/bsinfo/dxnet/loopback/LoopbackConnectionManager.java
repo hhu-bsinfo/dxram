@@ -81,7 +81,8 @@ public class LoopbackConnectionManager extends AbstractConnectionManager {
         }
 
         m_loopbackSendThread =
-                new LoopbackSendThread(this, (int) p_nioConfig.getConnectionTimeOut().getMs(), (int) m_loopbackConfig.getOugoingRingBufferSize().getBytes());
+                new LoopbackSendThread(this, (int) p_nioConfig.getConnectionTimeOut().getMs(), (int) m_loopbackConfig.getOugoingRingBufferSize().getBytes(),
+                        p_coreConfig.getOverprovisioning());
         m_loopbackSendThread.setName("Network-LoopbackSendThread");
         m_loopbackSendThread.start();
     }

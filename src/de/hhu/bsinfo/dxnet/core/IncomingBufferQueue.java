@@ -13,15 +13,19 @@
 
 package de.hhu.bsinfo.dxnet.core;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.utils.UnsafeHandler;
 import de.hhu.bsinfo.utils.stats.StatisticsOperation;
 import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
 /**
  * The IncomingBufferQueue stored incoming buffers from all connections.
  * Uses a ring-buffer implementation for incoming buffers.
+ * One producer (network thread) and one consumer (message creation coordinator).
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.05.2016
  */
@@ -41,12 +45,12 @@ public class IncomingBufferQueue {
     private int[] m_sizeBuffer;
     private IncomingBuffer m_incomingBuffer;
 
-    private int m_maxBytes;
-    private long m_currentBytes;
+    private final int m_maxBytes;
+    private AtomicInteger m_currentBytes;
 
-    // single producer, single consumer lock free queue
-    private volatile int m_posFront;
-    private volatile int m_posBack;
+    // single producer, single consumer lock free queue (posBack and posFront are synchronized with fences and byte counter)
+    private int m_posBack;
+    private int m_posFront;
 
     /**
      * Creates an instance of IncomingBufferQueue
@@ -61,33 +65,19 @@ public class IncomingBufferQueue {
         m_addrBuffer = new long[SIZE];
         m_sizeBuffer = new int[SIZE];
         m_maxBytes = p_maxIncomingBufferSize * 8;
-        m_currentBytes = 0;
+        m_currentBytes = new AtomicInteger(0);
 
-        m_posFront = 0;
         m_posBack = 0;
+        m_posFront = 0;
 
         m_incomingBuffer = new IncomingBuffer();
-    }
-
-    /**
-     * Returns whether the ring-buffer is empty or not.
-     */
-    public boolean isEmpty() {
-        return m_posFront == m_posBack;
     }
 
     /**
      * Returns whether the ring-buffer is full or not.
      */
     public boolean isFull() {
-        return (m_posBack + 1) % SIZE == m_posFront % SIZE;
-    }
-
-    /**
-     * Returns the number of pending buffers.
-     */
-    public int size() {
-        return (m_posBack - m_posFront) / 2;
+        return m_currentBytes.get() >= m_maxBytes || m_posFront - m_posBack == SIZE;
     }
 
     /**
@@ -96,21 +86,26 @@ public class IncomingBufferQueue {
     IncomingBuffer popBuffer() {
 
         // #ifdef STATISTICS
-        // SOP_POP.enter();
+        SOP_POP.enter();
         // #endif /* STATISTICS */
 
-        int front = m_posFront % SIZE;
-        int size = m_sizeBuffer[front];
+        UnsafeHandler.getInstance().getUnsafe().loadFence();
+        if (m_posBack == m_posFront) {
+            // Empty
+            return null;
+        }
 
-        m_currentBytes -= size;
+        int back = m_posBack % SIZE;
+        int size = m_sizeBuffer[back];
+        m_incomingBuffer.set(m_connectionBuffer[back].getPipeIn(), m_directBuffers[back], m_bufferHandleBuffer[back], m_addrBuffer[back], size);
+
         // & 0x7FFFFFFF kill sign
-        m_posFront = m_posFront + 1 & 0x7FFFFFFF;
+        m_posBack = m_posBack + 1 & 0x7FFFFFFF;
+        m_currentBytes.addAndGet(-size); // Includes storeFence()
 
         // #ifdef STATISTICS
-        // SOP_POP.leave();
+        SOP_POP.leave();
         // #endif /* STATISTICS */
-
-        m_incomingBuffer.set(m_connectionBuffer[front].getPipeIn(), m_directBuffers[front], m_bufferHandleBuffer[front], m_addrBuffer[front], size);
 
         return m_incomingBuffer;
     }
@@ -132,10 +127,10 @@ public class IncomingBufferQueue {
      */
     public boolean pushBuffer(final AbstractConnection p_connection, final BufferPool.DirectBufferWrapper p_directBufferWrapper, final long p_bufferHandle,
             final long p_addr, final int p_size) {
-        int back;
+        int front;
 
         // #ifdef STATISTICS
-        // SOP_PUSH.enter();
+        SOP_PUSH.enter();
         // #endif /* STATISTICS */
 
         if (p_size == 0) {
@@ -146,24 +141,24 @@ public class IncomingBufferQueue {
             return true;
         }
 
-        if ((m_posBack + 1) % SIZE == m_posFront % SIZE || m_currentBytes >= m_maxBytes) {
+        if (m_currentBytes.get() >= m_maxBytes || m_posFront - m_posBack == SIZE) { // m_currentBytes.get() includes loadFence()
             // Return without adding the job if queue is full or too many bytes are pending
             return false;
         }
 
-        back = m_posBack % SIZE;
+        front = m_posFront % SIZE;
 
-        m_connectionBuffer[back] = p_connection;
-        m_directBuffers[back] = p_directBufferWrapper;
-        m_bufferHandleBuffer[back] = p_bufferHandle;
-        m_addrBuffer[back] = p_addr;
-        m_sizeBuffer[back] = p_size;
-        m_currentBytes += p_size;
+        m_connectionBuffer[front] = p_connection;
+        m_directBuffers[front] = p_directBufferWrapper;
+        m_bufferHandleBuffer[front] = p_bufferHandle;
+        m_addrBuffer[front] = p_addr;
+        m_sizeBuffer[front] = p_size;
         // & 0x7FFFFFFF kill sign
-        m_posBack = m_posBack + 1 & 0x7FFFFFFF;
+        m_posFront = m_posFront + 1 & 0x7FFFFFFF;
+        m_currentBytes.addAndGet(p_size); // Includes storeFence()
 
         // #ifdef STATISTICS
-        // SOP_PUSH.leave();
+        SOP_PUSH.leave();
         // #endif /* STATISTICS */
 
         return true;
@@ -174,7 +169,7 @@ public class IncomingBufferQueue {
      *
      * @author Kevin Beineke, kevin.beineke@hhu.de, 27.09.2017
      */
-    protected static final class IncomingBuffer {
+    static final class IncomingBuffer {
 
         AbstractPipeIn m_pipeIn;
         BufferPool.DirectBufferWrapper m_buffer;
@@ -186,6 +181,51 @@ public class IncomingBufferQueue {
          * Creates an instance of IncomingBuffer
          */
         private IncomingBuffer() {
+        }
+
+        /**
+         * Returns the pipe in
+         *
+         * @return AbstractPipeIn
+         */
+        AbstractPipeIn getPipeIn() {
+            return m_pipeIn;
+        }
+
+        /**
+         * Returns the native memory buffer
+         *
+         * @return the DirectBufferWrapper
+         */
+        BufferPool.DirectBufferWrapper getDirectBuffer() {
+            return m_buffer;
+        }
+
+        /**
+         * Returns the buffer handle
+         *
+         * @return the buffer handler
+         */
+        long getBufferHandle() {
+            return m_bufferHandle;
+        }
+
+        /**
+         * Returns the buffer address
+         *
+         * @return the address
+         */
+        long getBufferAddress() {
+            return m_bufferAddress;
+        }
+
+        /**
+         * Returns the buffer size
+         *
+         * @return the buffer size
+         */
+        int getBufferSize() {
+            return m_bufferSize;
         }
 
         /**

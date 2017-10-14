@@ -34,12 +34,12 @@ public class MessageHeader implements Importable {
     private int m_payloadSize;
 
     // Just state for message creation and de-serialization, not part of actual header
-    private volatile AbstractPipeIn m_pipeIn;
-    private volatile UnfinishedImExporterOperation m_unfinishedOperation;
-    private volatile long m_address;
-    private volatile int m_currentPosition;
-    private volatile int m_bytesAvailable;
-    private volatile int m_slot;
+    private AbstractPipeIn m_pipeIn;
+    private UnfinishedImExporterOperation m_unfinishedOperation;
+    private long m_address;
+    private int m_currentPosition;
+    private int m_bytesAvailable;
+    private int m_slot;
 
     // Constructors
 

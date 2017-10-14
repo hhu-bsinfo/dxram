@@ -19,14 +19,14 @@ package de.hhu.bsinfo.dxnet.core;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.07.2017
  */
 class UnfinishedImExporterOperation {
-    private volatile int m_startIndex;
-    private volatile long m_primitive;
-    private volatile Object m_object;
+    private int m_startIndex;
+    private long m_primitive;
+    private Object m_object;
 
     // Following attributes are relevant for importing, only
-    private volatile Message m_unfinishedMessage;
-    private volatile MessageHeader m_currentHeader;
-    private volatile int m_bytesCopied;
+    private Message m_unfinishedMessage;
+    private MessageHeader m_currentHeader;
+    private int m_bytesCopied;
 
     /**
      * Creates an instance of UnfinishedImExporterOperation
@@ -43,7 +43,7 @@ class UnfinishedImExporterOperation {
 
     @Override
     public String toString() {
-        return "m_startIndex " + m_startIndex + ", m_primitive " + m_primitive + ", m_object " + m_object;
+        return "m_startIndex " + m_startIndex + ", m_primitive " + m_primitive + ", m_object " + m_object + ", " + m_bytesCopied;
     }
 
     /**
@@ -179,7 +179,20 @@ class UnfinishedImExporterOperation {
     }
 
     /**
-     * Reset instance
+     * Transfer all state from another UnfinishedImExporterOperation.
+     */
+    void transfer(final UnfinishedImExporterOperation p_prevUO) {
+        m_primitive = p_prevUO.m_primitive;
+        m_object = p_prevUO.m_object;
+        m_startIndex = p_prevUO.m_startIndex;
+
+        m_unfinishedMessage = p_prevUO.m_unfinishedMessage;
+        m_currentHeader = p_prevUO.m_currentHeader;
+        m_bytesCopied = p_prevUO.m_bytesCopied;
+    }
+
+    /**
+     * Reset instance.
      */
     void reset() {
         m_primitive = 0;

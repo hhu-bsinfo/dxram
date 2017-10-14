@@ -104,13 +104,13 @@ public class OutgoingRingBuffer {
      */
     public void shiftFront(final int p_writtenBytes) {
         // #ifdef STATISTICS
-        // SOP_SHIFT_FRONT.enter(p_writtenBytes);
+        SOP_SHIFT_FRONT.enter(p_writtenBytes);
         // #endif /* STATISTICS */
 
         m_posFront += p_writtenBytes;
 
         // #ifdef STATISTICS
-        // SOP_SHIFT_FRONT.leave();
+        SOP_SHIFT_FRONT.leave();
         // #endif /* STATISTICS */
     }
 
@@ -134,7 +134,7 @@ public class OutgoingRingBuffer {
         int posFrontRelative;
 
         // #ifdef STATISTICS
-        // SOP_PUSH.enter();
+        SOP_PUSH.enter();
         // #endif /* STATISTICS */
 
         m_producers.incrementAndGet();
@@ -150,7 +150,7 @@ public class OutgoingRingBuffer {
         }
 
         // #ifdef STATISTICS
-        // boolean waited = false;
+        boolean waited = false;
         // #endif /* STATISTICS */
 
         // Allocate space in ring buffer by incrementing position back
@@ -166,9 +166,9 @@ public class OutgoingRingBuffer {
                 if (!m_largeMessageInProgress.get() && fits(posBackRelative, posFrontRelative, p_messageSize)) {
 
                     // #ifdef STATISTICS
-                    // if (waited) {
-                    // SOP_WAIT_FULL.leave();
-                    // }
+                    if (waited) {
+                    SOP_WAIT_FULL.leave();
+                    }
                     // #endif /* STATISTICS */
 
                     // Optimistic increase
@@ -183,10 +183,10 @@ public class OutgoingRingBuffer {
                     // Try again
                 } else {
                     // #ifdef STATISTICS
-                    // if (!waited) {
-                    // SOP_WAIT_FULL.enter();
-                    // waited = true;
-                    // }
+                    if (!waited) {
+                    SOP_WAIT_FULL.enter();
+                    waited = true;
+                    }
                     // #endif /* STATISTICS */
 
                     // Buffer is full -> wait
@@ -225,17 +225,17 @@ public class OutgoingRingBuffer {
         m_producers.decrementAndGet();
 
         // #ifdef STATISTICS
-        // SOP_PUSH.leave();
+        SOP_PUSH.leave();
         // #endif /* STATISTICS */
 
         // #ifdef STATISTICS
-        // SOP_BUFFER_POSTED.enter();
+        SOP_BUFFER_POSTED.enter();
         // #endif /* STATISTICS */
 
         p_pipeOut.bufferPosted(p_messageSize);
 
         // #ifdef STATISTICS
-        // SOP_BUFFER_POSTED.leave();
+        SOP_BUFFER_POSTED.leave();
         // #endif /* STATISTICS */
     }
 
@@ -317,13 +317,13 @@ public class OutgoingRingBuffer {
             allWrittenBytes = exporter.getNumberOfWrittenBytes();
 
             // #ifdef STATISTICS
-            // SOP_BUFFER_POSTED.enter();
+            SOP_BUFFER_POSTED.enter();
             // #endif /* STATISTICS */
 
             p_pipeOut.bufferPosted(allWrittenBytes - previouslyWrittenBytes);
 
             // #ifdef STATISTICS
-            // SOP_BUFFER_POSTED.leave();
+            SOP_BUFFER_POSTED.leave();
             // #endif /* STATISTICS */
 
             // Buffer is full now - > wait for consumer
@@ -373,7 +373,7 @@ public class OutgoingRingBuffer {
         int posFrontRelative;
 
         // #ifdef STATISTICS
-        // SOP_POP.enter();
+        SOP_POP.enter();
         // #endif /* STATISTICS */
 
         // Deny access to incoming producers
@@ -396,7 +396,7 @@ public class OutgoingRingBuffer {
         m_consumerWaits = false;
 
         // #ifdef STATISTICS
-        // SOP_POP.leave();
+        SOP_POP.leave();
         // #endif /* STATISTICS */
 
         return (long) posBackRelative << 32 | (long) posFrontRelative;

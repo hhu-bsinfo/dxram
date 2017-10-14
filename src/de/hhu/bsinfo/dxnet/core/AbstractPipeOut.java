@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.utils.UnsafeHandler;
 import de.hhu.bsinfo.utils.stats.StatisticsOperation;
 import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
@@ -33,7 +34,7 @@ public abstract class AbstractPipeOut {
 
     private final short m_ownNodeID;
     private final short m_destinationNodeID;
-    private volatile boolean m_isConnected;
+    private boolean m_isConnected;
     private final AbstractFlowControl m_flowControl;
     private final OutgoingRingBuffer m_outgoing;
 
@@ -83,6 +84,8 @@ public abstract class AbstractPipeOut {
      */
     public void setConnected(final boolean p_connected) {
         m_isConnected = p_connected;
+        UnsafeHandler.getInstance().getUnsafe()
+                .storeFence(); // m_isConnected is not volatile as it is read often without changing value -> use store fence here
     }
 
     /**
@@ -141,13 +144,13 @@ public abstract class AbstractPipeOut {
         }
 
         // #ifdef STATISTICS
-        // SOP_FC_DATA_TO_SEND.enter();
+        SOP_FC_DATA_TO_SEND.enter();
         // #endif /* STATISTICS */
 
         m_flowControl.dataToSend(messageTotalSize);
 
         // #ifdef STATISTICS
-        // SOP_FC_DATA_TO_SEND.leave();
+        SOP_FC_DATA_TO_SEND.leave();
         // #endif /* STATISTICS */
 
         m_sentMessages.incrementAndGet();

@@ -57,9 +57,11 @@ public class MessageCreationCoordinator extends Thread {
         IncomingBufferQueue.IncomingBuffer incomingBuffer;
         //int parkCounter = 0;
 
+        // TODO: Idle
         while (!m_shutdown) {
             // pop an incomingBuffer
-            if (m_bufferQueue.isEmpty()) {
+            incomingBuffer = m_bufferQueue.popBuffer();
+            if (incomingBuffer == null) {
                 // Ring-buffer is empty.
 
                 // Wait for a short period (~ xx µs) and continue
@@ -73,12 +75,11 @@ public class MessageCreationCoordinator extends Thread {
                 Thread.yield();
             } else {
                 //parkCounter = 0;
-                incomingBuffer = m_bufferQueue.popBuffer();
 
                 try {
-                    incomingBuffer.m_pipeIn.processBuffer(incomingBuffer);
+                    incomingBuffer.getPipeIn().processBuffer(incomingBuffer);
                 } catch (final NetworkException e) {
-                    incomingBuffer.m_pipeIn.returnProcessedBuffer(incomingBuffer.m_buffer, incomingBuffer.m_bufferHandle);
+                    incomingBuffer.getPipeIn().returnProcessedBuffer(incomingBuffer.getDirectBuffer(), incomingBuffer.getBufferHandle());
 
                     // #if LOGGER == ERROR
                     LOGGER.error("Processing incoming buffer failed", e);

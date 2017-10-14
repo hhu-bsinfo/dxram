@@ -261,7 +261,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         // return interest of previous call
         if (p_prevNodeIdWritten != NodeID.INVALID_ID) {
             // #ifdef STATISTICS
-            // SOP_SEND_NEXT_DATA.leave();
+            SOP_SEND_NEXT_DATA.leave();
             // #endif /* STATISTICS */
 
             // #if LOGGER >= TRACE
@@ -349,7 +349,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         m_sendThreadRetArgs.putShort(nodeId);
 
         // #ifdef STATISTICS
-        // SOP_SEND_NEXT_DATA.enter();
+        SOP_SEND_NEXT_DATA.enter();
         // #endif /* STATISTICS */
 
         return ByteBufferHelper.getDirectAddress(m_sendThreadRetArgs);
@@ -374,7 +374,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
         while (!m_incomingBufferQueue.pushBuffer(connection, null, p_bufferHandle, p_addr, p_length)) {
             // #if LOGGER == TRACE
-            // LOGGER.trace("Message creator: IncomingBuffer queue is full!");
+            LOGGER.trace("Message creator: IncomingBuffer queue is full!");
             // #endif /* LOGGER == TRACE */
 
             //Thread.yield();

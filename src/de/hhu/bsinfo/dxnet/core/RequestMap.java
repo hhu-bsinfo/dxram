@@ -157,19 +157,14 @@ public final class RequestMap {
         Request request;
 
         if (p_response != null) {
+            p_response.setSendReceiveTimestamp(System.nanoTime());
             request = remove(p_response.getRequestID());
 
             if (request != null) {
-
-                // #ifdef STATISTICS
-                SOP_REQ_RESP_RTT.enter(request.getRoundTripTimeNs() / 1000);
-                // #endif /* STATISTICS */
-
-                // #ifdef STATISTICS
-                SOP_REQ_RESP_RTT.leave();
-                // #endif /* STATISTICS */
-
                 request.fulfill(p_response);
+
+                // Not surrounded by statistics strings as this should always be registered
+                SOP_REQ_RESP_RTT.record(request.getRoundTripTimeNs());
             }
         }
     }

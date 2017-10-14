@@ -110,7 +110,7 @@ public final class BufferPool {
         int posFront;
 
         posFront = m_posFrontLarge & 0x7FFFFFFF;
-        if ((posFront + 1 & 0x7FFFFFFF) % LARGE_BUFFER_POOL_SIZE != (m_posBackConsumerLarge.get() & 0x7FFFFFFF) % LARGE_BUFFER_POOL_SIZE) {
+        if (posFront - (m_posBackConsumerLarge.get() & 0x7FFFFFFF) < LARGE_BUFFER_POOL_SIZE) {
             // Not empty
             ret = m_largeBufferPool[posFront % LARGE_BUFFER_POOL_SIZE];
             m_posFrontLarge++;
@@ -118,7 +118,7 @@ public final class BufferPool {
         }
 
         posFront = m_posFrontMedium & 0x7FFFFFFF;
-        if ((posFront + 1 & 0x7FFFFFFF) % MEDIUM_BUFFER_POOL_SIZE != (m_posBackConsumerMedium.get() & 0x7FFFFFFF) % MEDIUM_BUFFER_POOL_SIZE) {
+        if (posFront - (m_posBackConsumerMedium.get() & 0x7FFFFFFF) < MEDIUM_BUFFER_POOL_SIZE) {
             // Not empty
             ret = m_mediumBufferPool[posFront % MEDIUM_BUFFER_POOL_SIZE];
             m_posFrontMedium++;
@@ -126,7 +126,7 @@ public final class BufferPool {
         }
 
         posFront = m_posFrontSmall & 0x7FFFFFFF;
-        if ((posFront + 1 & 0x7FFFFFFF) % SMALL_BUFFER_POOL_SIZE != (m_posBackConsumerSmall.get() & 0x7FFFFFFF) % SMALL_BUFFER_POOL_SIZE) {
+        if (posFront - (m_posBackConsumerSmall.get() & 0x7FFFFFFF) < SMALL_BUFFER_POOL_SIZE) {
             // Not empty
             ret = m_smallBufferPool[posFront % SMALL_BUFFER_POOL_SIZE];
             m_posFrontSmall++;
@@ -162,7 +162,7 @@ public final class BufferPool {
                 posFront = m_posFrontLarge & 0x7FFFFFFF;
                 posBackSigned = m_posBackProducerLarge.get();
                 posBack = posBackSigned & 0x7FFFFFFF;
-                if (posBack % LARGE_BUFFER_POOL_SIZE == posFront % LARGE_BUFFER_POOL_SIZE) {
+                if (posBack == posFront) {
                     // Full
                     break;
                 }
@@ -188,7 +188,7 @@ public final class BufferPool {
                 posFront = m_posFrontMedium & 0x7FFFFFFF;
                 posBackSigned = m_posBackProducerMedium.get();
                 posBack = posBackSigned & 0x7FFFFFFF;
-                if (posBack % MEDIUM_BUFFER_POOL_SIZE == posFront % MEDIUM_BUFFER_POOL_SIZE) {
+                if (posBack == posFront) {
                     // Full
                     break;
                 }
@@ -214,7 +214,7 @@ public final class BufferPool {
                 posFront = m_posFrontSmall & 0x7FFFFFFF;
                 posBackSigned = m_posBackProducerSmall.get();
                 posBack = posBackSigned & 0x7FFFFFFF;
-                if (posBack % SMALL_BUFFER_POOL_SIZE == posFront % SMALL_BUFFER_POOL_SIZE) {
+                if (posBack == posFront) {
                     // Full
                     break;
                 }
@@ -233,6 +233,7 @@ public final class BufferPool {
             }
         }
 
+        System.out.println("got here");
         // Return without adding the incoming buffer if pool is full or buffer size is incompatible (was created after initialization)
     }
 

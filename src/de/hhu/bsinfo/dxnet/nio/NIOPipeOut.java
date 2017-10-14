@@ -104,7 +104,7 @@ public class NIOPipeOut extends AbstractPipeOut {
         ByteBuffer buffer;
 
         // #ifdef STATISTICS
-        // SOP_WRITE.enter();
+        SOP_WRITE.enter();
         // #endif /* STATISTICS */
 
         buffer = ((NIOOutgoingRingBuffer) getOutgoingQueue()).popFront();
@@ -123,7 +123,7 @@ public class NIOPipeOut extends AbstractPipeOut {
         }
 
         // #ifdef STATISTICS
-        // SOP_WRITE.leave();
+        SOP_WRITE.leave();
         // #endif /* STATISTICS */
 
         return ret;
@@ -137,7 +137,7 @@ public class NIOPipeOut extends AbstractPipeOut {
         int readAllBytes;
 
         // #ifdef STATISTICS
-        // SOP_READ_FLOW_CONTROL.enter();
+        SOP_READ_FLOW_CONTROL.enter();
         // #endif /* STATISTICS */
 
         // This is a flow control byte
@@ -157,7 +157,7 @@ public class NIOPipeOut extends AbstractPipeOut {
         getFlowControl().handleFlowControlData(m_flowControlBytes.getInt(0));
 
         // #ifdef STATISTICS
-        // SOP_READ_FLOW_CONTROL.leave();
+        SOP_READ_FLOW_CONTROL.leave();
         // #endif /* STATISTICS */
     }
 

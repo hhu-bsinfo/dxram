@@ -62,6 +62,7 @@ public final class DXNet {
     private final NIOConfig m_nioConfig;
     private final IBConfig m_ibConfig;
     private final LoopbackConfig m_loopbackConfig;
+    private final boolean m_loopbackDeviceActive;
 
     private final MessageReceiverStore m_messageReceivers;
     private final MessageHandlers m_messageHandlers;
@@ -95,15 +96,18 @@ public final class DXNet {
         m_loopbackConfig = p_loopbackConfig;
 
         if ("Ethernet".equals(m_coreConfig.getDevice())) {
+            m_loopbackDeviceActive = false;
             m_messageReceivers = new MessageReceiverStore((int) m_nioConfig.getRequestTimeOut().getMs());
         } else if ("Infiniband".equals(m_coreConfig.getDevice())) {
+            m_loopbackDeviceActive = false;
             m_messageReceivers = new MessageReceiverStore((int) m_ibConfig.getRequestTimeOut().getMs());
         } else {
+            m_loopbackDeviceActive = true;
             m_messageReceivers = new MessageReceiverStore((int) m_loopbackConfig.getRequestTimeOut().getMs());
         }
 
         MessageHeaderPool headerPool = new MessageHeaderPool(MESSAGE_HEADER_POOL_SIZE);
-        m_messageHandlers = new MessageHandlers(m_coreConfig.getNumMessageHandlerThreads(), m_messageReceivers, headerPool);
+        m_messageHandlers = new MessageHandlers(m_coreConfig.getNumMessageHandlerThreads(), m_coreConfig.getOverprovisioning(), m_messageReceivers, headerPool);
 
         if ("Ethernet".equals(m_coreConfig.getDevice())) {
             m_messageDirectory = new MessageDirectory((int) m_nioConfig.getRequestTimeOut().getMs());
@@ -249,7 +253,7 @@ public final class DXNet {
      */
     public void connectNode(final short p_nodeID) throws NetworkException {
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering connectNode with: p_nodeID=0x%X", p_nodeID);
+        LOGGER.trace("Entering connectNode with: p_nodeID=0x%X", p_nodeID);
         // #endif /* LOGGER == TRACE */
 
         try {
@@ -264,7 +268,7 @@ public final class DXNet {
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting connectNode");
+        LOGGER.trace("Exiting connectNode");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -280,14 +284,14 @@ public final class DXNet {
         AbstractConnection connection;
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Entering sendMessage with: p_message=%s", p_message);
+        LOGGER.trace("Entering sendMessage with: p_message=%s", p_message);
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
-        // SOP_SEND.enter();
+        SOP_SEND.enter();
         // #endif /* STATISTICS */
 
-        if (p_message.getDestination() == m_coreConfig.getOwnNodeId()) {
+        if (p_message.getDestination() == m_coreConfig.getOwnNodeId() && !m_loopbackDeviceActive) {
             // #if LOGGER >= ERROR
             LOGGER.error("Invalid destination 0x%X. No loopback allowed.", p_message.getDestination());
             // #endif /* LOGGER >= ERROR */
@@ -323,11 +327,11 @@ public final class DXNet {
         }
 
         // #ifdef STATISTICS
-        // SOP_SEND.leave();
+        SOP_SEND.leave();
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Exiting sendMessage");
+        LOGGER.trace("Exiting sendMessage");
         // #endif /* LOGGER == TRACE */
     }
 
@@ -345,7 +349,7 @@ public final class DXNet {
      */
     public void sendSync(final Request p_request, final int p_timeout, final boolean p_waitForResponses) throws NetworkException {
         // #if LOGGER == TRACE
-        // LOGGER.trace("Sending request (sync): %s", p_request);
+        LOGGER.trace("Sending request (sync): %s", p_request);
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
@@ -361,7 +365,7 @@ public final class DXNet {
         }
 
         // #if LOGGER == TRACE
-        // LOGGER.trace("Waiting for response to request: %s", p_request);
+        LOGGER.trace("Waiting for response to request: %s", p_request);
         // #endif /* LOGGER == TRACE */
 
         int timeout = p_timeout != -1 ? p_timeout : m_timeOut;

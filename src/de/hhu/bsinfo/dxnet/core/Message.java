@@ -54,7 +54,7 @@ public class Message {
     private boolean m_exclusivity;
 
     private int m_oldMessageID = INVALID_MESSAGE_ID;
-    private long m_sendReceiveTimestamp;
+    private volatile long m_sendReceiveTimestamp;
 
     /**
      * Creates an instance of Message
@@ -214,6 +214,10 @@ public class Message {
      */
     public final boolean isExclusive() {
         return m_exclusivity;
+    }
+
+    public final void setDestination(final short p_destination) {
+        m_destination = p_destination;
     }
 
     /**

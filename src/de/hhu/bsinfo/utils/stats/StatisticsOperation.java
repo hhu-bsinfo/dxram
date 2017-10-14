@@ -38,7 +38,7 @@ public final class StatisticsOperation {
      * Constructor
      *
      * @param p_name
-     *     Name of the operation.
+     *         Name of the operation.
      */
     StatisticsOperation(final String p_name) {
         m_name = p_name;
@@ -69,7 +69,7 @@ public final class StatisticsOperation {
      * Enable/disable recording of the operation
      *
      * @param p_val
-     *     True to enable, false to disable
+     *         True to enable, false to disable
      */
     public void setEnabled(final boolean p_val) {
         m_enabled = p_val;
@@ -116,7 +116,7 @@ public final class StatisticsOperation {
      * to record.
      *
      * @param p_val
-     *     Value to added to the long counter.
+     *         Value to added to the long counter.
      */
     public void enter(final long p_val) {
         if (!m_enabled) {
@@ -148,7 +148,7 @@ public final class StatisticsOperation {
      * to record.
      *
      * @param p_val
-     *     Value to added to the double counter.
+     *         Value to added to the double counter.
      */
     public void enter(final double p_val) {
         if (!m_enabled) {
@@ -173,6 +173,42 @@ public final class StatisticsOperation {
         stats.m_opCount++;
         stats.m_timeNsStart = System.nanoTime();
         stats.m_counter2 += p_val;
+    }
+
+    /**
+     * Record previously determined time span.
+     *
+     * @param p_val
+     *         Value to record.
+     */
+    public void record(final long p_val) {
+        if (!m_enabled) {
+            return;
+        }
+
+        long threadId = Thread.currentThread().getId();
+        if (threadId >= m_statsMapBlockPos * ms_blockSizeStatsMap) {
+            m_mapLock.lock();
+            while (threadId >= m_statsMapBlockPos * ms_blockSizeStatsMap) {
+                m_statsMap[m_statsMapBlockPos++] = new Stats[ms_blockSizeStatsMap];
+            }
+            m_mapLock.unlock();
+        }
+
+        Stats stats = m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)];
+        if (stats == null) {
+            stats = new Stats(Thread.currentThread().getName());
+            m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)] = stats;
+        }
+
+        stats.m_totalTimeNs += p_val;
+        if (p_val < stats.m_shortestTimeNs) {
+            stats.m_shortestTimeNs = p_val;
+        }
+        if (p_val > stats.m_longestTimeNs) {
+            stats.m_longestTimeNs = p_val;
+        }
+        stats.m_opCount++;
     }
 
     /**
@@ -240,7 +276,7 @@ public final class StatisticsOperation {
          * Constructor
          *
          * @param p_threadName
-         *     Name of the thread
+         *         Name of the thread
          */
         private Stats(final String p_threadName) {
             m_threadName = p_threadName;
@@ -358,8 +394,8 @@ public final class StatisticsOperation {
         @Override
         public String toString() {
             return "Stats[" + m_threadName + "](m_opCount, " + m_opCount + ")(avgTimeMs, " + getAverageTimeMs() + ")(m_totalTimeMs, " + getTotalTimeMs() +
-                ")(m_shortestTimeMs, " + getShortestTimeMs() + ")(m_longestTimeMs, " + getLongestTimeMs() + ")(avgTimeMs, " + getAverageTimeMs() +
-                ")(opsPerSecond, " + getOpsPerSecond() + ")(m_counter, " + m_counter + ")(m_counter2, " + m_counter2 + ')';
+                    ")(m_shortestTimeMs, " + getShortestTimeMs() + ")(m_longestTimeMs, " + getLongestTimeMs() + ")(opsPerSecond, " + getOpsPerSecond() +
+                    ")(m_counter, " + m_counter + ")(m_counter2, " + m_counter2 + ')';
         }
     }
 }

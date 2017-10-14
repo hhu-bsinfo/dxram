@@ -47,14 +47,14 @@ final class ExclusiveMessageHandler {
      * @param p_messageReceivers
      *         Provides all registered message receivers
      */
-    ExclusiveMessageHandler(final MessageReceiverStore p_messageReceivers, final MessageHeaderPool p_messageHeaderPool) {
+    ExclusiveMessageHandler(final MessageReceiverStore p_messageReceivers, final MessageHeaderPool p_messageHeaderPool, final boolean p_overprovisioning) {
         m_exclusiveMessageHeaders = new MessageHeaderStore(EXCLUSIVE_MESSAGE_STORE_SIZE);
 
         // #if LOGGER >= INFO
         LOGGER.info("Network: ExclusiveMessageHandler: Initialising thread");
         // #endif /* LOGGER >= INFO */
 
-        m_exclusiveMessageHandler = new MessageHandler(p_messageReceivers, m_exclusiveMessageHeaders, p_messageHeaderPool);
+        m_exclusiveMessageHandler = new MessageHandler(p_messageReceivers, m_exclusiveMessageHeaders, p_messageHeaderPool, p_overprovisioning);
         m_exclusiveMessageHandler.setName("Network: ExclusiveMessageHandler");
         m_exclusiveMessageHandler.start();
     }
@@ -80,39 +80,16 @@ final class ExclusiveMessageHandler {
     }
 
     /**
-     * Enqueue a message header
+     * Enqueue a batch of message headers
      *
-     * @param p_header
-     *         the message header
+     * @param p_headers
+     *         the message headers
+     * @param p_messages
+     *         the number of used entries in array
      */
-    void newHeader(final MessageHeader p_header) {
-        // #ifdef STATISTICS
-        // SOP_PUSH.enter();
-        // #endif /* STATISTICS */
-
-        // Ignore network test messages (e.g. ping after response delay)
-        if (!(p_header.getType() == Messages.DEFAULT_MESSAGES_TYPE && p_header.getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
-            while (!m_exclusiveMessageHeaders.pushMessageHeader(p_header)) {
-                // #ifdef STATISTICS
-                // SOP_WAIT.enter();
-                // #endif /* STATISTICS */
-
-                LockSupport.parkNanos(100);
-
-                // #ifdef STATISTICS
-                // SOP_WAIT.leave();
-                // #endif /* STATISTICS */
-            }
-        }
-
-        // #ifdef STATISTICS
-        // SOP_PUSH.leave();
-        // #endif /* STATISTICS */
-    }
-
     void newHeaders(final MessageHeader[] p_headers, final int p_messages) {
         // #ifdef STATISTICS
-        // SOP_PUSH.enter();
+        SOP_PUSH.enter();
         // #endif /* STATISTICS */
 
         if (!m_exclusiveMessageHeaders.pushMessageHeaders(p_headers, p_messages)) {
@@ -125,13 +102,13 @@ final class ExclusiveMessageHandler {
                 if (!(p_headers[i].getType() == Messages.DEFAULT_MESSAGES_TYPE && p_headers[i].getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
                     while (!m_exclusiveMessageHeaders.pushMessageHeader(p_headers[i])) {
                         // #ifdef STATISTICS
-                        // SOP_WAIT.enter();
+                        SOP_WAIT.enter();
                         // #endif /* STATISTICS */
 
                         LockSupport.parkNanos(100);
 
                         // #ifdef STATISTICS
-                        // SOP_WAIT.leave();
+                        SOP_WAIT.leave();
                         // #endif /* STATISTICS */
                     }
                 }
@@ -139,7 +116,7 @@ final class ExclusiveMessageHandler {
         }
 
         // #ifdef STATISTICS
-        // SOP_PUSH.leave();
+        SOP_PUSH.leave();
         // #endif /* STATISTICS */
     }
 

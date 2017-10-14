@@ -26,8 +26,8 @@ public class MessageHeaderStore {
     private final int m_size;
     private final MessageHeader[] m_buffer;
 
-    private final AtomicInteger m_posFront;
-    private volatile int m_posBack;
+    private final AtomicInteger m_posBack;
+    private volatile int m_posFront;
 
     /**
      * Creates an instance of MessageHeaderStore
@@ -37,14 +37,14 @@ public class MessageHeaderStore {
      */
     MessageHeaderStore(final int p_size) {
         if (p_size % 2 != 0) {
-            throw new IllegalStateException("Message store size must be a power of two, invalid value " + p_size);
+            throw new IllegalStateException("Message store size must be a multiple of two, invalid value " + p_size);
         }
 
         m_size = p_size;
         m_buffer = new MessageHeader[m_size];
 
-        m_posFront = new AtomicInteger(0);
-        m_posBack = 0;
+        m_posBack = new AtomicInteger(0);
+        m_posFront = 0;
     }
 
     /**
@@ -53,64 +53,55 @@ public class MessageHeaderStore {
      * @return whether the ring-buffer is empty or not
      */
     public boolean isEmpty() {
-        return (m_posFront.get() & 0x7FFFFFFF) == (m_posBack & 0x7FFFFFFF);
+        return (m_posBack.get() & 0x7FFFFFFF) == (m_posFront & 0x7FFFFFFF);
     }
 
     /**
-     * Returns whether the ring-buffer is full or not.
-     *
-     * @return whether the ring-buffer is full or not
-     */
-    public boolean isFull() {
-        return (m_posBack + 1 & 0x7FFFFFFF) % m_size == (m_posFront.get() & 0x7FFFFFFF) % m_size;
-    }
-
-    /**
-     * Returns the maximum number of pending message headers.
-     *
-     * @return the capacity
-     */
-    public int capacity() {
-        return m_buffer.length;
-    }
-
-    /**
-     * Adds a message header at the end of the buffer.
+     * Adds a message header.
      *
      * @param p_header
      *         the message
-     * @return whether the job was added or not
+     * @return whether the message header was added or not
      */
     boolean pushMessageHeader(final MessageHeader p_header) {
         // & 0x7FFFFFFF to kill sign
-        int posBack = m_posBack & 0x7FFFFFFF;
-        int posFront = m_posFront.get() & 0x7FFFFFFF;
+        int posFront = m_posFront & 0x7FFFFFFF;
+        int posBack = m_posBack.get() & 0x7FFFFFFF;
 
-        if ((posBack + 1 & 0x7FFFFFFF) % m_size == posFront % m_size) {
+        if (posFront - posBack == m_size) {
             // Return without adding the message header if queue is full
             return false;
         }
 
-        m_buffer[posBack % m_size] = p_header;
-        m_posBack++;
+        m_buffer[posFront % m_size] = p_header;
+        m_posFront++;
 
         return true;
     }
 
+    /**
+     * Adds a batch of message headers.
+     *
+     * @param p_headers
+     *         the message headers to be processed
+     * @param p_messages
+     *         the number of valid entries in the array
+     * @return whether the message headers were added or not
+     */
     boolean pushMessageHeaders(final MessageHeader[] p_headers, final int p_messages) {
         // & 0x7FFFFFFF to kill sign
-        int posBack = m_posBack & 0x7FFFFFFF;
-        int posFront = m_posFront.get() & 0x7FFFFFFF;
+        int posFront = m_posFront & 0x7FFFFFFF;
+        int posBack = m_posBack.get() & 0x7FFFFFFF;
 
-        if ((posBack + p_messages + 1 & 0x7FFFFFFF) >= posFront) {
+        if ((posFront + p_messages & 0x7FFFFFFF) - posBack > m_size) {
             // Return without adding the message headers if not all message header fit
             return false;
         }
 
         for (int i = 0; i < p_messages; i++) {
-            m_buffer[(posBack + i) % m_size] = p_headers[i];
+            m_buffer[(posFront + i) % m_size] = p_headers[i];
         }
-        m_posBack += p_messages;
+        m_posFront += p_messages;
 
         return true;
     }
@@ -118,25 +109,24 @@ public class MessageHeaderStore {
     /**
      * Gets a message header from the beginning of the buffer.
      *
-     * @return the message or null if isEmpty
+     * @return the message or null if empty
      */
     MessageHeader popMessageHeader() {
         MessageHeader ret;
 
         while (true) {
-            // get front before back, otherwise front can overtake back when scheduler interrupts thread between get calls
-            int posFrontSigned = m_posFront.get();
-            int posFront = posFrontSigned & 0x7FFFFFFF;
-
-            if (posFront == (m_posBack & 0x7FFFFFFF)) {
-                // Ring-buffer is isEmpty.
+            // Get back before front, otherwise back can overtake front when scheduler interrupts thread between get calls
+            int posBackSigned = m_posBack.get();
+            int posBack = posBackSigned & 0x7FFFFFFF;
+            if (posBack == (m_posFront & 0x7FFFFFFF)) {
+                // Ring-buffer is empty.
                 ret = null;
                 break;
             }
 
-            ret = m_buffer[posFront % m_size];
+            ret = m_buffer[posBack % m_size];
 
-            if (m_posFront.compareAndSet(posFrontSigned, posFrontSigned + 1)) {
+            if (m_posBack.compareAndSet(posBackSigned, posBackSigned + 1)) {
                 break;
             }
         }

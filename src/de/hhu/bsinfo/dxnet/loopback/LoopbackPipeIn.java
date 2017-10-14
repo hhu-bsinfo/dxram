@@ -33,7 +33,7 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 /**
  * Created by nothaas on 6/9/17.
  */
-class LoopbackPipeIn extends AbstractPipeIn {
+public class LoopbackPipeIn extends AbstractPipeIn {
     private static final StatisticsOperation COPY = StatisticsRecorderManager.getOperation(LoopbackPipeIn.class, "Copy");
     private static final StatisticsOperation WAITING_FULL = StatisticsRecorderManager.getOperation(LoopbackPipeIn.class, "WaitingFull");
 
@@ -63,6 +63,11 @@ class LoopbackPipeIn extends AbstractPipeIn {
     public int read(final ByteBuffer p_buffer) {
         int ret;
 
+        if (m_incomingBufferQueue.isFull()) {
+            // Abort to avoid deadlock when sending requests/responses as responses cannot be sent if send thread locks down below
+            return 0;
+        }
+
         BufferPool.DirectBufferWrapper directBufferWrapper;
         ByteBuffer buffer;
 
@@ -70,7 +75,7 @@ class LoopbackPipeIn extends AbstractPipeIn {
         buffer = directBufferWrapper.getBuffer();
 
         // #ifdef STATISTICS
-        // COPY.enter();
+        COPY.enter();
         // #endif /* STATISTICS */
 
         if (buffer.remaining() >= p_buffer.remaining()) {
@@ -87,28 +92,26 @@ class LoopbackPipeIn extends AbstractPipeIn {
         buffer.flip();
 
         // #ifdef STATISTICS
-        // COPY.leave();
+        COPY.leave();
         // #endif /* STATISTICS */
 
         // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
         while (!m_incomingBufferQueue.pushBuffer(m_parentConnection, directBufferWrapper, 0, directBufferWrapper.getAddress(), ret)) {
             // #ifdef STATISTICS
-            // WAITING_FULL.enter();
+            WAITING_FULL.enter();
             // #endif /* STATISTICS */
 
-            //Thread.yield();
             LockSupport.parkNanos(100);
 
             // #ifdef STATISTICS
-            // WAITING_FULL.leave();
+            WAITING_FULL.leave();
             // #endif /* STATISTICS */
         }
-        //returnProcessedBuffer(directBufferWrapper, -1);
 
         return ret;
     }
 
-    public ByteBuffer readFlowControlData(final ByteBuffer p_buffer) {
+    ByteBuffer readFlowControlData(final ByteBuffer p_buffer) {
         // Copy flow control bytes for comparison reasons
 
         m_flowControlBytes.rewind();

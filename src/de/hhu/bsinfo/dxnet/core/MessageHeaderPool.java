@@ -61,7 +61,7 @@ public final class MessageHeaderPool {
         int posFront = m_posFront & 0x7FFFFFFF;
         int posBack = m_posBackConsumer.get() & 0x7FFFFFFF;
 
-        if ((posFront + p_messageHeaders.length + 1 & 0x7FFFFFFF) - posBack >= m_size) {
+        if ((posFront + p_messageHeaders.length & 0x7FFFFFFF) - posBack > m_size) {
             // Ring-buffer is empty.
 
             // #if LOGGER >= WARN
@@ -90,7 +90,7 @@ public final class MessageHeaderPool {
         int posFront = m_posFront & 0x7FFFFFFF;
         int posBack = m_posBackConsumer.get() & 0x7FFFFFFF;
 
-        if ((posFront + 1 & 0x7FFFFFFF) % m_size == posBack % m_size) {
+        if (posFront - posBack == m_size) {
             // Ring-buffer is empty.
 
             // #if LOGGER >= WARN
@@ -117,7 +117,7 @@ public final class MessageHeaderPool {
             int posFront = m_posFront & 0x7FFFFFFF;
             int posBackSigned = m_posBackProducer.get();
             int posBack = posBackSigned & 0x7FFFFFFF;
-            if ((posBack + p_messageHeaders.length + 1 & 0x7FFFFFFF) >= posFront) {
+            if ((posBack + p_messageHeaders.length & 0x7FFFFFFF) > posFront) {
                 // Cannot return all message headers at once -> try returning single message headers until pool is full
                 for (int i = 0; i < p_messageHeaders.length; i++) {
                     if (!returnHeader(p_messageHeaders[i])) {
@@ -157,7 +157,7 @@ public final class MessageHeaderPool {
             int posFront = m_posFront & 0x7FFFFFFF;
             int posBackSigned = m_posBackProducer.get();
             int posBack = posBackSigned & 0x7FFFFFFF;
-            if ((posBack + 1 & 0x7FFFFFFF) == posFront) {
+            if (posBack == posFront) {
                 // Return without adding the message header if queue is full (happens if message headers were created in getHeader())
 
                 // #if LOGGER >= WARN

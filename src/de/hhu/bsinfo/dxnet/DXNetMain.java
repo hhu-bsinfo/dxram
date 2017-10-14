@@ -67,15 +67,30 @@ public final class DXNetMain implements MessageReceiver {
     public static void main(final String[] p_arguments) {
 
         // Parse command line arguments
-        if (p_arguments.length < 4) {
-            System.out.println("Usage: config_file own_ip num_messages message_size num_threads");
+        if (p_arguments.length < 7) {
+            System.out.println("Usage: config_file mode own_ip role num_messages message_size num_threads [server_ip]");
             System.exit(-1);
         }
         String configPath = p_arguments[0];
-        String ip = p_arguments[1];
-        ms_messageCount = Long.parseLong(p_arguments[2]);
-        ms_messageSize = Integer.parseInt(p_arguments[3]);
-        int threads = Integer.parseInt(p_arguments[4]);
+        String mode = p_arguments[1].toLowerCase();
+        if (!"messages".equals(mode) && !"requests".equals(mode)) {
+            System.out.println("Mode must be Messages or Requests (case insensitive).");
+            System.exit(-1);
+        }
+        String ip = p_arguments[2];
+        String role = p_arguments[3].toLowerCase();
+        if (!"server".equals(role) && !"client".equals(role)) {
+            System.out.println("Role must be Server or Client (case insensitive). For sending messages start one client, for sending requests/responses " +
+                    "start one server first and then one client (for Loopback starting one client is enough).");
+            System.exit(-1);
+        }
+        if ("requests".equals(mode) && "client".equals(role) && p_arguments.length == 7) {
+            System.out.println("When starting the client and sending requests/responses the server_ip must be set (Loopback: 0 or any other number).");
+            System.exit(-1);
+        }
+        ms_messageCount = Long.parseLong(p_arguments[4]);
+        ms_messageSize = Integer.parseInt(p_arguments[5]);
+        int threads = Integer.parseInt(p_arguments[6]);
 
         // Load configuration file for network related parameters
         LOGGER.info("Loading configuration '%s'...", configPath);
@@ -178,6 +193,7 @@ public final class DXNetMain implements MessageReceiver {
         }
 
         // Set own node ID and register all participating nodes
+        context.getCoreConfig().setOwnNodeId((short) 6);
         NodeMap nodeMap = new DXNetNodeMap(context.getCoreConfig().getOwnNodeId());
         // ((DXNetNodeMap) nodeMap).addNode((short) 7, new InetSocketAddress("255.255.255.255", 0xFFFF));
 
@@ -192,60 +208,75 @@ public final class DXNetMain implements MessageReceiver {
         ms_dxnet.register(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_REQUEST, new DXNetMain());
         ms_dxnet.register(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_RESPONSE, new DXNetMain());
 
-        // Workload
-        Runnable taskMessage = () -> {
-            BenchmarkMessage message = new BenchmarkMessage((short) 7, ms_messageSize);
-            for (int i = 0; i < ms_messageCount / threads; i++) {
+        if ("server".equals(role)) {
+            // Server answers requests, only -> let main thread wait
+            while (true) {
                 try {
-                    ms_dxnet.sendMessage(message);
-                } catch (NetworkException e) {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-        };
+        } else {
+            // Workload
+            Runnable task;
+            if ("messages".equals(mode)) {
+                task = () -> {
+                    BenchmarkMessage message = new BenchmarkMessage((short) 7, ms_messageSize);
+                    for (int i = 0; i < ms_messageCount / threads; i++) {
+                        try {
+                            ms_dxnet.sendMessage(message);
+                        } catch (NetworkException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+            } else {
+                task = () -> {
+                    for (int i = 0; i < ms_messageCount / threads; i++) {
+                        try {
+                            BenchmarkRequest request = new BenchmarkRequest((short) 7, ms_messageSize);
+                            ms_dxnet.sendSync(request, -1, true);
+                        } catch (NetworkException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+            }
 
-        Runnable taskRequest = () -> {
-            for (int i = 0; i < ms_messageCount / threads; i++) {
+            long timeStart = System.nanoTime();
+            LOGGER.info("Starting workload...");
+            Thread[] threadArray = new Thread[threads];
+            for (int i = 0; i < threads; i++) {
+                threadArray[i] = new Thread(task);
+                threadArray[i].start();
+            }
+
+            for (int i = 0; i < threads; i++) {
                 try {
-                    BenchmarkRequest request = new BenchmarkRequest((short) 7, ms_messageSize);
-                    ms_dxnet.sendSync(request, -1, false);
-                } catch (NetworkException e) {
-                    e.printStackTrace();
+                    threadArray[i].join();
+                } catch (InterruptedException ignore) {
                 }
             }
-        };
+            LOGGER.info("Workload finished on sender.");
 
-        long timeStart = System.nanoTime();
-        LOGGER.info("Starting workload...");
-        Thread[] threadArray = new Thread[threads];
-        for (int i = 0; i < threads; i++) {
-            //threadArray[i] = new Thread(taskMessage);
-            threadArray[i] = new Thread(taskRequest);
-            threadArray[i].start();
-        }
+            if ("requests".equals(mode)) {
+                // Printing statistics
+                while (!ms_dxnet.isRequestMapEmpty()) {
+                    LockSupport.parkNanos(100);
+                }
+                PrintStatistics.printStatisticsToOutput(System.out);
 
-        for (int i = 0; i < threads; i++) {
-            try {
-                threadArray[i].join();
-            } catch (InterruptedException ignore) {
+                long timeDiff = System.nanoTime() - timeStart;
+                LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
+                LOGGER.info("Time per message: %d ns", timeDiff / ms_messageCount);
+                LOGGER.info("Throughput: %d MB/s", (int) ((double) ms_messageCount * ms_messageSize / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000)));
+                LOGGER.info("Throughput (with overhead): %d MB/s",
+                        (int) ((double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
+                                ((double) timeDiff / 1000 / 1000 / 1000)));
+                System.exit(0);
             }
         }
-        LOGGER.info("Workload finished on sender.");
-
-        // Printing statistics (for sending requests, comment out for messages)
-        while (!ms_dxnet.isRequestMapEmpty()) {
-            LockSupport.parkNanos(100);
-        }
-        PrintStatistics.printStatisticsToOutput(System.out);
-
-        long timeDiff = System.nanoTime() - timeStart;
-        LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
-        LOGGER.info("Time per message: %d ns", timeDiff / ms_messageCount);
-        LOGGER.info("Throughput: %d MB/s", (int) ((double) ms_messageCount * ms_messageSize / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000)));
-        LOGGER.info("Throughput (with overhead): %d MB/s",
-                (int) ((double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
-                        ((double) timeDiff / 1000 / 1000 / 1000)));
-        System.exit(0);
     }
 
     private AtomicLong m_messages = new AtomicLong(0);
@@ -254,6 +285,8 @@ public final class DXNetMain implements MessageReceiver {
     public void onIncomingMessage(Message p_message) {
         if (p_message.getSubtype() == Messages.SUBTYPE_BENCHMARK_REQUEST) {
             BenchmarkResponse response = new BenchmarkResponse((BenchmarkRequest) p_message);
+            response.setDestination((short) 6);
+
             try {
                 ms_dxnet.sendMessage(response);
             } catch (NetworkException e) {

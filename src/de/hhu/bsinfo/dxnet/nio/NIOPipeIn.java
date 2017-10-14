@@ -96,7 +96,7 @@ class NIOPipeIn extends AbstractPipeIn {
         buffer = directBufferWrapper.getBuffer();
 
         // #ifdef STATISTICS
-        // SOP_READ.enter();
+        SOP_READ.enter();
         // #endif /* STATISTICS */
 
         while (true) {
@@ -120,7 +120,6 @@ class NIOPipeIn extends AbstractPipeIn {
                     LOGGER.warn("Network-Selector: IncomingBuffer queue is full!");
                     // #endif /* LOGGER == WARN */
 
-                    //Thread.yield();
                     LockSupport.parkNanos(100);
                 }
 
@@ -128,7 +127,7 @@ class NIOPipeIn extends AbstractPipeIn {
             }
         }
         // #ifdef STATISTICS
-        // SOP_READ.leave();
+        SOP_READ.leave();
         // #endif /* STATISTICS */
 
         return ret;
@@ -142,7 +141,7 @@ class NIOPipeIn extends AbstractPipeIn {
         int tries = 0;
 
         // #ifdef STATISTICS
-        // SOP_WRITE_FLOW_CONTROL.enter();
+        SOP_WRITE_FLOW_CONTROL.enter();
         // #endif /* STATISTICS */
 
         m_flowControlBytes.rewind();
@@ -161,7 +160,7 @@ class NIOPipeIn extends AbstractPipeIn {
         }
 
         // #ifdef STATISTICS
-        // SOP_WRITE_FLOW_CONTROL.leave();
+        SOP_WRITE_FLOW_CONTROL.leave();
         // #endif /* STATISTICS */
     }
 }

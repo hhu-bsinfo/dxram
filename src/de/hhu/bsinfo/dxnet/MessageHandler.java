@@ -50,6 +50,8 @@ final class MessageHandler extends Thread {
     private final MessageHeaderStore m_defaultMessages;
     private final MessageImporterCollection m_importers;
     private final LocalMessageHeaderPool m_messageHeaderPool;
+
+    private boolean m_overprovisioning;
     private volatile boolean m_shutdown;
 
     // Constructors
@@ -60,11 +62,14 @@ final class MessageHandler extends Thread {
      * @param p_queue
      *         the message queue
      */
-    MessageHandler(final MessageReceiverStore p_messageReceivers, final MessageHeaderStore p_queue, final MessageHeaderPool p_messageHeaderPool) {
+    MessageHandler(final MessageReceiverStore p_messageReceivers, final MessageHeaderStore p_queue, final MessageHeaderPool p_messageHeaderPool,
+            final boolean p_overprovisioning) {
         m_messageReceivers = p_messageReceivers;
         m_defaultMessages = p_queue;
         m_importers = new MessageImporterCollection();
         m_messageHeaderPool = new LocalMessageHeaderPool(p_messageHeaderPool);
+
+        m_overprovisioning = p_overprovisioning;
     }
 
     /**
@@ -85,17 +90,18 @@ final class MessageHandler extends Thread {
 
         while (!m_shutdown) {
             // #ifdef STATISTICS
-            // SOP_POP.enter();
+            SOP_POP.enter();
             // #endif /* STATISTICS */
 
             header = m_defaultMessages.popMessageHeader();
 
             if (header == null) {
+                // TODO: Idle
                 // keep latency low (especially on infiniband) but also keep cpu load low
                 // avoid parking on every iteration -> increases overall latency for messages
                 //if (sleepCounter > THRESHOLD_PARK_SLEEP) {
                 // #ifdef STATISTICS
-                // SOP_WAIT.enter();
+                SOP_WAIT.enter();
                 // #endif /* STATISTICS */
 
                 // No new message for a longer period -> increase sleep to 1 ms to reduce cpu load
@@ -103,33 +109,38 @@ final class MessageHandler extends Thread {
                 //LockSupport.parkNanos(1000 * 1000);
 
                 // #ifdef STATISTICS
-                // SOP_WAIT.leave();
+                SOP_WAIT.leave();
                 // #endif /* STATISTICS */
                 //} else if (waitCounter > THRESHOLD_PARK) {
                 // #ifdef STATISTICS
-                // SOP_SLEEP.enter();
+                SOP_SLEEP.enter();
                 // #endif /* STATISTICS */
 
                 // No new message at the moment -> sleep for xx µs and try again
-                LockSupport.parkNanos(1);
+                if (m_overprovisioning) {
+                    LockSupport.parkNanos(1);
+                } /*else {
+                    Thread.yield();
+                }*/
+
                 //sleepCounter++;
 
                 // #ifdef STATISTICS
-                // SOP_SLEEP.leave();
+                SOP_SLEEP.leave();
                 // #endif /* STATISTICS */
                 //} else {
                 //waitCounter++;
                 //}
 
                 // #ifdef STATISTICS
-                // SOP_POP.leave();
+                SOP_POP.leave();
                 // #endif /* STATISTICS */
 
                 continue;
             }
 
             // #ifdef STATISTICS
-            // SOP_POP.leave();
+            SOP_POP.leave();
             // #endif /* STATISTICS */
 
             // reset waits and sleeps
@@ -137,7 +148,7 @@ final class MessageHandler extends Thread {
             //sleepCounter = 0;
 
             // #ifdef STATISTICS
-            // SOP_CREATE.enter();
+            SOP_CREATE.enter();
             // #endif /* STATISTICS */
 
             try {
@@ -148,20 +159,20 @@ final class MessageHandler extends Thread {
             }
 
             // #ifdef STATISTICS
-            // SOP_CREATE.leave();
+            SOP_CREATE.leave();
             // #endif /* STATISTICS */
 
             if (message != null) {
                 messageReceiver = m_messageReceivers.getReceiver(message.getType(), message.getSubtype());
                 if (messageReceiver != null) {
                     // #ifdef STATISTICS
-                    // SOP_EXECUTE.enter();
+                    SOP_EXECUTE.enter();
                     // #endif /* STATISTICS */
 
                     messageReceiver.onIncomingMessage(message);
 
                     // #ifdef STATISTICS
-                    // SOP_EXECUTE.leave();
+                    SOP_EXECUTE.leave();
                     // #endif /* STATISTICS */
                 } else {
                     // #if LOGGER >= ERROR

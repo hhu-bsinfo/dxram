@@ -47,8 +47,8 @@ final class DefaultMessageHandlerPool {
      * @param p_numMessageHandlerThreads
      *         the number of default message handler
      */
-    DefaultMessageHandlerPool(final MessageReceiverStore p_messageReceivers, final MessageHeaderPool p_messageHeaderPool,
-            final int p_numMessageHandlerThreads) {
+    DefaultMessageHandlerPool(final MessageReceiverStore p_messageReceivers, final MessageHeaderPool p_messageHeaderPool, final int p_numMessageHandlerThreads,
+            final boolean p_overprovisioning) {
         m_defaultMessageHeaders = new MessageHeaderStore(SIZE_MESSAGE_STORE);
 
         // #if LOGGER >= INFO
@@ -58,7 +58,7 @@ final class DefaultMessageHandlerPool {
         MessageHandler t;
         m_threads = new MessageHandler[p_numMessageHandlerThreads];
         for (int i = 0; i < m_threads.length; i++) {
-            t = new MessageHandler(p_messageReceivers, m_defaultMessageHeaders, p_messageHeaderPool);
+            t = new MessageHandler(p_messageReceivers, m_defaultMessageHeaders, p_messageHeaderPool, p_overprovisioning);
             t.setName("Network: MessageHandler " + (i + 1));
             m_threads[i] = t;
             t.start();
@@ -90,39 +90,16 @@ final class DefaultMessageHandlerPool {
     }
 
     /**
-     * Enqueue a message header
+     * Enqueue a batch of message headers
      *
-     * @param p_header
-     *         the message header
+     * @param p_headers
+     *         the message headers
+     * @param p_messages
+     *         the number of used entries in array
      */
-    void newHeader(final MessageHeader p_header) {
-        // #ifdef STATISTICS
-        // SOP_PUSH.enter();
-        // #endif /* STATISTICS */
-
-        // Ignore network test messages (e.g. ping after response delay)
-        if (!(p_header.getType() == Messages.DEFAULT_MESSAGES_TYPE && p_header.getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
-            while (!m_defaultMessageHeaders.pushMessageHeader(p_header)) {
-                // #ifdef STATISTICS
-                // SOP_WAIT.enter();
-                // #endif /* STATISTICS */
-
-                LockSupport.parkNanos(100);
-
-                // #ifdef STATISTICS
-                // SOP_WAIT.leave();
-                // #endif /* STATISTICS */
-            }
-        }
-
-        // #ifdef STATISTICS
-        // SOP_PUSH.leave();
-        // #endif /* STATISTICS */
-    }
-
     void newHeaders(final MessageHeader[] p_headers, final int p_messages) {
         // #ifdef STATISTICS
-        // SOP_PUSH.enter();
+        SOP_PUSH.enter();
         // #endif /* STATISTICS */
 
         if (!m_defaultMessageHeaders.pushMessageHeaders(p_headers, p_messages)) {
@@ -131,13 +108,13 @@ final class DefaultMessageHandlerPool {
                 if (!(p_headers[i].getType() == Messages.DEFAULT_MESSAGES_TYPE && p_headers[i].getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
                     while (!m_defaultMessageHeaders.pushMessageHeader(p_headers[i])) {
                         // #ifdef STATISTICS
-                        // SOP_WAIT.enter();
+                        SOP_WAIT.enter();
                         // #endif /* STATISTICS */
 
                         LockSupport.parkNanos(100);
 
                         // #ifdef STATISTICS
-                        // SOP_WAIT.leave();
+                        SOP_WAIT.leave();
                         // #endif /* STATISTICS */
                     }
                 }
@@ -145,7 +122,7 @@ final class DefaultMessageHandlerPool {
         }
 
         // #ifdef STATISTICS
-        // SOP_PUSH.leave();
+        SOP_PUSH.leave();
         // #endif /* STATISTICS */
     }
 
