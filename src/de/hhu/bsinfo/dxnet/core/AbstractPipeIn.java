@@ -377,6 +377,24 @@ public abstract class AbstractPipeIn {
             message = p_unfinishedOperation.getMessage();
         }
 
+        // important: Set corresponding request BEFORE readPayload. The call might use the request
+        Request request = null;
+        if (message.isResponse()) {
+
+            // hack:
+            // to avoid copying data multiple times, some responses use the same objects provided
+            // with the request to directly write the data to them instead of creating a temporary
+            // object in the response, de-serializing the data and then copying from the temporary object
+            // to the object that should receive the data in the first place. (example DXRAM: get request/response)
+            // This is only possible, if we have a reference to the original request within the response
+            // while reading from the network byte buffer. But in this low level stage, we (usually) don't have
+            // access to requests/responses. So we exploit the request map to get our corresponding request
+            // before de-serializing the network buffer for every request.
+            Response response = (Response) message;
+            request = m_requestMap.getRequest(response);
+            response.setCorrespondingRequest(request);
+        }
+
         // #ifdef STATISTICS
         SOP_READ_PAYLOAD.enter();
         // #endif /* STATISTICS */
@@ -399,23 +417,10 @@ public abstract class AbstractPipeIn {
         // #endif /* STATISTICS */
 
         if (message.isResponse()) {
-
-            // hack:
-            // to avoid copying data multiple times, some responses use the same objects provided
-            // with the request to directly write the data to them instead of creating a temporary
-            // object in the response, de-serializing the data and then copying from the temporary object
-            // to the object that should receive the data in the first place. (example DXRAM: get request/response)
-            // This is only possible, if we have a reference to the original request within the response
-            // while reading from the network byte buffer. But in this low level stage, we (usually) don't have
-            // access to requests/responses. So we exploit the request map to get our corresponding request
-            // before de-serializing the network buffer for every request.
-            Response response = (Response) message;
-            Request request = m_requestMap.getRequest(response);
             if (request == null) {
                 // Request is not available, probably because of a time-out
                 return null;
             }
-            response.setCorrespondingRequest(request);
 
             // #ifdef STATISTICS
             SOP_FULFILL.enter();
