@@ -96,8 +96,8 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
      */
     public IBConnectionManager(final CoreConfig p_coreConfig, final IBConfig p_config, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
             final RequestMap p_requestMap, final IncomingBufferQueue p_incomingBufferQueue, final MessageHeaderPool p_messageHeaderPool,
-            final MessageHandlers p_messageHandlers) {
-        super(p_config.getMaxConnections());
+            final MessageHandlers p_messageHandlers, final boolean p_overprovisioning) {
+        super(p_config.getMaxConnections(), p_overprovisioning);
 
         m_coreConfig = p_coreConfig;
         m_config = p_config;

@@ -40,6 +40,8 @@ public abstract class AbstractConnectionManager {
 
     protected ConnectionManagerListener m_listener;
 
+    protected volatile boolean m_overprovisioning;
+
     private final int m_maxConnections;
 
     /**
@@ -48,12 +50,13 @@ public abstract class AbstractConnectionManager {
      * @param p_maxConnections
      *         Max number of connections to keep active simultaneously
      */
-    protected AbstractConnectionManager(final int p_maxConnections) {
+    protected AbstractConnectionManager(final int p_maxConnections, final boolean p_overprovisioning) {
         m_maxConnections = p_maxConnections;
         m_connections = new AbstractConnection[65536];
         m_connectionCreationLock = new ReentrantLock(false);
 
         m_openConnections = 0;
+        m_overprovisioning = p_overprovisioning;
     }
 
     /**
@@ -61,6 +64,13 @@ public abstract class AbstractConnectionManager {
      */
     public void setListener(final ConnectionManagerListener p_listener) {
         m_listener = p_listener;
+    }
+
+    /**
+     * Activate parking strategy for send/receive thread.
+     */
+    public void setOverprovisioning() {
+        m_overprovisioning = true;
     }
 
     /**

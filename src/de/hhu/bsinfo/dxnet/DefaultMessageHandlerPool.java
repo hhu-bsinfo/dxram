@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxnet.core.MessageHeader;
 import de.hhu.bsinfo.dxnet.core.MessageHeaderPool;
-import de.hhu.bsinfo.dxnet.core.messages.Messages;
 import de.hhu.bsinfo.utils.stats.StatisticsOperation;
 import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
@@ -90,6 +89,15 @@ final class DefaultMessageHandlerPool {
     }
 
     /**
+     * Activate parking strategy for all default message handlers.
+     */
+    void activateParking() {
+        for (int i = 0; i < m_threads.length; i++) {
+            m_threads[i].activateParking();
+        }
+    }
+
+    /**
      * Enqueue a batch of message headers
      *
      * @param p_headers
@@ -104,19 +112,16 @@ final class DefaultMessageHandlerPool {
 
         if (!m_defaultMessageHeaders.pushMessageHeaders(p_headers, p_messages)) {
             for (int i = 0; i < p_messages; i++) {
-                // Ignore network test messages (e.g. ping after response delay)
-                if (!(p_headers[i].getType() == Messages.DEFAULT_MESSAGES_TYPE && p_headers[i].getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE)) {
-                    while (!m_defaultMessageHeaders.pushMessageHeader(p_headers[i])) {
-                        // #ifdef STATISTICS
-                        SOP_WAIT.enter();
-                        // #endif /* STATISTICS */
+                while (!m_defaultMessageHeaders.pushMessageHeader(p_headers[i])) {
+                    // #ifdef STATISTICS
+                    SOP_WAIT.enter();
+                    // #endif /* STATISTICS */
 
-                        LockSupport.parkNanos(100);
+                    LockSupport.parkNanos(100);
 
-                        // #ifdef STATISTICS
-                        SOP_WAIT.leave();
-                        // #endif /* STATISTICS */
-                    }
+                    // #ifdef STATISTICS
+                    SOP_WAIT.leave();
+                    // #endif /* STATISTICS */
                 }
             }
         }
@@ -124,9 +129,5 @@ final class DefaultMessageHandlerPool {
         // #ifdef STATISTICS
         SOP_PUSH.leave();
         // #endif /* STATISTICS */
-    }
-
-    boolean isEmpty() {
-        return m_defaultMessageHeaders.isEmpty();
     }
 }

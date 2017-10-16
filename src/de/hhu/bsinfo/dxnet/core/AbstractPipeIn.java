@@ -254,12 +254,18 @@ public abstract class AbstractPipeIn {
                 // #endif /* STATISTICS */
             }
 
+            // Ignore network test messages (e.g. ping after response delay). Default messages do not have a payload.
+            if (messageHeader.getType() == Messages.DEFAULT_MESSAGES_TYPE && messageHeader.getSubtype() == Messages.SUBTYPE_DEFAULT_MESSAGE) {
+                continue;
+            }
+
             /* Create and read message. Delegated to message handlers if message is included entirely in current incoming buffer. */
 
             int payloadSize = messageHeader.getPayloadSize();
             if (currentPosition + payloadSize - m_unfinishedOperation.getBytesCopied() > bytesAvailable) {
                 // End of current data stream in importer, incomplete message
                 // Last message is separated -> take over creation to provide message reference for next buffer
+
                 Message message =
                         createAndFillMessage(messageHeader, address, currentPosition, bytesAvailable, m_unfinishedOperation, m_importers, m_messageHeaderPool,
                                 m_slotPosition);
@@ -300,6 +306,7 @@ public abstract class AbstractPipeIn {
                 m_unfinishedOperation = m_slotUnfinishedOperations[slotUnfinishedOperation];
                 m_unfinishedOperation.reset();
             }
+
             if (m_messageHandlers.newHeader(messageHeader)) {
                 messageCounter.addAndGet(m_messageHandlerPoolSize);
             }

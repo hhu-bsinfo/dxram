@@ -56,8 +56,8 @@ public class LoopbackConnectionManager extends AbstractConnectionManager {
 
     public LoopbackConnectionManager(final CoreConfig p_coreConfig, final LoopbackConfig p_nioConfig, final NodeMap p_nodeMap,
             final MessageDirectory p_messageDirectory, final RequestMap p_requestMap, final IncomingBufferQueue p_incomingBufferQueue,
-            final MessageHeaderPool p_messageHeaderPool, final MessageHandlers p_messageHandlers) {
-        super(2);
+            final MessageHeaderPool p_messageHeaderPool, final MessageHandlers p_messageHandlers, final boolean p_overprovisioning) {
+        super(2, p_overprovisioning);
 
         m_coreConfig = p_coreConfig;
         m_loopbackConfig = p_nioConfig;
@@ -82,7 +82,7 @@ public class LoopbackConnectionManager extends AbstractConnectionManager {
 
         m_loopbackSendThread =
                 new LoopbackSendThread(this, (int) p_nioConfig.getConnectionTimeOut().getMs(), (int) m_loopbackConfig.getOugoingRingBufferSize().getBytes(),
-                        p_coreConfig.getOverprovisioning());
+                        p_overprovisioning);
         m_loopbackSendThread.setName("Network-LoopbackSendThread");
         m_loopbackSendThread.start();
     }
@@ -91,6 +91,12 @@ public class LoopbackConnectionManager extends AbstractConnectionManager {
     public void close() {
         LOGGER.info("LoopbackSendThread close...");
         m_loopbackSendThread.close();
+    }
+
+    @Override
+    public void setOverprovisioning() {
+        m_overprovisioning = true;
+        m_loopbackSendThread.activateParking();
     }
 
     /**

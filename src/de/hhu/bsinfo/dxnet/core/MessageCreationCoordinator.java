@@ -26,11 +26,11 @@ import org.apache.logging.log4j.Logger;
 public class MessageCreationCoordinator extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(MessageCreationCoordinator.class.getSimpleName());
 
-    // optimized values determined by experiments
-    private static final int THRESHOLD_PARK = 10000;
+    private static final int THRESHOLD_TIME_CHECK = 100000;
 
     private IncomingBufferQueue m_bufferQueue;
 
+    private volatile boolean m_overprovisioning;
     private volatile boolean m_shutdown;
 
     /**
@@ -39,8 +39,9 @@ public class MessageCreationCoordinator extends Thread {
      * @param p_maxIncomingBufferSize
      *         the max incoming buffer size
      */
-    public MessageCreationCoordinator(final int p_maxIncomingBufferSize) {
+    public MessageCreationCoordinator(final int p_maxIncomingBufferSize, final boolean p_overprovisioning) {
         m_bufferQueue = new IncomingBufferQueue(p_maxIncomingBufferSize);
+        m_overprovisioning = p_overprovisioning;
     }
 
     /**
@@ -52,39 +53,46 @@ public class MessageCreationCoordinator extends Thread {
         return m_bufferQueue;
     }
 
+    /**
+     * Activate overprovisioning.
+     */
+    public void activateParking() {
+        m_overprovisioning = true;
+    }
+
     @Override
     public void run() {
         IncomingBufferQueue.IncomingBuffer incomingBuffer;
-        //int parkCounter = 0;
+        int counter = 0;
+        long lastSuccessfulPop = 0;
 
-        // TODO: Idle
         while (!m_shutdown) {
             // pop an incomingBuffer
             incomingBuffer = m_bufferQueue.popBuffer();
             if (incomingBuffer == null) {
                 // Ring-buffer is empty.
-
-                // Wait for a short period (~ xx µs) and continue
-                // keep latency low (especially on infiniband) but also keep cpu load low
-                // avoid parking on every iteration -> increases overall latency for messages
-                /*if (parkCounter >= THRESHOLD_PARK) {
-                    LockSupport.parkNanos(1);
-                } else {
-                    parkCounter++;
-                }*/
-                Thread.yield();
-            } else {
-                //parkCounter = 0;
-
-                try {
-                    incomingBuffer.getPipeIn().processBuffer(incomingBuffer);
-                } catch (final NetworkException e) {
-                    incomingBuffer.getPipeIn().returnProcessedBuffer(incomingBuffer.getDirectBuffer(), incomingBuffer.getBufferHandle());
-
-                    // #if LOGGER == ERROR
-                    LOGGER.error("Processing incoming buffer failed", e);
-                    // #endif /* LOGGER == ERROR */
+                if (++counter >= THRESHOLD_TIME_CHECK) {
+                    if (System.currentTimeMillis() - lastSuccessfulPop > 1000) { // No message header for over a second -> sleep
+                        LockSupport.parkNanos(100);
+                    }
                 }
+
+                if (m_overprovisioning) {
+                    Thread.yield();
+                }
+                continue;
+            }
+            lastSuccessfulPop = System.currentTimeMillis();
+            counter = 0;
+
+            try {
+                incomingBuffer.getPipeIn().processBuffer(incomingBuffer);
+            } catch (final NetworkException e) {
+                incomingBuffer.getPipeIn().returnProcessedBuffer(incomingBuffer.getDirectBuffer(), incomingBuffer.getBufferHandle());
+
+                // #if LOGGER == ERROR
+                LOGGER.error("Processing incoming buffer failed", e);
+                // #endif /* LOGGER == ERROR */
             }
         }
     }

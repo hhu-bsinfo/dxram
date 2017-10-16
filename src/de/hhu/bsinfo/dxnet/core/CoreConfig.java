@@ -33,9 +33,6 @@ public class CoreConfig {
     private int m_requestMapSize = 1048576;
 
     @Expose
-    private boolean m_overprovisioning = false;
-
-    @Expose
     private boolean m_useStaticExporterPool = true;
 
     @Expose
@@ -74,13 +71,6 @@ public class CoreConfig {
      */
     public int getRequestMapSize() {
         return m_requestMapSize;
-    }
-
-    /**
-     * Whether the application uses (much) more threads than cores available for sending messages.
-     */
-    public boolean getOverprovisioning() {
-        return m_overprovisioning;
     }
 
     /**

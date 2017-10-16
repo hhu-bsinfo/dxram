@@ -69,6 +69,14 @@ public final class MessageHandlers {
     }
 
     /**
+     * Activate parking strategy for message handlers.
+     */
+    void activateParking() {
+        m_defaultMessageHandlerPool.activateParking();
+        m_exclusiveMessageHandler.activateParking();
+    }
+
+    /**
      * Add a new message header. Pool locally first, write through when thread-local pool is full.
      *
      * @param p_header

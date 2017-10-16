@@ -143,19 +143,6 @@ public class Request extends Message {
     }
 
     /**
-     * Get the time it took to send out the request and receive the response to it
-     *
-     * @return The time it took to send out the request and receive the response or -1 if request not sent, no response received or timeout.
-     */
-    long getRoundTripTimeNs() {
-        if (m_response != null) {
-            return m_response.getSendReceiveTimestamp() - getSendReceiveTimestamp();
-        }
-
-        return -1;
-    }
-
-    /**
      * Wait until the Request is fulfilled or aborted
      *
      * @param p_timeoutMs
@@ -221,6 +208,15 @@ public class Request extends Message {
 
         m_response = p_response;
         m_fulfilled = true;
+    }
+
+    @Override
+    public void reuse() {
+        super.reuse();
+
+        m_response = null;
+        m_fulfilled = false;
+        m_aborted = false;
     }
 
 }

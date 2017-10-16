@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxnet;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import org.apache.logging.log4j.LogManager;
@@ -76,6 +77,10 @@ public final class DXNet {
 
     private final AbstractConnectionManager m_connectionManager;
 
+    private int m_availableCores;
+    private volatile boolean m_overprovisioning = false;
+    private AtomicInteger m_sendThreads = new AtomicInteger(0);
+
     /**
      * Constructor
      *
@@ -106,8 +111,17 @@ public final class DXNet {
             m_messageReceivers = new MessageReceiverStore((int) m_loopbackConfig.getRequestTimeOut().getMs());
         }
 
+        m_availableCores = Runtime.getRuntime().availableProcessors() - m_coreConfig.getNumMessageHandlerThreads() - 1 /*SendReceive thread*/ -
+                1 /*MessageCreationCoordinator*/;
+        if (m_availableCores <= 0) {
+            m_overprovisioning = true;
+            // #if LOGGER >= INFO
+            LOGGER.info("Overprovisioning detected (%d network threads on %d cores). Activating parking strategy for network threads.");
+            // #endif /* LOGGER >= INFO */
+        }
+
         MessageHeaderPool headerPool = new MessageHeaderPool(MESSAGE_HEADER_POOL_SIZE);
-        m_messageHandlers = new MessageHandlers(m_coreConfig.getNumMessageHandlerThreads(), m_coreConfig.getOverprovisioning(), m_messageReceivers, headerPool);
+        m_messageHandlers = new MessageHandlers(m_coreConfig.getNumMessageHandlerThreads(), m_overprovisioning, m_messageReceivers, headerPool);
 
         if ("Ethernet".equals(m_coreConfig.getDevice())) {
             m_messageDirectory = new MessageDirectory((int) m_nioConfig.getRequestTimeOut().getMs());
@@ -124,11 +138,11 @@ public final class DXNet {
         // #endif /* LOGGER >= INFO */
 
         if ("Ethernet".equals(m_coreConfig.getDevice())) {
-            m_messageCreationCoordinator = new MessageCreationCoordinator((int) m_nioConfig.getOugoingRingBufferSize().getBytes());
+            m_messageCreationCoordinator = new MessageCreationCoordinator((int) m_nioConfig.getOugoingRingBufferSize().getBytes(), m_overprovisioning);
         } else if ("Infiniband".equals(m_coreConfig.getDevice())) {
-            m_messageCreationCoordinator = new MessageCreationCoordinator((int) m_ibConfig.getOugoingRingBufferSize().getBytes());
+            m_messageCreationCoordinator = new MessageCreationCoordinator((int) m_ibConfig.getOugoingRingBufferSize().getBytes(), m_overprovisioning);
         } else {
-            m_messageCreationCoordinator = new MessageCreationCoordinator((int) m_loopbackConfig.getOugoingRingBufferSize().getBytes());
+            m_messageCreationCoordinator = new MessageCreationCoordinator((int) m_loopbackConfig.getOugoingRingBufferSize().getBytes(), m_overprovisioning);
         }
 
         m_messageCreationCoordinator.setName("Network: MessageCreationCoordinator");
@@ -141,14 +155,14 @@ public final class DXNet {
 
         if ("Ethernet".equals(m_coreConfig.getDevice())) {
             m_connectionManager = new NIOConnectionManager(m_coreConfig, m_nioConfig, p_nodeMap, m_messageDirectory, m_requestMap,
-                    m_messageCreationCoordinator.getIncomingBufferQueue(), headerPool, m_messageHandlers);
+                    m_messageCreationCoordinator.getIncomingBufferQueue(), headerPool, m_messageHandlers, m_overprovisioning);
         } else if ("Infiniband".equals(m_coreConfig.getDevice())) {
             m_connectionManager = new IBConnectionManager(m_coreConfig, m_ibConfig, p_nodeMap, m_messageDirectory, m_requestMap,
-                    m_messageCreationCoordinator.getIncomingBufferQueue(), headerPool, m_messageHandlers);
+                    m_messageCreationCoordinator.getIncomingBufferQueue(), headerPool, m_messageHandlers, m_overprovisioning);
             ((IBConnectionManager) m_connectionManager).init();
         } else {
             m_connectionManager = new LoopbackConnectionManager(m_coreConfig, m_loopbackConfig, p_nodeMap, m_messageDirectory, m_requestMap,
-                    m_messageCreationCoordinator.getIncomingBufferQueue(), headerPool, m_messageHandlers);
+                    m_messageCreationCoordinator.getIncomingBufferQueue(), headerPool, m_messageHandlers, m_overprovisioning);
         }
     }
 
@@ -291,6 +305,17 @@ public final class DXNet {
         SOP_SEND.enter();
         // #endif /* STATISTICS */
 
+        if (!m_overprovisioning && m_sendThreads.incrementAndGet() > m_availableCores) {
+            m_overprovisioning = true;
+            m_connectionManager.setOverprovisioning();
+            m_messageCreationCoordinator.activateParking();
+            m_messageHandlers.activateParking();
+
+            // #if LOGGER >= INFO
+            LOGGER.info("Overprovisioning detected (%d network threads on %d cores). Activating parking strategy for network threads.");
+            // #endif /* LOGGER >= INFO */
+        }
+
         if (p_message.getDestination() == m_coreConfig.getOwnNodeId() && !m_loopbackDeviceActive) {
             // #if LOGGER >= ERROR
             LOGGER.error("Invalid destination 0x%X. No loopback allowed.", p_message.getDestination());
@@ -304,6 +329,7 @@ public final class DXNet {
                 // #endif /* LOGGER >= DEBUG */
                 throw new NetworkDestinationUnreachableException(p_message.getDestination());
             }
+
             try {
                 if (connection != null) {
                     connection.postMessage(p_message);
@@ -324,6 +350,10 @@ public final class DXNet {
                 // #endif /* LOGGER >= DEBUG */
                 throw new NetworkException("Sending data failed ", e);
             }
+        }
+
+        if (!m_overprovisioning) {
+            m_sendThreads.decrementAndGet();
         }
 
         // #ifdef STATISTICS

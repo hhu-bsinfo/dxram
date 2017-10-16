@@ -35,23 +35,18 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 final class MessageHandler extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(MessageHandler.class.getSimpleName());
     private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(MessageHandler.class, "Pop");
-    private static final StatisticsOperation SOP_WAIT = StatisticsRecorderManager.getOperation(MessageHandler.class, "Wait");
-    private static final StatisticsOperation SOP_SLEEP = StatisticsRecorderManager.getOperation(MessageHandler.class, "Sleep");
     private static final StatisticsOperation SOP_CREATE = StatisticsRecorderManager.getOperation(MessageHandler.class, "Create");
     private static final StatisticsOperation SOP_EXECUTE = StatisticsRecorderManager.getOperation(MessageHandler.class, "Execute");
 
     // optimized values determined by experiments
-    private static final int THRESHOLD_PARK = 10;
-    private static final int THRESHOLD_PARK_SLEEP = 100;
-    //private static final int THRESHOLD_PARK = 10000;
-    //private static final int THRESHOLD_PARK_SLEEP = 1000;
+    private static final int THRESHOLD_TIME_CHECK = 100000;
 
     private final MessageReceiverStore m_messageReceivers;
     private final MessageHeaderStore m_defaultMessages;
     private final MessageImporterCollection m_importers;
     private final LocalMessageHeaderPool m_messageHeaderPool;
 
-    private boolean m_overprovisioning;
+    private volatile boolean m_overprovisioning;
     private volatile boolean m_shutdown;
 
     // Constructors
@@ -79,11 +74,18 @@ final class MessageHandler extends Thread {
         m_shutdown = true;
     }
 
+    /**
+     * Activate parking strategy.
+     */
+    void activateParking() {
+        m_overprovisioning = true;
+    }
+
     // Methods
     @Override
     public void run() {
-        //int waitCounter = 0;
-        //int sleepCounter = 0;
+        int counter = 0;
+        long lastSuccessfulPop = 0;
         MessageHeader header;
         Message message;
         MessageReceiver messageReceiver;
@@ -95,57 +97,25 @@ final class MessageHandler extends Thread {
 
             header = m_defaultMessages.popMessageHeader();
 
-            if (header == null) {
-                // TODO: Idle
-                // keep latency low (especially on infiniband) but also keep cpu load low
-                // avoid parking on every iteration -> increases overall latency for messages
-                //if (sleepCounter > THRESHOLD_PARK_SLEEP) {
-                // #ifdef STATISTICS
-                SOP_WAIT.enter();
-                // #endif /* STATISTICS */
-
-                // No new message for a longer period -> increase sleep to 1 ms to reduce cpu load
-                // continue sleeping until new messages are available
-                //LockSupport.parkNanos(1000 * 1000);
-
-                // #ifdef STATISTICS
-                SOP_WAIT.leave();
-                // #endif /* STATISTICS */
-                //} else if (waitCounter > THRESHOLD_PARK) {
-                // #ifdef STATISTICS
-                SOP_SLEEP.enter();
-                // #endif /* STATISTICS */
-
-                // No new message at the moment -> sleep for xx µs and try again
-                if (m_overprovisioning) {
-                    LockSupport.parkNanos(1);
-                } /*else {
-                    Thread.yield();
-                }*/
-
-                //sleepCounter++;
-
-                // #ifdef STATISTICS
-                SOP_SLEEP.leave();
-                // #endif /* STATISTICS */
-                //} else {
-                //waitCounter++;
-                //}
-
-                // #ifdef STATISTICS
-                SOP_POP.leave();
-                // #endif /* STATISTICS */
-
-                continue;
-            }
-
             // #ifdef STATISTICS
             SOP_POP.leave();
             // #endif /* STATISTICS */
 
-            // reset waits and sleeps
-            //waitCounter = 0;
-            //sleepCounter = 0;
+            if (header == null) {
+                if (++counter >= THRESHOLD_TIME_CHECK) {
+                    if (System.currentTimeMillis() - lastSuccessfulPop > 1000) { // No message header for over a second -> sleep
+                        LockSupport.parkNanos(100);
+                    }
+                }
+
+                if (m_overprovisioning) {
+                    LockSupport.parkNanos(1);
+                }
+
+                continue;
+            }
+            lastSuccessfulPop = System.currentTimeMillis();
+            counter = 0;
 
             // #ifdef STATISTICS
             SOP_CREATE.enter();

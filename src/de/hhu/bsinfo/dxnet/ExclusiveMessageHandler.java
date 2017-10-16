@@ -80,6 +80,13 @@ final class ExclusiveMessageHandler {
     }
 
     /**
+     * Activate parking strategy for exclusive message handler.
+     */
+    void activateParking() {
+        m_exclusiveMessageHandler.activateParking();
+    }
+
+    /**
      * Enqueue a batch of message headers
      *
      * @param p_headers

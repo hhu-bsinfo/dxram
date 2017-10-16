@@ -53,10 +53,13 @@ import de.hhu.bsinfo.utils.unit.TimeUnit;
 public final class DXNetMain implements MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXNetMain.class.getSimpleName());
 
+    private static final boolean POOLING = true;
+
     private static DXNet ms_dxnet;
 
     private static long ms_messageCount;
     private static int ms_messageSize;
+    private static BenchmarkResponse[] ms_responses;
 
     private long m_timeStart;
 
@@ -221,27 +224,60 @@ public final class DXNetMain implements MessageReceiver {
             // Workload
             Runnable task;
             if ("messages".equals(mode)) {
-                task = () -> {
-                    BenchmarkMessage message = new BenchmarkMessage((short) 7, ms_messageSize);
-                    for (int i = 0; i < ms_messageCount / threads; i++) {
-                        try {
-                            ms_dxnet.sendMessage(message);
-                        } catch (NetworkException e) {
-                            e.printStackTrace();
+                if (POOLING) {
+                    task = () -> {
+                        BenchmarkMessage message = new BenchmarkMessage((short) 7, ms_messageSize);
+                        for (int i = 0; i < ms_messageCount / threads; i++) {
+                            try {
+                                ms_dxnet.sendMessage(message);
+                            } catch (NetworkException e) {
+                                e.printStackTrace();
+                            }
                         }
-                    }
-                };
+                    };
+                } else {
+                    task = () -> {
+                        for (int i = 0; i < ms_messageCount / threads; i++) {
+                            try {
+                                BenchmarkMessage message = new BenchmarkMessage((short) 7, ms_messageSize);
+                                ms_dxnet.sendMessage(message);
+                            } catch (NetworkException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    };
+                }
             } else {
-                task = () -> {
-                    for (int i = 0; i < ms_messageCount / threads; i++) {
-                        try {
-                            BenchmarkRequest request = new BenchmarkRequest((short) 7, ms_messageSize);
-                            ms_dxnet.sendSync(request, -1, true);
-                        } catch (NetworkException e) {
-                            e.printStackTrace();
-                        }
+                if (POOLING) {
+                    int numberOfMessageHandler = context.getCoreConfig().getNumMessageHandlerThreads();
+                    ms_responses = new BenchmarkResponse[numberOfMessageHandler];
+                    for (int i = 0; i < numberOfMessageHandler; i++) {
+                        ms_responses[i] = new BenchmarkResponse();
                     }
-                };
+
+                    task = () -> {
+                        BenchmarkRequest request = new BenchmarkRequest((short) 7, ms_messageSize);
+                        for (int i = 0; i < ms_messageCount / threads; i++) {
+                            try {
+                                request.reuse();
+                                ms_dxnet.sendSync(request, -1, true);
+                            } catch (NetworkException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    };
+                } else {
+                    task = () -> {
+                        for (int i = 0; i < ms_messageCount / threads; i++) {
+                            try {
+                                BenchmarkRequest request = new BenchmarkRequest((short) 7, ms_messageSize);
+                                ms_dxnet.sendSync(request, -1, true);
+                            } catch (NetworkException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    };
+                }
             }
 
             long timeStart = System.nanoTime();
@@ -284,7 +320,13 @@ public final class DXNetMain implements MessageReceiver {
     @Override
     public void onIncomingMessage(Message p_message) {
         if (p_message.getSubtype() == Messages.SUBTYPE_BENCHMARK_REQUEST) {
-            BenchmarkResponse response = new BenchmarkResponse((BenchmarkRequest) p_message);
+            BenchmarkResponse response;
+            if (POOLING) {
+                response = ms_responses[Integer.parseInt(Thread.currentThread().getName().substring(24)) - 1];
+                response.reuse((BenchmarkRequest) p_message, Messages.SUBTYPE_BENCHMARK_RESPONSE);
+            } else {
+                response = new BenchmarkResponse((BenchmarkRequest) p_message);
+            }
             response.setDestination((short) 6);
 
             try {

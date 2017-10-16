@@ -142,8 +142,6 @@ public class OutgoingRingBuffer {
             // Consumer wants to flush
             m_producers.decrementAndGet();
             while (m_consumerWaits) {
-                // Wait for a minimal time (around xx µs). There is no unpark() involved!
-                //LockSupport.parkNanos(1);
                 Thread.yield();
             }
             m_producers.incrementAndGet();
@@ -167,7 +165,7 @@ public class OutgoingRingBuffer {
 
                     // #ifdef STATISTICS
                     if (waited) {
-                    SOP_WAIT_FULL.leave();
+                        SOP_WAIT_FULL.leave();
                     }
                     // #endif /* STATISTICS */
 
@@ -184,8 +182,8 @@ public class OutgoingRingBuffer {
                 } else {
                     // #ifdef STATISTICS
                     if (!waited) {
-                    SOP_WAIT_FULL.enter();
-                    waited = true;
+                        SOP_WAIT_FULL.enter();
+                        waited = true;
                     }
                     // #endif /* STATISTICS */
 

@@ -38,7 +38,7 @@ class LoopbackSendThread extends Thread {
     private LoopbackConnection m_connection1;
     private LoopbackConnection m_connection2;
 
-    private boolean m_overprovisioining;
+    private volatile boolean m_overprovisioining;
     private volatile boolean m_running;
 
     // Constructors
@@ -58,6 +58,13 @@ class LoopbackSendThread extends Thread {
 
         m_overprovisioining = p_overprovisioning;
         m_running = true;
+    }
+
+    /**
+     * Activate parking strategy.
+     */
+    void activateParking() {
+        m_overprovisioining = true;
     }
 
     @Override
@@ -103,9 +110,7 @@ class LoopbackSendThread extends Thread {
 
                 if (m_overprovisioining) {
                     LockSupport.parkNanos(1);
-                } /*else {
-                    Thread.yield();
-                }*/
+                }
 
                 if (System.nanoTime() - time > 1000 * 1000) {
                     try {

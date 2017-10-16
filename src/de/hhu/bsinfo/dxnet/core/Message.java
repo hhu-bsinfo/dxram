@@ -345,6 +345,40 @@ public class Message {
     }
 
     /**
+     * Reset all state and assign new message ID.
+     */
+    public void reuse() {
+        // Message reused (probably pooled)
+        if (m_messageID == m_oldMessageID) {
+            m_messageID = getNextMessageID();
+        }
+    }
+
+    /**
+     * Re-initialize message attributes if response is reused
+     *
+     * @param p_messageID
+     *         the message ID
+     * @param p_destination
+     *         the destination
+     * @param p_type
+     *         the type
+     * @param p_subtype
+     *         the subtype
+     */
+    public void set(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype) {
+        m_messageID = p_messageID;
+        m_source = -1;
+        m_destination = p_destination;
+        m_type = p_type;
+        m_subtype = p_subtype;
+        m_exclusivity = DEFAULT_EXCLUSIVITY_VALUE;
+
+        // Set message type to 1 for responses only
+        m_messageType = (byte) 1;
+    }
+
+    /**
      * Write the message using the provided exporter
      *
      * @param p_exporter

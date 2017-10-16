@@ -65,8 +65,8 @@ public class NIOConnectionManager extends AbstractConnectionManager {
 
     public NIOConnectionManager(final CoreConfig p_coreConfig, final NIOConfig p_nioConfig, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory,
             final RequestMap p_requestMap, final IncomingBufferQueue p_incomingBufferQueue, final MessageHeaderPool p_messageHeaderPool,
-            final MessageHandlers p_messageHandlers) {
-        super(p_nioConfig.getMaxConnections());
+            final MessageHandlers p_messageHandlers, final boolean p_overprovisioning) {
+        super(p_nioConfig.getMaxConnections(), p_overprovisioning);
 
         m_coreConfig = p_coreConfig;
         m_config = p_nioConfig;

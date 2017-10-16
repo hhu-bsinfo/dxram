@@ -72,4 +72,13 @@ public class Response extends Message {
     final int getRequestID() {
         return getMessageID();
     }
+
+    /**
+     * Reset/Initialize all state and assign new message ID.
+     */
+    public void reuse(final Request p_request, final byte p_subtype) {
+        set(p_request.getMessageID(), p_request.getSource(), p_request.getType(), p_subtype);
+
+        m_correspondingRequest = p_request;
+    }
 }

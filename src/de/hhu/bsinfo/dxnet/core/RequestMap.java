@@ -155,16 +155,18 @@ public final class RequestMap {
      */
     void fulfill(final Response p_response) {
         Request request;
+        long timeReceiveReponse;
 
         if (p_response != null) {
             p_response.setSendReceiveTimestamp(System.nanoTime());
+            timeReceiveReponse = p_response.getSendReceiveTimestamp();
             request = remove(p_response.getRequestID());
 
             if (request != null) {
                 request.fulfill(p_response);
 
                 // Not surrounded by statistics strings as this should always be registered
-                SOP_REQ_RESP_RTT.record(request.getRoundTripTimeNs());
+                SOP_REQ_RESP_RTT.record(timeReceiveReponse - request.getSendReceiveTimestamp());
             }
         }
     }
