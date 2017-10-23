@@ -233,7 +233,6 @@ public final class BufferPool {
             }
         }
 
-        System.out.println("got here");
         // Return without adding the incoming buffer if pool is full or buffer size is incompatible (was created after initialization)
     }
 

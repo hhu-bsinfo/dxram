@@ -9,6 +9,7 @@
 #   port - The port of Peer
 #   ram_size_in_mb - The key-value store size (optional)
 #   total_storage_nodes - Total number of DXRAM storage nodes
+#   total_run_nodes - Total number of YCSB run/benchmark nodes
 #   zookeeper_string - String for zookeeper connection (format: <ip>:<port>)
 #   insertstart - Start record offset for node
 #   recordcount - Total number of records for node
@@ -19,9 +20,10 @@ compile_ycsb_application_options_string_peer()
 	local port=$2
 	local ram_size_in_mb=$3
 	local total_storage_nodes=$4
-	local zookeeper_string=$5
-	local insertstart=$6
-	local recordcount=$7
+	local total_run_nodes=$5
+	local zookeeper_string=$6
+	local insertstart=$7
+	local recordcount=$8
 
 	YCSB_PARAMS=""
 
@@ -43,8 +45,13 @@ compile_ycsb_application_options_string_peer()
 	fi
 
 	if [ "$total_storage_nodes" != "-" ]; then
-		YCSB_PARAMS="$YCSB_PARAMS -p dxram.nodes=$total_storage_nodes"
+		YCSB_PARAMS="$YCSB_PARAMS -p dxram.nodes_store=$total_storage_nodes"
 	fi
+
+	if [ "$total_run_nodes" != "-" ]; then
+		YCSB_PARAMS="$YCSB_PARAMS -p dxram.nodes_run=$total_run_nodes"
+	fi
+
 	if [ "$insertstart" != "-" ]; then
 		YCSB_PARAMS="$YCSB_PARAMS -p insertstart=$insertstart"
 	fi
@@ -61,6 +68,7 @@ compile_ycsb_application_options_string_peer()
 #   ram_size_in_mb - The key-value store size
 #   run_as_root - Run the instance as root
 #   total_storage_nodes - Total number of DXRAM storage nodes
+#   total_run_nodes - Total number of YCSB run/benchmark nodes
 #   zookeeper_string - String for zookeeper connection (format: <ip>:<port>)
 #   insertstart - Start record offset for node
 #   recordcount - Total number of records for node
@@ -74,16 +82,17 @@ start_remote_peer()
 	local port=$2
 	local ram_size_in_mb=$3
 	local total_storage_nodes=$4
-	local run_as_root=$5
-	local zookeeper_string=$6
-	local insertstart=$7
-	local recordcount=$8
-	local ycsb_type=$9
-	local ycsb_threads=${10}
-	local ycsb_workload=${11}
-	local additional_shell_cmds="${12}"
+	local total_run_nodes=$5
+	local run_as_root=$6
+	local zookeeper_string=$7
+	local insertstart=$8
+	local recordcount=$9
+	local ycsb_type=${10}
+	local ycsb_threads=${11}
+	local ycsb_workload=${12}
+	local additional_shell_cmds="${13}"
 
-	compile_ycsb_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$zookeeper_string" "$insertstart" "$recordcount"
+	compile_ycsb_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$total_run_nodes" "$zookeeper_string" "$insertstart" "$recordcount"
 
 	if [ "$run_as_root" != "" ] || [ "$run_as_root" == "1" ]; then
 		root="sudo -P"
@@ -114,6 +123,7 @@ start_remote_peer()
 #   ram_size_in_mb - The key-value store size
 #   run_as_root - Run the instance as root
 #   total_storage_nodes - Total number of DXRAM storage nodes
+#   total_run_nodes - Total number of YCSB run/benchmark nodes
 #   zookeeper_string - String for zookeeper connection (format: <ip>:<port>)
 #   insertstart - Start record offset for node
 #   recordcount - Total number of records for node
@@ -128,15 +138,16 @@ start_local_peer()
 	local ram_size_in_mb=$3
 	local run_as_root=$4
 	local total_storage_nodes=$5
-	local zookeeper_string=$6
-	local insertstart=$7
-	local recordcount=$8
-	local ycsb_type=$9
-	local ycsb_threads=${10}
-	local ycsb_workload=${11}
-	local additional_shell_cmds="${12}"
+	local total_run_nodes=$6
+	local zookeeper_string=$7
+	local insertstart=$8
+	local recordcount=$9
+	local ycsb_type=${10}
+	local ycsb_threads=${11}
+	local ycsb_workload=${12}
+	local additional_shell_cmds="${13}"
 
-	compile_ycsb_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$zookeeper_string" "$insertstart" "$recordcount"
+	compile_ycsb_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$total_run_nodes" "$zookeeper_string" "$insertstart" "$recordcount"
 
 	if [ "$run_as_root" != "" ] || [ "$run_as_root" == "1" ]; then
 		root="sudo -P"
@@ -221,7 +232,8 @@ additional_shell_cmds=${15}
 
 # default values: unused indicator
 ram_size_in_mb="-"
-ycsb_nodes="-"
+ycsb_nodes_store="-"
+ycsb_nodes_run="-"
 ycsb_insertstart="-"
 
 iter=5
@@ -243,8 +255,10 @@ while true; do
 		ycsb_threads=`echo $tmp | cut -d '=' -f 2`
 	elif [ "$arg_type" = "workload" ] ; then
 		ycsb_workload=`echo $tmp | cut -d '=' -f 2`
-	elif [ "$arg_type" = "nodes" ] ; then
-		ycsb_nodes=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "nodes_store" ] ; then
+		ycsb_nodes_store=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "nodes_run" ] ; then
+		ycsb_nodes_run=`echo $tmp | cut -d '=' -f 2`
 	elif [ "$arg_type" = "insertstart" ] ; then
 		ycsb_insertstart=`echo $tmp | cut -d '=' -f 2`
 	elif [ "$arg_type" = "recordcount" ] ; then
@@ -275,16 +289,16 @@ else
 	fi
 fi
 
-print=`echo "YCSB Peer $ip:$port (kvsm{$ram_size_in_mb} nodes{$ycsb_nodes} zk{${zookeeper_ip}:${zookeeper_port}} insertstart{$ycsb_insertstart} recordcnt{$ycsb_recordcount} type{$ycsb_type} threads{$ycsb_threads} workload{$ycsb_workload} add_shell_cmds{$additional_shell_cmds}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
+print=`echo "YCSB Peer $ip:$port (kvsm{$ram_size_in_mb} nodes_store{$ycsb_nodes_store} nodes_run{$ycsb_nodes_run} zk{${zookeeper_ip}:${zookeeper_port}} insertstart{$ycsb_insertstart} recordcnt{$ycsb_recordcount} type{$ycsb_type} threads{$ycsb_threads} workload{$ycsb_workload} add_shell_cmds{$additional_shell_cmds}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
 echo -n "$print"
 
 if [ "$is_remote" = false ]; then
 	echo -n "."
-	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$run_as_root" "$ycsb_nodes" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
+	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$run_as_root" "$ycsb_nodes_store" "$ycsb_nodes_run" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
 	echo -n "."
 else
 	echo -n "."
-	start_remote_peer "$ip" "$port" "$ram_size_in_mb" "$run_as_root" "$ycsb_nodes" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
+	start_remote_peer "$ip" "$port" "$ram_size_in_mb" "$run_as_root" "$ycsb_nodes_store" "$ycsb_nodes_run" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
 	echo -n "."
 fi
 
