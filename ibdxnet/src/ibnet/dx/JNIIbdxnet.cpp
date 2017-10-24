@@ -21,12 +21,12 @@
 #include <memory>
 
 #include <backwards/backward.hpp>
-#include <ibnet/core/IbTimeoutException.h>
 
 #include "ibnet/sys/Logger.h"
 #include "ibnet/sys/ProfileTimer.hpp"
-#include "ibnet/core/IbException.h"
+#include "ibnet/core/IbConnection.h"
 #include "ibnet/core/IbNodeConfArgListReader.h"
+#include "ibnet/core/IbTimeoutException.h"
 
 #include "ConnectionCreator.h"
 #include "ConnectionHandler.h"
@@ -229,12 +229,13 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_dxnet_ib_JNIIbdxnet_addNode(
 JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_dxnet_ib_JNIIbdxnet_getSendBufferAddress(
         JNIEnv* p_env, jclass p_class, jshort p_targetNodeId)
 {
+    std::shared_ptr < ibnet::core::IbConnection > connection;
+
     try {
-        std::shared_ptr < ibnet::core::IbConnection > connection =
-            g_connectionManager->GetConnection(
+        connection = g_connectionManager->GetConnection(
                 (uint16_t) (p_targetNodeId & 0xFFFF));
     } catch (ibnet::core::IbTimeoutException& e) {
-        IBNET_LOG_ERROR("{}", e);
+        IBNET_LOG_ERROR("{}", e.what());
         return (jlong) -1;
     }
 
