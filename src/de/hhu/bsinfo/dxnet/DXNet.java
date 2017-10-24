@@ -116,7 +116,8 @@ public final class DXNet {
         if (m_availableCores <= 0) {
             m_overprovisioning = true;
             // #if LOGGER >= INFO
-            LOGGER.info("Overprovisioning detected (%d network threads on %d cores). Activating parking strategy for network threads.");
+            LOGGER.info("Overprovisioning detected (%d network threads on %d cores). Activating parking strategy for network threads.",
+                    m_coreConfig.getNumMessageHandlerThreads(), Runtime.getRuntime().availableProcessors());
             // #endif /* LOGGER >= INFO */
         }
 
