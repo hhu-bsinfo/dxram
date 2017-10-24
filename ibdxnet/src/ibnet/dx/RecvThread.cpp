@@ -38,9 +38,9 @@ RecvThread::RecvThread(
     m_recvBufferPool(recvBufferPool),
     m_recvHandler(recvHandler),
     m_sharedQueueInitialFill(false),
-    m_noDataCounter(0),
     m_recvBytes(0),
-    m_recvFlowControlBytes(0)
+    m_recvFlowControlBytes(0),
+    m_waitTimer()
 {
     m_timers.push_back(sys::ProfileTimer("Total"));
     m_timers.push_back(sys::ProfileTimer("FCPoll"));
@@ -127,20 +127,17 @@ void RecvThread::_RunLoop(void)
 {
     // flow control has higher priority, always try this queue first
     if (!__ProcessFlowControl() && !__ProcessBuffers()) {
-        m_noDataCounter++;
+        if (!m_waitTimer.IsRunning()) {
+            m_waitTimer.Start();
+        }
 
-        // reduce cpu load on idle but keep latency low under heavy load
-        if (m_noDataCounter > 100 && m_noDataCounter <= 1000) {
+        if (m_waitTimer.GetTimeMs() > 100.0) {
             std::this_thread::yield();
-        } else if (m_noDataCounter > 1000 && m_noDataCounter <= 10000) {
-            std::this_thread::sleep_for(std::chrono::nanoseconds(100));
-        } else if (m_noDataCounter > 10000 && m_noDataCounter <= 100000) {
-            std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
-        } else if (m_noDataCounter > 100000 && m_noDataCounter <= 1000000) {
-            std::this_thread::sleep_for(std::chrono::microseconds(10));
+        } else if (m_waitTimer.GetTimeMs() > 1000.0) {
+            std::this_thread::sleep_for(std::chrono::nanoseconds(1));
         }
     } else {
-        m_noDataCounter = 0;
+        m_waitTimer.Stop();
     }
 }
 

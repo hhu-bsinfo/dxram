@@ -26,6 +26,7 @@
 #include "ibnet/core/IbMemReg.h"
 #include "ibnet/sys/ProfileTimer.hpp"
 #include "ibnet/sys/ThreadLoop.h"
+#include "ibnet/sys/Timer.hpp"
 
 #include "SendBuffers.h"
 #include "SendHandler.h"
@@ -100,12 +101,11 @@ private:
     uint64_t m_ibSendQueueBatchCount;
     uint64_t m_ibSendQueueFullUtilizationCount;
 
-    uint32_t m_noDataCounter;
-
 private:
     uint64_t m_sentBytes;
     uint64_t m_sentFlowControlBytes;
     std::vector<sys::ProfileTimer> m_timers;
+    sys::Timer m_waitTimer;
 };
 
 }

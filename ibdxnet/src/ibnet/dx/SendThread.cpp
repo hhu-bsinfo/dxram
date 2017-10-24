@@ -36,9 +36,9 @@ SendThread::SendThread(uint32_t recvBufferSize,
     m_prevDataWritten(0),
     m_ibSendQueueBatchCount(0),
     m_ibSendQueueFullUtilizationCount(0),
-    m_noDataCounter(0),
     m_sentBytes(0),
-    m_sentFlowControlBytes(0)
+    m_sentFlowControlBytes(0),
+    m_waitTimer()
 {
     m_timers.push_back(sys::ProfileTimer("Total"));
     m_timers.push_back(sys::ProfileTimer("GetNextDataToSend"));
@@ -100,23 +100,20 @@ void SendThread::_RunLoop(void)
 
     // nothing to process
     if (data == nullptr) {
-        m_noDataCounter++;
+        if (!m_waitTimer.IsRunning()) {
+            m_waitTimer.Start();
+        }
 
-        // reduce cpu load on idle but keep latency low under heavy load
-        if (m_noDataCounter > 100 && m_noDataCounter <= 1000) {
+        if (m_waitTimer.GetTimeMs() > 100.0) {
             std::this_thread::yield();
-        } else if (m_noDataCounter > 1000 && m_noDataCounter <= 10000) {
-            std::this_thread::sleep_for(std::chrono::nanoseconds(100));
-        } else if (m_noDataCounter > 10000 && m_noDataCounter <= 100000) {
-            std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
-        } else if (m_noDataCounter > 100000 && m_noDataCounter <= 1000000) {
-            std::this_thread::sleep_for(std::chrono::microseconds(10));
+        } else if (m_waitTimer.GetTimeMs() > 1000.0) {
+            std::this_thread::sleep_for(std::chrono::nanoseconds(1));
         }
 
         return;
     }
 
-    m_noDataCounter = 0;
+    m_waitTimer.Stop();
 
     // seems like we got something to process
     m_prevNodeIdWritten = data->m_nodeId;

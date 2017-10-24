@@ -28,6 +28,7 @@
 #include "ibnet/core/IbMemReg.h"
 #include "ibnet/sys/ProfileTimer.hpp"
 #include "ibnet/sys/ThreadLoop.h"
+#include "ibnet/sys/Timer.hpp"
 
 #include "RecvBufferPool.h"
 #include "RecvHandler.h"
@@ -102,10 +103,10 @@ private:
 
 private:
     std::atomic<bool> m_sharedQueueInitialFill;
-    uint32_t m_noDataCounter;
     uint64_t m_recvBytes;
     uint64_t m_recvFlowControlBytes;
     std::vector<sys::ProfileTimer> m_timers;
+    sys::Timer m_waitTimer;
 
 };
 
