@@ -92,6 +92,11 @@ core::IbMemReg* RecvBufferPool::GetBuffer(void)
         buffer = m_dataBuffers[front % m_bufferPoolSize];
 
         m_dataBuffersFront.fetch_add(1, std::memory_order_release);
+
+        if (!warnOnce) {
+            IBNET_LOG_WARN("Finally, got returned receive buffer");
+        }
+
         break;
     }
 
