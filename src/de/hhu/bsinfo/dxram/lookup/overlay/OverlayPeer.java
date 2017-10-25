@@ -21,6 +21,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -97,9 +100,6 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.utils.ArrayListLong;
 import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.NodeID;
@@ -803,35 +803,41 @@ public class OverlayPeer implements MessageReceiver {
      *         Id of the barrier to sign on to.
      * @param p_customData
      *         Custom data to pass along with the sign on
+     * @param p_waitForRelease
+     *         True to wait for the barrier to be released, false to just sign on and don't wait for release (e.g. signal for remotes)
      * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
      */
-    public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData) {
+    public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData, final boolean p_waitForRelease) {
         if (p_barrierId == BarrierID.INVALID_ID) {
             return null;
         }
 
         Semaphore waitForRelease = new Semaphore(0);
+        MessageReceiver msg = null;
         final BarrierReleaseMessage[] releaseMessage = {null};
-        MessageReceiver msg = p_message -> {
-            if (p_message != null) {
-                if (p_message.getType() == DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE) {
-                    switch (p_message.getSubtype()) {
-                        case LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE: {
-                            releaseMessage[0] = (BarrierReleaseMessage) p_message;
-                            if (releaseMessage[0].getBarrierId() == p_barrierId) {
-                                waitForRelease.release();
+
+        if (p_waitForRelease) {
+            msg = p_message -> {
+                if (p_message != null) {
+                    if (p_message.getType() == DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE) {
+                        switch (p_message.getSubtype()) {
+                            case LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE: {
+                                releaseMessage[0] = (BarrierReleaseMessage) p_message;
+                                if (releaseMessage[0].getBarrierId() == p_barrierId) {
+                                    waitForRelease.release();
+                                }
+                                break;
                             }
-                            break;
+                            default:
+                                break;
                         }
-                        default:
-                            break;
                     }
                 }
-            }
-        };
+            };
 
-        // make sure to register the listener BEFORE sending the sign on to not miss the release message
-        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
+            // make sure to register the listener BEFORE sending the sign on to not miss the release message
+            m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
+        }
 
         short responsibleSuperpeer = BarrierID.getOwnerID(p_barrierId);
         BarrierSignOnRequest request = new BarrierSignOnRequest(responsibleSuperpeer, p_barrierId, p_customData);
@@ -841,7 +847,11 @@ public class OverlayPeer implements MessageReceiver {
             // #if LOGGER >= ERROR
             LOGGER.error("Sign on barrier 0x%X failed: %s", p_barrierId, e);
             // #endif /* LOGGER >= ERROR */
-            m_network.unregister(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
+
+            if (p_waitForRelease) {
+                m_network.unregister(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
+            }
+
             return null;
         }
 
@@ -850,18 +860,27 @@ public class OverlayPeer implements MessageReceiver {
             // #if LOGGER >= ERROR
             LOGGER.error("Sign on barrier 0x%X failed", p_barrierId);
             // #endif /* LOGGER >= ERROR */
-            m_network.unregister(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
+
+            if (p_waitForRelease) {
+                m_network.unregister(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
+            }
+
             return null;
         }
 
-        try {
-            waitForRelease.acquire();
-        } catch (final InterruptedException ignored) {
+        if (p_waitForRelease) {
+            try {
+                waitForRelease.acquire();
+            } catch (final InterruptedException ignored) {
+            }
+
+            m_network.unregister(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
+
+            return releaseMessage[0].getBarrierResults();
+        } else {
+            // Return empty status on no wait
+            return new BarrierStatus();
         }
-
-        m_network.unregister(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
-
-        return releaseMessage[0].getBarrierResults();
     }
 
     /**

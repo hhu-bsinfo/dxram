@@ -507,6 +507,27 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         Id of the barrier to sign on to.
      * @param p_customData
      *         Custom data to pass along with the sign on
+     * @param p_waitForRelease
+     *         True to wait for the barrier to be released, false to just sign on and don't wait for release (e.g. signal for remotes)
+     * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
+     */
+    public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData, final boolean p_waitForRelease) {
+        // #ifdef ASSERT_NODE_ROLE
+        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            throw new InvalidNodeRoleException(m_boot.getNodeRole());
+        }
+        // #endif /* ASSERT_NODE_ROLE */
+
+        return m_peer.barrierSignOn(p_barrierId, p_customData, p_waitForRelease);
+    }
+
+    /**
+     * Sign on to a barrier and wait for it getting released (number of peers, barrier size, have signed on).
+     *
+     * @param p_barrierId
+     *         Id of the barrier to sign on to.
+     * @param p_customData
+     *         Custom data to pass along with the sign on
      * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
      */
     public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData) {
@@ -516,7 +537,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        return m_peer.barrierSignOn(p_barrierId, p_customData);
+        return m_peer.barrierSignOn(p_barrierId, p_customData, true);
     }
 
     /**
