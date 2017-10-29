@@ -119,7 +119,7 @@ public class NIOPipeOut extends AbstractPipeOut {
                 }
                 writtenBytes += bytes;
             }
-            getOutgoingQueue().shiftFront(writtenBytes);
+            getOutgoingQueue().shiftBack(writtenBytes);
         }
 
         // #ifdef STATISTICS

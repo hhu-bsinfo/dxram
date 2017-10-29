@@ -31,7 +31,7 @@ public class DXNetNodeMap implements NodeMap {
      * @param p_ownNodeID
      *         the NodeID
      */
-    public DXNetNodeMap(final short p_ownNodeID) {
+    DXNetNodeMap(final short p_ownNodeID) {
         m_nodeID = p_ownNodeID;
     }
 

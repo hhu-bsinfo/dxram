@@ -46,7 +46,7 @@ class LoopbackOutgoingRingBuffer extends OutgoingRingBuffer {
         int posBackRelative;
         int posFrontRelative;
 
-        tmp = popFrontShift();
+        tmp = popBackShift();
         posBackRelative = (int) (tmp >> 32 & 0x7FFFFFFF);
         posFrontRelative = (int) (tmp & 0x7FFFFFFF);
 
@@ -67,10 +67,10 @@ class LoopbackOutgoingRingBuffer extends OutgoingRingBuffer {
      *         the byte buffer including own NodeID
      */
     void pushNodeID(final ByteBuffer p_buffer) {
-        if (m_posBack.get() == 0) {
+        if (m_posFrontProducer.get() == 0) {
             UnsafeMemory.writeByte(m_bufferAddr, p_buffer.get());
             UnsafeMemory.writeByte(m_bufferAddr + 1, p_buffer.get());
-            m_posBack.set(2);
+            m_posFrontProducer.set(2);
         } else {
             throw new IllegalStateException();
         }

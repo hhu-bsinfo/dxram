@@ -59,7 +59,7 @@ public class LoopbackPipeOut extends AbstractPipeOut {
 
         int length = m_connection.getPipeIn().read(buffer);
 
-        getOutgoingQueue().shiftFront(length);
+        getOutgoingQueue().shiftBack(length);
 
         return true;
     }

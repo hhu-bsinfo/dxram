@@ -47,6 +47,6 @@ class IBOutgoingRingBuffer extends OutgoingRingBuffer {
      * (higher 32-bit) of the ring buffer
      */
     long popFront() {
-        return popFrontShift();
+        return popBackShift();
     }
 }

@@ -59,9 +59,8 @@ public final class MessageHeaderPool {
     boolean getHeaders(final MessageHeader[] p_messageHeaders) {
         // & 0x7FFFFFFF to kill sign
         int posFront = m_posFront & 0x7FFFFFFF;
-        int posBack = m_posBackConsumer.get() & 0x7FFFFFFF;
 
-        if ((posFront + p_messageHeaders.length & 0x7FFFFFFF) - posBack > m_size) {
+        if ((m_posBackConsumer.get() + m_size & 0x7FFFFFFF) < (posFront + p_messageHeaders.length & 0x7FFFFFFF)) {
             // Ring-buffer is empty.
 
             // #if LOGGER >= WARN
@@ -88,9 +87,8 @@ public final class MessageHeaderPool {
 
         // & 0x7FFFFFFF to kill sign
         int posFront = m_posFront & 0x7FFFFFFF;
-        int posBack = m_posBackConsumer.get() & 0x7FFFFFFF;
 
-        if (posFront - posBack == m_size) {
+        if ((m_posBackConsumer.get() + m_size & 0x7FFFFFFF) == posFront) {
             // Ring-buffer is empty.
 
             // #if LOGGER >= WARN

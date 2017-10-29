@@ -66,9 +66,8 @@ public class MessageHeaderStore {
     boolean pushMessageHeader(final MessageHeader p_header) {
         // & 0x7FFFFFFF to kill sign
         int posFront = m_posFront & 0x7FFFFFFF;
-        int posBack = m_posBack.get() & 0x7FFFFFFF;
 
-        if (posFront - posBack == m_size) {
+        if ((m_posBack.get() + m_size & 0x7FFFFFFF) == posFront) {
             // Return without adding the message header if queue is full
             return false;
         }
@@ -91,9 +90,8 @@ public class MessageHeaderStore {
     boolean pushMessageHeaders(final MessageHeader[] p_headers, final int p_messages) {
         // & 0x7FFFFFFF to kill sign
         int posFront = m_posFront & 0x7FFFFFFF;
-        int posBack = m_posBack.get() & 0x7FFFFFFF;
 
-        if ((posFront + p_messages & 0x7FFFFFFF) - posBack > m_size) {
+        if ((m_posBack.get() + m_size & 0x7FFFFFFF) < (posFront + p_messages & 0x7FFFFFFF)) {
             // Return without adding the message headers if not all message header fit
             return false;
         }

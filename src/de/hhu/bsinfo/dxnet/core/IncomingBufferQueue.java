@@ -49,8 +49,8 @@ public class IncomingBufferQueue {
     private AtomicInteger m_currentBytes;
 
     // single producer, single consumer lock free queue (posBack and posFront are synchronized with fences and byte counter)
-    private int m_posBack;
-    private int m_posFront;
+    private int m_posBack; // 31 bits used (see incrementation)
+    private int m_posFront; // 31 bits used (see incrementation)
 
     /**
      * Creates an instance of IncomingBufferQueue
@@ -77,7 +77,7 @@ public class IncomingBufferQueue {
      * Returns whether the ring-buffer is full or not.
      */
     public boolean isFull() {
-        return m_currentBytes.get() >= m_maxBytes || m_posFront - m_posBack == SIZE;
+        return m_currentBytes.get() >= m_maxBytes || (m_posBack + SIZE & 0x7FFFFFFF) == m_posFront;
     }
 
     /**
@@ -141,7 +141,7 @@ public class IncomingBufferQueue {
             return true;
         }
 
-        if (m_currentBytes.get() >= m_maxBytes || m_posFront - m_posBack == SIZE) { // m_currentBytes.get() includes loadFence()
+        if (m_currentBytes.get() >= m_maxBytes || (m_posBack + SIZE & 0x7FFFFFFF) == m_posFront) { // m_currentBytes.get() includes loadFence()
             // Return without adding the job if queue is full or too many bytes are pending
             return false;
         }

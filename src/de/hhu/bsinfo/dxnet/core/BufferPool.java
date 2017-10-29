@@ -110,7 +110,7 @@ public final class BufferPool {
         int posFront;
 
         posFront = m_posFrontLarge & 0x7FFFFFFF;
-        if (posFront - (m_posBackConsumerLarge.get() & 0x7FFFFFFF) < LARGE_BUFFER_POOL_SIZE) {
+        if ((m_posBackConsumerLarge.get() + LARGE_BUFFER_POOL_SIZE & 0x7FFFFFFF) > posFront) {
             // Not empty
             ret = m_largeBufferPool[posFront % LARGE_BUFFER_POOL_SIZE];
             m_posFrontLarge++;
@@ -118,7 +118,7 @@ public final class BufferPool {
         }
 
         posFront = m_posFrontMedium & 0x7FFFFFFF;
-        if (posFront - (m_posBackConsumerMedium.get() & 0x7FFFFFFF) < MEDIUM_BUFFER_POOL_SIZE) {
+        if ((m_posBackConsumerMedium.get() + MEDIUM_BUFFER_POOL_SIZE & 0x7FFFFFFF) > posFront) {
             // Not empty
             ret = m_mediumBufferPool[posFront % MEDIUM_BUFFER_POOL_SIZE];
             m_posFrontMedium++;
@@ -126,7 +126,7 @@ public final class BufferPool {
         }
 
         posFront = m_posFrontSmall & 0x7FFFFFFF;
-        if (posFront - (m_posBackConsumerSmall.get() & 0x7FFFFFFF) < SMALL_BUFFER_POOL_SIZE) {
+        if ((m_posBackConsumerSmall.get() + SMALL_BUFFER_POOL_SIZE & 0x7FFFFFFF) > posFront) {
             // Not empty
             ret = m_smallBufferPool[posFront % SMALL_BUFFER_POOL_SIZE];
             m_posFrontSmall++;
@@ -234,6 +234,10 @@ public final class BufferPool {
         }
 
         // Return without adding the incoming buffer if pool is full or buffer size is incompatible (was created after initialization)
+        // #if LOGGER >= WARN
+        LOGGER.warn("Could not add incoming buffer because size (%d) does not match or corresponding queue is full!",
+                p_directBufferWrapper.getBuffer().capacity());
+        // #endif /* LOGGER >= WARN */
     }
 
     /**

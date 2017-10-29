@@ -111,7 +111,7 @@ public abstract class AbstractPipeOut {
      *         Number of bytes recently sent
      */
     public void dataProcessed(final int p_writtenBytes) {
-        m_outgoing.shiftFront(p_writtenBytes);
+        m_outgoing.shiftBack(p_writtenBytes);
     }
 
     /**
