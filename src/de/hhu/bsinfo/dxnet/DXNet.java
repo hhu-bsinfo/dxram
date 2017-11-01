@@ -58,6 +58,7 @@ public final class DXNet {
     private static final StatisticsOperation SOP_WAIT_RESPONSE = StatisticsRecorderManager.getOperation(DXNet.class, "WaitForResponse");
 
     private static final int MESSAGE_HEADER_POOL_SIZE = 1000 * 1000;
+    private static final int OVERPROVISIONING_OFFSET = 25;
 
     private final CoreConfig m_coreConfig;
     private final NIOConfig m_nioConfig;
@@ -111,8 +112,9 @@ public final class DXNet {
             m_messageReceivers = new MessageReceiverStore((int) m_loopbackConfig.getRequestTimeOut().getMs());
         }
 
-        m_availableCores = Runtime.getRuntime().availableProcessors() - m_coreConfig.getNumMessageHandlerThreads() - 1 /*SendReceive thread*/ -
-                1 /*MessageCreationCoordinator*/;
+        m_availableCores =
+                Runtime.getRuntime().availableProcessors() + OVERPROVISIONING_OFFSET - m_coreConfig.getNumMessageHandlerThreads() - 1 /*SendReceive thread*/ -
+                        1 /*MessageCreationCoordinator*/;
         if (m_availableCores <= 0) {
             m_overprovisioning = true;
             // #if LOGGER >= INFO
