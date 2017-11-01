@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxnet.core;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
@@ -39,12 +40,17 @@ public class OutgoingRingBuffer {
 
     // multiple producer, single consumer
     private volatile int m_posBack;
+
+    // Upper 32 bits: front position in m_uncommittedMessageSizes; lower 32 bits: current front producer pointer in ring buffer
     protected final AtomicLong m_posFrontProducer;
-    private final AtomicInteger m_posFrontConsumer;
+    // Upper 32 bits: back position in m_uncommittedMessageSizes; lower 32 bits: current front consumer pointer in ring buffer
+    private final AtomicLong m_posFrontConsumer;
+    // Also stores the back position in m_uncommittedMessageSizes because back position in m_posFrontConsumer is invalidated during committing
+    private final AtomicInteger m_posBackArray;
+
+    private final AtomicBoolean m_largeMessageBeingWritten;
 
     private final int[] m_uncommittedMessageSizes;
-    private final AtomicInteger m_uncommittedSerializations;
-
     private long m_bufferAddr;
     private int m_bufferSize;
 
@@ -59,10 +65,13 @@ public class OutgoingRingBuffer {
     protected OutgoingRingBuffer(final AbstractExporterPool p_exporterPool) {
         m_posBack = 0;
         m_posFrontProducer = new AtomicLong(0);
-        m_posFrontConsumer = new AtomicInteger(0);
+        m_posFrontConsumer = new AtomicLong(0);
+
+        m_posBackArray = new AtomicInteger(0);
+
+        m_largeMessageBeingWritten = new AtomicBoolean(false);
 
         m_uncommittedMessageSizes = new int[MAX_CONCURRENT_THREADS];
-        m_uncommittedSerializations = new AtomicInteger(0);
 
         m_exporterPool = p_exporterPool;
     }
@@ -95,7 +104,7 @@ public class OutgoingRingBuffer {
      * @return whether the ring-buffer is empty or not
      */
     public boolean isEmpty() {
-        return (m_posBack & 0x7FFFFFFFL) == (m_posFrontConsumer.get() & 0x7FFFFFFFL);
+        return (m_posBack & 0x7FFFFFFFL) == ((int) m_posFrontConsumer.get() & 0x7FFFFFFFL);
     }
 
     /**
@@ -129,8 +138,7 @@ public class OutgoingRingBuffer {
      *         if message could not be serialized
      */
     void pushMessage(final Message p_message, final int p_messageSize, final AbstractPipeOut p_pipeOut) throws NetworkException {
-        long posFrontUnlimited;
-        int posFrontRelative;
+        long posFrontProducer;
 
         // #ifdef STATISTICS
         SOP_PUSH.enter();
@@ -140,22 +148,17 @@ public class OutgoingRingBuffer {
         boolean waited = false;
         // #endif /* STATISTICS */
 
-        // Limit the number of threads serializing messages to the array size for storing message sizes
-        while (m_uncommittedSerializations.incrementAndGet() > MAX_CONCURRENT_THREADS) {
-            m_uncommittedSerializations.decrementAndGet();
-
-            // Wait for a minimal time (around xx µs). There is no unpark() involved!
-            LockSupport.parkNanos(1);
-        }
-
         // Allocate space in ring buffer by incrementing position back
         while (true) {
-            posFrontUnlimited = m_posFrontProducer.get(); // We need this value for compareAndSet operation
-            posFrontRelative = (int) ((posFrontUnlimited & 0x7FFFFFFF) % m_bufferSize); // posBackRelative must not exceed buffer
-
             if (p_messageSize <= m_bufferSize) {
+                posFrontProducer = m_posFrontProducer.get(); // We need this value for compareAndSet operation
+
                 // Small message -> reserve space if message fits in free space
-                if ((m_posBack + m_bufferSize & 0x7FFFFFFF) > (posFrontUnlimited + p_messageSize & 0x7FFFFFFF)) {
+                int posBack = m_posBack;
+                if ((posBack + m_bufferSize & 0x7FFFFFFF) > (posFrontProducer + p_messageSize & 0x7FFFFFFF) ||
+                        /* 31-bit overflow in posBack but not posFront */
+                        (posBack + m_bufferSize & 0x7FFFFFFF) < (posBack & 0x7FFFFFFF) &&
+                                (posFrontProducer + p_messageSize & 0x7FFFFFFF) > (posFrontProducer & 0x7FFFFFFF)) {
 
                     // #ifdef STATISTICS
                     if (waited) {
@@ -164,75 +167,16 @@ public class OutgoingRingBuffer {
                     // #endif /* STATISTICS */
 
                     /* Enter serialization area */
-                    int pos;
-                    if (m_posFrontProducer.compareAndSet(posFrontUnlimited, posFrontUnlimited + p_messageSize + (1L << 32))) {
-                        pos = (int) ((posFrontUnlimited >> 32) % MAX_CONCURRENT_THREADS);
-                    } else {
+                    long newPosFrontProducer = enterSerializationArea(posFrontProducer, p_messageSize);
+                    if (newPosFrontProducer == -1) {
                         continue;
                     }
 
-                    serialize(p_message, posFrontRelative, p_messageSize, p_messageSize > m_bufferSize - posFrontRelative /* with overflow */);
+                    serialize(p_message, (int) ((posFrontProducer & 0x7FFFFFFF) % m_bufferSize), p_messageSize);
 
                     /* Leave serialization area */
-                    if (m_posFrontConsumer.compareAndSet((int) posFrontUnlimited, (int) (posFrontUnlimited + p_messageSize))) {
-                        m_uncommittedMessageSizes[pos] = 0;
-                        m_uncommittedSerializations.decrementAndGet();
-
-                        // Increase posFrontConsumer for finished threads
-                        if (pos != (int) (((m_posFrontProducer.get() >> 32) - 1) % MAX_CONCURRENT_THREADS)) {
-                            // At least one thread entered the serialization area after this thread.
-                            // If that thread finished the serialization earlier this thread must increase the posFrontConsumer for it (and consecutive threads)
-                            int size = p_messageSize;
-                            while (pos != (int) (((m_posFrontProducer.get() >> 32) - 1) % MAX_CONCURRENT_THREADS)) { // Get current value for all iterations
-                                pos = (pos + 1) % MAX_CONCURRENT_THREADS;
-                                int currentSize = m_uncommittedMessageSizes[pos];
-
-                                // Get message size
-                                while (currentSize == 0) {
-                                    // The following thread is either not finished or the value is not visible yet
-
-                                    if (m_posFrontConsumer.get() != (int) (posFrontUnlimited + size)) {
-                                        // The following thread just finished serialization and increased posFrontConsumer -> nothing to do for this thread
-                                        break;
-                                    }
-
-                                    // Get new value
-                                    Thread.yield();
-                                    UnsafeHandler.getInstance().getUnsafe().loadFence();
-                                    currentSize = m_uncommittedMessageSizes[pos];
-                                }
-                                if (currentSize == 0) {
-                                    break;
-                                }
-
-                                size += currentSize;
-                                m_uncommittedMessageSizes[pos] = 0;
-                                m_uncommittedSerializations.decrementAndGet();
-                                m_posFrontConsumer.compareAndSet((int) (posFrontUnlimited + size - currentSize), (int) (posFrontUnlimited + size));
-                            }
-                        }
-                    } else {
-                        // Unable to set posFrontConsumer as current value is lower than expected:
-                        // another thread entered the serialization area earlier but is not finished yet
-                        m_uncommittedMessageSizes[pos] = p_messageSize;
-                        UnsafeHandler.getInstance().getUnsafe().storeFence();
-                    }
+                    leaveSerializationArea(posFrontProducer, newPosFrontProducer, p_messageSize);
                     break;
-
-                    // Optimistic increase
-                    /*if (m_posFrontProducer.compareAndSet(posFrontUnlimited, posFrontUnlimited + p_messageSize)) {
-                        // Position back could be set
-
-                        // Serialize complete message into ring buffer
-                        serialize(p_message, posFrontRelative, p_messageSize, p_messageSize > m_bufferSize - posFrontRelative /* with overflow *//*);
-
-                        while (!m_posFrontConsumer.compareAndSet(posFrontUnlimited, posFrontUnlimited + p_messageSize)) {
-                            Thread.yield();
-                        }
-
-                        break;
-                    }*/
-                    // Try again
                 } else {
                     // #ifdef STATISTICS
                     if (!waited) {
@@ -245,14 +189,20 @@ public class OutgoingRingBuffer {
                     LockSupport.parkNanos(100);
                 }
             } else {
-                // Optimistic increase
-                if (m_posFrontProducer.compareAndSet(posFrontUnlimited, posFrontUnlimited + p_messageSize)) {
-                    // Position front could be set
+                if (m_largeMessageBeingWritten.compareAndSet(false, true)) {
+                    posFrontProducer = m_posFrontProducer.get();
+                    long newPosFrontProducer = enterSerializationArea(posFrontProducer, p_messageSize);
+                    if (newPosFrontProducer == -1) {
+                        continue;
+                    }
 
                     // Fill free space with message and continue as soon as more space is available
-                    serializeLargeMessage(p_message, p_messageSize, (int) posFrontUnlimited, p_pipeOut);
+                    serializeLargeMessage(p_message, p_messageSize, posFrontProducer, p_pipeOut);
 
+                    m_largeMessageBeingWritten.set(false);
                     break;
+                } else {
+                    LockSupport.parkNanos(100);
                 }
                 // Try again
             }
@@ -274,6 +224,109 @@ public class OutgoingRingBuffer {
     }
 
     /**
+     * Enter serialization area (lock-free)
+     *
+     * @param p_posFrontProducer
+     *         the current front position in ring buffer (for producers)
+     * @param p_messageSize
+     *         the message size
+     * @return the new front position in ring-buffer
+     */
+    private long enterSerializationArea(final long p_posFrontProducer, final int p_messageSize) {
+        long newPosFrontProducer = p_posFrontProducer + p_messageSize & 0x7FFFFFFF; // Add message size -> new posFront for producers
+        newPosFrontProducer += ((p_posFrontProducer >> 32) + 1 & 0x7FFFFFFF) << 32; // Increment pos -> new posFront in message size array
+        if (!m_posFrontProducer.compareAndSet(p_posFrontProducer, newPosFrontProducer)) {
+            // Try again
+            return -1;
+        }
+        return newPosFrontProducer;
+    }
+
+    /**
+     * Leave serialization area (lock-free)
+     *
+     * @param p_posFrontProducer
+     *         the current front position in ring buffer (for producers)
+     * @param p_newPosFrontProducer
+     *         the new front position in ring buffer (for producers)
+     * @param p_messageSize
+     *         the message size
+     */
+    private void leaveSerializationArea(final long p_posFrontProducer, final long p_newPosFrontProducer, final int p_messageSize) {
+        int posFrontArray = (int) (p_posFrontProducer >> 32) & 0x7FFFFFFF;
+        long newPosFrontProducer = p_newPosFrontProducer;
+
+        // Wait if posBackArray fell too far behind (might be -1 if a serialization is being committed)
+        int posBackArray;
+        while (true) {
+            posBackArray = m_posBackArray.get() & 0x7FFFFFFF;
+            if (posFrontArray < (posBackArray + MAX_CONCURRENT_THREADS - 1 & 0x7FFFFFFF) ||
+                                /* overflow */ (posBackArray + MAX_CONCURRENT_THREADS - 1 & 0x7FFFFFFF) < posBackArray && posBackArray <= posFrontArray) {
+                // The registered index is free -> start committing
+                break;
+            }
+
+            LockSupport.parkNanos(1);
+        }
+
+        if (m_posFrontConsumer.compareAndSet(p_posFrontProducer, (newPosFrontProducer & 0x7FFFFFFF) + (-1L << 32))) {
+            // Commit serialization
+            m_uncommittedMessageSizes[posFrontArray % MAX_CONCURRENT_THREADS] = 0;
+            m_posBackArray.set(posFrontArray + 1 & 0x7FFFFFFF);
+            m_posFrontConsumer.compareAndSet((newPosFrontProducer & 0x7FFFFFFF) + (-1L << 32), newPosFrontProducer);
+
+            // Increase posFrontConsumer for finished threads
+            // At least one thread entered the serialization area after this thread.
+            // If that thread finished the serialization earlier this thread must increase the posFrontConsumer for it (and consecutive threads)
+            int currentSize;
+            while (true) {
+                posFrontArray = posFrontArray + 1 & 0x7FFFFFFF;
+                UnsafeHandler.getInstance().getUnsafe().loadFence();
+                currentSize = m_uncommittedMessageSizes[posFrontArray % MAX_CONCURRENT_THREADS];
+
+                // Get message size
+                while (currentSize == 0) {
+                    // The following thread is either not finished or the value is not visible yet
+
+                    if (m_posFrontProducer.get() == newPosFrontProducer) {
+                        // No following thread -> nothing to do for this thread
+                        break;
+                    }
+
+                    if (m_posFrontConsumer.get() != newPosFrontProducer) {
+                        // The following thread just finished serialization and increased posFrontConsumer -> nothing to do for this thread
+                        break;
+                    }
+
+                    // Get new value
+                    Thread.yield();
+                    UnsafeHandler.getInstance().getUnsafe().loadFence();
+                    currentSize = m_uncommittedMessageSizes[posFrontArray % MAX_CONCURRENT_THREADS];
+                }
+                if (currentSize == 0) {
+                    break;
+                }
+
+                long oldPosFrontProducer = newPosFrontProducer;
+                newPosFrontProducer = oldPosFrontProducer + currentSize & 0x7FFFFFFF; // Add message size -> new posFront for producers
+                newPosFrontProducer += (long) (posFrontArray + 1 & 0x7FFFFFFF) << 32; // Increment pos -> new posFront in message size array
+                if (!m_posFrontConsumer.compareAndSet(oldPosFrontProducer, (newPosFrontProducer & 0x7FFFFFFF) + (-1L << 32))) {
+                    // Another thread committed this serialization already -> nothing to do for this thread
+                    break;
+                }
+                m_uncommittedMessageSizes[posFrontArray % MAX_CONCURRENT_THREADS] = 0;
+                m_posBackArray.set(posFrontArray + 1 & 0x7FFFFFFF);
+                m_posFrontConsumer.compareAndSet((newPosFrontProducer & 0x7FFFFFFF) + (-1L << 32), newPosFrontProducer);
+            }
+        } else {
+            // Unable to set posFrontConsumer as current value is lower than expected:
+            // another thread entered the serialization area earlier but is not finished yet
+            m_uncommittedMessageSizes[posFrontArray % MAX_CONCURRENT_THREADS] = p_messageSize;
+            UnsafeHandler.getInstance().getUnsafe().storeFence();
+        }
+    }
+
+    /**
      * Initialize exporter and write message into native memory.
      *
      * @param p_message
@@ -282,16 +335,14 @@ public class OutgoingRingBuffer {
      *         the start offset
      * @param p_messageSize
      *         the message bytesAvailable
-     * @param p_hasOverflow
-     *         whether there is an overflow or not
      * @throws NetworkException
      *         if message could not be serialized
      */
-    private void serialize(final Message p_message, final int p_start, final int p_messageSize, final boolean p_hasOverflow) throws NetworkException {
+    private void serialize(final Message p_message, final int p_start, final int p_messageSize) throws NetworkException {
 
         // Get exporter (default or overflow). Small messages are written at once, but might be split into two parts if ring buffer overflows during writing.
         MessageExporterCollection exporterCollection = m_exporterPool.getInstance();
-        AbstractMessageExporter exporter = exporterCollection.getMessageExporter(p_hasOverflow);
+        AbstractMessageExporter exporter = exporterCollection.getMessageExporter(p_messageSize > m_bufferSize - p_start);
         exporter.setBuffer(m_bufferAddr, m_bufferSize);
         exporter.setPosition(p_start);
 
@@ -310,11 +361,10 @@ public class OutgoingRingBuffer {
      * @throws NetworkException
      *         if message could not be serialized
      */
-    private void serializeLargeMessage(final Message p_message, final int p_messageSize, final int p_oldPosFront, final AbstractPipeOut p_pipeOut)
+    private void serializeLargeMessage(final Message p_message, final int p_messageSize, final long p_oldPosFrontProducer, final AbstractPipeOut p_pipeOut)
             throws NetworkException {
-        int posFrontUnlimited;
+        long posFrontConsumer = p_oldPosFrontProducer;
         int posBack = m_posBack & 0x7FFFFFFF;
-        int oldPosFrontUnlimited = p_oldPosFront;
         int allWrittenBytes = 0;
         int startPosition;
         int limit;
@@ -328,8 +378,11 @@ public class OutgoingRingBuffer {
 
         while (true) {
             // Calculate start and limit (might not be reached) for next write and configure exporter
-            startPosition = (int) (oldPosFrontUnlimited & 0x7FFFFFFFL) % m_bufferSize;
+            startPosition = (int) (posFrontConsumer & 0x7FFFFFFFL) % m_bufferSize;
             limit = (posBack - 1) % m_bufferSize;
+            if (limit == -1) {
+                limit = m_bufferSize - 1;
+            }
             exporter.setPosition(startPosition);
             exporter.setLimit(limit);
             exporter.setNumberOfWrittenBytes(allWrittenBytes);
@@ -340,7 +393,6 @@ public class OutgoingRingBuffer {
 
                 // Break if all bytes have been written. Cannot be here if not as ArrayIndexOutOfBoundsException would have been thrown.
                 exporterCollection.deleteUnfinishedOperation();
-                break;
             } catch (final ArrayIndexOutOfBoundsException ignore) {
             }
 
@@ -350,11 +402,10 @@ public class OutgoingRingBuffer {
 
             // Get new values
             posBack = m_posBack & 0x7FFFFFFF;
-            posFrontUnlimited = (int) m_posFrontProducer.get();
+            posFrontConsumer = (posFrontConsumer & 0xFFFFFFFF00000000L) + ((int) posFrontConsumer + allWrittenBytes - previouslyWrittenBytes & 0x7FFFFFFF);
 
             // Reserve space for next write
-            oldPosFrontUnlimited = posFrontUnlimited;
-            m_posFrontConsumer.set(posFrontUnlimited + Math.min(m_bufferSize - ((posFrontUnlimited & 0x7FFFFFFF) - posBack), p_messageSize - allWrittenBytes));
+            m_posFrontConsumer.set(posFrontConsumer);
 
             // #ifdef STATISTICS
             SOP_BUFFER_POSTED.enter();
@@ -366,10 +417,15 @@ public class OutgoingRingBuffer {
             SOP_BUFFER_POSTED.leave();
             // #endif /* STATISTICS */
 
+            if (p_messageSize == allWrittenBytes) {
+                break;
+            }
+
             // Wait for consumer to finish writing
             while ((m_posBack & 0x7FFFFFFF) == posBack) {
                 LockSupport.parkNanos(100);
             }
+            posBack = m_posBack & 0x7FFFFFFF;
         }
     }
 
@@ -391,7 +447,7 @@ public class OutgoingRingBuffer {
         SOP_POP.enter();
         // #endif /* STATISTICS */
 
-        posFront = m_posFrontConsumer.get() & 0x7FFFFFFF;
+        posFront = (int) m_posFrontConsumer.get() & 0x7FFFFFFF;
         posFrontRelative = posFront % m_bufferSize;
         posBack = m_posBack & 0x7FFFFFFF;
         posBackRelative = posBack % m_bufferSize;
