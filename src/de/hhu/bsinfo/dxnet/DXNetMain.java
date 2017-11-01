@@ -226,8 +226,13 @@ public final class DXNetMain implements MessageReceiver {
             if ("messages".equals(mode)) {
                 if (POOLING) {
                     task = () -> {
+                        long messageCount = ms_messageCount / threads;
+                        if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
+                            messageCount += ms_messageCount % threads;
+                        }
+
                         BenchmarkMessage message = new BenchmarkMessage((short) 7, ms_messageSize);
-                        for (int i = 0; i < ms_messageCount / threads; i++) {
+                        for (int i = 0; i < messageCount; i++) {
                             try {
                                 ms_dxnet.sendMessage(message);
                             } catch (NetworkException e) {
@@ -237,7 +242,12 @@ public final class DXNetMain implements MessageReceiver {
                     };
                 } else {
                     task = () -> {
-                        for (int i = 0; i < ms_messageCount / threads; i++) {
+                        long messageCount = ms_messageCount / threads;
+                        if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
+                            messageCount += ms_messageCount % threads;
+                        }
+
+                        for (int i = 0; i < messageCount; i++) {
                             try {
                                 BenchmarkMessage message = new BenchmarkMessage((short) 7, ms_messageSize);
                                 ms_dxnet.sendMessage(message);
@@ -256,8 +266,13 @@ public final class DXNetMain implements MessageReceiver {
                     }
 
                     task = () -> {
+                        long messageCount = ms_messageCount / threads;
+                        if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
+                            messageCount += ms_messageCount % threads;
+                        }
+
                         BenchmarkRequest request = new BenchmarkRequest((short) 7, ms_messageSize);
-                        for (int i = 0; i < ms_messageCount / threads; i++) {
+                        for (int i = 0; i < messageCount; i++) {
                             try {
                                 request.reuse();
                                 ms_dxnet.sendSync(request, -1, true);
@@ -268,7 +283,12 @@ public final class DXNetMain implements MessageReceiver {
                     };
                 } else {
                     task = () -> {
-                        for (int i = 0; i < ms_messageCount / threads; i++) {
+                        long messageCount = ms_messageCount / threads;
+                        if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
+                            messageCount += ms_messageCount % threads;
+                        }
+
+                        for (int i = 0; i < messageCount; i++) {
                             try {
                                 BenchmarkRequest request = new BenchmarkRequest((short) 7, ms_messageSize);
                                 ms_dxnet.sendSync(request, -1, true);
@@ -285,6 +305,7 @@ public final class DXNetMain implements MessageReceiver {
             Thread[] threadArray = new Thread[threads];
             for (int i = 0; i < threads; i++) {
                 threadArray[i] = new Thread(task);
+                threadArray[i].setName(String.valueOf(i));
                 threadArray[i].start();
             }
 
