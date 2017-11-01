@@ -67,15 +67,15 @@ public class MessageHeaderStore {
         // & 0x7FFFFFFF to kill sign
         int posFront = m_posFront & 0x7FFFFFFF;
 
-        if ((m_posBack.get() + m_size & 0x7FFFFFFF) == posFront) {
-            // Return without adding the message header if queue is full
-            return false;
+        if ((m_posBack.get() + m_size & 0x7FFFFFFF) != posFront) {
+            m_buffer[posFront % m_size] = p_header;
+            m_posFront++;
+
+            return true;
         }
 
-        m_buffer[posFront % m_size] = p_header;
-        m_posFront++;
-
-        return true;
+        // Return without adding the message header if queue is full
+        return false;
     }
 
     /**
@@ -90,18 +90,22 @@ public class MessageHeaderStore {
     boolean pushMessageHeaders(final MessageHeader[] p_headers, final int p_messages) {
         // & 0x7FFFFFFF to kill sign
         int posFront = m_posFront & 0x7FFFFFFF;
+        int posBack = m_posBack.get();
 
-        if ((m_posBack.get() + m_size & 0x7FFFFFFF) < (posFront + p_messages & 0x7FFFFFFF)) {
-            // Return without adding the message headers if not all message header fit
-            return false;
+        if ((posBack + m_size & 0x7FFFFFFF) >= (posFront + p_messages & 0x7FFFFFFF) ||
+                /* 31-bit overflow in posBack but not posFront */
+                (posBack + m_size & 0x7FFFFFFF) < (posBack & 0x7FFFFFFF) && (posFront + p_messages & 0x7FFFFFFF) > (posFront & 0x7FFFFFFF)) {
+
+            for (int i = 0; i < p_messages; i++) {
+                m_buffer[(posFront + i & 0x7FFFFFFF) % m_size] = p_headers[i];
+            }
+            m_posFront += p_messages;
+
+            return true;
         }
 
-        for (int i = 0; i < p_messages; i++) {
-            m_buffer[(posFront + i) % m_size] = p_headers[i];
-        }
-        m_posFront += p_messages;
-
-        return true;
+        // Return without adding the message headers if not all message header fit
+        return false;
     }
 
     /**

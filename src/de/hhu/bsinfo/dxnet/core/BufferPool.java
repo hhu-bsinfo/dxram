@@ -110,7 +110,7 @@ public final class BufferPool {
         int posFront;
 
         posFront = m_posFrontLarge & 0x7FFFFFFF;
-        if ((m_posBackConsumerLarge.get() + LARGE_BUFFER_POOL_SIZE & 0x7FFFFFFF) > posFront) {
+        if ((m_posBackConsumerLarge.get() + LARGE_BUFFER_POOL_SIZE & 0x7FFFFFFF) != posFront) {
             // Not empty
             ret = m_largeBufferPool[posFront % LARGE_BUFFER_POOL_SIZE];
             m_posFrontLarge++;
@@ -118,7 +118,7 @@ public final class BufferPool {
         }
 
         posFront = m_posFrontMedium & 0x7FFFFFFF;
-        if ((m_posBackConsumerMedium.get() + MEDIUM_BUFFER_POOL_SIZE & 0x7FFFFFFF) > posFront) {
+        if ((m_posBackConsumerMedium.get() + MEDIUM_BUFFER_POOL_SIZE & 0x7FFFFFFF) != posFront) {
             // Not empty
             ret = m_mediumBufferPool[posFront % MEDIUM_BUFFER_POOL_SIZE];
             m_posFrontMedium++;
@@ -126,7 +126,7 @@ public final class BufferPool {
         }
 
         posFront = m_posFrontSmall & 0x7FFFFFFF;
-        if ((m_posBackConsumerSmall.get() + SMALL_BUFFER_POOL_SIZE & 0x7FFFFFFF) > posFront) {
+        if ((m_posBackConsumerSmall.get() + SMALL_BUFFER_POOL_SIZE & 0x7FFFFFFF) != posFront) {
             // Not empty
             ret = m_smallBufferPool[posFront % SMALL_BUFFER_POOL_SIZE];
             m_posFrontSmall++;

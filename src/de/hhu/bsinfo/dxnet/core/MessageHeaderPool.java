@@ -59,22 +59,26 @@ public final class MessageHeaderPool {
     boolean getHeaders(final MessageHeader[] p_messageHeaders) {
         // & 0x7FFFFFFF to kill sign
         int posFront = m_posFront & 0x7FFFFFFF;
+        int posBack = m_posBackConsumer.get();
 
-        if ((m_posBackConsumer.get() + m_size & 0x7FFFFFFF) < (posFront + p_messageHeaders.length & 0x7FFFFFFF)) {
-            // Ring-buffer is empty.
+        if ((posBack + m_size & 0x7FFFFFFF) >= (posFront + p_messageHeaders.length & 0x7FFFFFFF) ||
+                /* 31-bit overflow in posBack but not posFront */
+                (posBack + m_size & 0x7FFFFFFF) < (posBack & 0x7FFFFFFF) && (posFront + p_messageHeaders.length & 0x7FFFFFFF) > (posFront & 0x7FFFFFFF)) {
+            for (int i = 0; i < p_messageHeaders.length; i++) {
+                p_messageHeaders[i] = m_buffer[(posFront + i & 0x7FFFFFFF) % m_size];
+            }
+            m_posFront += p_messageHeaders.length;
 
-            // #if LOGGER >= WARN
-            LOGGER.warn("Insufficient pooled message headers. Allocating temporary message header.");
-            // #endif /* LOGGER >= WARN *//*
-
-            return false;
+            return true;
         }
-        for (int i = 0; i < p_messageHeaders.length; i++) {
-            p_messageHeaders[i] = m_buffer[(posFront + i) % m_size];
-        }
-        m_posFront += p_messageHeaders.length;
 
-        return true;
+        // Ring-buffer is empty.
+
+        // #if LOGGER >= WARN
+        LOGGER.warn("Insufficient pooled message headers. Allocating temporary message header.");
+        // #endif /* LOGGER >= WARN *//*
+
+        return false;
     }
 
     /**
@@ -88,19 +92,20 @@ public final class MessageHeaderPool {
         // & 0x7FFFFFFF to kill sign
         int posFront = m_posFront & 0x7FFFFFFF;
 
-        if ((m_posBackConsumer.get() + m_size & 0x7FFFFFFF) == posFront) {
-            // Ring-buffer is empty.
+        if ((m_posBackConsumer.get() + m_size & 0x7FFFFFFF) != posFront) {
+            ret = m_buffer[posFront % m_size];
+            m_posFront++;
 
-            // #if LOGGER >= WARN
-            LOGGER.warn("Insufficient pooled message headers. Allocating temporary message header.");
-            // #endif /* LOGGER >= WARN *//*
-
-            return new MessageHeader();
+            return ret;
         }
-        ret = m_buffer[posFront % m_size];
-        m_posFront++;
 
-        return ret;
+        // Ring-buffer is empty.
+
+        // #if LOGGER >= WARN
+        LOGGER.warn("Insufficient pooled message headers. Allocating temporary message header.");
+        // #endif /* LOGGER >= WARN *//*
+
+        return new MessageHeader();
     }
 
     /**
@@ -128,7 +133,7 @@ public final class MessageHeaderPool {
 
             if (m_posBackProducer.compareAndSet(posBackSigned, posBackSigned + p_messageHeaders.length)) {
                 for (int i = 0; i < p_messageHeaders.length; i++) {
-                    m_buffer[(posBack + i) % m_size] = p_messageHeaders[i];
+                    m_buffer[(posBack + i & 0x7FFFFFFF) % m_size] = p_messageHeaders[i];
                 }
 
                 // First atomic is necessary to synchronize producers, second to inform consumer after message header has been added
