@@ -64,6 +64,9 @@ public final class BufferPool {
         m_osBufferSize = p_osBufferSize;
 
         // Initialize ring-buffer for large buffers
+        if ((LARGE_BUFFER_POOL_SIZE & LARGE_BUFFER_POOL_SIZE - 1) != 0) {
+            throw new NetworkRuntimeException("Large buffer pool size must be a power of 2!");
+        }
         m_posFrontLarge = 0;
         m_posBackProducerLarge = new AtomicInteger(0);
         m_posBackConsumerLarge = new AtomicInteger(0);
@@ -73,6 +76,9 @@ public final class BufferPool {
         }
 
         // Initialize ring-buffer for medium buffers
+        if ((MEDIUM_BUFFER_POOL_SIZE & MEDIUM_BUFFER_POOL_SIZE - 1) != 0) {
+            throw new NetworkRuntimeException("Medium buffer pool size must be a power of 2!");
+        }
         m_posFrontMedium = 0;
         m_posBackProducerMedium = new AtomicInteger(0);
         m_posBackConsumerMedium = new AtomicInteger(0);
@@ -82,6 +88,9 @@ public final class BufferPool {
         }
 
         // Initialize ring-buffer for small buffers
+        if ((SMALL_BUFFER_POOL_SIZE & SMALL_BUFFER_POOL_SIZE - 1) != 0) {
+            throw new NetworkRuntimeException("Small buffer pool size must be a power of 2!");
+        }
         m_posFrontSmall = 0;
         m_posBackProducerSmall = new AtomicInteger(0);
         m_posBackConsumerSmall = new AtomicInteger(0);

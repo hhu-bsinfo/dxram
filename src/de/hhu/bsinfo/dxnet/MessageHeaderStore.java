@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxnet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import de.hhu.bsinfo.dxnet.core.MessageHeader;
+import de.hhu.bsinfo.dxnet.core.NetworkRuntimeException;
 
 /**
  * Lock-free ring buffer for message headers (single producer, multiple consumers)
@@ -36,8 +37,8 @@ public class MessageHeaderStore {
      *         Must be a power of two to handle wrap around
      */
     MessageHeaderStore(final int p_size) {
-        if (p_size % 2 != 0) {
-            throw new IllegalStateException("Message store size must be a multiple of two, invalid value " + p_size);
+        if ((p_size & p_size - 1) != 0) {
+            throw new NetworkRuntimeException("MessageHeader store size must be a power of 2!");
         }
 
         m_size = p_size;
@@ -94,7 +95,7 @@ public class MessageHeaderStore {
 
         if ((posBack + m_size & 0x7FFFFFFF) >= (posFront + p_messages & 0x7FFFFFFF) ||
                 /* 31-bit overflow in posBack but not posFront */
-                (posBack + m_size & 0x7FFFFFFF) < (posBack & 0x7FFFFFFF) && (posFront + p_messages & 0x7FFFFFFF) > (posFront & 0x7FFFFFFF)) {
+                (posBack + m_size & 0x7FFFFFFF) < (posBack & 0x7FFFFFFF) && (posFront + p_messages & 0x7FFFFFFF) > (posBack & 0x7FFFFFFF)) {
 
             for (int i = 0; i < p_messages; i++) {
                 m_buffer[(posFront + i & 0x7FFFFFFF) % m_size] = p_headers[i];

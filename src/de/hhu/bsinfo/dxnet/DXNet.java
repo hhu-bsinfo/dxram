@@ -57,7 +57,7 @@ public final class DXNet {
     private static final StatisticsOperation SOP_SEND_SYNC = StatisticsRecorderManager.getOperation(DXNet.class, "MessageSendSync");
     private static final StatisticsOperation SOP_WAIT_RESPONSE = StatisticsRecorderManager.getOperation(DXNet.class, "WaitForResponse");
 
-    private static final int MESSAGE_HEADER_POOL_SIZE = 1000 * 1000;
+    private static final int MESSAGE_HEADER_POOL_SIZE = 1024 * 1024;
     private static final int OVERPROVISIONING_OFFSET = 25;
 
     private final CoreConfig m_coreConfig;

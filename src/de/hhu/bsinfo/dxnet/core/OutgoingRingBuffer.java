@@ -87,6 +87,10 @@ public class OutgoingRingBuffer {
     protected void setBuffer(final long p_bufferAddr, final int p_bufferSize) {
         m_bufferAddr = p_bufferAddr;
         m_bufferSize = p_bufferSize;
+
+        if ((m_bufferSize & m_bufferSize - 1) != 0) {
+            throw new NetworkRuntimeException("Outgoing ring-buffer size must be a power of 2!");
+        }
     }
 
     /**
@@ -104,7 +108,7 @@ public class OutgoingRingBuffer {
      * @return whether the ring-buffer is empty or not
      */
     public boolean isEmpty() {
-        return (m_posBack & 0x7FFFFFFFL) == ((int) m_posFrontConsumer.get() & 0x7FFFFFFFL);
+        return m_posBack == m_posFrontProducer.get();
     }
 
     /**
@@ -118,7 +122,7 @@ public class OutgoingRingBuffer {
         SOP_SHIFT_BACK.enter(p_writtenBytes);
         // #endif /* STATISTICS */
 
-        m_posBack += p_writtenBytes;
+        m_posBack = m_posBack + p_writtenBytes & 0x7FFFFFFF;
 
         // #ifdef STATISTICS
         SOP_SHIFT_BACK.leave();
@@ -157,8 +161,7 @@ public class OutgoingRingBuffer {
                 int posBack = m_posBack;
                 if ((posBack + m_bufferSize & 0x7FFFFFFF) > (posFrontProducer + p_messageSize & 0x7FFFFFFF) ||
                         /* 31-bit overflow in posBack but not posFront */
-                        (posBack + m_bufferSize & 0x7FFFFFFF) < (posBack & 0x7FFFFFFF) &&
-                                (posFrontProducer + p_messageSize & 0x7FFFFFFF) > (posFrontProducer & 0x7FFFFFFF)) {
+                        (posBack + m_bufferSize & 0x7FFFFFFF) < posBack && (posFrontProducer + p_messageSize & 0x7FFFFFFF) > posBack) {
 
                     // #ifdef STATISTICS
                     if (waited) {
@@ -172,7 +175,7 @@ public class OutgoingRingBuffer {
                         continue;
                     }
 
-                    serialize(p_message, (int) ((posFrontProducer & 0x7FFFFFFF) % m_bufferSize), p_messageSize);
+                    serialize(p_message, ((int) posFrontProducer & 0x7FFFFFFF) % m_bufferSize, p_messageSize);
 
                     /* Leave serialization area */
                     leaveSerializationArea(posFrontProducer, newPosFrontProducer, p_messageSize);
@@ -253,15 +256,18 @@ public class OutgoingRingBuffer {
      *         the message size
      */
     private void leaveSerializationArea(final long p_posFrontProducer, final long p_newPosFrontProducer, final int p_messageSize) {
+        /*while (!m_posFrontConsumer.compareAndSet(p_posFrontProducer, p_newPosFrontProducer)) {
+            Thread.yield();
+        }*/
         int posFrontArray = (int) (p_posFrontProducer >> 32) & 0x7FFFFFFF;
         long newPosFrontProducer = p_newPosFrontProducer;
 
         // Wait if posBackArray fell too far behind (might be -1 if a serialization is being committed)
         int posBackArray;
         while (true) {
-            posBackArray = m_posBackArray.get() & 0x7FFFFFFF;
+            posBackArray = m_posBackArray.get();
             if (posFrontArray < (posBackArray + MAX_CONCURRENT_THREADS - 1 & 0x7FFFFFFF) ||
-                                /* overflow */ (posBackArray + MAX_CONCURRENT_THREADS - 1 & 0x7FFFFFFF) < posBackArray && posBackArray <= posFrontArray) {
+                    /* overflow */ (posBackArray + MAX_CONCURRENT_THREADS - 1 & 0x7FFFFFFF) < posBackArray && posBackArray <= posFrontArray) {
                 // The registered index is free -> start committing
                 break;
             }
@@ -364,7 +370,7 @@ public class OutgoingRingBuffer {
     private void serializeLargeMessage(final Message p_message, final int p_messageSize, final long p_oldPosFrontProducer, final AbstractPipeOut p_pipeOut)
             throws NetworkException {
         long posFrontConsumer = p_oldPosFrontProducer;
-        int posBack = m_posBack & 0x7FFFFFFF;
+        int posBack = m_posBack;
         int allWrittenBytes = 0;
         int startPosition;
         int limit;
@@ -401,7 +407,7 @@ public class OutgoingRingBuffer {
             allWrittenBytes = exporter.getNumberOfWrittenBytes();
 
             // Get new values
-            posBack = m_posBack & 0x7FFFFFFF;
+            posBack = m_posBack;
             posFrontConsumer = (posFrontConsumer & 0xFFFFFFFF00000000L) + ((int) posFrontConsumer + allWrittenBytes - previouslyWrittenBytes & 0x7FFFFFFF);
 
             // Reserve space for next write
@@ -422,10 +428,10 @@ public class OutgoingRingBuffer {
             }
 
             // Wait for consumer to finish writing
-            while ((m_posBack & 0x7FFFFFFF) == posBack) {
+            while (m_posBack == posBack) {
                 LockSupport.parkNanos(100);
             }
-            posBack = m_posBack & 0x7FFFFFFF;
+            posBack = m_posBack;
         }
     }
 
@@ -447,9 +453,9 @@ public class OutgoingRingBuffer {
         SOP_POP.enter();
         // #endif /* STATISTICS */
 
-        posFront = (int) m_posFrontConsumer.get() & 0x7FFFFFFF;
+        posFront = (int) m_posFrontConsumer.get();
         posFrontRelative = posFront % m_bufferSize;
-        posBack = m_posBack & 0x7FFFFFFF;
+        posBack = m_posBack;
         posBackRelative = posBack % m_bufferSize;
 
         if (posFrontRelative < posBackRelative) {

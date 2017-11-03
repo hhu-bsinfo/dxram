@@ -59,6 +59,10 @@ public class IncomingBufferQueue {
      *         the max incoming buffer size
      */
     IncomingBufferQueue(final int p_maxIncomingBufferSize) {
+        if ((SIZE & SIZE - 1) != 0) {
+            throw new NetworkRuntimeException("Incoming buffer queue size must be a power of 2!");
+        }
+
         m_connectionBuffer = new AbstractConnection[SIZE];
         m_directBuffers = new BufferPool.DirectBufferWrapper[SIZE];
         m_bufferHandleBuffer = new long[SIZE];

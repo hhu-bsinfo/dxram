@@ -40,6 +40,10 @@ public final class MessageHeaderPool {
      *         the pool size
      */
     public MessageHeaderPool(final int p_size) {
+        if ((p_size & p_size - 1) != 0) {
+            throw new NetworkRuntimeException("MessageHeader pool size must be a power of 2!");
+        }
+
         m_size = p_size;
         m_buffer = new MessageHeader[m_size];
         for (int i = 0; i < m_size; i++) {
@@ -63,7 +67,7 @@ public final class MessageHeaderPool {
 
         if ((posBack + m_size & 0x7FFFFFFF) >= (posFront + p_messageHeaders.length & 0x7FFFFFFF) ||
                 /* 31-bit overflow in posBack but not posFront */
-                (posBack + m_size & 0x7FFFFFFF) < (posBack & 0x7FFFFFFF) && (posFront + p_messageHeaders.length & 0x7FFFFFFF) > (posFront & 0x7FFFFFFF)) {
+                (posBack + m_size & 0x7FFFFFFF) < (posBack & 0x7FFFFFFF) && (posFront + p_messageHeaders.length & 0x7FFFFFFF) > (posBack & 0x7FFFFFFF)) {
             for (int i = 0; i < p_messageHeaders.length; i++) {
                 p_messageHeaders[i] = m_buffer[(posFront + i & 0x7FFFFFFF) % m_size];
             }
