@@ -43,6 +43,7 @@ import de.hhu.bsinfo.dxnet.core.messages.Messages;
 import de.hhu.bsinfo.dxram.ms.tasks.PrintStatistics;
 import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
 import de.hhu.bsinfo.dxram.util.TimeUnitGsonSerializer;
+import de.hhu.bsinfo.utils.UnsafeHandler;
 import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
@@ -57,9 +58,13 @@ public final class DXNetMain implements MessageReceiver {
 
     private static DXNet ms_dxnet;
 
+    private static boolean ms_isServer = false;
     private static long ms_messageCount;
     private static int ms_messageSize;
     private static BenchmarkResponse[] ms_responses;
+
+    private static boolean ms_serverStart = false;
+    private static volatile boolean ms_remoteFinished = false;
 
     private long m_timeStart;
 
@@ -71,7 +76,7 @@ public final class DXNetMain implements MessageReceiver {
 
         // Parse command line arguments
         if (p_arguments.length < 7) {
-            System.out.println("Usage: config_file mode own_ip role num_messages message_size num_threads [server_ip]");
+            System.out.println("Usage: config_file mode own_ip role num_messages message_size num_threads [server_ip|client_ip]");
             System.exit(-1);
         }
         String configPath = p_arguments[0];
@@ -80,15 +85,19 @@ public final class DXNetMain implements MessageReceiver {
             System.out.println("Mode must be Messages or Requests (case insensitive).");
             System.exit(-1);
         }
-        String ip = p_arguments[2];
+        String ownIP = p_arguments[2];
         String role = p_arguments[3].toLowerCase();
         if (!"server".equals(role) && !"client".equals(role)) {
-            System.out.println("Role must be Server or Client (case insensitive). For sending messages start one client, for sending requests/responses " +
-                    "start one server first and then one client (for Loopback starting one client is enough).");
+            System.out.println("Role must be Server or Client (case insensitive)." +
+                    " Start one server first and then one client (for Loopback starting one client (without a server) is enough).");
             System.exit(-1);
         }
-        if ("requests".equals(mode) && "client".equals(role) && p_arguments.length == 7) {
-            System.out.println("When starting the client and sending requests/responses the server_ip must be set (Loopback: 0 or any other number).");
+        if (p_arguments.length == 7) {
+            if ("server".equals(role)) {
+                System.out.println("When starting the server the client_ip must be set (Loopback: 0 or any other number).");
+            } else {
+                System.out.println("When starting the client the server_ip must be set and the server must be running (Loopback: 0 or any other number).");
+            }
             System.exit(-1);
         }
         ms_messageCount = Long.parseLong(p_arguments[4]);
@@ -158,7 +167,7 @@ public final class DXNetMain implements MessageReceiver {
 
             // Check if given ip address is bound to one of this node's network interfaces
             boolean found = false;
-            InetSocketAddress socketAddress = new InetSocketAddress("255.255.255.255", 0xFFFF);
+            InetSocketAddress socketAddress = new InetSocketAddress(ownIP, 0xFFFF);
             InetAddress myAddress = socketAddress.getAddress();
             try {
                 Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
@@ -187,6 +196,11 @@ public final class DXNetMain implements MessageReceiver {
             LOGGER.debug("Loading infiniband...");
             //DXRAMJNIManager.loadJNIModule("JNIIbdxnet");
         } else if ("Loopback".equals(context.getCoreConfig().getDevice())) {
+            if ("server".equals(role)) {
+                System.out.println("Server role is not allowed for loopback device");
+                System.exit(-1);
+            }
+
             LOGGER.debug("Loading loopback...");
         } else {
             // #if LOGGER >= ERROR
@@ -196,9 +210,32 @@ public final class DXNetMain implements MessageReceiver {
         }
 
         // Set own node ID and register all participating nodes
-        context.getCoreConfig().setOwnNodeId((short) 6);
-        NodeMap nodeMap = new DXNetNodeMap(context.getCoreConfig().getOwnNodeId());
-        // ((DXNetNodeMap) nodeMap).addNode((short) 7, new InetSocketAddress("255.255.255.255", 0xFFFF));
+        short destinationNID;
+        NodeMap nodeMap;
+        if ("Loopback".equals(context.getCoreConfig().getDevice())) {
+            // With loopback device one instance is started, only
+            context.getCoreConfig().setOwnNodeId((short) 6);
+            nodeMap = new DXNetNodeMap(context.getCoreConfig().getOwnNodeId());
+            destinationNID = (short) 7;
+            ms_isServer = false;
+        } else {
+            // Server has NodeID 7 (and port 22222 when using Ethernet), client NodeID 6 (and port 22223 when using Ethernet)
+            if ("server".equals(role)) {
+                context.getCoreConfig().setOwnNodeId((short) 7);
+                nodeMap = new DXNetNodeMap(context.getCoreConfig().getOwnNodeId());
+                ((DXNetNodeMap) nodeMap).addNode((short) 7, new InetSocketAddress(ownIP, 22222));
+                ((DXNetNodeMap) nodeMap).addNode((short) 6, new InetSocketAddress(p_arguments[7], 22223));
+                destinationNID = (short) 6;
+                ms_isServer = true;
+            } else {
+                context.getCoreConfig().setOwnNodeId((short) 6);
+                nodeMap = new DXNetNodeMap(context.getCoreConfig().getOwnNodeId());
+                ((DXNetNodeMap) nodeMap).addNode((short) 6, new InetSocketAddress(ownIP, 22223));
+                ((DXNetNodeMap) nodeMap).addNode((short) 7, new InetSocketAddress(p_arguments[7], 22222));
+                destinationNID = (short) 7;
+                ms_isServer = false;
+            }
+        }
 
         // Initialize DXNet
         ms_dxnet = new DXNet(context.getCoreConfig(), context.getNIOConfig(), context.getIBConfig(), context.getLoopbackConfig(), nodeMap);
@@ -211,135 +248,156 @@ public final class DXNetMain implements MessageReceiver {
         ms_dxnet.register(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_REQUEST, new DXNetMain());
         ms_dxnet.register(Messages.DEFAULT_MESSAGES_TYPE, Messages.SUBTYPE_BENCHMARK_RESPONSE, new DXNetMain());
 
+        // Workload
+        Runnable task;
+        if ("messages".equals(mode)) {
+            if (POOLING) {
+                task = () -> {
+                    long messageCount = ms_messageCount / threads;
+                    if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
+                        messageCount += ms_messageCount % threads;
+                    }
+
+                    BenchmarkMessage message = new BenchmarkMessage(destinationNID, ms_messageSize);
+                    for (int i = 0; i < messageCount; i++) {
+                        try {
+                            ms_dxnet.sendMessage(message);
+                        } catch (NetworkException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+            } else {
+                task = () -> {
+                    long messageCount = ms_messageCount / threads;
+                    if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
+                        messageCount += ms_messageCount % threads;
+                    }
+
+                    for (int i = 0; i < messageCount; i++) {
+                        try {
+                            BenchmarkMessage message = new BenchmarkMessage(destinationNID, ms_messageSize);
+                            ms_dxnet.sendMessage(message);
+                        } catch (NetworkException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+            }
+        } else {
+            if (POOLING) {
+                int numberOfMessageHandler = context.getCoreConfig().getNumMessageHandlerThreads();
+                ms_responses = new BenchmarkResponse[numberOfMessageHandler];
+                for (int i = 0; i < numberOfMessageHandler; i++) {
+                    ms_responses[i] = new BenchmarkResponse();
+                }
+
+                task = () -> {
+                    long messageCount = ms_messageCount / threads;
+                    if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
+                        messageCount += ms_messageCount % threads;
+                    }
+
+                    BenchmarkRequest request = new BenchmarkRequest(destinationNID, ms_messageSize);
+                    for (int i = 0; i < messageCount; i++) {
+                        try {
+                            request.reuse();
+                            ms_dxnet.sendSync(request, -1, true);
+                        } catch (NetworkException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+            } else {
+                task = () -> {
+                    long messageCount = ms_messageCount / threads;
+                    if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
+                        messageCount += ms_messageCount % threads;
+                    }
+
+                    for (int i = 0; i < messageCount; i++) {
+                        try {
+                            BenchmarkRequest request = new BenchmarkRequest(destinationNID, ms_messageSize);
+                            ms_dxnet.sendSync(request, -1, true);
+                        } catch (NetworkException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+            }
+        }
+
         if ("server".equals(role)) {
             // Server answers requests, only -> let main thread wait
-            while (true) {
+            while (!ms_serverStart) {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(1);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            }
-        } else {
-            // Workload
-            Runnable task;
-            if ("messages".equals(mode)) {
-                if (POOLING) {
-                    task = () -> {
-                        long messageCount = ms_messageCount / threads;
-                        if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
-                            messageCount += ms_messageCount % threads;
-                        }
-
-                        BenchmarkMessage message = new BenchmarkMessage((short) 7, ms_messageSize);
-                        for (int i = 0; i < messageCount; i++) {
-                            try {
-                                ms_dxnet.sendMessage(message);
-                            } catch (NetworkException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    };
-                } else {
-                    task = () -> {
-                        long messageCount = ms_messageCount / threads;
-                        if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
-                            messageCount += ms_messageCount % threads;
-                        }
-
-                        for (int i = 0; i < messageCount; i++) {
-                            try {
-                                BenchmarkMessage message = new BenchmarkMessage((short) 7, ms_messageSize);
-                                ms_dxnet.sendMessage(message);
-                            } catch (NetworkException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    };
-                }
-            } else {
-                if (POOLING) {
-                    int numberOfMessageHandler = context.getCoreConfig().getNumMessageHandlerThreads();
-                    ms_responses = new BenchmarkResponse[numberOfMessageHandler];
-                    for (int i = 0; i < numberOfMessageHandler; i++) {
-                        ms_responses[i] = new BenchmarkResponse();
-                    }
-
-                    task = () -> {
-                        long messageCount = ms_messageCount / threads;
-                        if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
-                            messageCount += ms_messageCount % threads;
-                        }
-
-                        BenchmarkRequest request = new BenchmarkRequest((short) 7, ms_messageSize);
-                        for (int i = 0; i < messageCount; i++) {
-                            try {
-                                request.reuse();
-                                ms_dxnet.sendSync(request, -1, true);
-                            } catch (NetworkException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    };
-                } else {
-                    task = () -> {
-                        long messageCount = ms_messageCount / threads;
-                        if (Integer.parseInt(Thread.currentThread().getName()) == threads - 1) {
-                            messageCount += ms_messageCount % threads;
-                        }
-
-                        for (int i = 0; i < messageCount; i++) {
-                            try {
-                                BenchmarkRequest request = new BenchmarkRequest((short) 7, ms_messageSize);
-                                ms_dxnet.sendSync(request, -1, true);
-                            } catch (NetworkException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    };
-                }
-            }
-
-            long timeStart = System.nanoTime();
-            LOGGER.info("Starting workload...");
-            Thread[] threadArray = new Thread[threads];
-            for (int i = 0; i < threads; i++) {
-                threadArray[i] = new Thread(task);
-                threadArray[i].setName(String.valueOf(i));
-                threadArray[i].start();
-            }
-
-            for (int i = 0; i < threads; i++) {
-                try {
-                    threadArray[i].join();
-                } catch (InterruptedException ignore) {
-                }
-            }
-            LOGGER.info("Workload finished on sender.");
-
-            if ("requests".equals(mode)) {
-                // Printing statistics
-                while (!ms_dxnet.isRequestMapEmpty()) {
-                    LockSupport.parkNanos(100);
-                }
-                PrintStatistics.printStatisticsToOutput(System.out);
-
-                long timeDiff = System.nanoTime() - timeStart;
-                LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
-                LOGGER.info("Time per message: %d ns", timeDiff / ms_messageCount);
-                LOGGER.info("Throughput: %d MB/s", (int) ((double) ms_messageCount * ms_messageSize / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000)));
-                LOGGER.info("Throughput (with overhead): %d MB/s",
-                        (int) ((double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
-                                ((double) timeDiff / 1000 / 1000 / 1000)));
-                System.exit(0);
+                UnsafeHandler.getInstance().getUnsafe().loadFence();
             }
         }
+
+        long timeStart = System.nanoTime();
+        LOGGER.info("Starting workload...");
+        Thread[] threadArray = new Thread[threads];
+        for (int i = 0; i < threads; i++) {
+            threadArray[i] = new Thread(task);
+            threadArray[i].setName(String.valueOf(i));
+            threadArray[i].start();
+        }
+
+        for (int i = 0; i < threads; i++) {
+            try {
+                threadArray[i].join();
+            } catch (InterruptedException ignore) {
+            }
+        }
+        LOGGER.info("Workload finished on sender.");
+
+        if ("requests".equals(mode)) {
+            // Printing statistics
+            while (!ms_dxnet.isRequestMapEmpty()) {
+                LockSupport.parkNanos(100);
+            }
+            PrintStatistics.printStatisticsToOutput(System.out);
+
+            long timeDiff = System.nanoTime() - timeStart;
+            LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
+            LOGGER.info("Time per message: %d ns", timeDiff / ms_messageCount);
+            LOGGER.info("Throughput: %d MB/s", (int) ((double) ms_messageCount * ms_messageSize / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000)));
+            LOGGER.info("Throughput (with overhead): %d MB/s",
+                    (int) ((double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
+                            ((double) timeDiff / 1000 / 1000 / 1000)));
+        }
+
+        while (!ms_remoteFinished) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        System.exit(0);
     }
 
     private AtomicLong m_messages = new AtomicLong(0);
 
     @Override
     public void onIncomingMessage(Message p_message) {
+        short destinationNID;
+
+        if (ms_isServer) {
+            if (!ms_serverStart) {
+                ms_serverStart = true;
+                UnsafeHandler.getInstance().getUnsafe().storeFence();
+            }
+            destinationNID = (short) 6;
+        } else {
+            destinationNID = (short) 7;
+        }
+
         if (p_message.getSubtype() == Messages.SUBTYPE_BENCHMARK_REQUEST) {
             BenchmarkResponse response;
             if (POOLING) {
@@ -348,12 +406,16 @@ public final class DXNetMain implements MessageReceiver {
             } else {
                 response = new BenchmarkResponse((BenchmarkRequest) p_message);
             }
-            response.setDestination((short) 6);
+            response.setDestination(destinationNID);
 
             try {
                 ms_dxnet.sendMessage(response);
             } catch (NetworkException e) {
                 e.printStackTrace();
+            }
+
+            if (m_messages.incrementAndGet() == ms_messageCount) {
+                ms_remoteFinished = true;
             }
         } else {
             if (m_messages.incrementAndGet() == ms_messageCount) {
@@ -367,7 +429,8 @@ public final class DXNetMain implements MessageReceiver {
                 LOGGER.info("Throughput (with overhead): %d MB/s",
                         (int) ((double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
                                 ((double) timeDiff / 1000 / 1000 / 1000)));
-                System.exit(0);
+
+                ms_remoteFinished = true;
             }
         }
     }
