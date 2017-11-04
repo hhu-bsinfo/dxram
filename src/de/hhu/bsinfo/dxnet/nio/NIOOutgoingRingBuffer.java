@@ -41,12 +41,12 @@ class NIOOutgoingRingBuffer extends OutgoingRingBuffer {
      *
      * @return the ByteBuffer
      */
-    ByteBuffer popFront() {
+    ByteBuffer pop() {
         long tmp;
         int posBackRelative;
         int posFrontRelative;
 
-        tmp = popBackShift();
+        tmp = popBack();
         posBackRelative = (int) (tmp >> 32 & 0x7FFFFFFF);
         posFrontRelative = (int) (tmp & 0x7FFFFFFF);
 
@@ -68,9 +68,10 @@ class NIOOutgoingRingBuffer extends OutgoingRingBuffer {
      */
     void pushNodeID(final ByteBuffer p_buffer) {
         if (m_posFrontProducer.get() == 0) {
+            m_posFrontProducer.set(2);
             UnsafeMemory.writeByte(m_bufferAddr, p_buffer.get());
             UnsafeMemory.writeByte(m_bufferAddr + 1, p_buffer.get());
-            m_posFrontProducer.set(2);
+            m_posFrontConsumer.set(2);
         } else {
             throw new IllegalStateException();
         }

@@ -107,7 +107,7 @@ public class NIOPipeOut extends AbstractPipeOut {
         SOP_WRITE.enter();
         // #endif /* STATISTICS */
 
-        buffer = ((NIOOutgoingRingBuffer) getOutgoingQueue()).popFront();
+        buffer = ((NIOOutgoingRingBuffer) getOutgoingQueue()).pop();
         if (buffer != null && buffer.position() != buffer.limit()) {
             while (buffer.remaining() > 0) {
 

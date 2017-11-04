@@ -44,7 +44,7 @@ public class OutgoingRingBuffer {
     // Upper 32 bits: front position in m_uncommittedMessageSizes; lower 32 bits: current front producer pointer in ring buffer
     protected final AtomicLong m_posFrontProducer;
     // Upper 32 bits: back position in m_uncommittedMessageSizes; lower 32 bits: current front consumer pointer in ring buffer
-    private final AtomicLong m_posFrontConsumer;
+    protected final AtomicLong m_posFrontConsumer;
     // Also stores the back position in m_uncommittedMessageSizes because back position in m_posFrontConsumer is invalidated during committing
     private final AtomicInteger m_posBackArray;
 
@@ -443,7 +443,7 @@ public class OutgoingRingBuffer {
      *
      * @return the start and end address; empty if both back and front are equal
      */
-    protected long popBackShift() {
+    protected long popBack() {
         int posFront;
         int posFrontRelative;
         int posBack;

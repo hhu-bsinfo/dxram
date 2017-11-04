@@ -41,12 +41,12 @@ class LoopbackOutgoingRingBuffer extends OutgoingRingBuffer {
      *
      * @return the ByteBuffer
      */
-    ByteBuffer popFront() {
+    ByteBuffer pop() {
         long tmp;
         int posBackRelative;
         int posFrontRelative;
 
-        tmp = popBackShift();
+        tmp = popBack();
         posBackRelative = (int) (tmp >> 32 & 0x7FFFFFFF);
         posFrontRelative = (int) (tmp & 0x7FFFFFFF);
 

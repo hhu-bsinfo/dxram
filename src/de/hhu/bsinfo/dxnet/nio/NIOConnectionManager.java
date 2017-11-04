@@ -144,6 +144,9 @@ public class NIOConnectionManager extends AbstractConnectionManager {
         while (!ret.getPipeOut().isConnected()) {
             if (ret.isConnectionCreationAborted()) {
                 condLock.unlock();
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Connection creation aborted");
+                // #endif /* LOGGER >= DEBUG */
                 return null;
             }
 
