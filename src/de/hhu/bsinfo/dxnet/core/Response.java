@@ -20,7 +20,7 @@ package de.hhu.bsinfo.dxnet.core;
  */
 public class Response extends Message {
 
-    private Request m_correspondingRequest;
+    private volatile Request m_correspondingRequest;
 
     // Constructors
 
@@ -61,6 +61,10 @@ public class Response extends Message {
      *         the corresponding request
      */
     void setCorrespondingRequest(final Request p_correspondingRequest) {
+        if (p_correspondingRequest == null) {
+            throw new NetworkRuntimeException("Setting corresponding request NULL to response " + this);
+        }
+
         m_correspondingRequest = p_correspondingRequest;
     }
 
