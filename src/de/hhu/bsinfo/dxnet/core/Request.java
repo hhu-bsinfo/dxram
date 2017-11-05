@@ -137,6 +137,8 @@ public class Request extends Message {
         if (m_response != null && p_class.isAssignableFrom(m_response.getClass())) {
             ret = p_class.cast(m_response);
             m_response.setCorrespondingRequest(this);
+        } else {
+            throw new NetworkRuntimeException("Can't get response to request " + this + ", not available (maybe due to sending failed request or timeout when receiving resposne?)");
         }
 
         return ret;
@@ -150,7 +152,7 @@ public class Request extends Message {
      */
     public final void waitForResponse(final int p_timeoutMs) throws NetworkException {
         long cur = System.nanoTime();
-        long deadline = cur + p_timeoutMs * 1000 * 1000;
+        long deadline = cur + ((long) p_timeoutMs) * 1000 * 1000;
 
         ms_threadsWaiting.incrementAndGet();
         int counter = 0;
@@ -204,7 +206,9 @@ public class Request extends Message {
      *         the Response
      */
     final void fulfill(final Response p_response) {
-        assert p_response != null;
+        if (p_response == null) {
+            throw new RuntimeException("Fullfilling request " + this + " with NULL response");
+        }
 
         m_response = p_response;
         m_fulfilled = true;
