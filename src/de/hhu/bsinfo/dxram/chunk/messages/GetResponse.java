@@ -127,11 +127,6 @@ public class GetResponse extends Response {
 
             if (chunk.getState() == ChunkState.OK) {
                 p_importer.importObject(chunk);
-            } else {
-                System.out.println("-----Chunk DOES_NOT_EXIST " + ChunkID.toHexString(chunk.getID()));
-                for (DataStructure chunk2 : request.getChunks()) {
-                    System.out.println(chunk2);
-                }
             }
         }
     }
