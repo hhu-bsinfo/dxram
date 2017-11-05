@@ -154,7 +154,14 @@ public final class DXNet {
         m_lastFailures = new AtomicLongArray(65536);
 
         m_requestMap = new RequestMap(m_coreConfig.getRequestMapSize());
-        m_timeOut = (int) m_nioConfig.getRequestTimeOut().getMs();
+
+        if ("Ethernet".equals(m_coreConfig.getDevice())) {
+            m_timeOut = (int) m_nioConfig.getRequestTimeOut().getMs();
+        } else if ("Infiniband".equals(m_coreConfig.getDevice())) {
+            m_timeOut = (int) m_ibConfig.getRequestTimeOut().getMs();
+        } else {
+            m_timeOut = (int) m_loopbackConfig.getRequestTimeOut().getMs();
+        }
 
         if ("Ethernet".equals(m_coreConfig.getDevice())) {
             m_connectionManager = new NIOConnectionManager(m_coreConfig, m_nioConfig, p_nodeMap, m_messageDirectory, m_requestMap,
@@ -422,7 +429,7 @@ public final class DXNet {
             // #endif /* STATISTICS */
 
             // #if LOGGER >= ERROR
-            LOGGER.error("Sending sync, waiting for responses %s failed, timeout", p_request);
+            LOGGER.error("Sending sync, waiting for responses to %s failed, timeout: %d ms", p_request, timeout);
             // #endif /* LOGGER >= ERROR */
 
             m_requestMap.remove(p_request.getRequestID());
@@ -434,7 +441,7 @@ public final class DXNet {
             // #endif /* STATISTICS */
 
             // #if LOGGER >= TRACE
-            LOGGER.trace("Sending sync, waiting for responses %s failed, cancelled", p_request);
+            LOGGER.trace("Sending sync, waiting for responses to %s failed, cancelled: %d ms", p_request, timeout);
             // #endif /* LOGGER >= TRACE */
 
             throw e;
