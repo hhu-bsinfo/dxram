@@ -373,17 +373,22 @@ void IbConnectionManager::ConnectionContext::Create(uint16_t nodeId,
         uint16_t connectionId = m_availableConnectionIds.back();
         m_availableConnectionIds.pop_back();
 
-        m_connections[nodeId] = m_connectionCreator->CreateConnection(
+        std::shared_ptr<IbConnection> connection;
+
+        connection = m_connectionCreator->CreateConnection(
             connectionId, m_device, m_protDom);
 
-        for (auto& it : m_connections[nodeId]->GetQps()) {
+        for (auto& it : connection->GetQps()) {
             m_qpNumToNodeIdMappings.insert(std::make_pair(
                 it->GetPhysicalQpNum(), nodeId));
         }
 
-        if (m_connections[nodeId]->GetQps().size() > MAX_QPS_PER_CONNECTION) {
+        if (connection->GetQps().size() > MAX_QPS_PER_CONNECTION) {
             throw IbException("Exceeded max qps per connection limit");
         }
+
+        // connection setup done, make visible
+        m_connections[nodeId] = connection;
 
         IBNET_LOG_DEBUG("Allocated new connection to remote 0x{:X} with {} QPs",
             nodeId, m_connections[nodeId]->GetQps().size());
