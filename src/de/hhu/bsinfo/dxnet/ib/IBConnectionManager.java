@@ -179,8 +179,9 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
         }
 
         m_connectionCreationLock.lock();
+        // FIXME see fixme on AbstractConnectionManager
         if (m_openConnections == m_config.getMaxConnections()) {
-            dismissRandomConnection();
+            // dismissRandomConnection();
         }
 
         connection = (IBConnection) m_connections[p_destination & 0xFFFF];

@@ -112,9 +112,14 @@ public abstract class AbstractConnectionManager {
 
             ret = m_connections[p_destination & 0xFFFF];
             if (ret == null || !ret.getPipeOut().isConnected()) {
-                if (m_openConnections == m_maxConnections) {
-                    dismissRandomConnection();
-                }
+
+                // FIXME for some reason, connections are dismissed when we haven't
+                // exceeded the actual max, e.g. hilbert 1 superpeer 64 peers
+                // and max connections = 100 (maybe connected with FIXME issue
+                // further below?)
+//                if (m_openConnections == m_maxConnections) {
+//                    dismissRandomConnection();
+//                }
 
                 try {
                     ret = createConnection(p_destination, ret);
