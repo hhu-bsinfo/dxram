@@ -161,7 +161,7 @@ bool RecvThread::__ProcessFlowControl(void)
             &recvLength);
     } catch (core::IbException& e) {
         m_timers[1].Exit();
-        IBNET_LOG_ERROR("Polling for flow control completion failed: {}",
+        IBNET_LOG_ERROR("Polling for data buffer completion failed: {}",
             e.what());
         return false;
     }
@@ -173,16 +173,22 @@ bool RecvThread::__ProcessFlowControl(void)
         return false;
     }
 
+
+retry:
     m_timers[2].Enter();
 
     uint16_t sourceNode = m_connectionManager->GetNodeIdForPhysicalQPNum(qpNum);
     core::IbMemReg* mem = (core::IbMemReg*) workReqId;
 
+    // FIXME very ugly hack to work around some visibility (?) issue
+    // when the connection is created and the mapping inserted into the map
+    // but not correctly returned here which results in having to drop
+    // packages if we don't retry until we get something valid
     if (sourceNode == core::IbNodeId::INVALID) {
         m_timers[2].Exit();
         IBNET_LOG_PANIC("No node id mapping for qpNum 0x{:x} on FC data recv. "
             "losing FC recv work requests (not added back to queue)", qpNum);
-
+        goto retry;
         return false;
     }
 
@@ -237,6 +243,7 @@ bool RecvThread::__ProcessBuffers(void)
         return false;
     }
 
+retry:
     m_timers[6].Enter();
 
     uint16_t sourceNode = m_connectionManager->GetNodeIdForPhysicalQPNum(qpNum);
@@ -245,9 +252,15 @@ bool RecvThread::__ProcessBuffers(void)
 
     m_timers[6].Exit();
 
+    // FIXME very ugly hack to work around some visibility (?) issue
+    // when the connection is created and the mapping inserted into the map
+    // but not correctly returned here which results in having to drop
+    // packages if we don't retry until we get something valid
     if (sourceNode == core::IbNodeId::INVALID) {
-        IBNET_LOG_PANIC("No node id mapping for qpNum 0x{:x} on FC data recv. "
+        IBNET_LOG_PANIC("No node id mapping for qpNum 0x{:x} on buffer data recv. "
             "losing data recv work requests (not added back to queue)", qpNum);
+
+        goto retry;
 
         return false;
     }
