@@ -392,6 +392,16 @@ public abstract class AbstractPipeIn {
             // before de-serializing the network buffer for every request.
             Response response = (Response) message;
             request = m_requestMap.getRequest(response);
+
+            // FIXME not a good idea to abort here because there is still data
+            // in the buffers that needs to be read
+            // however, that's not possible for some responses because they
+            // need their corresponding requests for that
+            if (request == null) {
+                // Request is not available, probably because of a time-out
+                return null;
+            }
+
             response.setCorrespondingRequest(request);
         }
 

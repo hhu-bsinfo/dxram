@@ -32,7 +32,7 @@ public final class RequestMap {
     private static final StatisticsOperation SOP_REQ_RESP_RTT = StatisticsRecorderManager.getOperation(RequestMap.class, "ReqRespRTT");
 
     // Attributes
-    private Request[] m_pendingRequests;
+    private volatile Request[] m_pendingRequests;
 
     private ReentrantReadWriteLock m_lock = new ReentrantReadWriteLock(false);
 
@@ -80,11 +80,13 @@ public final class RequestMap {
 
         m_lock.readLock().lock();
         index = p_request.getRequestID() % m_pendingRequests.length;
+
         if (m_pendingRequests[index] != null) {
             // #if LOGGER >= ERROR
             LOGGER.error("Request %s for idx=%d still registered! Request Map might be too small", m_pendingRequests[index], index);
             // #endif /* LOGGER >= ERROR */
         }
+
         m_pendingRequests[index] = p_request;
         m_lock.readLock().unlock();
     }
@@ -143,6 +145,12 @@ public final class RequestMap {
         m_lock.readLock().lock();
         ret = m_pendingRequests[p_response.getRequestID() % m_pendingRequests.length];
         m_lock.readLock().unlock();
+
+        if (ret == null) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Missing request for response " + p_response);
+            // #endif /* LOGGER >= ERROR */
+        }
 
         return ret;
     }
