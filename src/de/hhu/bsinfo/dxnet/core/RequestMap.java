@@ -13,11 +13,10 @@
 
 package de.hhu.bsinfo.dxnet.core;
 
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.utils.UnsafeHandler;
 import de.hhu.bsinfo.utils.stats.StatisticsOperation;
 import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
@@ -32,9 +31,7 @@ public final class RequestMap {
     private static final StatisticsOperation SOP_REQ_RESP_RTT = StatisticsRecorderManager.getOperation(RequestMap.class, "ReqRespRTT");
 
     // Attributes
-    private volatile Request[] m_pendingRequests;
-
-    private ReentrantReadWriteLock m_lock = new ReentrantReadWriteLock(false);
+    private final Request[] m_pendingRequests;
 
     // Constructors
 
@@ -62,14 +59,14 @@ public final class RequestMap {
     public boolean isEmpty() {
         boolean ret = true;
 
-        m_lock.readLock().lock();
+        UnsafeHandler.getInstance().getUnsafe().loadFence();
+
         for (int i = 0; i < m_pendingRequests.length; i++) {
             if (m_pendingRequests[i] != null) {
                 ret = false;
                 break;
             }
         }
-        m_lock.readLock().unlock();
 
         return ret;
     }
@@ -83,9 +80,13 @@ public final class RequestMap {
     public void put(final Request p_request) {
         int index;
 
-        m_lock.readLock().lock();
         index = p_request.getRequestID() % m_pendingRequests.length;
 
+        UnsafeHandler.getInstance().getUnsafe().loadFence();
+
+        // what's not covered (but very unlikely to happen):
+        // if two threads access the same index, e.g. one having a message
+        // id of 0 and the other thread with the first overflowed message id
         if (m_pendingRequests[index] != null) {
             // #if LOGGER >= ERROR
             LOGGER.error("Request %s for idx=%d still registered! Request Map might be too small", m_pendingRequests[index], index);
@@ -93,7 +94,8 @@ public final class RequestMap {
         }
 
         m_pendingRequests[index] = p_request;
-        m_lock.readLock().unlock();
+
+        UnsafeHandler.getInstance().getUnsafe().storeFence();
     }
 
     /**
@@ -107,11 +109,14 @@ public final class RequestMap {
         Request ret;
         int index;
 
-        m_lock.readLock().lock();
         index = p_requestID % m_pendingRequests.length;
+
+        UnsafeHandler.getInstance().getUnsafe().loadFence();
+
         ret = m_pendingRequests[index];
         m_pendingRequests[index] = null;
-        m_lock.readLock().unlock();
+
+        UnsafeHandler.getInstance().getUnsafe().storeFence();
 
         return ret;
     }
@@ -125,15 +130,17 @@ public final class RequestMap {
     public void removeAll(final short p_nodeID) {
         Request request;
 
-        m_lock.writeLock().lock();
         for (int i = 0; i < m_pendingRequests.length; i++) {
+            UnsafeHandler.getInstance().getUnsafe().loadFence();
+
             request = m_pendingRequests[i];
             if (request != null && request.getDestination() == p_nodeID) {
                 request.abort();
                 m_pendingRequests[i] = null;
+
+                UnsafeHandler.getInstance().getUnsafe().storeFence();
             }
         }
-        m_lock.writeLock().unlock();
     }
 
     /**
@@ -146,16 +153,8 @@ public final class RequestMap {
     Request getRequest(final Response p_response) {
         Request ret;
 
-        // TODO: DO we really need a lock here?
-        m_lock.readLock().lock();
+        UnsafeHandler.getInstance().getUnsafe().loadFence();
         ret = m_pendingRequests[p_response.getRequestID() % m_pendingRequests.length];
-        m_lock.readLock().unlock();
-
-        if (ret == null) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Missing request for response " + p_response);
-            // #endif /* LOGGER >= ERROR */
-        }
 
         return ret;
     }
@@ -168,18 +167,18 @@ public final class RequestMap {
      */
     void fulfill(final Response p_response) {
         Request request;
-        long timeReceiveReponse;
+        long timeReceiveResponse;
 
         if (p_response != null) {
             p_response.setSendReceiveTimestamp(System.nanoTime());
-            timeReceiveReponse = p_response.getSendReceiveTimestamp();
+            timeReceiveResponse = p_response.getSendReceiveTimestamp();
             request = remove(p_response.getRequestID());
 
             if (request != null) {
                 request.fulfill(p_response);
 
                 // Not surrounded by statistics strings as this should always be registered
-                SOP_REQ_RESP_RTT.record(timeReceiveReponse - request.getSendReceiveTimestamp());
+                SOP_REQ_RESP_RTT.record(timeReceiveResponse - request.getSendReceiveTimestamp());
             }
         }
     }
