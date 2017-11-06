@@ -41,6 +41,7 @@ public abstract class AbstractPipeIn {
     private static final StatisticsOperation SOP_READ_HEADER = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "ReadHeader");
     private static final StatisticsOperation SOP_READ_PAYLOAD = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "ReadPayload");
     private static final StatisticsOperation SOP_WAIT_SLOT = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "WaitSlot");
+    private static final StatisticsOperation SOP_REQ_RESP_RTT = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "ReqRespRTT");
 
     private static final int BUFFER_SLOTS = 8;
 
@@ -438,7 +439,19 @@ public abstract class AbstractPipeIn {
             SOP_FULFILL.enter();
             // #endif /* STATISTICS */
 
-            m_requestMap.fulfill((Response) message);
+            long timeReceiveResponse;
+            Response response = (Response) message;
+
+            response.setSendReceiveTimestamp(System.nanoTime());
+            timeReceiveResponse = response.getSendReceiveTimestamp();
+            request = m_requestMap.remove(response.getRequestID());
+
+            if (request != null) {
+                request.fulfill(response);
+
+                // Not surrounded by statistics strings as this should always be registered
+                SOP_REQ_RESP_RTT.record(timeReceiveResponse - request.getSendReceiveTimestamp());
+            }
 
             // #ifdef STATISTICS
             SOP_FULFILL.leave();

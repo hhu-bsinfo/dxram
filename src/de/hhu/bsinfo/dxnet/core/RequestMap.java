@@ -17,8 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.utils.UnsafeHandler;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 
 /**
  * Manages pending requests
@@ -27,8 +25,6 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
  */
 public final class RequestMap {
     private static final Logger LOGGER = LogManager.getFormatterLogger(RequestMap.class.getSimpleName());
-
-    private static final StatisticsOperation SOP_REQ_RESP_RTT = StatisticsRecorderManager.getOperation(RequestMap.class, "ReqRespRTT");
 
     // Attributes
     private final Request[] m_pendingRequests;
@@ -157,29 +153,5 @@ public final class RequestMap {
         ret = m_pendingRequests[p_response.getRequestID() % m_pendingRequests.length];
 
         return ret;
-    }
-
-    /**
-     * Fulfill a Request by the given Response
-     *
-     * @param p_response
-     *         the Response
-     */
-    void fulfill(final Response p_response) {
-        Request request;
-        long timeReceiveResponse;
-
-        if (p_response != null) {
-            p_response.setSendReceiveTimestamp(System.nanoTime());
-            timeReceiveResponse = p_response.getSendReceiveTimestamp();
-            request = remove(p_response.getRequestID());
-
-            if (request != null) {
-                request.fulfill(p_response);
-
-                // Not surrounded by statistics strings as this should always be registered
-                SOP_REQ_RESP_RTT.record(timeReceiveResponse - request.getSendReceiveTimestamp());
-            }
-        }
     }
 }
