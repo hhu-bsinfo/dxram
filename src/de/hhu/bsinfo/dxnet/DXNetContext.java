@@ -100,6 +100,13 @@ public class DXNetContext {
             return true;
         }
 
+        if ((m_coreConfig.getRequestMapSize() & m_coreConfig.getRequestMapSize() - 1) != 0) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Request map size must be pow2!");
+            // #endif /* LOGGER >= ERROR */
+            return true;
+        }
+
         if (m_nioConfig.getFlowControlWindow().getBytes() * 2 > m_nioConfig.getOugoingRingBufferSize().getBytes()) {
             // #if LOGGER >= ERROR
             LOGGER.error("NIO: OS buffer size must be at least twice the size of flow control window size!");

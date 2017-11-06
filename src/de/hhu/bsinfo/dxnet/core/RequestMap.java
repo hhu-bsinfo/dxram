@@ -45,6 +45,11 @@ public final class RequestMap {
      *         the number of entries in request map
      */
     public RequestMap(final int p_size) {
+        // request map size must be pow2
+        if ((p_size & p_size - 1) != 0) {
+            throw new NetworkRuntimeException("Requests map size must be pow2, cur value: " + p_size);
+        }
+
         m_pendingRequests = new Request[p_size];
     }
 
