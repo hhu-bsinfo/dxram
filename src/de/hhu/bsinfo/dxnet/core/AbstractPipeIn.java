@@ -393,12 +393,14 @@ public abstract class AbstractPipeIn {
             Response response = (Response) message;
             request = m_requestMap.getRequest(response);
 
-            // FIXME not a good idea to abort here because there is still data
-            // in the buffers that needs to be read
-            // however, that's not possible for some responses because they
-            // need their corresponding requests for that
+            // abort if request timed out but response arrived very late
+            // which results in not finding the corresponding request anymore
+            // just drop the response because the data for it is already skipped
             if (request == null) {
-                // Request is not available, probably because of a time-out
+                // cleanup
+                updateBufferSlot(p_slot);
+                p_messageHeaderPool.returnHeader(p_header);
+
                 return null;
             }
 
