@@ -33,6 +33,10 @@ public class DXNetNodeMap implements NodeMap {
      */
     DXNetNodeMap(final short p_ownNodeID) {
         m_nodeID = p_ownNodeID;
+
+        for (int i = 0; i < m_nodeMap.length; i++) {
+            m_nodeMap[i] = new InetSocketAddress("255.255.255.255", 0xFFFF);
+        }
     }
 
     /**
