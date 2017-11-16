@@ -19,11 +19,12 @@ compile_ycsb_application_options_string_peer()
 	local ip=$1
 	local port=$2
 	local ram_size_in_mb=$3
-	local total_storage_nodes=$4
-	local total_run_nodes=$5
-	local zookeeper_string=$6
-	local insertstart=$7
-	local recordcount=$8
+	local handlers=$4
+	local total_storage_nodes=$5
+	local total_run_nodes=$6
+	local zookeeper_string=$7
+	local insertstart=$8
+	local recordcount=$9
 
 	YCSB_PARAMS=""
 
@@ -37,6 +38,10 @@ compile_ycsb_application_options_string_peer()
 	YCSB_PARAMS="$YCSB_PARAMS -p zookeeper.string=$zookeeper_string"
 	YCSB_PARAMS="$YCSB_PARAMS -p recordcount=$recordcount"
 	YCSB_PARAMS="$YCSB_PARAMS -p status.interval=1"
+
+	if [ "$handlers" != "" ]; then
+		YCSB_PARAMS="$YCSB_PARAMS -p dxram.m_config.m_componentConfigs[NetworkComponentConfig].m_core.m_numMessageHandlerThreads=$handlers"
+	fi
 
 	# parameters only used on storage instance
 	if [ "$ram_size_in_mb" != "-" ]; then
@@ -81,18 +86,19 @@ start_remote_peer()
 	local ip=$1
 	local port=$2
 	local ram_size_in_mb=$3
-	local run_as_root=$4
-	local total_storage_nodes=$5
-	local total_run_nodes=$6
-	local zookeeper_string=$7
-	local insertstart=$8
-	local recordcount=$9
-	local ycsb_type=${10}
-	local ycsb_threads=${11}
-	local ycsb_workload=${12}
-	local additional_shell_cmds="${13}"
+	local handlers=$4
+	local run_as_root=$5
+	local total_storage_nodes=$6
+	local total_run_nodes=$7
+	local zookeeper_string=$8
+	local insertstart=$9
+	local recordcount=${10}
+	local ycsb_type=${11}
+	local ycsb_threads=${12}
+	local ycsb_workload=${13}
+	local additional_shell_cmds="${14}"
 
-	compile_ycsb_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$total_run_nodes" "$zookeeper_string" "$insertstart" "$recordcount"
+	compile_ycsb_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$handlers" "$total_storage_nodes" "$total_run_nodes" "$zookeeper_string" "$insertstart" "$recordcount"
 
 	if [ "$run_as_root" != "" ] || [ "$run_as_root" == "1" ]; then
 		root="sudo -P"
@@ -136,18 +142,19 @@ start_local_peer()
 	local ip=$1
 	local port=$2
 	local ram_size_in_mb=$3
-	local run_as_root=$4
-	local total_storage_nodes=$5
-	local total_run_nodes=$6
-	local zookeeper_string=$7
-	local insertstart=$8
-	local recordcount=$9
-	local ycsb_type=${10}
-	local ycsb_threads=${11}
-	local ycsb_workload=${12}
-	local additional_shell_cmds="${13}"
+	local handlers=$4
+	local run_as_root=$5
+	local total_storage_nodes=$6
+	local total_run_nodes=$7
+	local zookeeper_string=$8
+	local insertstart=$9
+	local recordcount=${10}
+	local ycsb_type=${11}
+	local ycsb_threads=${12}
+	local ycsb_workload=${13}
+	local additional_shell_cmds="${14}"
 
-	compile_ycsb_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$total_storage_nodes" "$total_run_nodes" "$zookeeper_string" "$insertstart" "$recordcount"
+	compile_ycsb_application_options_string_peer "$ip" "$port" "$ram_size_in_mb" "$handlers" "$total_storage_nodes" "$total_run_nodes" "$zookeeper_string" "$insertstart" "$recordcount"
 
 	if [ "$run_as_root" != "" ] || [ "$run_as_root" == "1" ]; then
 		root="sudo -P"
@@ -246,6 +253,8 @@ while true; do
 		break
 	elif [ "$arg_type" = "kvss" ] ; then
 		ram_size_in_mb=`echo $tmp | cut -d '=' -f 2`
+	elif [ "$arg_type" = "handlers" ] ; then
+		handlers=`echo $tmp | cut -d '=' -f 2`
 	elif [ "$arg_type" = "cond" ] ; then
 		condition=`echo $tmp | cut -d '=' -f 2`
 		condition="$condition"
@@ -266,7 +275,7 @@ while true; do
 	elif [ "$arg_type" = "shellcmd" ]; then
 		additional_shell_cmds=`echo $tmp | cut -d '=' -f 2`
 	elif [ "$arg_type" = "root" ]; then
-		run_as_root=`echo $tmp | cut -d '=' -f 2`	
+		run_as_root=`echo $tmp | cut -d '=' -f 2`
 	else
 		echo "ERROR: Unknown parameter type $arg_type"
 	fi
@@ -280,7 +289,7 @@ fi
 if [ "$is_remote" = false ]; then
 	if [ "$(ssh ${hostname} "pgrep -f "^java.*$(echo $ip | sed -r 's/\./\\\./g').*${port}"")" != "" ]; then
 		echo "ERROR: Detected active instance ${ip}:${port} on ${hostname}"
-		exit 1	
+		exit 1
 	fi
 else
 	if [ "$(pgrep -f "^java.*$(echo $ip | sed -r 's/\./\\\./g').*${port}")" != "" ]; then
@@ -289,16 +298,16 @@ else
 	fi
 fi
 
-print=`echo "YCSB Peer $ip:$port (kvsm{$ram_size_in_mb} nodes_store{$ycsb_nodes_store} nodes_run{$ycsb_nodes_run} zk{${zookeeper_ip}:${zookeeper_port}} insertstart{$ycsb_insertstart} recordcnt{$ycsb_recordcount} type{$ycsb_type} threads{$ycsb_threads} workload{$ycsb_workload} add_shell_cmds{$additional_shell_cmds}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
+print=`echo "YCSB Peer $ip:$port (kvsm{$ram_size_in_mb} handlers{$handlers} nodes_store{$ycsb_nodes_store} nodes_run{$ycsb_nodes_run} zk{${zookeeper_ip}:${zookeeper_port}} insertstart{$ycsb_insertstart} recordcnt{$ycsb_recordcount} type{$ycsb_type} threads{$ycsb_threads} workload{$ycsb_workload} add_shell_cmds{$additional_shell_cmds}): Starting ." | tr -s ' ' | sed -e 's/ )/)/g'`
 echo -n "$print"
 
 if [ "$is_remote" = false ]; then
 	echo -n "."
-	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$run_as_root" "$ycsb_nodes_store" "$ycsb_nodes_run" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
+	start_local_peer "$ip" "$port" "$ram_size_in_mb" "$handlers" "$run_as_root" "$ycsb_nodes_store" "$ycsb_nodes_run" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
 	echo -n "."
 else
 	echo -n "."
-	start_remote_peer "$ip" "$port" "$ram_size_in_mb" "$run_as_root" "$ycsb_nodes_store" "$ycsb_nodes_run" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
+	start_remote_peer "$ip" "$port" "$ram_size_in_mb" "$handlers" "$run_as_root" "$ycsb_nodes_store" "$ycsb_nodes_run" "${zookeeper_ip}:${zookeeper_port}" "$ycsb_insertstart" "$ycsb_recordcount" "$ycsb_type" "$ycsb_threads" "$ycsb_workload" "$additional_shell_cmds" > "${LOG_DIR}/${hostname}_${port}_peer" 2>&1 &
 	echo -n "."
 fi
 
