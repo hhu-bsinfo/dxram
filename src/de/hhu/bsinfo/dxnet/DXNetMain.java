@@ -40,6 +40,7 @@ import de.hhu.bsinfo.dxnet.core.messages.BenchmarkMessage;
 import de.hhu.bsinfo.dxnet.core.messages.BenchmarkRequest;
 import de.hhu.bsinfo.dxnet.core.messages.BenchmarkResponse;
 import de.hhu.bsinfo.dxnet.core.messages.Messages;
+import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.ms.tasks.PrintStatistics;
 import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
 import de.hhu.bsinfo.dxram.util.TimeUnitGsonSerializer;
@@ -194,7 +195,8 @@ public final class DXNetMain implements MessageReceiver {
             }
         } else if ("Infiniband".equals(context.getCoreConfig().getDevice())) {
             LOGGER.debug("Loading infiniband...");
-            //DXRAMJNIManager.loadJNIModule("JNIIbdxnet");
+            // TODO: Check if file exists
+            DXRAMJNIManager.loadJNIModule("JNIIbdxnet");
         } else if ("Loopback".equals(context.getCoreConfig().getDevice())) {
             if ("server".equals(role)) {
                 System.out.println("Server role is not allowed for loopback device");
@@ -366,10 +368,10 @@ public final class DXNetMain implements MessageReceiver {
             long timeDiff = System.nanoTime() - timeStart;
             LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
             LOGGER.info("Time per message: %d ns", timeDiff / ms_messageCount);
-            LOGGER.info("Throughput: %d MB/s", (int) ((double) ms_messageCount * ms_messageSize / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000)));
-            LOGGER.info("Throughput (with overhead): %d MB/s",
-                    (int) ((double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
-                            ((double) timeDiff / 1000 / 1000 / 1000)));
+            LOGGER.info("Throughput: %f MB/s", (double) ms_messageCount * ms_messageSize / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000));
+            LOGGER.info("Throughput (with overhead): %f MB/s",
+                    (double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
+                            ((double) timeDiff / 1000 / 1000 / 1000));
         }
 
         while (!ms_remoteFinished) {
@@ -378,6 +380,11 @@ public final class DXNetMain implements MessageReceiver {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         System.exit(0);
     }
@@ -425,10 +432,10 @@ public final class DXNetMain implements MessageReceiver {
                 long timeDiff = System.nanoTime() - m_timeStart;
                 LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
                 LOGGER.info("Time per message: %d ns", timeDiff / ms_messageCount);
-                LOGGER.info("Throughput: %d MB/s", (int) ((double) ms_messageCount * ms_messageSize / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000)));
-                LOGGER.info("Throughput (with overhead): %d MB/s",
-                        (int) ((double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
-                                ((double) timeDiff / 1000 / 1000 / 1000)));
+                LOGGER.info("Throughput: %f MB/s", (double) ms_messageCount * ms_messageSize / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000));
+                LOGGER.info("Throughput (with overhead): %f MB/s",
+                        (double) ms_messageCount * (ms_messageSize + ObjectSizeUtil.sizeofCompactedNumber(ms_messageSize) + 10) / 1024 / 1024 /
+                                ((double) timeDiff / 1000 / 1000 / 1000));
 
                 ms_remoteFinished = true;
             }
