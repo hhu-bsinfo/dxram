@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.utils.stats;
 
+import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -176,7 +177,7 @@ public final class StatisticsOperation {
     }
 
     /**
-     * Record previously determined time span.
+     * Record previously determined time span. Stores all values to calculate percentiles.
      *
      * @param p_val
      *         Value to record.
@@ -195,9 +196,9 @@ public final class StatisticsOperation {
             m_mapLock.unlock();
         }
 
-        Stats stats = m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)];
+        StatsPercentile stats = (StatsPercentile) m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)];
         if (stats == null) {
-            stats = new Stats(Thread.currentThread().getName());
+            stats = new StatsPercentile(Thread.currentThread().getName());
             m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)] = stats;
         }
 
@@ -209,6 +210,8 @@ public final class StatisticsOperation {
             stats.m_longestTimeNs = p_val;
         }
         stats.m_opCount++;
+
+        stats.register(p_val);
     }
 
     /**
@@ -259,13 +262,13 @@ public final class StatisticsOperation {
      *
      * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
      */
-    private static final class Stats {
+    private static class Stats {
         private String m_threadName = "";
 
-        private long m_opCount;
-        private long m_totalTimeNs;
-        private long m_shortestTimeNs = Long.MAX_VALUE;
-        private long m_longestTimeNs = Long.MIN_VALUE;
+        long m_opCount;
+        long m_totalTimeNs;
+        long m_shortestTimeNs = Long.MAX_VALUE;
+        long m_longestTimeNs = Long.MIN_VALUE;
         private long m_counter;
         private double m_counter2;
 
@@ -278,7 +281,7 @@ public final class StatisticsOperation {
          * @param p_threadName
          *         Name of the thread
          */
-        private Stats(final String p_threadName) {
+        Stats(final String p_threadName) {
             m_threadName = p_threadName;
         }
 
@@ -396,6 +399,131 @@ public final class StatisticsOperation {
             return "Stats[" + m_threadName + "](m_opCount, " + m_opCount + ")(avgTimeMs, " + getAverageTimeMs() + ")(m_totalTimeMs, " + getTotalTimeMs() +
                     ")(m_shortestTimeMs, " + getShortestTimeMs() + ")(m_longestTimeMs, " + getLongestTimeMs() + ")(opsPerSecond, " + getOpsPerSecond() +
                     ")(m_counter, " + m_counter + ")(m_counter2, " + m_counter2 + ')';
+        }
+    }
+
+    /**
+     * Internal state for an operation storing percentiles for statistics.
+     *
+     * @author Kevin Beineke, kevin.beineke@hhu.de, 27.11.2017
+     */
+    private static final class StatsPercentile extends Stats {
+
+        private static final int SLOT_SIZE = 100000;
+
+        private ArrayList<long[]> m_slots;
+        private int m_index;
+
+        /**
+         * Constructor
+         *
+         * @param p_threadName
+         *         Name of the thread
+         */
+        private StatsPercentile(final String p_threadName) {
+            super(p_threadName);
+
+            m_slots = new ArrayList<>();
+            long[] arr = new long[SLOT_SIZE];
+            m_slots.add(arr);
+
+            m_index = 0;
+        }
+
+        /**
+         * Register value.
+         *
+         * @param p_value
+         *         the value
+         */
+        void register(final long p_value) {
+            long[] arr = m_slots.get(m_slots.size() - 1);
+            if (m_index == SLOT_SIZE) {
+                arr = new long[SLOT_SIZE];
+                m_slots.add(arr);
+                m_index = 0;
+            }
+
+            arr[m_index++] = p_value;
+        }
+
+        /**
+         * Calculate percentile.
+         *
+         * @param p_percentage
+         *         the percentage
+         * @return the percentile
+         */
+        double getPercentile(final float p_percentage) {
+            if (p_percentage <= 0.0 || p_percentage >= 1.0) {
+                throw new IllegalArgumentException("Percentage must be in (0.0, 1.0)!");
+            }
+
+            int size = (m_slots.size() - 1) * SLOT_SIZE + m_index;
+            int index = (int) Math.ceil(p_percentage * size) - 1;
+            return m_slots.get(index / SLOT_SIZE)[index % SLOT_SIZE] / 1000.0 / 1000.0;
+        }
+
+        /**
+         * Sort all registered values (ascending).
+         */
+        private void sortValues() {
+            quickSort(0, (m_slots.size() - 1) * SLOT_SIZE + m_index - 1);
+        }
+
+        /**
+         * Quicksort implementation.
+         *
+         * @param p_lowerIndex
+         *         the lower index
+         * @param p_higherIndex
+         *         the higher index
+         */
+        private void quickSort(int p_lowerIndex, int p_higherIndex) {
+            int i = p_lowerIndex;
+            int j = p_higherIndex;
+            int index = p_lowerIndex + (p_higherIndex - p_lowerIndex) / 2;
+            long pivot = m_slots.get(index / SLOT_SIZE)[index % SLOT_SIZE];
+            while (i <= j) {
+                while (m_slots.get(i / SLOT_SIZE)[i % SLOT_SIZE] < pivot) {
+                    i++;
+                }
+                while (m_slots.get(j / SLOT_SIZE)[j % SLOT_SIZE] > pivot) {
+                    j--;
+                }
+                if (i <= j) {
+                    exchangeNumbers(i, j);
+                    i++;
+                    j--;
+                }
+            }
+            if (p_lowerIndex < j) {
+                quickSort(p_lowerIndex, j);
+            }
+            if (i < p_higherIndex) {
+                quickSort(i, p_higherIndex);
+            }
+        }
+
+        /**
+         * Helper method for quicksort. Exchange two values.
+         *
+         * @param p_i
+         *         first index
+         * @param p_j
+         *         second index
+         */
+        private void exchangeNumbers(int p_i, int p_j) {
+            long temp = m_slots.get(p_i / SLOT_SIZE)[p_i % SLOT_SIZE];
+            m_slots.get(p_i / SLOT_SIZE)[p_i % SLOT_SIZE] = m_slots.get(p_j / SLOT_SIZE)[p_j % SLOT_SIZE];
+            m_slots.get(p_j / SLOT_SIZE)[p_j % SLOT_SIZE] = temp;
+        }
+
+        @Override
+        public String toString() {
+            sortValues();
+            return super.toString() + "(95th percentile, " + getPercentile(0.95f) + ")(99th percentile, " + getPercentile(0.99f) + ")(99.9th percentile, " +
+                    getPercentile(0.999f) + ')';
         }
     }
 }
