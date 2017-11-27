@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.utils.stats;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -36,7 +37,7 @@ public class StatisticsRecorder {
      * Constructor
      *
      * @param p_recorderName
-     *     Recorder name
+     *         Recorder name
      */
     StatisticsRecorder(final String p_recorderName) {
         m_recorderName = p_recorderName;
@@ -55,7 +56,7 @@ public class StatisticsRecorder {
      * Enable/disable all operations
      *
      * @param p_val
-     *     True to enable, false to disable
+     *         True to enable, false to disable
      */
     public void setAllOperationsEnabled(final boolean p_val) {
         for (StatisticsOperation op : m_operations.values()) {
@@ -72,6 +73,22 @@ public class StatisticsRecorder {
         }
     }
 
+    /**
+     * Write StatisticsOperations to files.
+     *
+     * @param p_path
+     *         the folder to write into.
+     */
+    public void writeStatisticsToFile(final String p_path) {
+        try {
+            for (StatisticsOperation op : m_operations.values()) {
+                op.writeToFile(p_path);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public String toString() {
         String str = '[' + m_recorderName + ']';
@@ -85,7 +102,7 @@ public class StatisticsRecorder {
      * Get an operation from the recorder (non existing operations are created on demand)
      *
      * @param p_name
-     *     Name of the operation
+     *         Name of the operation
      * @return StatisticsOperation
      */
     StatisticsOperation getOperation(final String p_name) {

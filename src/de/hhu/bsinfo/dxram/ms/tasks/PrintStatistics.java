@@ -87,4 +87,17 @@ public final class PrintStatistics {
         p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");
     }
+
+    /**
+     * Print the statistics to files.
+     *
+     * @param p_path
+     *         The folder to write into.
+     */
+    public static void writeStatisticsToFile(final String p_path) {
+        Collection<StatisticsRecorder> recorders = Statistics.getRecorders();
+        for (StatisticsRecorder recorder : recorders) {
+            recorder.writeStatisticsToFile(p_path);
+        }
+    }
 }

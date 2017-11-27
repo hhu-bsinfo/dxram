@@ -13,7 +13,12 @@
 
 package de.hhu.bsinfo.utils.stats;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -26,11 +31,14 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 23.03.2016
  */
 public final class StatisticsOperation {
+    private static final int PRINT_THRESHOLD = 10;
+
     public static final int INVALID_ID = -1;
     // stats per thread, avoids having locks
     private static int ms_blockSizeStatsMap = 1000;
     private String m_name;
     private boolean m_enabled = true;
+    private AtomicInteger m_numberOfStats;
     private Stats[][] m_statsMap = new Stats[10000][0];
     private int m_statsMapBlockPos;
     private Lock m_mapLock = new ReentrantLock(false);
@@ -46,6 +54,7 @@ public final class StatisticsOperation {
 
         m_statsMap[0] = new Stats[ms_blockSizeStatsMap];
         m_statsMapBlockPos = 1;
+        m_numberOfStats = new AtomicInteger(0);
     }
 
     /**
@@ -82,6 +91,7 @@ public final class StatisticsOperation {
     public void reset() {
         m_statsMap[0] = new Stats[ms_blockSizeStatsMap];
         m_statsMapBlockPos = 1;
+        m_numberOfStats.set(0);
     }
 
     /**
@@ -106,6 +116,7 @@ public final class StatisticsOperation {
         if (stats == null) {
             stats = new Stats(Thread.currentThread().getName());
             m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)] = stats;
+            m_numberOfStats.incrementAndGet();
         }
 
         stats.m_opCount++;
@@ -137,6 +148,7 @@ public final class StatisticsOperation {
         if (stats == null) {
             stats = new Stats(Thread.currentThread().getName());
             m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)] = stats;
+            m_numberOfStats.incrementAndGet();
         }
 
         stats.m_opCount++;
@@ -169,6 +181,7 @@ public final class StatisticsOperation {
         if (stats == null) {
             stats = new Stats(Thread.currentThread().getName());
             m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)] = stats;
+            m_numberOfStats.incrementAndGet();
         }
 
         stats.m_opCount++;
@@ -200,6 +213,7 @@ public final class StatisticsOperation {
         if (stats == null) {
             stats = new StatsPercentile(Thread.currentThread().getName());
             m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)] = stats;
+            m_numberOfStats.incrementAndGet();
         }
 
         stats.m_totalTimeNs += p_val;
@@ -243,14 +257,101 @@ public final class StatisticsOperation {
         }
     }
 
+    /**
+     * Write stats to files.
+     *
+     * @param p_path
+     *         the folder to write into.
+     * @throws IOException
+     *         if the file could not be opened.
+     */
+    void writeToFile(final String p_path) throws IOException {
+        FileWriter fw = new FileWriter(p_path + m_name + ".csv", true);
+        BufferedWriter bw = new BufferedWriter(fw);
+        PrintWriter out = new PrintWriter(bw);
+
+        String line;
+        Stats stats;
+        for (int i = 0; i < m_statsMapBlockPos; i++) {
+            for (int j = 0; j < ms_blockSizeStatsMap; j++) {
+                stats = m_statsMap[i][j];
+                if (stats != null) {
+                    line = stats.m_threadName + '\t' + stats.getOpCount() + '\t' + stats.getAverageTimeMs() + '\t' + stats.getShortestTimeMs() + '\t' +
+                            stats.getLongestTimeMs() + '\t' + stats.getOpsPerSecond() + '\t' + stats.getCounter() + '\t' + stats.getCounter2();
+                    if (stats instanceof StatsPercentile) {
+                        ((StatsPercentile) stats).sortValues();
+                        line += '\t' + ((StatsPercentile) stats).getPercentile(0.95f) + '\t' + ((StatsPercentile) stats).getPercentile(0.99f) + '\t' +
+                                ((StatsPercentile) stats).getPercentile(0.999f);
+                    }
+                    out.println(line);
+                }
+            }
+        }
+        out.close();
+        bw.close();
+        fw.close();
+    }
+
     @Override
     public String toString() {
         String str = '[' + m_name + " (enabled " + m_enabled + "): ";
-        for (int i = 0; i < m_statsMapBlockPos; i++) {
-            for (int j = 0; j < ms_blockSizeStatsMap; j++) {
-                if (m_statsMap[i][j] != null) {
-                    str += "\n\t\t" + m_statsMap[i][j];
+        if (m_numberOfStats.get() < PRINT_THRESHOLD) {
+            for (int i = 0; i < m_statsMapBlockPos; i++) {
+                for (int j = 0; j < ms_blockSizeStatsMap; j++) {
+                    if (m_statsMap[i][j] != null) {
+                        str += "\n\t\t" + m_statsMap[i][j];
+                    }
                 }
+            }
+        } else {
+            Stats stats;
+            double min = 0;
+            double max = 0;
+            double sum = 0;
+            double total = 0;
+            double perc95 = 0;
+            double perc99 = 0;
+            double perc999 = 0;
+            long opCount = 0;
+            long opRate = 0;
+            long counter = 0;
+            long counter2 = 0;
+            boolean percentile = false;
+            int numberOfStats = m_numberOfStats.get();
+            str += numberOfStats + " Stats recorded, printing shortened statistic: ";
+            for (int i = 0; i < m_statsMapBlockPos; i++) {
+                for (int j = 0; j < ms_blockSizeStatsMap; j++) {
+                    stats = m_statsMap[i][j];
+                    if (stats != null) {
+                        if (min == 0 || stats.getShortestTimeMs() < min) {
+                            min = stats.getShortestTimeMs();
+                        }
+                        if (stats.getLongestTimeMs() > max) {
+                            max = stats.getLongestTimeMs();
+                        }
+                        sum += stats.getAverageTimeMs();
+                        opCount += stats.getOpCount();
+                        counter += stats.getCounter();
+                        counter2 += stats.getCounter2();
+                        total += stats.getTotalTimeMs();
+                        opRate += stats.getOpsPerSecond();
+
+                        if (stats instanceof StatsPercentile) {
+                            percentile = true;
+                            ((StatsPercentile) stats).sortValues();
+                            perc95 += ((StatsPercentile) stats).getPercentile(0.95f);
+                            perc99 += ((StatsPercentile) stats).getPercentile(0.99f);
+                            perc999 += ((StatsPercentile) stats).getPercentile(0.999f);
+                        }
+                    }
+                }
+            }
+            double avg = sum / numberOfStats;
+            str += "Stats[All](m_opCount, " + opCount + ")(avgTimeMs, " + avg + ")(m_totalTimeMs, " + total + ")(m_shortestTimeMs, " + min +
+                    ")(m_longestTimeMs, " + max + ")(opsPerSecond, " + opRate / numberOfStats + ")(m_counter, " + counter + ")(m_counter2, " + counter2 + ')';
+            if (percentile) {
+                str += "(avg. 95th percentile, " + perc95 / numberOfStats + ")(avg. 99th percentile, " + perc99 / numberOfStats + ")(avg. 99.9th percentile, " +
+                        perc999 / numberOfStats + ')';
             }
         }
 

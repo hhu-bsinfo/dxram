@@ -364,6 +364,7 @@ public final class DXNetMain implements MessageReceiver {
                 LockSupport.parkNanos(100);
             }
             PrintStatistics.printStatisticsToOutput(System.out);
+            //PrintStatistics.writeStatisticsToFile("/home/beineke/dxnet/stats/" + role + '/');
 
             long timeDiff = System.nanoTime() - timeStart;
             LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
@@ -428,6 +429,7 @@ public final class DXNetMain implements MessageReceiver {
             if (m_messages.incrementAndGet() == ms_messageCount) {
                 LOGGER.info("Workload finished on receiver.");
                 PrintStatistics.printStatisticsToOutput(System.out);
+                //PrintStatistics.writeStatisticsToFile("/home/beineke/dxnet/stats/client/");
 
                 long timeDiff = System.nanoTime() - m_timeStart;
                 LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
