@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxram.ms;
 
-import de.hhu.bsinfo.utils.serialization.Exportable;
-import de.hhu.bsinfo.utils.serialization.Importable;
+import de.hhu.bsinfo.dxutils.serialization.Exportable;
+import de.hhu.bsinfo.dxutils.serialization.Importable;
 
 /**
  * Common interface for all nodes in a task script execution flow

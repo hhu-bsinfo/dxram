@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxgraph.data;
 
-import de.hhu.bsinfo.utils.serialization.Exportable;
-import de.hhu.bsinfo.utils.serialization.Importable;
+import de.hhu.bsinfo.dxutils.serialization.Exportable;
+import de.hhu.bsinfo.dxutils.serialization.Importable;
 
 /**
  * Base class for a property to be attached to a Vertex or an Edge.

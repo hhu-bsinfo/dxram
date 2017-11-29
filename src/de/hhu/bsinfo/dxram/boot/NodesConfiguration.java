@@ -16,8 +16,8 @@ package de.hhu.bsinfo.dxram.boot;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.utils.NodeID;
-import de.hhu.bsinfo.utils.unit.IPV4Unit;
+import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
  * Represents a nodes configuration for DXRAM. This also holds any information

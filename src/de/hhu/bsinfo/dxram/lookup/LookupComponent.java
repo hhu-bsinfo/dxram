@@ -43,9 +43,9 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.sync.SynchronizationServiceConfig;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageServiceConfig;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.utils.ArrayListLong;
-import de.hhu.bsinfo.utils.Cache;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
+import de.hhu.bsinfo.dxutils.Cache;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Component for finding chunks in superpeer overlay.

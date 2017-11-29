@@ -4,7 +4,7 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.app.AbstractApplication;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * "Hello world" example DXRAM application

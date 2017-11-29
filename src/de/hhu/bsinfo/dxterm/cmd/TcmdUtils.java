@@ -6,7 +6,7 @@ import java.util.List;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxterm.TerminalServiceAccessor;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Created by nothaas on 5/26/17.

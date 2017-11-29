@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxnet.core;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Common configuration values for the core parts of the network subsystem

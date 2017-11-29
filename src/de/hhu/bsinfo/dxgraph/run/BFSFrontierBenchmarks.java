@@ -26,8 +26,8 @@ import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.HalfConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.TreeSetFifo;
-import de.hhu.bsinfo.utils.eval.EvaluationTables;
-import de.hhu.bsinfo.utils.eval.Stopwatch;
+import de.hhu.bsinfo.dxutils.eval.EvaluationTables;
+import de.hhu.bsinfo.dxutils.eval.Stopwatch;
 
 /**
  * Benchmark and compare execution time of various frontier lists used for BFS in dxgraph.

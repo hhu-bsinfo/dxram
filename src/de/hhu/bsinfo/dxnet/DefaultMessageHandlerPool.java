@@ -20,8 +20,8 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxnet.core.MessageHeader;
 import de.hhu.bsinfo.dxnet.core.MessageHeaderPool;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 
 /**
  * Distributes incoming default messages
@@ -30,8 +30,9 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
  */
 final class DefaultMessageHandlerPool {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DefaultMessageHandlerPool.class.getSimpleName());
-    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Push");
-    private static final StatisticsOperation SOP_WAIT = StatisticsRecorderManager.getOperation(DefaultMessageHandlerPool.class, "Wait");
+    private static final String RECORDER = "DXNet-MessageHeaderStore";
+    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(RECORDER, "Push");
+    private static final StatisticsOperation SOP_WAIT = StatisticsRecorderManager.getOperation(RECORDER, "Wait");
 
     // must be a power of two to work with wrap around
     private static final int SIZE_MESSAGE_STORE = 16 * 1024;
@@ -112,12 +113,14 @@ final class DefaultMessageHandlerPool {
 
         if (!m_defaultMessageHeaders.pushMessageHeaders(p_headers, p_messages)) {
             for (int i = 0; i < p_messages; i++) {
-                while (!m_defaultMessageHeaders.pushMessageHeader(p_headers[i])) {
+                if (!m_defaultMessageHeaders.pushMessageHeader(p_headers[i])) {
                     // #ifdef STATISTICS
                     SOP_WAIT.enter();
                     // #endif /* STATISTICS */
 
-                    LockSupport.parkNanos(100);
+                    while (!m_defaultMessageHeaders.pushMessageHeader(p_headers[i])) {
+                        LockSupport.parkNanos(100);
+                    }
 
                     // #ifdef STATISTICS
                     SOP_WAIT.leave();

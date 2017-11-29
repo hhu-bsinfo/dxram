@@ -23,7 +23,7 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Implementation of the lock component interface. This provides a peer side locking i.e.

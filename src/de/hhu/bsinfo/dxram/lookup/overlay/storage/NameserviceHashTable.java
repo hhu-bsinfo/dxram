@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
-import de.hhu.bsinfo.utils.CRC16;
+import de.hhu.bsinfo.dxutils.CRC16;
 
 /**
  * HashTable to store ID-Mappings (Linear probing)

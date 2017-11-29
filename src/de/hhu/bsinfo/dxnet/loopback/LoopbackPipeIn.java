@@ -14,7 +14,6 @@
 package de.hhu.bsinfo.dxnet.loopback;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.locks.LockSupport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,15 +26,14 @@ import de.hhu.bsinfo.dxnet.core.IncomingBufferQueue;
 import de.hhu.bsinfo.dxnet.core.MessageDirectory;
 import de.hhu.bsinfo.dxnet.core.MessageHeaderPool;
 import de.hhu.bsinfo.dxnet.core.RequestMap;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 
 /**
  * Created by nothaas on 6/9/17.
  */
 public class LoopbackPipeIn extends AbstractPipeIn {
-    private static final StatisticsOperation COPY = StatisticsRecorderManager.getOperation(LoopbackPipeIn.class, "Copy");
-    private static final StatisticsOperation WAITING_FULL = StatisticsRecorderManager.getOperation(LoopbackPipeIn.class, "WaitingFull");
+    private static final StatisticsOperation SOP_COPY = StatisticsRecorderManager.getOperation("DXNet-Loopback", "Copy");
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeIn.class.getSimpleName());
 
@@ -75,7 +73,7 @@ public class LoopbackPipeIn extends AbstractPipeIn {
         buffer = directBufferWrapper.getBuffer();
 
         // #ifdef STATISTICS
-        COPY.enter();
+        SOP_COPY.enter();
         // #endif /* STATISTICS */
 
         if (buffer.remaining() >= p_buffer.remaining()) {
@@ -92,21 +90,10 @@ public class LoopbackPipeIn extends AbstractPipeIn {
         buffer.flip();
 
         // #ifdef STATISTICS
-        COPY.leave();
+        SOP_COPY.leave();
         // #endif /* STATISTICS */
 
-        // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
-        while (!m_incomingBufferQueue.pushBuffer(m_parentConnection, directBufferWrapper, 0, directBufferWrapper.getAddress(), ret)) {
-            // #ifdef STATISTICS
-            WAITING_FULL.enter();
-            // #endif /* STATISTICS */
-
-            LockSupport.parkNanos(100);
-
-            // #ifdef STATISTICS
-            WAITING_FULL.leave();
-            // #endif /* STATISTICS */
-        }
+        m_incomingBufferQueue.pushBuffer(m_parentConnection, directBufferWrapper, 0, directBufferWrapper.getAddress(), ret);
 
         return ret;
     }

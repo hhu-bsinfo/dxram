@@ -16,9 +16,9 @@ package de.hhu.bsinfo.dxgraph.data;
 import java.util.Arrays;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.utils.serialization.Exporter;
-import de.hhu.bsinfo.utils.serialization.Importer;
-import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.dxutils.serialization.Exporter;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Object representation of a vertex with a static list of neighbours.

@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.soh;
 
-import de.hhu.bsinfo.utils.UnsafeMemory;
+import de.hhu.bsinfo.dxutils.UnsafeMemory;
 
 /**
  * Implementation of a storage based on an unsafe allocated

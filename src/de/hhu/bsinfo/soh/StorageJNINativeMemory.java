@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.soh;
 
-import de.hhu.bsinfo.utils.JNINativeMemory;
+import de.hhu.bsinfo.dxutils.jni.JNINativeMemory;
 
 /**
  * Storage implementation for JNINativeMemory

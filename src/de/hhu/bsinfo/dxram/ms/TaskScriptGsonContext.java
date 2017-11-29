@@ -22,10 +22,10 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
-import de.hhu.bsinfo.dxram.util.TimeUnitGsonSerializer;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
-import de.hhu.bsinfo.utils.unit.TimeUnit;
+import de.hhu.bsinfo.dxutils.StorageUnitGsonSerializer;
+import de.hhu.bsinfo.dxutils.TimeUnitGsonSerializer;
+import de.hhu.bsinfo.dxutils.unit.StorageUnit;
+import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

@@ -20,7 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxnet.ConnectionManagerListener;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Abstract class for a connection manager. Manage connections to keep only a max amount of connections

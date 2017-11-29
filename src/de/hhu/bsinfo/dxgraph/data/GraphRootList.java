@@ -16,9 +16,9 @@ package de.hhu.bsinfo.dxgraph.data;
 import java.util.Arrays;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.utils.serialization.Exporter;
-import de.hhu.bsinfo.utils.serialization.Importer;
-import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.dxutils.serialization.Exporter;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * List of root vertex ids used as entry points for various graph algorithms.

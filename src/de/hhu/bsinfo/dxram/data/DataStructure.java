@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxram.data;
 
-import de.hhu.bsinfo.utils.serialization.Exportable;
-import de.hhu.bsinfo.utils.serialization.Importable;
+import de.hhu.bsinfo.dxutils.serialization.Exportable;
+import de.hhu.bsinfo.dxutils.serialization.Importable;
 
 /**
  * Base class for any kind of data structure that can be stored to and read from

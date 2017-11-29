@@ -39,8 +39,8 @@ import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.utils.JNIFileRaw;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * This service provides all recovery functionality.

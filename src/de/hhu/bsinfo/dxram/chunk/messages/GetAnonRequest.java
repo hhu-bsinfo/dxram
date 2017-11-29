@@ -18,7 +18,7 @@ import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
-import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Request for getting an anonymous chunk from a remote node. The size of a chunk is _NOT_ known prior fetching the data

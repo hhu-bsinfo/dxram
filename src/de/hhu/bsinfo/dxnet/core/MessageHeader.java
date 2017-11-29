@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxnet.core;
 
-import de.hhu.bsinfo.utils.serialization.Importable;
-import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.serialization.Importable;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
 
 /**
  * Used to import message headers.
@@ -145,10 +145,10 @@ public class MessageHeader implements Importable {
      * @throws NetworkException
      *         it the message type/subtype is invalid
      */
-    public Message createAndFillMessage(final MessageImporterCollection p_importerCollection, final LocalMessageHeaderPool p_messageHeaderPool)
+    public Message createAndImportMessage(final MessageImporterCollection p_importerCollection, final LocalMessageHeaderPool p_messageHeaderPool)
             throws NetworkException {
         return m_pipeIn
-                .createAndFillMessage(this, m_address, m_currentPosition, m_bytesAvailable, m_unfinishedOperation, p_importerCollection, p_messageHeaderPool,
+                .createAndImportMessage(this, m_address, m_currentPosition, m_bytesAvailable, m_unfinishedOperation, p_importerCollection, p_messageHeaderPool,
                         m_slot);
     }
 

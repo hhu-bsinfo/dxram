@@ -19,9 +19,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
-import de.hhu.bsinfo.utils.RandomUtils;
+import de.hhu.bsinfo.dxutils.RandomUtils;
 
 /**
  * Btree to cache ranges

@@ -16,7 +16,6 @@ package de.hhu.bsinfo.dxnet.ib;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.concurrent.locks.LockSupport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,10 +35,10 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.NetworkRuntimeException;
 import de.hhu.bsinfo.dxnet.core.RequestMap;
 import de.hhu.bsinfo.dxnet.core.StaticExporterPool;
-import de.hhu.bsinfo.utils.ByteBufferHelper;
-import de.hhu.bsinfo.utils.NodeID;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.ByteBufferHelper;
+import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 
 /**
  * Connection manager for infiniband (note: this is the main class for the IB subsystem in the java space)
@@ -49,7 +48,7 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 public class IBConnectionManager extends AbstractConnectionManager implements JNIIbdxnet.SendHandler, JNIIbdxnet.RecvHandler, JNIIbdxnet.ConnectionHandler {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IBConnectionManager.class.getSimpleName());
 
-    private static final StatisticsOperation SOP_SEND_NEXT_DATA = StatisticsRecorderManager.getOperation(IBConnectionManager.class, "SendNextData");
+    private static final StatisticsOperation SOP_SEND_NEXT_DATA = StatisticsRecorderManager.getOperation("DXNet-IBConnectionManager", "SendNextData");
 
     private final CoreConfig m_coreConfig;
     private final IBConfig m_config;
@@ -372,15 +371,7 @@ public class IBConnectionManager extends AbstractConnectionManager implements JN
             return;
         }
 
-        // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
-        while (!m_incomingBufferQueue.pushBuffer(connection, null, p_bufferHandle, p_addr, p_length)) {
-            // #if LOGGER == TRACE
-            LOGGER.trace("Message creator: IncomingBuffer queue is full!");
-            // #endif /* LOGGER == TRACE */
-
-            //Thread.yield();
-            LockSupport.parkNanos(100);
-        }
+        m_incomingBufferQueue.pushBuffer(connection, null, p_bufferHandle, p_addr, p_length);
     }
 
     @Override

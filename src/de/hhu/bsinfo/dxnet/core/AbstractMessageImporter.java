@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.dxnet.core;
 
-import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
 
 /**
  * Abstraction of an Importer for network messages.

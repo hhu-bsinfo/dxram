@@ -18,8 +18,8 @@ import java.util.ArrayList;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
-import de.hhu.bsinfo.utils.NodeID;
-import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Response to a JoinRequest

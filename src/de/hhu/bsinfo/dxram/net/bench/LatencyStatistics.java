@@ -1,7 +1,7 @@
 package de.hhu.bsinfo.dxram.net.bench;
 
-import de.hhu.bsinfo.utils.eval.Stopwatch;
-import de.hhu.bsinfo.utils.unit.TimeUnit;
+import de.hhu.bsinfo.dxutils.eval.Stopwatch;
+import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
  * Created by nothaas on 7/3/17.

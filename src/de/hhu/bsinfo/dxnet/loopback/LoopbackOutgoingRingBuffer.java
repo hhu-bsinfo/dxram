@@ -17,8 +17,8 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxnet.core.AbstractExporterPool;
 import de.hhu.bsinfo.dxnet.core.OutgoingRingBuffer;
-import de.hhu.bsinfo.utils.ByteBufferHelper;
-import de.hhu.bsinfo.utils.UnsafeMemory;
+import de.hhu.bsinfo.dxutils.ByteBufferHelper;
+import de.hhu.bsinfo.dxutils.UnsafeMemory;
 
 /**
  * Created by nothaas on 7/17/17.

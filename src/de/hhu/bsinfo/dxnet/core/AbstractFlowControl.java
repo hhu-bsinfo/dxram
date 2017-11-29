@@ -19,6 +19,9 @@ import java.util.concurrent.locks.LockSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
+
 /**
  * Software flow control. Avoids that the sender is flooding the receiver if the receiver can't
  * keep up with processing the incoming buffers, deserializing and distpatching the messages.
@@ -29,6 +32,7 @@ import org.apache.logging.log4j.Logger;
  */
 public abstract class AbstractFlowControl {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractFlowControl.class.getSimpleName());
+    private static final StatisticsOperation SOP_WAIT = StatisticsRecorderManager.getOperation("DXNet-FlowControl", "Wait");
 
     private final short m_destinationNodeID;
 
@@ -83,8 +87,18 @@ public abstract class AbstractFlowControl {
         LOGGER.trace("flowControlDataToSend (%X): %d", m_destinationNodeID, p_writtenBytes);
         // #endif /* LOGGER >= TRACE */
 
-        while (m_unconfirmedBytes.get() > m_flowControlWindowSize) {
-            LockSupport.parkNanos(100);
+        if (m_unconfirmedBytes.get() > m_flowControlWindowSize) {
+            // #ifdef STATISTICS
+            SOP_WAIT.enter();
+            // #endif /* STATISTICS */
+
+            while (m_unconfirmedBytes.get() > m_flowControlWindowSize) {
+                LockSupport.parkNanos(100);
+            }
+
+            // #ifdef STATISTICS
+            SOP_WAIT.leave();
+            // #endif /* STATISTICS */
         }
 
         m_unconfirmedBytes.addAndGet(p_writtenBytes);

@@ -4,7 +4,7 @@ import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
+import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 
 /**
  * Config for the TemporaryStorageService

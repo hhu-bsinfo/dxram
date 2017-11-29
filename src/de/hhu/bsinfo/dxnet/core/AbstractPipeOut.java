@@ -18,9 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.utils.UnsafeHandler;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.UnsafeHandler;
 
 /**
  * Endpoint for outgoing data on a connection.
@@ -28,8 +26,6 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 09.06.2017
  */
 public abstract class AbstractPipeOut {
-    private static final StatisticsOperation SOP_FC_DATA_TO_SEND = StatisticsRecorderManager.getOperation(AbstractPipeOut.class, "FCDataToSend");
-
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeOut.class.getSimpleName());
 
     private final short m_ownNodeID;
@@ -142,16 +138,7 @@ public abstract class AbstractPipeOut {
                     "parallelism when messages are received and processed", messageTotalSize);
             // #endif /* LOGGER >= WARN */
         }
-
-        // #ifdef STATISTICS
-        SOP_FC_DATA_TO_SEND.enter();
-        // #endif /* STATISTICS */
-
         m_flowControl.dataToSend(messageTotalSize);
-
-        // #ifdef STATISTICS
-        SOP_FC_DATA_TO_SEND.leave();
-        // #endif /* STATISTICS */
 
         m_sentMessages.incrementAndGet();
         m_sentData.addAndGet(messageTotalSize);

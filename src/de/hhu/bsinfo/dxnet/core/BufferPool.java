@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.utils.ByteBufferHelper;
+import de.hhu.bsinfo.dxutils.ByteBufferHelper;
 
 /**
  * Pools incoming buffers (native memory) in different sizes (used for NIO and Loopback)

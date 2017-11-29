@@ -18,14 +18,13 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.log.LogComponent;
-import de.hhu.bsinfo.utils.RandomUtils;
+import de.hhu.bsinfo.dxutils.RandomUtils;
 
 /**
  * Reorganization thread

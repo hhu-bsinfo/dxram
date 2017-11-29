@@ -37,9 +37,9 @@ import de.hhu.bsinfo.dxnet.loopback.LoopbackConfig;
 import de.hhu.bsinfo.dxnet.loopback.LoopbackConnectionManager;
 import de.hhu.bsinfo.dxnet.nio.NIOConfig;
 import de.hhu.bsinfo.dxnet.nio.NIOConnectionManager;
-import de.hhu.bsinfo.utils.NodeID;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 
 /**
  * DXNet main class. The network subsystem supports different types of transport. Ethernet using Java NIO and InfiniBand using libibverbs through an
@@ -53,9 +53,10 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
  */
 public final class DXNet {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXNet.class.getSimpleName());
-    private static final StatisticsOperation SOP_SEND = StatisticsRecorderManager.getOperation(DXNet.class, "MessageSend");
-    private static final StatisticsOperation SOP_SEND_SYNC = StatisticsRecorderManager.getOperation(DXNet.class, "MessageSendSync");
-    private static final StatisticsOperation SOP_WAIT_RESPONSE = StatisticsRecorderManager.getOperation(DXNet.class, "WaitForResponse");
+    private static final String RECORDER = "DXNet";
+    private static final StatisticsOperation SOP_SEND = StatisticsRecorderManager.getOperation(RECORDER, "Send");
+    private static final StatisticsOperation SOP_SEND_SYNC = StatisticsRecorderManager.getOperation(RECORDER, "SendSync");
+    private static final StatisticsOperation SOP_WAIT_RESPONSE = StatisticsRecorderManager.getOperation(RECORDER, "WaitForResponse");
 
     private static final int MESSAGE_HEADER_POOL_SIZE = 1024 * 1024;
     private static final int OVERPROVISIONING_OFFSET = 25;
@@ -428,6 +429,10 @@ public final class DXNet {
             SOP_WAIT_RESPONSE.leave();
             // #endif /* STATISTICS */
 
+            // #ifdef STATISTICS
+            SOP_SEND_SYNC.leave();
+            // #endif /* STATISTICS */
+
             // #if LOGGER >= ERROR
             LOGGER.error("Sending sync, waiting for responses to %s failed, timeout: %d ms", p_request, timeout);
             // #endif /* LOGGER >= ERROR */
@@ -438,6 +443,10 @@ public final class DXNet {
         } catch (final NetworkResponseCancelledException e) {
             // #ifdef STATISTICS
             SOP_WAIT_RESPONSE.leave();
+            // #endif /* STATISTICS */
+
+            // #ifdef STATISTICS
+            SOP_SEND_SYNC.leave();
             // #endif /* STATISTICS */
 
             // #if LOGGER >= TRACE

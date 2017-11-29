@@ -15,8 +15,8 @@ package de.hhu.bsinfo.dxram.data;
 
 import java.security.InvalidParameterException;
 
-import de.hhu.bsinfo.utils.serialization.Exporter;
-import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.serialization.Exporter;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
 
 /**
  * Implementation of a data structure based on a generic byte array

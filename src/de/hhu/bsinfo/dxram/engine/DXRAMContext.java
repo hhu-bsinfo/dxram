@@ -22,7 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.utils.unit.IPV4Unit;
+import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
  * Context object with settings for the engine as well as component and service instances

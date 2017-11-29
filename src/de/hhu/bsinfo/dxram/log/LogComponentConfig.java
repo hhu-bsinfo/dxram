@@ -6,7 +6,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponentConfig;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
+import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 
 /**
  * Config for the LogComponent

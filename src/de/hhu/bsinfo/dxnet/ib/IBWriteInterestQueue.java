@@ -15,7 +15,7 @@ package de.hhu.bsinfo.dxnet.ib;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Queue to keep track of nodes with available interests. The caller has to ensure

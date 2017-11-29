@@ -119,9 +119,9 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.utils.ArrayListLong;
-import de.hhu.bsinfo.utils.CRC16;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
+import de.hhu.bsinfo.dxutils.CRC16;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Superpeer functionality for overlay

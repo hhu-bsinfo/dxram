@@ -20,8 +20,8 @@ import java.io.RandomAccessFile;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
-import de.hhu.bsinfo.utils.JNIFileDirect;
-import de.hhu.bsinfo.utils.JNIFileRaw;
+import de.hhu.bsinfo.dxutils.jni.JNIFileDirect;
+import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
 
 /**
  * Skeleton for a log

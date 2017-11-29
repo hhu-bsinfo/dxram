@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
-import de.hhu.bsinfo.utils.ArrayListLong;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
 
 /**
  * Message for removing a Chunk on a remote node

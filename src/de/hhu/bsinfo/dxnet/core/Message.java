@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxnet.core;
 import java.nio.BufferOverflowException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Represents a network message

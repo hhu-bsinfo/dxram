@@ -31,12 +31,12 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.utils.BloomFilter;
-import de.hhu.bsinfo.utils.CRC16;
-import de.hhu.bsinfo.utils.NodeID;
-import de.hhu.bsinfo.utils.ZooKeeperHandler;
-import de.hhu.bsinfo.utils.ZooKeeperHandler.ZooKeeperException;
-import de.hhu.bsinfo.utils.unit.IPV4Unit;
+import de.hhu.bsinfo.dxutils.BloomFilter;
+import de.hhu.bsinfo.dxutils.CRC16;
+import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.ZooKeeperHandler;
+import de.hhu.bsinfo.dxutils.ZooKeeperHandler.ZooKeeperException;
+import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
  * Implementation of the BootComponent interface with zookeeper.

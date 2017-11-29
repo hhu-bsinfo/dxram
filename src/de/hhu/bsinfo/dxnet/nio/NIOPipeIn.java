@@ -16,7 +16,6 @@ package de.hhu.bsinfo.dxnet.nio;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.locks.LockSupport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,16 +28,18 @@ import de.hhu.bsinfo.dxnet.core.IncomingBufferQueue;
 import de.hhu.bsinfo.dxnet.core.MessageDirectory;
 import de.hhu.bsinfo.dxnet.core.MessageHeaderPool;
 import de.hhu.bsinfo.dxnet.core.RequestMap;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 
 /**
  * Created by nothaas on 6/9/17.
  */
 class NIOPipeIn extends AbstractPipeIn {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeIn.class.getSimpleName());
-    private static final StatisticsOperation SOP_READ = StatisticsRecorderManager.getOperation(NIOPipeIn.class, "NIORead");
-    private static final StatisticsOperation SOP_WRITE_FLOW_CONTROL = StatisticsRecorderManager.getOperation(NIOPipeIn.class, "NIOWriteFlowControl");
+
+    private static final String RECORDER = "DXNet-NIO";
+    private static final StatisticsOperation SOP_READ = StatisticsRecorderManager.getOperation(RECORDER, "Read");
+    private static final StatisticsOperation SOP_WRITE_FLOW_CONTROL = StatisticsRecorderManager.getOperation(RECORDER, "WriteFC");
 
     private SocketChannel m_incomingChannel;
     private final BufferPool m_bufferPool;
@@ -114,14 +115,7 @@ class NIOPipeIn extends AbstractPipeIn {
                 LOGGER.trace("Posting receive buffer (limit %d) to connection 0x%X", buffer.limit(), getDestinationNodeID());
                 // #endif /* LOGGER >= TRACE */
 
-                // Avoid congestion by not allowing more than m_numberOfBuffers buffers to be cached for reading
-                while (!m_incomingBufferQueue.pushBuffer(m_parentConnection, directBufferWrapper, 0, directBufferWrapper.getAddress(), buffer.remaining())) {
-                    // #if LOGGER == WARN
-                    LOGGER.warn("Network-Selector: IncomingBuffer queue is full!");
-                    // #endif /* LOGGER == WARN */
-
-                    LockSupport.parkNanos(100);
-                }
+                m_incomingBufferQueue.pushBuffer(m_parentConnection, directBufferWrapper, 0, directBufferWrapper.getAddress(), buffer.remaining());
 
                 break;
             }

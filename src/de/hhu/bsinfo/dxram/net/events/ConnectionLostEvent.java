@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.net.events;
 
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * An event for connection loss. Triggered by NIOSelector-Thread.

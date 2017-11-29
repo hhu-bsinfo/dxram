@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.engine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.utils.OSValidator;
+import de.hhu.bsinfo.dxutils.OSValidator;
 
 /**
  * Separate class to avoid further bloating of DXRAMEngine to setup JNI related things (used by DXRAMEngine).

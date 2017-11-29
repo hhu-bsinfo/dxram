@@ -6,7 +6,7 @@ import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.utils.unit.TimeUnit;
+import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
  * Config for the MasterSlaveComputeService

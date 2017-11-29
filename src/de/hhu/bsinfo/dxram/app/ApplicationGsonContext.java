@@ -27,10 +27,10 @@ import com.google.gson.JsonSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
-import de.hhu.bsinfo.dxram.util.TimeUnitGsonSerializer;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
-import de.hhu.bsinfo.utils.unit.TimeUnit;
+import de.hhu.bsinfo.dxutils.StorageUnitGsonSerializer;
+import de.hhu.bsinfo.dxutils.TimeUnitGsonSerializer;
+import de.hhu.bsinfo.dxutils.unit.StorageUnit;
+import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
  * Gson context for applications handling serialization and deserialization of configuration values

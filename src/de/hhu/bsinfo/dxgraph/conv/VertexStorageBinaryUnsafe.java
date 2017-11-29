@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxgraph.conv;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.utils.UnsafeHandler;
+import de.hhu.bsinfo.dxutils.UnsafeHandler;
 
 /**
  * Space efficient and multi threaded optimized storage for vertex data.

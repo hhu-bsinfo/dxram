@@ -15,9 +15,9 @@ package de.hhu.bsinfo.dxgraph.conv;
 
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-import de.hhu.bsinfo.utils.main.AbstractMain;
+import de.hhu.bsinfo.dxgraph.util.args.ArgumentList;
+import de.hhu.bsinfo.dxgraph.util.args.ArgumentList.Argument;
+import de.hhu.bsinfo.dxgraph.util.AbstractMain;
 
 /**
  * Base class for all graph converters.

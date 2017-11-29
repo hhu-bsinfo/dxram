@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
-import de.hhu.bsinfo.utils.RandomUtils;
+import de.hhu.bsinfo.dxutils.RandomUtils;
 
 /**
  * Collection of chunk related utility functions used by tasks

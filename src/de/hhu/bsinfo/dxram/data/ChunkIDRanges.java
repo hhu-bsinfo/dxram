@@ -13,11 +13,11 @@
 
 package de.hhu.bsinfo.dxram.data;
 
-import de.hhu.bsinfo.utils.ArrayListLong;
-import de.hhu.bsinfo.utils.serialization.Exportable;
-import de.hhu.bsinfo.utils.serialization.Exporter;
-import de.hhu.bsinfo.utils.serialization.Importable;
-import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
+import de.hhu.bsinfo.dxutils.serialization.Exportable;
+import de.hhu.bsinfo.dxutils.serialization.Exporter;
+import de.hhu.bsinfo.dxutils.serialization.Importable;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
 
 /**
  * Store one or multiple chunk ID ranges. All longs are treated unsigned!

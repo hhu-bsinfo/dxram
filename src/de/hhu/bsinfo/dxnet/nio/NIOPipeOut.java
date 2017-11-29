@@ -25,16 +25,18 @@ import de.hhu.bsinfo.dxnet.core.AbstractFlowControl;
 import de.hhu.bsinfo.dxnet.core.AbstractPipeOut;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.OutgoingRingBuffer;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 
 /**
  * Created by nothaas on 6/9/17.
  */
 public class NIOPipeOut extends AbstractPipeOut {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NIOPipeOut.class.getSimpleName());
-    private static final StatisticsOperation SOP_WRITE = StatisticsRecorderManager.getOperation(NIOPipeOut.class, "NIOWrite");
-    private static final StatisticsOperation SOP_READ_FLOW_CONTROL = StatisticsRecorderManager.getOperation(NIOPipeOut.class, "NIOReadFlowControl");
+
+    private static final String RECORDER = "DXNet-NIO";
+    private static final StatisticsOperation SOP_WRITE = StatisticsRecorderManager.getOperation(RECORDER, "Write");
+    private static final StatisticsOperation SOP_READ_FLOW_CONTROL = StatisticsRecorderManager.getOperation(RECORDER, "ReadFC");
 
     private final int m_bufferSize;
 
@@ -148,6 +150,11 @@ public class NIOPipeOut extends AbstractPipeOut {
 
             if (readBytes == -1) {
                 // Channel was closed
+
+                // #ifdef STATISTICS
+                SOP_READ_FLOW_CONTROL.leave();
+                // #endif /* STATISTICS */
+
                 return;
             }
 

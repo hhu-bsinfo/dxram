@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxnet.core;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.utils.UnsafeHandler;
+import de.hhu.bsinfo.dxutils.UnsafeHandler;
 
 /**
  * Manages pending requests

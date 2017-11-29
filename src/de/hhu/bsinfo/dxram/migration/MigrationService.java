@@ -39,8 +39,8 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.utils.ArrayListLong;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Migration service providing migration of chunks.

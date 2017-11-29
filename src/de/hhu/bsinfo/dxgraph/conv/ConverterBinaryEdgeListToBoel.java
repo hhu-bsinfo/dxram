@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.dxgraph.conv;
 
-import de.hhu.bsinfo.utils.main.AbstractMain;
+import de.hhu.bsinfo.dxgraph.util.AbstractMain;
 
 /**
  * Multi threaded converter, expecting edge list in binary form:

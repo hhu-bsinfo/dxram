@@ -24,8 +24,8 @@ import de.hhu.bsinfo.dxnet.core.MessageHeader;
 import de.hhu.bsinfo.dxnet.core.MessageHeaderPool;
 import de.hhu.bsinfo.dxnet.core.MessageImporterCollection;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 
 /**
  * Executes incoming default messages
@@ -34,9 +34,9 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
  */
 final class MessageHandler extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(MessageHandler.class.getSimpleName());
-    private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(MessageHandler.class, "Pop");
-    private static final StatisticsOperation SOP_CREATE = StatisticsRecorderManager.getOperation(MessageHandler.class, "Create");
-    private static final StatisticsOperation SOP_EXECUTE = StatisticsRecorderManager.getOperation(MessageHandler.class, "Execute");
+    private static final String RECORDER = "DXNet-MessageHandler";
+    private static final StatisticsOperation SOP_CREATE = StatisticsRecorderManager.getOperation(RECORDER, "CreateAndImport");
+    private static final StatisticsOperation SOP_EXECUTE = StatisticsRecorderManager.getOperation(RECORDER, "Execute");
 
     // optimized values determined by experiments
     private static final int THRESHOLD_TIME_CHECK = 100000;
@@ -91,15 +91,7 @@ final class MessageHandler extends Thread {
         MessageReceiver messageReceiver;
 
         while (!m_shutdown) {
-            // #ifdef STATISTICS
-            SOP_POP.enter();
-            // #endif /* STATISTICS */
-
             header = m_defaultMessages.popMessageHeader();
-
-            // #ifdef STATISTICS
-            SOP_POP.leave();
-            // #endif /* STATISTICS */
 
             if (header == null) {
                 if (++counter >= THRESHOLD_TIME_CHECK) {
@@ -122,7 +114,7 @@ final class MessageHandler extends Thread {
             // #endif /* STATISTICS */
 
             try {
-                message = header.createAndFillMessage(m_importers, m_messageHeaderPool);
+                message = header.createAndImportMessage(m_importers, m_messageHeaderPool);
             } catch (NetworkException e) {
                 e.printStackTrace();
                 continue;

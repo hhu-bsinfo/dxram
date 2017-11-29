@@ -15,8 +15,8 @@ package de.hhu.bsinfo.dxgraph.data;
 
 import java.util.Arrays;
 
-import de.hhu.bsinfo.utils.serialization.Exporter;
-import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.serialization.Exporter;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
 
 /**
  * Created by nothaas on 9/9/16.

@@ -18,3 +18,5 @@ dxram.iml
 out/*
 /tmp/
 /app/
+/util/statistics.pdf
+/stats/

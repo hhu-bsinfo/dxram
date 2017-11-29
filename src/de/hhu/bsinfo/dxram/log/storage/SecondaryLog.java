@@ -37,11 +37,11 @@ import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.ChecksumHandler;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
-import de.hhu.bsinfo.utils.ArrayListLong;
-import de.hhu.bsinfo.utils.JNIFileDirect;
-import de.hhu.bsinfo.utils.JNIFileRaw;
-import de.hhu.bsinfo.utils.NodeID;
-import de.hhu.bsinfo.utils.RandomUtils;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
+import de.hhu.bsinfo.dxutils.jni.JNIFileDirect;
+import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
+import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.RandomUtils;
 
 /**
  * This class implements the secondary log

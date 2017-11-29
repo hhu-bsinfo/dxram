@@ -13,7 +13,7 @@
 
 package de.hhu.bsinfo.dxram.log.header;
 
-import de.hhu.bsinfo.utils.JNINativeCRCGenerator;
+import de.hhu.bsinfo.dxutils.jni.JNINativeCRCGenerator;
 
 /**
  * Helper class for generating 32-bit checksums.

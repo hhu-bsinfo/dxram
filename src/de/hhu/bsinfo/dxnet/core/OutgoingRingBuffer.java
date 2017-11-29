@@ -18,9 +18,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 
-import de.hhu.bsinfo.utils.UnsafeHandler;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.UnsafeHandler;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 
 /**
  * Lock-free ring buffer implementation for outgoing messages. The implementation allows many threads to
@@ -30,11 +30,11 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.05.2016
  */
 public class OutgoingRingBuffer {
-    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "Push");
-    private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "Pop");
-    private static final StatisticsOperation SOP_WAIT_FULL = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "WaitFull");
-    private static final StatisticsOperation SOP_SHIFT_BACK = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "ShiftFront");
-    private static final StatisticsOperation SOP_BUFFER_POSTED = StatisticsRecorderManager.getOperation(OutgoingRingBuffer.class, "BufferPosted");
+    private static final String RECORDER = "DXNet-ORB";
+    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(RECORDER, "Push");
+    private static final StatisticsOperation SOP_WAIT_FULL = StatisticsRecorderManager.getOperation(RECORDER, "WaitFull");
+    private static final StatisticsOperation SOP_BUFFER_POSTED = StatisticsRecorderManager.getOperation(RECORDER, "BufferPosted");
+    private static final StatisticsOperation SOP_SHIFT_BACK = StatisticsRecorderManager.getOperation(RECORDER, "ShiftBack");
 
     private static final int MAX_CONCURRENT_THREADS = 1000;
 
@@ -449,10 +449,6 @@ public class OutgoingRingBuffer {
         int posBack;
         int posBackRelative;
 
-        // #ifdef STATISTICS
-        SOP_POP.enter();
-        // #endif /* STATISTICS */
-
         posFront = (int) m_posFrontConsumer.get();
         posFrontRelative = posFront % m_bufferSize;
         posBack = m_posBack;
@@ -461,10 +457,6 @@ public class OutgoingRingBuffer {
         if (posFrontRelative < posBackRelative) {
             posFrontRelative = m_bufferSize;
         }
-
-        // #ifdef STATISTICS
-        SOP_POP.leave();
-        // #endif /* STATISTICS */
 
         return (long) posFrontRelative << 32 | (long) posBackRelative;
     }

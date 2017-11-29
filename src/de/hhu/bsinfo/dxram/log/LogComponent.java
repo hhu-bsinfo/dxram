@@ -53,9 +53,9 @@ import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.utils.JNIFileRaw;
-import de.hhu.bsinfo.utils.NodeID;
-import de.hhu.bsinfo.utils.StringUtils;
+import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
+import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.StringUtils;
 
 /**
  * This service provides access to the backend storage system.

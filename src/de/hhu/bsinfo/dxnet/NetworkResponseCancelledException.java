@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxnet;
 
 import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.utils.NodeID;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Exception if a request was sent but the response delivery was cancelled.

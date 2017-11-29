@@ -40,14 +40,14 @@ import de.hhu.bsinfo.dxnet.core.messages.BenchmarkMessage;
 import de.hhu.bsinfo.dxnet.core.messages.BenchmarkRequest;
 import de.hhu.bsinfo.dxnet.core.messages.BenchmarkResponse;
 import de.hhu.bsinfo.dxnet.core.messages.Messages;
-import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.ms.tasks.PrintStatistics;
-import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
-import de.hhu.bsinfo.dxram.util.TimeUnitGsonSerializer;
-import de.hhu.bsinfo.utils.UnsafeHandler;
-import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
-import de.hhu.bsinfo.utils.unit.StorageUnit;
-import de.hhu.bsinfo.utils.unit.TimeUnit;
+import de.hhu.bsinfo.dxutils.StorageUnitGsonSerializer;
+import de.hhu.bsinfo.dxutils.TimeUnitGsonSerializer;
+import de.hhu.bsinfo.dxutils.UnsafeHandler;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.dxutils.stats.ExportStatistics;
+import de.hhu.bsinfo.dxutils.stats.PrintStatistics;
+import de.hhu.bsinfo.dxutils.unit.StorageUnit;
+import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
  * Execution: java -Dlog4j.configurationFile=config/log4j.xml -cp lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:dxram.jar de.hhu.bsinfo.dxnet.DXNetMain config/dxram.json Loopback 127.0.0.1
@@ -56,6 +56,7 @@ public final class DXNetMain implements MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXNetMain.class.getSimpleName());
 
     private static final boolean POOLING = true;
+    private static final boolean EXPORT_STATISTICS = true;
 
     private static DXNet ms_dxnet;
 
@@ -195,8 +196,8 @@ public final class DXNetMain implements MessageReceiver {
             }
         } else if ("Infiniband".equals(context.getCoreConfig().getDevice())) {
             LOGGER.debug("Loading infiniband...");
-            // TODO: Check if file exists
-            DXRAMJNIManager.loadJNIModule("JNIIbdxnet");
+
+            System.load(System.getProperty("user.dir") + "/jni/libJNIIbdxnet.so");
         } else if ("Loopback".equals(context.getCoreConfig().getDevice())) {
             if ("server".equals(role)) {
                 System.out.println("Server role is not allowed for loopback device");
@@ -363,8 +364,12 @@ public final class DXNetMain implements MessageReceiver {
             while (!ms_dxnet.isRequestMapEmpty()) {
                 LockSupport.parkNanos(100);
             }
-            PrintStatistics.printStatisticsToOutput(System.out);
-            //PrintStatistics.writeStatisticsToFile("/home/beineke/dxnet/stats/" + role + '/');
+
+            if (EXPORT_STATISTICS) {
+                ExportStatistics.writeStatisticsToFile(System.getProperty("user.dir") + "/stats/DXNetMain/" + role + '/');
+            } else {
+                PrintStatistics.printStatisticsToOutput(System.out);
+            }
 
             long timeDiff = System.nanoTime() - timeStart;
             LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);
@@ -428,8 +433,12 @@ public final class DXNetMain implements MessageReceiver {
         } else {
             if (m_messages.incrementAndGet() == ms_messageCount) {
                 LOGGER.info("Workload finished on receiver.");
-                PrintStatistics.printStatisticsToOutput(System.out);
-                //PrintStatistics.writeStatisticsToFile("/home/beineke/dxnet/stats/client/");
+
+                if (EXPORT_STATISTICS) {
+                    ExportStatistics.writeStatisticsToFile(System.getProperty("user.dir") + "/stats/DXNetMain/client/");
+                } else {
+                    PrintStatistics.printStatisticsToOutput(System.out);
+                }
 
                 long timeDiff = System.nanoTime() - m_timeStart;
                 LOGGER.info("Runtime: %d ms", timeDiff / 1000 / 1000);

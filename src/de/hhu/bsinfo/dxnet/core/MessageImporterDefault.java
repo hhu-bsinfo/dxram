@@ -13,8 +13,8 @@
 
 package de.hhu.bsinfo.dxnet.core;
 
-import de.hhu.bsinfo.utils.UnsafeMemory;
-import de.hhu.bsinfo.utils.serialization.Importable;
+import de.hhu.bsinfo.dxutils.UnsafeMemory;
+import de.hhu.bsinfo.dxutils.serialization.Importable;
 
 /**
  * Implementation of an Importer for network messages.

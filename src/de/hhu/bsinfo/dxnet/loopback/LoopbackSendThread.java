@@ -20,7 +20,7 @@ import java.util.concurrent.locks.LockSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.utils.UnsafeHandler;
+import de.hhu.bsinfo.dxutils.UnsafeHandler;
 
 /**
  * Manages the network connections

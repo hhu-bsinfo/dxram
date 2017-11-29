@@ -34,9 +34,9 @@ import de.hhu.bsinfo.dxram.net.messages.NetworkMessages;
 import de.hhu.bsinfo.dxram.net.messages.NetworkTestMessage;
 import de.hhu.bsinfo.dxram.net.messages.NetworkTestRequest;
 import de.hhu.bsinfo.dxram.net.messages.NetworkTestResponse;
-import de.hhu.bsinfo.utils.serialization.Exporter;
-import de.hhu.bsinfo.utils.serialization.Importer;
-import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.dxutils.serialization.Exporter;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Task to benchmark/test network communication of nodes using the network interface

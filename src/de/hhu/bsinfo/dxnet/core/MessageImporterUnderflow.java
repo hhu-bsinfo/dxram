@@ -15,9 +15,9 @@ package de.hhu.bsinfo.dxnet.core;
 
 import java.nio.charset.StandardCharsets;
 
-import de.hhu.bsinfo.utils.UnsafeMemory;
-import de.hhu.bsinfo.utils.serialization.Importable;
-import de.hhu.bsinfo.utils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.dxutils.UnsafeMemory;
+import de.hhu.bsinfo.dxutils.serialization.Importable;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Implementation of an Importer for network messages, used after overflow.

@@ -21,10 +21,10 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxnet.MessageHandlers;
 import de.hhu.bsinfo.dxnet.core.messages.Messages;
-import de.hhu.bsinfo.utils.NodeID;
-import de.hhu.bsinfo.utils.UnsafeMemory;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.UnsafeMemory;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 
 /**
  * Endpoint for incoming data on a connection.
@@ -34,14 +34,11 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 public abstract class AbstractPipeIn {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPipeIn.class.getSimpleName());
 
-    private static final StatisticsOperation SOP_PROCESS = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "ProcessBuffer");
-    private static final StatisticsOperation SOP_DELIVER = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "DeliverMessage");
-    private static final StatisticsOperation SOP_FULFILL = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "FulfillRequest");
-    private static final StatisticsOperation SOP_CREATE_MESSAGE = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "CreateMessage");
-    private static final StatisticsOperation SOP_READ_HEADER = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "ReadHeader");
-    private static final StatisticsOperation SOP_READ_PAYLOAD = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "ReadPayload");
-    private static final StatisticsOperation SOP_WAIT_SLOT = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "WaitSlot");
-    private static final StatisticsOperation SOP_REQ_RESP_RTT = StatisticsRecorderManager.getOperation(AbstractPipeIn.class, "ReqRespRTT");
+    private static final String RECORDER = "DXNet-PipeIn";
+    private static final StatisticsOperation SOP_PROCESS = StatisticsRecorderManager.getOperation(RECORDER, "ProcessBuffer");
+    private static final StatisticsOperation SOP_FULFILL = StatisticsRecorderManager.getOperation(RECORDER, "FulfillRequest");
+    private static final StatisticsOperation SOP_WAIT_SLOT = StatisticsRecorderManager.getOperation(RECORDER, "WaitSlot");
+    private static final StatisticsOperation SOP_REQ_RESP_RTT = StatisticsRecorderManager.getOperation(RECORDER, "ReqRespRTT");
 
     private static final int BUFFER_SLOTS = 8;
 
@@ -207,11 +204,6 @@ public abstract class AbstractPipeIn {
 
             if (m_unfinishedOperation.isEmpty() || !m_unfinishedOperation.wasMessageCreated()) {
                 // Skip reading header only if message payload could not be read entirely (only relevant for first iteration)
-
-                // #ifdef STATISTICS
-                SOP_READ_HEADER.enter();
-                // #endif /* STATISTICS */
-
                 if (currentPosition + Message.HEADER_SIZE - m_unfinishedOperation.getBytesCopied() > bytesAvailable) {
                     // End of current data stream in importer, incomplete header
                     readHeader(messageHeader, currentPosition, address, bytesAvailable, m_unfinishedOperation, m_importers);
@@ -231,10 +223,6 @@ public abstract class AbstractPipeIn {
                     m_unfinishedOperation.incrementBytesCopied(bytesAvailable - currentPosition);
                     m_unfinishedOperation.setMessageHeader(messageHeader);
 
-                    // #ifdef STATISTICS
-                    SOP_READ_HEADER.leave();
-                    // #endif /* STATISTICS */
-
                     break;
                 }
 
@@ -249,10 +237,6 @@ public abstract class AbstractPipeIn {
                     m_unfinishedOperation = m_slotUnfinishedOperations[slotUnfinishedOperation];
                     m_unfinishedOperation.reset();
                 }
-
-                // #ifdef STATISTICS
-                SOP_READ_HEADER.leave();
-                // #endif /* STATISTICS */
             }
 
             // Ignore network test messages (e.g. ping after response delay). Default messages do not have a payload.
@@ -268,7 +252,7 @@ public abstract class AbstractPipeIn {
                 // Last message is separated -> take over creation to provide message reference for next buffer
 
                 Message message =
-                        createAndFillMessage(messageHeader, address, currentPosition, bytesAvailable, m_unfinishedOperation, m_importers, m_messageHeaderPool,
+                        createAndImportMessage(messageHeader, address, currentPosition, bytesAvailable, m_unfinishedOperation, m_importers, m_messageHeaderPool,
                                 m_slotPosition);
 
                 if (!m_unfinishedOperation.isEmpty()) {
@@ -292,10 +276,6 @@ public abstract class AbstractPipeIn {
 
             // Delegate to message handlers
 
-            // #ifdef STATISTICS
-            SOP_DELIVER.enter();
-            // #endif /* STATISTICS */
-
             if (m_unfinishedOperation.isEmpty()) {
                 messageHeader.setMessageInformation(this, m_dummyOperation, address, currentPosition, bytesAvailable, slot);
                 currentPosition += payloadSize;
@@ -312,10 +292,6 @@ public abstract class AbstractPipeIn {
                 messageCounter.addAndGet(m_messageHandlerPoolSize);
             }
             m_receivedMessages++;
-
-            // #ifdef STATISTICS
-            SOP_DELIVER.leave();
-            // #endif /* STATISTICS */
 
             if (bytesAvailable == currentPosition) {
                 // Buffer fully processed
@@ -356,23 +332,14 @@ public abstract class AbstractPipeIn {
      * @throws NetworkException
      *         if de-serialization failed
      */
-    Message createAndFillMessage(final MessageHeader p_header, final long p_address, final int p_currentPosition, final int p_bytesAvailable,
+    Message createAndImportMessage(final MessageHeader p_header, final long p_address, final int p_currentPosition, final int p_bytesAvailable,
             final UnfinishedImExporterOperation p_unfinishedOperation, final MessageImporterCollection p_importerCollection,
             final LocalMessageHeaderPool p_messageHeaderPool, final int p_slot) throws NetworkException {
         Message message;
 
         if (p_unfinishedOperation.isEmpty() || !p_unfinishedOperation.wasMessageCreated()) {
             // Create a new message
-
-            // #ifdef STATISTICS
-            SOP_CREATE_MESSAGE.enter();
-            // #endif /* STATISTICS */
-
             message = createMessage(p_header, p_currentPosition, p_address, p_bytesAvailable, p_importerCollection);
-
-            // #ifdef STATISTICS
-            SOP_CREATE_MESSAGE.leave();
-            // #endif /* STATISTICS */
         } else {
             // Continue with partly de-serialized message
             message = p_unfinishedOperation.getMessage();
@@ -408,36 +375,19 @@ public abstract class AbstractPipeIn {
             response.setCorrespondingRequest(request);
         }
 
-        // #ifdef STATISTICS
-        SOP_READ_PAYLOAD.enter();
-        // #endif /* STATISTICS */
-
         if (!readPayload(p_currentPosition, message, p_address, p_bytesAvailable, p_header.getPayloadSize(), p_unfinishedOperation, p_importerCollection)) {
             // Message could not be completely de-serialized
-
-            // #ifdef STATISTICS
-            SOP_READ_PAYLOAD.leave();
-            // #endif /* STATISTICS */
-
             return message;
         }
 
         updateBufferSlot(p_slot);
         p_messageHeaderPool.returnHeader(p_header);
 
-        // #ifdef STATISTICS
-        SOP_READ_PAYLOAD.leave();
-        // #endif /* STATISTICS */
-
         if (message.isResponse()) {
             if (request == null) {
                 // Request is not available, probably because of a time-out
                 return null;
             }
-
-            // #ifdef STATISTICS
-            SOP_FULFILL.enter();
-            // #endif /* STATISTICS */
 
             long timeReceiveResponse;
             Response response = (Response) message;
@@ -447,15 +397,20 @@ public abstract class AbstractPipeIn {
             request = m_requestMap.remove(response.getRequestID());
 
             if (request != null) {
+
+                // #ifdef STATISTICS
+                SOP_FULFILL.enter();
+                // #endif /* STATISTICS */
+
                 request.fulfill(response);
+
+                // #ifdef STATISTICS
+                SOP_FULFILL.leave();
+                // #endif /* STATISTICS */
 
                 // Not surrounded by statistics strings as this should always be registered
                 SOP_REQ_RESP_RTT.record(timeReceiveResponse - request.getSendReceiveTimestamp());
             }
-
-            // #ifdef STATISTICS
-            SOP_FULFILL.leave();
-            // #endif /* STATISTICS */
 
             return null;
         } else {

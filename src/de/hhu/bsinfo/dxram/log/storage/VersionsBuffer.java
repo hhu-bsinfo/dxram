@@ -27,8 +27,8 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
-import de.hhu.bsinfo.utils.JNIFileDirect;
-import de.hhu.bsinfo.utils.JNIFileRaw;
+import de.hhu.bsinfo.dxutils.jni.JNIFileDirect;
+import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
 
 /**
  * HashTable to store versions (Linear probing)

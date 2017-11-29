@@ -14,13 +14,14 @@
 package de.hhu.bsinfo.dxnet.core;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.utils.UnsafeHandler;
-import de.hhu.bsinfo.utils.stats.StatisticsOperation;
-import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.UnsafeHandler;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 
 /**
  * The IncomingBufferQueue stored incoming buffers from all connections.
@@ -32,8 +33,8 @@ import de.hhu.bsinfo.utils.stats.StatisticsRecorderManager;
 public class IncomingBufferQueue {
     private static final Logger LOGGER = LogManager.getFormatterLogger(IncomingBufferQueue.class.getSimpleName());
 
-    private static final StatisticsOperation SOP_PUSH = StatisticsRecorderManager.getOperation(IncomingBufferQueue.class, "IncomingBufferQueuePush");
-    private static final StatisticsOperation SOP_POP = StatisticsRecorderManager.getOperation(IncomingBufferQueue.class, "IncomingBufferQueuePop");
+    private static final String RECORDER = "DXNet-IBQ";
+    private static final StatisticsOperation SOP_WAIT_PUSH = StatisticsRecorderManager.getOperation(RECORDER, "WaitPush");
 
     // must be a power of two to work with wrap around
     private static final int SIZE = 2 * 2 * 1024;
@@ -88,11 +89,6 @@ public class IncomingBufferQueue {
      * Removes one buffer from queue.
      */
     IncomingBuffer popBuffer() {
-
-        // #ifdef STATISTICS
-        SOP_POP.enter();
-        // #endif /* STATISTICS */
-
         UnsafeHandler.getInstance().getUnsafe().loadFence();
         if (m_posBack == m_posFront) {
             // Empty
@@ -106,10 +102,6 @@ public class IncomingBufferQueue {
         // & 0x7FFFFFFF kill sign
         m_posBack = m_posBack + 1 & 0x7FFFFFFF;
         m_currentBytes.addAndGet(-size); // Includes storeFence()
-
-        // #ifdef STATISTICS
-        SOP_POP.leave();
-        // #endif /* STATISTICS */
 
         return m_incomingBuffer;
     }
@@ -127,27 +119,37 @@ public class IncomingBufferQueue {
      *         (Unsafe) address to the incoming buffer
      * @param p_size
      *         Size of the incoming buffer
-     * @return whether the job was added or not
      */
-    public boolean pushBuffer(final AbstractConnection p_connection, final BufferPool.DirectBufferWrapper p_directBufferWrapper, final long p_bufferHandle,
+    public void pushBuffer(final AbstractConnection p_connection, final BufferPool.DirectBufferWrapper p_directBufferWrapper, final long p_bufferHandle,
             final long p_addr, final int p_size) {
         int front;
-
-        // #ifdef STATISTICS
-        SOP_PUSH.enter();
-        // #endif /* STATISTICS */
 
         if (p_size == 0) {
             // #if LOGGER >= WARN
             LOGGER.warn("Buffer size must not be 0. Incoming buffer is discarded.");
             // #endif /* LOGGER >= WARN */
 
-            return true;
+            return;
         }
 
-        if (m_currentBytes.get() >= m_maxBytes || (m_posBack + SIZE & 0x7FFFFFFF) == m_posFront) { // m_currentBytes.get() includes loadFence()
-            // Return without adding the job if queue is full or too many bytes are pending
-            return false;
+        if (m_currentBytes.get() >= m_maxBytes || (m_posBack + SIZE & 0x7FFFFFFF) == m_posFront) {
+            // Avoid congestion by not allowing more than a predefined number of buffers to be cached for importing
+
+            // #if LOGGER == WARN
+            LOGGER.warn("IBQ is full!");
+            // #endif /* LOGGER == WARN */
+
+            // #ifdef STATISTICS
+            SOP_WAIT_PUSH.enter();
+            // #endif /* STATISTICS */
+
+            while (m_currentBytes.get() >= m_maxBytes || (m_posBack + SIZE & 0x7FFFFFFF) == m_posFront) {
+                LockSupport.parkNanos(100);
+            }
+
+            // #ifdef STATISTICS
+            SOP_WAIT_PUSH.leave();
+            // #endif /* STATISTICS */
         }
 
         front = m_posFront % SIZE;
@@ -160,12 +162,6 @@ public class IncomingBufferQueue {
         // & 0x7FFFFFFF kill sign
         m_posFront = m_posFront + 1 & 0x7FFFFFFF;
         m_currentBytes.addAndGet(p_size); // Includes storeFence()
-
-        // #ifdef STATISTICS
-        SOP_PUSH.leave();
-        // #endif /* STATISTICS */
-
-        return true;
     }
 
     /**

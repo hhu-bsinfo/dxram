@@ -15,8 +15,8 @@ package de.hhu.bsinfo.dxnet.nio;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.utils.unit.StorageUnit;
-import de.hhu.bsinfo.utils.unit.TimeUnit;
+import de.hhu.bsinfo.dxutils.unit.StorageUnit;
+import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
  * Dedicated configuration values for NIO
