@@ -1,3 +1,6 @@
 [submodule "wiki"]
 	path = wiki
 	url = git@git.hhu.de:kebei100/dxram.wiki.git
+[submodule "src/de/hhu/bsinfo/dxutils"]
+	path = src/de/hhu/bsinfo/dxutils
+	url = https://github.com/hhu-bsinfo/dxutils.git
