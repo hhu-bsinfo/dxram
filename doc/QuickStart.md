@@ -16,6 +16,11 @@ DXRAM in the "lib" folder:
 * sl4j-log4j12 for Zookeeper
 * ZooKeeper (3.4.3) for DXRAM
 
+DXRAM uses submodules like dxutils and dxnet. Make sure to load them as well after cloning:
+```
+git submodule update --init --recursive
+```
+
 # ZooKeeper
 Download, install and setup [ZooKeeper](https://zookeeper.apache.org/).
 See System Requirements in the admin guide of ZooKeeper (a packaged
