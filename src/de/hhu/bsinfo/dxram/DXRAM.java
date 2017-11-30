@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.dxram;
 
 import java.net.InetSocketAddress;
+import java.util.Locale;
 
 import de.hhu.bsinfo.dxram.app.ApplicationComponent;
 import de.hhu.bsinfo.dxram.app.ApplicationService;
@@ -74,6 +75,7 @@ public final class DXRAM {
      * Constructor
      */
     public DXRAM() {
+        Locale.setDefault(new Locale("en", "US"));
         m_engine = new DXRAMEngine(VERSION);
         registerComponents(m_engine);
         registerServices(m_engine);
