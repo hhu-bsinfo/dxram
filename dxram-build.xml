@@ -4,18 +4,35 @@
     <import file="dxram-build-config.xml"/>
 
     <target name="all"
-            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-debug, compile-release,
+            depends="git_submodule, clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-debug, compile-release,
              compile-performance"
             description="builds all files"/>
     <target name="debug"
-            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-debug"
+            depends="git_submodule, clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-debug"
             description="builds dxram-debug.jar (contains all logger calls)"/>
     <target name="release"
-            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-release"
+            depends="git_submodule, clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-release"
             description="builds dxram-release-jar"/>
     <target name="performance"
-            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-performance"
+            depends="git_submodule, clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, copy_script, create_log, compile-performance"
             description="builds dxram-performance.jar (without any logger calls)"/>
+
+    <target name="git_submodule" depends="check_dirs" unless="dirs_contain-files">
+        <echo message="DXNet and/or DXUtils directories are empty -> getting submodules"/>
+        <exec executable="git">
+            <arg value="submodule"/>
+            <arg value="update"/>
+            <arg value="--init"/>
+            <arg value="--recursive"/>
+        </exec>
+    </target>
+
+    <target name="check_dirs">
+        <fileset dir="src/de/hhu/bsinfo/dxnet" id="fileset1"/>
+        <fileset dir="src/de/hhu/bsinfo/dxutils" id="fileset2"/>
+        <pathconvert refid="fileset1" property="dirs_contain-files" setonempty="false"/>
+        <pathconvert refid="fileset2" property="dirs_contain-files" setonempty="false"/>
+    </target>
 
     <target name="clean-all" description="removes all created files and folders">
         <delete dir="${build_proj_dir}" failonerror="false"/>
