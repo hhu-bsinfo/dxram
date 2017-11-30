@@ -34,8 +34,8 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.BloomFilter;
 import de.hhu.bsinfo.dxutils.CRC16;
 import de.hhu.bsinfo.dxutils.NodeID;
-import de.hhu.bsinfo.dxutils.ZooKeeperHandler;
-import de.hhu.bsinfo.dxutils.ZooKeeperHandler.ZooKeeperException;
+import de.hhu.bsinfo.dxram.util.ZooKeeperHandler;
+import de.hhu.bsinfo.dxram.util.ZooKeeperHandler.ZooKeeperException;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**

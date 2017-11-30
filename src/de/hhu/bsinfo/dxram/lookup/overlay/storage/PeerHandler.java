@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
-import de.hhu.bsinfo.dxutils.ArrayListLong;
+import de.hhu.bsinfo.dxram.util.ArrayListLong;
 
 /**
  * Wrapper class for all data belonging to one peer: One Btree to store ranges, one to store backup range affiliation and an ArrayList for the backup ranges

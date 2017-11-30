@@ -37,7 +37,7 @@ import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.ChecksumHandler;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
-import de.hhu.bsinfo.dxutils.ArrayListLong;
+import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxutils.jni.JNIFileDirect;
 import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
 import de.hhu.bsinfo.dxutils.NodeID;

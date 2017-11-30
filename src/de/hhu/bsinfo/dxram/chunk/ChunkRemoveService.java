@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.dxutils.ArrayListLong;
+import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
