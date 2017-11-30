@@ -3,12 +3,14 @@
 plot_data_series()
 {
 	local column_x=1
-	local x_axis_title="Statistics"	
+	local x_axis_title="Statistics"
+	local width=$(echo "scale=2; $ELEMENTS/2+(2/$ELEMENTS)" | bc)
+	local width=${width%.*}
 	local height=$((PLOTS * 3))
 	
 	# Generate gnuplot script
 	local plot_script="set output \"${OUTPUT_FILE}\"
-		set terminal pdf size $ELEMENTS,$height font \"Helvetica,6\"
+		set terminal pdf size $width,$height font \"Helvetica,6\"
 		set multiplot layout $PLOTS, 1 scale 1, 1
 		set offsets 0, 0, 0.2, 0
 		set decimal \".\"
@@ -94,7 +96,7 @@ process_data()
 		done < $file
 	done
 	
-	ELEMENTS=$((`cat tmp.csv | wc -l` / 2))
+	ELEMENTS=$((`cat tmp.csv | wc -l`))
 	
 	sort tmp.csv > tmp_sorted.csv
 }
