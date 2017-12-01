@@ -1,5 +1,4 @@
-/bin/de
-/bin/generated
+/bin
 /build/
 .checkstyle
 .classpath
