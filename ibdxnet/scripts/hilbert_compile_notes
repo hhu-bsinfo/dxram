@@ -1,2 +1,0 @@
-- add /software/java/1.8.0_25/include/ and /software/java/1.8.0_25/include/linux to cmakefile of jni module
-- remove usage of backward, requires elflibs and would be pain to install that
