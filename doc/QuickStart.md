@@ -118,13 +118,15 @@ by using [various terminal commands](Terminal.md).
 If you want to use InfiniBand instead of Ethernet network:
 * You need a cluster with InfiniBand hardware and software stack
 installed
-* Follow the instructions in the [*ibdxnet* subfolder](../ibdxnet/README.md) to compile the *JNIIbdxnet* library.
+* Follow the instructions in the
+[*ibdxnet* repository](https://github.com/hhu-bsinfo/ibdxnet) to
+compile the *JNIIbdxnet* library.
 * Put the *libJNIIbdxnet.so* file into the *jni* subfolder on your
 deployed dxram instance(s)
 * Open the *dxram.conf* and enable InfiniBand
 (under *NetworkComponentConfig/m_core*):
 ```
-"m_infiniband": true
+"m_device": "Infiniband"
 ```
 * Deploy your instances
 
