@@ -11,9 +11,24 @@ import de.hhu.bsinfo.dxnet.DXNetMain;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 
-public class PlacementTester {
+/**
+ * Class for testing the placement strategies.
+ */
+public final class PlacementTester {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXNetMain.class.getSimpleName());
 
+    /**
+     * Unused constructor.
+     */
+    private PlacementTester() {
+    }
+
+    /**
+     * Main
+     *
+     * @param p_args
+     *         program arguments
+     */
     public static void main(String[] p_args) {
         int replicationFactor;
         boolean disjunctive;
@@ -58,7 +73,7 @@ public class PlacementTester {
         ArrayList<BackupPeer> initialSetOfPeers = new ArrayList<>(availablePeers.size());
         initialSetOfPeers.addAll(availablePeers);
 
-        //AbstractPlacementStrategy strategy = new RandomPlacement(replicationFactor, disjunctive, rackAware, switchAware);
+        /* Replace class here to switch placement strategy */
         AbstractPlacementStrategy strategy = new CopysetPlacement(replicationFactor, disjunctive, rackAware, switchAware);
         if (!strategy.initialize(initialSetOfPeers)) {
             strategy = new RandomPlacement(replicationFactor, disjunctive, rackAware, switchAware);
