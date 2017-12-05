@@ -15,10 +15,11 @@ package de.hhu.bsinfo.dxram.chunk;
 
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
+import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -26,8 +27,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Component for chunk handling.
@@ -58,10 +57,6 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
      */
     public boolean putMigratedChunks(final long[] p_chunkIDs, final byte[][] p_data) {
         short rangeID = 0;
-        int logEntrySize;
-        long size = 0;
-        long cutChunkID = ChunkID.INVALID_ID;
-        short[] backupPeers = null;
         BackupRange backupRange;
         ArrayList<BackupRange> backupRanges;
         ArrayList<Long> cutChunkIDs;
@@ -142,7 +137,7 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
         int counter = 1;
         short rangeID;
         long cutChunkID;
-        short[] backupPeers;
+        BackupPeer[] backupPeers;
         BackupRange backupRange;
 
         backupRange = p_backupRanges.get(0);
@@ -161,10 +156,10 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
                 rangeID = backupRange.getRangeID();
             }
 
-            for (short backupPeer : backupPeers) {
-                if (backupPeer != NodeID.INVALID_ID) {
+            for (BackupPeer backupPeer : backupPeers) {
+                if (backupPeer != null) {
                     try {
-                        m_network.sendMessage(new LogMessage(backupPeer, rangeID, new DSByteArray(p_chunkIDs[i], p_data[i])));
+                        m_network.sendMessage(new LogMessage(backupPeer.getNodeID(), rangeID, new DSByteArray(p_chunkIDs[i], p_data[i])));
                     } catch (final NetworkException ignore) {
 
                     }

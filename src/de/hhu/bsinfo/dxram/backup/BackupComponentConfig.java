@@ -28,7 +28,16 @@ public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
     private byte m_replicationFactor = 3;
 
     @Expose
-    private boolean m_forceDisjunctiveFirstBackupPeers = false;
+    private String m_backupPlacementStrategy = "Random";
+
+    @Expose
+    private boolean m_disjunctiveFirstBackupPeer = true;
+
+    @Expose
+    private boolean m_rackAware = false;
+
+    @Expose
+    private boolean m_switchAware = false;
 
     /**
      * Constructor
@@ -75,10 +84,34 @@ public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
     }
 
     /**
-     * Defines whether the first backup peer for every backup range is chosen randomly or disjunctive
+     * The backup placement strategy
+     * "Random": all backup peers are selected randomly
+     * "Copyset": copyset replication
+     * "LocationAware"
      */
-    public boolean getForceDisjunctiveFirstBackupPeers() {
-        return m_forceDisjunctiveFirstBackupPeers;
+    String getBackupPlacementStrategy() {
+        return m_backupPlacementStrategy;
+    }
+
+    /**
+     * If true, the first backup peer is selected disjunctive
+     */
+    boolean disjunctiveFirstBackupPeer() {
+        return m_disjunctiveFirstBackupPeer;
+    }
+
+    /**
+     * If true, in every set of backup peers all backup peers are from another rack, if possible
+     */
+    boolean rackAware() {
+        return m_rackAware;
+    }
+
+    /**
+     * If true, in every set of backup peers all backup peers are behind another switch, if possible
+     */
+    boolean switchAware() {
+        return m_switchAware;
     }
 
     @Override

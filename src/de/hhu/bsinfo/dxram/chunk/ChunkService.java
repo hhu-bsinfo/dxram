@@ -18,8 +18,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
+import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
@@ -52,13 +56,10 @@ import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * This service provides access to the backend storage system.
@@ -665,21 +666,21 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         // Send backups
         if (m_backup.isActive()) {
             BackupRange backupRange;
-            short[] backupPeers;
+            BackupPeer[] backupPeers;
             DataStructure[] dataStructures;
             for (Entry<BackupRange, ArrayList<DataStructure>> entry : remoteChunksByBackupRange.entrySet()) {
                 backupRange = entry.getKey();
                 dataStructures = entry.getValue().toArray(new DataStructure[entry.getValue().size()]);
 
                 backupPeers = backupRange.getBackupPeers();
-                for (short backupPeer : backupPeers) {
-                    if (backupPeer != NodeID.INVALID_ID) {
+                for (BackupPeer backupPeer : backupPeers) {
+                    if (backupPeer != null) {
                         // #if LOGGER == TRACE
-                        LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeer);
+                        LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeer.getNodeID());
                         // #endif /* LOGGER == TRACE */
 
                         try {
-                            m_network.sendMessage(new LogMessage(backupPeer, backupRange.getRangeID(), dataStructures));
+                            m_network.sendMessage(new LogMessage(backupPeer.getNodeID(), backupRange.getRangeID(), dataStructures));
                         } catch (final NetworkException ignore) {
 
                         }
@@ -1246,21 +1247,21 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         // Send backups
         if (m_backup.isActive()) {
             BackupRange backupRange;
-            short[] backupPeers;
+            BackupPeer[] backupPeers;
             DataStructure[] dataStructures;
             for (Entry<BackupRange, ArrayList<DataStructure>> entry : remoteChunksByBackupRange.entrySet()) {
                 backupRange = entry.getKey();
                 dataStructures = entry.getValue().toArray(new DataStructure[entry.getValue().size()]);
 
                 backupPeers = backupRange.getBackupPeers();
-                for (short backupPeer : backupPeers) {
-                    if (backupPeer != NodeID.INVALID_ID) {
+                for (BackupPeer backupPeer : backupPeers) {
+                    if (backupPeer != null) {
                         // #if LOGGER == TRACE
-                        LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeer);
+                        LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeer.getNodeID());
                         // #endif /* LOGGER == TRACE */
 
                         try {
-                            m_network.sendMessage(new LogMessage(backupPeer, backupRange.getRangeID(), dataStructures));
+                            m_network.sendMessage(new LogMessage(backupPeer.getNodeID(), backupRange.getRangeID(), dataStructures));
                         } catch (final NetworkException ignore) {
 
                         }

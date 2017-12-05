@@ -16,28 +16,28 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import de.hhu.bsinfo.dxnet.core.Response;
 
 /**
- * Response to a PeerJoinEventRequest
+ * Response to a NodeJoinEventRequest
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.04.2017
  */
-public class PeerJoinEventResponse extends Response {
+public class NodeJoinEventResponse extends Response {
 
     // Constructors
 
     /**
-     * Creates an instance of PeerJoinEventResponse
+     * Creates an instance of NodeJoinEventResponse
      */
-    public PeerJoinEventResponse() {
+    public NodeJoinEventResponse() {
         super();
     }
 
     /**
-     * Creates an instance of PeerJoinEventResponse
+     * Creates an instance of NodeJoinEventResponse
      *
      * @param p_request
-     *     the corresponding PeerJoinEventRequest
+     *     the corresponding NodeJoinEventRequest
      */
-    public PeerJoinEventResponse(final PeerJoinEventRequest p_request) {
-        super(p_request, LookupMessages.SUBTYPE_PEER_JOIN_EVENT_RESPONSE);
+    public NodeJoinEventResponse(final NodeJoinEventRequest p_request) {
+        super(p_request, LookupMessages.SUBTYPE_NODE_JOIN_EVENT_RESPONSE);
     }
 }

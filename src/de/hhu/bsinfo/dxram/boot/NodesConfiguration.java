@@ -60,7 +60,7 @@ final class NodesConfiguration {
      * Set the node ID for the current/own node.
      *
      * @param p_nodeID
-     *     Node id to set.
+     *         Node id to set.
      */
     void setOwnNodeID(final short p_nodeID) {
         m_ownID = p_nodeID;
@@ -95,7 +95,7 @@ final class NodesConfiguration {
      * Get the NodeEntry of the specified node ID.
      *
      * @param p_nodeID
-     *     Node ID to get the entry of.
+     *         Node ID to get the entry of.
      * @return NodeEntry containing information about the node or null if it does not exist.
      */
     NodeEntry getNode(final short p_nodeID) {
@@ -106,14 +106,20 @@ final class NodesConfiguration {
      * Adds a node
      *
      * @param p_nodeID
-     *     Id of the node.
+     *         Id of the node.
      * @param p_entry
-     *     the configured node
+     *         the configured node
      * @return whether this is a new entry or not
      */
     synchronized boolean addNode(final short p_nodeID, final NodeEntry p_entry) {
         NodeEntry prev = m_nodes[p_nodeID & 0xFFFF];
-        m_nodes[p_nodeID & 0xFFFF] = p_entry;
+
+        if (prev == null || !prev.getAddress().equals(p_entry.getAddress()) || prev.getRole() != p_entry.getRole()) {
+            m_nodes[p_nodeID & 0xFFFF] = p_entry;
+        } else {
+            // Node is already in list -> mark as online
+            m_nodes[p_nodeID & 0xFFFF].setStatus(true);
+        }
 
         return prev == null || !prev.getAddress().equals(p_entry.getAddress());
     }
@@ -122,7 +128,7 @@ final class NodesConfiguration {
      * Remove a node from the mappings list.
      *
      * @param p_nodeID
-     *     Node ID of the entry to remove.
+     *         Node ID of the entry to remove.
      */
     synchronized void removeNode(final short p_nodeID) {
         m_nodes[p_nodeID & 0xFFFF] = null;
@@ -162,6 +168,8 @@ final class NodesConfiguration {
         @Expose
         private byte m_readFromFile = 1;
 
+        private boolean m_online = false;
+
         /**
          * Creates an instance of NodesConfigurationEntry
          */
@@ -172,15 +180,15 @@ final class NodesConfiguration {
          * Creates an instance of NodesConfigurationEntry
          *
          * @param p_address
-         *     addres of the node
+         *         addres of the node
          * @param p_rack
-         *     the rack of the node
+         *         the rack of the node
          * @param p_switch
-         *     the switcharea of the node
+         *         the switcharea of the node
          * @param p_role
-         *     the role of the node
+         *         the role of the node
          * @param p_readFromFile
-         *     whether this node's information was read from nodes file or not
+         *         whether this node's information was read from nodes file or not
          */
         NodeEntry(final IPV4Unit p_address, final short p_rack, final short p_switch, final NodeRole p_role, final boolean p_readFromFile) {
             assert p_rack >= 0;
@@ -233,7 +241,7 @@ final class NodesConfiguration {
         @Override
         public String toString() {
             return "NodesConfigurationEntry [m_address=" + m_address + ", m_rack=" + m_rack + ", m_switch=" + m_switch + ", m_role=" + m_role.getAcronym() +
-                ", m_readFromFile=" + (m_readFromFile == 1 ? "true" : "false") + ']';
+                    ", m_readFromFile=" + (m_readFromFile == 1 ? "true" : "false") + ']';
         }
 
         /**
@@ -243,6 +251,22 @@ final class NodesConfiguration {
          */
         boolean readFromFile() {
             return m_readFromFile == 1;
+        }
+
+        /**
+         * Returns whether this node is online or not
+         *
+         * @return true, if node is not available anymore
+         */
+        boolean getStatus() {
+            return m_online;
+        }
+
+        /**
+         * Marks this node as online/offline
+         */
+        void setStatus(final boolean p_online) {
+            m_online = p_online;
         }
 
     }

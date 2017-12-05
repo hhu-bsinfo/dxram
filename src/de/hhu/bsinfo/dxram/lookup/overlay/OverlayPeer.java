@@ -71,8 +71,8 @@ import de.hhu.bsinfo.dxram.lookup.messages.MigrateRangeResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.NameserviceUpdatePeerCachesMessage;
-import de.hhu.bsinfo.dxram.lookup.messages.PeerJoinEventRequest;
-import de.hhu.bsinfo.dxram.lookup.messages.PeerJoinEventResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.NodeJoinEventRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.NodeJoinEventResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.PingSuperpeerMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsResponse;
@@ -99,10 +99,10 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxutils.CRC16;
 import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
  * Peer functionality for overlay
@@ -1343,8 +1343,8 @@ public class OverlayPeer implements MessageReceiver {
                     case LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE:
                         incomingNameserviceUpdatePeerCachesMessage((NameserviceUpdatePeerCachesMessage) p_message);
                         break;
-                    case LookupMessages.SUBTYPE_PEER_JOIN_EVENT_REQUEST:
-                        incomingPeerJoinEventRequest((PeerJoinEventRequest) p_message);
+                    case LookupMessages.SUBTYPE_NODE_JOIN_EVENT_REQUEST:
+                        incomingNodeJoinEventRequest((NodeJoinEventRequest) p_message);
                         break;
                     default:
                         break;
@@ -1356,7 +1356,7 @@ public class OverlayPeer implements MessageReceiver {
     /**
      * Informs responsible superpeer about finished startup
      */
-    public boolean finishStartup() {
+    public boolean finishStartup(final short p_rack, final short p_switch, final IPV4Unit p_address) {
         short responsibleSuperpeer;
 
         while (true) {
@@ -1365,7 +1365,7 @@ public class OverlayPeer implements MessageReceiver {
             m_overlayLock.readLock().unlock();
 
             try {
-                m_network.sendMessage(new FinishedStartupMessage(responsibleSuperpeer));
+                m_network.sendMessage(new FinishedStartupMessage(responsibleSuperpeer, p_rack, p_switch, p_address));
             } catch (final NetworkException ignore) {
                 // Try again. Responsible superpeer is changed automatically.
                 continue;
@@ -1545,25 +1545,26 @@ public class OverlayPeer implements MessageReceiver {
     }
 
     /**
-     * Handles an incoming PeerJoinEventRequest
+     * Handles an incoming NodeJoinEventRequest
      *
-     * @param p_peerJoinEventRequest
-     *         the PeerJoinEventRequest
+     * @param p_nodeJoinEventRequest
+     *         the NodeJoinEventRequest
      */
-    private void incomingPeerJoinEventRequest(final PeerJoinEventRequest p_peerJoinEventRequest) {
+    private void incomingNodeJoinEventRequest(final NodeJoinEventRequest p_nodeJoinEventRequest) {
 
         // #if LOGGER == TRACE
-        LOGGER.trace("Got request: PeerJoinEventRequest 0x%X", p_peerJoinEventRequest.getSource());
+        LOGGER.trace("Got request: NodeJoinEventRequest 0x%X", p_nodeJoinEventRequest.getSource());
         // #endif /* LOGGER == TRACE */
 
         try {
-            m_network.sendMessage(new PeerJoinEventResponse(p_peerJoinEventRequest));
+            m_network.sendMessage(new NodeJoinEventResponse(p_nodeJoinEventRequest));
         } catch (NetworkException ignore) {
             // Superpeer is not available anymore, ignore it as new superpeer will be determined automatically
         }
 
         // Notify other components/services
-        m_event.fireEvent(new NodeJoinEvent(getClass().getSimpleName(), p_peerJoinEventRequest.getJoinedPeer(), NodeRole.PEER));
+        m_event.fireEvent(new NodeJoinEvent(getClass().getSimpleName(), p_nodeJoinEventRequest.getJoinedPeer(), p_nodeJoinEventRequest.getRole(),
+                p_nodeJoinEventRequest.getRack(), p_nodeJoinEventRequest.getSwitch(), p_nodeJoinEventRequest.getAddress()));
     }
 
     // -----------------------------------------------------------------------------------
@@ -1617,8 +1618,8 @@ public class OverlayPeer implements MessageReceiver {
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE,
                 AskAboutSuccessorResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE, SendSuperpeersMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PEER_JOIN_EVENT_REQUEST, PeerJoinEventRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PEER_JOIN_EVENT_RESPONSE, PeerJoinEventResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NODE_JOIN_EVENT_REQUEST, NodeJoinEventRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NODE_JOIN_EVENT_RESPONSE, NodeJoinEventResponse.class);
 
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST, BarrierAllocRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_ALLOC_RESPONSE, BarrierAllocResponse.class);
@@ -1670,7 +1671,7 @@ public class OverlayPeer implements MessageReceiver {
     private void registerNetworkMessageListener() {
         m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE, this);
         m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE, this);
-        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PEER_JOIN_EVENT_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NODE_JOIN_EVENT_REQUEST, this);
     }
 
 }

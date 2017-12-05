@@ -6,8 +6,12 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
+import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
@@ -23,13 +27,9 @@ import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
 import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
-import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * This service provides access to the backend storage system (removals only)
@@ -231,7 +231,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
         // Inform backups
         if (m_backup.isActive()) {
             long backupPeersAsLong;
-            short[] backupPeers;
+            BackupPeer[] backupPeers;
             ArrayListLong ids;
             for (Map.Entry<Long, ArrayListLong> entry : remoteChunksByBackupPeers.entrySet()) {
                 backupPeersAsLong = entry.getKey();
@@ -239,9 +239,9 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
 
                 backupPeers = BackupRange.convert(backupPeersAsLong);
                 for (int i = 0; i < backupPeers.length; i++) {
-                    if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
+                    if (backupPeers[i] != null && backupPeers[i].getNodeID() != m_boot.getNodeID()) {
                         try {
-                            m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(backupPeers[i], ids));
+                            m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(backupPeers[i].getNodeID(), ids));
                         } catch (final NetworkException ignore) {
 
                         }
@@ -530,7 +530,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             // Inform backups
             if (m_backup.isActive()) {
                 long backupPeersAsLong;
-                short[] backupPeers;
+                BackupPeer[] backupPeers;
                 ArrayListLong ids;
                 for (Map.Entry<Long, ArrayListLong> entry : remoteChunksByBackupPeers.entrySet()) {
                     backupPeersAsLong = entry.getKey();
@@ -538,9 +538,9 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
 
                     backupPeers = BackupRange.convert(backupPeersAsLong);
                     for (int i = 0; i < backupPeers.length; i++) {
-                        if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
+                        if (backupPeers[i] != null && backupPeers[i].getNodeID() != m_boot.getNodeID()) {
                             try {
-                                m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(backupPeers[i], ids));
+                                m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(backupPeers[i].getNodeID(), ids));
                             } catch (final NetworkException ignore) {
 
                             }

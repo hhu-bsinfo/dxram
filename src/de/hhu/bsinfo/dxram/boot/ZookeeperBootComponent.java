@@ -24,18 +24,22 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.data.Stat;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
+import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
+import de.hhu.bsinfo.dxram.event.EventListener;
+import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
+import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxram.util.ZooKeeperHandler;
+import de.hhu.bsinfo.dxram.util.ZooKeeperHandler.ZooKeeperException;
 import de.hhu.bsinfo.dxutils.BloomFilter;
 import de.hhu.bsinfo.dxutils.CRC16;
 import de.hhu.bsinfo.dxutils.NodeID;
-import de.hhu.bsinfo.dxram.util.ZooKeeperHandler;
-import de.hhu.bsinfo.dxram.util.ZooKeeperHandler.ZooKeeperException;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
@@ -43,7 +47,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> implements Watcher {
+public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> implements Watcher, EventListener<AbstractEvent> {
     // component dependencies
     private EventComponent m_event;
     private LookupComponent m_lookup;
@@ -54,11 +58,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     private short m_bootstrap = NodeID.INVALID_ID;
     private BloomFilter m_bloomFilter;
 
-    private boolean m_isActiveAndAvailableForBackup;
-
     private NodesConfiguration m_nodes;
 
     private volatile boolean m_isStarting;
+
     private boolean m_shutdown;
 
     /**
@@ -69,112 +72,93 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     }
 
     @Override
+    public List<BackupPeer> getPeersFromNodeFile() {
+        NodeEntry[] allNodes = m_nodes.getNodes();
+
+        NodeEntry currentEntry;
+        ArrayList<BackupPeer> ret = new ArrayList<>();
+        for (int i = 0; i < allNodes.length; i++) {
+            currentEntry = allNodes[i];
+            if (currentEntry != null) {
+                if (currentEntry.readFromFile() && currentEntry.getRole() == NodeRole.PEER) {
+                    ret.add(new BackupPeer((short) (i & 0xFFFF), currentEntry.getRack(), currentEntry.getSwitch()));
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    @Override
+    public List<BackupPeer> getIDsOfAvailableBackupPeers() {
+        NodeEntry[] allNodes = m_nodes.getNodes();
+
+        NodeEntry currentEntry;
+        ArrayList<BackupPeer> ret = new ArrayList<>();
+        for (int i = 0; i < allNodes.length; i++) {
+            currentEntry = allNodes[i];
+            if (currentEntry != null) {
+                if (currentEntry.getRole() == NodeRole.PEER && currentEntry.getStatus()) {
+                    ret.add(new BackupPeer((short) (i & 0xFFFF), currentEntry.getRack(), currentEntry.getSwitch()));
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    @Override
     public List<Short> getIDsOfOnlineNodes() {
-        // TODO: Don't use ZooKeeper for this
+        NodeEntry[] allNodes = m_nodes.getNodes();
 
-        List<Short> ids = new ArrayList<>();
-
-        if (zookeeperPathExists("nodes/superpeers")) {
-            try {
-                List<String> children = m_zookeeper.getChildren("nodes/superpeers");
-                for (String child : children) {
-                    ids.add(Short.parseShort(child));
+        NodeEntry currentEntry;
+        ArrayList<Short> ret = new ArrayList<>();
+        for (int i = 0; i < allNodes.length; i++) {
+            currentEntry = allNodes[i];
+            if (currentEntry != null) {
+                if (currentEntry.getStatus()) {
+                    ret.add((short) (i & 0xFFFF));
                 }
-            } catch (final ZooKeeperException ignored) {
-            }
-        }
-        if (zookeeperPathExists("nodes/peers")) {
-            try {
-                List<String> children = m_zookeeper.getChildren("nodes/peers");
-                for (String child : children) {
-                    ids.add(Short.parseShort(child));
-                }
-            } catch (final ZooKeeperException ignored) {
-            }
-        }
-        if (zookeeperPathExists("nodes/terminals")) {
-            try {
-                List<String> children = m_zookeeper.getChildren("nodes/terminals");
-                for (String child : children) {
-                    ids.add(Short.parseShort(child));
-                }
-            } catch (final ZooKeeperException ignored) {
             }
         }
 
-        return ids;
+        return ret;
     }
 
     @Override
     public List<Short> getIDsOfOnlinePeers() {
-        // TODO: Don't use ZooKeeper for this
+        NodeEntry[] allNodes = m_nodes.getNodes();
 
-        short childID;
-        List<Short> ids = new ArrayList<>();
-
-        if (zookeeperPathExists("nodes/peers")) {
-            try {
-                List<String> children = m_zookeeper.getChildren("nodes/peers");
-                for (String child : children) {
-                    childID = Short.parseShort(child);
-                    if (childID != getNodeID()) {
-                        ids.add(Short.parseShort(child));
-                    }
+        NodeEntry currentEntry;
+        ArrayList<Short> ret = new ArrayList<>();
+        for (int i = 0; i < allNodes.length; i++) {
+            currentEntry = allNodes[i];
+            if (currentEntry != null) {
+                if (currentEntry.getRole() == NodeRole.PEER && currentEntry.getStatus()) {
+                    ret.add((short) (i & 0xFFFF));
                 }
-            } catch (final ZooKeeperException ignored) {
             }
         }
 
-        return ids;
-    }
-
-    @Override
-    public List<Short> getIDsOfAvailableBackupPeers() {
-        // TODO: Don't use ZooKeeper for this
-
-        short childID;
-        List<Short> ids = new ArrayList<>();
-
-        if (zookeeperPathExists("nodes/peers")) {
-            try {
-                List<String> children = m_zookeeper.getChildren("nodes/peers");
-                for (String child : children) {
-                    childID = Short.parseShort(child);
-                    if (childID != getNodeID()) {
-                        // Add peer if it is available for backup (1), only
-                        if (zookeeperGetData("nodes/peers/" + childID)[0] == (byte) 1) {
-                            ids.add(Short.parseShort(child));
-                        }
-                    }
-                }
-            } catch (final ZooKeeperException ignored) {
-            }
-        }
-
-        return ids;
+        return ret;
     }
 
     @Override
     public List<Short> getIDsOfOnlineSuperpeers() {
-        // TODO: Don't use ZooKeeper for this
+        NodeEntry[] allNodes = m_nodes.getNodes();
 
-        short childID;
-        List<Short> ids = new ArrayList<>();
-
-        if (zookeeperPathExists("nodes/superpeers")) {
-            try {
-                List<String> children = m_zookeeper.getChildren("nodes/superpeers");
-                for (String child : children) {
-                    childID = Short.parseShort(child);
-                    if (childID != getNodeID()) {
-                        ids.add(Short.parseShort(child));
-                    }
+        NodeEntry currentEntry;
+        ArrayList<Short> ret = new ArrayList<>();
+        for (int i = 0; i < allNodes.length; i++) {
+            currentEntry = allNodes[i];
+            if (currentEntry != null) {
+                if (currentEntry.getRole() == NodeRole.SUPERPEER && currentEntry.getStatus()) {
+                    ret.add((short) (i & 0xFFFF));
                 }
-            } catch (final ZooKeeperException ignored) {
             }
         }
 
-        return ids;
+        return ret;
     }
 
     @Override
@@ -188,14 +172,19 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     }
 
     @Override
+    public short getRack() {
+        return m_nodes.getOwnNodeEntry().getRack();
+    }
+
+    @Override
+    public short getSwitch() {
+        return m_nodes.getOwnNodeEntry().getSwitch();
+    }
+
+    @Override
     public int getNumberOfAvailableSuperpeers() {
         // if bootstrap is not available (wrong startup order of superpeers and peers)
-        byte[] data = zookeeperGetData("nodes/superpeers");
-        if (data != null) {
-            return Integer.parseInt(new String(data));
-        } else {
-            return 0;
-        }
+        return getIDsOfOnlineSuperpeers().size();
     }
 
     @Override
@@ -211,41 +200,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
     @Override
     public boolean isNodeOnline(final short p_nodeID) {
-        if (zookeeperPathExists("nodes/superpeers")) {
-            try {
-                List<String> children = m_zookeeper.getChildren("nodes/superpeers");
-                for (String child : children) {
-                    if (p_nodeID == Short.parseShort(child)) {
-                        return true;
-                    }
-                }
-            } catch (final ZooKeeperException ignored) {
-            }
-        }
-        if (zookeeperPathExists("nodes/peers")) {
-            try {
-                List<String> children = m_zookeeper.getChildren("nodes/peers");
-                for (String child : children) {
-                    if (p_nodeID == Short.parseShort(child)) {
-                        return true;
-                    }
-                }
-            } catch (final ZooKeeperException ignored) {
-            }
-        }
-        if (zookeeperPathExists("nodes/terminals")) {
-            try {
-                List<String> children = m_zookeeper.getChildren("nodes/terminals");
-                for (String child : children) {
-                    if (p_nodeID == Short.parseShort(child)) {
-                        return true;
-                    }
-                }
-            } catch (final ZooKeeperException ignored) {
-            }
+        NodeEntry entry = m_nodes.getNode(p_nodeID);
+        if (entry == null) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Could not find node %s", NodeID.toHexString(p_nodeID));
+            // #endif /* LOGGER >= WARN */
+            return false;
         }
 
-        return false;
+        return entry.getStatus();
     }
 
     @Override
@@ -253,7 +216,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         NodeEntry entry = m_nodes.getNode(p_nodeID);
         if (entry == null) {
             // #if LOGGER >= WARN
-            LOGGER.warn("Could not find node role for %s", NodeID.toHexString(p_nodeID));
+            LOGGER.warn("Could not find node %s", NodeID.toHexString(p_nodeID));
             // #endif /* LOGGER >= WARN */
             return null;
         }
@@ -280,8 +243,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
     @Override
     public boolean nodeAvailable(final short p_nodeID) {
-        return zookeeperPathExists("nodes/superpeers/" + p_nodeID) || zookeeperPathExists("nodes/peers/" + p_nodeID) ||
-                zookeeperPathExists("nodes/terminals/" + p_nodeID);
+        return isNodeOnline(p_nodeID);
     }
 
     @Override
@@ -289,20 +251,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         Stat status;
 
         if (p_role == NodeRole.SUPERPEER) {
-            try {
-                // Remove superpeer
-                status = zookeeperGetStatus("nodes/superpeers/" + p_nodeID);
-                if (status != null) {
-                    zookeeperDelete("nodes/superpeers/" + p_nodeID, status.getVersion());
-                    if (!m_nodes.getNode(p_nodeID).readFromFile()) {
-                        // Enable re-usage of NodeID if failed superpeer was not in nodes file
-                        zookeeperCreate("node/free/" + p_nodeID);
-                    }
-                    LOGGER.debug("Removed superpeer 0x%X from zookeeper", p_nodeID);
-                }
-            } catch (final ZooKeeperException e) {
-                // Entry was already deleted by another node
+            // Remove superpeer
+            if (!m_nodes.getNode(p_nodeID).readFromFile()) {
+                // Enable re-usage of NodeID if failed superpeer was not in nodes file
+                zookeeperCreate("node/free/" + p_nodeID);
             }
+            LOGGER.debug("Removed superpeer 0x%X from zookeeper", p_nodeID);
 
             // Determine new bootstrap if failed superpeer is current one
             if (p_nodeID == m_bootstrap) {
@@ -311,43 +265,14 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 // #if LOGGER >= DEBUG
                 LOGGER.debug("Failed node %s was bootstrap. New bootstrap is %s", NodeID.toHexString(p_nodeID), NodeID.toHexString(m_bootstrap));
                 // #endif /* LOGGER >= DEBUG */
-
             }
         } else if (p_role == NodeRole.PEER) {
-            try {
-                // Remove peer
-                status = zookeeperGetStatus("nodes/peers/" + p_nodeID);
-                if (status != null) {
-                    // Remove all children if there are any (currently not unused)
-                    List<String> children = m_zookeeper.getChildren("nodes/peers/" + p_nodeID, this);
-                    for (String child : children) {
-                        Stat stat = zookeeperGetStatus("nodes/peers/" + p_nodeID + '/' + child);
-                        if (stat != null) {
-                            zookeeperDelete("nodes/peers/" + p_nodeID + '/' + child, stat.getVersion());
-                        }
-                    }
-
-                    zookeeperDelete("nodes/peers/" + p_nodeID, status.getVersion());
-                    if (!m_nodes.getNode(p_nodeID).readFromFile()) {
-                        // Enable re-usage of NodeID if failed peer was not in nodes file
-                        zookeeperCreate("node/free/" + p_nodeID);
-                    }
-                    LOGGER.debug("Removed peer 0x%X from zookeeper", p_nodeID);
-                }
-            } catch (final ZooKeeperException e) {
-                // Entry was already deleted by another node
+            // Remove peer
+            if (!m_nodes.getNode(p_nodeID).readFromFile()) {
+                // Enable re-usage of NodeID if failed peer was not in nodes file
+                zookeeperCreate("node/free/" + p_nodeID);
             }
-        } else {
-            try {
-                // Remove terminal
-                status = zookeeperGetStatus("nodes/terminals/" + p_nodeID);
-                if (status != null) {
-                    zookeeperDelete("nodes/terminals/" + p_nodeID, status.getVersion());
-                    LOGGER.debug("Removed terminal 0x%X from zookeeper", p_nodeID);
-                }
-            } catch (final ZooKeeperException e) {
-                // Entry was already deleted by another node
-            }
+            LOGGER.debug("Removed peer 0x%X from zookeeper", p_nodeID);
         }
 
         if (!m_nodes.getNode(p_nodeID).readFromFile()) {
@@ -362,8 +287,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             }
         }
 
-        // TODO: Remove failed node from nodes configuration?
-        // m_nodesConfiguration.removeNode(p_nodeID);
+        m_nodes.getNode(p_nodeID).setStatus(false);
     }
 
     @Override
@@ -383,63 +307,57 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 LOGGER.error("ZooKeeper state expired");
                 // #endif /* LOGGER >= ERROR */
             } else {
-                try {
-                    path = p_event.getPath();
-                    prefix = m_zookeeper.getPath() + '/';
-                    while (m_isStarting) {
-                        try {
-                            Thread.sleep(100);
-                        } catch (final InterruptedException ignored) {
-                        }
-                    }
-                    if (path != null) {
-                        if (path.equals(prefix + "nodes/new")) {
-
-                            children = m_zookeeper.getChildren("nodes/new", this);
-                            for (String child : children) {
-                                nodeID = Short.parseShort(child);
-                                node = new String(zookeeperGetData("nodes/new/" + nodeID));
-                                splits = node.split(":");
-
-                                role = NodeRole.toNodeRole(splits[2]);
-
-                                m_nodes.addNode(nodeID, new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), (short) 0, (short) 0, role, false));
+                if (m_isStarting) {
+                    // Use ZooKeeper entries while booting
+                    try {
+                        path = p_event.getPath();
+                        prefix = m_zookeeper.getPath() + '/';
+                        while (m_isStarting) {
+                            try {
+                                Thread.sleep(100);
+                            } catch (final InterruptedException ignored) {
                             }
                         }
+                        if (path != null) {
+                            if (path.equals(prefix + "nodes/new")) {
+
+                                children = m_zookeeper.getChildren("nodes/new", this);
+                                for (String child : children) {
+                                    nodeID = Short.parseShort(child);
+                                    node = new String(zookeeperGetData("nodes/new/" + nodeID));
+                                    splits = node.split(":");
+
+                                    role = NodeRole.toNodeRole(splits[2]);
+
+                                    m_nodes.addNode(nodeID, new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), Short.parseShort(splits[3]),
+                                            Short.parseShort(splits[4]), role, false));
+                                }
+                            }
+                        }
+                    } catch (final ZooKeeperException e) {
+                        // #if LOGGER >= ERROR
+                        LOGGER.error("Could not access ZooKeeper", e);
+                        // #endif /* LOGGER >= ERROR */
                     }
-                } catch (final ZooKeeperException e) {
-                    // #if LOGGER >= ERROR
-                    LOGGER.error("Could not access ZooKeeper", e);
-                    // #endif /* LOGGER >= ERROR */
                 }
             }
         }
     }
 
-    //@Override
-    //public void eventTriggered(final NodeFailureEvent p_event) {
-    // TODO: Remove failed node from nodes configuration?
-    // m_nodesConfiguration.removeNode(p_event.getNodeID());
-    //}
+    @Override
+    public void eventTriggered(final AbstractEvent p_event) {
+        if (p_event instanceof NodeFailureEvent) {
+            m_nodes.getNode(((NodeFailureEvent) p_event).getNodeID()).setStatus(false);
+        } else if (p_event instanceof NodeJoinEvent) {
+            NodeJoinEvent event = (NodeJoinEvent) p_event;
+            m_nodes.addNode(event.getNodeID(), new NodeEntry(event.getAddress(), event.getRack(), event.getSwitch(), event.getRole(), false));
+        }
+    }
 
     @Override
     public boolean finishInitComponent() {
-        // Register peer/superpeer (a terminal node is not registered to exclude it from backup)
-        try {
-            if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.SUPERPEER) {
-                m_zookeeper.create("nodes/superpeers/" + m_nodes.getOwnNodeID());
-            } else if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.PEER) {
-                if (m_isActiveAndAvailableForBackup) {
-                    m_zookeeper.create("nodes/peers/" + m_nodes.getOwnNodeID(), new byte[] {1});
-                } else {
-                    m_zookeeper.create("nodes/peers/" + m_nodes.getOwnNodeID(), new byte[] {0});
-                }
-            }
-        } catch (ZooKeeperException | KeeperException | InterruptedException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Node could not be registered in ZooKeeper. Restart recommendable as other nodes might not find it.");
-            // #endif /* LOGGER >= ERROR */
-        }
+
+        m_isStarting = false;
 
         return true;
     }
@@ -469,20 +387,21 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         LOGGER.info("Initializing with address %s, role %s", m_ownAddress, role);
         // #endif /* LOGGER >= INFO */
 
+        m_event.registerListener(this, NodeFailureEvent.class);
+        m_event.registerListener(this, NodeJoinEvent.class);
+
         m_zookeeper = new ZooKeeperHandler(getConfig().getPath(), getConfig().getConnection().getAddressStr(), (int) getConfig().getTimeout().getMs());
         m_isStarting = true;
 
         m_nodes = new NodesConfiguration();
 
-        if (!parseNodes(getConfig().getNodesConfig(), role)) {
+        if (!parseNodes(getConfig().getNodesConfig(), role, getConfig().getRack(), getConfig().getSwitch())) {
             // #if LOGGER >= ERROR
             LOGGER.error("Parsing nodes failed");
             // #endif /* LOGGER >= ERROR */
+
             return false;
         }
-
-        m_isActiveAndAvailableForBackup = p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive() &&
-                p_config.getComponentConfig(BackupComponentConfig.class).availableForBackup();
 
         return true;
     }
@@ -573,9 +492,13 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      *         the nodes to parse
      * @param p_cmdLineNodeRole
      *         the role from command line
+     * @param p_cmdLineRack
+     *         the rack this node is in (irrelevant for nodes in nodes file)
+     * @param p_cmdLineSwitch
+     *         the switch this node is connected to (irrelevant for nodes in nodes file)
      * @return the parsed nodes
      */
-    private boolean parseNodes(final ArrayList<NodeEntry> p_nodes, final NodeRole p_cmdLineNodeRole) {
+    private boolean parseNodes(final ArrayList<NodeEntry> p_nodes, final NodeRole p_cmdLineNodeRole, final short p_cmdLineRack, final short p_cmdLineSwitch) {
         boolean ret = false;
         String barrier;
         boolean parsed = false;
@@ -618,7 +541,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             if (!parsed) {
                 // normal node
                 m_zookeeper.waitForBarrier(barrier, this);
-                ret = parseNodesNormal(p_nodes, p_cmdLineNodeRole);
+                ret = parseNodesNormal(p_nodes, p_cmdLineNodeRole, p_cmdLineRack, p_cmdLineSwitch);
             }
         } catch (final ZooKeeperException e) {
             // #if LOGGER >= ERROR
@@ -627,7 +550,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             return false;
         }
 
-        m_isStarting = false;
         return ret;
     }
 
@@ -642,7 +564,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      */
     private boolean parseNodesBootstrap(final ArrayList<NodeEntry> p_nodes) {
         short nodeID;
-        int numberOfSuperpeers;
         int seed;
 
         // #if LOGGER == TRACE
@@ -655,7 +576,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             }
 
             // Parse node information
-            numberOfSuperpeers = 0;
             seed = 1;
 
             for (NodeEntry entry : p_nodes) {
@@ -674,9 +594,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                     // #if LOGGER >= INFO
                     LOGGER.info("Own node assigned: %s", entry);
                     // #endif /* LOGGER >= INFO */
-                }
-                if (entry.getRole() == NodeRole.SUPERPEER) {
-                    numberOfSuperpeers++;
                 }
 
                 m_nodes.addNode((short) (nodeID & 0x0000FFFF), entry);
@@ -702,19 +619,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 // #endif /* LOGGER >= ERROR */
                 m_zookeeper.close(true);
                 return false;
-            }
-
-            // set default/invalid data
-            if (!m_zookeeper.exists("nodes/peers")) {
-                m_zookeeper.create("nodes/peers");
-            }
-            if (!m_zookeeper.exists("nodes/superpeers")) {
-                m_zookeeper.create("nodes/superpeers", String.valueOf(numberOfSuperpeers).getBytes());
-            } else {
-                m_zookeeper.setData("nodes/superpeers", String.valueOf(numberOfSuperpeers).getBytes());
-            }
-            if (!m_zookeeper.exists("nodes/terminals")) {
-                m_zookeeper.create("nodes/terminals");
             }
 
             // Register superpeer
@@ -743,10 +647,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      *         the nodes to parse
      * @param p_cmdLineNodeRole
      *         the role from command line
+     * @param p_cmdLineRack
+     *         the rack this node is in (ignored for nodes in nodes file)
+     * @param p_cmdLineSwitch
+     *         the switch this node is connected to (ignored for nodes in nodes file)
      * @return whether parsing was successful or not
      * @note this method is called by every node except bootstrap
      */
-    private boolean parseNodesNormal(final ArrayList<NodeEntry> p_nodes, final NodeRole p_cmdLineNodeRole) {
+    private boolean parseNodesNormal(final ArrayList<NodeEntry> p_nodes, final NodeRole p_cmdLineNodeRole, final short p_cmdLineRack,
+            final short p_cmdLineSwitch) {
         short nodeID;
         int seed;
         String node;
@@ -805,7 +714,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 splits = node.split(":");
 
                 m_nodes.addNode(nodeID,
-                        new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), (short) 0, (short) 0, NodeRole.toNodeRole(splits[2]), false));
+                        new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), Short.parseShort(splits[3]), Short.parseShort(splits[4]),
+                                NodeRole.toNodeRole(splits[2]), false));
 
                 if (nodeID == m_nodes.getOwnNodeID()) {
                     // NodeID was already re-used
@@ -819,7 +729,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 LOGGER.warn("Node not in nodes.config (%s)", m_ownAddress);
                 // #endif /* LOGGER >= WARN */
 
-                node = m_ownAddress + ":" + p_cmdLineNodeRole.getAcronym() + ':' + 0 + ':' + 0;
+                node = m_ownAddress + ":" + p_cmdLineNodeRole.getAcronym() + ':' + p_cmdLineRack + ':' + p_cmdLineSwitch;
 
                 childs = m_zookeeper.getChildren("nodes/free");
                 if (!childs.isEmpty()) {
@@ -841,7 +751,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 }
 
                 // Set routing information for that node
-                m_nodes.addNode(nodeID, new NodeEntry(m_ownAddress, (short) 0, (short) 0, p_cmdLineNodeRole, false));
+                m_nodes.addNode(nodeID, new NodeEntry(m_ownAddress, p_cmdLineRack, p_cmdLineSwitch, p_cmdLineNodeRole, false));
             } else {
                 // Remove NodeID if this node failed before
                 nodeID = m_nodes.getOwnNodeID();

@@ -47,8 +47,8 @@ public final class LookupMessages {
     public static final byte SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE = 24;
     public static final byte SUBTYPE_UPDATE_METADATA_AFTER_RECOVERY_MESSAGE = 25;
     public static final byte SUBTYPE_PING_SUPERPEER_MESSAGE = 26;
-    public static final byte SUBTYPE_PEER_JOIN_EVENT_REQUEST = 27;
-    public static final byte SUBTYPE_PEER_JOIN_EVENT_RESPONSE = 28;
+    public static final byte SUBTYPE_NODE_JOIN_EVENT_REQUEST = 27;
+    public static final byte SUBTYPE_NODE_JOIN_EVENT_RESPONSE = 28;
 
     public static final byte SUBTYPE_SEND_BACKUPS_MESSAGE = 29;
     public static final byte SUBTYPE_SEND_SUPERPEERS_MESSAGE = 30;

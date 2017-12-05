@@ -13,8 +13,10 @@
 
 package de.hhu.bsinfo.dxram.chunk;
 
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
+import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -25,7 +27,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -59,12 +60,25 @@ public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig>
 
         m_memoryManager.lockManage();
         chunkId = m_memoryManager.createIndex(p_size);
-        if (chunkId != ChunkID.INVALID_ID) {
-            m_backup.registerChunk(chunkId, p_size);
-        }
         m_memoryManager.unlockManage();
 
         return chunkId;
+    }
+
+    /**
+     * Register index chunk for the nameservice. Is called for the first nameservice entry added.
+     *
+     * @param p_chunkID
+     *         the ChunkID of the nameservice index chunk
+     * @param p_size
+     *         Size of the index chunk.
+     */
+    public void registerIndexChunk(final long p_chunkID, final int p_size) {
+        m_memoryManager.lockManage();
+        if (p_chunkID != ChunkID.INVALID_ID) {
+            m_backup.registerChunk(p_chunkID, p_size);
+        }
+        m_memoryManager.unlockManage();
     }
 
     /**
@@ -86,17 +100,17 @@ public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig>
 
         if (m_backup.isActive()) {
             BackupRange backupRange = m_backup.getBackupRange(p_dataStructure.getID());
-            short[] backupPeers = backupRange.getBackupPeers();
+            BackupPeer[] backupPeers = backupRange.getBackupPeers();
 
             if (backupPeers != null) {
-                for (short peer : backupPeers) {
-                    if (peer != m_boot.getNodeID() && peer != NodeID.INVALID_ID) {
+                for (BackupPeer peer : backupPeers) {
+                    if (peer != null && peer.getNodeID() != m_boot.getNodeID()) {
                         // #if LOGGER == TRACE
-                        LOGGER.trace("Logging 0x%x to %s", p_dataStructure.getID(), NodeID.toHexString(peer));
+                        LOGGER.trace("Logging 0x%x to %s", p_dataStructure.getID(), NodeID.toHexString(peer.getNodeID()));
                         // #endif /* LOGGER == TRACE */
 
                         try {
-                            m_network.sendMessage(new LogMessage(peer, backupRange.getRangeID(), p_dataStructure));
+                            m_network.sendMessage(new LogMessage(peer.getNodeID(), backupRange.getRangeID(), p_dataStructure));
                         } catch (final NetworkException ignore) {
 
                         }

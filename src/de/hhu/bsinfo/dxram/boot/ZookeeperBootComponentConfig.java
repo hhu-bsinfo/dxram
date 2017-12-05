@@ -39,6 +39,12 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
         }
     };
 
+    @Expose
+    private short m_rack = 0;
+
+    @Expose
+    private short m_switch = 0;
+
     /**
      * Constructor
      */
@@ -51,6 +57,20 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
      */
     public String getPath() {
         return m_path;
+    }
+
+    /**
+     * The rack this node is in. Must be set if node was not in initial nodes file.
+     */
+    public short getRack() {
+        return m_rack;
+    }
+
+    /**
+     * The switch this node is connected to. Must be set if node was not in initial nodes file.
+     */
+    public short getSwitch() {
+        return m_switch;
     }
 
     /**
@@ -86,7 +106,7 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
 
-        if (m_bitfieldSize.getBytes() < 2048*1024) {
+        if (m_bitfieldSize.getBytes() < 2048 * 1024) {
             // #if LOGGER >= WARN
             LOGGER.warn("Bitfield size is rather small. Not all node IDs may be addressable because of high false positives rate!");
             // #endif /* LOGGER >= WARN */

@@ -16,11 +16,11 @@ package de.hhu.bsinfo.dxram.lookup.overlay.storage;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 
 /**
  * Wrapper class for all data belonging to one peer: One Btree to store ranges, one to store backup range affiliation and an ArrayList for the backup ranges
@@ -41,7 +41,7 @@ public final class PeerHandler {
      * Creates an instance of LookupTree
      *
      * @param p_order
-     *     order of the btree
+     *         order of the btree
      */
     PeerHandler(final short p_order, final short p_creator) {
         m_state = PeerState.ONLINE;
@@ -61,8 +61,9 @@ public final class PeerHandler {
 
     /**
      * Sets the state
+     *
      * @param p_state
-     *      ONLINE, LOST, IN_RECOVERY or RECOVERED
+     *         ONLINE, LOST, IN_RECOVERY or RECOVERED
      */
     void setState(final PeerState p_state) {
         m_state = p_state;
@@ -81,11 +82,11 @@ public final class PeerHandler {
      * Updates the metadata of given backup range
      *
      * @param p_rangeID
-     *     the backup range to update
+     *         the backup range to update
      * @param p_recoveryPeer
-     *     the peer that recovered the backup range
+     *         the peer that recovered the backup range
      * @param p_chunkIDRanges
-     *     ChunkIDs of all recovered chunks arranged in ranges
+     *         ChunkIDs of all recovered chunks arranged in ranges
      */
     void updateMetadataAfterRecovery(final short p_rangeID, final short p_recoveryPeer, final long[] p_chunkIDRanges) {
         // "Migrate" recovered ChunkIDs
@@ -106,7 +107,7 @@ public final class PeerHandler {
      * Returns the range given ChunkID is in
      *
      * @param p_chunkID
-     *     ChunkID of requested object
+     *         ChunkID of requested object
      * @return the first and last ChunkID of the range
      */
     LookupRange getMetadata(final long p_chunkID) {
@@ -133,9 +134,9 @@ public final class PeerHandler {
      * Stores the migration for a single chunk
      *
      * @param p_chunkID
-     *     ChunkID of migrated object
+     *         ChunkID of migrated object
      * @param p_nodeID
-     *     new primary peer
+     *         new primary peer
      * @return true if insertion was successful
      */
     boolean migrate(final long p_chunkID, final short p_nodeID) {
@@ -146,11 +147,11 @@ public final class PeerHandler {
      * Stores the migration for a range
      *
      * @param p_startCID
-     *     ChunkID of first migrated object
+     *         ChunkID of first migrated object
      * @param p_endCID
-     *     ChunkID of last migrated object
+     *         ChunkID of last migrated object
      * @param p_nodeID
-     *     new primary peer
+     *         new primary peer
      * @return true if insertion was successful
      */
     boolean migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
@@ -161,7 +162,7 @@ public final class PeerHandler {
      * Removes given chunk from btree; only necessary for migrated chunks
      *
      * @param p_chunkID
-     *     ChunkID of deleted object
+     *         ChunkID of deleted object
      * @note should always be called if an object is deleted
      */
     void remove(final long p_chunkID) {
@@ -172,7 +173,7 @@ public final class PeerHandler {
      * Removes multiple chunks from btree; only necessary for migrated chunks
      *
      * @param p_chunkIDs
-     *     ChunkIDs of deleted objects
+     *         ChunkIDs of deleted objects
      * @note should always be called if an object is deleted
      */
 
@@ -184,27 +185,21 @@ public final class PeerHandler {
      * Initializes a new backup range
      *
      * @param p_backupRange
-     *     the backup range to initialize
-     * @return true if insertion was successful
+     *         the backup range to initialize
      */
-    boolean initRange(final BackupRange p_backupRange) {
-        byte rangeID;
-        long backupPeers;
-
+    void initRange(final BackupRange p_backupRange) {
         m_backupRanges.add(p_backupRange.getRangeID(), BackupRange.convert(p_backupRange.getBackupPeers()));
-
-        return true;
     }
 
     /**
      * Replaces given peer from specific backup range
      *
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @param p_toBeReplacedPeer
-     *     NodeID of peer to replace
+     *         NodeID of peer to replace
      * @param p_replacement
-     *     NodeID of new backup peer
+     *         NodeID of new backup peer
      */
     void replaceBackupPeer(final short p_rangeID, final short p_toBeReplacedPeer, final short p_replacement) {
         long backupPeers;
@@ -249,18 +244,21 @@ public final class PeerHandler {
      * Writes all peer's data to given byte buffer
      *
      * @param p_data
-     *     the ByteBuffer
+     *         the ByteBuffer
      */
     void receiveMetadata(ByteBuffer p_data) {
         ByteBufferImExporter exporter;
 
         switch (m_state) {
-            case ONLINE:  p_data.put((byte) 0);
+            case ONLINE:
+                p_data.put((byte) 0);
                 break;
-            case LOST:  p_data.put((byte) 1);
+            case LOST:
+                p_data.put((byte) 1);
                 break;
             case IN_RECOVERY: // Temporary state is ignored because it is relevant for recovery coordinator, only
-            case RECOVERED:  p_data.put((byte) 3);
+            case RECOVERED:
+                p_data.put((byte) 3);
                 break;
             default:
                 break;
@@ -274,7 +272,7 @@ public final class PeerHandler {
      * Stores all given data
      *
      * @param p_data
-     *     the data
+     *         the data
      */
     void storeMetadata(final ByteBuffer p_data) {
         ByteBufferImExporter importer;
@@ -282,11 +280,14 @@ public final class PeerHandler {
         // Creator was read before
 
         switch (p_data.get()) {
-            case 0:  m_state = PeerState.ONLINE;
+            case 0:
+                m_state = PeerState.ONLINE;
                 break;
-            case 1:  m_state = PeerState.LOST;
+            case 1:
+                m_state = PeerState.LOST;
                 break;
-            case 3:  m_state = PeerState.RECOVERED;
+            case 3:
+                m_state = PeerState.RECOVERED;
                 break;
             default:
                 break;

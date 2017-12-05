@@ -35,7 +35,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
     private static long ms_backupRangeSize;
 
     private short m_rangeID;
-    private short[] m_backupPeers;
+    private BackupPeer[] m_backupPeers;
 
     private int m_size;
 
@@ -55,7 +55,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * @param p_backupPeers
      *         the backup peers
      */
-    public BackupRange(final short p_rangeID, final short[] p_backupPeers) {
+    public BackupRange(final short p_rangeID, final BackupPeer[] p_backupPeers) {
         m_rangeID = p_rangeID;
         m_backupPeers = p_backupPeers;
         m_size = 0;
@@ -68,12 +68,12 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      *         the backup peers in long representation
      * @return the backup peers in short[] representation
      */
-    public static short[] convert(final long p_backupPeers) {
-        short[] ret;
+    public static BackupPeer[] convert(final long p_backupPeers) {
+        BackupPeer[] ret;
 
-        ret = new short[ms_replicationFactor];
+        ret = new BackupPeer[ms_replicationFactor];
         for (int i = 0; i < ms_replicationFactor; i++) {
-            ret[i] = (short) ((p_backupPeers & 0x000000000000FFFFL << i * 16) >> i * 16);
+            ret[i] = new BackupPeer((short) ((p_backupPeers & 0x000000000000FFFFL << i * 16) >> i * 16), (short) 0, (short) 0);
         }
 
         return ret;
@@ -86,11 +86,11 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      *         the backup peers in short[] representation
      * @return the backup peers in long representation
      */
-    public static long convert(final short[] p_backupPeers) {
+    public static long convert(final BackupPeer[] p_backupPeers) {
         long ret = 0;
 
         for (int i = 0; i < ms_replicationFactor; i++) {
-            ret += (p_backupPeers[i] & 0x000000000000FFFFL) << i * 16;
+            ret += (p_backupPeers[i].getNodeID() & 0x000000000000FFFFL) << i * 16;
         }
 
         return ret;
@@ -225,7 +225,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * @param p_rangeID
      *         the RangeID
      */
-    public void setRangeID(final short p_rangeID) {
+    void setRangeID(final short p_rangeID) {
         m_rangeID = p_rangeID;
     }
 
@@ -236,7 +236,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      *
      * @return the backup peers
      */
-    public short[] getBackupPeers() {
+    public BackupPeer[] getBackupPeers() {
         return m_backupPeers;
     }
 
@@ -247,19 +247,19 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      */
     @Override
     public String toString() {
-        String ret = m_rangeID + " [";
+        StringBuilder ret = new StringBuilder(m_rangeID + " [");
 
         for (int i = 0; i < ms_replicationFactor; i++) {
-            ret += NodeID.toHexString(m_backupPeers[i]);
+            ret.append(NodeID.toHexString(m_backupPeers[i].getNodeID()));
 
             if (i == ms_replicationFactor - 1) {
-                ret += "]";
+                ret.append(']');
             } else {
-                ret += ", ";
+                ret.append(", ");
             }
         }
 
-        return ret;
+        return ret.toString();
     }
 
     /**
@@ -301,7 +301,7 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      *
      * @return the backup peers
      */
-    public long getBackupPeersAsLong() {
+    long getBackupPeersAsLong() {
         return BackupRange.convert(m_backupPeers);
     }
 
@@ -312,11 +312,11 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      *         the new backup peer
      * @return whether the peer was added or not
      */
-    boolean addBackupPeer(final short p_newPeer) {
+    boolean addBackupPeer(final BackupPeer p_newPeer) {
         boolean ret = false;
 
         for (int i = 0; i < m_backupPeers.length; i++) {
-            if (m_backupPeers[i] == NodeID.INVALID_ID) {
+            if (m_backupPeers[i] == null) {
                 m_backupPeers[i] = p_newPeer;
                 ret = true;
                 break;
@@ -334,13 +334,13 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * @param p_newPeer
      *         the new backup peer
      */
-    public void replaceBackupPeer(final short p_oldPeer, final short p_newPeer) {
+    void replaceBackupPeer(final BackupPeer p_oldPeer, final BackupPeer p_newPeer) {
         int addIndex = m_backupPeers.length - 1;
 
         for (int i = 0; i < m_backupPeers.length; i++) {
-            if (m_backupPeers[i] == p_oldPeer) {
+            if (m_backupPeers[i].getNodeID() == p_oldPeer.getNodeID()) {
                 for (int j = i; j < m_backupPeers.length - 1; j++) {
-                    if (m_backupPeers[j + 1] == NodeID.INVALID_ID) {
+                    if (m_backupPeers[j + 1] == null) {
                         addIndex = j;
                         break;
                     }
@@ -357,8 +357,24 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      *
      * @return the backup peers
      */
-    short[] getCopyOfBackupPeers() {
+    BackupPeer[] getCopyOfBackupPeers() {
         return Arrays.copyOf(m_backupPeers, m_backupPeers.length);
+    }
+
+    /**
+     * Get backup peers
+     *
+     * @return the backup peers
+     */
+    short[] getNodeIDsOfBackupPeers() {
+        short[] ret = new short[ms_replicationFactor];
+        Arrays.fill(ret, NodeID.INVALID_ID);
+
+        for (int i = 0; i < m_backupPeers.length; i++) {
+            ret[i] = m_backupPeers[i].getNodeID();
+        }
+
+        return ret;
     }
 
     /**

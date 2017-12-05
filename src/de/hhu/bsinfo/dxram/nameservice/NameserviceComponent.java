@@ -43,6 +43,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
     private NameServiceStringConverter m_converter;
 
     private NameServiceIndexData m_indexData;
+    private boolean m_indexDataRegistered;
     private Lock m_indexDataLock;
 
     /**
@@ -200,6 +201,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
             // #endif /* LOGGER >= ERROR */
             return false;
         }
+        m_indexDataRegistered = false;
 
         m_indexDataLock = new ReentrantLock(false);
 
@@ -227,6 +229,10 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
      */
     private boolean insertMapping(final int p_key, final long p_chunkID) {
         m_indexDataLock.lock();
+        if (!m_indexDataRegistered) {
+            m_chunk.registerIndexChunk(m_indexData.getID(), m_indexData.sizeofObject());
+        }
+
         if (!m_indexData.insertMapping(p_key, p_chunkID)) {
             // index chunk full, create new one
             final NameServiceIndexData nextIndexChunk = new NameServiceIndexData();

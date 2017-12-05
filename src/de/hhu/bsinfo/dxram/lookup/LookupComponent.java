@@ -13,6 +13,7 @@
 
 package de.hhu.bsinfo.dxram.lookup;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
@@ -42,10 +43,11 @@ import de.hhu.bsinfo.dxram.nameservice.NameserviceComponentConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.sync.SynchronizationServiceConfig;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageServiceConfig;
-import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.Cache;
 import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
  * Component for finding chunks in superpeer overlay.
@@ -800,7 +802,8 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     public boolean finishInitComponent() {
 
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            m_peer.finishStartup();
+            InetSocketAddress socketAddress = m_boot.getNodeAddress(m_boot.getNodeID());
+            m_peer.finishStartup(m_boot.getRack(), m_boot.getSwitch(), new IPV4Unit(socketAddress.getHostString(), socketAddress.getPort()));
         }
 
         return true;

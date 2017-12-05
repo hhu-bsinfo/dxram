@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.boot;
 import java.net.InetSocketAddress;
 import java.util.List;
 
+import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -42,6 +43,20 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
     }
 
     /**
+     * Get IDs of all available (online) backup peers which are in initial node file.
+     *
+     * @return List of IDs of peers available for backup without own ID.
+     */
+    public abstract List<BackupPeer> getPeersFromNodeFile();
+
+    /**
+     * Get IDs of all available (online) backup peers.
+     *
+     * @return List of IDs of peers available for backup without own ID.
+     */
+    public abstract List<BackupPeer> getIDsOfAvailableBackupPeers();
+
+    /**
      * Get IDs of all available (online) nodes including the own.
      *
      * @return List of IDs of nodes available.
@@ -54,13 +69,6 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      * @return List of IDs of nodes available without own ID.
      */
     public abstract List<Short> getIDsOfOnlinePeers();
-
-    /**
-     * Get IDs of all available (online) backup peers.
-     *
-     * @return List of IDs of peers available for backup without own ID.
-     */
-    public abstract List<Short> getIDsOfAvailableBackupPeers();
 
     /**
      * Get IDs of all available (online) superpeer nodes except the own.
@@ -82,6 +90,20 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      * @return Own Role.
      */
     public abstract NodeRole getNodeRole();
+
+    /**
+     * Get the rack, this node is in.
+     *
+     * @return the rack.
+     */
+    public abstract short getRack();
+
+    /**
+     * Get the role, this node is connected to.
+     *
+     * @return the switch.
+     */
+    public abstract short getSwitch();
 
     /**
      * Get the number of currently available superpeers.

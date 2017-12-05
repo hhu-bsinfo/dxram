@@ -20,8 +20,10 @@ import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
+import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
@@ -52,10 +54,9 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.StringUtils;
+import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
 
 /**
  * This service provides access to the backend storage system.
@@ -198,7 +199,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      *         the backup range
      */
     public void initBackupRange(final BackupRange p_backupRange) {
-        short[] backupPeers;
+        BackupPeer[] backupPeers;
         InitBackupRangeRequest request;
         InitBackupRangeResponse response;
         long time;
@@ -208,9 +209,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         time = System.currentTimeMillis();
         if (backupPeers != null) {
             for (int i = 0; i < backupPeers.length; i++) {
-                if (backupPeers[i] != NodeID.INVALID_ID) {
+                if (backupPeers[i] != null) {
                     // The last peer is new in a recovered backup range
-                    request = new InitBackupRangeRequest(backupPeers[i], p_backupRange.getRangeID());
+                    request = new InitBackupRangeRequest(backupPeers[i].getNodeID(), p_backupRange.getRangeID());
 
                     try {
                         m_network.sendSync(request);
@@ -243,14 +244,14 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      *         the failed peer
      */
     public void initRecoveredBackupRange(final BackupRange p_backupRange, final short p_oldBackupRange, final short p_failedPeer, final short p_newBackupPeer) {
-        short[] backupPeers = p_backupRange.getBackupPeers();
+        BackupPeer[] backupPeers = p_backupRange.getBackupPeers();
         if (backupPeers != null) {
             for (int i = 0; i < backupPeers.length; i++) {
-                if (backupPeers[i] != NodeID.INVALID_ID) {
-                    if (backupPeers[i] == p_newBackupPeer) {
-                        initBackupRangeOnPeer(backupPeers[i], p_backupRange.getRangeID(), p_oldBackupRange, p_failedPeer, true);
+                if (backupPeers[i] != null) {
+                    if (backupPeers[i].getNodeID() == p_newBackupPeer) {
+                        initBackupRangeOnPeer(backupPeers[i].getNodeID(), p_backupRange.getRangeID(), p_oldBackupRange, p_failedPeer, true);
                     } else {
-                        initBackupRangeOnPeer(backupPeers[i], p_backupRange.getRangeID(), p_oldBackupRange, p_failedPeer, false);
+                        initBackupRangeOnPeer(backupPeers[i].getNodeID(), p_backupRange.getRangeID(), p_oldBackupRange, p_failedPeer, false);
                     }
                 }
             }
@@ -387,8 +388,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         DataStructure[] ret = null;
 
         try {
-            ret = SecondaryLog.recoverFromFile(p_fileName, p_path, getConfig().useChecksum(), m_secondaryLogSize,
-                    (int) getConfig().getLogSegmentSize().getBytes(), m_mode);
+            ret = SecondaryLog
+                    .recoverFromFile(p_fileName, p_path, getConfig().useChecksum(), m_secondaryLogSize, (int) getConfig().getLogSegmentSize().getBytes(),
+                            m_mode);
         } catch (final IOException e) {
             // #if LOGGER >= ERROR
             LOGGER.error("Could not recover from file %s: %s", p_path, e);
@@ -536,9 +538,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             // #endif /* LOGGER == TRACE */
 
             // Create reorganization thread for secondary logs
-            m_secondaryLogsReorgThread =
-                    new SecondaryLogsReorgThread(this, m_backup.getConfig().getBackupRangeSize().getBytes() * 2,
-                            (int) getConfig().getLogSegmentSize().getBytes());
+            m_secondaryLogsReorgThread = new SecondaryLogsReorgThread(this, m_backup.getConfig().getBackupRangeSize().getBytes() * 2,
+                    (int) getConfig().getLogSegmentSize().getBytes());
             m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
 
             // Create primary log buffer
