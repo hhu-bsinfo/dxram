@@ -81,14 +81,17 @@
         <mkdir dir="${build_proj_dir}/classes/${buildtype}"/>
 
         <condition property="debugOn" value="true" else="false">
-            <equals arg1="${buildtype}" arg2="debug"/>
+			<or>
+            	<equals arg1="${buildtype}" arg2="debug"/>
+				<equals arg1="${buildtype}" arg2="release"/>
+			</or>     
         </condition>
         <condition property="optimizeOn" value="on" else="off">
-            <equals arg1="${buildtype}" arg2="release"/>
-        </condition>
-        <condition property="optimizeOn" value="on" else="off">
-            <equals arg1="${buildtype}" arg2="performance"/>
-        </condition>
+			<or>
+            	<equals arg1="${buildtype}" arg2="release"/>
+				<equals arg1="${buildtype}" arg2="performance"/>
+			</or>        
+		</condition>
 
         <javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false"
                debug="${debugOn}" optimize="${optimizeOn}"
