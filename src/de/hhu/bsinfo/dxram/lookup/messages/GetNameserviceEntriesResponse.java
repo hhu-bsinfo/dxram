@@ -69,7 +69,7 @@ public class GetNameserviceEntriesResponse extends Response {
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeBytes(m_entries);
+        p_exporter.writeByteArray(m_entries);
     }
 
     @Override
