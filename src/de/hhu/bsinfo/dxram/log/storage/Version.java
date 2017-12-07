@@ -29,9 +29,9 @@ public class Version {
      * Creates an instance of EpochVersion
      *
      * @param p_epoch
-     *     the epoch
+     *         the epoch
      * @param p_version
-     *     the version
+     *         the version
      */
     public Version(final short p_epoch, final int p_version) {
         m_epoch = p_epoch;
@@ -60,10 +60,10 @@ public class Version {
      * Compares two Versions; Is faster than equals as class type is known
      *
      * @param p_cmp
-     *     the EpochVersion to compare with
+     *         the EpochVersion to compare with
      * @return true if version, epoch and eon is equal
      */
-    public boolean isEqual(final Version p_cmp) {
+    boolean isEqual(final Version p_cmp) {
         return m_epoch == p_cmp.m_epoch && m_version == p_cmp.m_version;
     }
 
@@ -71,7 +71,7 @@ public class Version {
      * Compares two EpochVersions
      *
      * @param p_cmp
-     *     the EpochVersion to compare with
+     *         the EpochVersion to compare with
      * @return true if version, epoch and eon is equal
      */
     @Override
@@ -93,7 +93,7 @@ public class Version {
      * Compares two EpochVersions
      *
      * @param p_cmp
-     *     the EpochVersion to compare with
+     *         the EpochVersion to compare with
      * @return 1 if p_cmp is smaller, 0 if they are equal and -1 if p_cmp is greater
      */
     public int compareTo(final Version p_cmp) {

@@ -71,8 +71,8 @@ public class GetUtilizationResponse extends Response {
     @Override
     protected final int getPayloadLength() {
         if (m_utilization != null) {
-            byte[] bytes = m_utilization.getBytes();
-            return ObjectSizeUtil.sizeofCompactedNumber(bytes.length) + bytes.length;
+            int length = ObjectSizeUtil.sizeofString(m_utilization);
+            return ObjectSizeUtil.sizeofCompactedNumber(length) + length;
         } else {
             return Byte.BYTES;
         }

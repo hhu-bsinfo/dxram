@@ -67,7 +67,7 @@ public final class LogCatalog {
      * Returns whether there is already a secondary log with given identifier
      *
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @return whether there is already a secondary log with given identifier or not
      */
     public boolean exists(final short p_rangeID) {
@@ -79,7 +79,7 @@ public final class LogCatalog {
      * Gets the corresponding secondary log
      *
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @return the secondary log
      */
     public SecondaryLog getLog(final short p_rangeID) {
@@ -99,7 +99,7 @@ public final class LogCatalog {
      * Gets the corresponding secondary log buffer
      *
      * @param p_rangeID
-     *     the RangeID for migrations or -1
+     *         the RangeID for migrations or -1
      * @return the secondary log buffer
      */
     public SecondaryLogBuffer getBuffer(final short p_rangeID) {
@@ -120,13 +120,13 @@ public final class LogCatalog {
      * Inserts a new range
      *
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @param p_log
-     *     the new secondary log to link
+     *         the new secondary log to link
      * @param p_secondaryLogBufferSize
-     *     the secondary log buffer size
+     *         the secondary log buffer size
      * @param p_logSegmentSize
-     *     the segment size
+     *         the segment size
      */
     public void insertRange(short p_rangeID, final SecondaryLog p_log, final int p_secondaryLogBufferSize, final int p_logSegmentSize) {
         SecondaryLogBuffer buffer;
@@ -182,7 +182,7 @@ public final class LogCatalog {
      * Closes all logs and buffers from this node
      *
      * @throws IOException
-     *     if the log could not be closed
+     *         if the log could not be closed
      */
     public void closeLogsAndBuffers() throws IOException {
         for (int i = 0; i < m_logs.length; i++) {
@@ -202,17 +202,17 @@ public final class LogCatalog {
 
     @Override
     public String toString() {
-        String ret = "Cat:[";
+        StringBuilder ret = new StringBuilder("Cat:[");
 
         for (int i = 0; i < m_logs.length; i++) {
             if (m_logs[i] == null) {
-                ret += "null\n     ";
+                ret.append("null\n     ");
             } else {
-                ret += m_logs[i] + "\n     ";
+                ret.append(m_logs[i]).append("\n     ");
             }
         }
 
-        return ret + ']';
+        return ret.toString() + ']';
     }
 
     /**

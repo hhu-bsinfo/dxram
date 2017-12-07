@@ -845,21 +845,21 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     /**
      * Removes Chunks from log
      *
-     * @param p_buffer
-     *         the ChunkID buffer
+     * @param p_rangeID
+     *         the RangeID
      * @param p_owner
      *         the Chunks' owner
+     * @param p_chunkIDs
+     *         the ChunkIDs of all to be deleted chunks
      */
-    void incomingRemoveChunks(final ByteBuffer p_buffer, final short p_owner) {
+    void incomingRemoveChunks(final short p_rangeID, final short p_owner, final long[] p_chunkIDs) {
         long chunkID;
         SecondaryLog secLog;
-        final byte rangeID = p_buffer.get();
-        final int size = p_buffer.getInt();
 
-        for (int i = 0; i < size; i++) {
-            chunkID = p_buffer.getLong();
+        for (int i = 0; i < p_chunkIDs.length; i++) {
+            chunkID = p_chunkIDs[i];
 
-            secLog = getSecondaryLog(p_owner, rangeID);
+            secLog = getSecondaryLog(p_owner, p_rangeID);
             if (secLog != null) {
                 secLog.invalidateChunk(chunkID);
             } else {

@@ -118,7 +118,7 @@ public class SecondaryLog extends AbstractLog {
             final int p_logSegmentSize, final int p_reorgUtilizationThreshold, final boolean p_useChecksum, final HarddriveAccessMode p_mode)
             throws IOException {
         super(new File(p_backupDirectory + 'N' + NodeID.toHexString(p_owner) + '_' + SECLOG_PREFIX_FILENAME + NodeID.toHexString(p_owner) + '_' + p_rangeID +
-                SECLOG_POSTFIX_FILENAME), p_secondaryLogSize, SECLOG_HEADER.length, p_mode);
+                SECLOG_POSTFIX_FILENAME), p_secondaryLogSize, p_mode);
         if (p_secondaryLogSize < p_flashPageSize) {
             throw new IllegalArgumentException("Error: Secondary log too small");
         }

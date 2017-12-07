@@ -54,7 +54,7 @@ class VersionsBuffer {
     private LogComponent m_logComponent;
     private HarddriveAccessMode m_mode;
 
-    private short m_originalOwner;
+    private final short m_originalOwner;
     private int[] m_table;
     private int m_count;
     private int m_intCapacity;
@@ -63,7 +63,7 @@ class VersionsBuffer {
 
     private int m_windowSize;
     private long m_numberOfCIDs = 0;
-    private double m_averageLID = 0;
+    private volatile double m_averageLID = 0;
 
     private String m_path;
     private RandomAccessFile m_versionsFile;
@@ -83,15 +83,15 @@ class VersionsBuffer {
      * Creates an instance of VersionsBuffer
      *
      * @param p_originalOwner
-     *     the creator of the original backup range
+     *         the creator of the original backup range
      * @param p_logComponent
-     *     the log component to enable calling access granting methods
+     *         the log component to enable calling access granting methods
      * @param p_secondaryLogSize
-     *     the secondary log size
+     *         the secondary log size
      * @param p_path
-     *     the versions file's path
+     *         the versions file's path
      * @param p_mode
-     *     the harddrive access mode
+     *         the harddrive access mode
      */
     VersionsBuffer(final short p_originalOwner, final LogComponent p_logComponent, final long p_secondaryLogSize, final String p_path,
             final HarddriveAccessMode p_mode) {
@@ -179,7 +179,7 @@ class VersionsBuffer {
      * Hashes the given key with MurmurHash3
      *
      * @param p_key
-     *     the key
+     *         the key
      * @return the hash value
      */
     public static int hash(final long p_key) {
@@ -220,7 +220,7 @@ class VersionsBuffer {
      * Returns the value to which the specified key is mapped in VersionsBuffer
      *
      * @param p_key
-     *     the searched key (is incremented before insertion to avoid 0)
+     *         the searched key (is incremented before insertion to avoid 0)
      * @return the value to which the key is mapped in VersionsBuffer
      */
 
@@ -251,9 +251,9 @@ class VersionsBuffer {
      * Maps the given key to the given value in VersionsBuffer
      *
      * @param p_key
-     *     the key (is incremented before insertion to avoid 0)
+     *         the key (is incremented before insertion to avoid 0)
      * @param p_version
-     *     the version
+     *         the version
      */
     protected final void put(final long p_key, final int p_version) {
         // Avoid rehashing and excessive memory usage by waiting
@@ -349,9 +349,9 @@ class VersionsBuffer {
      * Maps the given key to the given value in VersionsBuffer if VersionBuffer is not completely filled
      *
      * @param p_key
-     *     the key (is incremented before insertion to avoid 0)
+     *         the key (is incremented before insertion to avoid 0)
      * @param p_version
-     *     the version
+     *         the version
      */
     final void tryPut(final long p_key, final int p_version) {
         if (m_count == WAIT_THRESHOLD) {
@@ -369,7 +369,7 @@ class VersionsBuffer {
      * Returns the next value to which the specified key is mapped in VersionsBuffer
      *
      * @param p_key
-     *     the searched key (is incremented before insertion to avoid 0)
+     *         the searched key (is incremented before insertion to avoid 0)
      * @return the 1 + value to which the key is mapped in VersionsBuffer
      */
     final Version getNext(final long p_key) {
@@ -476,14 +476,14 @@ class VersionsBuffer {
                     m_versionsFile.write(ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE);
                 } else if (m_mode == HarddriveAccessMode.ODIRECT) {
                     if (JNIFileDirect
-                        .dwrite(m_fileID, ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE, (int) JNIFileDirect.length(m_fileID), m_writeBufferPointer,
-                            m_writeBufferSize) < 0) {
+                            .dwrite(m_fileID, ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE, (int) JNIFileDirect.length(m_fileID), m_writeBufferPointer,
+                                    m_writeBufferSize) < 0) {
                         throw new IOException("JNI Error.");
                     }
                 } else {
                     long writePosition = JNIFileRaw.dlength(m_fileID);
                     if (JNIFileRaw.dwrite(m_fileID, ms_flushBuffer.array(), 0, count * SSD_ENTRY_SIZE, writePosition, m_writeBufferPointer, m_writeBufferSize) <
-                        0) {
+                            0) {
                         throw new IOException("JNI Error.");
                     }
                 }
@@ -503,9 +503,9 @@ class VersionsBuffer {
      * Read all versions from SSD, add current versions and write back (if specified, only)
      *
      * @param p_allVersions
-     *     the array and hashtable to put eons, epochs and versions in
+     *         the array and hashtable to put eons, epochs and versions in
      * @param p_writeBack
-     *     whether the versions should be written-back for compactification
+     *         whether the versions should be written-back for compactification
      * @return the lowest CID at the time the versions are read-in
      */
     long readAll(final TemporaryVersionsStorage p_allVersions, final boolean p_writeBack) {
@@ -524,9 +524,7 @@ class VersionsBuffer {
         VersionsHashTable versionsHashTable;
         VersionsArray versionsArray;
 
-        m_accessLock.lock();
         averageLID = (long) m_averageLID;
-        m_accessLock.unlock();
 
         versionsHashTable = p_allVersions.getVersionsHashTable();
         versionsArray = p_allVersions.getVersionsArray();
@@ -573,8 +571,8 @@ class VersionsBuffer {
                         long localID = ChunkID.getLocalID(chunkID);
                         if (localID >= lowestLID && localID <= highestLID) {
                             // ChunkID is in range -> put in array
-                            versionsArray.put(chunkID, buffer.getShort(), (buffer.get() & 0xFF) << 16 | (buffer.get() & 0xFF) << 8 | buffer.get() & 0xFF,
-                                    lowestCID);
+                            versionsArray
+                                    .put(chunkID, buffer.getShort(), (buffer.get() & 0xFF) << 16 | (buffer.get() & 0xFF) << 8 | buffer.get() & 0xFF, lowestCID);
                         } else {
                             // ChunkID is outside of range -> put in hashtable
                             versionsHashTable.put(chunkID, buffer.getShort(), (buffer.get() & 0xFF) << 16 | (buffer.get() & 0xFF) << 8 | buffer.get() & 0xFF);
@@ -693,9 +691,9 @@ class VersionsBuffer {
      * Maps the given key to the given value in VersionsBuffer
      *
      * @param p_key
-     *     the key (is incremented before insertion to avoid 0)
+     *         the key (is incremented before insertion to avoid 0)
      * @param p_version
-     *     the version
+     *         the version
      */
     private void putInternal(final long p_key, final int p_version) {
         int index;
@@ -751,7 +749,7 @@ class VersionsBuffer {
      * Gets the key at given index
      *
      * @param p_index
-     *     the index in table (-> 3 indices per element)
+     *         the index in table (-> 3 indices per element)
      * @return the key
      */
     private long getKey(final int p_index) {
@@ -765,7 +763,7 @@ class VersionsBuffer {
      * Gets the version at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @return the version
      */
     private int getVersion(final int p_index) {
@@ -776,11 +774,11 @@ class VersionsBuffer {
      * Sets the key-value tuple at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @param p_key
-     *     the key
+     *         the key
      * @param p_version
-     *     the version
+     *         the version
      */
     private void set(final int p_index, final long p_key, final int p_version) {
         int index;

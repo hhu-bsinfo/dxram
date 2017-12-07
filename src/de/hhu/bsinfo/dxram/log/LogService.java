@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxram.log;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -30,9 +33,6 @@ import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 
 /**
  * This service provides access to the backend storage system.
@@ -204,7 +204,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      *         the RemoveMessage
      */
     private void incomingRemoveMessage(final RemoveMessage p_message) {
-        m_log.incomingRemoveChunks(p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingRemoveChunks(p_message.getRangeID(), p_message.getSource(), p_message.getChunkIDs());
     }
 
     /**

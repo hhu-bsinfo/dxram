@@ -46,7 +46,7 @@ public abstract class AbstractLog {
     private int m_readBufferSize;
     private int m_writeBufferSize;
 
-    private ReentrantLock m_lock;
+    private ReentrantLock m_fileAccessLock;
 
     // Constructors
 
@@ -54,21 +54,15 @@ public abstract class AbstractLog {
      * Initializes the common resources of a log
      *
      * @param p_logFile
-     *     the random access file (RAF) of the log
+     *         the random access file (RAF) of the log
      * @param p_logSize
-     *     the size in byte of the log
-     * @param p_logHeaderSize
-     *     the size in byte of the log header
+     *         the size in byte of the log
      * @param p_mode
-     *     the HarddriveAccessMode
+     *         the HarddriveAccessMode
      */
-    AbstractLog(final File p_logFile, final long p_logSize, final int p_logHeaderSize, HarddriveAccessMode p_mode) {
+    AbstractLog(final File p_logFile, final long p_logSize, HarddriveAccessMode p_mode) {
         m_logFile = p_logFile;
-        // header-size is not needed because header is not written to log
-        //m_logFileSize = p_logSize + p_logHeaderSize;
         m_logFileSize = p_logSize;
-        // set current header-length to 0, because header is not written to log
-        //m_logFileHeaderSize = p_logHeaderSize;
         m_logFileHeaderSize = 0;
         m_totalUsableSpace = p_logSize;
 
@@ -83,7 +77,7 @@ public abstract class AbstractLog {
             m_readBufferSize = 8 * 1024 * 1024;
         }
 
-        m_lock = new ReentrantLock(false);
+        m_fileAccessLock = new ReentrantLock(false);
     }
 
     /**
@@ -114,20 +108,20 @@ public abstract class AbstractLog {
      * Key function to read from log file randomly
      *
      * @param p_data
-     *     buffer to fill with log data
+     *         buffer to fill with log data
      * @param p_length
-     *     number of bytes to read
+     *         number of bytes to read
      * @param p_readPos
-     *     the position within the log file
+     *         the position within the log file
      * @param p_randomAccessFile
-     *     the RandomAccessFile
+     *         the RandomAccessFile
      * @param p_headerSize
-     *     the length of the secondary log header
+     *         the length of the secondary log header
      * @throws IOException
-     *     if reading the random access file failed
+     *         if reading the random access file failed
      */
     static void readFromSecondaryLogFile(final byte[] p_data, final int p_length, final long p_readPos, final RandomAccessFile p_randomAccessFile,
-        final short p_headerSize) throws IOException {
+            final short p_headerSize) throws IOException {
         final long innerLogSeekPos = p_headerSize + p_readPos;
         final long bytesUntilEnd = p_randomAccessFile.length() - (p_headerSize + p_readPos);
 
@@ -143,24 +137,24 @@ public abstract class AbstractLog {
      * Key function to read from log file randomly - O_DIRECT or Raw version
      *
      * @param p_data
-     *     buffer to fill with log data
+     *         buffer to fill with log data
      * @param p_length
-     *     number of bytes to read
+     *         number of bytes to read
      * @param p_readPos
-     *     the position within the log file
+     *         the position within the log file
      * @param p_fileID
-     *     the descriptor of the logfile
+     *         the descriptor of the logfile
      * @param p_readBufferPointer
-     *     a pointer to allocated readbuffer via JNI
+     *         a pointer to allocated readbuffer via JNI
      * @param p_readBufferSize
-     *     the size of the allocated readbuffer
+     *         the size of the allocated readbuffer
      * @param p_headerSize
-     *     the length of the secondary log header
+     *         the length of the secondary log header
      * @param p_mode
-     *     the HarddriveAccessMode
+     *         the HarddriveAccessMode
      */
     static void readFromSecondaryLogFile(final byte[] p_data, final int p_length, final long p_readPos, final int p_fileID, final long p_readBufferPointer,
-        final int p_readBufferSize, final short p_headerSize, final HarddriveAccessMode p_mode) {
+            final int p_readBufferSize, final short p_headerSize, final HarddriveAccessMode p_mode) {
         if (p_mode == HarddriveAccessMode.ODIRECT) {
             final long innerLogSeekPos = p_headerSize + p_readPos;
             final long bytesUntilEnd = JNIFileDirect.length(p_fileID) - (p_headerSize + p_readPos);
@@ -189,10 +183,10 @@ public abstract class AbstractLog {
      * Opens a random access file for the log
      *
      * @param p_logFile
-     *     the log file
+     *         the log file
      * @return file descriptor to the log file
      * @throws IOException
-     *     if opening the random access file failed
+     *         if opening the random access file failed
      */
     private static RandomAccessFile openLog(final File p_logFile) throws IOException {
         return new RandomAccessFile(p_logFile, "rw");
@@ -202,7 +196,7 @@ public abstract class AbstractLog {
      * Closes the log
      *
      * @throws IOException
-     *     if the closing fails
+     *         if the closing fails
      */
     public final void close() throws IOException {
         if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
@@ -226,7 +220,7 @@ public abstract class AbstractLog {
      * Closes the log and deletes it
      *
      * @throws IOException
-     *     if the closing fails
+     *         if the closing fails
      */
     public void closeAndRemove() throws IOException {
         if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
@@ -264,10 +258,10 @@ public abstract class AbstractLog {
      * Creates and initializes random access file
      *
      * @param p_header
-     *     the log type specific header
+     *         the log type specific header
      * @return whether the log could be created
      * @throws IOException
-     *     if the header could not be read or written
+     *         if the header could not be read or written
      */
 
     final boolean createLogAndWriteHeader(final byte[] p_header) throws IOException {
@@ -343,15 +337,15 @@ public abstract class AbstractLog {
      * Key function to read from log randomly
      *
      * @param p_data
-     *     buffer to fill with log data
+     *         buffer to fill with log data
      * @param p_length
-     *     number of bytes to read
+     *         number of bytes to read
      * @param p_readPos
-     *     the position within the log file
+     *         the position within the log file
      * @param p_accessed
-     *     whether the RAF is accessed by another thread or not
+     *         whether the RAF is accessed by another thread or not
      * @throws IOException
-     *     if reading the random access file failed
+     *         if reading the random access file failed
      */
     final void readFromSecondaryLog(final byte[] p_data, final int p_length, final long p_readPos, final boolean p_accessed) throws IOException {
         final long innerLogSeekPos = m_logFileHeaderSize + p_readPos;
@@ -359,7 +353,7 @@ public abstract class AbstractLog {
 
         if (p_length > 0) {
             if (p_accessed) {
-                m_lock.lock();
+                m_fileAccessLock.lock();
             }
 
             assert p_length <= bytesUntilEnd;
@@ -378,7 +372,7 @@ public abstract class AbstractLog {
             }
 
             if (p_accessed) {
-                m_lock.unlock();
+                m_fileAccessLock.unlock();
             }
         }
     }
@@ -387,16 +381,16 @@ public abstract class AbstractLog {
      * Key function to write in log sequentially
      *
      * @param p_data
-     *     buffer with data to write in log
+     *         buffer with data to write in log
      * @param p_bufferOffset
-     *     offset in buffer
+     *         offset in buffer
      * @param p_length
-     *     number of bytes to write
+     *         number of bytes to write
      * @param p_writePos
-     *     the current write position
+     *         the current write position
      * @return updated write position
      * @throws IOException
-     *     if reading the random access file failed
+     *         if reading the random access file failed
      */
     final long appendToPrimaryLog(final byte[] p_data, final int p_bufferOffset, final int p_length, final long p_writePos) throws IOException {
         long ret;
@@ -408,12 +402,12 @@ public abstract class AbstractLog {
                 m_randomAccessFile.write(p_data, p_bufferOffset, p_length);
             } else if (m_mode == HarddriveAccessMode.ODIRECT) {
                 if (JNIFileDirect.write(m_fileID, p_data, p_bufferOffset, p_length, m_logFileHeaderSize + p_writePos, m_writeBufferPointer, m_writeBufferSize) <
-                    0) {
+                        0) {
                     throw new IOException("Error writing to log");
                 }
             } else {
                 if (JNIFileRaw.write(m_fileID, p_data, p_bufferOffset, p_length, m_logFileHeaderSize + p_writePos, m_writeBufferPointer, m_writeBufferSize) <
-                    0) {
+                        0) {
                     throw new IOException("Error writing to log");
                 }
             }
@@ -430,25 +424,21 @@ public abstract class AbstractLog {
                 m_randomAccessFile.seek(m_logFileHeaderSize);
                 m_randomAccessFile.write(p_data, p_bufferOffset + (int) bytesUntilEnd, p_length - (int) bytesUntilEnd);
             } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                if (JNIFileDirect
-                    .write(m_fileID, p_data, p_bufferOffset, (int) bytesUntilEnd, m_logFileHeaderSize + p_writePos, m_writeBufferPointer, m_writeBufferSize) <
-                    0) {
+                if (JNIFileDirect.write(m_fileID, p_data, p_bufferOffset, (int) bytesUntilEnd, m_logFileHeaderSize + p_writePos, m_writeBufferPointer,
+                        m_writeBufferSize) < 0) {
                     throw new IOException("Error writing to log");
                 }
-                if (JNIFileDirect
-                    .write(m_fileID, p_data, p_bufferOffset + (int) bytesUntilEnd, p_length - (int) bytesUntilEnd, m_logFileHeaderSize, m_writeBufferPointer,
-                        m_writeBufferSize) < 0) {
+                if (JNIFileDirect.write(m_fileID, p_data, p_bufferOffset + (int) bytesUntilEnd, p_length - (int) bytesUntilEnd, m_logFileHeaderSize,
+                        m_writeBufferPointer, m_writeBufferSize) < 0) {
                     throw new IOException("Error writing to log");
                 }
             } else {
-                if (JNIFileRaw
-                    .write(m_fileID, p_data, p_bufferOffset, (int) bytesUntilEnd, m_logFileHeaderSize + p_writePos, m_writeBufferPointer, m_writeBufferSize) <
-                    0) {
+                if (JNIFileRaw.write(m_fileID, p_data, p_bufferOffset, (int) bytesUntilEnd, m_logFileHeaderSize + p_writePos, m_writeBufferPointer,
+                        m_writeBufferSize) < 0) {
                     throw new IOException("Error writing to log");
                 }
-                if (JNIFileRaw
-                    .write(m_fileID, p_data, p_bufferOffset + (int) bytesUntilEnd, p_length - (int) bytesUntilEnd, m_logFileHeaderSize, m_writeBufferPointer,
-                        m_writeBufferSize) < 0) {
+                if (JNIFileRaw.write(m_fileID, p_data, p_bufferOffset + (int) bytesUntilEnd, p_length - (int) bytesUntilEnd, m_logFileHeaderSize,
+                        m_writeBufferPointer, m_writeBufferSize) < 0) {
                     throw new IOException("Error writing to log");
                 }
             }
@@ -463,25 +453,25 @@ public abstract class AbstractLog {
      * Key function to write in log
      *
      * @param p_data
-     *     buffer with data to write in log
+     *         buffer with data to write in log
      * @param p_bufferOffset
-     *     offset in buffer
+     *         offset in buffer
      * @param p_readPos
-     *     offset in log file
+     *         offset in log file
      * @param p_length
-     *     number of bytes to write
+     *         number of bytes to write
      * @param p_accessed
-     *     whether the RAF is accessed by another thread or not
+     *         whether the RAF is accessed by another thread or not
      * @return number of bytes that were written successfully
      * @throws IOException
-     *     if reading the random access file failed
+     *         if reading the random access file failed
      */
     final int writeToSecondaryLog(final byte[] p_data, final int p_bufferOffset, final long p_readPos, final int p_length, final boolean p_accessed)
-        throws IOException {
+            throws IOException {
 
         if (p_length > 0) {
             if (p_accessed) {
-                m_lock.lock();
+                m_fileAccessLock.lock();
             }
 
             assert p_readPos + p_length <= m_totalUsableSpace;
@@ -491,18 +481,18 @@ public abstract class AbstractLog {
                 m_randomAccessFile.write(p_data, p_bufferOffset, p_length);
             } else if (m_mode == HarddriveAccessMode.ODIRECT) {
                 if (JNIFileDirect.write(m_fileID, p_data, p_bufferOffset, p_length, m_logFileHeaderSize + p_readPos, m_writeBufferPointer, m_writeBufferSize) <
-                    0) {
+                        0) {
                     throw new IOException("Error writing to log");
                 }
             } else {
                 if (JNIFileRaw.write(m_fileID, p_data, p_bufferOffset, p_length, m_logFileHeaderSize + p_readPos, m_writeBufferPointer, m_writeBufferSize) <
-                    0) {
+                        0) {
                     throw new IOException("Error writing to log");
                 }
             }
 
             if (p_accessed) {
-                m_lock.unlock();
+                m_fileAccessLock.unlock();
             }
         }
         return p_length;
@@ -512,16 +502,16 @@ public abstract class AbstractLog {
      * Writes data to log
      *
      * @param p_data
-     *     a buffer
+     *         a buffer
      * @param p_offset
-     *     offset within the buffer
+     *         offset within the buffer
      * @param p_length
-     *     length of data
+     *         length of data
      * @return number of successfully written bytes
      * @throws InterruptedException
-     *     if the write access fails
+     *         if the write access fails
      * @throws IOException
-     *     if the write access fails
+     *         if the write access fails
      */
     abstract int appendData(byte[] p_data, int p_offset, int p_length) throws IOException, InterruptedException;
 }
