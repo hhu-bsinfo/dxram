@@ -15,7 +15,7 @@ plot_data_series()
 		set offsets 0, 0, 0.2, 0
 		set decimal \".\"
 		set format y \"%'g\"
-		set datafile separator \"\t\"
+		set datafile separator \";\"
 		set style data histogram
 		set style fill solid border -1
 		set key horiz center top outside
@@ -72,15 +72,14 @@ process_data()
 	touch tmp.csv
 	for file in $INPUT_FOLDER*.csv; do
 		cat $file >> tmp.csv
-		
-		columns=`awk -F'[\t]+' '{print NF}' $file | head -n 1`
+		columns=`awk -F'[;]+' '{print NF}' $file | head -n 1`
 		if [ "$columns" != "" ] && [ "$columns" -gt 9 ]; then
 			PERCENTILES=true
 		fi
 		
 		while read line; do
-			counter1=`echo "$line" | cut -d $'\t' -f 8`
-			counter2=`echo "$line" | cut -d $'\t' -f 9`
+			counter1=`echo "$line" | cut -d $';' -f 8`
+			counter2=`echo "$line" | cut -d $';' -f 9`
 			if [ "$counter1" != "0" ]; then
 				if [ "$COUNTER1" = false ]; then
 					PLOTS=$((PLOTS + 1))
