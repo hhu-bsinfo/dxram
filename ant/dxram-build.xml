@@ -18,7 +18,7 @@
             description="builds dxram-performance.jar (without any logger calls)"/>
 
     <target name="git_submodule" depends="check_dirs" unless="dirs_contain-files">
-        <echo message="DXNet and/or DXUtils directories are empty -> getting submodules"/>
+        <echo message="DXNet, DXMonitor, Monitoring-Console and/or DXUtils directories are empty -> getting submodules"/>
         <exec executable="git">
             <arg value="submodule"/>
             <arg value="update"/>

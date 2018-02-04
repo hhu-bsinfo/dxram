@@ -10,6 +10,7 @@
         </classpath>
     </taskdef>
 
+    <!-- Build root debug -->
     <target name="debug" description="builds dxram-debug.jar (contains all logger calls)">
         <antcall target="update-git-rev-in-code"/>
         <antcall target="update-build-type">
@@ -24,6 +25,7 @@
         <copy file="${build_proj_dir}/${name_dxram}.jar" tofile="${basedir}/${name_dxram}.jar"/>
     </target>
 
+    <!-- Build root release -->
     <target name="release" description="builds dxram-release-jar">
         <exec dir="util/" executable="/bin/bash">
             <arg line="preprocessor.sh INFO ENABLED DISABLED"/>
@@ -54,6 +56,7 @@
         <copy file="${build_proj_dir}/${name_dxram}.jar" tofile="${basedir}/${name_dxram}.jar"/>
     </target>
 
+    <!-- Build root performance -->
     <target name="performance" description="builds dxram-performance.jar (without any statistics)">
         <exec dir="util/" executable="/bin/bash">
             <arg line="preprocessor.sh INFO DISABLED DISABLED"/>
@@ -84,8 +87,46 @@
         <copy file="${build_proj_dir}/${name_dxram}.jar" tofile="${basedir}/${name_dxram}.jar"/>
     </target>
 
+    <!-- Compile class files -->
     <target name="compile" description="builds class files">
         <echo message="Compiling with build type ${buildtype}"/>
+
+        <!-- Find tools.jar which is included in the JDK. Required for dxmon -->
+        <if>
+            <equals arg1="${java.home}" arg2=""/>
+            <then>
+                <!-- java_home not set -->
+                <exec command="uname" resultproperty="unameResult"/>
+                <exec command="expr substr $(uname -s) 1 5" resultproperty="unameResult2"/>
+
+                <if>
+                    <equals arg1="${unameResult}" arg2="Darwin" />
+                    <then> <!-- OSX -->
+                        <exec command="/usr/libexec/java_home" resultproperty="tmpJH"/>
+                        <property name="tools.path" value="${tmpJH}/lib/"/>
+                    </then>
+                    <elseif>
+                        <equals arg1="${unameResult2}" arg2="Linux" />
+                        <then> <!-- LINUX -->
+                            <exec command="dirname $(dirname $readlink -f $(type -p javac)))" resultproperty="tmpJH"/>
+                            <property name="tools.path" value="${tmpJH}/lib/"/>
+                        </then>
+                    </elseif>
+                </if>
+            </then>
+            <else>
+                <!-- java.home is set -->
+                <if>
+                    <contains string="${java.home}" substring="jre"/>
+                    <then>
+                        <property name="tools.path" value="${java.home}/../lib"/>
+                    </then>
+                    <else>
+                        <property name="tools.path" value="${java.home}/lib"/>
+                    </else>
+                </if>
+            </else>
+        </if>
 
         <mkdir dir="${build_proj_dir}/classes"/>
         <mkdir dir="${build_proj_dir}/classes/${buildtype}"/>
@@ -117,6 +158,7 @@
                 <fileset dir="${lib_dir}">
                     <include name="**/*.jar"/>
                 </fileset>
+                <file name="${tools.path}/tools.jar"/>
             </classpath>
         </javac>
 
@@ -135,7 +177,6 @@
 
         <delete dir="${build_proj_dir}/classes"/>
     </target>
-
 
     <available file=".git" type="dir" property="git.present"/>
 
