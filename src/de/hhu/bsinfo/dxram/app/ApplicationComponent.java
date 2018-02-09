@@ -11,7 +11,6 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
@@ -123,6 +122,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
         }
 
         JarInputStream jarFile;
+
         try {
             jarFile = new JarInputStream(new FileInputStream(p_jar));
         } catch (final IOException e) {
@@ -135,6 +135,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
 
         while(true) {
             String classname = getNextClass(jarFile, p_jar);
+
             if(classname == null) {
                 break;
             } else if(classname.isEmpty()) {
@@ -153,7 +154,9 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 e.printStackTrace();
-            } catch (NoClassDefFoundError e) { continue;}
+            } catch (NoClassDefFoundError ignored) {
+
+            }
         }
 
         try {
@@ -168,6 +171,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
 
         while (true) {
             String classname = getNextClass(jarFile, p_jar);
+
             if(classname == null) {
                 break;
             } else if(classname.isEmpty()) {
@@ -206,15 +210,17 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
             try {
                 URLClassLoader loader = (URLClassLoader) ClassLoader.getSystemClassLoader();
                 URL url = new File(dep).toURI().toURL();
+
                 //Disallow if already loaded
                 for (java.net.URL it : java.util.Arrays.asList(loader.getURLs())) {
                     if (it.equals(url)) {
                         return;
                     }
                 }
-                Method method = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
+
+                Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
                 method.setAccessible(true);
-                method.invoke(loader, new Object[]{url});
+                method.invoke(loader, url);
                 // #if LOGGER >= INFO
                 LOGGER.info("Load dependency %s", dep);
                 // #endif /* LOGGER >= INFO */
@@ -228,6 +234,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
 
     private String getNextClass(JarInputStream p_jarFile, File p_jar) {
         JarEntry jarEntry = null;
+
         try {
             jarEntry = p_jarFile.getNextJarEntry();
         } catch (final IOException e) {
