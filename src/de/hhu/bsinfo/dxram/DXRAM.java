@@ -279,6 +279,7 @@ public final class DXRAM {
 
         for (String arg : p_args) {
             builder.append(arg);
+            builder.append(' ');
         }
 
         System.out.println(builder);
@@ -296,6 +297,7 @@ public final class DXRAM {
 
         for (String arg : args) {
             builder.append(arg);
+            builder.append(' ');
         }
 
         System.out.println(builder);
