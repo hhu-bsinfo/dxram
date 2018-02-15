@@ -69,7 +69,8 @@ import de.hhu.bsinfo.dxutils.NodeID;
  */
 public final class DXRAM {
     public static final DXRAMVersion VERSION = new DXRAMVersion(0, 3, 0);
-    public static final String GIT_COMMIT = "81128932";
+    public static final String GIT_COMMIT = "Not Available"; //@GITCOMMIT@
+    public static final String BUILD_TYPE = "Not Available"; //@BUILDTYPE@
     private static final String STARTUP_DONE_STR = "!---ooo---!";
 
     private DXRAMEngine m_engine;
@@ -238,6 +239,7 @@ public final class DXRAM {
     private void printNodeInfo() {
         String str = ">>> DXRAM Node <<<\n";
         str += VERSION + "\n";
+        str += "Build type: " + BUILD_TYPE + '\n';
         str += "Git commit: " + GIT_COMMIT + "\n";
 
         String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");

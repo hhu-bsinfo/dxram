@@ -12,6 +12,10 @@
 
     <target name="debug" description="builds dxram-debug.jar (contains all logger calls)">
         <antcall target="update-git-rev-in-code"/>
+        <antcall target="update-build-type">
+            <param name="buildtype" value="debug"/>
+        </antcall>
+
         <antcall target="compile">
             <param name="buildtype" value="debug"/>
         </antcall>
@@ -26,6 +30,9 @@
         </exec>
 
         <antcall target="update-git-rev-in-code"/>
+        <antcall target="update-build-type">
+            <param name="buildtype" value="release"/>
+        </antcall>
 
         <trycatch>
             <try>
@@ -53,6 +60,9 @@
         </exec>
 
         <antcall target="update-git-rev-in-code"/>
+        <antcall target="update-build-type">
+            <param name="buildtype" value="performance"/>
+        </antcall>
 
         <trycatch>
             <try>
@@ -128,7 +138,7 @@
 
     <available file=".git" type="dir" property="git.present"/>
 
-    <target name="update-git-rev-in-code" depends="replace-tokens"/>
+    <target name="update-git-rev-in-code" depends="replace-git-tokens"/>
 
     <target name="git.revision" description="Store git revision in ${repository.version}" if="git.present">
         <echo level="info" message="git.present is set ${git.present}"/>
@@ -149,7 +159,15 @@
         <echo level="info" message="repository.version is set ${repository.version}"/>
     </target>
 
-    <target name="replace-tokens" depends="git.revision">
-        <replace dir="${source_dir}" token="@GITCOMMIT@" value="${repository.version}"/>
+    <target name="replace-git-tokens" depends="git.revision">
+        <replaceregexp match="&quot;.*&quot;;.*//@GITCOMMIT@" replace="&quot;${repository.version}&quot;; //@GITCOMMIT@">
+            <fileset dir="${source_dir}"/>
+        </replaceregexp>
+    </target>
+
+   <target name="update-build-type">
+        <replaceregexp match="&quot;.*&quot;;.*//@BUILDTYPE@" replace="&quot;${buildtype}&quot;; //@BUILDTYPE@">
+            <fileset dir="${source_dir}"/>
+        </replaceregexp>
     </target>
 </project>
