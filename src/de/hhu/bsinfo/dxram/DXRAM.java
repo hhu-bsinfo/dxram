@@ -13,7 +13,10 @@
 
 package de.hhu.bsinfo.dxram;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Locale;
 
 import de.hhu.bsinfo.dxram.app.ApplicationComponent;
@@ -88,6 +91,9 @@ public final class DXRAM {
      *         Program arguments.
      */
     public static void main(final String[] p_args) {
+        printJVMArgs();
+        printCmdArgs(p_args);
+
         DXRAM dxram = new DXRAM();
 
         System.out.println("Starting DXRAM, version " + dxram.getVersion());
@@ -257,6 +263,40 @@ public final class DXRAM {
 
             System.out.println(str);
         }
+    }
+
+    /**
+     * Print all cmd args specified on startup
+     *
+     * @param p_args
+     *         Main arguments
+     */
+    private static void printCmdArgs(final String[] p_args) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Cmd arguments: ");
+
+        for (String arg : p_args) {
+            builder.append(arg);
+        }
+
+        System.out.println(builder);
+    }
+
+    /**
+     * Print all JVM args specified on startup
+     */
+    private static void printJVMArgs() {
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        List<String> args = runtimeMxBean.getInputArguments();
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("JVM arguments: ");
+
+        for (String arg : args) {
+            builder.append(arg);
+        }
+
+        System.out.println(builder);
     }
 
     /**
