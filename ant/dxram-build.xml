@@ -84,17 +84,17 @@
     </target>
 
     <target name="compile-debug" depends="create_base_dirs" description="builds class files, debug build">
-        <ant antfile="dxram-core-build.xml" target="debug"/>
-        <ant antfile="dxram-apps-build.xml" target="debug"/>
+        <ant antfile="${basedir}/ant/dxram-core-build.xml" target="debug"/>
+        <ant antfile="${basedir}/ant/dxram-apps-build.xml" target="debug"/>
     </target>
 
     <target name="compile-release" depends="create_base_dirs" description="builds class files, release build">
-        <ant antfile="dxram-core-build.xml" target="release"/>
-        <ant antfile="dxram-apps-build.xml" target="release"/>
+        <ant antfile="${basedir}/ant/dxram-core-build.xml" target="release"/>
+        <ant antfile="${basedir}/ant/dxram-apps-build.xml" target="release"/>
     </target>
 
     <target name="compile-performance" depends="create_base_dirs" description="builds class files, performance build">
-        <ant antfile="dxram-core-build.xml" target="performance"/>
-        <ant antfile="dxram-apps-build.xml" target="performance"/>
+        <ant antfile="${basedir}/ant/dxram-core-build.xml" target="performance"/>
+        <ant antfile="${basedir}/ant/dxram-apps-build.xml" target="performance"/>
     </target>
 </project>
