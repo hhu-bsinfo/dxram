@@ -47,9 +47,9 @@
         <copy file="${build_proj_dir}/${name_dxram}.jar" tofile="${basedir}/${name_dxram}.jar"/>
     </target>
 
-    <target name="performance" description="builds dxram-performance.jar (without any logger calls)">
+    <target name="performance" description="builds dxram-performance.jar (without any statistics)">
         <exec dir="util/" executable="/bin/bash">
-            <arg line="preprocessor.sh DISABLED DISABLED DISABLED"/>
+            <arg line="preprocessor.sh INFO DISABLED DISABLED"/>
         </exec>
 
         <antcall target="update-git-rev-in-code"/>
