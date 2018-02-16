@@ -91,7 +91,7 @@
     <target name="compile" description="builds class files">
         <echo message="Compiling with build type ${buildtype}"/>
 
-        <!-- Find tools.jar which is included in the JDK. Required for dxmon -->
+        <!-- Find tools.jar which is included in the JDK. Required for dxmonitor -->
         <if>
             <equals arg1="${java.home}" arg2=""/>
             <then>
@@ -150,7 +150,7 @@
             <compilerarg line="-Xlint:sunapi -XDenableSunApiLintControl"/>
             <include name="de/hhu/bsinfo/dxgraph/**/*.java"/>
             <include name="de/hhu/bsinfo/dxram/**/*.java"/>
-            <include name="de/hhu/bsinfo/dxmon/**/*.java"/>
+            <include name="de/hhu/bsinfo/dxmonitor/**/*.java"/>
             <include name="de/hhu/bsinfo/dxnet/**/*.java"/>
             <include name="de/hhu/bsinfo/dxutils/**/*.java"/>
             <include name="de/hhu/bsinfo/soh/**/*.java"/>

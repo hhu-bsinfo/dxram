@@ -5,5 +5,5 @@
 	path = src/de/hhu/bsinfo/dxnet
 	url = https://github.com/hhu-bsinfo/dxnet-src.git
 [submodule "src/de/hhu/bsinfo/dxmon"]
-	path = src/de/hhu/bsinfo/dxmon
+	path = src/de/hhu/bsinfo/dxmonitor
 	url = https://github.com/hhu-bsinfo/dxmon-src.git
