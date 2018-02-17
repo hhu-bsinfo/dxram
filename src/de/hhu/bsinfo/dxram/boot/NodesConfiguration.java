@@ -116,10 +116,9 @@ final class NodesConfiguration {
 
         if (prev == null || !prev.getAddress().equals(p_entry.getAddress()) || prev.getRole() != p_entry.getRole()) {
             m_nodes[p_nodeID & 0xFFFF] = p_entry;
-        } else {
-            // Node is already in list -> mark as online
-            m_nodes[p_nodeID & 0xFFFF].setStatus(true);
         }
+        m_nodes[p_nodeID & 0xFFFF].setStatus(true);
+
 
         return prev == null || !prev.getAddress().equals(p_entry.getAddress());
     }
