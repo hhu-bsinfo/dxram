@@ -52,7 +52,7 @@ Run built in benchmarks or external applications/benchmarks
 * [Troubleshooting](doc/Troubleshooting.md)
 * [DXRAM Architecture](doc/Architecture.md)
 * [Publications involving DXRAM](http://www.cs.hhu.de/en/research-groups/operating-systems/publications.html)
-* [Development environment setup](doc/DevelopmentSetup.md)
+* [Development setup](doc/DevelopmentSetup.md)
 * [Develop applications using DXRAM](doc/Development.md)
 * [Manual setup and configuration of DXRAM instances](doc/ManualSetup.md)
 * [Style guide bash](doc/StyleGuideBash.md)
