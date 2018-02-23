@@ -59,6 +59,6 @@ Run built in benchmarks or external applications/benchmarks
 
 # License
 
-Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, 
+Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf,
 Institute of Computer Science, Department Operating Systems. 
 Licensed under the [GNU General Public License](LICENSE.md).
