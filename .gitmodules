@@ -1,6 +1,6 @@
 [submodule "src/de/hhu/bsinfo/dxutils"]
 	path = src/de/hhu/bsinfo/dxutils
-	url = https://github.com/hhu-bsinfo/dxutils.git
+	url = https://github.com/hhu-bsinfo/dxutils-src.git
 [submodule "src/de/hhu/bsinfo/dxnet"]
 	path = src/de/hhu/bsinfo/dxnet
 	url = https://github.com/hhu-bsinfo/dxnet-src.git
