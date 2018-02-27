@@ -41,17 +41,17 @@ uint32_t sse42_crc32(uint32_t p_crc, const uint8_t* p_data, uint32_t p_offset, u
     p_crc = _mm_crc32_u64(p_crc, *((uint64_t *) &p_data[i + p_offset]));
     i += 8;
   }
-  
+
   if (i + 4 <= p_length) {
     p_crc = _mm_crc32_u32(p_crc, *((uint32_t *) &p_data[i + p_offset]));
     i += 4;
   }
-  
+
   if (i + 2 <= p_length) {
     p_crc = _mm_crc32_u16(p_crc, *((uint16_t *) &p_data[i + p_offset]));
     i += 2;
   }
-  
+
   if (i + 1 <= p_length) {
     p_crc = _mm_crc32_u8(p_crc, p_data[i + p_offset]);
     i++;
@@ -90,14 +90,18 @@ static void* resolve_crc32(void) {
 uint32_t crc32_sse(uint32_t p_crc, const uint8_t* p_data, uint32_t p_offset, uint32_t p_length) __attribute__ ((ifunc ("resolve_crc32")));
 
 
-JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNINativeCRCGenerator_hash(JNIEnv *p_env, jclass p_class, jint p_checksum, jbyteArray p_data, jint p_offset, jint p_length) {
+JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNINativeCRCGenerator_hashNative(JNIEnv *p_env, jclass p_class, jint p_checksum, jlong p_data, jint p_offset, jint p_length) {
+	return crc32_sse(p_checksum, (char*) p_data, p_offset, p_length);
+}
+
+JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNINativeCRCGenerator_hashHeap(JNIEnv *p_env, jclass p_class, jint p_checksum, jbyteArray p_data, jint p_offset, jint p_length) {
 	jint ret;
-	
+
 	char* data = (*p_env)->GetPrimitiveArrayCritical(p_env, p_data, 0);
 	if (data) {
 		ret = crc32_sse(p_checksum, data, p_offset, p_length);
 		(*p_env)->ReleasePrimitiveArrayCritical(p_env, p_data, data, 0);
 	}
-	
+
 	return ret;
 }
