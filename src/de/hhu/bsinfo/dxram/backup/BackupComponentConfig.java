@@ -58,7 +58,7 @@ public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
      * If this peer is not available for backup, it will not log and recover chunks but all other backup functions, like replicating own chunks, are enabled.
      * Do not set this parameter globally to deactivate backup. Use backupActive parameter for that purpose.
      */
-    public boolean availableForBackup() {
+    boolean availableForBackup() {
         return m_availableForBackup;
     }
 

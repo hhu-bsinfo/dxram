@@ -33,6 +33,7 @@ public class NodeJoinEventRequest extends Request {
     private NodeRole m_nodeRole;
     private short m_rack;
     private short m_switch;
+    private boolean m_availableForBackup;
     private IPV4Unit m_address;
 
     // Temp. state
@@ -57,13 +58,14 @@ public class NodeJoinEventRequest extends Request {
      *         the NodeID of the joined peer
      */
     public NodeJoinEventRequest(final short p_destination, final short p_nodeID, final NodeRole p_role, final short p_rack, final short p_switch,
-            final IPV4Unit p_address) {
+            final boolean p_availableForBackup, final IPV4Unit p_address) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NODE_JOIN_EVENT_REQUEST);
 
         m_nodeID = p_nodeID;
         m_nodeRole = p_role;
         m_rack = p_rack;
         m_switch = p_switch;
+        m_availableForBackup = p_availableForBackup;
         m_address = p_address;
     }
 
@@ -106,6 +108,15 @@ public class NodeJoinEventRequest extends Request {
     }
 
     /**
+     * Returns whether the joined node is available for backup or not. Always false for superpeers.
+     *
+     * @return true, if available for backup
+     */
+    public boolean isAvailableForBackup() {
+        return m_availableForBackup;
+    }
+
+    /**
      * Returns the address
      *
      * @return the joined peer's address
@@ -116,7 +127,7 @@ public class NodeJoinEventRequest extends Request {
 
     @Override
     protected final int getPayloadLength() {
-        return 4 * Short.BYTES + ObjectSizeUtil.sizeofString(m_address.getAddressStr());
+        return 4 * Short.BYTES + Byte.BYTES + ObjectSizeUtil.sizeofString(m_address.getAddressStr());
     }
 
     // Methods
@@ -126,6 +137,7 @@ public class NodeJoinEventRequest extends Request {
         p_exporter.writeShort((short) m_nodeRole.getAcronym());
         p_exporter.writeShort(m_rack);
         p_exporter.writeShort(m_switch);
+        p_exporter.writeBoolean(m_availableForBackup);
         p_exporter.writeString(m_address.getAddressStr());
     }
 
@@ -136,6 +148,7 @@ public class NodeJoinEventRequest extends Request {
         m_nodeRole = NodeRole.getRoleByAcronym((char) m_acr);
         m_rack = p_importer.readShort(m_rack);
         m_switch = p_importer.readShort(m_switch);
+        m_availableForBackup = p_importer.readBoolean(m_availableForBackup);
         m_addrStr = p_importer.readString(m_addrStr);
         String[] splitAddr = m_addrStr.split(":");
         m_address = new IPV4Unit(splitAddr[0], Integer.parseInt(splitAddr[1]));

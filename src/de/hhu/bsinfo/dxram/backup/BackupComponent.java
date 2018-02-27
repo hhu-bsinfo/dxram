@@ -425,7 +425,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                                 m_lookup.replaceBackupPeer(rangeID, NodeID.INVALID_ID, joinedPeer.getNodeID());
 
                                 // #if LOGGER >= INFO
-                                LOGGER.info("Replicating backup range %d to new peer 0x%X", i, joinedPeer);
+                                LOGGER.info("Replicating backup range %d to new peer %s", i, joinedPeer);
                                 // #endif /* LOGGER >= INFO */
 
                                 // Backup range was not complete -> send all chunks to joined peer
@@ -433,7 +433,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                                         .replicateBackupRange(joinedPeer.getNodeID(), m_backupRangeTree.getAllChunkIDRangesOfBackupRange(rangeID), rangeID);
 
                                 // #if LOGGER >= INFO
-                                LOGGER.info("Replicated %d chunk(s) of backup range %d to new peer 0x%X", num, i, joinedPeer);
+                                LOGGER.info("Replicated %d chunk(s) of backup range %d to new peer %s", num, i, joinedPeer);
                                 // #endif /* LOGGER >= INFO */
                             } else {
                                 m_lock.writeLock().unlock();

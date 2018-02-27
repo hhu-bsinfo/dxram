@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.boot.NodesConfiguration;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
@@ -34,10 +35,12 @@ public class JoinResponse extends Response {
     private short m_successor;
     private ArrayList<Short> m_superpeers;
     private ArrayList<Short> m_peers;
+    private ArrayList<NodesConfiguration.NodeEntry> m_onlineNodes;
     private byte[] m_metadata;
 
     private int m_superpeersToRead; // Used for serialization, only
     private int m_peersToRead; // Used for serialization, only
+    private int m_nodesToRead; // Used for serialization, only
 
     // Constructors
 
@@ -52,6 +55,7 @@ public class JoinResponse extends Response {
         m_successor = NodeID.INVALID_ID;
         m_superpeers = null;
         m_peers = null;
+        m_onlineNodes = null;
         m_metadata = null;
     }
 
@@ -70,11 +74,14 @@ public class JoinResponse extends Response {
      *         the finger superpeers
      * @param p_peers
      *         the peers the superpeer is responsible for
+     * @param p_onlineNodes
+     *         all available nodes with address, role, ...
      * @param p_metadata
      *         the metadata
      */
     public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer, final short p_predecessor, final short p_successor,
-            final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final byte[] p_metadata) {
+            final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<NodesConfiguration.NodeEntry> p_onlineNodes,
+            final byte[] p_metadata) {
         super(p_request, LookupMessages.SUBTYPE_JOIN_RESPONSE);
 
         m_newContactSuperpeer = p_newContactSuperpeer;
@@ -82,6 +89,7 @@ public class JoinResponse extends Response {
         m_successor = p_successor;
         m_superpeers = p_superpeers;
         m_peers = p_peers;
+        m_onlineNodes = p_onlineNodes;
         m_metadata = p_metadata;
     }
 
@@ -133,6 +141,15 @@ public class JoinResponse extends Response {
     }
 
     /**
+     * Get online nodes
+     *
+     * @return the nodes
+     */
+    public final ArrayList<NodesConfiguration.NodeEntry> getOnlineNodes() {
+        return m_onlineNodes;
+    }
+
+    /**
      * Get metadata
      *
      * @return the byte array
@@ -156,6 +173,15 @@ public class JoinResponse extends Response {
 
             if (m_peers != null && !m_peers.isEmpty()) {
                 ret += ObjectSizeUtil.sizeofCompactedNumber(m_peers.size()) + Short.BYTES * m_peers.size();
+            } else {
+                ret += Byte.BYTES;
+            }
+
+            if (m_onlineNodes != null && !m_onlineNodes.isEmpty()) {
+                ret += ObjectSizeUtil.sizeofCompactedNumber(m_onlineNodes.size());
+                for (NodesConfiguration.NodeEntry entry : m_onlineNodes) {
+                    ret += entry.sizeofObject();
+                }
             } else {
                 ret += Byte.BYTES;
             }
@@ -198,6 +224,15 @@ public class JoinResponse extends Response {
                 }
             }
 
+            if (m_onlineNodes == null || m_onlineNodes.isEmpty()) {
+                p_exporter.writeCompactNumber(0);
+            } else {
+                p_exporter.writeCompactNumber(m_onlineNodes.size());
+                for (NodesConfiguration.NodeEntry entry : m_onlineNodes) {
+                    p_exporter.exportObject(entry);
+                }
+            }
+
             if (m_metadata == null || m_metadata.length == 0) {
                 p_exporter.writeCompactNumber(0);
             } else {
@@ -236,6 +271,20 @@ public class JoinResponse extends Response {
                 short peer = p_importer.readShort((short) 0);
                 if (m_peers.size() == i) {
                     m_peers.add(peer);
+                }
+            }
+
+            m_nodesToRead = p_importer.readCompactNumber(m_nodesToRead);
+            if (m_onlineNodes == null) {
+                // Do not overwrite existing array list
+                m_onlineNodes = new ArrayList<NodesConfiguration.NodeEntry>(m_nodesToRead);
+            }
+            for (int i = 0; i < m_nodesToRead; i++) {
+                NodesConfiguration.NodeEntry node = new NodesConfiguration.NodeEntry(true);
+                p_importer.importObject(node);
+
+                if (m_onlineNodes.size() == i) {
+                    m_onlineNodes.add(node);
                 }
             }
 

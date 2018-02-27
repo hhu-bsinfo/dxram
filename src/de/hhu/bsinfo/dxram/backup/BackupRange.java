@@ -90,6 +90,9 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
         long ret = 0;
 
         for (int i = 0; i < ms_replicationFactor; i++) {
+            if (p_backupPeers[i] == null) {
+                break;
+            }
             ret += (p_backupPeers[i].getNodeID() & 0x000000000000FFFFL) << i * 16;
         }
 
@@ -302,7 +305,11 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      * @return the backup peers
      */
     long getBackupPeersAsLong() {
-        return BackupRange.convert(m_backupPeers);
+        if (m_backupPeers != null) {
+            return BackupRange.convert(m_backupPeers);
+        } else {
+            return -1;
+        }
     }
 
     /**

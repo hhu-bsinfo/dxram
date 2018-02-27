@@ -98,13 +98,25 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         for (int i = 0; i < allNodes.length; i++) {
             currentEntry = allNodes[i];
             if (currentEntry != null) {
-                if (currentEntry.getRole() == NodeRole.PEER && currentEntry.getStatus()) {
+                if (currentEntry.getRole() == NodeRole.PEER && currentEntry.getStatus() && currentEntry.isAvailableForBackup()) {
                     ret.add(new BackupPeer((short) (i & 0xFFFF), currentEntry.getRack(), currentEntry.getSwitch()));
                 }
             }
         }
 
         return ret;
+    }
+
+    @Override
+    public ArrayList<NodeEntry> getOnlineNodes() {
+        return m_nodes.getOnlineNodes();
+    }
+
+    @Override
+    public void putOnlineNodes(ArrayList<NodeEntry> p_onlineNodes) {
+        for (NodeEntry entry : p_onlineNodes) {
+            m_nodes.addNode(entry);
+        }
     }
 
     @Override
@@ -292,54 +304,11 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
     @Override
     public void process(final WatchedEvent p_event) {
-        String path;
-        String prefix;
-
-        List<String> children;
-        short nodeID;
-        NodeRole role;
-        String node;
-        String[] splits;
-
         if (!m_shutdown) {
             if (p_event.getType() == Event.EventType.None && p_event.getState() == KeeperState.Expired) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("ZooKeeper state expired");
                 // #endif /* LOGGER >= ERROR */
-            } else {
-                if (m_isStarting) {
-                    // Use ZooKeeper entries while booting
-                    try {
-                        path = p_event.getPath();
-                        prefix = m_zookeeper.getPath() + '/';
-                        while (m_isStarting) {
-                            try {
-                                Thread.sleep(100);
-                            } catch (final InterruptedException ignored) {
-                            }
-                        }
-                        if (path != null) {
-                            if (path.equals(prefix + "nodes/new")) {
-
-                                children = m_zookeeper.getChildren("nodes/new", this);
-                                for (String child : children) {
-                                    nodeID = Short.parseShort(child);
-                                    node = new String(zookeeperGetData("nodes/new/" + nodeID));
-                                    splits = node.split(":");
-
-                                    role = NodeRole.toNodeRole(splits[2]);
-
-                                    m_nodes.addNode(nodeID, new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), Short.parseShort(splits[3]),
-                                            Short.parseShort(splits[4]), role, false));
-                                }
-                            }
-                        }
-                    } catch (final ZooKeeperException e) {
-                        // #if LOGGER >= ERROR
-                        LOGGER.error("Could not access ZooKeeper", e);
-                        // #endif /* LOGGER >= ERROR */
-                    }
-                }
             }
         }
     }
@@ -350,7 +319,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             m_nodes.getNode(((NodeFailureEvent) p_event).getNodeID()).setStatus(false);
         } else if (p_event instanceof NodeJoinEvent) {
             NodeJoinEvent event = (NodeJoinEvent) p_event;
-            m_nodes.addNode(event.getNodeID(), new NodeEntry(event.getAddress(), event.getRack(), event.getSwitch(), event.getRole(), false));
+            boolean readFromFile = m_nodes.getNode(event.getNodeID()) != null;
+            m_nodes.addNode(new NodeEntry(event.getAddress(), event.getNodeID(), event.getRack(), event.getSwitch(), event.getRole(), readFromFile,
+                    event.isAvailableForBackup(), true));
         }
     }
 
@@ -596,7 +567,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                     // #endif /* LOGGER >= INFO */
                 }
 
-                m_nodes.addNode((short) (nodeID & 0x0000FFFF), entry);
+                entry.setNodeID((short) (nodeID & 0x0000FFFF));
+                m_nodes.addNode(entry);
                 // #if LOGGER >= INFO
                 LOGGER.info("Node added: %s", entry);
                 // #endif /* LOGGER >= INFO */
@@ -695,7 +667,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                     // #endif /* LOGGER >= INFO */
                 }
 
-                m_nodes.addNode((short) (nodeID & 0x0000FFFF), entry);
+                entry.setNodeID((short) (nodeID & 0x0000FFFF));
+                m_nodes.addNode(entry);
                 // #if LOGGER >= INFO
                 LOGGER.info("Node added: %s", entry);
                 // #endif /* LOGGER >= INFO */
@@ -704,7 +677,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
 
             // Apply changes
-            childs = m_zookeeper.getChildren("nodes/new");
+            /*childs = m_zookeeper.getChildren("nodes/new");
             for (String child : childs) {
                 nodeID = Short.parseShort(child);
                 node = new String(zookeeperGetData("nodes/new/" + nodeID));
@@ -713,15 +686,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 // Set routing information for that node
                 splits = node.split(":");
 
-                m_nodes.addNode(nodeID,
-                        new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), Short.parseShort(splits[3]), Short.parseShort(splits[4]),
-                                NodeRole.toNodeRole(splits[2]), false));
+                m_nodes.addNode(
+                        new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), nodeID, Short.parseShort(splits[3]), Short.parseShort(splits[4]),
+                                NodeRole.toNodeRole(splits[2]), false, true));
 
                 if (nodeID == m_nodes.getOwnNodeID()) {
                     // NodeID was already re-used
                     m_nodes.setOwnNodeID(NodeID.INVALID_ID);
                 }
-            }
+            }*/
 
             if (m_nodes.getOwnNodeID() == NodeID.INVALID_ID) {
                 // Add this node if it was not in start configuration
@@ -739,7 +712,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                     m_zookeeper.delete("nodes/free/" + nodeID);
                 } else {
                     splits = m_ownAddress.getIP().split("\\.");
-                    seed = ((Integer.parseInt(splits[1]) << 16) + (Integer.parseInt(splits[2]) << 8) + Integer.parseInt(splits[3])) * -1;
+                    seed = (Integer.parseInt(splits[1]) << 16) + (Integer.parseInt(splits[2]) << 8) + Integer.parseInt(splits[3]);
                     nodeID = CRC16.continuousHash(seed);
                     while (m_bloomFilter.contains(nodeID) || nodeID == NodeID.INVALID_ID) {
                         nodeID = CRC16.continuousHash(--seed);
@@ -751,7 +724,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 }
 
                 // Set routing information for that node
-                m_nodes.addNode(nodeID, new NodeEntry(m_ownAddress, p_cmdLineRack, p_cmdLineSwitch, p_cmdLineNodeRole, false));
+                //m_nodes.addNode(new NodeEntry(m_ownAddress, nodeID, p_cmdLineRack, p_cmdLineSwitch, p_cmdLineNodeRole, false, true));
             } else {
                 // Remove NodeID if this node failed before
                 nodeID = m_nodes.getOwnNodeID();

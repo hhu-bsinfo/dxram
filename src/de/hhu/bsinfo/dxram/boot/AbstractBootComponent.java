@@ -14,6 +14,7 @@
 package de.hhu.bsinfo.dxram.boot;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
@@ -55,6 +56,18 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      * @return List of IDs of peers available for backup without own ID.
      */
     public abstract List<BackupPeer> getIDsOfAvailableBackupPeers();
+
+    /**
+     * Get node entries of all available (online) nodes including the own.
+     *
+     * @return List of IDs of nodes available.
+     */
+    public abstract ArrayList<NodesConfiguration.NodeEntry> getOnlineNodes();
+
+    /**
+     * Put node entries of available (online) nodes.
+     */
+    public abstract void putOnlineNodes(ArrayList<NodesConfiguration.NodeEntry> p_onlineNodes);
 
     /**
      * Get IDs of all available (online) nodes including the own.

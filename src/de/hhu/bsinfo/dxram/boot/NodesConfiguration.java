@@ -13,10 +13,17 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
+import java.util.ArrayList;
+
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.serialization.Exportable;
+import de.hhu.bsinfo.dxutils.serialization.Exporter;
+import de.hhu.bsinfo.dxutils.serialization.Importable;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
@@ -26,7 +33,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * @author Florian Klein, florian.klein@hhu.de, 03.09.2013
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 9.12.2015
  */
-final class NodesConfiguration {
+public final class NodesConfiguration {
 
     private NodeEntry[] m_nodes = new NodeEntry[NodeID.MAX_ID + 1];
     private short m_ownID = NodeID.INVALID_ID;
@@ -79,16 +86,16 @@ final class NodesConfiguration {
 
     @Override
     public String toString() {
-        String str = "";
+        StringBuilder str = new StringBuilder();
 
-        str += "NodesConfiguration[ownID: " + m_ownID + "]:";
+        str.append("NodesConfiguration[ownID: ").append(m_ownID).append("]:");
         for (int i = 0; i < m_nodes.length; i++) {
             if (m_nodes[i] != null) {
-                str += '\n' + NodeID.toHexString((short) i) + ": " + m_nodes[i];
+                str.append('\n').append(NodeID.toHexString((short) i)).append(": ").append(m_nodes[i]);
             }
         }
 
-        return str;
+        return str.toString();
     }
 
     /**
@@ -103,23 +110,35 @@ final class NodesConfiguration {
     }
 
     /**
+     * Get all online nodes.
+     *
+     * @return all NodeEntries from online nodes.
+     */
+    ArrayList<NodeEntry> getOnlineNodes() {
+        NodeEntry entry;
+        ArrayList<NodeEntry> list = new ArrayList<>();
+        for (int i = 0; i < m_nodes.length; i++) {
+            entry = m_nodes[i];
+            if (entry != null && entry.getStatus()) {
+                list.add(entry);
+            }
+        }
+
+        return list;
+    }
+
+    /**
      * Adds a node
      *
-     * @param p_nodeID
-     *         Id of the node.
      * @param p_entry
      *         the configured node
      * @return whether this is a new entry or not
      */
-    synchronized boolean addNode(final short p_nodeID, final NodeEntry p_entry) {
-        NodeEntry prev = m_nodes[p_nodeID & 0xFFFF];
+    synchronized boolean addNode(final NodeEntry p_entry) {
+        short nodeID = p_entry.getNodeID();
+        NodeEntry prev = m_nodes[nodeID & 0xFFFF];
 
-        if (prev == null || !prev.getAddress().equals(p_entry.getAddress()) || prev.getRole() != p_entry.getRole()) {
-            m_nodes[p_nodeID & 0xFFFF] = p_entry;
-        } else {
-            // Node is already in list -> mark as online
-            m_nodes[p_nodeID & 0xFFFF].setStatus(true);
-        }
+        m_nodes[nodeID & 0xFFFF] = p_entry;
 
         return prev == null || !prev.getAddress().equals(p_entry.getAddress());
     }
@@ -139,7 +158,7 @@ final class NodesConfiguration {
      *
      * @author Florian Klein, florian.klein@hhu.de, 03.09.2013
      */
-    static final class NodeEntry {
+    public static final class NodeEntry implements Importable, Exportable {
 
         // configuration values
         /**
@@ -168,12 +187,19 @@ final class NodesConfiguration {
         @Expose
         private byte m_readFromFile = 1;
 
+        private short m_nodeID = NodeID.INVALID_ID;
         private boolean m_online = false;
+        private boolean m_availableForBackup = true;
+
+        // Tmp. state for import
+        private String m_addrStr;
+        private short m_acr;
 
         /**
          * Creates an instance of NodesConfigurationEntry
          */
-        NodeEntry() {
+        public NodeEntry(final boolean p_isOnline) {
+            m_online = p_isOnline;
         }
 
         /**
@@ -189,17 +215,25 @@ final class NodesConfiguration {
          *         the role of the node
          * @param p_readFromFile
          *         whether this node's information was read from nodes file or not
+         * @param p_availableForBackup
+         *         whether this peer is available for backup/logging or not
+         * @param p_isOnline
+         *         true, if this node is online
          */
-        NodeEntry(final IPV4Unit p_address, final short p_rack, final short p_switch, final NodeRole p_role, final boolean p_readFromFile) {
+        NodeEntry(final IPV4Unit p_address, final short p_nodeID, final short p_rack, final short p_switch, final NodeRole p_role, final boolean p_readFromFile,
+                final boolean p_availableForBackup, final boolean p_isOnline) {
             assert p_rack >= 0;
             assert p_switch >= 0;
             assert p_role != null;
 
             m_address = p_address;
+            m_nodeID = p_nodeID;
             m_rack = p_rack;
             m_switch = p_switch;
             m_role = p_role;
             m_readFromFile = (byte) (p_readFromFile ? 1 : 0);
+            m_availableForBackup = p_availableForBackup;
+            m_online = p_isOnline;
         }
 
         /**
@@ -209,6 +243,25 @@ final class NodesConfiguration {
          */
         public IPV4Unit getAddress() {
             return m_address;
+        }
+
+        /**
+         * Gets the NodeID
+         *
+         * @return the NodeID
+         */
+        public short getNodeID() {
+            return m_nodeID;
+        }
+
+        /**
+         * Sets the NodeID
+         *
+         * @param p_nodeID
+         *         the NodeID
+         */
+        public void setNodeID(final short p_nodeID) {
+            m_nodeID = p_nodeID;
         }
 
         /**
@@ -240,8 +293,9 @@ final class NodesConfiguration {
 
         @Override
         public String toString() {
-            return "NodesConfigurationEntry [m_address=" + m_address + ", m_rack=" + m_rack + ", m_switch=" + m_switch + ", m_role=" + m_role.getAcronym() +
-                    ", m_readFromFile=" + (m_readFromFile == 1 ? "true" : "false") + ']';
+            return "NodesConfigurationEntry [m_address=" + m_address + ", m_nodeID=" + m_nodeID + ", m_rack=" + m_rack + ", m_switch=" + m_switch +
+                    ", m_role=" + m_role.getAcronym() + ", m_online=" + m_online + ", m_availableForBackup=" + m_availableForBackup + ", m_readFromFile=" +
+                    (m_readFromFile == 1 ? "true" : "false") + ']';
         }
 
         /**
@@ -251,6 +305,15 @@ final class NodesConfiguration {
          */
         boolean readFromFile() {
             return m_readFromFile == 1;
+        }
+
+        /**
+         * Returns whether this node is available for backup or not
+         *
+         * @return true, if node is available for backup
+         */
+        boolean isAvailableForBackup() {
+            return m_availableForBackup;
         }
 
         /**
@@ -269,5 +332,32 @@ final class NodesConfiguration {
             m_online = p_online;
         }
 
+        @Override
+        public void exportObject(Exporter p_exporter) {
+            p_exporter.writeString(m_address.getAddressStr());
+            p_exporter.writeShort(m_nodeID);
+            p_exporter.writeShort((short) m_role.getAcronym());
+            p_exporter.writeShort(m_rack);
+            p_exporter.writeShort(m_switch);
+            p_exporter.writeBoolean(m_availableForBackup);
+        }
+
+        @Override
+        public void importObject(Importer p_importer) {
+            m_addrStr = p_importer.readString(m_addrStr);
+            String[] splitAddr = m_addrStr.split(":");
+            m_address = new IPV4Unit(splitAddr[0], Integer.parseInt(splitAddr[1]));
+            m_nodeID = p_importer.readShort(m_nodeID);
+            m_acr = p_importer.readShort(m_acr);
+            m_role = NodeRole.getRoleByAcronym((char) m_acr);
+            m_rack = p_importer.readShort(m_rack);
+            m_switch = p_importer.readShort(m_switch);
+            m_availableForBackup = p_importer.readBoolean(m_availableForBackup);
+        }
+
+        @Override
+        public int sizeofObject() {
+            return ObjectSizeUtil.sizeofString(m_address.getAddressStr()) + 4 * Short.BYTES + Byte.BYTES;
+        }
     }
 }

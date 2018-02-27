@@ -29,6 +29,7 @@ public class NodeJoinEvent extends AbstractEvent {
     private NodeRole m_role = NodeRole.PEER;
     private short m_rack = 0;
     private short m_switch = 0;
+    private boolean m_availableForBackup;
     private IPV4Unit m_address;
 
     /**
@@ -42,13 +43,14 @@ public class NodeJoinEvent extends AbstractEvent {
      *         the joined peer's role
      */
     public NodeJoinEvent(final String p_sourceClass, final short p_nodeID, final NodeRole p_role, final short p_rack, final short p_switch,
-            final IPV4Unit p_address) {
+            final boolean p_availableForBackup, final IPV4Unit p_address) {
         super(p_sourceClass);
 
         m_nodeID = p_nodeID;
         m_role = p_role;
         m_rack = p_rack;
         m_switch = p_switch;
+        m_availableForBackup = p_availableForBackup;
         m_address = p_address;
     }
 
@@ -86,6 +88,15 @@ public class NodeJoinEvent extends AbstractEvent {
      */
     public short getSwitch() {
         return m_switch;
+    }
+
+    /**
+     * Returns whether the joined node is available for backup or not. Always false for superpeers.
+     *
+     * @return true, if available for backup
+     */
+    public boolean isAvailableForBackup() {
+        return m_availableForBackup;
     }
 
     /**

@@ -17,6 +17,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
+import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -58,6 +59,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     private static final short ORDER = 10;
 
     // component dependencies
+    private BackupComponent m_backup;
     private AbstractBootComponent m_boot;
     private EventComponent m_event;
     private NetworkComponent m_network;
@@ -803,7 +805,8 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         if (m_boot.getNodeRole() == NodeRole.PEER) {
             InetSocketAddress socketAddress = m_boot.getNodeAddress(m_boot.getNodeID());
-            m_peer.finishStartup(m_boot.getRack(), m_boot.getSwitch(), new IPV4Unit(socketAddress.getHostString(), socketAddress.getPort()));
+            m_peer.finishStartup(m_boot.getRack(), m_boot.getSwitch(), m_backup.isActiveAndAvailableForBackup(),
+                    new IPV4Unit(socketAddress.getHostString(), socketAddress.getPort()));
         }
 
         return true;
@@ -821,6 +824,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
@@ -847,7 +851,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
                     (int) getConfig().getStabilizationBreakTime(), p_config.getServiceConfig(SynchronizationServiceConfig.class).getMaxBarriersPerSuperpeer(),
                     p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxNumEntries(),
                     (int) p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxSize().getBytes(),
-                    p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive(), m_boot, m_network);
+                    p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive(), m_boot, m_network, m_event);
         } else {
             m_peer = new OverlayPeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_network, m_event);
             m_event.registerListener(this, NameserviceCacheEntryUpdateEvent.class);

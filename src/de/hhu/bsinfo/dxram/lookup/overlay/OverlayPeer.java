@@ -1356,7 +1356,7 @@ public class OverlayPeer implements MessageReceiver {
     /**
      * Informs responsible superpeer about finished startup
      */
-    public boolean finishStartup(final short p_rack, final short p_switch, final IPV4Unit p_address) {
+    public boolean finishStartup(final short p_rack, final short p_switch, final boolean p_availableForBackup, final IPV4Unit p_address) {
         short responsibleSuperpeer;
 
         while (true) {
@@ -1365,7 +1365,7 @@ public class OverlayPeer implements MessageReceiver {
             m_overlayLock.readLock().unlock();
 
             try {
-                m_network.sendMessage(new FinishedStartupMessage(responsibleSuperpeer, p_rack, p_switch, p_address));
+                m_network.sendMessage(new FinishedStartupMessage(responsibleSuperpeer, p_rack, p_switch, p_availableForBackup, p_address));
             } catch (final NetworkException ignore) {
                 // Try again. Responsible superpeer is changed automatically.
                 continue;
@@ -1423,6 +1423,8 @@ public class OverlayPeer implements MessageReceiver {
         m_superpeers = joinResponse.getSuperpeers();
         m_mySuperpeer = joinResponse.getSource();
         OverlayHelper.insertSuperpeer(m_mySuperpeer, m_superpeers);
+
+        m_boot.putOnlineNodes(joinResponse.getOnlineNodes());
 
         // #if LOGGER == TRACE
         LOGGER.trace("Exiting joinSuperpeerOverlay");
@@ -1564,7 +1566,8 @@ public class OverlayPeer implements MessageReceiver {
 
         // Notify other components/services
         m_event.fireEvent(new NodeJoinEvent(getClass().getSimpleName(), p_nodeJoinEventRequest.getJoinedPeer(), p_nodeJoinEventRequest.getRole(),
-                p_nodeJoinEventRequest.getRack(), p_nodeJoinEventRequest.getSwitch(), p_nodeJoinEventRequest.getAddress()));
+                p_nodeJoinEventRequest.getRack(), p_nodeJoinEventRequest.getSwitch(), p_nodeJoinEventRequest.isAvailableForBackup(),
+                p_nodeJoinEventRequest.getAddress()));
     }
 
     // -----------------------------------------------------------------------------------

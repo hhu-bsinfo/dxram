@@ -54,6 +54,11 @@ public class BackupPeer implements Importable, Exportable {
     }
 
     @Override
+    public String toString() {
+        return "[" + m_nodeID + ", " + m_rack + ", " + m_switch + ']';
+    }
+
+    @Override
     public void exportObject(Exporter p_exporter) {
         p_exporter.writeShort(m_nodeID);
         p_exporter.writeShort(m_rack);
