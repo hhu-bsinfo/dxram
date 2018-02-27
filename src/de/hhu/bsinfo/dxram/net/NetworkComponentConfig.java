@@ -76,15 +76,15 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
                 return false;
             }
 
-            if (m_ib.getFlowControlMaxRecvReqs() < m_ib.getMaxConnections()) {
+            if (m_ib.getSharedReceiveQueueSize() < m_ib.getSendQueueSize() * m_ib.getMaxConnections()) {
                 // #if LOGGER >= WARN
-                LOGGER.warn("IB m_ibFlowControlMaxRecvReqs < m_maxConnections: This may result in performance penalties when too many nodes are active");
+                LOGGER.warn("IB m_srqSize < m_sqSize * m_maxConnections: This may result in performance penalties when too many nodes are active");
                 // #endif /* LOGGER >= WARN */
             }
 
-            if (m_ib.getMaxRecvReqs() < m_ib.getMaxConnections()) {
+            if (m_ib.getSharedSendCompletionQueueSize() < m_ib.getSendQueueSize() * m_ib.getMaxConnections()) {
                 // #if LOGGER >= WARN
-                LOGGER.warn("IB m_ibMaxRecvReqs < m_maxConnections: This may result in performance penalties when too many nodes are active");
+                LOGGER.warn("IB m_sharedSCQSize < m_sqSize * m_maxConnections: This may result in performance penalties when too many nodes are active");
                 // #endif /* LOGGER >= WARN */
             }
 

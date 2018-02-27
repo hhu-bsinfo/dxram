@@ -86,6 +86,18 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     }
 
     /**
+     * Registers a special receive message type
+     *
+     * @param p_type
+     *         the unique type
+     * @param p_subtype
+     *         the unique subtype
+     */
+    public void registerSpecialReceiveMessageType(final byte p_type, final byte p_subtype) {
+        m_dxnet.registerSpecialReceiveMessageType(p_type, p_subtype);
+    }
+
+    /**
      * Connect a node.
      *
      * @param p_nodeID

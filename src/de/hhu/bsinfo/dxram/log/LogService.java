@@ -13,8 +13,9 @@
 
 package de.hhu.bsinfo.dxram.log;
 
-import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.SpecialMessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.MessageHeader;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
@@ -39,7 +40,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class LogService extends AbstractDXRAMService<LogServiceConfig> implements MessageReceiver {
+public class LogService extends AbstractDXRAMService<LogServiceConfig> implements SpecialMessageReceiver {
     // component dependencies
     private NetworkComponent m_network;
     private LogComponent m_log;
@@ -83,6 +84,11 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
             GetUtilizationResponse response = (GetUtilizationResponse) request.getResponse();
             return response.getUtilization();
         }
+    }
+
+    @Override
+    public void onIncomingHeader(final MessageHeader p_messageHeader) {
+        m_log.incomingLogChunks(p_messageHeader);
     }
 
     @Override
@@ -174,7 +180,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      *         the LogMessage
      */
     private void incomingLogMessage(final LogMessage p_message) {
-        m_log.incomingLogChunks(p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(), p_message.getMessageBuffer(), p_message.getSource());
     }
 
     /**
@@ -184,7 +190,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      *         the LogAnonMessage
      */
     private void incomingLogAnonMessage(final LogAnonMessage p_message) {
-        m_log.incomingLogChunks(p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(), p_message.getMessageBuffer(), p_message.getSource());
     }
 
     /**
@@ -194,7 +200,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      *         the LogBufferMessage
      */
     private void incomingLogBufferMessage(final LogBufferMessage p_message) {
-        m_log.incomingLogChunks(p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(), p_message.getMessageBuffer(), p_message.getSource());
     }
 
     /**
@@ -262,6 +268,8 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST, GetUtilizationRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE, GetUtilizationResponse.class);
+
+        m_network.registerSpecialReceiveMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_ANON_MESSAGE);
     }
 
     /**
