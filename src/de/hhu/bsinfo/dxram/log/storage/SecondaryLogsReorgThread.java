@@ -33,7 +33,6 @@ import de.hhu.bsinfo.dxutils.RandomUtils;
  */
 public final class SecondaryLogsReorgThread extends Thread {
 
-    private static final int ITERATIONS_PER_LOG = 20;
     private static final Logger LOGGER = LogManager.getFormatterLogger(SecondaryLogsReorgThread.class.getSimpleName());
 
     // Attributes
@@ -45,7 +44,7 @@ public final class SecondaryLogsReorgThread extends Thread {
     private Condition m_reorganizationFinishedCondition;
     private ReentrantLock m_requestLock;
     private ReentrantLock m_recoveryLock;
-    private byte[] m_reorgSegmentData;
+    private DirectByteBufferWrapper m_reorgSegmentData;
     private byte m_counter;
     private boolean m_isRandomChoice;
     private volatile SecondaryLog m_secLog;
@@ -61,11 +60,11 @@ public final class SecondaryLogsReorgThread extends Thread {
      * Creates an instance of SecondaryLogsReorgThread
      *
      * @param p_logComponent
-     *     the log component
+     *         the log component
      * @param p_secondaryLogSize
-     *     the secondary log size
+     *         the secondary log size
      * @param p_logSegmentSize
-     *     the segment size
+     *         the segment size
      */
     public SecondaryLogsReorgThread(final LogComponent p_logComponent, final long p_secondaryLogSize, final int p_logSegmentSize) {
         m_logComponent = p_logComponent;
@@ -81,7 +80,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 
         m_recoveryLock = new ReentrantLock(false);
 
-        m_reorgSegmentData = new byte[p_logSegmentSize];
+        m_reorgSegmentData = new DirectByteBufferWrapper(p_logSegmentSize);
 
         m_counter = 0;
     }
@@ -90,7 +89,7 @@ public final class SecondaryLogsReorgThread extends Thread {
      * Get access to secondary log for reorganization thread
      *
      * @param p_secLog
-     *     the Secondary Log
+     *         the Secondary Log
      */
     private static void leaveSecLog(final SecondaryLog p_secLog) {
         if (p_secLog.isAccessed()) {
@@ -162,7 +161,7 @@ public final class SecondaryLogsReorgThread extends Thread {
             if (counter == 0) {
                 // This is the first iteration -> choose secondary log and gather versions
                 secondaryLog = chooseLog();
-                if (secondaryLog != null && (secondaryLog.getOccupiedSpace() > m_secondaryLogSize / 2 || m_isRandomChoice)) {
+                if (secondaryLog != null && (2 * secondaryLog.getOccupiedSpace() > m_secondaryLogSize || secondaryLog.needToBeReorganized())) {
                     getAccessToSecLog(secondaryLog);
                     if (!interrupted()) {
                         lowestLID = secondaryLog.getCurrentVersions(m_allVersions, true);
@@ -221,6 +220,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 
     /**
      * Process urgent request by reorganizing the entire secondary log
+     *
      * @lock m_reorganizationLock must be acquired
      */
     private void processUrgentRequest() {
@@ -259,6 +259,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 
     /**
      * Process low priority requests by reorganizing the entire secondary log
+     *
      * @lock m_reorganizationLock must be acquired
      */
     private void processLowPriorityRequest() {
@@ -291,7 +292,10 @@ public final class SecondaryLogsReorgThread extends Thread {
             if (!interrupted()) {
                 lowestLID = secondaryLog.getCurrentVersions(m_allVersions, true);
                 if (!interrupted()) {
-                    secondaryLog.reorganizeAll(m_reorgSegmentData, m_allVersions, lowestLID);
+                    if (2 * secondaryLog.getOccupiedSpace() > m_secondaryLogSize || secondaryLog.needToBeReorganized()) {
+                        // Reorganize if any updates arrived, only
+                        secondaryLog.reorganizeAll(m_reorgSegmentData, m_allVersions, lowestLID);
+                    }
                 }
             }
             secondaryLog.resetReorgSegment();
@@ -306,10 +310,11 @@ public final class SecondaryLogsReorgThread extends Thread {
 
     /**
      * Reset data structures and leave secondary log
+     *
      * @param p_secondaryLog
-     *      the current secondary log
+     *         the current secondary log
      * @param p_counter
-     *      the current iteration
+     *         the current iteration
      * @return next iteration
      */
     private int leaveSecondaryLog(final SecondaryLog p_secondaryLog, final int p_counter) {
@@ -334,11 +339,11 @@ public final class SecondaryLogsReorgThread extends Thread {
      * Sets the secondary log to reorganize next
      *
      * @param p_secLog
-     *     the Secondary Log
+     *         the Secondary Log
      * @param p_await
-     *     whether to wait for completion of the reorganization or not
+     *         whether to wait for completion of the reorganization or not
      * @throws InterruptedException
-     *     if caller is interrupted
+     *         if caller is interrupted
      */
     void setLogToReorgImmediately(final SecondaryLog p_secLog, final boolean p_await) throws InterruptedException {
 
@@ -368,7 +373,7 @@ public final class SecondaryLogsReorgThread extends Thread {
      * Get access to secondary log for reorganization thread
      *
      * @param p_secLog
-     *     the Secondary Log
+     *         the Secondary Log
      */
     private void getAccessToSecLog(final SecondaryLog p_secLog) {
         if (!p_secLog.isAccessed()) {

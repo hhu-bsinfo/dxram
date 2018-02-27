@@ -13,13 +13,17 @@
 
 package de.hhu.bsinfo.dxram.log.header;
 
+import java.nio.ByteBuffer;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.log.storage.DirectByteBufferWrapper;
 import de.hhu.bsinfo.dxram.log.storage.Version;
 
 /**
  * Extends AbstractLogEntryHeader for implementing access to primary log entry header.
+ * Log entry headers are read and written with absolute methods (position is untouched), only!
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 25.01.2017
  */
@@ -40,53 +44,54 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      * Generates a log entry with filled-in header but without any payload
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_size
-     *     the payload length
+     *         the payload length
      * @param p_version
-     *     the version
+     *         the version
      * @param p_rangeID
-     *     the RangeID
+     *         the RangeID
      * @param p_owner
-     *     the owner NodeID
+     *         the owner NodeID
      * @param p_originalOwner
-     *     the original owner (before recovery)
-     * @return the log entry
+     *         the original owner (before recovery)
+     * @param p_timestamp
+     *         the timestamp or 0 if timestamps are disabled
      */
-    public abstract byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner,
-            final short p_originalOwner);
+    public abstract ByteBuffer createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner,
+            final short p_originalOwner, final int p_timestamp);
 
     /**
      * Returns RangeID of a log entry
      *
      * @param p_buffer
-     *     buffer with log entries
+     *         buffer with log entries
      * @param p_offset
-     *     offset in buffer
+     *         offset in buffer
      * @return the version
      */
-    public abstract short getRangeID(final byte[] p_buffer, final int p_offset);
+    public abstract short getRangeID(final ByteBuffer p_buffer, final int p_offset);
 
     /**
      * Returns owner of a log entry
      *
      * @param p_buffer
-     *     buffer with log entries
+     *         buffer with log entries
      * @param p_offset
-     *     offset in buffer
+     *         offset in buffer
      * @return the NodeID
      */
-    public abstract short getOwner(final byte[] p_buffer, final int p_offset);
+    public abstract short getOwner(final ByteBuffer p_buffer, final int p_offset);
 
     /**
      * Prints the log header
      *
      * @param p_buffer
-     *     buffer with log entries
+     *         buffer with log entries
      * @param p_offset
-     *     offset in buffer
+     *         offset in buffer
      */
-    public abstract void print(final byte[] p_buffer, final int p_offset);
+    public abstract void print(final ByteBuffer p_buffer, final int p_offset);
 
     /**
      * Returns the corresponding AbstractPrimLogEntryHeader
@@ -101,62 +106,64 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      * Adds chaining ID to log entry header
      *
      * @param p_buffer
-     *     the byte array
+     *         the byte array
      * @param p_offset
-     *     the offset within buffer
+     *         the offset within buffer
      * @param p_chainingID
-     *     the chaining ID
+     *         the chaining ID
      * @param p_chainSize
-     *     the number of segments in chain
+     *         the number of segments in chain
      * @param p_logEntryHeader
-     *     the LogEntryHeader
+     *         the LogEntryHeader
      */
-    public static void addChainingIDAndChainSize(final byte[] p_buffer, final int p_offset, final byte p_chainingID, final byte p_chainSize,
-        final AbstractPrimLogEntryHeader p_logEntryHeader) {
+    public static void addChainingIDAndChainSize(final ByteBuffer p_buffer, final int p_offset, final byte p_chainingID, final byte p_chainSize,
+            final AbstractPrimLogEntryHeader p_logEntryHeader) {
         int offset = p_logEntryHeader.getCHAOffset(p_buffer, p_offset);
 
-        p_buffer[offset] = (byte) (p_chainingID & 0xff);
-        p_buffer[offset + 1] = (byte) (p_chainSize & 0xff);
+        p_buffer.put(offset, (byte) (p_chainingID & 0xFF));
+        p_buffer.put(offset + 1, (byte) (p_chainSize & 0xFF));
     }
 
     /**
      * Adjusts the length in log entry header. Is used for chained log entries, only.
      *
      * @param p_buffer
-     *     the byte array
+     *         the byte array
      * @param p_offset
-     *     the offset within buffer
+     *         the offset within buffer
      * @param p_newLength
-     *     the new length
+     *         the new length
      * @param p_logEntryHeader
-     *     the LogEntryHeader
+     *         the LogEntryHeader
      */
-    public static void adjustLength(final byte[] p_buffer, final int p_offset, final int p_newLength, final AbstractPrimLogEntryHeader p_logEntryHeader) {
+    public static void adjustLength(final ByteBuffer p_buffer, final int p_offset, final int p_newLength, final AbstractPrimLogEntryHeader p_logEntryHeader) {
         int offset = p_logEntryHeader.getLENOffset(p_buffer, p_offset);
         int lengthSize = p_logEntryHeader.getVEROffset(p_buffer, p_offset) - offset;
 
         for (int i = 0; i < lengthSize; i++) {
-            p_buffer[offset + i] = (byte) (p_newLength >> i * 8 & 0xff);
+            p_buffer.put(offset + i, (byte) (p_newLength >> i * 8 & 0xFF));
         }
     }
 
     /**
      * Adds checksum to entry header
      *
-     * @param p_buffer
-     *     the byte array
+     * @param p_bufferWrapper
+     *         the byte buffer wrapper
      * @param p_offset
-     *     the offset within buffer
+     *         the offset within buffer
      * @param p_size
-     *     the size of payload
+     *         the size of payload
      * @param p_logEntryHeader
-     *     the LogEntryHeader
+     *         the LogEntryHeader
+     * @param p_headerSize
+     *         the size of the header
      * @param p_bytesUntilEnd
-     *     number of bytes until wrap around
+     *         number of bytes until wrap around
      */
-    public static void addChecksum(final byte[] p_buffer, final int p_offset, final int p_size, final AbstractPrimLogEntryHeader p_logEntryHeader,
-        final int p_bytesUntilEnd) {
-        ChecksumHandler.addChecksum(p_buffer, p_offset, p_size, p_logEntryHeader, p_bytesUntilEnd);
+    public static void addChecksum(final DirectByteBufferWrapper p_bufferWrapper, final int p_offset, final int p_size,
+            final AbstractPrimLogEntryHeader p_logEntryHeader, final int p_headerSize, final int p_bytesUntilEnd) {
+        ChecksumHandler.addChecksum(p_bufferWrapper, p_offset, p_size, p_logEntryHeader, p_headerSize, p_bytesUntilEnd);
     }
 
     /**
@@ -164,45 +171,44 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      * and copies the payload
      *
      * @param p_input
-     *     the input buffer
+     *         the input buffer
      * @param p_inputOffset
-     *     the input buffer offset
+     *         the input buffer offset
      * @param p_output
-     *     the output buffer
-     * @param p_outputOffset
-     *     the output buffer offset
+     *         the output buffer
      * @param p_logEntrySize
-     *     the length of the log entry
+     *         the length of the log entry
      * @param p_bytesUntilEnd
-     *     the number of bytes to the end of the input buffer
+     *         the number of bytes to the end of the input buffer
      * @param p_conversionOffset
-     *     the conversion offset
-     * @return the number of written bytes
+     *         the conversion offset
      */
-    public static int convertAndPut(final byte[] p_input, final int p_inputOffset, final byte[] p_output, final int p_outputOffset, final int p_logEntrySize,
-        final int p_bytesUntilEnd, final short p_conversionOffset) {
-        int ret;
-
+    public static void convertAndPut(final ByteBuffer p_input, final int p_inputOffset, final ByteBuffer p_output, final int p_logEntrySize,
+            final int p_bytesUntilEnd, final short p_conversionOffset) {
         // Set type field
-        p_output[p_outputOffset] = p_input[p_inputOffset];
+        p_output.put(p_input.get(p_inputOffset));
         if (p_logEntrySize <= p_bytesUntilEnd) {
             // Copy shortened header and payload
-            System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset + 1, p_logEntrySize - p_conversionOffset);
+            p_input.position(p_inputOffset + p_conversionOffset);
+            p_input.limit(p_inputOffset + p_logEntrySize);
+            p_output.put(p_input);
         } else {
             // Entry is bisected
             if (p_conversionOffset >= p_bytesUntilEnd) {
                 // Copy shortened header and payload
-                System.arraycopy(p_input, p_conversionOffset - p_bytesUntilEnd, p_output, p_outputOffset + 1, p_logEntrySize - p_conversionOffset);
+                p_input.position(p_conversionOffset - p_bytesUntilEnd);
+                p_input.limit(p_logEntrySize - p_bytesUntilEnd);
+                p_output.put(p_input);
             } else {
                 // Copy shortened header and payload in two steps
-                System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset + 1, p_bytesUntilEnd - p_conversionOffset);
-                System.arraycopy(p_input, 0, p_output, p_outputOffset + p_bytesUntilEnd - p_conversionOffset + 1,
-                    p_logEntrySize - (p_bytesUntilEnd - p_conversionOffset));
+                p_input.position(p_inputOffset + p_conversionOffset);
+                p_output.put(p_input);
+
+                p_input.position(0);
+                p_input.limit(p_logEntrySize - p_bytesUntilEnd);
+                p_output.put(p_input);
             }
         }
-        ret = p_logEntrySize - (p_conversionOffset - 1);
-
-        return ret;
     }
 
     /**
@@ -210,11 +216,11 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      *
      * @return the offset
      */
-    public static short getConversionOffset(final byte[] p_buffer, final int p_offset) {
+    public static short getConversionOffset(final ByteBuffer p_buffer, final int p_offset) {
         short ret;
         byte type;
 
-        type = (byte) (p_buffer[p_offset] & TYPE_MASK);
+        type = (byte) (p_buffer.get(p_offset) & TYPE_MASK);
         if (type == 0) {
             // Convert into DefaultSecLogEntryHeader by skipping NodeID
             ret = PRIM_LOG_ENTRY_HEADER.getLIDOffset();
@@ -227,15 +233,15 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
     }
 
     @Override
-    public long getCID(final byte[] p_buffer, final int p_offset) {
+    public long getCID(final ByteBuffer p_buffer, final int p_offset) {
         return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_buffer, p_offset);
     }
 
     @Override
-    short getNodeID(final byte[] p_buffer, final int p_offset) {
+    short getNodeID(final ByteBuffer p_buffer, final int p_offset) {
         final int offset = p_offset + getNIDOffset();
 
-        return (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
+        return p_buffer.getShort(offset);
     }
 
 }

@@ -13,19 +13,23 @@
 
 package de.hhu.bsinfo.dxram.log.header;
 
+import java.nio.ByteBuffer;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxram.log.storage.Version;
+import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 
 /**
  * Extends AbstractLogEntryHeader for a migration log entry header (secondary log)
- * Fields: | Type | NodeID | LocalID | Length  | Epoch | Version | Chaining | Checksum |
- * Length: |  1   |   2    | 1,2,4,6 | 0,1,2,3 |   2   | 0,1,2,4 |   0,2    |    0,4   |
+ * Fields: | Type | NodeID | LocalID | Length  | Timestamp | Epoch | Version | Chaining | Checksum |
+ * Length: |  1   |   2    | 1,2,4,6 | 0,1,2,3 |    0,4    |   2   | 0,1,2,4 |   0,2    |    0,4   |
  * Type field contains type, length of LocalID field, length of length field and length of version field
+ * Timestamp field has length 0 if timestamps are deactivated in DXRAM configuration, 4 otherwise
  * Chaining field has length 0 for chunks smaller than 1/2 of segment size (4 MB default) and 2 for larger chunks (chaining ID + chain size)
  * Checksum field has length 0 if checksums are deactivated in DXRAM configuration, 4 otherwise
+ * Log entry headers are read and written with absolute methods (position is untouched), only!
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 25.06.2015
  */
@@ -48,14 +52,14 @@ class MigrationSecLogEntryHeader extends AbstractSecLogEntryHeader {
     }
 
     @Override
-    public short getNodeID(final byte[] p_buffer, final int p_offset) {
+    public short getNodeID(final ByteBuffer p_buffer, final int p_offset) {
         final int offset = p_offset + ms_nidOffset;
 
-        return (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
+        return p_buffer.getShort(offset);
     }
 
     @Override
-    public long getCID(final byte[] p_buffer, final int p_offset) {
+    public long getCID(final ByteBuffer p_buffer, final int p_offset) {
         return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_buffer, p_offset);
     }
 
@@ -66,7 +70,7 @@ class MigrationSecLogEntryHeader extends AbstractSecLogEntryHeader {
 
     // Methods
     @Override
-    public void print(final byte[] p_buffer, final int p_offset) {
+    public void print(final ByteBuffer p_buffer, final int p_offset) {
         final Version version = getVersion(p_buffer, p_offset);
 
         System.out.println("********************Secondary Log Entry Header (Migration)********************");

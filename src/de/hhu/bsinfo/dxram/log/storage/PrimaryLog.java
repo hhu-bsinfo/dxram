@@ -15,7 +15,6 @@ package de.hhu.bsinfo.dxram.log.storage;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
@@ -30,7 +29,6 @@ public final class PrimaryLog extends AbstractLog {
 
     // Constants
     private static final String PRIMLOG_SUFFIX_FILENAME = "prim.log";
-    private static final byte[] PRIMLOG_HEADER = "DXRAMPrimLogv1".getBytes(Charset.forName("UTF-8"));
 
     // Attributes
     private LogComponent m_logComponent;
@@ -52,6 +50,10 @@ public final class PrimaryLog extends AbstractLog {
      *         the NodeID
      * @param p_primaryLogSize
      *         the size of a primary log
+     * @param p_useChecksums
+     *         whether checksums are written to log entries
+     * @param p_useTimestamps
+     *         whether timestamps are written to log entries
      * @param p_flashPageSize
      *         the size of flash page
      * @param p_mode
@@ -60,8 +62,10 @@ public final class PrimaryLog extends AbstractLog {
      *         if primary log could not be created
      */
     public PrimaryLog(final LogComponent p_logComponent, final String p_backupDirectory, final short p_nodeID, final long p_primaryLogSize,
-            final int p_flashPageSize, final HarddriveAccessMode p_mode) throws IOException {
-        super(new File(p_backupDirectory + 'N' + p_nodeID + '_' + PRIMLOG_SUFFIX_FILENAME), p_primaryLogSize, p_mode);
+            final boolean p_useChecksums, final boolean p_useTimestamps, final int p_flashPageSize, final HarddriveAccessMode p_mode) throws IOException {
+        super(new File(
+                        p_backupDirectory + 'N' + p_nodeID + '_' + (p_useChecksums ? "1" : "0") + '_' + (p_useTimestamps ? "1" : "0") + '_' + PRIMLOG_SUFFIX_FILENAME),
+                p_primaryLogSize, p_mode, 0, p_flashPageSize);
         m_primaryLogSize = p_primaryLogSize;
 
         m_writePos = 0;
@@ -73,7 +77,7 @@ public final class PrimaryLog extends AbstractLog {
             throw new IllegalArgumentException("Error: Primary log too small");
         }
 
-        if (!createLogAndWriteHeader(PRIMLOG_HEADER)) {
+        if (!createLogAndWriteHeader()) {
             throw new IOException("Error: Primary log could not be created");
         }
     }
@@ -85,17 +89,15 @@ public final class PrimaryLog extends AbstractLog {
     }
 
     @Override
-    public int appendData(final byte[] p_data, final int p_offset, final int p_length) throws IOException, InterruptedException {
+    public void appendData(final DirectByteBufferWrapper p_data, final int p_length) throws IOException, InterruptedException {
         if (m_primaryLogSize - m_numberOfBytes < p_length) {
             // Not enough free space in primary log -> flush to secondary logs and reset primary log
             m_logComponent.flushDataToSecondaryLogs();
             m_numberOfBytes = 0;
         }
 
-        m_writePos = appendToPrimaryLog(p_data, p_offset, p_length, m_writePos);
+        m_writePos = appendToPrimaryLog(p_data, p_length, m_writePos);
         m_numberOfBytes += p_length;
-
-        return p_length;
     }
 
 }

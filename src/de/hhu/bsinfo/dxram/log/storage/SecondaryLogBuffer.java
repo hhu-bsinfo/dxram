@@ -14,7 +14,7 @@
 package de.hhu.bsinfo.dxram.log.storage;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,8 +31,7 @@ public final class SecondaryLogBuffer {
     private static final Logger LOGGER = LogManager.getFormatterLogger(SecondaryLogBuffer.class.getSimpleName());
 
     // Attributes
-    private byte[] m_buffer;
-    private int m_bytesInBuffer;
+    private DirectByteBufferWrapper m_buffer;
     private SecondaryLog m_secondaryLog;
 
     // Constructors
@@ -44,57 +43,21 @@ public final class SecondaryLogBuffer {
      * Creates an instance of SecondaryLogBuffer
      *
      * @param p_secondaryLog
-     *     Instance of the corresponding secondary log. Used to write directly to secondary
+     *         Instance of the corresponding secondary log. Used to write directly to secondary
      * @param p_bufferSize
-     *     the secondary log buffer size
+     *         the secondary log buffer size
      * @param p_logSegmentSize
-     *     the segment size
+     *         the segment size
      */
     SecondaryLogBuffer(final SecondaryLog p_secondaryLog, final int p_bufferSize, final int p_logSegmentSize) {
 
         m_secondaryLog = p_secondaryLog;
         m_logSegmentSize = p_logSegmentSize;
 
-        m_bytesInBuffer = 0;
-        m_buffer = new byte[p_bufferSize];
+        m_buffer = new DirectByteBufferWrapper(p_bufferSize + 1); // One byte for segment terminator (0) which is set before writing to secLog
         // #if LOGGER == TRACE
         LOGGER.trace("Initialized secondary log buffer (%d)", p_bufferSize);
         // #endif /* LOGGER == TRACE */
-    }
-
-    /**
-     * Changes log entries for storing in secondary log
-     *
-     * @param p_buffer
-     *     the log entries
-     * @param p_bufferOffset
-     *     offset in buffer
-     * @param p_entryOrRangeSize
-     *     size of the log entry/range
-     * @return processed buffer
-     */
-    private static byte[] processBuffer(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize) {
-        byte[] buffer;
-        int oldBufferOffset = p_bufferOffset;
-        int newBufferOffset = 0;
-        int logEntrySize;
-        AbstractPrimLogEntryHeader logEntryHeader;
-
-        buffer = new byte[p_entryOrRangeSize];
-        while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
-            // Determine header of next log entry
-            logEntryHeader = AbstractPrimLogEntryHeader.getHeader();
-            logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) + logEntryHeader.getLength(p_buffer, oldBufferOffset);
-
-            // Copy primary log header, but skip NodeID and RangeID
-            newBufferOffset += AbstractPrimLogEntryHeader
-                .convertAndPut(p_buffer, oldBufferOffset, buffer, newBufferOffset, logEntrySize, p_buffer.length - oldBufferOffset,
-                    AbstractPrimLogEntryHeader.getConversionOffset(p_buffer, oldBufferOffset));
-            oldBufferOffset += logEntrySize;
-        }
-        buffer = Arrays.copyOf(buffer, newBufferOffset);
-
-        return buffer;
     }
 
     // Methods
@@ -105,7 +68,7 @@ public final class SecondaryLogBuffer {
      * @return the number of bytes
      */
     public int getOccupiedSpace() {
-        return m_bytesInBuffer;
+        return m_buffer.getBuffer().position();
     }
 
     /**
@@ -114,7 +77,7 @@ public final class SecondaryLogBuffer {
      * @return whether buffer is empty or not
      */
     public boolean isBufferEmpty() {
-        return m_bytesInBuffer == 0;
+        return m_buffer.getBuffer().position() == 0;
     }
 
     /**
@@ -129,7 +92,6 @@ public final class SecondaryLogBuffer {
             LOGGER.error("Could not flush secondary log buffer", e);
             // #endif /* LOGGER >= ERROR */
         }
-        m_bytesInBuffer = 0;
         m_buffer = null;
     }
 
@@ -137,15 +99,14 @@ public final class SecondaryLogBuffer {
      * Flushes all data in secondary log buffer to secondary log regardless of the size
      *
      * @throws IOException
-     *     if the secondary log could not be written or buffer be read
+     *         if the secondary log could not be written or buffer be read
      * @throws InterruptedException
-     *     if the caller was interrupted
+     *         if the caller was interrupted
      */
     public void flushSecLogBuffer() throws IOException, InterruptedException {
-
-        if (m_bytesInBuffer > 0) {
-            m_secondaryLog.appendData(m_buffer, 0, m_bytesInBuffer);
-            m_bytesInBuffer = 0;
+        if (m_buffer.getBuffer().position() > 0) {
+            m_secondaryLog.appendData(m_buffer, m_buffer.getBuffer().position());
+            m_buffer.getBuffer().rewind();
         }
     }
 
@@ -154,35 +115,59 @@ public final class SecondaryLogBuffer {
      * contains enough data
      *
      * @param p_buffer
-     *     buffer with data to append
-     * @param p_bufferOffset
-     *     offset in buffer
+     *         buffer with data to append
      * @param p_entryOrRangeSize
-     *     size of the log entry/range
-     * @return whether the buffer was flushed or not
-     * @throws IOException
-     *     if the secondary log could not be written or buffer be read
-     * @throws InterruptedException
-     *     if the caller was interrupted
+     *         size of the log entry/range
+     * @return the DirectByteBufferWrapper for flushing or null if data was appended to buffer
      */
-    boolean bufferData(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize) throws IOException, InterruptedException {
-        boolean ret = false;
-        byte[] buffer;
+    DirectByteBufferWrapper bufferData(final DirectByteBufferWrapper p_buffer, final int p_entryOrRangeSize) {
+        DirectByteBufferWrapper bufferWrapper;
 
-        // Trim log entries (removes all NodeIDs)
-        buffer = processBuffer(p_buffer, p_bufferOffset, p_entryOrRangeSize);
-        if (m_bytesInBuffer + buffer.length >= m_buffer.length) {
+        if (m_buffer.getBuffer().position() + p_entryOrRangeSize >= m_buffer.getBuffer().capacity() - 1) {
             // Merge current secondary log buffer and new buffer and write to secondary log
+            bufferWrapper = new DirectByteBufferWrapper(m_buffer.getBuffer().position() + p_entryOrRangeSize + 1);
 
-            flushAllDataToSecLog(buffer, p_bufferOffset, buffer.length);
-            ret = true;
+            bufferWrapper.getBuffer().put(m_buffer.getBuffer());
+            m_buffer.getBuffer().rewind();
+
+            processBuffer(p_buffer.getBuffer(), p_entryOrRangeSize, bufferWrapper);
+
+            bufferWrapper.getBuffer().flip();
+            return bufferWrapper;
+
+            //flushAllDataToSecLog(bufferWrapper, size);
         } else {
             // Append buffer to secondary log buffer
-            System.arraycopy(buffer, 0, m_buffer, m_bytesInBuffer, buffer.length);
-            m_bytesInBuffer += buffer.length;
-        }
+            processBuffer(p_buffer.getBuffer(), p_entryOrRangeSize, m_buffer);
 
-        return ret;
+            return null;
+        }
+    }
+
+    /**
+     * Changes log entries for storing in secondary log
+     *
+     * @param p_buffer
+     *         the log entries
+     * @param p_entryOrRangeSize
+     *         size of the log entry/range
+     */
+    private static void processBuffer(final ByteBuffer p_buffer, final int p_entryOrRangeSize, final DirectByteBufferWrapper p_destination) {
+        int oldBufferOffset = 0;
+        int logEntrySize;
+        AbstractPrimLogEntryHeader logEntryHeader;
+
+        while (oldBufferOffset < p_entryOrRangeSize) {
+            // Determine header of next log entry
+            logEntryHeader = AbstractPrimLogEntryHeader.getHeader();
+            logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) + logEntryHeader.getLength(p_buffer, oldBufferOffset);
+
+            // Copy primary log header, but skip NodeID and RangeID
+            AbstractPrimLogEntryHeader.convertAndPut(p_buffer, oldBufferOffset, p_destination.getBuffer(), logEntrySize, p_buffer.capacity() - oldBufferOffset,
+                    AbstractPrimLogEntryHeader.getConversionOffset(p_buffer, oldBufferOffset));
+            p_buffer.limit(p_buffer.capacity());
+            oldBufferOffset += logEntrySize;
+        }
     }
 
     /**
@@ -190,39 +175,48 @@ public final class SecondaryLogBuffer {
      * Appends given data to buffer data and writes all data at once
      *
      * @param p_buffer
-     *     buffer with data to append
-     * @param p_bufferOffset
-     *     offset in buffer
+     *         buffer with data to append
      * @param p_entryOrRangeSize
-     *     size of the log entry/range
+     *         size of the log entry/range
      * @throws IOException
-     *     if the secondary log could not be written or buffer be read
+     *         if the secondary log could not be written or buffer be read
      * @throws InterruptedException
-     *     if the caller was interrupted
+     *         if the caller was interrupted
      */
-    void flushAllDataToSecLog(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize) throws IOException, InterruptedException {
-        byte[] dataToWrite;
+    void flushAllDataToSecLog(final DirectByteBufferWrapper p_buffer, final int p_entryOrRangeSize) throws IOException, InterruptedException {
+        DirectByteBufferWrapper wrapper;
+        ByteBuffer secLogBuffer;
+        ByteBuffer dataToWrite;
 
         if (isBufferEmpty()) {
             // No data in secondary log buffer -> Write directly in secondary log
-            m_secondaryLog.appendData(p_buffer, p_bufferOffset, p_entryOrRangeSize);
+            m_secondaryLog.appendData(p_buffer, p_entryOrRangeSize);
         } else {
             // There is data in secondary log buffer
-            if (m_bytesInBuffer + p_entryOrRangeSize <= m_logSegmentSize) {
-                // Data combined fits in one segment -> Flush buffer and write new data in secondary log with one access
-                dataToWrite = new byte[m_bytesInBuffer + p_entryOrRangeSize];
-                System.arraycopy(m_buffer, 0, dataToWrite, 0, m_bytesInBuffer);
-                System.arraycopy(p_buffer, 0, dataToWrite, m_bytesInBuffer, p_entryOrRangeSize);
+            secLogBuffer = m_buffer.getBuffer();
+            if (secLogBuffer.position() + p_entryOrRangeSize <= m_logSegmentSize) {
+                // Data combined fits in one segment -> flush buffer and write new data in secondary log with one access
+                wrapper = new DirectByteBufferWrapper(secLogBuffer.position() + p_entryOrRangeSize + 1);
+                dataToWrite = wrapper.getBuffer();
 
-                m_secondaryLog.appendData(dataToWrite, 0, dataToWrite.length);
-                m_bytesInBuffer = 0;
+                // Copy secLog buffer
+                secLogBuffer.flip();
+                dataToWrite.put(secLogBuffer);
+                secLogBuffer.clear();
+
+                // Copy new range
+                p_buffer.getBuffer().limit(p_entryOrRangeSize);
+                dataToWrite.put(p_buffer.getBuffer());
+
+                dataToWrite.rewind();
+                m_secondaryLog.appendData(wrapper, dataToWrite.capacity() - 1);
             } else {
                 // Write buffer first
-                m_secondaryLog.appendData(m_buffer, 0, m_bytesInBuffer);
-                m_bytesInBuffer = 0;
+                m_secondaryLog.appendData(m_buffer, secLogBuffer.position());
+                secLogBuffer.rewind();
 
                 // Write new data
-                m_secondaryLog.appendData(p_buffer, p_bufferOffset, p_entryOrRangeSize);
+                m_secondaryLog.appendData(p_buffer, p_entryOrRangeSize);
             }
         }
     }

@@ -14,13 +14,16 @@
 package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
+import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
-import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxutils.ByteBufferHelper;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Message for logging a Chunk on a remote node
@@ -31,7 +34,10 @@ public class LogMessage extends Message {
 
     // Attributes
     private short m_rangeID;
+    // For exporting
     private DataStructure[] m_dataStructures;
+    // For importing
+    private int m_numberOfDSs;
     private ByteBuffer m_buffer;
 
     // Constructors
@@ -44,6 +50,7 @@ public class LogMessage extends Message {
 
         m_rangeID = RangeID.INVALID_ID;
         m_dataStructures = null;
+        m_numberOfDSs = 0;
         m_buffer = null;
     }
 
@@ -67,6 +74,24 @@ public class LogMessage extends Message {
     // Getters
 
     /**
+     * Get the rangeID
+     *
+     * @return the rangeID
+     */
+    public final short getRangeID() {
+        return m_rangeID;
+    }
+
+    /**
+     * Get the number of data structures
+     *
+     * @return the number of data structures
+     */
+    public final int getNumberOfDataStructures() {
+        return m_numberOfDSs;
+    }
+
+    /**
      * Get the message buffer
      *
      * @return the message buffer
@@ -81,12 +106,13 @@ public class LogMessage extends Message {
             int ret = Short.BYTES + Integer.BYTES;
 
             for (DataStructure dataStructure : m_dataStructures) {
-                ret += Long.BYTES + Integer.BYTES + dataStructure.sizeofObject();
+                int size = dataStructure.sizeofObject();
+                ret += Long.BYTES + ObjectSizeUtil.sizeofCompactedNumber(size) + size;
             }
 
             return ret;
         } else {
-            return m_buffer.limit();
+            return Short.BYTES + Integer.BYTES + m_buffer.limit();
         }
     }
 
@@ -94,23 +120,29 @@ public class LogMessage extends Message {
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         p_exporter.writeShort(m_rangeID);
-
         p_exporter.writeInt(m_dataStructures.length);
+
         for (DataStructure dataStructure : m_dataStructures) {
             final int size = dataStructure.sizeofObject();
 
             p_exporter.writeLong(dataStructure.getID());
-            p_exporter.writeInt(size);
+            p_exporter.writeCompactNumber(size);
             p_exporter.exportObject(dataStructure);
         }
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer, final int p_payloadSize) {
+        m_rangeID = p_importer.readShort(m_rangeID);
+        m_numberOfDSs = p_importer.readInt(m_numberOfDSs);
+
         // Just copy all bytes, will be serialized into primary write buffer later
-        byte[] bytes = new byte[p_payloadSize];
-        p_importer.readBytes(bytes);
-        m_buffer = ByteBuffer.wrap(bytes);
+        int payloadSize = p_payloadSize - Short.BYTES - Integer.BYTES;
+        if (m_buffer == null) {
+            m_buffer = ByteBuffer.allocateDirect(payloadSize);
+            m_buffer.order(ByteOrder.LITTLE_ENDIAN);
+        }
+        p_importer.readBytes(ByteBufferHelper.getDirectAddress(m_buffer), 0, payloadSize);
     }
 
 }

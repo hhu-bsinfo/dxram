@@ -13,13 +13,14 @@
 
 package de.hhu.bsinfo.dxram.log;
 
+import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import de.hhu.bsinfo.dxnet.core.MessageHeader;
+import de.hhu.bsinfo.dxnet.core.MessageImporterDefault;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
@@ -34,14 +35,13 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
-import de.hhu.bsinfo.dxram.log.header.AbstractPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.ChecksumHandler;
-import de.hhu.bsinfo.dxram.log.header.PrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeResponse;
 import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeResponse;
+import de.hhu.bsinfo.dxram.log.storage.DirectByteBufferWrapper;
 import de.hhu.bsinfo.dxram.log.storage.LogCatalog;
 import de.hhu.bsinfo.dxram.log.storage.PrimaryLog;
 import de.hhu.bsinfo.dxram.log.storage.PrimaryWriteBuffer;
@@ -49,14 +49,15 @@ import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogsReorgThread;
 import de.hhu.bsinfo.dxram.log.storage.TemporaryVersionsStorage;
-import de.hhu.bsinfo.dxram.log.storage.Version;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxutils.ByteBufferHelper;
 import de.hhu.bsinfo.dxutils.NodeID;
-import de.hhu.bsinfo.dxutils.StringUtils;
 import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 
 /**
  * This service provides access to the backend storage system.
@@ -65,8 +66,9 @@ import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
  */
 public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     // Constants
-    private static final AbstractPrimLogEntryHeader PRIM_LOG_ENTRY_HEADER = new PrimLogEntryHeader();
-    private static final int PAYLOAD_PRINT_LENGTH = 128;
+    private static final String RECORDER = "LogComponent";
+    private static final StatisticsOperation SOP_LOG_BATCH = StatisticsRecorderManager.getOperation(RECORDER, "LogBatch");
+    private static final StatisticsOperation SOP_PUT_ENTRY_AND_HEADER = StatisticsRecorderManager.getOperation(RECORDER, "PutEntryAndHeader");
 
     private HarddriveAccessMode m_mode;
 
@@ -79,6 +81,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     // private state
     private short m_nodeID;
     private boolean m_loggingIsActive;
+    private long m_initTime;
 
     private long m_secondaryLogSize;
 
@@ -101,51 +104,6 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      */
     public LogComponent() {
         super(DXRAMComponentOrder.Init.LOG, DXRAMComponentOrder.Shutdown.LOG, LogComponentConfig.class);
-    }
-
-    /**
-     * Prints the metadata of one log entry
-     *
-     * @param p_payload
-     *         buffer with payload
-     * @param p_offset
-     *         offset within buffer
-     * @param p_length
-     *         length of payload
-     * @param p_version
-     *         version of chunk
-     * @param p_index
-     *         index of log entry
-     * @param p_logEntryHeader
-     *         the log entry header
-     */
-    private static void printMetadata(final long p_chunkID, final byte[] p_payload, final int p_offset, final int p_length, final Version p_version,
-            final int p_index, final AbstractSecLogEntryHeader p_logEntryHeader) {
-        byte[] array;
-
-        try {
-            if (p_version.getVersion() != Version.INVALID_VERSION) {
-                array = new String(Arrays.copyOfRange(p_payload, p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset),
-                        p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH)).trim().getBytes();
-
-                if (StringUtils.looksLikeUTF8(array)) {
-                    System.out.println(
-                            "Log Entry " + p_index + ": \t ChunkID - " + ChunkID.toHexString(p_chunkID) + ") \t Length - " + p_length + "\t Version - " +
-                                    p_version.getEpoch() + ',' + p_version.getVersion() + " \t Payload - " + new String(array, "UTF-8"));
-                } else {
-                    System.out.println(
-                            "Log Entry " + p_index + ": \t ChunkID - " + ChunkID.toHexString(p_chunkID) + ") \t Length - " + p_length + "\t Version - " +
-                                    p_version.getEpoch() + ',' + p_version.getVersion() + " \t Payload is no String");
-                }
-            } else {
-                System.out.println("Log Entry " + p_index + ": \t ChunkID - " + ChunkID.toHexString(p_chunkID) + ") \t Length - " + p_length + "\t Version - " +
-                        p_version.getEpoch() + ',' + p_version.getVersion() + " \t Tombstones have no payload");
-            }
-        } catch (final UnsupportedEncodingException | IllegalArgumentException ignored) {
-            System.out.println("Log Entry " + p_index + ": \t ChunkID - " + ChunkID.toHexString(p_chunkID) + ") \t Length - " + p_length + "\t Version - " +
-                    p_version.getEpoch() + ',' + p_version.getVersion() + " \t Payload is no String");
-        }
-        // p_localID: -1 can only be printed as an int
     }
 
     /**
@@ -389,7 +347,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
         try {
             ret = SecondaryLog
-                    .recoverFromFile(p_fileName, p_path, getConfig().useChecksum(), m_secondaryLogSize, (int) getConfig().getLogSegmentSize().getBytes(),
+                    .recoverFromFile(p_fileName, p_path, getConfig().useChecksums(), m_secondaryLogSize, (int) getConfig().getLogSegmentSize().getBytes(),
                             m_mode);
         } catch (final IOException e) {
             // #if LOGGER >= ERROR
@@ -502,16 +460,18 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
 
-        // Set the segment size. Needed for log entry header to split large chunks (must be called before the first log entry header is created)
-        AbstractLogEntryHeader.setSegmentSize((int) getConfig().getLogSegmentSize().getBytes());
-        // Set the log entry header crc size (must be called before the first log entry header is created)
-        ChecksumHandler.setCRCSize(getConfig().useChecksum());
+        applyConfiguration(getConfig());
 
         m_loggingIsActive = m_boot.getNodeRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup();
         if (m_loggingIsActive) {
-            DXRAMJNIManager.loadJNIModule("JNINativeCRCGenerator");
+            m_nodeID = m_boot.getNodeID();
+            m_backupDirectory = m_backup.getConfig().getBackupDirectory();
+            m_secondaryLogSize = m_backup.getConfig().getBackupRangeSize().getBytes() * 2;
 
-            m_mode = HarddriveAccessMode.convert(getConfig().getHarddriveAccess());
+            m_flushLock = new ReentrantLock(false);
+
+            // Load jni modules
+            DXRAMJNIManager.loadJNIModule("JNINativeCRCGenerator");
             if (m_mode == HarddriveAccessMode.ODIRECT) {
                 DXRAMJNIManager.loadJNIModule(HarddriveAccessMode.getJNIFileName(m_mode));
             } else if (m_mode == HarddriveAccessMode.RAW_DEVICE) {
@@ -519,46 +479,147 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                 JNIFileRaw.prepareRawDevice(getConfig().getRawDevicePath(), 0);
             }
 
-            m_nodeID = m_boot.getNodeID();
+            purgeLogDirectory(m_backupDirectory);
 
-            m_backupDirectory = m_backup.getConfig().getBackupDirectory();
-            m_secondaryLogSize = m_backup.getConfig().getBackupRangeSize().getBytes() * 2;
+            createLogsAndBuffers();
 
-            // Create primary log
-            try {
-                m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, getConfig().getPrimaryLogSize().getBytes(),
-                        (int) getConfig().getFlashPageSize().getBytes(), m_mode);
-            } catch (final IOException e) {
-                // #if LOGGER >= ERROR
-                LOGGER.error("Primary log creation failed", e);
-                // #endif /* LOGGER >= ERROR */
-            }
-            // #if LOGGER == TRACE
-            LOGGER.trace("Initialized primary log (%d)", (int) getConfig().getLogSegmentSize().getBytes());
-            // #endif /* LOGGER == TRACE */
-
-            // Create reorganization thread for secondary logs
-            m_secondaryLogsReorgThread = new SecondaryLogsReorgThread(this, m_backup.getConfig().getBackupRangeSize().getBytes() * 2,
-                    (int) getConfig().getLogSegmentSize().getBytes());
-            m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
-
-            // Create primary log buffer
-            m_writeBuffer = new PrimaryWriteBuffer(this, m_primaryLog, (int) getConfig().getWriteBufferSize().getBytes(),
-                    (int) getConfig().getFlashPageSize().getBytes(), (int) m_secondaryLogSize, (int) getConfig().getLogSegmentSize().getBytes(),
-                    getConfig().useChecksum(), getConfig().sortBufferPooling());
-
-            // Create secondary log and secondary log buffer catalogs
-            m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
-
-            m_secondaryLogCreationLock = new ReentrantReadWriteLock(false);
-
-            // Start secondary logs reorganization thread
-            m_secondaryLogsReorgThread.start();
-
-            m_flushLock = new ReentrantLock(false);
+            createAndStartReorganizationThread(m_backup.getConfig().getBackupRangeSize().getBytes());
         }
 
         return true;
+    }
+
+    /**
+     * Init component. Used for component testing, only.
+     *
+     * @param p_config
+     *         the log component configuration
+     * @param p_backupDir
+     *         the directory to store logs in
+     * @param p_backupRangeSize
+     *         the backup range size
+     */
+    void initComponent(final LogComponentConfig p_config, final String p_backupDir, final int p_backupRangeSize) {
+        setConfig(p_config);
+
+        applyConfiguration(p_config);
+
+        m_loggingIsActive = true;
+        m_nodeID = (short) 1;
+        m_backupDirectory = p_backupDir;
+        m_secondaryLogSize = p_backupRangeSize * 2;
+
+        m_flushLock = new ReentrantLock(false);
+
+        // Load jni modules
+        final String cwd = System.getProperty("user.dir");
+        String path = cwd + "/jni/libJNINativeCRCGenerator.so";
+        System.load(path);
+
+        if (m_mode == HarddriveAccessMode.ODIRECT) {
+            path = cwd + "/jni/libJNIFileDirect.so";
+            System.load(path);
+        } else if (m_mode == HarddriveAccessMode.RAW_DEVICE) {
+            path = cwd + "/jni/libJNIFileRaw.so";
+            System.load(path);
+            JNIFileRaw.prepareRawDevice(getConfig().getRawDevicePath(), 0);
+        }
+
+        purgeLogDirectory(m_backupDirectory);
+
+        createLogsAndBuffers();
+
+        createAndStartReorganizationThread(p_backupRangeSize);
+    }
+
+    /**
+     * Apply configuration.
+     *
+     * @param p_config
+     *         the configuration
+     */
+    private void applyConfiguration(final LogComponentConfig p_config) {
+        m_mode = HarddriveAccessMode.convert(p_config.getHarddriveAccess());
+
+        if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+            DirectByteBufferWrapper.useNativeBuffers(false);
+            ChecksumHandler.useNativeBuffers(false);
+        } else {
+            DirectByteBufferWrapper.useNativeBuffers(true);
+            ChecksumHandler.useNativeBuffers(true);
+        }
+        DirectByteBufferWrapper.setPageSize((int) p_config.getFlashPageSize().getBytes());
+        // Set the segment size. Needed for log entry header to split large chunks (must be called before the first log entry header is created)
+        AbstractLogEntryHeader.setSegmentSize((int) p_config.getLogSegmentSize().getBytes());
+        // Set the log entry header tsp size (must be called before the first log entry header is created)
+        AbstractLogEntryHeader.setTimestampSize(p_config.useTimestamps());
+        // Set the log entry header crc size (must be called before the first log entry header is created)
+        ChecksumHandler.setCRCSize(p_config.useChecksums());
+
+        m_initTime = System.currentTimeMillis();
+    }
+
+    /**
+     * Purge all logs from directory.
+     *
+     * @param p_path
+     *         the directory
+     */
+    private static void purgeLogDirectory(final String p_path) {
+        File dir = new File(p_path);
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (!file.isDirectory()) {
+                    if (!file.delete()) {
+                        // Ignore. Will be overwritten anyways
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Create all logs and buffers.
+     */
+    private void createLogsAndBuffers() {
+        // Create primary log
+        try {
+            m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, getConfig().getPrimaryLogSize().getBytes(), getConfig().useChecksums(),
+                    getConfig().useTimestamps(), (int) getConfig().getFlashPageSize().getBytes(), m_mode);
+        } catch (final IOException e) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Primary log creation failed", e);
+            // #endif /* LOGGER >= ERROR */
+        }
+        // #if LOGGER == TRACE
+        LOGGER.trace("Initialized primary log (%d)", (int) getConfig().getLogSegmentSize().getBytes());
+        // #endif /* LOGGER == TRACE */
+
+        // Create primary log buffer
+        m_writeBuffer =
+                new PrimaryWriteBuffer(this, m_primaryLog, (int) getConfig().getWriteBufferSize().getBytes(), (int) getConfig().getFlashPageSize().getBytes(),
+                        (int) getConfig().getSecondaryLogBufferSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes(), getConfig().useChecksums());
+
+        // Create secondary log and secondary log buffer catalogs
+        m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
+
+        m_secondaryLogCreationLock = new ReentrantReadWriteLock(false);
+    }
+
+    /**
+     * Create and start the secondary logs reorganization thread.
+     *
+     * @param p_backupRangeSize
+     *         the backup range size
+     */
+    private void createAndStartReorganizationThread(final long p_backupRangeSize) {
+        // Create reorganization thread for secondary logs
+        m_secondaryLogsReorgThread = new SecondaryLogsReorgThread(this, p_backupRangeSize * 2, (int) getConfig().getLogSegmentSize().getBytes());
+        m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
+
+        // Start secondary logs reorganization thread
+        m_secondaryLogsReorgThread.start();
     }
 
     @Override
@@ -622,7 +683,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      * @return the current utilization
      */
     String getCurrentUtilization() {
-        String ret;
+        StringBuilder ret;
         long allBytesAllocated = 0;
         long allBytesOccupied = 0;
         long counterAllocated;
@@ -633,45 +694,46 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         LogCatalog cat;
 
         if (m_loggingIsActive) {
-            ret = "***********************************************************************\n" + "*Primary log: " + m_primaryLog.getOccupiedSpace() +
-                    " bytes\n" + "***********************************************************************\n\n" +
-                    "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" + "+Secondary logs:\n";
+            ret = new StringBuilder(
+                    "***********************************************************************\n" + "*Primary log: " + m_primaryLog.getOccupiedSpace() +
+                            " bytes\n" + "***********************************************************************\n\n" +
+                            "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" + "+Secondary logs:\n");
 
             for (int i = 0; i < m_logCatalogs.length; i++) {
                 cat = m_logCatalogs[i];
                 if (cat != null) {
                     counterAllocated = 0;
                     counterOccupied = 0;
-                    ret += "++Node " + NodeID.toHexString((short) i) + ":\n";
+                    ret.append("++Node ").append(NodeID.toHexString((short) i)).append(":\n");
                     secondaryLogs = cat.getAllLogs();
                     secLogBuffers = cat.getAllBuffers();
                     for (int j = 0; j < secondaryLogs.length; j++) {
                         if (secondaryLogs[j] != null) {
-                            ret += "+++Backup range " + j + ": ";
+                            ret.append("+++Backup range ").append(j).append(": ");
                             if (secondaryLogs[j].isAccessed()) {
-                                ret += "#Active log# ";
+                                ret.append("#Active log# ");
                             }
 
                             counterAllocated += secondaryLogs[j].getLogFileSize() + secondaryLogs[j].getVersionsFileSize();
                             occupiedInRange = secondaryLogs[j].getOccupiedSpace();
                             counterOccupied += occupiedInRange;
 
-                            ret += occupiedInRange + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
-                            ret += secondaryLogs[j].getSegmentDistribution() + '\n';
+                            ret.append(occupiedInRange).append(" bytes (in buffer: ").append(secLogBuffers[j].getOccupiedSpace()).append(" bytes)\n");
+                            ret.append(secondaryLogs[j].getSegmentDistribution()).append('\n');
                         }
                     }
-                    ret += "++Bytes per node: allocated -> " + counterAllocated + ", occupied -> " + counterOccupied + '\n';
+                    ret.append("++Bytes per node: allocated -> ").append(counterAllocated).append(", occupied -> ").append(counterOccupied).append('\n');
                     allBytesAllocated += counterAllocated;
                     allBytesOccupied += counterOccupied;
                 }
             }
-            ret += "Complete size: allocated -> " + allBytesAllocated + ", occupied -> " + allBytesOccupied + '\n';
-            ret += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+            ret.append("Complete size: allocated -> ").append(allBytesAllocated).append(", occupied -> ").append(allBytesOccupied).append('\n');
+            ret.append("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
         } else {
-            ret = "Backup is deactivated!\n";
+            ret = new StringBuilder("Backup is deactivated!\n");
         }
 
-        return ret;
+        return ret.toString();
     }
 
     /**
@@ -700,7 +762,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                 // Create new secondary log
                 secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_rangeID, m_backupDirectory, m_secondaryLogSize,
                         (int) getConfig().getFlashPageSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes(),
-                        getConfig().getReorgUtilizationThreshold(), getConfig().useChecksum(), m_mode);
+                        getConfig().getReorgUtilizationThreshold(), getConfig().useChecksums(), getConfig().useTimestamps(), getConfig().getColdDataThreshold(),
+                        m_mode);
                 // Insert range in log catalog
                 cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes());
             }
@@ -745,7 +808,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                     // Create new secondary log
                     secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_originalOwner, p_rangeID, m_backupDirectory, m_secondaryLogSize,
                             (int) getConfig().getFlashPageSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes(),
-                            getConfig().getReorgUtilizationThreshold(), getConfig().useChecksum(), m_mode);
+                            getConfig().getReorgUtilizationThreshold(), getConfig().useChecksums(), getConfig().useTimestamps(),
+                            getConfig().getColdDataThreshold(), m_mode);
                     // Insert range in log catalog
                     cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(),
                             (int) getConfig().getLogSegmentSize().getBytes());
@@ -801,44 +865,134 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     }
 
     /**
-     * Logs a buffer with Chunks on SSD
+     * This is a special receiver message. To avoid creating and deserializing the message,
+     * the message header is passed here directly (if complete, split messages are handled normally).
      *
-     * @param p_buffer
-     *         the Chunk buffer
-     * @param p_owner
-     *         the Chunks' owner
+     * @param p_messageHeader
+     *         the message header (the payload is yet to be deserialized)
      */
-    void incomingLogChunks(final ByteBuffer p_buffer, final short p_owner) {
-        long chunkID;
-        int length;
-        byte[] logEntryHeader;
-        final short rangeID = p_buffer.getShort();
-        final int size = p_buffer.getInt();
+    void incomingLogChunks(final MessageHeader p_messageHeader) {
+        long chunkID = ChunkID.INVALID_ID;
+        int length = -1;
 
-        SecondaryLog secLog = getSecondaryLog(p_owner, rangeID);
+        MessageImporterDefault importer = new MessageImporterDefault();
+        p_messageHeader.initExternalImporter(importer);
+
+        short owner = p_messageHeader.getSource();
+        short rangeID = importer.readShort((short) 0);
+        int numberOfChunks = importer.readInt(0);
+
+        // #ifdef STATISTICS
+        SOP_LOG_BATCH.enter();
+        // #endif /* STATISTICS */
+
+        SecondaryLog secLog = getSecondaryLog(owner, rangeID);
         if (secLog == null) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Logging of chunks failed. SecondaryLog for range %s,%d is missing!", p_owner, rangeID);
+            LOGGER.error("Logging of chunks failed. SecondaryLog for range %s,%d is missing!", owner, rangeID);
             // #endif /* LOGGER >= ERROR */
             return;
         }
 
         short originalOwner = secLog.getOriginalOwner();
-        for (int i = 0; i < size; i++) {
-            chunkID = p_buffer.getLong();
-            length = p_buffer.getInt();
+        for (int i = 0; i < numberOfChunks; i++) {
+            chunkID = importer.readLong(chunkID);
+            length = importer.readCompactNumber(length);
 
             assert length > 0;
 
+            int timestamp = 0;
+            if (getConfig().useTimestamps()) {
+                timestamp = (int) ((System.currentTimeMillis() - m_initTime) / 1000);
+            }
             try {
-                logEntryHeader = PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length, secLog.getNextVersion(chunkID), rangeID, p_owner, originalOwner);
-                m_writeBuffer.putLogData(logEntryHeader, p_buffer, length);
+                // #ifdef STATISTICS
+                SOP_PUT_ENTRY_AND_HEADER.enter();
+                // #endif /* STATISTICS */
+
+                m_writeBuffer.putLogData(importer, chunkID, length, rangeID, owner, originalOwner, timestamp, secLog);
+
+                // #ifdef STATISTICS
+                SOP_PUT_ENTRY_AND_HEADER.leave();
+                // #endif /* STATISTICS */
+
             } catch (final InterruptedException e) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("Logging of chunk 0x%X failed: %s", chunkID, e);
                 // #endif /* LOGGER >= ERROR */
             }
         }
+
+        // #ifdef STATISTICS
+        SOP_LOG_BATCH.leave();
+        // #endif /* STATISTICS */
+    }
+
+    /**
+     * Logs a buffer with Chunks on SSD
+     *
+     * @param p_rangeID
+     *         the RangeID
+     * @param p_numberOfDataStructures
+     *         the number of data structures stored in p_buffer
+     * @param p_buffer
+     *         the Chunk buffer
+     * @param p_owner
+     *         the Chunks' owner
+     */
+    void incomingLogChunks(final short p_rangeID, final int p_numberOfDataStructures, final ByteBuffer p_buffer, final short p_owner) {
+        long chunkID = ChunkID.INVALID_ID;
+        int length = -1;
+
+        // #ifdef STATISTICS
+        SOP_LOG_BATCH.enter();
+        // #endif /* STATISTICS */
+
+        SecondaryLog secLog = getSecondaryLog(p_owner, p_rangeID);
+        if (secLog == null) {
+            // #if LOGGER >= ERROR
+            LOGGER.error("Logging of chunks failed. SecondaryLog for range %s,%d is missing!", p_owner, p_rangeID);
+            // #endif /* LOGGER >= ERROR */
+            return;
+        }
+
+        MessageImporterDefault importer = new MessageImporterDefault();
+        importer.setBuffer(ByteBufferHelper.getDirectAddress(p_buffer), p_buffer.capacity(), 0);
+        importer.setNumberOfReadBytes(0);
+
+        short originalOwner = secLog.getOriginalOwner();
+        for (int i = 0; i < p_numberOfDataStructures; i++) {
+            chunkID = importer.readLong(chunkID);
+            length = importer.readCompactNumber(length);
+
+            assert length > 0;
+
+            int timestamp = 0;
+            if (getConfig().useTimestamps()) {
+                timestamp = (int) ((System.currentTimeMillis() - m_initTime) / 1000);
+            }
+            try {
+                // #ifdef STATISTICS
+                SOP_PUT_ENTRY_AND_HEADER.enter();
+                // #endif /* STATISTICS */
+
+                m_writeBuffer.putLogData(importer, chunkID, length, p_rangeID, p_owner, originalOwner, timestamp, secLog);
+                p_buffer.position(p_buffer.position() + length);
+
+                // #ifdef STATISTICS
+                SOP_PUT_ENTRY_AND_HEADER.leave();
+                // #endif /* STATISTICS */
+
+            } catch (final InterruptedException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Logging of chunk 0x%X failed: %s", chunkID, e);
+                // #endif /* LOGGER >= ERROR */
+            }
+        }
+
+        // #ifdef STATISTICS
+        SOP_LOG_BATCH.leave();
+        // #endif /* STATISTICS */
 
     }
 

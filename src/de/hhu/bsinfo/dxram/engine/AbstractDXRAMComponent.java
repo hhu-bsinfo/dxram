@@ -243,7 +243,7 @@ public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentCon
      * @param p_config
      *         Config to set
      */
-    void setConfig(final T p_config) {
+    public void setConfig(final T p_config) {
         m_config = p_config;
     }
 }

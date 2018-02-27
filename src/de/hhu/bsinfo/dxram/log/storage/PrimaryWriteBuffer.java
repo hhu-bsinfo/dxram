@@ -15,8 +15,7 @@ package de.hhu.bsinfo.dxram.log.storage;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -28,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.AbstractPrimLogEntryHeader;
@@ -59,15 +58,16 @@ public class PrimaryWriteBuffer {
 
     // Attributes
     private final LogComponent m_logComponent;
-    private final PrimaryLog m_primaryLog;
     private final int m_writeBufferSize;
     private final int m_flashPageSize;
     private final int m_secondaryLogBufferSize;
     private final int m_logSegmentSize;
     private final boolean m_useChecksum;
+    private final boolean m_native;
 
-    private byte[] m_buffer;
-    private PrimaryLogWriterThread m_writerThread;
+    private DirectByteBufferWrapper m_bufferWrapper;
+    private ByteBuffer m_buffer;
+    private PrimaryLogProcessThread m_processThread;
 
     private long m_timestamp;
 
@@ -76,7 +76,7 @@ public class PrimaryWriteBuffer {
     // the metadata (-> happened before)
     private int m_bufferReadPointer;
     private int m_bufferWritePointer;
-    private HashMap<Integer, Integer> m_lengthByBackupRange;
+    private HashMap<Integer, Partitioning> m_lengthAndFragmentationByBackupRange;
 
     // Read/Set by exclusive message handler, only (either to log chunks or to initialize flushing during recovery)
     private boolean m_needToLock;
@@ -103,10 +103,8 @@ public class PrimaryWriteBuffer {
     private Condition m_dataAvailableCond;
     private Condition m_finishedCopyingCond;
 
-    private boolean m_poolBuffers;
-    private ArrayList<byte[]> m_segmentPoolLarge;
-    private ArrayList<byte[]> m_segmentPoolMedium;
-    private ArrayList<byte[]> m_segmentPoolSmall;
+    private BufferPool m_bufferPool;
+    private WriterJobQueue m_writerJobQueue;
 
     // Constructors
 
@@ -115,38 +113,34 @@ public class PrimaryWriteBuffer {
      * configuration
      *
      * @param p_logComponent
-     *     the log component
+     *         the log component
      * @param p_primaryLog
-     *     Instance of the primary log. Used to write directly to primary log if buffer is full
+     *         Instance of the primary log. Used to write directly to primary log if buffer is full
      * @param p_writeBufferSize
-     *     the size of the write buffer
+     *         the size of the write buffer
      * @param p_flashPageSize
-     *     the size of a flash page
+     *         the size of a flash page
      * @param p_secondaryLogBufferSize
-     *     the secondary log buffer size
+     *         the secondary log buffer size
      * @param p_logSegmentSize
-     *     the segment size
+     *         the segment size
      * @param p_useChecksum
-     *     whether checksums are used
-     * @param p_sortBufferPooling
-     *     whether buffer pooling is enabled or not
+     *         whether checksums are used
      */
     public PrimaryWriteBuffer(final LogComponent p_logComponent, final PrimaryLog p_primaryLog, final int p_writeBufferSize, final int p_flashPageSize,
-        final int p_secondaryLogBufferSize, final int p_logSegmentSize, final boolean p_useChecksum, final boolean p_sortBufferPooling) {
+            final int p_secondaryLogBufferSize, final int p_logSegmentSize, final boolean p_useChecksum) {
         m_logComponent = p_logComponent;
-        m_primaryLog = p_primaryLog;
         m_writeBufferSize = p_writeBufferSize;
         m_flashPageSize = p_flashPageSize;
         m_secondaryLogBufferSize = p_secondaryLogBufferSize;
         m_logSegmentSize = p_logSegmentSize;
         m_useChecksum = p_useChecksum;
-        m_poolBuffers = p_sortBufferPooling;
 
         m_bufferReadPointer = 0;
         m_bufferWritePointer = 0;
         m_bytesInWriteBuffer = 0;
         m_timestamp = System.currentTimeMillis();
-        m_writerThread = null;
+        m_processThread = null;
         m_flushingComplete = false;
         m_dataAvailable = false;
 
@@ -159,30 +153,19 @@ public class PrimaryWriteBuffer {
         if (m_writeBufferSize < m_flashPageSize || m_writeBufferSize > WRITE_BUFFER_MAX_SIZE || Integer.bitCount(m_writeBufferSize) != 1) {
             throw new IllegalArgumentException("Illegal buffer size! Must be 2^x with " + Math.log(m_flashPageSize) / Math.log(2) + " <= x <= 31");
         }
-        m_buffer = new byte[m_writeBufferSize];
-        m_lengthByBackupRange = new HashMap<Integer, Integer>();
+        m_bufferWrapper = new DirectByteBufferWrapper(m_writeBufferSize);
+        m_buffer = m_bufferWrapper.getBuffer();
+        m_native = m_buffer.isDirect();
+        m_lengthAndFragmentationByBackupRange = new HashMap<Integer, Partitioning>();
         m_isShuttingDown = false;
 
-        if (m_poolBuffers) {
-            // Creates buffers for segment pooling (2 * 8 MB, 16 * 1 MB, 32 * 0.5 MB, total: 48 MB)
-            m_segmentPoolLarge = new ArrayList<byte[]>();
-            m_segmentPoolMedium = new ArrayList<byte[]>();
-            m_segmentPoolSmall = new ArrayList<byte[]>();
+        m_bufferPool = new BufferPool(p_logSegmentSize);
 
-            for (int i = 0; i < 2; i++) {
-                m_segmentPoolLarge.add(new byte[m_logSegmentSize]);
-            }
-            for (int i = 0; i < 16; i++) {
-                m_segmentPoolMedium.add(new byte[m_logSegmentSize / 8]);
-            }
-            for (int i = 0; i < 32; i++) {
-                m_segmentPoolSmall.add(new byte[m_logSegmentSize / 16]);
-            }
-        }
+        m_writerJobQueue = new WriterJobQueue(this, p_primaryLog);
 
-        m_writerThread = new PrimaryLogWriterThread();
-        m_writerThread.setName("Logging: Writer Thread");
-        m_writerThread.start();
+        m_processThread = new PrimaryLogProcessThread();
+        m_processThread.setName("Logging: Process Thread");
+        m_processThread.start();
 
         // #if LOGGER == TRACE
         LOGGER.trace("Initialized primary write buffer (%d)", m_writeBufferSize);
@@ -201,32 +184,45 @@ public class PrimaryWriteBuffer {
         while (!m_flushingComplete) {
             Thread.yield();
         }
+        m_writerJobQueue.shutdown();
     }
 
     /**
-     * Print the throughput statistic
-     */
-    public void printThroughput() {
-        m_writerThread.printThroughput();
-    }
-
-    /**
-     * Writes log entries as a whole (max. size: write buffer) Log entry format:
-     * /////// // CID // LEN // CRC// DATA ... ///////
-     * Is only called by exclusive message handler
+     * Return ByteBuffer wrapper to pool
      *
-     * @param p_header
-     *     the log entry's header as a byte array
-     * @param p_buffer
-     *     the message buffer (position is on payload)
-     * @param p_payloadLength
-     *     the payload length
-     * @return the number of written bytes
-     * @throws InterruptedException
-     *     if caller is interrupted
+     * @param p_bufferWrapper
+     *         the buffer
      */
-    public final int putLogData(final byte[] p_header, final ByteBuffer p_buffer, final int p_payloadLength) throws InterruptedException {
+    void returnBuffer(final DirectByteBufferWrapper p_bufferWrapper) {
+        m_bufferPool.returnBuffer(p_bufferWrapper);
+    }
+
+    /**
+     * Writes log entries to primary write buffer.
+     *
+     * @param p_importer
+     *         the message importer
+     * @param p_chunkID
+     *         the chunk ID
+     * @param p_payloadLength
+     *         the payload length
+     * @param p_rangeID
+     *         the range ID
+     * @param p_owner
+     *         the current owner
+     * @param p_originalOwner
+     *         the creator
+     * @param p_timestamp
+     *         the time since initialization in seconds
+     * @param p_secLog
+     *         the corresponding secondary log (to determine the version)
+     * @throws InterruptedException
+     *         if caller is interrupted
+     */
+    public final void putLogData(final AbstractMessageImporter p_importer, final long p_chunkID, final int p_payloadLength, final short p_rangeID,
+            final short p_owner, final short p_originalOwner, final int p_timestamp, final SecondaryLog p_secLog) throws InterruptedException {
         AbstractPrimLogEntryHeader logEntryHeader;
+        byte headerSize;
         int bytesInWriteBuffer;
         int bytesToWrite;
         int bytesUntilEnd;
@@ -236,22 +232,27 @@ public class PrimaryWriteBuffer {
         int numberOfHeaders;
         int combinedRangeID;
         long currentTime;
-        Integer counter;
+        ByteBuffer header;
+        Version version;
+
+        version = p_secLog.getNextVersion(p_chunkID);
 
         logEntryHeader = AbstractPrimLogEntryHeader.getHeader();
-        combinedRangeID = (logEntryHeader.getOwner(p_header, 0) << 16) + logEntryHeader.getRangeID(p_header, 0);
+        header = logEntryHeader.createLogEntryHeader(p_chunkID, p_payloadLength, version, p_rangeID, p_owner, p_originalOwner, p_timestamp);
+        headerSize = (byte) header.limit();
+
+        combinedRangeID = (p_owner << 16) + p_rangeID;
 
         // Large chunks are split and chained -> there might be more than one header
         numberOfHeaders = (int) Math.ceil((float) p_payloadLength / AbstractLogEntryHeader.getMaxLogEntrySize());
-        bytesToWrite = numberOfHeaders * p_header.length + p_payloadLength;
+        bytesToWrite = numberOfHeaders * headerSize + p_payloadLength;
 
         if (p_payloadLength <= 0) {
             throw new IllegalArgumentException("No payload for log entry!");
         }
         if (numberOfHeaders > Byte.MAX_VALUE) {
-            throw new IllegalArgumentException(
-                "Chunk is too large to log. Maximum chunk size for current configuration is " + Byte.MAX_VALUE * AbstractLogEntryHeader.getMaxLogEntrySize() +
-                    '!');
+            throw new IllegalArgumentException("Chunk is too large to log. Maximum chunk size for current configuration is " +
+                    Byte.MAX_VALUE * AbstractLogEntryHeader.getMaxLogEntrySize() + '!');
         }
         if (bytesToWrite > m_writeBufferSize) {
             throw new IllegalArgumentException("Data to write exceeds buffer size!");
@@ -288,24 +289,27 @@ public class PrimaryWriteBuffer {
         // Access metadata without locking as no other thread can change meanwhile; changed values will become visible
         // when granted access to writer thread by acquiring the metadata lock (-> happened before)
         writePointer = m_bufferWritePointer;
-        m_bufferWritePointer = (writePointer + bytesToWrite) % m_buffer.length;
+
+        m_bufferWritePointer = (writePointer + bytesToWrite) % m_buffer.capacity();
         // Update byte counters
         m_bytesInWriteBuffer += bytesToWrite;
 
-        counter = m_lengthByBackupRange.get(combinedRangeID);
-        if (counter == null) {
-            m_lengthByBackupRange.put(combinedRangeID, bytesToWrite);
+        // Add bytes to write to log of combinedRangeID (optimization for sorting)
+        int conversionOffset = AbstractPrimLogEntryHeader.getConversionOffset(header, 0);
+        Partitioning part = m_lengthAndFragmentationByBackupRange.get(combinedRangeID);
+        if (part == null) {
+            m_lengthAndFragmentationByBackupRange.put(combinedRangeID, new Partitioning(bytesToWrite, conversionOffset));
         } else {
-            m_lengthByBackupRange.put(combinedRangeID, counter + bytesToWrite);
+            part.addEntry(bytesToWrite, conversionOffset);
         }
 
         for (int i = 0; i < numberOfHeaders; i++) {
-            writeSize = Math.min(bytesToWrite - writtenBytes, AbstractLogEntryHeader.getMaxLogEntrySize()) - p_header.length;
+            writeSize = Math.min(bytesToWrite - writtenBytes, AbstractLogEntryHeader.getMaxLogEntrySize()) - headerSize;
 
             if (numberOfHeaders > 1) {
                 // Log entry is too large and must be chained -> set chaining ID, chain size and length in header for this part
-                AbstractPrimLogEntryHeader.addChainingIDAndChainSize(p_header, 0, (byte) i, (byte) numberOfHeaders, logEntryHeader);
-                AbstractPrimLogEntryHeader.adjustLength(p_header, 0, writeSize, logEntryHeader);
+                AbstractPrimLogEntryHeader.addChainingIDAndChainSize(header, 0, (byte) i, (byte) numberOfHeaders, logEntryHeader);
+                AbstractPrimLogEntryHeader.adjustLength(header, 0, writeSize, logEntryHeader);
             }
 
             // Determine free space from end of log to end of array
@@ -315,40 +319,71 @@ public class PrimaryWriteBuffer {
                 bytesUntilEnd = m_bufferReadPointer - writePointer;
             }
 
-            if (writeSize + p_header.length <= bytesUntilEnd) {
+            if (writeSize + headerSize <= bytesUntilEnd) {
                 // Write header
-                System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
+                m_buffer.put(header);
+
                 // Write payload
-                p_buffer.get(m_buffer, writePointer + p_header.length, writeSize);
+                if (m_native) {
+                    p_importer.readBytes(m_bufferWrapper.getAddress(), m_buffer.position(), writeSize);
+                } else {
+                    p_importer.readBytes(m_buffer.array(), m_buffer.position(), writeSize);
+                }
+                m_buffer.position((m_buffer.position() + writeSize) % m_buffer.capacity());
             } else {
                 // Twofold cyclic write access
-                if (bytesUntilEnd < p_header.length) {
+                if (bytesUntilEnd < headerSize) {
                     // Write header
-                    System.arraycopy(p_header, 0, m_buffer, writePointer, bytesUntilEnd);
-                    System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0, p_header.length - bytesUntilEnd);
+                    header.limit(bytesUntilEnd);
+                    m_buffer.put(header);
+
+                    header.limit(headerSize);
+                    m_buffer.position(0);
+                    m_buffer.put(header);
+
                     // Write payload
-                    p_buffer.get(m_buffer, p_header.length - bytesUntilEnd, writeSize);
-                } else if (bytesUntilEnd > p_header.length) {
+                    if (m_native) {
+                        p_importer.readBytes(m_bufferWrapper.getAddress(), m_buffer.position(), writeSize);
+                    } else {
+                        p_importer.readBytes(m_buffer.array(), m_buffer.position(), writeSize);
+                    }
+                    m_buffer.position((m_buffer.position() + writeSize) % m_buffer.capacity());
+                } else if (bytesUntilEnd > headerSize) {
                     // Write header
-                    System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
+                    m_buffer.put(header);
+
                     // Write payload
-                    p_buffer.get(m_buffer, writePointer + p_header.length, bytesUntilEnd - p_header.length);
-                    p_buffer.get(m_buffer, 0, writeSize - (bytesUntilEnd - p_header.length));
+                    if (m_native) {
+                        p_importer.readBytes(m_bufferWrapper.getAddress(), m_buffer.position(), bytesUntilEnd - headerSize);
+
+                        p_importer.readBytes(m_bufferWrapper.getAddress(), 0, writeSize - (bytesUntilEnd - headerSize));
+                    } else {
+                        p_importer.readBytes(m_buffer.array(), m_buffer.position(), bytesUntilEnd - headerSize);
+
+                        p_importer.readBytes(m_buffer.array(), 0, writeSize - (bytesUntilEnd - headerSize));
+                    }
+                    m_buffer.position((writeSize - (bytesUntilEnd - headerSize)) % m_buffer.capacity());
                 } else {
                     // Write header
-                    System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
+                    m_buffer.put(header);
+
                     // Write payload
-                    p_buffer.get(m_buffer, 0, writeSize);
+                    if (m_native) {
+                        p_importer.readBytes(m_bufferWrapper.getAddress(), 0, writeSize);
+                    } else {
+                        p_importer.readBytes(m_buffer.array(), 0, writeSize);
+                    }
+                    m_buffer.position((m_buffer.position() + writeSize) % m_buffer.capacity());
                 }
             }
 
             if (m_useChecksum) {
                 // Determine checksum for payload and add to header
-                AbstractPrimLogEntryHeader.addChecksum(m_buffer, writePointer, writeSize, logEntryHeader, bytesUntilEnd);
+                AbstractPrimLogEntryHeader.addChecksum(m_bufferWrapper, writePointer, writeSize, logEntryHeader, headerSize, bytesUntilEnd);
             }
 
-            writePointer = (writePointer + writeSize + p_header.length) % m_buffer.length;
-            writtenBytes += writeSize + p_header.length;
+            writePointer = (writePointer + writeSize + headerSize) % m_buffer.capacity();
+            writtenBytes += writeSize + headerSize;
         }
 
         // ***Synchronization***//
@@ -363,8 +398,6 @@ public class PrimaryWriteBuffer {
             m_writerThreadAccessesBuffer = true;
             m_needToLock = true;
         }
-
-        return bytesToWrite;
     }
 
     /**
@@ -402,26 +435,21 @@ public class PrimaryWriteBuffer {
      *
      * @author Kevin Beineke 06.06.2014
      */
-    private final class PrimaryLogWriterThread extends Thread {
-
-        // Attributes
-        private long m_time;
-        private long m_amount;
-        private double m_throughput;
+    private final class PrimaryLogProcessThread extends Thread {
 
         // Constructors
 
         /**
-         * Creates an instance of PrimaryLogWriterThread
+         * Creates an instance of PrimaryLogProcessThread
          */
-        PrimaryLogWriterThread() {
-            m_time = System.currentTimeMillis();
-            m_amount = 0;
-            m_throughput = 0;
+        PrimaryLogProcessThread() {
         }
 
         @Override
         public void run() {
+            ByteBuffer buffer = m_buffer.duplicate();
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+
             while (true) {
                 if (m_isShuttingDown) {
                     break;
@@ -442,21 +470,19 @@ public class PrimaryWriteBuffer {
                     continue;
                 }
 
-                flushDataToPrimaryLog();
+                flushDataToPrimaryLog(buffer);
                 m_logComponent.getReorganizationThread().grantAccessToCurrentLog();
             }
         }
 
         /**
          * Flushes all data in write buffer to primary log
-         *
-         * @return number of copied bytes
          */
-        int flushDataToPrimaryLog() {
+        void flushDataToPrimaryLog(final ByteBuffer p_primaryWriteBuffer) {
             int writtenBytes = 0;
             int readPointer;
             int bytesInWriteBuffer;
-            Set<Entry<Integer, Integer>> lengthByBackupRange;
+            Set<Entry<Integer, Partitioning>> lengthAndFragmentationByBackupRange;
 
             // 1. Gain exclusive write access
             // 2. Copy read pointer and counter
@@ -489,11 +515,11 @@ public class PrimaryWriteBuffer {
             // Copy meta-data
             readPointer = m_bufferReadPointer;
             bytesInWriteBuffer = m_bytesInWriteBuffer;
-            lengthByBackupRange = m_lengthByBackupRange.entrySet();
+            lengthAndFragmentationByBackupRange = m_lengthAndFragmentationByBackupRange.entrySet();
 
             m_bufferReadPointer = m_bufferWritePointer;
             m_bytesInWriteBuffer = 0;
-            m_lengthByBackupRange = new HashMap<Integer, Integer>();
+            m_lengthAndFragmentationByBackupRange = new HashMap<Integer, Partitioning>();
 
             // Release access
             m_dataAvailable = false;
@@ -505,28 +531,21 @@ public class PrimaryWriteBuffer {
             if (bytesInWriteBuffer > 0) {
                 // Write data to secondary logs or primary log
                 try {
-                    writtenBytes = bufferAndStore(m_buffer, readPointer, bytesInWriteBuffer, lengthByBackupRange);
+                    p_primaryWriteBuffer.position(readPointer);
+                    writtenBytes = bufferAndStore(p_primaryWriteBuffer, readPointer, bytesInWriteBuffer, lengthAndFragmentationByBackupRange);
                 } catch (final IOException | InterruptedException e) {
                     // #if LOGGER >= ERROR
                     LOGGER.error("Could not flush data", e);
                     // #endif /* LOGGER >= ERROR */
                 }
+                if (writtenBytes != bytesInWriteBuffer) {
+                    // #if LOGGER >= ERROR
+                    LOGGER.error("Flush incomplete!");
+                    // #endif /* LOGGER >= ERROR */
+                }
             }
-            m_amount += writtenBytes;
+
             m_flushingComplete = true;
-
-            return writtenBytes;
-        }
-
-        /**
-         * Print the throughput statistic
-         */
-        void printThroughput() {
-            m_throughput = (double) m_amount / (System.currentTimeMillis() - m_time) / 1024 / 1024 * 1000 * 0.9 + m_throughput * 0.1;
-            m_amount = 0;
-            m_time = System.currentTimeMillis();
-
-            System.out.format("Throughput: %.2f mb/s\n", m_throughput);
         }
 
         /**
@@ -534,25 +553,24 @@ public class PrimaryWriteBuffer {
          * if longer than a flash page. Merges consecutive log entries of the same
          * node to limit the number of write accesses
          *
-         * @param p_buffer
-         *     data block
+         * @param p_primaryWriteBuffer
+         *         data block
          * @param p_offset
-         *     offset within the buffer
+         *         offset within the buffer
          * @param p_length
-         *     length of data
-         * @param p_lengthByBackupRange
-         *     length of data per node
+         *         length of data
+         * @param p_lengthAndFragmentationByBackupRange
+         *         length of data per node
          * @return the number of stored bytes
          * @throws IOException
-         *     if secondary log (buffer) could not be written
+         *         if secondary log (buffer) could not be written
          * @throws InterruptedException
-         *     if caller is interrupted
+         *         if caller is interrupted
          */
-        private int bufferAndStore(final byte[] p_buffer, final int p_offset, final int p_length, final Set<Entry<Integer, Integer>> p_lengthByBackupRange)
-            throws InterruptedException, IOException {
+        private int bufferAndStore(final ByteBuffer p_primaryWriteBuffer, final int p_offset, final int p_length,
+                final Set<Entry<Integer, Partitioning>> p_lengthAndFragmentationByBackupRange) throws InterruptedException, IOException {
             int i;
             int offset;
-            int primaryLogBufferOffset = 0;
             int primaryLogBufferSize = 0;
             int bytesRead = 0;
             int logEntrySize;
@@ -561,129 +579,148 @@ public class PrimaryWriteBuffer {
             int bufferLength;
             int combinedRangeID;
             short headerSize;
-            byte[] primaryLogBuffer;
-            byte[] header;
-            byte[] segment;
+            Partitioning part;
+            DirectByteBufferWrapper primaryLogBuffer = null;
+            ByteBuffer header;
+            ByteBuffer segment;
+            DirectByteBufferWrapper segmentWrapper;
             AbstractPrimLogEntryHeader logEntryHeader;
+            Iterator<Entry<Integer, Partitioning>> iter;
+            Entry<Integer, Partitioning> entry;
             HashMap<Integer, BufferNode> map;
-            Iterator<Entry<Integer, Integer>> iter;
-            Entry<Integer, Integer> entry;
             Iterator<Entry<Integer, BufferNode>> iter2;
             Entry<Integer, BufferNode> entry2;
             BufferNode bufferNode;
 
             // Sort buffer by backup range
-            if (p_buffer.length >= 0) {
+
+            /*
+             * Initialize backup range buffers:
+             * For every NodeID with at least one log entry in this
+             * buffer a hashmap entry will be created. The hashmap entry
+             * contains the RangeID (key), a buffer fitting all log
+             * entries and an offset. The size of the buffer is known
+             * from the monitoring information p_lengthByBackupRange.
+             * The offset is zero if the buffer will be stored in primary
+             * log (complete header) The offset is two if the buffer will be
+             * stored directly in secondary log (header without NodeID).
+             */
+            map = new HashMap<Integer, BufferNode>();
+            iter = p_lengthAndFragmentationByBackupRange.iterator();
+            while (iter.hasNext()) {
+                entry = iter.next();
+                combinedRangeID = entry.getKey();
+                part = entry.getValue();
+                if (part.getSecLogBytes() < m_secondaryLogBufferSize) {
+                    // There is less than 128 KB (default) data from this node -> store buffer in primary log (later)
+                    int totalBytes = part.getTotalBytes();
+                    primaryLogBufferSize += totalBytes;
+                    bufferNode = new BufferNode(totalBytes, part.m_bytesFragmentation, false);
+                } else {
+                    bufferNode = new BufferNode(part.getSecLogBytes(), part.m_bytesFragmentation, true);
+                }
+                map.put(combinedRangeID, bufferNode);
+            }
+
+            while (bytesRead < p_length) {
+                offset = (p_offset + bytesRead) % p_primaryWriteBuffer.capacity();
+                bytesUntilEnd = p_primaryWriteBuffer.capacity() - offset;
+
+                logEntryHeader = AbstractPrimLogEntryHeader.getHeader();
                 /*
-                 * Initialize backup range buffers:
-                 * For every NodeID with at least one log entry in this
-                 * buffer a hashmap entry will be created. The hashmap entry
-                 * contains the RangeID (key), a buffer fitting all log
-                 * entries and an offset. The size of the buffer is known
-                 * from the monitoring information p_lengthByBackupRange.
-                 * The offset is zero if the buffer will be stored in primary
-                 * log (complete header) The offset is two if the buffer will be
-                 * stored directly in secondary log (header without NodeID).
+                 * Because of the log's wrap around three cases must be distinguished
+                 * 1. Complete entry fits in current iteration
+                 * 2. Offset pointer is already in next iteration
+                 * 3. Log entry must be split over two iterations
                  */
-                map = new HashMap<Integer, BufferNode>();
-                iter = p_lengthByBackupRange.iterator();
-                while (iter.hasNext()) {
-                    entry = iter.next();
-                    combinedRangeID = entry.getKey();
-                    segmentLength = entry.getValue();
-                    if (segmentLength < m_secondaryLogBufferSize) {
-                        // There is less than 128 KB (default) data from this node -> store buffer in primary log (later)
-                        primaryLogBufferSize += segmentLength;
-                        bufferNode = new BufferNode(segmentLength, false);
+                if (logEntryHeader.isReadable(p_primaryWriteBuffer, offset, bytesUntilEnd)) {
+                    logEntrySize = logEntryHeader.getHeaderSize(p_primaryWriteBuffer, offset) + logEntryHeader.getLength(p_primaryWriteBuffer, offset);
+                    combinedRangeID = (logEntryHeader.getOwner(p_primaryWriteBuffer, offset) << 16) + logEntryHeader.getRangeID(p_primaryWriteBuffer, offset);
+
+                    bufferNode = map.get(combinedRangeID);
+                    bufferNode.appendToBuffer(p_primaryWriteBuffer, offset, logEntrySize, bytesUntilEnd,
+                            AbstractPrimLogEntryHeader.getConversionOffset(p_primaryWriteBuffer, offset));
+                } else {
+                    // Buffer overflow -> header is split
+                    // To get header size only the first byte is necessary
+                    headerSize = logEntryHeader.getHeaderSize(p_primaryWriteBuffer, offset);
+                    if (m_native) {
+                        header = ByteBuffer.allocateDirect(headerSize);
                     } else {
-                        bufferNode = new BufferNode(segmentLength, true);
+                        header = ByteBuffer.allocate(headerSize);
                     }
-                    map.put(combinedRangeID, bufferNode);
+                    header.order(ByteOrder.LITTLE_ENDIAN);
+
+                    header.put(p_primaryWriteBuffer);
+
+                    p_primaryWriteBuffer.position(0);
+                    p_primaryWriteBuffer.limit(headerSize - bytesUntilEnd);
+                    header.put(p_primaryWriteBuffer);
+                    p_primaryWriteBuffer.limit(p_primaryWriteBuffer.capacity());
+                    //System.arraycopy(p_buffer, offset, header, 0, bytesUntilEnd);
+                    //System.arraycopy(p_buffer, 0, header, bytesUntilEnd, headerSize - bytesUntilEnd);
+
+                    logEntrySize = headerSize + logEntryHeader.getLength(header, 0);
+                    combinedRangeID = (logEntryHeader.getOwner(header, 0) << 16) + logEntryHeader.getRangeID(header, 0);
+
+                    bufferNode = map.get(combinedRangeID);
+                    bufferNode.appendToBuffer(p_primaryWriteBuffer, offset, logEntrySize, bytesUntilEnd,
+                            AbstractPrimLogEntryHeader.getConversionOffset(header, 0));
                 }
+                bytesRead += logEntrySize;
+            }
 
-                while (bytesRead < p_length) {
-                    offset = (p_offset + bytesRead) % p_buffer.length;
-                    bytesUntilEnd = p_buffer.length - offset;
+            // Write sorted buffers to log
+            if (primaryLogBufferSize > 0) {
+                primaryLogBuffer = new DirectByteBufferWrapper(primaryLogBufferSize);
+            }
 
-                    logEntryHeader = AbstractPrimLogEntryHeader.getHeader();
-                    /*
-                     * Because of the log's wrap around three cases must be distinguished 1. Complete entry fits in
-                     * current iteration 2.
-                     * Offset pointer is already in next iteration 3. Log entry must be split over two iterations
-                     */
-                    if (logEntryHeader.isReadable(p_buffer, offset, bytesUntilEnd)) {
-                        logEntrySize = logEntryHeader.getHeaderSize(p_buffer, offset) + logEntryHeader.getLength(p_buffer, offset);
-                        combinedRangeID = (logEntryHeader.getOwner(p_buffer, offset) << 16) + logEntryHeader.getRangeID(p_buffer, offset);
+            iter2 = map.entrySet().iterator();
+            while (iter2.hasNext()) {
+                i = 0;
+                entry2 = iter2.next();
+                combinedRangeID = entry2.getKey();
+                bufferNode = entry2.getValue();
+                bufferLength = bufferNode.getBufferLength();
 
-                        bufferNode = map.get(combinedRangeID);
-                        bufferNode
-                            .appendToBuffer(p_buffer, offset, logEntrySize, bytesUntilEnd, AbstractPrimLogEntryHeader.getConversionOffset(p_buffer, offset));
-                    } else {
-                        // Buffer overflow -> header is split
-                        // To get header size only the first byte is necessary
-                        headerSize = logEntryHeader.getHeaderSize(p_buffer, offset);
-                        header = new byte[headerSize];
-                        System.arraycopy(p_buffer, offset, header, 0, bytesUntilEnd);
-                        System.arraycopy(p_buffer, 0, header, bytesUntilEnd, headerSize - bytesUntilEnd);
-
-                        logEntrySize = headerSize + logEntryHeader.getLength(header, 0);
-                        combinedRangeID = (logEntryHeader.getOwner(header, 0) << 16) + logEntryHeader.getRangeID(header, 0);
-
-                        bufferNode = map.get(combinedRangeID);
-                        bufferNode.appendToBuffer(p_buffer, offset, logEntrySize, bytesUntilEnd, AbstractPrimLogEntryHeader.getConversionOffset(header, 0));
-                    }
-                    bytesRead += logEntrySize;
-                }
-
-                // Write sorted buffers to log
-                primaryLogBuffer = new byte[primaryLogBufferSize];
-
-                iter2 = map.entrySet().iterator();
-                while (iter2.hasNext()) {
-                    i = 0;
-                    entry2 = iter2.next();
-                    combinedRangeID = entry2.getKey();
-                    bufferNode = entry2.getValue();
-                    // bufferNode.trimLastSegment();
-                    bufferLength = bufferNode.getBufferLength();
-
-                    segment = bufferNode.getData(i);
+                segmentWrapper = bufferNode.getSegmentWrapper(i);
+                while (segmentWrapper != null) {
+                    segment = segmentWrapper.getBuffer();
                     segmentLength = bufferNode.getSegmentLength(i);
-                    while (segment != null && segmentLength > 0) {
-                        if (bufferLength < m_secondaryLogBufferSize) {
-                            // 1. Buffer in secondary log buffer
-                            if (!bufferLogEntryInSecondaryLogBuffer(segment, 0, segmentLength, (short) combinedRangeID, (short) (combinedRangeID >> 16))) {
-                                // 2. Copy log entry/range to write it in primary log subsequently if the buffer was not
-                                // flushed during appending
-                                System.arraycopy(segment, 0, primaryLogBuffer, primaryLogBufferOffset, segmentLength);
-                                primaryLogBufferOffset += segmentLength;
-                            }
-                        } else {
-                            // Segment is larger than secondary log buffer size -> skip primary log
-                            writeDirectlyToSecondaryLog(segment, 0, segmentLength, (short) combinedRangeID, (short) (combinedRangeID >> 16));
-                        }
+                    segment.rewind();
 
-                        if (m_poolBuffers) {
-                            // Return byte array to segment pool
-                            if (segment.length == m_logSegmentSize && m_segmentPoolLarge.size() < 2) {
-                                m_segmentPoolLarge.add(segment);
-                            } else if (segment.length == m_logSegmentSize / 8 && m_segmentPoolMedium.size() < 16) {
-                                m_segmentPoolMedium.add(segment);
-                            } else if (segment.length == m_logSegmentSize / 16 && m_segmentPoolSmall.size() < 32) {
-                                m_segmentPoolSmall.add(segment);
-                            }
-                        }
-
-                        segment = bufferNode.getData(++i);
-                        segmentLength = bufferNode.getSegmentLength(i);
+                    if (segmentLength == 0) {
+                        break;
                     }
-                    iter2.remove();
-                }
 
-                if (primaryLogBufferSize > 0) {
-                    // Write all log entries, that were not written to secondary log, in primary log with one write access
-                    m_primaryLog.appendData(primaryLogBuffer, 0, primaryLogBufferOffset);
+                    if (bufferLength < m_secondaryLogBufferSize) {
+                        // 1. Buffer in secondary log buffer
+                        DirectByteBufferWrapper combinedBuffer =
+                                bufferLogEntryInSecondaryLogBuffer(segmentWrapper, segmentLength, (short) combinedRangeID, (short) (combinedRangeID >> 16));
+                        if (combinedBuffer != null) {
+                            // Flush combined buffer (old data in secondary log buffer + new data)
+                            writeToSecondaryLog(combinedBuffer, combinedBuffer.getBuffer().limit(), (short) combinedRangeID, (short) (combinedRangeID >> 16));
+                        } else {
+                            // 2. Copy log entry/range to write it in primary log subsequently if the buffer was not flushed during appending
+                            assert primaryLogBuffer != null;
+
+                            segment.position(0);
+                            segment.limit(segmentLength);
+                            primaryLogBuffer.getBuffer().put(segment);
+                        }
+                        returnBuffer(segmentWrapper);
+                    } else {
+                        // Segment is larger than secondary log buffer size -> skip primary log
+                        writeToSecondaryLog(segmentWrapper, segmentLength, (short) combinedRangeID, (short) (combinedRangeID >> 16));
+                    }
+                    segmentWrapper = bufferNode.getSegmentWrapper(++i);
                 }
+                iter2.remove();
+            }
+
+            if (primaryLogBufferSize > 0) {
+                // Write all log entries, that were not written to secondary log, in primary log with one write access
+                writeToPrimaryLog(primaryLogBuffer);
             }
 
             return bytesRead;
@@ -694,24 +731,18 @@ public class PrimaryWriteBuffer {
          * buffer
          *
          * @param p_buffer
-         *     data block
-         * @param p_bufferOffset
-         *     position of log entry/range in data block
+         *         data block
          * @param p_logEntrySize
-         *     size of log entry/range
+         *         size of log entry/range
          * @param p_rangeID
-         *     the RangeID
+         *         the RangeID
          * @param p_owner
-         *     the owner NodeID
-         * @return whether the buffer was flushed or not
-         * @throws IOException
-         *     if secondary log buffer could not be written
-         * @throws InterruptedException
-         *     if caller is interrupted
+         *         the owner NodeID
+         * @return the DirectByteBufferWrapper for flushing or null if data was appended to buffer
          */
-        private boolean bufferLogEntryInSecondaryLogBuffer(final byte[] p_buffer, final int p_bufferOffset, final int p_logEntrySize, final short p_rangeID,
-            final short p_owner) throws IOException, InterruptedException {
-            return m_logComponent.getSecondaryLogBuffer(p_owner, p_rangeID).bufferData(p_buffer, p_bufferOffset, p_logEntrySize);
+        private DirectByteBufferWrapper bufferLogEntryInSecondaryLogBuffer(final DirectByteBufferWrapper p_buffer, final int p_logEntrySize,
+                final short p_rangeID, final short p_owner) throws IOException, InterruptedException {
+            return m_logComponent.getSecondaryLogBuffer(p_owner, p_rangeID).bufferData(p_buffer, p_logEntrySize);
         }
 
         /**
@@ -720,23 +751,32 @@ public class PrimaryWriteBuffer {
          * empty to maintain order
          *
          * @param p_buffer
-         *     data block
-         * @param p_bufferOffset
-         *     position of log entry/range in data block
+         *         data block
          * @param p_logEntrySize
-         *     size of log entry/range
+         *         size of log entry/range
          * @param p_rangeID
-         *     the RangeID
+         *         the RangeID
          * @param p_owner
-         *     the owner NodeID
+         *         the owner NodeID
          * @throws IOException
-         *     if secondary log could not be written
+         *         if secondary log could not be written
          * @throws InterruptedException
-         *     if caller is interrupted
+         *         if caller is interrupted
          */
-        private void writeDirectlyToSecondaryLog(final byte[] p_buffer, final int p_bufferOffset, final int p_logEntrySize, final short p_rangeID,
-            final short p_owner) throws IOException, InterruptedException {
-            m_logComponent.getSecondaryLogBuffer(p_owner, p_rangeID).flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
+        private void writeToSecondaryLog(final DirectByteBufferWrapper p_buffer, final int p_logEntrySize, final short p_rangeID, final short p_owner)
+                throws IOException, InterruptedException {
+            m_writerJobQueue.pushJob((byte) 0, m_logComponent.getSecondaryLogBuffer(p_owner, p_rangeID), p_buffer, p_logEntrySize);
+        }
+
+        /**
+         * Writes a log entry/range to primary log
+         *
+         * @param p_buffer
+         *         data block
+         */
+        private void writeToPrimaryLog(final DirectByteBufferWrapper p_buffer) {
+            m_writerJobQueue.pushJob((byte) 1, null, p_buffer, 0);
+            //m_primaryLog.appendData(p_buffer, p_buffer.getBuffer().position());
         }
     }
 
@@ -752,8 +792,7 @@ public class PrimaryWriteBuffer {
         private int m_currentSegment;
         private int m_bufferLength;
         private boolean m_convert;
-        private int[] m_writtenBytesPerSegment;
-        private byte[][] m_segments;
+        private DirectByteBufferWrapper[] m_segments;
 
         // Constructors
 
@@ -761,58 +800,25 @@ public class PrimaryWriteBuffer {
          * Creates an instance of BufferNode
          *
          * @param p_length
-         *     the buffer length (the length might change after converting the headers and fitting the data into
-         *     segments)
+         *         the buffer length (the length might change after converting the headers and fitting the data into
+         *         segments)
          * @param p_convert
-         *     whether the log entry headers have to be converted or not
+         *         whether the log entry headers have to be converted or not
          */
-        private BufferNode(final int p_length, final boolean p_convert) {
-            int length = p_length;
+        private BufferNode(final int p_length, final int p_fragmentation, final boolean p_convert) {
+            int length = p_length + p_fragmentation;
 
-            m_numberOfSegments = (int) Math.ceil((double) p_length / m_logSegmentSize);
+            m_numberOfSegments = (int) Math.ceil((double) length / m_logSegmentSize);
 
             m_currentSegment = 0;
             m_bufferLength = p_length;
             m_convert = p_convert;
 
-            m_writtenBytesPerSegment = new int[m_numberOfSegments];
-            m_segments = new byte[m_numberOfSegments][];
+            m_segments = new DirectByteBufferWrapper[m_numberOfSegments];
 
-            if (m_poolBuffers) {
-                for (int i = 0; i < m_segments.length; i++) {
-                    if (length > m_logSegmentSize / 8) {
-                        if (!m_segmentPoolLarge.isEmpty()) {
-                            m_segments[i] = m_segmentPoolLarge.remove(m_segmentPoolLarge.size() - 1);
-                            length -= m_logSegmentSize;
-                        } else {
-                            m_segments[i] = new byte[Math.min(length, m_logSegmentSize)];
-                            length -= m_segments[i].length;
-                        }
-                    } else if (length > m_logSegmentSize / 16) {
-                        if (!m_segmentPoolMedium.isEmpty()) {
-                            m_segments[i] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
-                            length -= m_logSegmentSize / 8;
-                        } else {
-                            m_segments[i] = new byte[length];
-                            length -= m_segments[i].length;
-                        }
-                    } else {
-                        if (!m_segmentPoolSmall.isEmpty()) {
-                            m_segments[i] = m_segmentPoolSmall.remove(m_segmentPoolSmall.size() - 1);
-                            length -= m_logSegmentSize / 16;
-                        } else if (!m_segmentPoolMedium.isEmpty()) {
-                            m_segments[i] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
-                            length -= m_logSegmentSize / 8;
-                        } else {
-                            m_segments[i] = new byte[length];
-                            length -= m_segments[i].length;
-                        }
-                    }
-                }
-            } else {
-                for (int i = 0; i < m_segments.length; i++) {
-                    m_segments[i] = new byte[Math.min(length, m_logSegmentSize)];
-                }
+            for (int i = 0; length > 0; i++) {
+                m_segments[i] = m_bufferPool.getBuffer(length);
+                length -= m_segments[i].getBuffer().capacity();
             }
         }
 
@@ -831,14 +837,14 @@ public class PrimaryWriteBuffer {
          * Returns the number of written bytes per segment
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the number of written bytes per segment
          */
         private int getSegmentLength(final int p_index) {
             int ret = 0;
 
             if (p_index < m_numberOfSegments) {
-                ret = m_writtenBytesPerSegment[p_index];
+                ret = m_segments[p_index].getBuffer().position();
             }
 
             return ret;
@@ -850,11 +856,11 @@ public class PrimaryWriteBuffer {
          * Returns the buffer
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the buffer
          */
-        private byte[] getData(final int p_index) {
-            byte[] ret = null;
+        private DirectByteBufferWrapper getSegmentWrapper(final int p_index) {
+            DirectByteBufferWrapper ret = null;
 
             if (p_index < m_numberOfSegments) {
                 ret = m_segments[p_index];
@@ -868,124 +874,87 @@ public class PrimaryWriteBuffer {
         /**
          * Appends data to node buffer
          *
-         * @param p_buffer
-         *     the buffer
+         * @param p_primaryWriteBuffer
+         *         the buffer
          * @param p_offset
-         *     the offset within the buffer
+         *         the offset within the buffer
          * @param p_logEntrySize
-         *     the log entry size
+         *         the log entry size
          * @param p_bytesUntilEnd
-         *     the number of bytes until end
+         *         the number of bytes until end
          * @param p_conversionOffset
-         *     the conversion offset
+         *         the conversion offset
          */
-        private void appendToBuffer(final byte[] p_buffer, final int p_offset, final int p_logEntrySize, final int p_bytesUntilEnd,
-            final short p_conversionOffset) {
-            int index = -1;
-            int futureLogEntrySize;
+        private void appendToBuffer(final ByteBuffer p_primaryWriteBuffer, final int p_offset, final int p_logEntrySize, final int p_bytesUntilEnd,
+                final short p_conversionOffset) {
+            int logEntrySize;
+            ByteBuffer segment;
 
             if (m_convert) {
-                futureLogEntrySize = p_logEntrySize - (p_conversionOffset - 1);
+                logEntrySize = p_logEntrySize - (p_conversionOffset - 1);
             } else {
-                futureLogEntrySize = p_logEntrySize;
+                logEntrySize = p_logEntrySize;
             }
 
-            for (int i = 0; i <= m_currentSegment; i++) {
-                if (futureLogEntrySize <= m_segments[i].length - m_writtenBytesPerSegment[i]) {
-                    // A partly used segment has enough free space to store this entry
-                    index = i;
-                    break;
-                }
-            }
-            if (index == -1) {
-                index = ++m_currentSegment;
-                if (m_currentSegment == m_numberOfSegments) {
-                    // Current entry does not fit in any segment, because there is some fragmentation -> Add a segment
-                    m_segments = Arrays.copyOf(m_segments, ++m_numberOfSegments);
-                    m_writtenBytesPerSegment = Arrays.copyOf(m_writtenBytesPerSegment, m_numberOfSegments);
-
-                    if (m_poolBuffers) {
-                        if (futureLogEntrySize > m_logSegmentSize / 8) {
-                            if (!m_segmentPoolLarge.isEmpty()) {
-                                m_segments[index] = m_segmentPoolLarge.remove(m_segmentPoolLarge.size() - 1);
-                            } else {
-                                m_segments[index] = new byte[Math.min(futureLogEntrySize, m_logSegmentSize)];
-                            }
-                        } else if (futureLogEntrySize > m_logSegmentSize / 16) {
-                            if (!m_segmentPoolMedium.isEmpty()) {
-                                m_segments[index] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
-                            } else {
-                                m_segments[index] = new byte[futureLogEntrySize];
-                            }
-                        } else {
-                            if (!m_segmentPoolSmall.isEmpty()) {
-                                m_segments[index] = m_segmentPoolSmall.remove(m_segmentPoolSmall.size() - 1);
-                            } else if (!m_segmentPoolMedium.isEmpty()) {
-                                m_segments[index] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
-                            } else {
-                                m_segments[index] = new byte[futureLogEntrySize];
-                            }
-                        }
-                    } else {
-                        m_segments[index] = new byte[Math.min(futureLogEntrySize, m_logSegmentSize)];
-                    }
-                } else if (futureLogEntrySize > m_segments[index].length) {
-                    // Current entry does not fit in next buffer -> take/create a larger buffer
-                    if (m_poolBuffers) {
-                        // Return byte array to segment pool
-                        if (m_segments[index].length == m_logSegmentSize / 8) {
-                            // Return buffer
-                            if (m_segmentPoolMedium.size() < 16) {
-                                m_segmentPoolMedium.add(m_segments[index]);
-                            }
-                            if (!m_segmentPoolLarge.isEmpty()) {
-                                // Take a larger buffer
-                                m_segments[index] = m_segmentPoolLarge.remove(m_segmentPoolLarge.size() - 1);
-                            } else {
-                                // All larger buffers unavailable -> create a new one
-                                m_segments[index] = new byte[futureLogEntrySize];
-                            }
-                        } else if (m_segments[index].length == m_logSegmentSize / 16) {
-                            if (m_segmentPoolSmall.size() < 32) {
-                                m_segmentPoolSmall.add(m_segments[index]);
-                            }
-                            if (futureLogEntrySize <= m_logSegmentSize / 8) {
-                                if (!m_segmentPoolMedium.isEmpty()) {
-                                    m_segments[index] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
-                                } else {
-                                    m_segments[index] = new byte[futureLogEntrySize];
-                                }
-                            } else {
-                                if (!m_segmentPoolLarge.isEmpty()) {
-                                    m_segments[index] = m_segmentPoolLarge.remove(m_segmentPoolLarge.size() - 1);
-                                } else {
-                                    m_segments[index] = new byte[futureLogEntrySize];
-                                }
-                            }
-                        } else {
-                            m_segments[index] = new byte[futureLogEntrySize];
-                        }
-                    } else {
-                        m_segments[index] = new byte[futureLogEntrySize];
-                    }
-                }
+            segment = m_segments[m_currentSegment].getBuffer();
+            if (logEntrySize > segment.remaining()) {
+                segment = m_segments[++m_currentSegment].getBuffer();
             }
 
             if (m_convert) {
                 // More secondary log buffer size for this node: Convert primary log entry header to secondary log header and append entry to node buffer
-                m_writtenBytesPerSegment[index] += AbstractPrimLogEntryHeader
-                    .convertAndPut(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize, p_bytesUntilEnd, p_conversionOffset);
+                AbstractPrimLogEntryHeader.convertAndPut(p_primaryWriteBuffer, p_offset, segment, p_logEntrySize, p_bytesUntilEnd, p_conversionOffset);
             } else {
                 // Less secondary log buffer size for this node: Just append entry to node buffer without converting the log entry header
                 if (p_logEntrySize <= p_bytesUntilEnd) {
-                    System.arraycopy(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize);
+                    p_primaryWriteBuffer.position(p_offset);
+                    p_primaryWriteBuffer.limit(p_offset + p_logEntrySize);
+                    segment.put(p_primaryWriteBuffer);
                 } else {
-                    System.arraycopy(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_bytesUntilEnd);
-                    System.arraycopy(p_buffer, 0, m_segments[index], m_writtenBytesPerSegment[index] + p_bytesUntilEnd, p_logEntrySize - p_bytesUntilEnd);
+                    p_primaryWriteBuffer.position(p_offset);
+                    segment.put(p_primaryWriteBuffer);
+
+                    p_primaryWriteBuffer.position(0);
+                    p_primaryWriteBuffer.limit(p_logEntrySize - p_bytesUntilEnd);
+                    segment.put(p_primaryWriteBuffer);
                 }
-                m_writtenBytesPerSegment[index] += p_logEntrySize;
+            }
+            p_primaryWriteBuffer.limit(p_primaryWriteBuffer.capacity());
+
+        }
+    }
+
+    public class Partitioning {
+
+        private int m_totalBytes;
+        private int m_bytesWithTruncatedHeaders;
+        private int m_bytesFragmentation;
+
+        Partitioning(final int p_initialBytes, final int p_conversionOffset) {
+            m_totalBytes = p_initialBytes;
+            m_bytesWithTruncatedHeaders = p_initialBytes - p_conversionOffset + 1;
+            m_bytesFragmentation = 0;
+        }
+
+        int getTotalBytes() {
+            return m_totalBytes;
+        }
+
+        int getSecLogBytes() {
+            return m_bytesWithTruncatedHeaders;
+        }
+
+        int getFragmentedBytes() {
+            return m_bytesFragmentation;
+        }
+
+        void addEntry(final int p_length, final int p_conversionOffset) {
+            if ((m_bytesWithTruncatedHeaders + p_length) % m_logSegmentSize < p_length) {
+                m_bytesFragmentation += m_logSegmentSize - m_bytesWithTruncatedHeaders;
             }
 
+            m_totalBytes += p_length;
+            m_bytesWithTruncatedHeaders += p_length - p_conversionOffset + 1;
         }
     }
 }

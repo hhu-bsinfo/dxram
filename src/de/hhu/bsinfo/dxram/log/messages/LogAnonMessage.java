@@ -14,13 +14,15 @@
 package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
+import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
-import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxutils.ByteBufferHelper;
 
 /**
  * Message for logging an anonymous chunk on a remote node
@@ -32,7 +34,10 @@ public class LogAnonMessage extends Message {
 
     // Attributes
     private short m_rangeID;
+    // For exporting
     private ChunkAnon[] m_chunks;
+    // For importing
+    private int m_numberOfChunks;
     private ByteBuffer m_buffer;
 
     // Constructors
@@ -45,6 +50,7 @@ public class LogAnonMessage extends Message {
 
         m_rangeID = RangeID.INVALID_ID;
         m_chunks = null;
+        m_numberOfChunks = 0;
         m_buffer = null;
     }
 
@@ -68,6 +74,24 @@ public class LogAnonMessage extends Message {
     // Getters
 
     /**
+     * Get the rangeID
+     *
+     * @return the rangeID
+     */
+    public final short getRangeID() {
+        return m_rangeID;
+    }
+
+    /**
+     * Get the number of data structures
+     *
+     * @return the number of data structures
+     */
+    public final int getNumberOfDataStructures() {
+        return m_numberOfChunks;
+    }
+
+    /**
      * Get the message buffer
      *
      * @return the message buffer
@@ -87,7 +111,7 @@ public class LogAnonMessage extends Message {
 
             return ret;
         } else {
-            return m_buffer.limit();
+            return m_buffer.limit() + Short.BYTES + Integer.BYTES;
         }
     }
 
@@ -105,10 +129,16 @@ public class LogAnonMessage extends Message {
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer, final int p_payloadSize) {
+        m_rangeID = p_importer.readShort(m_rangeID);
+        m_numberOfChunks = p_importer.readInt(m_numberOfChunks);
+
         // Just copy all bytes, will be serialized into primary write buffer later
-        byte[] bytes = new byte[p_payloadSize];
-        p_importer.readBytes(bytes);
-        m_buffer = ByteBuffer.wrap(bytes);
+        int payloadSize = p_payloadSize - Short.BYTES - Integer.BYTES;
+        if (m_buffer == null) {
+            m_buffer = ByteBuffer.allocateDirect(payloadSize);
+            m_buffer.order(ByteOrder.LITTLE_ENDIAN);
+        }
+        p_importer.readBytes(ByteBufferHelper.getDirectAddress(m_buffer), 0, payloadSize);
     }
 
 }

@@ -13,6 +13,9 @@
 
 package de.hhu.bsinfo.dxram.log.header;
 
+import java.nio.ByteBuffer;
+
+import de.hhu.bsinfo.dxram.log.storage.DirectByteBufferWrapper;
 import de.hhu.bsinfo.dxutils.jni.JNINativeCRCGenerator;
 
 /**
@@ -23,8 +26,9 @@ import de.hhu.bsinfo.dxutils.jni.JNINativeCRCGenerator;
 public final class ChecksumHandler {
 
     // Attributes
-    private static byte ms_logEntryCRCSize = (byte) 4;
+    private static byte ms_logEntryCRCSize = (byte) 4; // Do not change!
     private static boolean ms_useChecksum = true;
+    private static boolean ms_native;
 
     /**
      * Hidden constructor
@@ -35,14 +39,18 @@ public final class ChecksumHandler {
     /**
      * Calculates the CRC32 checksum of a log entry's payload
      *
-     * @param p_payload
-     *     the payload
+     * @param p_bufferWrapper
+     *         the payload
      * @param p_offset
-     *     the offset within b
+     *         the offset within b
      * @return the checksum
      */
-    public static int calculateChecksumOfPayload(final byte[] p_payload, final int p_offset, final int p_length) {
-        return JNINativeCRCGenerator.hash(0, p_payload, p_offset, p_length);
+    public static int calculateChecksumOfPayload(final DirectByteBufferWrapper p_bufferWrapper, final int p_offset, final int p_length) {
+        if (ms_native) {
+            return JNINativeCRCGenerator.hashNative(0, p_bufferWrapper.getAddress(), p_offset, p_length);
+        } else {
+            return JNINativeCRCGenerator.hashHeap(0, p_bufferWrapper.getBuffer().array(), p_offset, p_length);
+        }
     }
 
     /**
@@ -58,7 +66,7 @@ public final class ChecksumHandler {
      * Sets the crc size
      *
      * @param p_useChecksum
-     *     whether a checksum is added or not
+     *         whether a checksum is added or not
      * @note Must be called before the first log entry header is created
      */
     public static void setCRCSize(final boolean p_useChecksum) {
@@ -66,6 +74,16 @@ public final class ChecksumHandler {
             ms_logEntryCRCSize = (byte) 0;
         }
         ms_useChecksum = p_useChecksum;
+    }
+
+    /**
+     * Whether to use native ByteBuffers or heap ByteBuffers for reading/writing from/to files.
+     *
+     * @param p_useNativeBuffers
+     *         whether to use native ByteBuffers (true) or heap ByteBuffers (false)
+     */
+    public static void useNativeBuffers(final boolean p_useNativeBuffers) {
+        ms_native = p_useNativeBuffers;
     }
 
     /**
@@ -80,59 +98,72 @@ public final class ChecksumHandler {
     /**
      * Adds checksum to entry header
      *
-     * @param p_buffer
-     *     the byte array
+     * @param p_bufferWrapper
+     *         the byte array
      * @param p_offset
-     *     the offset within buffer
+     *         the offset within buffer
      * @param p_size
-     *     the size of payload
+     *         the size of payload
      * @param p_logEntryHeader
-     *     the LogEntryHeader
+     *         the LogEntryHeader
+     * @param p_headerSize
+     *         the size of the header
      * @param p_bytesUntilEnd
-     *     number of bytes until wrap around
+     *         number of bytes until wrap around
      */
-    static void addChecksum(final byte[] p_buffer, final int p_offset, final int p_size, final AbstractPrimLogEntryHeader p_logEntryHeader,
-        final int p_bytesUntilEnd) {
-        final short headerSize = p_logEntryHeader.getHeaderSize(p_buffer, p_offset);
-        final short crcOffset = p_logEntryHeader.getCRCOffset(p_buffer, p_offset);
+    static void addChecksum(final DirectByteBufferWrapper p_bufferWrapper, final int p_offset, final int p_size,
+            final AbstractPrimLogEntryHeader p_logEntryHeader, final int p_headerSize, final int p_bytesUntilEnd) {
+        ByteBuffer buffer = p_bufferWrapper.getBuffer();
+        final short crcOffset = p_logEntryHeader.getCRCOffset(buffer, p_offset);
         int checksum = 0;
 
-        if (p_size + headerSize <= p_bytesUntilEnd) {
-            checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, p_offset + headerSize, p_size);
-
-            for (int i = 0; i < ms_logEntryCRCSize; i++) {
-                p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
+        if (p_size + p_headerSize <= p_bytesUntilEnd) {
+            if (ms_native) {
+                checksum = JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(), p_offset + p_headerSize, p_size);
+            } else {
+                checksum = JNINativeCRCGenerator.hashHeap(checksum, p_bufferWrapper.getBuffer().array(), p_offset + p_headerSize, p_size);
             }
+
+            buffer.putInt(p_offset + crcOffset, checksum);
         } else {
-            if (p_bytesUntilEnd < headerSize) {
-                checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, headerSize - p_bytesUntilEnd, p_size);
+            if (p_bytesUntilEnd < p_headerSize) {
+                if (ms_native) {
+                    checksum = JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(), p_headerSize - p_bytesUntilEnd, p_size);
+                } else {
+                    checksum = JNINativeCRCGenerator.hashHeap(checksum, p_bufferWrapper.getBuffer().array(), p_headerSize - p_bytesUntilEnd, p_size);
+                }
 
                 if (p_bytesUntilEnd <= crcOffset) {
-                    for (int i = 0; i < ms_logEntryCRCSize; i++) {
-                        p_buffer[crcOffset - p_bytesUntilEnd + i] = (byte) (checksum >> i * 8 & 0xff);
-                    }
+                    buffer.putInt(crcOffset - p_bytesUntilEnd, checksum);
                 } else {
-                    for (int i = 0; i < ms_logEntryCRCSize; i++) {
-                        if (p_bytesUntilEnd - crcOffset - i > 0) {
-                            p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
-                        } else {
-                            p_buffer[i - (p_bytesUntilEnd - crcOffset)] = (byte) (checksum >> i * 8 & 0xff);
-                        }
+                    int i;
+                    for (i = 0; i < p_bytesUntilEnd - crcOffset; i++) {
+                        buffer.put(p_offset + crcOffset + i, (byte) (checksum >> i * 8 & 0xFF));
+                    }
+                    for (; i < ms_logEntryCRCSize; i++) {
+                        buffer.put(i - (p_bytesUntilEnd - crcOffset), (byte) (checksum >> i * 8 & 0xFF));
                     }
                 }
-            } else if (p_bytesUntilEnd > headerSize) {
-                checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, p_offset + headerSize, p_bytesUntilEnd - headerSize);
-                checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, 0, p_size - (p_bytesUntilEnd - headerSize));
-
-                for (int i = 0; i < ms_logEntryCRCSize; i++) {
-                    p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
+            } else if (p_bytesUntilEnd > p_headerSize) {
+                if (ms_native) {
+                    checksum =
+                            JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(), p_offset + p_headerSize, p_bytesUntilEnd - p_headerSize);
+                    checksum = JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(), 0, p_size - (p_bytesUntilEnd - p_headerSize));
+                } else {
+                    checksum = JNINativeCRCGenerator
+                            .hashHeap(checksum, p_bufferWrapper.getBuffer().array(), p_offset + p_headerSize, p_bytesUntilEnd - p_headerSize);
+                    checksum = JNINativeCRCGenerator.hashHeap(checksum, p_bufferWrapper.getBuffer().array(), 0, p_size - (p_bytesUntilEnd - p_headerSize));
                 }
+
+                buffer.putInt(p_offset + crcOffset, checksum);
             } else {
-                checksum = JNINativeCRCGenerator.hash(checksum, p_buffer, 0, p_size);
-
-                for (int i = 0; i < ms_logEntryCRCSize; i++) {
-                    p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
+                if (ms_native) {
+                    checksum = JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(), 0, p_size);
+                } else {
+                    checksum = JNINativeCRCGenerator.hashHeap(checksum, p_bufferWrapper.getBuffer().array(), 0, p_size);
                 }
+
+                buffer.putInt(p_offset + crcOffset, checksum);
             }
         }
     }

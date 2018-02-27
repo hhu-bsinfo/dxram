@@ -14,12 +14,14 @@
 package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.backup.RangeID;
-import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.RangeID;
+import de.hhu.bsinfo.dxutils.ByteBufferHelper;
 
 /**
  * Message for logging an anonymous chunk on a remote node
@@ -32,7 +34,8 @@ public class LogBufferMessage extends Message {
     // Attributes
     private short m_rangeID;
     private ByteBuffer m_buffer;
-    private int m_bytesRead;
+    private int m_numberOfDSs;
+    private int m_bytes;
 
     // Constructors
 
@@ -44,6 +47,8 @@ public class LogBufferMessage extends Message {
 
         m_rangeID = RangeID.INVALID_ID;
         m_buffer = null;
+        m_bytes = 0;
+        m_numberOfDSs = 0;
     }
 
     /**
@@ -53,18 +58,39 @@ public class LogBufferMessage extends Message {
      *         the destination
      * @param p_rangeID
      *         the RangeID
+     * @param p_numberOfDSs
+     *         the number of data structures stored in p_buffer
      * @param p_buffer
      *         the chunks to store with ChunkID and payload size prepended
      */
-    public LogBufferMessage(final short p_destination, final short p_rangeID, final ByteBuffer p_buffer) {
+    public LogBufferMessage(final short p_destination, final short p_rangeID, final int p_numberOfDSs, final ByteBuffer p_buffer) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE, true);
 
         m_rangeID = p_rangeID;
         m_buffer = p_buffer;
-        m_bytesRead = m_buffer.limit() + Short.BYTES;
+        m_numberOfDSs = p_numberOfDSs;
+        m_bytes = m_buffer.limit() + Short.BYTES + Integer.BYTES;
     }
 
     // Getters
+
+    /**
+     * Get the rangeID
+     *
+     * @return the rangeID
+     */
+    public final short getRangeID() {
+        return m_rangeID;
+    }
+
+    /**
+     * Get the number of data structures
+     *
+     * @return the number of data structures
+     */
+    public final int getNumberOfDataStructures() {
+        return m_numberOfDSs;
+    }
 
     /**
      * Get the message buffer
@@ -77,23 +103,30 @@ public class LogBufferMessage extends Message {
 
     @Override
     protected final int getPayloadLength() {
-        return m_bytesRead;
+        return m_bytes;
     }
 
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         p_exporter.writeShort(m_rangeID);
+        p_exporter.writeInt(m_numberOfDSs);
         p_exporter.writeBytes(m_buffer.array());
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer, final int p_payloadSize) {
+        m_rangeID = p_importer.readShort(m_rangeID);
+        m_numberOfDSs = p_importer.readInt(m_numberOfDSs);
+
         // Just copy all bytes, will be serialized into primary write buffer later
-        byte[] bytes = new byte[p_payloadSize];
-        p_importer.readBytes(bytes);
-        m_buffer = ByteBuffer.wrap(bytes);
-        m_bytesRead = m_buffer.limit();
+        int payloadSize = p_payloadSize - Short.BYTES - Integer.BYTES;
+        if (m_buffer == null) {
+            m_buffer = ByteBuffer.allocateDirect(payloadSize);
+            m_buffer.order(ByteOrder.LITTLE_ENDIAN);
+        }
+        p_importer.readBytes(ByteBufferHelper.getDirectAddress(m_buffer), 0, payloadSize);
+        m_bytes = m_buffer.capacity() + Short.BYTES + Integer.BYTES;
     }
 
 }
