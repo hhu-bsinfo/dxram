@@ -35,6 +35,7 @@
 #include <pthread.h>
 #include "JNIFileRawStructures.h"
 
+// FIXME: see JNIFileDirect.c
 
 /* For low-level stuff in index use uintN_t instead of int and long.
    Since java has no simple implementation of unsigned, all parameter from jni are
@@ -66,11 +67,11 @@ pthread_mutex_t lock;
 index_entry_t *ind = NULL;
 
 
-/* 
- * Function to write an index-entry back to disk. Since we are performing 
+/*
+ * Function to write an index-entry back to disk. Since we are performing
  * direct disk access, the whole block has to bew written.
  * Index has to be locked before function call!
- * 
+ *
  * index_number: number of entry that should be written back
  * return: 0 on success, -1 on error
  */
@@ -81,7 +82,7 @@ int writeBackIndex(uint32_t index_number)
     if(pwrite(device, (void*) &ind[index_number - (index_number % entries_per_block)], BLOCKSIZE, start_write) == -1){
       // if writing back failed delete entry in index to avoid inconsistency
       ind[index_number].status = 0x00;
-      
+
       return -1;
     }
     return 0;
@@ -112,7 +113,7 @@ int checkNextPosAndSpace(uint32_t pos, uint32_t length)
     // everything ok
     return 0;
   }
-  
+
 
 /*
  * Class:     de_hhu_bsinfo_utils_JNIFileRaw
@@ -158,7 +159,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_prepareRawDevice
       entries_per_block = dev_head->entries_per_block;
 
       // Scan for last used index and set next_free_index, set append
-      
+
       pthread_mutex_lock(&lock);
 
       // allocate aligned buffer to load index data
@@ -209,13 +210,13 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_prepareRawDevice
 
       // calculate length of index and align it to a multiple of entries_per_block
       // Comments on the formula: First check, how many SecondaryLogs would fit into the partition
-      // ignoring that there are also VersionLogs. 
+      // ignoring that there are also VersionLogs.
       // Then, multiply by INDEX_FACTOR in assumption that for every SecondaryLog there is need
       // of up to INDEX_FACTOR-1 VersionLog-Chunks with size VER_BLOCK_SIZE
       // This should ensure that there is enough space in the index since it has a fixed size
       // Otherwise, this ensures that the preallocated fix index size is not too big
       // If VersionLogs are growing more than expected, simply increment INDEX_FACTOR or tune VER_BLOCK_SIZE
-      // the use of RAM is <2MB even for very big partitions (>2.5TBytes) 
+      // the use of RAM is <2MB even for very big partitions (>2.5TBytes)
       index_length = ((dev_size / SEC_LOGSIZE)*INDEX_FACTOR);
       // alignement
       index_length = index_length + (entries_per_block - (index_length % entries_per_block));
@@ -330,7 +331,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_createLog
     ind[next_free_index].cur_length = 0;
     strncpy(ind[next_free_index].logName, (char*) fileName, 37);
     ind[next_free_index].logName[37] = '\0';
-    
+
     if(writeBackIndex(next_free_index) == -1){
       pthread_mutex_unlock(&lock);
       return -1;
@@ -348,7 +349,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_createLog
 
     printf("Created log with index number %u and name %s.\n", ret, ind[ret].logName);
     fflush(stdout);
-    
+
     (*env)->ReleaseStringUTFChars(env, jFileName, fileName);
 
     // return index number as filedescriptor
@@ -383,19 +384,19 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_openLog
         printf("The size of this log is %u MB.\n", ind[i].part_length/(1024*1024));
         fflush(stdout);
 
-        // set the open bit - no need for page to be written back, 
+        // set the open bit - no need for page to be written back,
         // because information is not persistent
         pthread_mutex_lock(&lock);
         ind[i].status = ind[i].status | set_bit_second;
         pthread_mutex_unlock(&lock);
-        
+
         (*env)->ReleaseStringUTFChars(env, jFileName, fileName);
 
         // return index as descriptor
         return i;
       }
     }
-    
+
     (*env)->ReleaseStringUTFChars(env, jFileName, fileName);
 
     printf("Log with name %s does not exist.\n", (char*) fileName);
@@ -407,7 +408,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_openLog
  * Class:     de_hhu_bsinfo_utils_JNIFileRaw
  * Method:    closeLog
  * closes an opened logfile
- * fileID: the ID of start index 
+ * fileID: the ID of start index
  * return: 0 on success
  */
 JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_closeLog
@@ -427,7 +428,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_closeLog
  * Method:    createBuffer
  * creates a new aligned buffer in memory - this buffer can be used for buffering in
  * read/write operations. Notice that you have to use different buffers for
- * read and write since they are not synchronized 
+ * read and write since they are not synchronized
  * size:    length of buffer in bytes, must be a multiple of BLOCKSIZE
  * return:  address (pointer) of the created buffer or NULL
  */
@@ -651,14 +652,14 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_dwrite
     // first step: check file size an add parts if needed
     // this is only index operation without writing the data, because a lock is required to do this
     pthread_mutex_lock(&lock);
-    
+
     /* This is the loop that checks if there are enough parts allocated for this
      * VersionLog to write all the data at the given position.
      * rem_length counts how many bytes can be stored in the already scanned area,
      * if there are no remaining bytes left, the loop finishes and the function continues.
      * Because of the many cases that can occur, loop has many branches with if-else.
      * Therefore, a small overview is given here:
-     * 
+     *
      * while bytes are remaining
      *   ->if write-start position is in current part
      *       ->if write-end position is in current part
@@ -671,7 +672,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_dwrite
      *   ->else (write-start position not in current part)
      *       ->if write-end position is in this part
      *           nothing else to do, write-end position exists -> no remaining bytes left
-     *       ->else (write-end position is not in this part)     
+     *       ->else (write-end position is not in this part)
      *           ->if write-start position is surpassed
      *              remaining length has to be updated
      *           ->if next part exists
@@ -680,15 +681,15 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_dwrite
      *              a new part has to be created
      *              ->if write-start position was not surpassed
      *                 add offset from current to write-start position to the remaining length
-     *              create part with remaining length -> no remaining bytes left 
-     * 
+     *              create part with remaining length -> no remaining bytes left
+     *
      * This scheme should guide you through the following loop:
-     */              
+     */
 
     while(rem_length > 0){
       // start position for write is in current part
       if(aligned_start_pos >= in_file_pos && aligned_start_pos < in_file_pos + ind[cur_ind].part_length){
-        
+
         // set start_index
         start_index_entry = cur_ind;
         length_at_begin = in_file_pos;
@@ -708,10 +709,10 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_dwrite
           if(ind[cur_ind].nextBlock != cur_ind){
             // scan next part
             cur_ind = ind[cur_ind].nextBlock;
-          // case 2: there exists no further part -> allocate space for a new part 
+          // case 2: there exists no further part -> allocate space for a new part
           // that is big enough for all the remaining data and make index entry
           }else{
-          
+
             // calculate suitable length for new part -> multiple of VER_BLOCK_SIZE;
             rem_length += (VER_BLOCK_SIZE - (rem_length % VER_BLOCK_SIZE));
 
@@ -838,7 +839,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_dwrite
     }
 
     pthread_mutex_unlock(&lock);
-    
+
     fflush(stdout);
 
     // the needed space on device is allocated - now we can read/write the data without locks
@@ -877,7 +878,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_dwrite
       cur_ind = ind[cur_ind].nextBlock;
       rem_length -= write_length;
     }
-    
+
     // update length-attribute of the file
     // this operation does not return the real length of the file (since it is written in fixed-size-parts)
     // but it is sufficient for our use, because DXRAM only appends to Versionlogs or writes them from beginning on
@@ -944,14 +945,14 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_dread
       }
       buf_created = 1;
     }
-    
+
     uint32_t start_index_entry = 0;       // index of part contsining aligned_start_pos
     uint32_t end_index_entry = 0;         // index of part containing aligned_end_pos
     uint32_t length_at_begin = 0;         // in-file-offset of the beginning of the start_index-part
     uint32_t cur_ind = fileID;            // index to scan
     uint32_t rem_length = aligned_length;   // length that is not read from a part yet
     uint32_t in_file_pos = 0;             // current position in file
-    
+
     // find start index for aligned_start_pos
     while(aligned_start_pos >= in_file_pos + ind[cur_ind].part_length){
       in_file_pos = in_file_pos + ind[cur_ind].part_length;
@@ -964,7 +965,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_dread
     // aligned_start_pos is in part with index cur_ind
     start_index_entry = cur_ind;
     length_at_begin = in_file_pos;
-    
+
     // find index for aligned_end_pos
     while(aligned_end_pos >= in_file_pos + ind[cur_ind].part_length){
       in_file_pos = in_file_pos + ind[cur_ind].part_length;
@@ -976,7 +977,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_dread
     }
     // alinged_end_pos is in part with index cur_ind
     end_index_entry = cur_ind;
-    
+
     // loop that reads to buffer
     cur_ind = start_index_entry;
     int ret = 0;
@@ -1031,10 +1032,10 @@ JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_length
     while(ind[cur_ind].nextBlock != cur_ind){
       cur_ind = ind[cur_ind].nextBlock;
       ret += ind[cur_ind].part_length;
-    }	
+    }
     return ret;
   }
-  
+
 /*
  * Class:     de_hhu_bsinfo_utils_JNIFileRaw
  * Method:    dlength
@@ -1051,7 +1052,7 @@ JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_dlength
     long ret = ind[fileID].cur_length;
     return (jlong)ret;
   }
-  
+
 /*
  * Class:     de_hhu_bsinfo_utils_JNIFileRaw
  * Method:    setDFileLength
@@ -1073,7 +1074,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_setDFileLength
     pthread_mutex_unlock(&lock);
     return 0;
   }
-  
+
 /*
  * Class:     de_hhu_bsinfo_utils_JNIFileRaw
  * Method:    deleteLog
@@ -1096,10 +1097,10 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_deleteLog
     // write changed index back
     int ret = writeBackIndex(fileID);
     pthread_mutex_unlock(&lock);
-    
+
     return ret;
   }
-  
+
 /*
  * Class:     de_hhu_bsinfo_utils_JNIFileRaw
  * Method:    getFileList
@@ -1111,7 +1112,7 @@ JNIEXPORT jstring JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_getFileList
   {
     // acquire lock becuase index must not be chnaged during this
     pthread_mutex_lock(&lock);
-    
+
     // first: calculate length of resulting string
     uint32_t string_length = 0;
     uint32_t i = 0;
@@ -1127,14 +1128,14 @@ JNIEXPORT jstring JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_getFileList
     }
     // add 0-Terminator
     string_length++;
-    
+
     // now create resulting String -> each entry has 37 characters + \n, in addition \0 for whole string
     char *res;
     if((res = malloc(string_length)) == NULL){
       pthread_mutex_unlock(&lock);
       return (*env)->NewStringUTF(env, "Failure");
     }
-    
+
     i = 0;
     uint32_t cur_pos = 0;
     while(((ind[i].status) & sel_bit_first) != 0x00){
@@ -1150,11 +1151,11 @@ JNIEXPORT jstring JNICALL Java_de_hhu_bsinfo_utils_JNIFileRaw_getFileList
     }
     // set 0-Terminator
     res[string_length-1] = '\0';
-    
+
     pthread_mutex_unlock(&lock);
-    
+
     return (*env)->NewStringUTF(env, res);
-    
+
   }
 
 /*
