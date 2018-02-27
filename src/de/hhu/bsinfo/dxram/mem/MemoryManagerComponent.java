@@ -28,16 +28,16 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMRuntimeException;
-import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.soh.MemoryRuntimeException;
-import de.hhu.bsinfo.soh.SmallObjectHeap;
-import de.hhu.bsinfo.soh.StorageUnsafeMemory;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
+import de.hhu.bsinfo.soh.MemoryRuntimeException;
+import de.hhu.bsinfo.soh.SmallObjectHeap;
+import de.hhu.bsinfo.soh.StorageUnsafeMemory;
 
 /**
  * Interface to access the local heap. Features for migration
@@ -942,8 +942,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      *
      * @param p_chunkIDs
      *         List of recovered chunk ids
-     * @param p_data
-     *         Recovered data
+     * @param p_dataAddress
+     *         The address of the recovered data block
      * @param p_offsets
      *         Offset list for chunks to address the data array
      * @param p_lengths
@@ -951,7 +951,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      * @param p_usedEntries
      *         Specifies the actual number of slots used in the array (may be less than p_lengths)
      */
-    public void createAndPutRecovered(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
+    public void createAndPutRecovered(final long[] p_chunkIDs, final long p_dataAddress, final int[] p_offsets, final int[] p_lengths,
+            final int p_usedEntries) {
         long[] addresses;
 
         // #if LOGGER == TRACE
@@ -973,7 +974,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             if (addresses != null) {
 
                 for (int i = 0; i < addresses.length; i++) {
-                    m_rawMemory.writeBytes(addresses[i], 0, p_data, p_offsets[i], p_lengths[i]);
+                    m_rawMemory.writeBytes(addresses[i], 0, p_dataAddress, p_offsets[i], p_lengths[i]);
                     m_totalActiveChunkMemory += p_lengths[i];
                 }
 

@@ -134,6 +134,14 @@ public class StorageUnsafeMemory implements Storage {
     }
 
     @Override
+    public int writeBytes(final long p_ptr, final long p_valueAddress, final int p_valueOffset, final int p_length) {
+        assert assertMemoryBounds(p_ptr, Byte.BYTES * p_length);
+
+        UnsafeMemory.copyBytes(m_memoryBase + p_ptr, p_valueAddress + p_valueOffset, p_length);
+        return p_length;
+    }
+
+    @Override
     public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
         assert assertMemoryBounds(p_ptr, Byte.BYTES * p_length);
 

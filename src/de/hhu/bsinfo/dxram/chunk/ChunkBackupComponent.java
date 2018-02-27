@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.chunk;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -28,7 +29,6 @@ import de.hhu.bsinfo.dxram.log.messages.LogBufferMessage;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 
 /**
  * Component for chunk handling.
@@ -94,6 +94,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
      */
     public int replicateBackupRange(final short p_backupPeer, final long[] p_chunkIDRanges, final int p_numberOfChunks, final short p_rangeID) {
         int counter = 0;
+        int allCounter = 0;
 
         // Initialize backup range on backup peer
         InitBackupRangeRequest request = new InitBackupRangeRequest(p_backupPeer, p_rangeID);
@@ -120,12 +121,16 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
                 if (bytes == 0) {
                     // Chunk does not fit in current buffer -> send buffer and repeat
                     chunkBuffer.flip();
+
                     try {
-                        m_network.sendMessage(new LogBufferMessage(p_backupPeer, p_rangeID, chunkBuffer));
+                        m_network.sendMessage(new LogBufferMessage(p_backupPeer, p_rangeID, counter, chunkBuffer));
                     } catch (final NetworkException ignore) {
 
                     }
                     chunkBuffer.clear();
+                    allCounter += counter;
+                    counter = 0;
+
                     bytes = m_memoryManager.get(currentChunkID, chunkArray, chunkBuffer.position() + Long.BYTES + Integer.BYTES, chunkArray.length);
                 }
 
@@ -142,9 +147,10 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
                 counter++;
             }
         }
+        allCounter += counter;
         m_memoryManager.unlockAccess();
 
-        return counter;
+        return allCounter;
     }
 
     /**
@@ -167,8 +173,8 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
      *
      * @param p_chunkIDs
      *         ChunkIDs of recovered Chunks.
-     * @param p_data
-     *         the byte array all recovered Chunks are stored in (contains also not to be recovered, invalid Chunks).
+     * @param p_dataAddress
+     *         the addrees of the byte array all recovered Chunks are stored in (contains also not to be recovered, invalid Chunks).
      * @param p_offsets
      *         the offsets within the byte array.
      * @param p_lengths
@@ -177,12 +183,13 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
      *         the number of actually used entries within the arrays (might be smaller than the array lengths).
      * @lock manage lock from memory manager component must be locked
      */
-    public boolean putRecoveredChunks(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
+    public boolean putRecoveredChunks(final long[] p_chunkIDs, final long p_dataAddress, final int[] p_offsets, final int[] p_lengths,
+            final int p_usedEntries) {
 
         while (m_recoveryChunkQueue.size() >= MAXIMUM_QUEUE_SIZE) {
             Thread.yield();
         }
-        m_recoveryChunkQueue.add(new Entry(p_chunkIDs, p_data, p_offsets, p_lengths, p_usedEntries));
+        m_recoveryChunkQueue.add(new Entry(p_chunkIDs, p_dataAddress, p_offsets, p_lengths, p_usedEntries));
 
         // #if LOGGER == TRACE
         LOGGER.trace("Stored %d recovered chunks locally", p_usedEntries);
@@ -255,14 +262,14 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
     private static final class Entry {
 
         private long[] m_chunkIDs;
-        private byte[] m_data;
+        private long m_dataAddress;
         private int[] m_offsets;
         private int[] m_lengths;
         private int m_usedEntries;
 
-        private Entry(final long[] p_chunkIDs, final byte[] p_data, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
+        private Entry(final long[] p_chunkIDs, final long p_dataAddress, final int[] p_offsets, final int[] p_lengths, final int p_usedEntries) {
             m_chunkIDs = p_chunkIDs;
-            m_data = p_data;
+            m_dataAddress = p_dataAddress;
             m_offsets = p_offsets;
             m_lengths = p_lengths;
             m_usedEntries = p_usedEntries;
@@ -315,7 +322,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
 
                 time = System.currentTimeMillis();
                 m_memoryManager.lockManage();
-                m_memoryManager.createAndPutRecovered(entry.m_chunkIDs, entry.m_data, entry.m_offsets, entry.m_lengths, entry.m_usedEntries);
+                m_memoryManager.createAndPutRecovered(entry.m_chunkIDs, entry.m_dataAddress, entry.m_offsets, entry.m_lengths, entry.m_usedEntries);
                 m_memoryManager.unlockManage();
                 m_timeToPut += System.currentTimeMillis() - time;
             }

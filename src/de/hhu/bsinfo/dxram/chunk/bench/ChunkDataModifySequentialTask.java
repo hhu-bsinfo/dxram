@@ -83,8 +83,8 @@ public class ChunkDataModifySequentialTask implements Task {
             time[i] = new Stopwatch();
         }
 
-        System.out.printf("Modifying (and checking %d) %d chunks sequentially %d times (pattern %d) in batches of %d chunk(s) with %d thread(s)...\n",
-                m_writeContentsAndVerify ? 1 : 0, totalChunkCount, m_iterations, m_pattern, m_chunkBatch, m_numThreads);
+        System.out.printf("Modifying (and checking %b) %d chunks sequentially %d times (pattern %d) in batches of %d chunk(s) with %d thread(s)...\n",
+                m_writeContentsAndVerify, totalChunkCount, m_iterations, m_pattern, m_chunkBatch, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;

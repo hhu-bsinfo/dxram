@@ -745,6 +745,33 @@ public final class SmallObjectHeap implements Importable, Exportable {
     }
 
     /**
+     * Write bytes from native address to the specified address + offset.
+     *
+     * @param p_address
+     *         Address.
+     * @param p_offset
+     *         Offset to add to the address.
+     * @param p_valueAddress
+     *         native address of bytes to write.
+     * @param p_valueOffset
+     *         Address offset.
+     * @param p_length
+     *         Number of elements to read.
+     * @return Number of elements written.
+     */
+    public int writeBytes(final long p_address, final long p_offset, final long p_valueAddress, final int p_valueOffset, final int p_length) {
+        assert assertMemoryBounds(p_address, p_offset);
+
+        int lengthFieldSize;
+        // skip length byte(s)
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+
+        assert assertMemoryBlockBounds(p_address, lengthFieldSize, read(p_address, lengthFieldSize), p_offset, Byte.BYTES);
+
+        return m_memory.writeBytes(p_address + lengthFieldSize + p_offset, p_valueAddress, p_valueOffset, p_length);
+    }
+
+    /**
      * Write an array of shorts to the heap.
      *
      * @param p_address

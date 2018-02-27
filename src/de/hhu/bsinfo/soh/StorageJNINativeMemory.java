@@ -145,6 +145,15 @@ public class StorageJNINativeMemory implements Storage {
     }
 
     @Override
+    public int writeBytes(final long p_ptr, final long p_valueAddress, final int p_valueOffset, final int p_length) {
+        assert p_ptr >= 0;
+        assert p_ptr + p_length <= m_memorySize;
+
+        JNINativeMemory.copy(m_memoryBase + p_ptr, p_valueAddress + p_valueOffset, p_length);
+        return p_length;
+    }
+
+    @Override
     public int writeShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
         assert p_ptr >= 0;
         assert p_ptr + p_length * Short.BYTES <= m_memorySize;

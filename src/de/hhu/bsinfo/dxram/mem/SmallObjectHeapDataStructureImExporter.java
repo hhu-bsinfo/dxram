@@ -13,12 +13,12 @@
 
 package de.hhu.bsinfo.dxram.mem;
 
-import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.soh.SmallObjectHeap;
 
 /**
  * Importer/Exporter wrapper to allow Importables/Exportables to be directly written
