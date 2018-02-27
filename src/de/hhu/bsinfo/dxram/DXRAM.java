@@ -13,7 +13,10 @@
 
 package de.hhu.bsinfo.dxram;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Locale;
 
 import de.hhu.bsinfo.dxram.app.ApplicationComponent;
@@ -66,7 +69,8 @@ import de.hhu.bsinfo.dxutils.NodeID;
  */
 public final class DXRAM {
     public static final DXRAMVersion VERSION = new DXRAMVersion(0, 3, 0);
-    public static final String GIT_COMMIT = "81128932";
+    public static final String GIT_COMMIT = "Not Available"; //@GITCOMMIT@
+    public static final String BUILD_TYPE = "Not Available"; //@BUILDTYPE@
     private static final String STARTUP_DONE_STR = "!---ooo---!";
 
     private DXRAMEngine m_engine;
@@ -88,6 +92,9 @@ public final class DXRAM {
      *         Program arguments.
      */
     public static void main(final String[] p_args) {
+        printJVMArgs();
+        printCmdArgs(p_args);
+
         DXRAM dxram = new DXRAM();
 
         System.out.println("Starting DXRAM, version " + dxram.getVersion());
@@ -232,6 +239,7 @@ public final class DXRAM {
     private void printNodeInfo() {
         String str = ">>> DXRAM Node <<<\n";
         str += VERSION + "\n";
+        str += "Build type: " + BUILD_TYPE + '\n';
         str += "Git commit: " + GIT_COMMIT + "\n";
 
         String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
@@ -257,6 +265,42 @@ public final class DXRAM {
 
             System.out.println(str);
         }
+    }
+
+    /**
+     * Print all cmd args specified on startup
+     *
+     * @param p_args
+     *         Main arguments
+     */
+    private static void printCmdArgs(final String[] p_args) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Cmd arguments: ");
+
+        for (String arg : p_args) {
+            builder.append(arg);
+            builder.append(' ');
+        }
+
+        System.out.println(builder);
+    }
+
+    /**
+     * Print all JVM args specified on startup
+     */
+    private static void printJVMArgs() {
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        List<String> args = runtimeMxBean.getInputArguments();
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("JVM arguments: ");
+
+        for (String arg : args) {
+            builder.append(arg);
+            builder.append(' ');
+        }
+
+        System.out.println(builder);
     }
 
     /**

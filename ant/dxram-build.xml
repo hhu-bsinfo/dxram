@@ -18,7 +18,7 @@
             description="builds dxram-performance.jar (without any logger calls)"/>
 
     <target name="git_submodule" depends="check_dirs" unless="dirs_contain-files">
-        <echo message="DXNet and/or DXUtils directories are empty -> getting submodules"/>
+        <echo message="DXNet, DXMonitor and/or DXUtils directories are empty -> getting submodules"/>
         <exec executable="git">
             <arg value="submodule"/>
             <arg value="update"/>
@@ -28,10 +28,12 @@
     </target>
 
     <target name="check_dirs">
-        <fileset dir="src/de/hhu/bsinfo/dxnet" id="fileset1"/>
-        <fileset dir="src/de/hhu/bsinfo/dxutils" id="fileset2"/>
+        <fileset dir="src/de/hhu/bsinfo/dxmonitor" id="fileset1"/>
+        <fileset dir="src/de/hhu/bsinfo/dxnet" id="fileset2"/>
+        <fileset dir="src/de/hhu/bsinfo/dxutils" id="fileset3"/>
         <pathconvert refid="fileset1" property="dirs_contain-files" setonempty="false"/>
         <pathconvert refid="fileset2" property="dirs_contain-files" setonempty="false"/>
+        <pathconvert refid="fileset3" property="dirs_contain-files" setonempty="false"/>
     </target>
 
     <target name="clean-all" description="removes all created files and folders">
@@ -75,7 +77,6 @@
         <copy todir="${build_proj_script_dir}">
             <fileset dir="${script_dir}"/>
         </copy>
-        <copy file="${basedir}/env.sh" tofile="${build_proj_dir}/env.sh"/>
         <copy file="${basedir}/dxterm-client" tofile="${build_proj_dir}/dxterm-client"/>
     </target>
 
@@ -84,17 +85,17 @@
     </target>
 
     <target name="compile-debug" depends="create_base_dirs" description="builds class files, debug build">
-        <ant antfile="dxram-core-build.xml" target="debug"/>
-        <ant antfile="dxram-apps-build.xml" target="debug"/>
+        <ant antfile="${basedir}/ant/dxram-core-build.xml" target="debug"/>
+        <ant antfile="${basedir}/ant/dxram-apps-build.xml" target="debug"/>
     </target>
 
     <target name="compile-release" depends="create_base_dirs" description="builds class files, release build">
-        <ant antfile="dxram-core-build.xml" target="release"/>
-        <ant antfile="dxram-apps-build.xml" target="release"/>
+        <ant antfile="${basedir}/ant/dxram-core-build.xml" target="release"/>
+        <ant antfile="${basedir}/ant/dxram-apps-build.xml" target="release"/>
     </target>
 
     <target name="compile-performance" depends="create_base_dirs" description="builds class files, performance build">
-        <ant antfile="dxram-core-build.xml" target="performance"/>
-        <ant antfile="dxram-apps-build.xml" target="performance"/>
+        <ant antfile="${basedir}/ant/dxram-core-build.xml" target="performance"/>
+        <ant antfile="${basedir}/ant/dxram-apps-build.xml" target="performance"/>
     </target>
 </project>

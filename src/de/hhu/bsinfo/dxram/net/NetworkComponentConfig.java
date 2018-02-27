@@ -88,6 +88,12 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
                 // #endif /* LOGGER >= WARN */
             }
 
+            if (m_ib.getSharedReceiveQueueSize() < m_ib.getSharedReceiveCompletionQueueSize()) {
+                // #if LOGGER >= WARN
+                LOGGER.warn("IB m_srqSize < m_sharedRCQSize: This may result in performance penalties when too many nodes are active");
+                // #endif /* LOGGER >= WARN */
+            }
+
             if (m_ib.getFlowControlWindow().getBytes() > Integer.MAX_VALUE) {
                 // #if LOGGER >= ERROR
                 LOGGER.error("IB: Flow control window size exceeding 2 GB, not allowed");
