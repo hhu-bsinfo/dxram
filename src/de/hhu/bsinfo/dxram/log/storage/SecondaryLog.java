@@ -315,7 +315,7 @@ public class SecondaryLog extends AbstractLog {
             randomAccessFile = new RandomAccessFile(new File(p_path), "r");
             result = new DirectByteBufferWrapper[numberOfSegments];
             for (int i = 0; i < numberOfSegments; i++) {
-                result[i] = new DirectByteBufferWrapper(p_logSegmentSize);
+                result[i] = new DirectByteBufferWrapper(p_logSegmentSize, true);
                 readFromSecondaryLogFile(result[i], p_logSegmentSize, i * p_logSegmentSize, randomAccessFile);
             }
             randomAccessFile.close();
@@ -327,7 +327,7 @@ public class SecondaryLog extends AbstractLog {
             // Allocate buffers for reading
             result = new DirectByteBufferWrapper[numberOfSegments];
             for (int i = 0; i < numberOfSegments; i++) {
-                result[i] = new DirectByteBufferWrapper(p_logSegmentSize);
+                result[i] = new DirectByteBufferWrapper(p_logSegmentSize, true);
                 readFromSecondaryLogFile(result[i], p_logSegmentSize, i * p_logSegmentSize, fileID, p_mode);
             }
             JNIFileDirect.close(fileID);
@@ -340,7 +340,7 @@ public class SecondaryLog extends AbstractLog {
             // Allocate buffers for reading
             result = new DirectByteBufferWrapper[numberOfSegments];
             for (int i = 0; i < numberOfSegments; i++) {
-                result[i] = new DirectByteBufferWrapper(p_logSegmentSize);
+                result[i] = new DirectByteBufferWrapper(p_logSegmentSize, true);
                 readFromSecondaryLogFile(result[i], p_logSegmentSize, i * p_logSegmentSize, fileID, p_mode);
             }
             JNIFileRaw.closeLog(fileID);
@@ -1171,7 +1171,7 @@ public class SecondaryLog extends AbstractLog {
 
         try {
             time = System.currentTimeMillis();
-            bufferWrapper = new DirectByteBufferWrapper(m_logSegmentSize);
+            bufferWrapper = new DirectByteBufferWrapper(m_logSegmentSize, true);
             segmentLength = readSegment(bufferWrapper, p_segmentIndex);
             segmentData = bufferWrapper.getBuffer();
 

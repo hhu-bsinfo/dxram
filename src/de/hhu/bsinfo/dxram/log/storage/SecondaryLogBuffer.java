@@ -54,7 +54,7 @@ public final class SecondaryLogBuffer {
         m_secondaryLog = p_secondaryLog;
         m_logSegmentSize = p_logSegmentSize;
 
-        m_buffer = new DirectByteBufferWrapper(p_bufferSize + 1); // One byte for segment terminator (0) which is set before writing to secLog
+        m_buffer = new DirectByteBufferWrapper(p_bufferSize + 1, true); // One byte for segment terminator (0) which is set before writing to secLog
         // #if LOGGER == TRACE
         LOGGER.trace("Initialized secondary log buffer (%d)", p_bufferSize);
         // #endif /* LOGGER == TRACE */
@@ -125,7 +125,8 @@ public final class SecondaryLogBuffer {
 
         if (m_buffer.getBuffer().position() + p_entryOrRangeSize >= m_buffer.getBuffer().capacity() - 1) {
             // Merge current secondary log buffer and new buffer and write to secondary log
-            bufferWrapper = new DirectByteBufferWrapper(m_buffer.getBuffer().position() + p_entryOrRangeSize + 1);
+            bufferWrapper = new DirectByteBufferWrapper(m_buffer.getBuffer().position() + p_entryOrRangeSize + 1,
+                    true); // One byte for segment terminator (0) which is set before writing to secLog
 
             bufferWrapper.getBuffer().put(m_buffer.getBuffer());
             m_buffer.getBuffer().rewind();
@@ -134,8 +135,6 @@ public final class SecondaryLogBuffer {
 
             bufferWrapper.getBuffer().flip();
             return bufferWrapper;
-
-            //flushAllDataToSecLog(bufferWrapper, size);
         } else {
             // Append buffer to secondary log buffer
             processBuffer(p_buffer.getBuffer(), p_entryOrRangeSize, m_buffer);
@@ -196,7 +195,8 @@ public final class SecondaryLogBuffer {
             secLogBuffer = m_buffer.getBuffer();
             if (secLogBuffer.position() + p_entryOrRangeSize <= m_logSegmentSize) {
                 // Data combined fits in one segment -> flush buffer and write new data in secondary log with one access
-                wrapper = new DirectByteBufferWrapper(secLogBuffer.position() + p_entryOrRangeSize + 1);
+                wrapper = new DirectByteBufferWrapper(secLogBuffer.position() + p_entryOrRangeSize + 1,
+                        true); // One byte for segment terminator (0) which is set before writing to secLog
                 dataToWrite = wrapper.getBuffer();
 
                 // Copy secLog buffer

@@ -80,7 +80,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 
         m_recoveryLock = new ReentrantLock(false);
 
-        m_reorgSegmentData = new DirectByteBufferWrapper(p_logSegmentSize);
+        m_reorgSegmentData = new DirectByteBufferWrapper(p_logSegmentSize, true);
 
         m_counter = 0;
     }

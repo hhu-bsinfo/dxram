@@ -50,11 +50,10 @@ class VersionsBuffer {
     private static final Logger LOGGER = LogManager.getFormatterLogger(VersionsBuffer.class.getSimpleName());
 
     // Attributes
-    private static final DirectByteBufferWrapper FLUSH_BUFFER_WRAPPER = new DirectByteBufferWrapper(SSD_ENTRY_SIZE * VERSIONS_BUFFER_CAPACITY);
+    private static final DirectByteBufferWrapper FLUSH_BUFFER_WRAPPER = new DirectByteBufferWrapper(SSD_ENTRY_SIZE * VERSIONS_BUFFER_CAPACITY, true);
     private static final ByteBuffer FLUSH_BUFFER = FLUSH_BUFFER_WRAPPER.getBuffer();
 
-    private static DirectByteBufferWrapper ms_readBufferWrapper = new DirectByteBufferWrapper(READ_BUFFER_CHUNK_SIZE);
-    private static ByteBuffer ms_readBuffer = ms_readBufferWrapper.getBuffer();
+    private static DirectByteBufferWrapper ms_reorgBufferWrapper = new DirectByteBufferWrapper(READ_BUFFER_CHUNK_SIZE, true);
 
     private LogComponent m_logComponent;
     private HarddriveAccessMode m_mode;
@@ -523,39 +522,40 @@ class VersionsBuffer {
 
                 // Read old versions from SSD and add to hashtable
                 // Then read all new versions from versions log and add to hashtable (overwrites older entries!)
-                if (length > ms_readBuffer.capacity()) {
-                    ms_readBufferWrapper = new DirectByteBufferWrapper(length + READ_BUFFER_CHUNK_SIZE - length % READ_BUFFER_CHUNK_SIZE);
-                    ms_readBuffer = ms_readBufferWrapper.getBuffer();
+                ByteBuffer readBuffer = ms_reorgBufferWrapper.getBuffer();
+                if (length > readBuffer.capacity()) {
+                    ms_reorgBufferWrapper = new DirectByteBufferWrapper(length + READ_BUFFER_CHUNK_SIZE - length % READ_BUFFER_CHUNK_SIZE, true);
+                    readBuffer = ms_reorgBufferWrapper.getBuffer();
                 }
 
                 if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
                     m_versionsFile.seek(0);
-                    m_versionsFile.readFully(ms_readBuffer.array());
+                    m_versionsFile.readFully(readBuffer.array());
                 } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                    if (JNIFileDirect.read(m_fileID, ms_readBufferWrapper.getAddress(), 0, length, 0) < 0) {
+                    if (JNIFileDirect.read(m_fileID, ms_reorgBufferWrapper.getAddress(), 0, length, 0) < 0) {
                         throw new IOException("JNI error: Could not read file");
                     }
                 } else {
-                    if (JNIFileRaw.read(m_fileID, ms_readBufferWrapper.getAddress(), 0, length, 0) < 0) {
+                    if (JNIFileRaw.read(m_fileID, ms_reorgBufferWrapper.getAddress(), 0, length, 0) < 0) {
                         throw new IOException("JNI error: Could not read file");
                     }
                 }
 
                 if (!Thread.currentThread().isInterrupted()) {
-                    ms_readBuffer.clear();
+                    readBuffer.clear();
 
                     for (int i = 0; i * SSD_ENTRY_SIZE < length; i++) {
-                        chunkID = ms_readBuffer.getLong();
+                        chunkID = readBuffer.getLong();
 
                         long localID = ChunkID.getLocalID(chunkID);
                         if (localID >= lowestLID && localID <= highestLID) {
                             // ChunkID is in range -> put in array
-                            versionsArray.put(chunkID, ms_readBuffer.getShort(),
-                                    (ms_readBuffer.get() & 0xFF) << 16 | (ms_readBuffer.get() & 0xFF) << 8 | ms_readBuffer.get() & 0xFF, lowestCID);
+                            versionsArray.put(chunkID, readBuffer.getShort(),
+                                    (readBuffer.get() & 0xFF) << 16 | (readBuffer.get() & 0xFF) << 8 | readBuffer.get() & 0xFF, lowestCID);
                         } else {
                             // ChunkID is outside of range -> put in hashtable
-                            versionsHashTable.put(chunkID, ms_readBuffer.getShort(),
-                                    (ms_readBuffer.get() & 0xFF) << 16 | (ms_readBuffer.get() & 0xFF) << 8 | ms_readBuffer.get() & 0xFF);
+                            versionsHashTable.put(chunkID, readBuffer.getShort(),
+                                    (readBuffer.get() & 0xFF) << 16 | (readBuffer.get() & 0xFF) << 8 | readBuffer.get() & 0xFF);
                         }
                     }
 
@@ -605,11 +605,12 @@ class VersionsBuffer {
                 if (p_writeBack && update) {
                     // Write back current hashtable compactified
                     length = (versionsArray.size() + versionsHashTable.size()) * SSD_ENTRY_SIZE;
-                    if (length > ms_readBuffer.capacity()) {
-                        ms_readBufferWrapper = new DirectByteBufferWrapper(length + READ_BUFFER_CHUNK_SIZE - length % READ_BUFFER_CHUNK_SIZE);
-                        ms_readBuffer = ms_readBufferWrapper.getBuffer();
+                    ByteBuffer writeBuffer = ms_reorgBufferWrapper.getBuffer();
+                    if (length > writeBuffer.capacity()) {
+                        ms_reorgBufferWrapper = new DirectByteBufferWrapper(length + READ_BUFFER_CHUNK_SIZE - length % READ_BUFFER_CHUNK_SIZE, true);
+                        writeBuffer = ms_reorgBufferWrapper.getBuffer();
                     }
-                    ms_readBuffer.clear();
+                    writeBuffer.clear();
 
                     // Gather all entries from array
                     for (int i = 0; i < versionsArray.capacity(); i++) {
@@ -617,13 +618,13 @@ class VersionsBuffer {
                         version = versionsArray.getVersion(i, 0);
 
                         if (version != -1) {
-                            ms_readBuffer.putLong(chunkID);
+                            writeBuffer.putLong(chunkID);
                             // Epoch (4 Bytes in hashtable, 2 in persistent table)
-                            ms_readBuffer.putShort(versionsArray.getEpoch(i, 0));
+                            writeBuffer.putShort(versionsArray.getEpoch(i, 0));
                             // Version (4 Bytes in hashtable, 3 in persistent table)
-                            ms_readBuffer.put((byte) (version >>> 16));
-                            ms_readBuffer.put((byte) (version >>> 8));
-                            ms_readBuffer.put((byte) version);
+                            writeBuffer.put((byte) (version >>> 16));
+                            writeBuffer.put((byte) (version >>> 8));
+                            writeBuffer.put((byte) version);
                         }
                     }
 
@@ -633,27 +634,27 @@ class VersionsBuffer {
                         chunkID = (long) hashTable[i] << 32 | hashTable[i + 1] & 0xFFFFFFFFL;
                         if (chunkID != 0) {
                             // ChunkID (-1 because 1 is added before putting to avoid CID 0)
-                            ms_readBuffer.putLong(chunkID - 1);
+                            writeBuffer.putLong(chunkID - 1);
                             // Epoch (4 Bytes in hashtable, 2 in persistent table)
-                            ms_readBuffer.putShort((short) hashTable[i + 2]);
+                            writeBuffer.putShort((short) hashTable[i + 2]);
                             // Version (4 Bytes in hashtable, 3 in persistent table)
                             version = hashTable[i + 3];
-                            ms_readBuffer.put((byte) (version >>> 16));
-                            ms_readBuffer.put((byte) (version >>> 8));
-                            ms_readBuffer.put((byte) version);
+                            writeBuffer.put((byte) (version >>> 16));
+                            writeBuffer.put((byte) (version >>> 8));
+                            writeBuffer.put((byte) version);
                         }
                     }
 
                     if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
                         m_versionsFile.seek(0);
-                        m_versionsFile.write(ms_readBuffer.array());
+                        m_versionsFile.write(writeBuffer.array());
                         m_versionsFile.setLength(length);
                     } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                        if (JNIFileDirect.write(m_fileID, ms_readBufferWrapper.getAddress(), 0, length, 0, (byte) 0, (byte) 1) < 0) {
+                        if (JNIFileDirect.write(m_fileID, ms_reorgBufferWrapper.getAddress(), 0, length, 0, (byte) 0, (byte) 1) < 0) {
                             throw new IOException("JNI error: Could not write to file");
                         }
                     } else {
-                        if (JNIFileRaw.write(m_fileID, ms_readBufferWrapper.getAddress(), 0, length, 0, (byte) 0, (byte) 1) < 0) {
+                        if (JNIFileRaw.write(m_fileID, ms_reorgBufferWrapper.getAddress(), 0, length, 0, (byte) 0, (byte) 1) < 0) {
                             throw new IOException("JNI error: Could not write to file");
                         }
                     }

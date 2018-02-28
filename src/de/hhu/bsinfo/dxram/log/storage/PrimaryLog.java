@@ -94,6 +94,7 @@ public final class PrimaryLog extends AbstractLog {
             // Not enough free space in primary log -> flush to secondary logs and reset primary log
             m_logComponent.flushDataToSecondaryLogs();
             m_numberOfBytes = 0;
+            m_writePos = 0;
         }
 
         m_writePos = appendToPrimaryLog(p_data, p_length, m_writePos);

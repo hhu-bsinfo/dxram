@@ -69,8 +69,8 @@ import de.hhu.bsinfo.dxutils.NodeID;
  */
 public final class DXRAM {
     public static final DXRAMVersion VERSION = new DXRAMVersion(0, 3, 0);
-    public static final String GIT_COMMIT = "Not Available"; //@GITCOMMIT@
-    public static final String BUILD_TYPE = "Not Available"; //@BUILDTYPE@
+    public static final String GIT_COMMIT = "323dfa4"; //@GITCOMMIT@
+    public static final String BUILD_TYPE = "debug"; //@BUILDTYPE@
     private static final String STARTUP_DONE_STR = "!---ooo---!";
 
     private DXRAMEngine m_engine;

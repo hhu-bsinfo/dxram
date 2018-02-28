@@ -22,37 +22,43 @@ public class DirectByteBufferWrapper {
      * @param p_size
      *         the buffer size
      */
-    DirectByteBufferWrapper(final int p_size) {
+    DirectByteBufferWrapper(final int p_size, final boolean p_isAccessedByDisk) {
 
         if (ms_native) {
-            // Allocate direct byte buffer page-aligned and with (at least) one overlapping page at the front.
-            // 1. Allocate direct byte buffer with two (if size is page-aligned) additional flash pages
-            // 2a. If byte buffer is already page-aligned, hide one additional flash page by slicing
-            // 2b. If not, move position to beginning of second next page and slice
-            int size = p_size + 2 * ms_pageSize;
-            if (p_size % ms_pageSize != 0) {
-                // If p_size is not page-aligned, we need to get the entire last page as well
-                size += ms_pageSize - p_size % ms_pageSize;
-            }
-            ByteBuffer buffer = ByteBuffer.allocateDirect(size);
-            long address = ByteBufferHelper.getDirectAddress(buffer);
+            if (p_isAccessedByDisk) {
+                // Allocate direct byte buffer page-aligned and with (at least) one overlapping page at the front.
+                // 1. Allocate direct byte buffer with two (if size is page-aligned) additional flash pages
+                // 2a. If byte buffer is already page-aligned, hide one additional flash page by slicing
+                // 2b. If not, move position to beginning of second next page and slice
+                int size = p_size + 2 * ms_pageSize;
+                if (p_size % ms_pageSize != 0) {
+                    // If p_size is not page-aligned, we need to get the entire last page as well
+                    size += ms_pageSize - p_size % ms_pageSize;
+                }
+                ByteBuffer buffer = ByteBuffer.allocateDirect(size);
+                long address = ByteBufferHelper.getDirectAddress(buffer);
 
-            if (address % ms_pageSize == 0) {
-                // Allocated ByteBuffer is already page-aligned -> move beginning to second page
-                buffer.position(ms_pageSize);
-                // Move end of to be sliced ByteBuffer to p_size (we two overlapping pages at the end)
-                buffer.limit(ms_pageSize + p_size);
-                // Slice buffer to hide alignment
-                m_buffer = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);
-                // Address points on first byte to write
-                m_addr = address + ms_pageSize;
+                if (address % ms_pageSize == 0) {
+                    // Allocated ByteBuffer is already page-aligned -> move beginning to second page
+                    buffer.position(ms_pageSize);
+                    // Move end of to be sliced ByteBuffer to p_size (we two overlapping pages at the end)
+                    buffer.limit(ms_pageSize + p_size);
+                    // Slice buffer to hide alignment
+                    m_buffer = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);
+                    // Address points on first byte to write
+                    m_addr = address + ms_pageSize;
+                } else {
+                    // Allocated ByteBuffer is NOT page-aligned -> move beginning to third page
+                    int newPosition = (int) (ms_pageSize - address % ms_pageSize + ms_pageSize);
+                    buffer.position(newPosition);
+                    buffer.limit(newPosition + p_size);
+                    m_buffer = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);
+                    m_addr = address + newPosition;
+                }
             } else {
-                // Allocated ByteBuffer is NOT page-aligned -> move beginning to third page
-                int newPosition = (int) (ms_pageSize - address % ms_pageSize + ms_pageSize);
-                buffer.position(newPosition);
-                buffer.limit(newPosition + p_size);
-                m_buffer = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);
-                m_addr = address + newPosition;
+                m_buffer = ByteBuffer.allocateDirect(p_size);
+                m_buffer.order(ByteOrder.LITTLE_ENDIAN);
+                m_addr = ByteBufferHelper.getDirectAddress(m_buffer);
             }
         } else {
             m_buffer = ByteBuffer.allocate(p_size);
@@ -65,8 +71,9 @@ public class DirectByteBufferWrapper {
      * Creates an instance of DirectBufferWrapper
      */
     DirectByteBufferWrapper() {
-        // Single zeroed page
-        ByteBuffer buffer = ByteBuffer.allocateDirect(3 * ms_pageSize);
+        // Assumes write position in file is page-aligned
+        // Single zeroed page (another page is needed for alignment)
+        ByteBuffer buffer = ByteBuffer.allocateDirect(2 * ms_pageSize);
         long address = ByteBufferHelper.getDirectAddress(buffer);
 
         if (address % ms_pageSize == 0) {
@@ -76,7 +83,7 @@ public class DirectByteBufferWrapper {
             m_addr = address;
         } else {
             // Allocated ByteBuffer is NOT page-aligned -> move beginning
-            int newPosition = (int) (ms_pageSize + ms_pageSize - address % ms_pageSize);
+            int newPosition = (int) (ms_pageSize - address % ms_pageSize);
             buffer.position(newPosition);
             buffer.limit(newPosition + ms_pageSize);
             m_buffer = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);

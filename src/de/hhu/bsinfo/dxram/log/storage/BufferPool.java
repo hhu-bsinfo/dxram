@@ -71,7 +71,7 @@ public final class BufferPool {
         m_posBackConsumerLarge = new AtomicInteger(0);
         m_largeBufferPool = new DirectByteBufferWrapper[LARGE_BUFFER_POOL_SIZE];
         for (int i = 0; i < LARGE_BUFFER_POOL_SIZE; i++) {
-            m_largeBufferPool[i] = new DirectByteBufferWrapper(p_logSegmentSize / LARGE_BUFFER_POOL_FACTOR);
+            m_largeBufferPool[i] = new DirectByteBufferWrapper(p_logSegmentSize / LARGE_BUFFER_POOL_FACTOR, true);
         }
 
         // Initialize ring-buffer for medium buffers
@@ -83,7 +83,7 @@ public final class BufferPool {
         m_posBackConsumerMedium = new AtomicInteger(0);
         m_mediumBufferPool = new DirectByteBufferWrapper[MEDIUM_BUFFER_POOL_SIZE];
         for (int i = 0; i < MEDIUM_BUFFER_POOL_SIZE; i++) {
-            m_mediumBufferPool[i] = new DirectByteBufferWrapper(p_logSegmentSize / MEDIUM_BUFFER_POOL_FACTOR);
+            m_mediumBufferPool[i] = new DirectByteBufferWrapper(p_logSegmentSize / MEDIUM_BUFFER_POOL_FACTOR, true);
         }
 
         // Initialize ring-buffer for small buffers
@@ -95,7 +95,7 @@ public final class BufferPool {
         m_posBackConsumerSmall = new AtomicInteger(0);
         m_smallBufferPool = new DirectByteBufferWrapper[SMALL_BUFFER_POOL_SIZE];
         for (int i = 0; i < SMALL_BUFFER_POOL_SIZE; i++) {
-            m_smallBufferPool[i] = new DirectByteBufferWrapper(p_logSegmentSize / SMALL_BUFFER_POOL_FACTOR);
+            m_smallBufferPool[i] = new DirectByteBufferWrapper(p_logSegmentSize / SMALL_BUFFER_POOL_FACTOR, true);
         }
     }
 

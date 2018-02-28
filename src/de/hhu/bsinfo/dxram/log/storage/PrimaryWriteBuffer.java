@@ -153,7 +153,7 @@ public class PrimaryWriteBuffer {
         if (m_writeBufferSize < m_flashPageSize || m_writeBufferSize > WRITE_BUFFER_MAX_SIZE || Integer.bitCount(m_writeBufferSize) != 1) {
             throw new IllegalArgumentException("Illegal buffer size! Must be 2^x with " + Math.log(m_flashPageSize) / Math.log(2) + " <= x <= 31");
         }
-        m_bufferWrapper = new DirectByteBufferWrapper(m_writeBufferSize);
+        m_bufferWrapper = new DirectByteBufferWrapper(m_writeBufferSize, false);
         m_buffer = m_bufferWrapper.getBuffer();
         m_native = m_buffer.isDirect();
         m_lengthAndFragmentationByBackupRange = new HashMap<Integer, Partitioning>();
@@ -657,8 +657,6 @@ public class PrimaryWriteBuffer {
                     p_primaryWriteBuffer.limit(headerSize - bytesUntilEnd);
                     header.put(p_primaryWriteBuffer);
                     p_primaryWriteBuffer.limit(p_primaryWriteBuffer.capacity());
-                    //System.arraycopy(p_buffer, offset, header, 0, bytesUntilEnd);
-                    //System.arraycopy(p_buffer, 0, header, bytesUntilEnd, headerSize - bytesUntilEnd);
 
                     logEntrySize = headerSize + logEntryHeader.getLength(header, 0);
                     combinedRangeID = (logEntryHeader.getOwner(header, 0) << 16) + logEntryHeader.getRangeID(header, 0);
@@ -672,7 +670,7 @@ public class PrimaryWriteBuffer {
 
             // Write sorted buffers to log
             if (primaryLogBufferSize > 0) {
-                primaryLogBuffer = new DirectByteBufferWrapper(primaryLogBufferSize);
+                primaryLogBuffer = new DirectByteBufferWrapper(primaryLogBufferSize, true);
             }
 
             iter2 = map.entrySet().iterator();
