@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
-import de.hhu.bsinfo.dxutils.stats.PrintStatistics;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 
 /**
  * Print the statistics to a file.
@@ -98,7 +98,8 @@ public class PrintStatisticsToFileTask implements Task {
             // #endif /* LOGGER >= ERROR */
             return -5;
         }
-        PrintStatistics.printStatisticsToOutput(out);
+
+        StatisticsManager.get().printStatistics(out);
 
         out.close();
 

@@ -15,9 +15,6 @@ package de.hhu.bsinfo.dxram.mem;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -32,8 +29,9 @@ import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
-import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
+import de.hhu.bsinfo.dxutils.stats.ThroughputPool;
+import de.hhu.bsinfo.dxutils.stats.Value;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 import de.hhu.bsinfo.soh.MemoryRuntimeException;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
@@ -51,18 +49,37 @@ import de.hhu.bsinfo.soh.StorageUnsafeMemory;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.11.2015
  */
 public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryManagerComponentConfig> {
-    // statistics recording
-    static final StatisticsOperation SOP_MALLOC = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Malloc");
-    private static final Logger LOGGER = LogManager.getFormatterLogger(MemoryManagerComponent.class.getSimpleName());
-    private static final StatisticsOperation SOP_MULTI_MALLOC = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "MultiMalloc");
-    private static final StatisticsOperation SOP_FREE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Free");
-    private static final StatisticsOperation SOP_GET = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Get");
-    private static final StatisticsOperation SOP_PUT = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Put");
-    private static final StatisticsOperation SOP_CREATE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Create");
-    private static final StatisticsOperation SOP_MULTI_CREATE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "MultiCreate");
-    private static final StatisticsOperation SOP_REMOVE = StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "Remove");
-    private static final StatisticsOperation SOP_CREATE_PUT_RECOVERED =
-            StatisticsRecorderManager.getOperation(MemoryManagerComponent.class, "CreateAndPutRecovered");
+    static final ThroughputPool SOP_MALLOC = new ThroughputPool(MemoryManagerComponent.class, "Malloc",
+            Value.Base.B_10);
+
+    private static final ThroughputPool SOP_MULTI_MALLOC = new ThroughputPool(MemoryManagerComponent.class,
+            "MultiMalloc", Value.Base.B_10);
+    private static final ThroughputPool SOP_FREE = new ThroughputPool(MemoryManagerComponent.class, "Free",
+            Value.Base.B_10);
+    private static final ThroughputPool SOP_GET = new ThroughputPool(MemoryManagerComponent.class, "Get",
+            Value.Base.B_10);
+    private static final ThroughputPool SOP_PUT = new ThroughputPool(MemoryManagerComponent.class, "Put",
+            Value.Base.B_10);
+    private static final ThroughputPool SOP_CREATE = new ThroughputPool(MemoryManagerComponent.class, "Create",
+            Value.Base.B_10);
+    private static final ThroughputPool SOP_MULTI_CREATE = new ThroughputPool(MemoryManagerComponent.class,
+            "MultiCreate", Value.Base.B_10);
+    private static final ThroughputPool SOP_REMOVE = new ThroughputPool(MemoryManagerComponent.class, "Remove",
+            Value.Base.B_10);
+    private static final ThroughputPool SOP_CREATE_PUT_RECOVERED = new ThroughputPool(MemoryManagerComponent.class,
+            "CreateAndPutRecovered", Value.Base.B_10);
+
+    static {
+        StatisticsManager.get().registerOperation(MemoryManagerComponent.class, SOP_MALLOC);
+        StatisticsManager.get().registerOperation(MemoryManagerComponent.class, SOP_MULTI_MALLOC);
+        StatisticsManager.get().registerOperation(MemoryManagerComponent.class, SOP_FREE);
+        StatisticsManager.get().registerOperation(MemoryManagerComponent.class, SOP_GET);
+        StatisticsManager.get().registerOperation(MemoryManagerComponent.class, SOP_PUT);
+        StatisticsManager.get().registerOperation(MemoryManagerComponent.class, SOP_CREATE);
+        StatisticsManager.get().registerOperation(MemoryManagerComponent.class, SOP_MULTI_CREATE);
+        StatisticsManager.get().registerOperation(MemoryManagerComponent.class, SOP_REMOVE);
+        StatisticsManager.get().registerOperation(MemoryManagerComponent.class, SOP_CREATE_PUT_RECOVERED);
+    }
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -255,7 +272,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
         try {
             // #ifdef STATISTICS
-            SOP_CREATE.enter();
+            SOP_CREATE.start(1);
             // #endif /* STATISTICS */
 
             chunkID = p_chunkId;
@@ -282,7 +299,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             }
 
             // #ifdef STATISTICS
-            SOP_CREATE.leave();
+            SOP_CREATE.stop();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, false);
@@ -326,18 +343,18 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
         try {
             // #ifdef STATISTICS
-            SOP_MULTI_CREATE.enter();
+            SOP_MULTI_CREATE.start(p_sizes.length);
             // #endif /* STATISTICS */
 
             // get new LIDs
             lids = m_cidTable.getFreeLIDs(p_sizes.length, p_consecutive);
 
             // #ifdef STATISTICS
-            SOP_MULTI_MALLOC.enter(p_sizes.length);
+            SOP_MULTI_MALLOC.start(p_sizes.length);
             // #endif /* STATISTICS */
             addresses = m_rawMemory.multiMallocSizes(p_sizes);
             // #ifdef STATISTICS
-            SOP_MULTI_MALLOC.leave();
+            SOP_MULTI_MALLOC.stop();
             // #endif /* STATISTICS */
             if (addresses != null) {
 
@@ -370,7 +387,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             }
 
             // #ifdef STATISTICS
-            SOP_MULTI_CREATE.leave();
+            SOP_MULTI_CREATE.stop();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, false);
@@ -450,7 +467,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
         try {
             // #ifdef STATISTICS
-            SOP_MULTI_CREATE.enter();
+            SOP_MULTI_CREATE.start(p_count);
             // #endif /* STATISTICS */
 
             // get new LIDs
@@ -458,11 +475,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
             // first, try to allocate. maybe early return
             // #ifdef STATISTICS
-            SOP_MULTI_MALLOC.enter(p_size);
+            SOP_MULTI_MALLOC.start(p_count);
             // #endif /* STATISTICS */
             addresses = m_rawMemory.multiMalloc(p_size, p_count);
             // #ifdef STATISTICS
-            SOP_MULTI_MALLOC.leave();
+            SOP_MULTI_MALLOC.stop();
             // #endif /* STATISTICS */
             if (addresses != null) {
 
@@ -495,7 +512,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             }
 
             // #ifdef STATISTICS
-            SOP_MULTI_CREATE.leave();
+            SOP_MULTI_CREATE.stop();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, false);
@@ -530,7 +547,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
         try {
             // #ifdef STATISTICS
-            SOP_CREATE.enter();
+            SOP_CREATE.start(1);
             // #endif /* STATISTICS */
 
             // get new LID from CIDTable
@@ -538,11 +555,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
             // first, try to allocate. maybe early return
             // #ifdef STATISTICS
-            SOP_MALLOC.enter(p_size);
+            SOP_MALLOC.start(1);
             // #endif /* STATISTICS */
             address = m_rawMemory.malloc(p_size);
             // #ifdef STATISTICS
-            SOP_MALLOC.leave();
+            SOP_MALLOC.stop();
             // #endif /* STATISTICS */
             if (address >= 0) {
                 chunkID = ((long) m_boot.getNodeID() << 48) + lid;
@@ -565,7 +582,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             }
 
             // #ifdef STATISTICS
-            SOP_CREATE.leave();
+            SOP_CREATE.stop();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, false);
@@ -601,7 +618,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                 ret = false;
             } else {
                 // #ifdef STATISTICS
-                SOP_GET.enter();
+                SOP_GET.start(1);
                 // #endif /* STATISTICS */
 
                 address = m_cidTable.get(p_dataStructure.getID());
@@ -619,7 +636,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                 }
 
                 // #ifdef STATISTICS
-                SOP_GET.leave();
+                SOP_GET.stop();
                 // #endif /* STATISTICS */
             }
         } catch (final MemoryRuntimeException e) {
@@ -640,7 +657,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      *
      * @param p_chunkID
      *         Read the chunk data of the specified ID
-     * @return A byte array with payload if getting the chunk payload was successful, null if no chunk with the ID exists.
+     * @return A byte array with payload if getting the chunk payload was successful, null if no chunk with the ID
+     * exists.
      */
     public byte[] get(final long p_chunkID) {
         byte[] ret;
@@ -655,7 +673,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                 ret = null;
             } else {
                 // #ifdef STATISTICS
-                SOP_GET.enter();
+                SOP_GET.start(1);
                 // #endif /* STATISTICS */
 
                 address = m_cidTable.get(p_chunkID);
@@ -667,14 +685,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                     SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
                     int retSize = importer.readBytes(ret);
                     if (retSize != chunkSize) {
-                        throw new DXRAMRuntimeException("Unknown error, importer size " + retSize + " != chunk size " + chunkSize);
+                        throw new DXRAMRuntimeException("Unknown error, importer size " + retSize + " != chunk size " +
+                                chunkSize);
                     }
                 } else {
                     ret = null;
                 }
 
                 // #ifdef STATISTICS
-                SOP_GET.leave();
+                SOP_GET.stop();
                 // #endif /* STATISTICS */
             }
         } catch (final MemoryRuntimeException e) {
@@ -707,7 +726,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             }
 
             // #ifdef STATISTICS
-            SOP_GET.enter();
+            SOP_GET.start(1);
             // #endif /* STATISTICS */
 
             address = m_cidTable.get(p_chunkID);
@@ -721,7 +740,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                     SmallObjectHeapDataStructureImExporter importer = getImExporter(address);
                     ret = importer.readBytes(p_buffer, p_offset, chunkSize);
                     if (ret != chunkSize) {
-                        throw new DXRAMRuntimeException("Unknown error, importer size " + ret + " != chunk size " + chunkSize);
+                        throw new DXRAMRuntimeException("Unknown error, importer size " + ret + " != chunk size " +
+                                chunkSize);
                     }
                 }
             } else {
@@ -729,7 +749,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             }
 
             // #ifdef STATISTICS
-            SOP_GET.leave();
+            SOP_GET.stop();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, true);
@@ -763,7 +783,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                 ret = false;
             } else {
                 // #ifdef STATISTICS
-                SOP_PUT.enter();
+                SOP_PUT.start(1);
                 // #endif /* STATISTICS */
 
                 address = m_cidTable.get(p_dataStructure.getID());
@@ -781,7 +801,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                 }
 
                 // #ifdef STATISTICS
-                SOP_PUT.leave();
+                SOP_PUT.stop();
                 // #endif /* STATISTICS */
             }
         } catch (final MemoryRuntimeException e) {
@@ -841,7 +861,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                 ret = false;
             } else {
                 // #ifdef STATISTICS
-                SOP_PUT.enter();
+                SOP_PUT.start(1);
                 // #endif /* STATISTICS */
 
                 address = m_cidTable.get(p_chunkID);
@@ -854,7 +874,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                 }
 
                 // #ifdef STATISTICS
-                SOP_PUT.leave();
+                SOP_PUT.stop();
                 // #endif /* STATISTICS */
             }
         } catch (final MemoryRuntimeException e) {
@@ -878,7 +898,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      * @param p_wasMigrated
      *         default value for this parameter should be false!
      *         if chunk was deleted during migration this flag should be set to true
-     * @return The size of the deleted chunk if removing the data was successful, -1 if the chunk with the specified id does not exist
+     * @return The size of the deleted chunk if removing the data was successful, -1 if the chunk with the specified id
+     * does not exist
      */
     public int remove(final long p_chunkID, final boolean p_wasMigrated) {
         int ret = -1;
@@ -893,7 +914,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                 ret = -1;
             } else {
                 // #ifdef STATISTICS
-                SOP_REMOVE.enter();
+                SOP_REMOVE.start(1);
                 // #endif /* STATISTICS */
 
                 // Get and delete the address from the CIDTable, mark as zombie first
@@ -914,15 +935,19 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                     }
                     ret = m_rawMemory.getSizeBlock(addressDeletedChunk);
                     // #ifdef STATISTICS
-                    SOP_FREE.enter(ret);
+                    SOP_FREE.start(1);
                     // #endif /* STATISTICS */
                     m_rawMemory.free(addressDeletedChunk);
                     // #ifdef STATISTICS
-                    SOP_FREE.leave();
+                    SOP_FREE.stop();
                     // #endif /* STATISTICS */
                     m_numActiveChunks--;
                     m_totalActiveChunkMemory -= ret;
                 }
+
+                // #ifdef STATISTICS
+                SOP_REMOVE.stop();
+                // #endif /* STATISTICS */
             }
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, false);
@@ -951,8 +976,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      * @param p_usedEntries
      *         Specifies the actual number of slots used in the array (may be less than p_lengths)
      */
-    public void createAndPutRecovered(final long[] p_chunkIDs, final long p_dataAddress, final int[] p_offsets, final int[] p_lengths,
-            final int p_usedEntries) {
+    public void createAndPutRecovered(final long[] p_chunkIDs, final long p_dataAddress, final int[] p_offsets,
+            final int[] p_lengths, final int p_usedEntries) {
         long[] addresses;
 
         // #if LOGGER == TRACE
@@ -961,15 +986,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
         try {
             // #ifdef STATISTICS
-            SOP_CREATE_PUT_RECOVERED.enter(p_usedEntries);
+            SOP_CREATE_PUT_RECOVERED.start(p_usedEntries);
             // #endif /* STATISTICS */
 
             // #ifdef STATISTICS
-            SOP_MULTI_MALLOC.enter(p_usedEntries);
+            SOP_MULTI_MALLOC.start(p_usedEntries);
             // #endif /* STATISTICS */
             addresses = m_rawMemory.multiMallocSizesUsedEntries(p_usedEntries, p_lengths);
             // #ifdef STATISTICS
-            SOP_MULTI_MALLOC.leave();
+            SOP_MULTI_MALLOC.stop();
             // #endif /* STATISTICS */
             if (addresses != null) {
 
@@ -988,7 +1013,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             }
 
             // #ifdef STATISTICS
-            SOP_CREATE_PUT_RECOVERED.leave();
+            SOP_CREATE_PUT_RECOVERED.stop();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, false);
@@ -1019,15 +1044,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
         try {
             // #ifdef STATISTICS
-            SOP_CREATE_PUT_RECOVERED.enter(p_dataStructures.length);
+            SOP_CREATE_PUT_RECOVERED.start(p_dataStructures.length);
             // #endif /* STATISTICS */
 
             // #ifdef STATISTICS
-            SOP_MULTI_MALLOC.enter(p_dataStructures.length);
+            SOP_MULTI_MALLOC.start(p_dataStructures.length);
             // #endif /* STATISTICS */
             addresses = m_rawMemory.multiMallocSizes(sizes);
             // #ifdef STATISTICS
-            SOP_MULTI_MALLOC.leave();
+            SOP_MULTI_MALLOC.stop();
             // #endif /* STATISTICS */
             if (addresses != null) {
 
@@ -1048,7 +1073,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             }
 
             // #ifdef STATISTICS
-            SOP_CREATE_PUT_RECOVERED.leave();
+            SOP_CREATE_PUT_RECOVERED.stop();
             // #endif /* STATISTICS */
         } catch (final MemoryRuntimeException e) {
             handleMemDumpOnError(e, false);
@@ -1379,7 +1404,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      */
     private void initMemory() {
         // #if LOGGER == INFO
-        LOGGER.info("Allocating native memory (%d mb). This may take a while...", getConfig().getKeyValueStoreSize().getMB());
+        LOGGER.info("Allocating native memory (%d mb). This may take a while...",
+                getConfig().getKeyValueStoreSize().getMB());
         // #endif /* LOGGER == INFO */
         // Runtime.getRuntime().load("/home/nothaas/dxram/jni/libJNINativeMemory.so");
         m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory(), getConfig().getKeyValueStoreSize().getBytes(),
@@ -1453,13 +1479,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             }
 
             // create unique file name for each thread to avoid collisions
-            String fileName = folder + "memdump-" + Thread.currentThread().getId() + '-' + System.currentTimeMillis() + ".soh";
+            String fileName = folder + "memdump-" + Thread.currentThread().getId() + '-' + System.currentTimeMillis() +
+                    ".soh";
 
             // #if LOGGER == ERROR
             LOGGER.fatal("Full memory dump to file: %s...", fileName);
             // #endif /* LOGGER == ERROR */
 
-            // ugly: we entered this with a access lock, acquire the managed lock to ensure full blocking of the memory before dumping
+            // ugly: we entered this with a access lock, acquire the managed lock to ensure full blocking of the memory
+            // before dumping
             if (p_acquireManageLock) {
                 unlockAccess();
                 lockManage();
@@ -1622,8 +1650,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
         @Override
         public int sizeofObject() {
-            return Long.BYTES * 3 + m_freeMemory.sizeofObject() + m_totalMemory.sizeofObject() + m_totalPayloadMemory.sizeofObject() +
-                    m_totalChunkPayloadMemory.sizeofObject() + m_totalMemoryCIDTables.sizeofObject() + Integer.BYTES + Long.BYTES * 2;
+            return Long.BYTES * 3 + m_freeMemory.sizeofObject() + m_totalMemory.sizeofObject() +
+                    m_totalPayloadMemory.sizeofObject() + m_totalChunkPayloadMemory.sizeofObject() +
+                    m_totalMemoryCIDTables.sizeofObject() + Integer.BYTES + Long.BYTES * 2;
         }
 
         @Override
@@ -1684,12 +1713,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
             str += "Free memory: " + m_freeMemory.getHumanReadable() + " (" + m_freeMemory.getBytes() + ")\n";
             str += "Total memory: " + m_totalMemory.getHumanReadable() + " (" + m_totalMemory.getBytes() + ")\n";
-            str += "Total payload memory: " + m_totalPayloadMemory.getHumanReadable() + " (" + m_totalPayloadMemory.getBytes() + ")\n";
+            str += "Total payload memory: " + m_totalPayloadMemory.getHumanReadable() + " (" +
+                    m_totalPayloadMemory.getBytes() + ")\n";
             str += "Num active memory blocks: " + m_numberOfActiveMemoryBlocks + '\n';
             str += "Num active chunks: " + m_numberOfActiveChunks + '\n';
-            str += "Total chunk payload memory: " + m_totalChunkPayloadMemory.getHumanReadable() + " (" + m_totalChunkPayloadMemory.getBytes() + ")\n";
+            str += "Total chunk payload memory: " + m_totalChunkPayloadMemory.getHumanReadable() + " (" +
+                    m_totalChunkPayloadMemory.getBytes() + ")\n";
             str += "Num CID tables: " + m_cidTableCount + '\n';
-            str += "Total CID tables memory: " + m_totalMemoryCIDTables.getHumanReadable() + " (" + m_totalChunkPayloadMemory.getBytes() + ")\n";
+            str += "Total CID tables memory: " + m_totalMemoryCIDTables.getHumanReadable() + " (" +
+                    m_totalChunkPayloadMemory.getBytes() + ")\n";
             str += "Num of free LIDs cached in LIDStore: " + m_cachedFreeLIDs + '\n';
             str += "Num of total available free LIDs in LIDStore: " + m_availableFreeLIDs + '\n';
             str += "New LID counter state: " + m_newLIDCounter;

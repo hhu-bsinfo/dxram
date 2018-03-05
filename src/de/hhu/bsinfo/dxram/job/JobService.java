@@ -38,8 +38,8 @@ import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
-import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
+import de.hhu.bsinfo.dxutils.stats.TimePool;
 
 /**
  * Service interface to schedule executables jobs. Use this to execute code
@@ -48,10 +48,15 @@ import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class JobService extends AbstractDXRAMService<JobServiceConfig> implements MessageReceiver, JobEventListener {
-    // statistics recorder
-    private static final StatisticsOperation SOP_CREATE = StatisticsRecorderManager.getOperation(JobService.class, "Submit");
-    private static final StatisticsOperation SOP_REMOTE_SUBMIT = StatisticsRecorderManager.getOperation(JobService.class, "RemoteSubmit");
-    private static final StatisticsOperation SOP_INCOMING_SUBMIT = StatisticsRecorderManager.getOperation(JobService.class, "IncomingSubmit");
+    private static final TimePool SOP_CREATE = new TimePool(JobService.class, "Submit");
+    private static final TimePool SOP_REMOTE_SUBMIT = new TimePool(JobService.class, "RemoteSubmit");
+    private static final TimePool SOP_INCOMING_SUBMIT = new TimePool(JobService.class, "IncomingSubmit");
+
+    static {
+        StatisticsManager.get().registerOperation(JobService.class, SOP_CREATE);
+        StatisticsManager.get().registerOperation(JobService.class, SOP_REMOTE_SUBMIT);
+        StatisticsManager.get().registerOperation(JobService.class, SOP_INCOMING_SUBMIT);
+    }
 
     // depdendent components
     private AbstractBootComponent m_boot;
@@ -95,7 +100,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      */
     public long pushJob(final AbstractJob p_job) {
         // #ifdef STATISTICS
-        SOP_CREATE.enter();
+        SOP_CREATE.start();
         // #endif /* STATISTICS */
 
         long jobId = JobID.createJobID(m_boot.getNodeID(), m_jobIDCounter.incrementAndGet());
@@ -109,7 +114,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
         }
 
         // #ifdef STATISTICS
-        SOP_CREATE.leave();
+        SOP_CREATE.stop();
         // #endif /* STATISTICS */
 
         return jobId;
@@ -127,7 +132,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      */
     public long pushJobRemote(final AbstractJob p_job, final short p_nodeID) {
         // #ifdef STATISTICS
-        SOP_REMOTE_SUBMIT.enter();
+        SOP_REMOTE_SUBMIT.start();
         // #endif /* STATISTICS */
 
         long jobId = JobID.createJobID(m_boot.getNodeID(), m_jobIDCounter.incrementAndGet());
@@ -161,7 +166,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
         }
 
         // #ifdef STATISTICS
-        SOP_REMOTE_SUBMIT.leave();
+        SOP_REMOTE_SUBMIT.stop();
         // #endif /* STATISTICS */
 
         // set jobid again to mark possible failure
@@ -264,7 +269,8 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
     public byte getJobEventBitMask() {
         // we need this to redirect callbacks for jobs, which got
         // submitted by a remote instance to us
-        return JobEvents.MS_JOB_SCHEDULED_FOR_EXECUTION_EVENT_ID | JobEvents.MS_JOB_STARTED_EXECUTION_EVENT_ID | JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID;
+        return JobEvents.MS_JOB_SCHEDULED_FOR_EXECUTION_EVENT_ID | JobEvents.MS_JOB_STARTED_EXECUTION_EVENT_ID |
+                JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID;
     }
 
     @Override
@@ -281,7 +287,8 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
                     m_remoteJobCallbackMap.remove(p_jobId);
                 }
 
-                JobEventTriggeredMessage message = new JobEventTriggeredMessage(JobID.getCreatorID(p_jobId), p_jobId, p_eventId);
+                JobEventTriggeredMessage message = new JobEventTriggeredMessage(JobID.getCreatorID(p_jobId), p_jobId,
+                        p_eventId);
 
                 try {
                     m_network.sendMessage(message);
@@ -343,10 +350,14 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      * Register network messages used here.
      */
     private void registerNetworkMessages() {
-        m_network.registerMessageType(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE, PushJobQueueMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_REQUEST, StatusRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_RESPONSE, StatusResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE, JobEventTriggeredMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE,
+                PushJobQueueMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_REQUEST,
+                StatusRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_RESPONSE,
+                StatusResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.JOB_MESSAGES_TYPE,
+                JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE, JobEventTriggeredMessage.class);
     }
 
     /**
@@ -366,7 +377,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      */
     private void incomingPushJobQueueMessage(final PushJobQueueMessage p_request) {
         // #ifdef STATISTICS
-        SOP_INCOMING_SUBMIT.enter();
+        SOP_INCOMING_SUBMIT.start();
         // #endif /* STATISTICS */
 
         AbstractJob job = p_request.getJob();
@@ -385,7 +396,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
         }
 
         // #ifdef STATISTICS
-        SOP_INCOMING_SUBMIT.leave();
+        SOP_INCOMING_SUBMIT.stop();
         // #endif /* STATISTICS */
     }
 
@@ -449,12 +460,14 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
             } else {
                 // should not happen, because we registered for specific events, only
                 // #if LOGGER >= ERROR
-                LOGGER.error("Getting remote callback for unregistered event '%d' on job id '0x%X'", p_message.getEventId(), p_message.getJobID());
+                LOGGER.error("Getting remote callback for unregistered event '%d' on job id '0x%X'",
+                        p_message.getEventId(), p_message.getJobID());
                 // #endif /* LOGGER >= ERROR */
             }
         } else {
             // #if LOGGER >= ERROR
-            LOGGER.error("Getting stored callbacks from map for callback to job id '0x%X' failed", p_message.getJobID());
+            LOGGER.error("Getting stored callbacks from map for callback to job id '0x%X' failed",
+                    p_message.getJobID());
             // #endif /* LOGGER >= ERROR */
         }
     }

@@ -1,12 +1,9 @@
 package de.hhu.bsinfo.dxram.stats;
 
-import java.util.Collection;
-
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxutils.stats.StatisticsRecorder;
-import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 
 /**
  * Service for internal statistics
@@ -22,23 +19,10 @@ public class StatisticsService extends AbstractDXRAMService<StatisticsServiceCon
     }
 
     /**
-     * Returns the recorders
-     *
-     * @return the recorders
+     * Get the statistics manager
      */
-    public Collection<StatisticsRecorder> getRecorders() {
-        return StatisticsRecorderManager.getRecorders();
-    }
-
-    /**
-     * Returns the recorder
-     *
-     * @param p_name
-     *         Get the recorder by its name
-     * @return the recorder
-     */
-    public StatisticsRecorder getRecorder(final String p_name) {
-        return StatisticsRecorderManager.getRecorder(p_name);
+    public StatisticsManager getManager() {
+        return StatisticsManager.get();
     }
 
     @Override

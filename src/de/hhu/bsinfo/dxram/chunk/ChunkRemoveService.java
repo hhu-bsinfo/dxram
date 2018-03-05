@@ -28,8 +28,9 @@ import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.ArrayListLong;
-import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
+import de.hhu.bsinfo.dxutils.stats.TimePool;
+import de.hhu.bsinfo.dxutils.stats.ValuePool;
 
 /**
  * This service provides access to the backend storage system (removals only)
@@ -37,9 +38,17 @@ import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 10.04.2017
  */
 public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceConfig> implements MessageReceiver {
-    // statistics recording
-    private static final StatisticsOperation SOP_REMOVE = StatisticsRecorderManager.getOperation(ChunkService.class, "Remove");
-    private static final StatisticsOperation SOP_INCOMING_REMOVE = StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingRemove");
+    private static final TimePool SOP_REMOVE_TIME = new TimePool(ChunkRemoveService.class, "GetAnon");
+    private static final TimePool SOP_INCOMING_REMOVE_TIME = new TimePool(ChunkRemoveService.class, "IncomingGetAnon");
+    private static final ValuePool SOP_REMOVE = new ValuePool(ChunkRemoveService.class, "PutAnon");
+    private static final ValuePool SOP_INCOMING_REMOVE = new ValuePool(ChunkRemoveService.class, "IncomingPutAnon");
+
+    static {
+        StatisticsManager.get().registerOperation(ChunkRemoveService.class, SOP_REMOVE_TIME);
+        StatisticsManager.get().registerOperation(ChunkRemoveService.class, SOP_INCOMING_REMOVE_TIME);
+        StatisticsManager.get().registerOperation(ChunkRemoveService.class, SOP_REMOVE);
+        StatisticsManager.get().registerOperation(ChunkRemoveService.class, SOP_INCOMING_REMOVE_TIME);
+    }
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -93,7 +102,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
-        SOP_REMOVE.enter(p_chunkIDs.length);
+        SOP_REMOVE.add(p_chunkIDs.length);
+        SOP_REMOVE_TIME.start();
         // #endif /* STATISTICS */
 
         // sort by local and remote data first
@@ -113,7 +123,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                 if (m_memoryManager.exists(p_chunkIDs[i])) {
                     if (ChunkID.getCreatorID(p_chunkIDs[i]) != m_boot.getNodeID()) {
                         // sort by initial owner/creator for chunk ID reuse
-                        ArrayListLong reuseChunkIDsOfPeer = reuseChunkIDsByPeers.computeIfAbsent(ChunkID.getCreatorID(p_chunkIDs[i]), a -> new ArrayListLong());
+                        ArrayListLong reuseChunkIDsOfPeer = reuseChunkIDsByPeers.computeIfAbsent(ChunkID.getCreatorID(
+                                p_chunkIDs[i]), a -> new ArrayListLong());
                         reuseChunkIDsOfPeer.add(p_chunkIDs[i]);
                     }
 
@@ -123,7 +134,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                     if (m_backup.isActive()) {
                         // sort by backup peers
                         long backupPeersAsLong = m_backup.getBackupPeersForLocalChunks(p_chunkIDs[i]);
-                        ArrayListLong remoteChunkIDsOfBackupPeers = remoteChunksByBackupPeers.computeIfAbsent(backupPeersAsLong, a -> new ArrayListLong());
+                        ArrayListLong remoteChunkIDsOfBackupPeers = remoteChunksByBackupPeers.computeIfAbsent(
+                                backupPeersAsLong, a -> new ArrayListLong());
                         remoteChunkIDsOfBackupPeers.add(p_chunkIDs[i]);
                     }
                 } else {
@@ -140,7 +152,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                     if (location.getState() == LookupState.OK) {
                         short peer = location.getPrimaryPeer();
 
-                        ArrayListLong remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayListLong());
+                        ArrayListLong remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer,
+                                a -> new ArrayListLong());
                         remoteChunksOfPeer.add(p_chunkIDs[i]);
                     }
                 }
@@ -170,7 +183,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             m_memoryManager.unlockManage();
         }
 
-        // send message to initial creator of locally stored but migrated removed chunks to allow re-use of chunk ID, otherwise chunk ID gets lost here
+        // send message to initial creator of locally stored but migrated removed chunks to allow re-use of chunk ID,
+        // otherwise chunk ID gets lost here
         for (final Map.Entry<Short, ArrayListLong> reuseChunkIDs : reuseChunkIDsByPeers.entrySet()) {
             short peer = reuseChunkIDs.getKey();
             ArrayListLong chunkIDs = reuseChunkIDs.getValue();
@@ -241,7 +255,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                 for (int i = 0; i < backupPeers.length; i++) {
                     if (backupPeers[i] != null && backupPeers[i].getNodeID() != m_boot.getNodeID()) {
                         try {
-                            m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(backupPeers[i].getNodeID(), ids));
+                            m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(
+                                    backupPeers[i].getNodeID(), ids));
                         } catch (final NetworkException ignore) {
 
                         }
@@ -251,7 +266,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
         }
 
         // #ifdef STATISTICS
-        SOP_REMOVE.leave();
+        SOP_REMOVE_TIME.stop();
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
@@ -311,8 +326,10 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
         m_remover = new ChunkRemover(getConfig().getRemoverQueueSize());
         m_remover.start();
 
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REUSE_ID_MESSAGE, ReuseIDMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_MESSAGE,
+                RemoveMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REUSE_ID_MESSAGE,
+                ReuseIDMessage.class);
 
         m_network.register(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_MESSAGE, this);
         m_network.register(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REUSE_ID_MESSAGE, this);
@@ -469,7 +486,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             int size;
 
             // #ifdef STATISTICS
-            SOP_INCOMING_REMOVE.enter(p_chunkIDs.length);
+            SOP_INCOMING_REMOVE.add(p_chunkIDs.length);
+            SOP_INCOMING_REMOVE_TIME.start();
             // #endif /* STATISTICS */
 
             Map<Long, ArrayListLong> remoteChunksByBackupPeers = new TreeMap<>();
@@ -482,7 +500,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                 if (m_backup.isActive()) {
                     // sort by backup peers
                     long backupPeersAsLong = m_backup.getBackupPeersForLocalChunks(p_chunkIDs[i]);
-                    ArrayListLong remoteChunkIDsOfBackupPeers = remoteChunksByBackupPeers.computeIfAbsent(backupPeersAsLong, k -> new ArrayListLong());
+                    ArrayListLong remoteChunkIDsOfBackupPeers = remoteChunksByBackupPeers.computeIfAbsent(
+                            backupPeersAsLong, k -> new ArrayListLong());
                     remoteChunkIDsOfBackupPeers.add(p_chunkIDs[i]);
                 }
             }
@@ -501,8 +520,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
 
                         if (ChunkID.getCreatorID(p_chunkIDs[i]) != m_boot.getNodeID()) {
                             // sort by initial owner/creator for chunk ID reuse
-                            ArrayListLong reuseChunkIDsOfPeer =
-                                    reuseChunkIDsByPeers.computeIfAbsent(ChunkID.getCreatorID(p_chunkIDs[i]), a -> new ArrayListLong());
+                            ArrayListLong reuseChunkIDsOfPeer = reuseChunkIDsByPeers.computeIfAbsent(
+                                    ChunkID.getCreatorID(p_chunkIDs[i]), a -> new ArrayListLong());
                             reuseChunkIDsOfPeer.add(p_chunkIDs[i]);
                         }
                     }
@@ -511,7 +530,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                 m_memoryManager.unlockManage();
             }
 
-            // send message to initial creator of locally stored but migrated removed chunks to allow re-use of chunk ID, otherwise chunk ID gets lost here
+            // send message to initial creator of locally stored but migrated removed chunks to allow re-use of chunk
+            // ID, otherwise chunk ID gets lost here
             for (final Map.Entry<Short, ArrayListLong> reuseChunkIDs : reuseChunkIDsByPeers.entrySet()) {
                 short peer = reuseChunkIDs.getKey();
                 ArrayListLong chunkIDs = reuseChunkIDs.getValue();
@@ -540,7 +560,8 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                     for (int i = 0; i < backupPeers.length; i++) {
                         if (backupPeers[i] != null && backupPeers[i].getNodeID() != m_boot.getNodeID()) {
                             try {
-                                m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(backupPeers[i].getNodeID(), ids));
+                                m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(
+                                        backupPeers[i].getNodeID(), ids));
                             } catch (final NetworkException ignore) {
 
                             }
@@ -550,7 +571,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             }
 
             // #ifdef STATISTICS
-            SOP_INCOMING_REMOVE.leave();
+            SOP_INCOMING_REMOVE_TIME.stop();
             // #endif /* STATISTICS */
         }
     }

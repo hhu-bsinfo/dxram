@@ -18,7 +18,7 @@ import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
-import de.hhu.bsinfo.dxutils.stats.PrintStatistics;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 
 /**
  * Print statistics to the console.
@@ -36,7 +36,7 @@ public class PrintStatisticsToConsoleTask implements Task {
 
     @Override
     public int execute(final TaskContext p_ctx) {
-        PrintStatistics.printStatisticsToOutput(System.out);
+        StatisticsManager.get().printStatistics(System.out);
         return 0;
     }
 

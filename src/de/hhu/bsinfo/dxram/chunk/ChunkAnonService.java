@@ -45,8 +45,9 @@ import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
+import de.hhu.bsinfo.dxutils.stats.ThroughputPool;
+import de.hhu.bsinfo.dxutils.stats.Value;
 
 /**
  * Special chunk service to work with anonymous chunks i.e. chunks with unknown size when getting them
@@ -54,11 +55,21 @@ import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.03.2017
  */
 public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfig> implements MessageReceiver {
-    // statistics recording
-    private static final StatisticsOperation SOP_GET_ANON = StatisticsRecorderManager.getOperation(ChunkService.class, "GetAnon");
-    private static final StatisticsOperation SOP_INCOMING_GET_ANON = StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingGetAnon");
-    private static final StatisticsOperation SOP_PUT_ANON = StatisticsRecorderManager.getOperation(ChunkService.class, "PutAnon");
-    private static final StatisticsOperation SOP_INCOMING_PUT_ANON = StatisticsRecorderManager.getOperation(ChunkService.class, "IncomingPutAnon");
+    private static final ThroughputPool SOP_GET_ANON = new ThroughputPool(ChunkAnonService.class, "GetAnon",
+            Value.Base.B_10);
+    private static final ThroughputPool SOP_INCOMING_GET_ANON = new ThroughputPool(ChunkAnonService.class,
+            "IncomingGetAnon", Value.Base.B_10);
+    private static final ThroughputPool SOP_PUT_ANON = new ThroughputPool(ChunkAnonService.class, "PutAnon",
+            Value.Base.B_10);
+    private static final ThroughputPool SOP_INCOMING_PUT_ANON = new ThroughputPool(ChunkAnonService.class,
+            "IncomingPutAnon", Value.Base.B_10);
+
+    static {
+        StatisticsManager.get().registerOperation(ChunkAnon.class, SOP_GET_ANON);
+        StatisticsManager.get().registerOperation(ChunkAnon.class, SOP_INCOMING_GET_ANON);
+        StatisticsManager.get().registerOperation(ChunkAnon.class, SOP_PUT_ANON);
+        StatisticsManager.get().registerOperation(ChunkAnon.class, SOP_INCOMING_PUT_ANON);
+    }
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -80,7 +91,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
      * unknown, only!
      *
      * @param p_ret
-     *         Pre-allocated array to put the new anonymous chunks to, matching the order of the provided chunk ID array.
+     *         Pre-allocated array to put the new anonymous chunks to, matching the order of the provided chunk ID array
      * @param p_chunkIDs
      *         Array with ChunkIDs.
      * @return Number of successfully read chunks
@@ -93,7 +104,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
-        SOP_GET_ANON.enter(p_chunkIDs.length);
+        SOP_GET_ANON.start(p_chunkIDs.length);
         // #endif /* STATISTICS */
 
         // sort by local and remote data first
@@ -125,7 +136,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                     if (lookupRange.getState() == LookupState.OK) {
                         short peer = lookupRange.getPrimaryPeer();
 
-                        ArrayList<Integer> remoteChunkIDsOfPeer = remoteChunkIDsByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
+                        ArrayList<Integer> remoteChunkIDsOfPeer = remoteChunkIDsByPeers.computeIfAbsent(peer,
+                                a -> new ArrayList<>());
                         // Add the index in ChunkID array not the ChunkID itself
                         remoteChunkIDsOfPeer.add(i);
                     }
@@ -187,7 +199,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         }
 
         // #ifdef STATISTICS
-        SOP_GET_ANON.leave();
+        SOP_GET_ANON.stop();
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
@@ -204,7 +216,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
      * unknown, only!
      *
      * @param p_ret
-     *         Pre-allocated array to put the new anonymous chunks to, matching the order of the provided chunk ID array.
+     *         Pre-allocated array to put the new anonymous chunks to, matching the order of the provided chunk ID array
      * @param p_chunkIDs
      *         Array with ChunkIDs.
      * @return Number of successfully read chunks
@@ -217,7 +229,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
-        SOP_GET_ANON.enter(p_chunkIDs.length);
+        SOP_GET_ANON.start(p_chunkIDs.length);
         // #endif /* STATISTICS */
 
         try {
@@ -239,7 +251,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         }
 
         // #ifdef STATISTICS
-        SOP_GET_ANON.leave();
+        SOP_GET_ANON.stop();
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
@@ -286,7 +298,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
      *         Number of items to put.
      * @return Number of successfully updated data structures.
      */
-    public int put(final ChunkLockOperation p_chunkUnlockOperation, final ChunkAnon[] p_chunks, final int p_offset, final int p_count) {
+    public int put(final ChunkLockOperation p_chunkUnlockOperation, final ChunkAnon[] p_chunks, final int p_offset,
+            final int p_count) {
         int chunksPut = 0;
 
         // #if LOGGER == TRACE
@@ -294,7 +307,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         // #endif /* LOGGER == TRACE */
 
         // #ifdef STATISTICS
-        SOP_PUT_ANON.enter(p_count);
+        SOP_PUT_ANON.start(p_count);
         // #endif /* STATISTICS */
 
         Map<Short, ArrayList<ChunkAnon>> remoteChunksByPeers = new TreeMap<>();
@@ -327,7 +340,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                     if (m_backup.isActive()) {
                         // sort by backup peers
                         BackupRange backupRange = m_backup.getBackupRange(p_chunks[i + p_offset].getID());
-                        ArrayList<ChunkAnon> remoteChunksOfBackupRange = remoteChunksByBackupRange.computeIfAbsent(backupRange, a -> new ArrayList<>());
+                        ArrayList<ChunkAnon> remoteChunksOfBackupRange =
+                                remoteChunksByBackupRange.computeIfAbsent(backupRange, a -> new ArrayList<>());
                         remoteChunksOfBackupRange.add(p_chunks[i + p_offset]);
                     }
                 } else {
@@ -346,7 +360,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                         p_chunks[i + p_offset].setState(ChunkState.UNDEFINED);
                         short peer = location.getPrimaryPeer();
 
-                        ArrayList<ChunkAnon> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
+                        ArrayList<ChunkAnon> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer,
+                                a -> new ArrayList<>());
                         remoteChunksOfPeer.add(p_chunks[i + p_offset]);
                     } else if (location.getState() == LookupState.DOES_NOT_EXIST) {
                         p_chunks[i + p_offset].setState(ChunkState.DOES_NOT_EXIST);
@@ -380,7 +395,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
             } else {
                 // Remote put
                 ArrayList<ChunkAnon> chunksToPut = entry.getValue();
-                PutAnonRequest request = new PutAnonRequest(peer, p_chunkUnlockOperation, chunksToPut.toArray(new ChunkAnon[chunksToPut.size()]));
+                PutAnonRequest request = new PutAnonRequest(peer, p_chunkUnlockOperation, chunksToPut.toArray(
+                        new ChunkAnon[chunksToPut.size()]));
 
                 try {
                     m_network.sendSync(request);
@@ -440,7 +456,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                         // #endif /* LOGGER == TRACE */
 
                         try {
-                            m_network.sendMessage(new LogAnonMessage(backupPeer.getNodeID(), backupRange.getRangeID(), chunks));
+                            m_network.sendMessage(new LogAnonMessage(backupPeer.getNodeID(), backupRange.getRangeID(),
+                                    chunks));
                         } catch (final NetworkException ignore) {
 
                         }
@@ -450,11 +467,12 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         }
 
         // #ifdef STATISTICS
-        SOP_PUT_ANON.leave();
+        SOP_PUT_ANON.stop();
         // #endif /* STATISTICS */
 
         // #if LOGGER == TRACE
-        LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...] -> %d", p_chunkUnlockOperation, p_chunks.length, chunksPut);
+        LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...] -> %d", p_chunkUnlockOperation, p_chunks.length,
+                chunksPut);
         // #endif /* LOGGER == TRACE */
 
         return chunksPut;
@@ -515,8 +533,10 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
 
         if (p_config.getEngineConfig().getRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup()) {
             if (m_memoryManager.getStatus().getMaxChunkSize().getBytes() > m_backup.getLogSegmentSizeBytes()) {
-                LOGGER.fatal("Backup is active and segment size (%d bytes) of log is smaller than max chunk size (%d bytes). Fix your configuration");
-                throw new DXRAMRuntimeException("Backup is active and segment size of log is smaller than max chunk size. Fix your configuration");
+                LOGGER.fatal("Backup is active and segment size (%d bytes) of log is smaller than max chunk size " +
+                        "(%d bytes). Fix your configuration");
+                throw new DXRAMRuntimeException("Backup is active and segment size of log is smaller than max chunk " +
+                        "size. Fix your configuration");
             }
         }
 
@@ -534,10 +554,14 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
      * Register network messages we use in here.
      */
     private void registerNetworkMessages() {
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_ANON_REQUEST, GetAnonRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_ANON_RESPONSE, GetAnonResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_ANON_REQUEST, PutAnonRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_ANON_RESPONSE, PutAnonResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_ANON_REQUEST,
+                GetAnonRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_ANON_RESPONSE,
+                GetAnonResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_ANON_REQUEST,
+                PutAnonRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_ANON_RESPONSE,
+                PutAnonResponse.class);
     }
 
     /**
@@ -562,7 +586,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         int numChunksGot = 0;
 
         // #ifdef STATISTICS
-        SOP_INCOMING_GET_ANON.enter(p_request.getChunkIDs().length);
+        SOP_INCOMING_GET_ANON.start(p_request.getChunkIDs().length);
         // #endif /* STATISTICS */
 
         try {
@@ -590,7 +614,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         }
 
         // #ifdef STATISTICS
-        SOP_INCOMING_GET_ANON.leave();
+        SOP_INCOMING_GET_ANON.stop();
         // #endif /* STATISTICS */
     }
 
@@ -608,7 +632,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         boolean allSuccessful = true;
 
         // #ifdef STATISTICS
-        SOP_INCOMING_PUT_ANON.enter(chunkIDs.length);
+        SOP_INCOMING_PUT_ANON.start(chunkIDs.length);
         // #endif /* STATISTICS */
 
         Map<BackupRange, ArrayList<ChunkAnon>> remoteChunksByBackupRange = new TreeMap<>();
@@ -629,7 +653,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                 if (m_backup.isActive()) {
                     // sort by backup peers
                     BackupRange backupRange = m_backup.getBackupRange(chunkIDs[i]);
-                    ArrayList<ChunkAnon> remoteChunksOfBackupRange = remoteChunksByBackupRange.computeIfAbsent(backupRange, k -> new ArrayList<>());
+                    ArrayList<ChunkAnon> remoteChunksOfBackupRange = remoteChunksByBackupRange.computeIfAbsent(
+                            backupRange, k -> new ArrayList<>());
                     remoteChunksOfBackupRange.add(new ChunkAnon(chunkIDs[i], data[i]));
                 }
             }
@@ -683,7 +708,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                         // #endif /* LOGGER == TRACE */
 
                         try {
-                            m_network.sendMessage(new LogAnonMessage(backupPeer.getNodeID(), backupRange.getRangeID(), chunks));
+                            m_network.sendMessage(new LogAnonMessage(backupPeer.getNodeID(), backupRange.getRangeID(),
+                                    chunks));
                         } catch (final NetworkException ignore) {
 
                         }
@@ -693,7 +719,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         }
 
         // #ifdef STATISTICS
-        SOP_INCOMING_PUT_ANON.leave();
+        SOP_INCOMING_PUT_ANON.stop();
         // #endif /* STATISTICS */
     }
 }

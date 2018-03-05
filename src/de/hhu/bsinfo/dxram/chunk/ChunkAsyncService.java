@@ -18,6 +18,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
@@ -35,12 +38,10 @@ import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
+import de.hhu.bsinfo.dxutils.stats.ThroughputPool;
+import de.hhu.bsinfo.dxutils.stats.Value;
 
 /**
  * This service provides access to the backend storage system.
@@ -49,9 +50,15 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.02.2016
  */
 public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceConfig> implements MessageReceiver {
-    // statistics recording
-    private static final StatisticsOperation SOP_PUT_ASYNC = StatisticsRecorderManager.getOperation(ChunkAsyncService.class, "PutAsync");
-    private static final StatisticsOperation SOP_INCOMING_PUT_ASYNC = StatisticsRecorderManager.getOperation(ChunkAsyncService.class, "IncomingPutAsync");
+    private static final ThroughputPool SOP_PUT_ASYNC = new ThroughputPool(ChunkAnonService.class, "PutAsync",
+            Value.Base.B_10);
+    private static final ThroughputPool SOP_INCOMING_PUT_ASYNC = new ThroughputPool(ChunkAnonService.class,
+            "IncomingPutAsync", Value.Base.B_10);
+
+    static {
+        StatisticsManager.get().registerOperation(ChunkAsyncService.class, SOP_PUT_ASYNC);
+        StatisticsManager.get().registerOperation(ChunkAsyncService.class, SOP_INCOMING_PUT_ASYNC);
+    }
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -98,13 +105,13 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
             // #endif /* LOGGER == TRACE */
         } else {
             // #if LOGGER == TRACE
-            LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation, p_dataStructures.length,
-                    ChunkID.toHexString(p_dataStructures[0].getID()));
+            LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation,
+                    p_dataStructures.length, ChunkID.toHexString(p_dataStructures[0].getID()));
             // #endif /* LOGGER == TRACE */
         }
 
         // #ifdef STATISTICS
-        SOP_PUT_ASYNC.enter(p_dataStructures.length);
+        SOP_PUT_ASYNC.start(p_dataStructures.length);
         // #endif /* STATISTICS */
 
         Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<>();
@@ -145,7 +152,8 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
                     dataStructure.setState(ChunkState.UNDEFINED);
                     short peer = location.getPrimaryPeer();
 
-                    ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
+                    ArrayList<DataStructure> remoteChunksOfPeer =
+                            remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
                     remoteChunksOfPeer.add(dataStructure);
                 } else if (location.getState() == LookupState.DOES_NOT_EXIST) {
                     dataStructure.setState(ChunkState.DOES_NOT_EXIST);
@@ -175,7 +183,8 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
             } else {
                 // Remote put
                 ArrayList<DataStructure> chunksToPut = entry.getValue();
-                PutMessage message = new PutMessage(peer, p_chunkUnlockOperation, chunksToPut.toArray(new DataStructure[chunksToPut.size()]));
+                PutMessage message = new PutMessage(peer, p_chunkUnlockOperation,
+                        chunksToPut.toArray(new DataStructure[chunksToPut.size()]));
                 try {
                     m_network.sendMessage(message);
                 } catch (final NetworkException e) {
@@ -195,7 +204,7 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
         }
 
         // #ifdef STATISTICS
-        SOP_PUT_ASYNC.leave();
+        SOP_PUT_ASYNC.stop();
         // #endif /* STATISTICS */
 
         if (p_dataStructures[0] == null) {
@@ -204,8 +213,8 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
             // #endif /* LOGGER == TRACE */
         } else {
             // #if LOGGER == TRACE
-            LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation, p_dataStructures.length,
-                    ChunkID.toHexString(p_dataStructures[0].getID()));
+            LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation,
+                    p_dataStructures.length, ChunkID.toHexString(p_dataStructures[0].getID()));
             // #endif /* LOGGER == TRACE */
         }
 
@@ -273,7 +282,8 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
      * Register network messages we use in here.
      */
     private void registerNetworkMessages() {
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_MESSAGE, PutMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_MESSAGE,
+                PutMessage.class);
     }
 
     /**
@@ -296,7 +306,7 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
         byte[][] data = p_request.getChunkData();
 
         // #ifdef STATISTICS
-        SOP_INCOMING_PUT_ASYNC.enter(chunkIDs.length);
+        SOP_INCOMING_PUT_ASYNC.start(chunkIDs.length);
         // #endif /* STATISTICS */
 
         m_memoryManager.lockAccess();
@@ -325,7 +335,7 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
         }
 
         // #ifdef STATISTICS
-        SOP_INCOMING_PUT_ASYNC.leave();
+        SOP_INCOMING_PUT_ASYNC.stop();
         // #endif /* STATISTICS */
     }
 }

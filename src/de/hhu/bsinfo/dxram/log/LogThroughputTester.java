@@ -26,12 +26,13 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
-import de.hhu.bsinfo.dxutils.stats.PrintStatistics;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 
 /**
  * Class for testing the logging and reorganization without starting DXRAM. Chunks are NOT send over network.
  * Example:
- * java -Dlog4j.configurationFile=config/log4j.xml -cp lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:dxram.jar
+ * java -Dlog4j.configurationFile=config/log4j.xml -cp lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:
+ * dxram.jar
  * de.hhu.bsinfo.dxram.log.LogThroughputTester
  * 10000000 10 1024
  *
@@ -120,7 +121,8 @@ public final class LogThroughputTester {
             e.printStackTrace();
         }
 
-        PrintStatistics.printStatisticsToOutput(System.out);
+        StatisticsManager.get().stopPeriodicPrinting();
+        StatisticsManager.get().printStatistics(System.out);
 
         System.exit(0);
     }
@@ -178,11 +180,16 @@ public final class LogThroughputTester {
      *         time difference between start and end.
      */
     private static void printResults(final long p_timeDiffNs) {
-        System.out.printf("[RESULTS]\n" + "[CHUNK SIZE] %d\n" + "[BATCH SIZE] %d\n" + "[RUNTIME] %d ms\n" + "[TIME PER CHUNK] %d ns\n" +
-                        "[THROUGHPUT] %f MB/s\n" + "[THROUGHPUT OVERHEAD] %f MB/s\n", ms_size, ms_batchSize, p_timeDiffNs / 1000 / 1000,
+        System.out.printf("[RESULTS]\n" + "[CHUNK SIZE] %d\n" + "[BATCH SIZE] %d\n" + "[RUNTIME] %d ms\n" +
+                        "[TIME PER CHUNK] %d ns\n" +
+                        "[THROUGHPUT] %f MB/s\n" + "[THROUGHPUT OVERHEAD] %f MB/s\n", ms_size, ms_batchSize,
+                p_timeDiffNs / 1000 / 1000,
                 ms_chunkCount != 0 ? p_timeDiffNs / ms_chunkCount : ms_chunkCount,
-                ms_chunkCount != 0 ? (double) ms_chunkCount * ms_size / 1024 / 1024 / ((double) p_timeDiffNs / 1000 / 1000 / 1000) : 0, ms_chunkCount != 0 ?
-                        (double) ms_chunkCount * (ms_size + ObjectSizeUtil.sizeofCompactedNumber(ms_size) + 10) / 1024 / 1024 /
+                ms_chunkCount != 0 ?
+                        (double) ms_chunkCount * ms_size / 1024 / 1024 / ((double) p_timeDiffNs / 1000 / 1000 / 1000) :
+                        0, ms_chunkCount != 0 ?
+                        (double) ms_chunkCount * (ms_size + ObjectSizeUtil.sizeofCompactedNumber(ms_size) + 10) / 1024 /
+                                1024 /
                                 ((double) p_timeDiffNs / 1000 / 1000 / 1000) : 0);
     }
 
@@ -202,7 +209,8 @@ public final class LogThroughputTester {
         public void run() {
             long chunkID = ((long) 2 << 48) + 1;
             int entrySize = ms_size + Long.BYTES + ObjectSizeUtil.sizeofCompactedNumber(ms_size);
-            int chunksPerRange = ms_backupRangeSize / (ms_size + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, ms_chunkCount, ms_size));
+            int chunksPerRange = ms_backupRangeSize / (ms_size + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(
+                    false, ms_chunkCount, ms_size));
 
             ByteBuffer buffer = ByteBuffer.allocateDirect(ms_batchSize * (ms_size + 8 + 4));
             buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -271,7 +279,8 @@ public final class LogThroughputTester {
                 }
                 timeRead += System.nanoTime() - start;
             }
-            System.out.println("DirectByteBuffer: write: " + timeWrite / 1000 + ", read: " + timeRead / 1000 + ", " + l2);
+            System.out.println(
+                    "DirectByteBuffer: write: " + timeWrite / 1000 + ", read: " + timeRead / 1000 + ", " + l2);
 
             timeWrite = 0;
             timeRead = 0;
@@ -304,7 +313,9 @@ public final class LogThroughputTester {
                 }
                 timeRead += System.nanoTime() - start;
             }
-            System.out.println("DirectByteBuffer littleEndian: write: " + timeWrite / 1000 + ", read: " + timeRead / 1000 + ", " + l2);
+            System.out.println(
+                    "DirectByteBuffer littleEndian: write: " + timeWrite / 1000 + ", read: " + timeRead / 1000 + ", " +
+                            l2);
 
             timeWrite = 0;
             timeRead = 0;
@@ -369,7 +380,9 @@ public final class LogThroughputTester {
                 }
                 timeRead += System.nanoTime() - start;
             }
-            System.out.println("HeapByteBuffer littleEndian: write: " + timeWrite / 1000 + ", read: " + timeRead / 1000 + ", " + l2);
+            System.out.println(
+                    "HeapByteBuffer littleEndian: write: " + timeWrite / 1000 + ", read: " + timeRead / 1000 + ", " +
+                            l2);
 
             timeWrite = 0;
             timeRead = 0;
@@ -400,8 +413,10 @@ public final class LogThroughputTester {
 
                 start = System.nanoTime();
                 for (int i = 0; i < length / 13; i++) {
-                    long l = arrays[j][i * 13] + (arrays[j][i * 13 + 1] << 8) + (arrays[j][i * 13 + 2] << 16) + ((long) arrays[j][i * 13 + 3] << 24) +
-                            ((long) arrays[j][i * 13 + 4] << 32) + ((long) arrays[j][i * 13 + 5] << 40) + ((long) arrays[j][i * 13 + 6] << 48) +
+                    long l = arrays[j][i * 13] + (arrays[j][i * 13 + 1] << 8) + (arrays[j][i * 13 + 2] << 16) +
+                            ((long) arrays[j][i * 13 + 3] << 24) +
+                            ((long) arrays[j][i * 13 + 4] << 32) + ((long) arrays[j][i * 13 + 5] << 40) +
+                            ((long) arrays[j][i * 13 + 6] << 48) +
                             ((long) arrays[j][i * 13 + 7] << 56);
 
                     short sh = (short) (arrays[j][i * 13 + 8] + (arrays[j][i * 13 + 9] << 8));
@@ -458,11 +473,14 @@ public final class LogThroughputTester {
 
                 long chunksLogged = ms_chunksLogged;
                 long timeDiff = System.nanoTime() - ms_timeStart;
-                System.out.printf("[PROGRESS] %d sec: Logged %d%% (%d), Throughput %f, Throughput(Overhead) %f\n", timeDiff / 1000 / 1000 / 1000,
+                System.out.printf("[PROGRESS] %d sec: Logged %d%% (%d), Throughput %f, Throughput(Overhead) %f\n",
+                        timeDiff / 1000 / 1000 / 1000,
                         ms_chunkCount != 0 ? (int) ((float) chunksLogged / ms_chunkCount * 100) : 0, chunksLogged,
-                        (double) chunksLogged * ms_size / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000), (double) chunksLogged *
+                        (double) chunksLogged * ms_size / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000),
+                        (double) chunksLogged *
                                 (ms_size + ObjectSizeUtil.sizeofCompactedNumber(ms_size) +
-                                        AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, ms_chunkCount / 2, ms_size)) / 1024 / 1024 /
+                                        AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, ms_chunkCount / 2,
+                                                ms_size)) / 1024 / 1024 /
                                 ((double) timeDiff / 1000 / 1000 / 1000));
             }
         }

@@ -22,8 +22,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.dxutils.jni.JNIFileDirect;
 import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
-import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
+import de.hhu.bsinfo.dxutils.stats.TimePool;
+import de.hhu.bsinfo.dxutils.stats.ValuePool;
 
 /**
  * Skeleton for a log
@@ -31,11 +32,17 @@ import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 06.06.2014
  */
 public abstract class AbstractLog {
+    private static final TimePool SOP_WRITE_PRIMARY_LOG = new TimePool(AbstractLog.class, "WritePrimaryLog");
+    private static final TimePool SOP_WRITE_SECONDARY_LOG = new TimePool(AbstractLog.class, "WriteSecondaryLog");
+    private static final TimePool SOP_READ_SECONDARY_LOG = new TimePool(AbstractLog.class, "ReadSecondaryLog");
+    private static final ValuePool SOP_WRITE_SECONDARY_LOG_DATA = new ValuePool(AbstractLog.class, "WriteSecondaryLog");
 
-    private static final String RECORDER = "AbstractLog";
-    private static final StatisticsOperation SOP_WRITE_PRIMARY_LOG = StatisticsRecorderManager.getOperation(RECORDER, "WritePrimaryLog");
-    private static final StatisticsOperation SOP_WRITE_SECONDARY_LOG = StatisticsRecorderManager.getOperation(RECORDER, "WriteSecondaryLog");
-    private static final StatisticsOperation SOP_READ_SECONDARY_LOG = StatisticsRecorderManager.getOperation(RECORDER, "ReadSecondaryLog");
+    static {
+        StatisticsManager.get().registerOperation(AbstractLog.class, SOP_WRITE_PRIMARY_LOG);
+        StatisticsManager.get().registerOperation(AbstractLog.class, SOP_WRITE_SECONDARY_LOG);
+        StatisticsManager.get().registerOperation(AbstractLog.class, SOP_READ_SECONDARY_LOG);
+        StatisticsManager.get().registerOperation(AbstractLog.class, SOP_WRITE_SECONDARY_LOG_DATA);
+    }
 
     private static byte[] ms_nullSegment = new byte[1];
     private static DirectByteBufferWrapper ms_nullSegmentWrapper = new DirectByteBufferWrapper();
@@ -65,7 +72,8 @@ public abstract class AbstractLog {
      * @param p_mode
      *         the HarddriveAccessMode
      */
-    AbstractLog(final File p_logFile, final long p_logSize, HarddriveAccessMode p_mode, final int p_logSegmentSize, final int p_flashPageSize) {
+    AbstractLog(final File p_logFile, final long p_logSize, HarddriveAccessMode p_mode, final int p_logSegmentSize,
+            final int p_flashPageSize) {
         m_logFile = p_logFile;
         m_logFileSize = p_logSize;
         m_totalUsableSpace = p_logSize;
@@ -118,7 +126,8 @@ public abstract class AbstractLog {
      * @throws IOException
      *         if reading the random access file failed
      */
-    static void readFromSecondaryLogFile(final DirectByteBufferWrapper p_bufferWrapper, final int p_length, final long p_readPos,
+    static void readFromSecondaryLogFile(final DirectByteBufferWrapper p_bufferWrapper, final int p_length,
+            final long p_readPos,
             final RandomAccessFile p_randomAccessFile) throws IOException {
         final long bytesUntilEnd = p_randomAccessFile.length() - p_readPos;
 
@@ -126,14 +135,14 @@ public abstract class AbstractLog {
             assert p_length <= bytesUntilEnd;
 
             // #ifdef STATISTICS
-            SOP_READ_SECONDARY_LOG.enter();
+            SOP_READ_SECONDARY_LOG.start();
             // #endif /* STATISTICS */
 
             p_randomAccessFile.seek(p_readPos);
             p_randomAccessFile.readFully(p_bufferWrapper.getBuffer().array(), 0, p_length);
 
             // #ifdef STATISTICS
-            SOP_READ_SECONDARY_LOG.leave();
+            SOP_READ_SECONDARY_LOG.stop();
             // #endif /* STATISTICS */
         }
     }
@@ -152,7 +161,8 @@ public abstract class AbstractLog {
      * @param p_mode
      *         the HarddriveAccessMode
      */
-    static void readFromSecondaryLogFile(final DirectByteBufferWrapper p_bufferWrapper, final int p_length, final long p_readPos, final int p_fileID,
+    static void readFromSecondaryLogFile(final DirectByteBufferWrapper p_bufferWrapper, final int p_length,
+            final long p_readPos, final int p_fileID,
             final HarddriveAccessMode p_mode) {
 
         if (p_mode == HarddriveAccessMode.ODIRECT) {
@@ -162,13 +172,13 @@ public abstract class AbstractLog {
                 assert p_length <= bytesUntilEnd;
 
                 // #ifdef STATISTICS
-                SOP_READ_SECONDARY_LOG.enter();
+                SOP_READ_SECONDARY_LOG.start();
                 // #endif /* STATISTICS */
 
                 JNIFileDirect.read(p_fileID, p_bufferWrapper.getAddress(), 0, p_length, p_readPos);
 
                 // #ifdef STATISTICS
-                SOP_READ_SECONDARY_LOG.leave();
+                SOP_READ_SECONDARY_LOG.stop();
                 // #endif /* STATISTICS */
             }
         } else {
@@ -178,13 +188,13 @@ public abstract class AbstractLog {
                 assert p_length <= bytesUntilEnd;
 
                 // #ifdef STATISTICS
-                SOP_READ_SECONDARY_LOG.enter();
+                SOP_READ_SECONDARY_LOG.start();
                 // #endif /* STATISTICS */
 
                 JNIFileRaw.read(p_fileID, p_bufferWrapper.getAddress(), 0, p_length, p_readPos);
 
                 // #ifdef STATISTICS
-                SOP_READ_SECONDARY_LOG.leave();
+                SOP_READ_SECONDARY_LOG.stop();
                 // #endif /* STATISTICS */
             }
         }
@@ -324,14 +334,15 @@ public abstract class AbstractLog {
      * @throws IOException
      *         if reading the random access file failed
      */
-    final void readFromSecondaryLog(final DirectByteBufferWrapper p_bufferWrapper, final int p_length, final long p_readPos, final boolean p_accessed)
+    final void readFromSecondaryLog(final DirectByteBufferWrapper p_bufferWrapper, final int p_length,
+            final long p_readPos, final boolean p_accessed)
             throws IOException {
         final long bytesUntilEnd = m_totalUsableSpace - p_readPos;
 
         if (p_length > 0) {
 
             // #ifdef STATISTICS
-            SOP_READ_SECONDARY_LOG.enter();
+            SOP_READ_SECONDARY_LOG.start();
             // #endif /* STATISTICS */
 
             if (p_accessed) {
@@ -358,7 +369,7 @@ public abstract class AbstractLog {
             }
 
             // #ifdef STATISTICS
-            SOP_READ_SECONDARY_LOG.leave();
+            SOP_READ_SECONDARY_LOG.stop();
             // #endif /* STATISTICS */
         }
     }
@@ -376,12 +387,13 @@ public abstract class AbstractLog {
      * @throws IOException
      *         if reading the random access file failed
      */
-    final long appendToPrimaryLog(final DirectByteBufferWrapper p_bufferWrapper, final int p_length, final long p_writePos) throws IOException {
+    final long appendToPrimaryLog(final DirectByteBufferWrapper p_bufferWrapper, final int p_length,
+            final long p_writePos) throws IOException {
         long ret;
         final long bytesUntilEnd;
 
         // #ifdef STATISTICS
-        SOP_WRITE_PRIMARY_LOG.enter();
+        SOP_WRITE_PRIMARY_LOG.start();
         // #endif /* STATISTICS */
 
         if (p_writePos + p_length <= m_totalUsableSpace) {
@@ -389,11 +401,13 @@ public abstract class AbstractLog {
                 m_randomAccessFile.seek(p_writePos);
                 m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), 0, p_length);
             } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), 0, p_length, p_writePos, (byte) 0, (byte) 0) < 0) {
+                if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), 0, p_length, p_writePos, (byte) 0,
+                        (byte) 0) < 0) {
                     throw new IOException("Error writing to log");
                 }
             } else {
-                if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), 0, p_length, p_writePos, (byte) 0, (byte) 0) < 0) {
+                if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), 0, p_length, p_writePos, (byte) 0,
+                        (byte) 0) < 0) {
                     throw new IOException("Error writing to log");
                 }
             }
@@ -408,20 +422,25 @@ public abstract class AbstractLog {
                 m_randomAccessFile.seek(p_writePos);
                 m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), 0, (int) bytesUntilEnd);
                 m_randomAccessFile.seek(0);
-                m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), (int) bytesUntilEnd, p_length - (int) bytesUntilEnd);
+                m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), (int) bytesUntilEnd,
+                        p_length - (int) bytesUntilEnd);
             } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), 0, (int) bytesUntilEnd, p_writePos, (byte) 0, (byte) 0) < 0) {
+                if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), 0, (int) bytesUntilEnd, p_writePos,
+                        (byte) 0, (byte) 0) < 0) {
                     throw new IOException("Error writing to log");
                 }
-                if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), (int) bytesUntilEnd, p_length - (int) bytesUntilEnd, 0, (byte) 0, (byte) 0) <
+                if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), (int) bytesUntilEnd,
+                        p_length - (int) bytesUntilEnd, 0, (byte) 0, (byte) 0) <
                         0) {
                     throw new IOException("Error writing to log");
                 }
             } else {
-                if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), 0, (int) bytesUntilEnd, p_writePos, (byte) 0, (byte) 0) < 0) {
+                if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), 0, (int) bytesUntilEnd, p_writePos,
+                        (byte) 0, (byte) 0) < 0) {
                     throw new IOException("Error writing to log");
                 }
-                if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), (int) bytesUntilEnd, p_length - (int) bytesUntilEnd, 0, (byte) 0, (byte) 0) < 0) {
+                if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), (int) bytesUntilEnd,
+                        p_length - (int) bytesUntilEnd, 0, (byte) 0, (byte) 0) < 0) {
                     throw new IOException("Error writing to log");
                 }
             }
@@ -430,7 +449,7 @@ public abstract class AbstractLog {
         }
 
         // #ifdef STATISTICS
-        SOP_WRITE_PRIMARY_LOG.leave();
+        SOP_WRITE_PRIMARY_LOG.stop();
         // #endif /* STATISTICS */
 
         return ret;
@@ -452,13 +471,15 @@ public abstract class AbstractLog {
      * @throws IOException
      *         if reading the random access file failed
      */
-    final void writeToSecondaryLog(final DirectByteBufferWrapper p_bufferWrapper, final int p_bufferOffset, final long p_readPos, final int p_length,
+    final void writeToSecondaryLog(final DirectByteBufferWrapper p_bufferWrapper, final int p_bufferOffset,
+            final long p_readPos, final int p_length,
             final boolean p_accessed) throws IOException {
 
         if (p_length > 0) {
 
             // #ifdef STATISTICS
-            SOP_WRITE_SECONDARY_LOG.enter(p_length);
+            SOP_WRITE_SECONDARY_LOG_DATA.add(p_length);
+            SOP_WRITE_SECONDARY_LOG.start();
             // #endif /* STATISTICS */
 
             if (p_bufferWrapper == null && p_length == 1) {
@@ -466,11 +487,13 @@ public abstract class AbstractLog {
                     m_randomAccessFile.seek(p_readPos);
                     m_randomAccessFile.write(ms_nullSegment, 0, p_length);
                 } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                    if (JNIFileDirect.write(m_fileID, ms_nullSegmentWrapper.getAddress(), 0, m_flashPageSize, p_readPos, (byte) 0, (byte) 0) < 0) {
+                    if (JNIFileDirect.write(m_fileID, ms_nullSegmentWrapper.getAddress(), 0, m_flashPageSize, p_readPos,
+                            (byte) 0, (byte) 0) < 0) {
                         throw new IOException("Error writing to log");
                     }
                 } else {
-                    if (JNIFileRaw.write(m_fileID, ms_nullSegmentWrapper.getAddress(), 0, m_flashPageSize, p_readPos, (byte) 0, (byte) 0) < 0) {
+                    if (JNIFileRaw.write(m_fileID, ms_nullSegmentWrapper.getAddress(), 0, m_flashPageSize, p_readPos,
+                            (byte) 0, (byte) 0) < 0) {
                         throw new IOException("Error writing to log");
                     }
                 }
@@ -496,11 +519,13 @@ public abstract class AbstractLog {
                     m_randomAccessFile.seek(p_readPos);
                     m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), p_bufferOffset, p_length);
                 } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                    if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), p_bufferOffset, p_length, p_readPos, (byte) 0, (byte) 0) < 0) {
+                    if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), p_bufferOffset, p_length, p_readPos,
+                            (byte) 0, (byte) 0) < 0) {
                         throw new IOException("Error writing to log");
                     }
                 } else {
-                    if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), p_bufferOffset, p_length, p_readPos, (byte) 0, (byte) 0) < 0) {
+                    if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), p_bufferOffset, p_length, p_readPos,
+                            (byte) 0, (byte) 0) < 0) {
                         throw new IOException("Error writing to log");
                     }
                 }
@@ -516,7 +541,7 @@ public abstract class AbstractLog {
             }
 
             // #ifdef STATISTICS
-            SOP_WRITE_SECONDARY_LOG.leave();
+            SOP_WRITE_SECONDARY_LOG.stop();
             // #endif /* STATISTICS */
 
         }

@@ -15,6 +15,11 @@ package de.hhu.bsinfo.dxram.lock;
 
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.NetworkDestinationUnreachableException;
+import de.hhu.bsinfo.dxnet.NetworkResponseCancelledException;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -33,26 +38,28 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxutils.stats.StatisticsOperation;
-import de.hhu.bsinfo.dxutils.stats.StatisticsRecorderManager;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.NetworkDestinationUnreachableException;
-import de.hhu.bsinfo.dxnet.NetworkResponseCancelledException;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
+import de.hhu.bsinfo.dxutils.stats.TimePool;
 
 /**
  * Lock service providing exclusive locking of chunks/data structures.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> implements MessageReceiver, EventListener<NodeFailureEvent> {
-    // statistics recorder
-    private static final StatisticsOperation SOP_LOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "Lock");
-    private static final StatisticsOperation SOP_UNLOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "Unlock");
-    private static final StatisticsOperation SOP_INCOMING_LOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "IncomingLock");
-    private static final StatisticsOperation SOP_INCOMING_UNLOCK = StatisticsRecorderManager.getOperation(PeerLockService.class, "IncomingUnlock");
+public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
+        implements MessageReceiver, EventListener<NodeFailureEvent> {
+    private static final TimePool SOP_LOCK = new TimePool(PeerLockService.class, "Lock");
+    private static final TimePool SOP_UNLOCK = new TimePool(PeerLockService.class, "Unlock");
+    private static final TimePool SOP_INCOMING_LOCK = new TimePool(PeerLockService.class, "IncomingLock");
+    private static final TimePool SOP_INCOMING_UNLOCK = new TimePool(PeerLockService.class, "IncomingUnlock");
+
+    static {
+        StatisticsManager.get().registerOperation(PeerLockService.class, SOP_LOCK);
+        StatisticsManager.get().registerOperation(PeerLockService.class, SOP_UNLOCK);
+        StatisticsManager.get().registerOperation(PeerLockService.class, SOP_INCOMING_LOCK);
+        StatisticsManager.get().registerOperation(PeerLockService.class, SOP_INCOMING_UNLOCK);
+    }
 
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -100,7 +107,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
         assert p_chunkID != ChunkID.INVALID_ID;
 
         // #ifdef STATISTICS
-        SOP_LOCK.enter();
+        SOP_LOCK.start();
         // #endif /* STATISTICS */
 
         ErrorCode err = ErrorCode.SUCCESS;
@@ -177,7 +184,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
         }
 
         // #ifdef STATISTICS
-        SOP_LOCK.leave();
+        SOP_LOCK.stop();
         // #endif /* STATISTICS */
 
         return err;
@@ -186,7 +193,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
     @Override
     public ErrorCode unlock(final boolean p_writeLock, final long p_chunkID) {
         // #ifdef STATISTICS
-        SOP_UNLOCK.enter();
+        SOP_UNLOCK.start();
         // #endif /* STATISTICS */
 
         ErrorCode err = ErrorCode.SUCCESS;
@@ -238,7 +245,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
         }
 
         // #ifdef STATISTICS
-        SOP_UNLOCK.leave();
+        SOP_UNLOCK.stop();
         // #endif /* STATISTICS */
 
         return err;
@@ -248,7 +255,8 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
     public void eventTriggered(final NodeFailureEvent p_event) {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
             // #if LOGGER >= DEBUG
-            LOGGER.debug("Connection to peer 0x%X lost, unlocking all chunks locked by lost instance", p_event.getNodeID());
+            LOGGER.debug("Connection to peer 0x%X lost, unlocking all chunks locked by lost instance",
+                    p_event.getNodeID());
             // #endif /* LOGGER >= DEBUG */
 
             if (!m_lock.unlockAllByNodeID(p_event.getNodeID())) {
@@ -312,11 +320,16 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
     protected boolean startService(final DXRAMContext.Config p_config) {
         m_event.registerListener(this, NodeFailureEvent.class);
 
-        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, LockRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, UnlockMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST, GetLockedListRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_RESPONSE, GetLockedListResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST,
+                LockRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE,
+                LockResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE,
+                UnlockMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE,
+                LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST, GetLockedListRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE,
+                LockMessages.SUBTYPE_GET_LOCKED_LIST_RESPONSE, GetLockedListResponse.class);
 
         m_network.register(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, this);
         m_network.register(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, this);
@@ -340,13 +353,13 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
         boolean success;
 
         // #ifdef STATISTICS
-        SOP_INCOMING_LOCK.enter();
+        SOP_INCOMING_LOCK.start();
         // #endif /* STATISTICS */
 
         // the host handles the timeout as we don't want to block the message receiver thread
         // for too long, execute a tryLock instead
-        success = m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(), p_request.isWriteLockOperation(),
-                (int) getConfig().getRemoteLockTryTimeout().getMs());
+        success = m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(),
+                p_request.isWriteLockOperation(), (int) getConfig().getRemoteLockTryTimeout().getMs());
 
         try {
             if (success) {
@@ -359,7 +372,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
         }
 
         // #ifdef STATISTICS
-        SOP_INCOMING_LOCK.leave();
+        SOP_INCOMING_LOCK.stop();
         // #endif /* STATISTICS */
     }
 
@@ -371,13 +384,13 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig> 
      */
     private void incomingUnlockMessage(final UnlockMessage p_message) {
         // #ifdef STATISTICS
-        SOP_INCOMING_UNLOCK.enter();
+        SOP_INCOMING_UNLOCK.start();
         // #endif /* STATISTICS */
 
         m_lock.unlock(ChunkID.getLocalID(p_message.getChunkID()), m_boot.getNodeID(), p_message.isWriteLockOperation());
 
         // #ifdef STATISTICS
-        SOP_INCOMING_UNLOCK.leave();
+        SOP_INCOMING_UNLOCK.stop();
         // #endif /* STATISTICS */
     }
 
