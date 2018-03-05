@@ -13,10 +13,11 @@
 
 package de.hhu.bsinfo.dxterm.cmd;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 
-import de.hhu.bsinfo.dxutils.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
@@ -36,28 +37,20 @@ public class TcmdStatsprint extends AbstractTerminalCommand {
 
     @Override
     public String getHelp() {
-        return "Prints all statistics\n" + "Usage: statsprint [className]\n" + "  className: Filter statistics by class name, optional";
+        return "Prints all statistics\n" + "Usage: statsprint";
     }
 
     @Override
-    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
+    public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout,
+            final TerminalServerStdin p_stdin,
             final TerminalServiceAccessor p_services) {
-        String className = p_cmd.getArgString(0, null);
-
         StatisticsService statistics = p_services.getService(StatisticsService.class);
 
-        if (className == null) {
-            for (StatisticsRecorder rec : statistics.getRecorders()) {
-                p_stdout.println(rec.toString());
-            }
-        } else {
-            StatisticsRecorder rec = statistics.getRecorder(className);
-            if (rec == null) {
-                p_stdout.printlnErr("No such recorder available");
-            } else {
-                p_stdout.println(rec.toString());
-            }
-        }
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(os);
+
+        statistics.getManager().printStatistics(ps);
+        p_stdout.println(os.toString());
     }
 
     @Override

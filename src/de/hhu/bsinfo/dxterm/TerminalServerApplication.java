@@ -81,7 +81,6 @@ import de.hhu.bsinfo.dxterm.cmd.TcmdNodelist;
 import de.hhu.bsinfo.dxterm.cmd.TcmdNodeshutdown;
 import de.hhu.bsinfo.dxterm.cmd.TcmdNodewait;
 import de.hhu.bsinfo.dxterm.cmd.TcmdStatsprint;
-import de.hhu.bsinfo.dxterm.cmd.TcmdStatsrecorders;
 import de.hhu.bsinfo.dxterm.cmd.TcmdTmpcreate;
 import de.hhu.bsinfo.dxterm.cmd.TcmdTmpget;
 import de.hhu.bsinfo.dxterm.cmd.TcmdTmpput;
@@ -89,11 +88,13 @@ import de.hhu.bsinfo.dxterm.cmd.TcmdTmpremove;
 import de.hhu.bsinfo.dxterm.cmd.TcmdTmpstatus;
 
 /**
- * Terminal server running on a DXRAM peer as a DXRAM application. Thin clients can connect to the server and execute terminal commands on the peer
+ * Terminal server running on a DXRAM peer as a DXRAM application. Thin clients can connect to the server and execute
+ * terminal commands on the peer
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-public class TerminalServerApplication extends AbstractApplication implements TerminalSession.Listener, TerminalServiceAccessor {
+public class TerminalServerApplication extends AbstractApplication implements TerminalSession.Listener,
+        TerminalServiceAccessor {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TerminalServerApplication.class.getSimpleName());
 
     @Expose
@@ -289,7 +290,6 @@ public class TerminalServerApplication extends AbstractApplication implements Te
 
         if (isServiceAvailable(StatisticsService.class)) {
             m_terminalServer.registerTerminalCommand(new TcmdStatsprint());
-            m_terminalServer.registerTerminalCommand(new TcmdStatsrecorders());
         }
 
         if (isServiceAvailable(SynchronizationService.class)) {
