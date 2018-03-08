@@ -13,19 +13,19 @@ the DXRAMMain class as the application entry point and the following VM argument
 ```
 -Dlog4j.configurationFile=config/log4j.xml
 -Ddxram.config=config/dxram.json
--Ddxram.m_engineSettings.m_address.m_ip=127.0.0.1
--Ddxram.m_engineSettings.m_address.m_port=22221
--Ddxram.m_engineSettings.m_role=Superpeer
+-Ddxram.m_config.m_engineConfig.m_address.m_ip=127.0.0.1
+-Ddxram.m_config.m_engineConfig.m_address.m_port=22221
+-Ddxram.m_config.m_engineConfig.m_role=Superpeer
 ```
 ...and the Peer:
 ```
 -Dlog4j.configurationFile=config/log4j.xml
 -Ddxram.config=config/dxram.json
--Ddxram.m_engineSettings.m_address.m_ip=127.0.0.1
--Ddxram.m_engineSettings.m_address.m_port=22222
--Ddxram.m_engineSettings.m_role=Peer
--Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_value=128
--Ddxram.m_components[MemoryManagerComponent].m_keyValueStoreSize.m_unit=mb
+-Ddxram.m_config.m_engineConfig.m_address.m_ip=127.0.0.1
+-Ddxram.m_config.m_engineConfig.m_address.m_port=22222
+-Ddxram.m_config.m_engineConfig.m_role=Peer
+-Ddxram.m_config.m_componentConfigs[MemoryManagerComponentConfig].m_keyValueStoreSize.m_value=128
+-Ddxram.m_config.m_componentConfigs[MemoryManagerComponentConfig].m_keyValueStoreSize.m_unit=mb
 ```
 
 Or use our deployment system [cdepl](

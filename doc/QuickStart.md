@@ -42,13 +42,6 @@ we recommend using our deployment system
 for example scripts for deploying DXRAM and documentation about the
 deployment process.
 
-A bash script to easily deploy instances to either localhost or nodes
-of a cluster is included (*script/deploy/deploy.sh*). We recommend running
-the *env.sh* script from the DXRAM root which sets up environment variables.
-This allows you to run the deploy script using the command *dxram-deploy*
-without having to care about the script's location.
-The script supports three modes of deployment.
-
 ## Running terminal client
 Once the deployment completed, you can start a terminal client to
 connect to a DXRAM peer running a terminal server using the
