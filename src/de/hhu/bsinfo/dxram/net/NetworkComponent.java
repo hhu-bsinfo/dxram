@@ -48,7 +48,8 @@ import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentConfig> implements EventListener<NodeFailureEvent>, ConnectionManagerListener {
+public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentConfig>
+        implements EventListener<NodeFailureEvent>, ConnectionManagerListener {
     // component dependencies
     private AbstractBootComponent m_boot;
     private EventComponent m_event;
@@ -79,8 +80,8 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
 
         if (p_type == Messages.DEFAULT_MESSAGES_TYPE) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Registering network message %s for type %s and subtype %s failed, type 0 is used for internal messages and not allowed",
-                    p_class.getSimpleName(), p_type, p_subtype);
+            LOGGER.error("Registering network message %s for type %s and subtype %s failed, type 0 is used for " +
+                    "internal messages and not allowed", p_class.getSimpleName(), p_type, p_subtype);
             // #endif /* LOGGER >= ERROR */
             return;
         }
@@ -307,7 +308,8 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
                         InetAddress currentAddress = addresses.nextElement();
                         if (myAddress.equals(currentAddress)) {
                             // #if LOGGER >= INFO
-                            LOGGER.info("%s is bound to %s", myAddress.getHostAddress(), currentNetworkInterface.getDisplayName());
+                            LOGGER.info("%s is bound to %s", myAddress.getHostAddress(),
+                                    currentNetworkInterface.getDisplayName());
                             // #endif /* LOGGER >= INFO */
                             found = true;
                             break outerloop;
@@ -330,7 +332,8 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
             DXRAMJNIManager.loadJNIModule("MsgrcJNIBinding");
         }
 
-        m_dxnet = new DXNet(getConfig().getCoreConfig(), getConfig().getNIOConfig(), getConfig().getIBConfig(), null, new NodeMappings(m_boot));
+        m_dxnet = new DXNet(getConfig().getCoreConfig(), getConfig().getNIOConfig(), getConfig().getIBConfig(), null,
+                new NodeMappings(m_boot));
 
         m_dxnet.setConnectionManagerListener(this);
 
