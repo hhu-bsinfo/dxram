@@ -327,7 +327,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
                 }
             }
         } else {
-            DXRAMJNIManager.loadJNIModule("JNIIbdxnet");
+            DXRAMJNIManager.loadJNIModule("MsgrcJNIBinding");
         }
 
         m_dxnet = new DXNet(getConfig().getCoreConfig(), getConfig().getNIOConfig(), getConfig().getIBConfig(), null, new NodeMappings(m_boot));
