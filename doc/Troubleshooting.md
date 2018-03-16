@@ -10,3 +10,11 @@ If you are experiencing network request timeouts but the target node to send the
 under the *NetworkComponent* section.
 
 Furthermore, this can also happen on very high loads (sending too many messages and the other node can't keep up with processing). Depending on your application/use case, you can ignore these errors or handle them accordingly by retrying the transmission.
+
+# Ethernet network TCP buffer sizes
+
+If you get the warning
+```
+Send buffer size could not be set properly. Check OS settings! Requested: XXX, actual: XXX
+```
+you should consider setting the TCP buffer sizes (see */proc/sys/net/core*) to the requested value. DXRAM does still work without setting them to the requested value but you won't get the best network performance.
