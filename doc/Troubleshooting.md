@@ -18,3 +18,9 @@ If you get the warning
 Send buffer size could not be set properly. Check OS settings! Requested: XXX, actual: XXX
 ```
 you should consider setting the TCP buffer sizes (see */proc/sys/net/core*) to the requested value. DXRAM does still work without setting them to the requested value but you won't get the best network performance.
+
+# Network error "Could not bind network address"
+
+It's very likely that you are already running a DXRAM instance or another application which uses the current port
+assigned. Either shotdown that process or use another port for the DXRAM instance you want to start.
+>>>>>>> doc: Update troubleshooting
