@@ -30,7 +30,8 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
      * Constructor
      */
     public ApplicationComponent() {
-        super(DXRAMComponentOrder.Init.APPLICATION, DXRAMComponentOrder.Shutdown.APPLICATION, ApplicationComponentConfig.class);
+        super(DXRAMComponentOrder.Init.APPLICATION, DXRAMComponentOrder.Shutdown.APPLICATION,
+                ApplicationComponentConfig.class);
     }
 
     /**
@@ -133,23 +134,23 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
             return classes;
         }
 
-        while(true) {
+        while (true) {
             String classname = getNextClass(jarFile, p_jar);
 
-            if(classname == null) {
+            if (classname == null) {
                 break;
-            } else if(classname.isEmpty()) {
+            } else if (classname.isEmpty()) {
                 continue;
             }
 
             try {
                 Class<?> clazz = Class.forName(classname, true, ucl);
 
-                if(AbstractApplicationDependency.class.isAssignableFrom(clazz)) {
+                if (AbstractApplicationDependency.class.equals(clazz.getSuperclass())) {
                     // #if LOGGER >= ERROR
                     LOGGER.info("Found Dependency Class: " + clazz.getName());
                     // #endif /* LOGGER >= ERROR */
-                    String[] dependencies = ((AbstractApplicationDependency)clazz.newInstance()).getDependency();
+                    String[] dependencies = ((AbstractApplicationDependency) clazz.newInstance()).getDependency();
                     loadDeps(dependencies);
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
@@ -172,16 +173,16 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
         while (true) {
             String classname = getNextClass(jarFile, p_jar);
 
-            if(classname == null) {
+            if (classname == null) {
                 break;
-            } else if(classname.isEmpty()) {
+            } else if (classname.isEmpty()) {
                 continue;
             }
 
             try {
                 Class<?> clazz = Class.forName(classname, true, ucl);
 
-                if (AbstractApplication.class.isAssignableFrom(clazz)) {
+                if (AbstractApplication.class.equals(clazz.getSuperclass())) {
                     // #if LOGGER >= INFO
                     LOGGER.info("Found application %s", clazz.getName());
                     // #endif /* LOGGER >= INFO */
@@ -197,7 +198,8 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
                 // #endif /* LOGGER >= ERROR */
             } catch (final NoSuchMethodException e) {
                 // #if LOGGER >= ERROR
-                LOGGER.error("Could not load class %s in jar %s, missing default constructor", classname, p_jar.getAbsolutePath());
+                LOGGER.error("Could not load class %s in jar %s, missing default constructor", classname,
+                        p_jar.getAbsolutePath());
                 // #endif /* LOGGER >= ERROR */
             }
         }
