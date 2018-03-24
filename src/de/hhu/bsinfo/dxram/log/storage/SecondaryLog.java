@@ -722,7 +722,7 @@ public class SecondaryLog extends AbstractLog {
      *         the ChunkID
      * @return the next version
      */
-    public final Version getNextVersion(final long p_chunkID) {
+    final Version getNextVersion(final long p_chunkID) {
         return m_versionsBuffer.getNext(p_chunkID);
     }
 
@@ -780,7 +780,7 @@ public class SecondaryLog extends AbstractLog {
          * a. Put data in currently active segment
          * b. No active segment or buffer too large to fit in: Create (new) "active segment" with given data
          * 2.
-         * a. Buffer is large (at least 90% of segment size): Create new segment and append it
+         * a. Buffer is large (at least 75% of segment size): Create new segment and append it
          * b. Fill partly used segments and put the rest (if there is data left) in a new segment and append it
          */
         if (m_isAccessedByReorgThread) {
@@ -792,7 +792,8 @@ public class SecondaryLog extends AbstractLog {
                 if (m_useTimestamps) {
                     // Modify segment age
                     int currentAge = m_activeSegment.getAge();
-                    m_activeSegment.setAge(currentAge - currentAge * length / m_activeSegment.getUsedBytes() /* contains length already */);
+                    m_activeSegment
+                            .setAge(currentAge - (currentAge + getCurrentTimeInSec() - m_activeSegment.m_lastAccess) * length / m_activeSegment.getUsedBytes() /* contains length already */);
                 }
             } else {
                 if (m_activeSegment != null) {
@@ -814,7 +815,7 @@ public class SecondaryLog extends AbstractLog {
                         if (m_useTimestamps) {
                             // Modify segment age
                             int currentAge = header.getAge();
-                            header.setAge(currentAge - currentAge * rangeSize / header.getUsedBytes() /* contains rangeSize already */);
+                            header.setAge(currentAge - (currentAge + getCurrentTimeInSec() - m_activeSegment.m_lastAccess) * rangeSize / header.getUsedBytes() /* contains rangeSize already */);
                         }
                         length -= rangeSize;
                     }
@@ -838,7 +839,7 @@ public class SecondaryLog extends AbstractLog {
                 m_activeSegment = null;
             }
 
-            if (length >= m_logSegmentSize * 0.9) {
+            if (length >= m_logSegmentSize * 0.75) {
                 // Create new segment and fill it
                 length = createNewSegmentAndFill(p_bufferWrapper, 0, length, false);
             }
@@ -1025,11 +1026,6 @@ public class SecondaryLog extends AbstractLog {
      */
     final void setAccessFlag(final boolean p_flag) {
         m_isAccessedByReorgThread = p_flag;
-
-        // Helpful for debugging, but may cause null pointer exception for writer thread
-        /*-if (!p_flag) {
-            m_activeSegment = null;//
-        }*/
     }
 
     /**
@@ -1358,7 +1354,7 @@ public class SecondaryLog extends AbstractLog {
                 if (m_useTimestamps) {
                     // Modify segment age
                     int currentAge = header.getAge();
-                    header.setAge(currentAge - currentAge * length / header.getUsedBytes() /* contains length already */);
+                    header.setAge(currentAge - (currentAge + getCurrentTimeInSec() - m_activeSegment.m_lastAccess) * length / header.getUsedBytes() /* contains length already */);
                 }
                 length = 0;
 
@@ -1377,7 +1373,7 @@ public class SecondaryLog extends AbstractLog {
                     if (m_useTimestamps) {
                         // Modify segment age
                         int currentAge = header.getAge();
-                        header.setAge(currentAge - currentAge * length / header.getUsedBytes() /* contains length already */);
+                        header.setAge(currentAge - (currentAge + getCurrentTimeInSec() - m_activeSegment.m_lastAccess) * length / header.getUsedBytes() /* contains length already */);
                     }
                     length = 0;
 
@@ -1401,7 +1397,7 @@ public class SecondaryLog extends AbstractLog {
                         if (m_useTimestamps) {
                             // Modify segment age
                             int currentAge = header.getAge();
-                            header.setAge(currentAge - currentAge * rangeSize / header.getUsedBytes() /* contains rangeSize already */);
+                            header.setAge(currentAge - (currentAge + getCurrentTimeInSec() - m_activeSegment.m_lastAccess) * rangeSize / header.getUsedBytes() /* contains rangeSize already */);
                         }
                         length -= rangeSize;
                         offset += rangeSize;
@@ -1453,7 +1449,7 @@ public class SecondaryLog extends AbstractLog {
             if (m_useTimestamps) {
                 // Modify segment age
                 int currentAge = header.getAge();
-                header.setAge(currentAge - currentAge * p_length / header.getUsedBytes() /* contains p_length already */);
+                header.setAge(currentAge - (currentAge + getCurrentTimeInSec() - m_activeSegment.m_lastAccess) * p_length / header.getUsedBytes() /* contains p_length already */);
             }
             ret = 0;
         } else {
