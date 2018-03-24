@@ -17,6 +17,7 @@
 package de.hhu.bsinfo.dxram.boot;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -445,7 +446,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         currentBootstrap = Short.parseShort(entry);
         if (currentBootstrap == m_bootstrap) {
             try {
-                if (!zookeeperSetData("nodes/bootstrap", String.valueOf(p_nodeID).getBytes(), status.getVersion())) {
+                if (!zookeeperSetData("nodes/bootstrap", String.valueOf(p_nodeID).getBytes(StandardCharsets.US_ASCII), status.getVersion())) {
                     m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
                 } else {
                     m_bootstrap = p_nodeID;
@@ -599,7 +600,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             // Register superpeer
             // register only if we are the superpeer. don't add node as superpeer
             if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.SUPERPEER) {
-                m_zookeeper.create("nodes/bootstrap", String.valueOf(m_bootstrap).getBytes());
+                m_zookeeper.create("nodes/bootstrap", String.valueOf(m_bootstrap).getBytes(StandardCharsets.US_ASCII));
             }
         } catch (final ZooKeeperException | KeeperException | InterruptedException e) {
             // #if LOGGER >= ERROR
@@ -711,7 +712,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 if (!childs.isEmpty()) {
                     nodeID = Short.parseShort(childs.get(0));
                     m_nodes.setOwnNodeID(nodeID);
-                    m_zookeeper.create("nodes/new/" + nodeID, node.getBytes());
+                    m_zookeeper.create("nodes/new/" + nodeID, node.getBytes(StandardCharsets.US_ASCII));
                     m_zookeeper.delete("nodes/free/" + nodeID);
                 } else {
                     splits = m_ownAddress.getIP().split("\\.");
@@ -723,7 +724,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                     m_bloomFilter.add(nodeID);
                     // Set own NodeID
                     m_nodes.setOwnNodeID(nodeID);
-                    m_zookeeper.create("nodes/new/" + nodeID, node.getBytes());
+                    m_zookeeper.create("nodes/new/" + nodeID, node.getBytes(StandardCharsets.US_ASCII));
                 }
 
                 // Set routing information for that node
