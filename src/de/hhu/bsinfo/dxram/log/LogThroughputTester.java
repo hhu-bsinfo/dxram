@@ -169,7 +169,7 @@ public final class LogThroughputTester {
         }
 
         ms_log = new LogComponent();
-        ms_conf = new LogComponentConfig(ms_accessMode, "/dev/raw/raw1", true, false, 4, 8, 256, 256, 128, 70, 9000);
+        ms_conf = new LogComponentConfig(ms_accessMode, "/dev/raw/raw1", true, false, 4, 8, 256, 32, 128, 70, 9000);
         ms_log.initComponent(ms_conf, pathLogFiles, ms_backupRangeSize);
     }
 

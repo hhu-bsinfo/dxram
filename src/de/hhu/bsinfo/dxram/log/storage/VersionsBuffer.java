@@ -244,9 +244,11 @@ class VersionsBuffer {
      */
     protected final void put(final long p_key, final int p_version) {
         // Avoid rehashing and excessive memory usage by waiting
-        while (m_count == WAIT_THRESHOLD) {
-            m_logComponent.grantAccessToWriterThread();
-            Thread.yield();
+        if (m_count == WAIT_THRESHOLD) {
+            m_logComponent.flushDataToPrimaryLog();
+            while (m_count == WAIT_THRESHOLD) {
+                Thread.yield();
+            }
         }
 
         putInternal(p_key, p_version);
@@ -338,6 +340,8 @@ class VersionsBuffer {
      */
     final void tryPut(final long p_key, final int p_version) {
         if (m_count == WAIT_THRESHOLD) {
+            m_logComponent.flushDataToPrimaryLog();
+
             // #if LOGGER >= WARN
             LOGGER.warn("Could not transfer log entry to new eon as current epoch is full");
             // #endif /* LOGGER >= WARN */
@@ -363,9 +367,11 @@ class VersionsBuffer {
         final long key = p_key + 1;
 
         // Avoid rehashing by waiting
-        while (m_count == WAIT_THRESHOLD) {
-            m_logComponent.grantAccessToWriterThread();
-            Thread.yield();
+        if (m_count == WAIT_THRESHOLD) {
+            m_logComponent.flushDataToPrimaryLog();
+            while (m_count == WAIT_THRESHOLD) {
+                Thread.yield();
+            }
         }
 
         index = (hash(key) & 0x7FFFFFFF) % VERSIONS_BUFFER_CAPACITY;
@@ -688,7 +694,6 @@ class VersionsBuffer {
 
         // Avoid rehashing by waiting
         while (m_count == WAIT_THRESHOLD) {
-            m_logComponent.grantAccessToWriterThread();
             Thread.yield();
         }
 

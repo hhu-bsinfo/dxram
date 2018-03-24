@@ -23,9 +23,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,16 +35,12 @@ import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.AbstractPrimLogEntryHeader;
 
 /**
- * Primary log write buffer Implemented as a ring buffer in a byte array. The
+ * Primary log write buffer. Implemented as a ring buffer on a ByteBuffer. The
  * in-memory write-buffer for writing on primary log is cyclic. Similar to a
  * ring buffer all read and write accesses are done by using pointers. All
  * readable bytes are between read and write pointer. Unused bytes between write
- * and read pointer. This class is designed for several producers and one
- * consumer (primary log writer- thread).Therefore the write-buffer is
- * implemented thread-safely. There are two write modes. In default mode the
- * buffer is extended adaptively if a threshold is passed (in (flash page size)
- * steps or doubled). Alternatively the caller can be blocked until the write
- * access is completed.
+ * and read pointer. This class is designed for one producer and one
+ * consumer (primary buffer process-thread).
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 06.06.2014
  */
@@ -55,9 +50,8 @@ public class PrimaryWriteBuffer {
 
     // Constants
     private static final int WRITE_BUFFER_MAX_SIZE = 1024 * 1024 * 1024;
-    // Must be smaller than 1/2 of WRITE_BUFFER_SIZE
-    private static final int SIGNAL_ON_BYTE_COUNT = 16 * 1024 * 1024;
-    private static final long WRITERTHREAD_TIMEOUTTIME = 100L;
+    private static final int FLUSH_THRESHOLD = 16 * 1024 * 1024;
+    private static final long PROCESSTHREAD_TIMEOUTTIME = 100L;
 
     // Attributes
     private final LogComponent m_logComponent;
@@ -70,44 +64,18 @@ public class PrimaryWriteBuffer {
 
     private DirectByteBufferWrapper m_bufferWrapper;
     private ByteBuffer m_buffer;
-    private PrimaryLogProcessThread m_processThread;
+    private PrimaryBufferProcessThread m_processThread;
 
-    private long m_timestamp;
-
-    // The following members are read/set by writer thread synchronized by metadata lock and read/set by exclusive message handler without
-    // synchronization, but it is guaranteed that metadata lock is acquired by exclusive message handler before writer thread accesses
-    // the metadata (-> happened before)
-    private int m_bufferReadPointer;
-    private int m_bufferWritePointer;
+    private volatile long m_bufferReadPointer;
+    private volatile long m_bufferWritePointer;
+    private volatile boolean m_priorityFlush;
     private HashMap<Integer, Partitioning> m_lengthAndFragmentationByBackupRange;
-
-    // Read/Set by exclusive message handler, only (either to log chunks or to initialize flushing during recovery)
-    private boolean m_needToLock;
-
-    // All accesses are synchronized by metadata lock
-    private boolean m_dataAvailable;
-
-    // Read by writer thread, set by application thread
-    private volatile boolean m_isShuttingDown;
-
-    // Set by application thread(s); used to wait until flushing is completed
-    private volatile boolean m_flushingComplete;
-
-    // Written by writer thread, read by exclusive message handler
-    private volatile boolean m_writerThreadRequestsAccessToBuffer;
-
-    // Read/Set by exclusive message handler and writer thread; used to grant access to writer thread
-    private volatile boolean m_writerThreadAccessesBuffer;
-
-    // Read and increased by exclusive message handler, read and reset by writer thread (no concurrent access!)
-    private volatile int m_bytesInWriteBuffer;
-
-    private ReentrantLock m_metadataLock;
-    private Condition m_dataAvailableCond;
-    private Condition m_finishedCopyingCond;
+    private AtomicBoolean m_metadataLock;
 
     private BufferPool m_bufferPool;
     private WriterJobQueue m_writerJobQueue;
+
+    private volatile boolean m_isShuttingDown;
 
     // Constructors
 
@@ -141,18 +109,10 @@ public class PrimaryWriteBuffer {
 
         m_bufferReadPointer = 0;
         m_bufferWritePointer = 0;
-        m_bytesInWriteBuffer = 0;
-        m_timestamp = System.currentTimeMillis();
         m_processThread = null;
-        m_flushingComplete = false;
-        m_dataAvailable = false;
+        m_priorityFlush = false;
 
-        m_needToLock = false;
-
-        m_metadataLock = new ReentrantLock(false);
-        m_dataAvailableCond = m_metadataLock.newCondition();
-        m_finishedCopyingCond = m_metadataLock.newCondition();
-
+        m_metadataLock = new AtomicBoolean(false);
         if (m_writeBufferSize < m_flashPageSize || m_writeBufferSize > WRITE_BUFFER_MAX_SIZE || Integer.bitCount(m_writeBufferSize) != 1) {
             throw new IllegalArgumentException("Illegal buffer size! Must be 2^x with " + Math.log(m_flashPageSize) / Math.log(2) + " <= x <= 31");
         }
@@ -166,7 +126,7 @@ public class PrimaryWriteBuffer {
 
         m_writerJobQueue = new WriterJobQueue(this, p_primaryLog);
 
-        m_processThread = new PrimaryLogProcessThread();
+        m_processThread = new PrimaryBufferProcessThread();
         m_processThread.setName("Logging: Process Thread");
         m_processThread.start();
 
@@ -181,12 +141,8 @@ public class PrimaryWriteBuffer {
      * Cleans the write buffer and resets the pointer
      */
     public final void closeWriteBuffer() {
-        // Shutdown primary log writer-thread
-        m_flushingComplete = false;
+        // Shutdown primary buffer process and writer threads
         m_isShuttingDown = true;
-        while (!m_flushingComplete) {
-            Thread.yield();
-        }
         m_writerJobQueue.shutdown();
     }
 
@@ -219,31 +175,32 @@ public class PrimaryWriteBuffer {
      *         the time since initialization in seconds
      * @param p_secLog
      *         the corresponding secondary log (to determine the version)
-     * @throws InterruptedException
-     *         if caller is interrupted
      */
     public final void putLogData(final AbstractMessageImporter p_importer, final long p_chunkID, final int p_payloadLength, final short p_rangeID,
-            final short p_owner, final short p_originalOwner, final int p_timestamp, final SecondaryLog p_secLog) throws InterruptedException {
+            final short p_owner, final short p_originalOwner, final int p_timestamp, final SecondaryLog p_secLog) {
         AbstractPrimLogEntryHeader logEntryHeader;
         byte headerSize;
-        int bytesInWriteBuffer;
         int bytesToWrite;
         int bytesUntilEnd;
         int writtenBytes = 0;
         int writeSize;
         int writePointer;
+        int readPointer;
         int numberOfHeaders;
         int combinedRangeID;
-        long currentTime;
         ByteBuffer header;
         Version version;
 
         version = p_secLog.getNextVersion(p_chunkID);
 
         logEntryHeader = AbstractPrimLogEntryHeader.getHeader();
+        // Create log entry header and write it to a pooled buffer
+        // -> easier to handle (overflow, chaining, ...) than writing directly into the primary write buffer
+        // Checksum and chaining information are added in loop below
         header = logEntryHeader.createLogEntryHeader(p_chunkID, p_payloadLength, version, p_rangeID, p_owner, p_originalOwner, p_timestamp);
         headerSize = (byte) header.limit();
 
+        // Combine owner and range ID in an int to be used as a key in hash table
         combinedRangeID = (p_owner << 16) + p_rangeID;
 
         // Large chunks are split and chained -> there might be more than one header
@@ -261,195 +218,161 @@ public class PrimaryWriteBuffer {
             throw new IllegalArgumentException("Data to write exceeds buffer size!");
         }
 
-        // ***Synchronization***//
-        // Signal writer thread if write buffer is nearly full
-        bytesInWriteBuffer = m_bytesInWriteBuffer;
-        if (bytesInWriteBuffer > m_writeBufferSize * 0.8) {
-            // Grant writer thread access to meta-data (data available)
-            // Acquires metadata lock -> changed values become visible to writer thread
-            grantAccessToWriterThread();
-        }
+        while (true) {
+            long readPointerAbsolute = m_bufferReadPointer;
+            long writePointerAbsolute = m_bufferWritePointer; // We need this value for compareAndSet operation
+            if ((readPointerAbsolute + m_writeBufferSize & 0x7FFFFFFF) > (writePointerAbsolute + bytesToWrite & 0x7FFFFFFF) ||
+                        /* 31-bit overflow in readPointer but not posFront */
+                    (readPointerAbsolute + m_writeBufferSize & 0x7FFFFFFF) < readPointerAbsolute &&
+                            (writePointerAbsolute + bytesToWrite & 0x7FFFFFFF) > readPointerAbsolute) {
 
-        // Explicitly synchronize if access to meta-data was granted to writer thread or no message was logged in a long time
-        // This is always executed by the same thread (exclusive message handler)
-        currentTime = System.currentTimeMillis();
-        if (m_needToLock || currentTime - m_timestamp > WRITERTHREAD_TIMEOUTTIME) {
-            // If m_needToLock is set, writer thread got access granted by this thread and flushing is in progress
-            // After waiting at least WRITERTHREAD_TIMEOUTTIME without getting access, the writer thread accesses the metadata
-            // anyway -> check if writer thread is accessing when (currentTime - m_timestamp > WRITERTHREAD_TIMEOUTTIME)
-            m_needToLock = false;
-            m_metadataLock.lock();
-            while (m_writerThreadAccessesBuffer) {
-                m_finishedCopyingCond.await();
-            }
-            m_metadataLock.unlock();
-            bytesInWriteBuffer = 0;
-        }
-        m_timestamp = currentTime;
+                // ***Appending***//
+                readPointer = (int) (readPointerAbsolute % m_buffer.capacity());
+                writePointer = (int) (writePointerAbsolute % m_buffer.capacity());
+                for (int i = 0; i < numberOfHeaders; i++) {
+                    writeSize = Math.min(bytesToWrite - writtenBytes, AbstractLogEntryHeader.getMaxLogEntrySize()) - headerSize;
 
-        // ***Appending***//
-        // Set buffer write pointer and byte counter
-        // Access metadata without locking as no other thread can change meanwhile; changed values will become visible
-        // when granted access to writer thread by acquiring the metadata lock (-> happened before)
-        writePointer = m_bufferWritePointer;
+                    if (numberOfHeaders > 1) {
+                        // Log entry is too large and must be chained -> set chaining ID, chain size and length in header for this part
+                        AbstractPrimLogEntryHeader.addChainingIDAndChainSize(header, 0, (byte) i, (byte) numberOfHeaders, logEntryHeader);
+                        AbstractPrimLogEntryHeader.adjustLength(header, 0, writeSize, logEntryHeader);
+                    }
 
-        m_bufferWritePointer = (writePointer + bytesToWrite) % m_buffer.capacity();
-        // Update byte counters
-        m_bytesInWriteBuffer += bytesToWrite;
+                    // Determine free space from end of log to end of array
+                    if (writePointer >= readPointer) {
+                        bytesUntilEnd = m_writeBufferSize - writePointer;
+                    } else {
+                        bytesUntilEnd = readPointer - writePointer;
+                    }
 
-        // Add bytes to write to log of combinedRangeID (optimization for sorting)
-        int conversionOffset = AbstractPrimLogEntryHeader.getConversionOffset(header, 0);
-        Partitioning part = m_lengthAndFragmentationByBackupRange.get(combinedRangeID);
-        if (part == null) {
-            m_lengthAndFragmentationByBackupRange.put(combinedRangeID, new Partitioning(bytesToWrite, conversionOffset));
-        } else {
-            part.addEntry(bytesToWrite, conversionOffset);
-        }
+                    if (writeSize + headerSize <= bytesUntilEnd) {
+                        // Write header
+                        m_buffer.put(header);
 
-        for (int i = 0; i < numberOfHeaders; i++) {
-            writeSize = Math.min(bytesToWrite - writtenBytes, AbstractLogEntryHeader.getMaxLogEntrySize()) - headerSize;
+                        // Write payload
+                        if (m_native) {
+                            p_importer.readBytes(m_bufferWrapper.getAddress(), m_buffer.position(), writeSize);
+                        } else {
+                            p_importer.readBytes(m_buffer.array(), m_buffer.position(), writeSize);
+                        }
+                        m_buffer.position((m_buffer.position() + writeSize) % m_buffer.capacity());
+                    } else {
+                        // Twofold cyclic write access
+                        if (bytesUntilEnd < headerSize) {
+                            // Write header
+                            header.limit(bytesUntilEnd);
+                            m_buffer.put(header);
 
-            if (numberOfHeaders > 1) {
-                // Log entry is too large and must be chained -> set chaining ID, chain size and length in header for this part
-                AbstractPrimLogEntryHeader.addChainingIDAndChainSize(header, 0, (byte) i, (byte) numberOfHeaders, logEntryHeader);
-                AbstractPrimLogEntryHeader.adjustLength(header, 0, writeSize, logEntryHeader);
-            }
+                            header.limit(headerSize);
+                            m_buffer.position(0);
+                            m_buffer.put(header);
 
-            // Determine free space from end of log to end of array
-            if (writePointer >= m_bufferReadPointer) {
-                bytesUntilEnd = m_writeBufferSize - writePointer;
-            } else {
-                bytesUntilEnd = m_bufferReadPointer - writePointer;
-            }
+                            // Write payload
+                            if (m_native) {
+                                p_importer.readBytes(m_bufferWrapper.getAddress(), m_buffer.position(), writeSize);
+                            } else {
+                                p_importer.readBytes(m_buffer.array(), m_buffer.position(), writeSize);
+                            }
+                            m_buffer.position((m_buffer.position() + writeSize) % m_buffer.capacity());
+                        } else if (bytesUntilEnd > headerSize) {
+                            // Write header
+                            m_buffer.put(header);
 
-            if (writeSize + headerSize <= bytesUntilEnd) {
-                // Write header
-                m_buffer.put(header);
+                            // Write payload
+                            if (m_native) {
+                                p_importer.readBytes(m_bufferWrapper.getAddress(), m_buffer.position(), bytesUntilEnd - headerSize);
 
-                // Write payload
-                if (m_native) {
-                    p_importer.readBytes(m_bufferWrapper.getAddress(), m_buffer.position(), writeSize);
-                } else {
-                    p_importer.readBytes(m_buffer.array(), m_buffer.position(), writeSize);
+                                p_importer.readBytes(m_bufferWrapper.getAddress(), 0, writeSize - (bytesUntilEnd - headerSize));
+                            } else {
+                                p_importer.readBytes(m_buffer.array(), m_buffer.position(), bytesUntilEnd - headerSize);
+
+                                p_importer.readBytes(m_buffer.array(), 0, writeSize - (bytesUntilEnd - headerSize));
+                            }
+                            m_buffer.position((writeSize - (bytesUntilEnd - headerSize)) % m_buffer.capacity());
+                        } else {
+                            // Write header
+                            m_buffer.put(header);
+
+                            // Write payload
+                            if (m_native) {
+                                p_importer.readBytes(m_bufferWrapper.getAddress(), 0, writeSize);
+                            } else {
+                                p_importer.readBytes(m_buffer.array(), 0, writeSize);
+                            }
+                            m_buffer.position((m_buffer.position() + writeSize) % m_buffer.capacity());
+                        }
+                    }
+
+                    if (m_useChecksum) {
+                        // Determine checksum for payload and add to header
+                        AbstractPrimLogEntryHeader.addChecksum(m_bufferWrapper, writePointer, writeSize, logEntryHeader, headerSize, bytesUntilEnd);
+                    }
+
+                    writePointer = (writePointer + writeSize + headerSize) % m_buffer.capacity();
+                    writtenBytes += writeSize + headerSize;
                 }
-                m_buffer.position((m_buffer.position() + writeSize) % m_buffer.capacity());
-            } else {
-                // Twofold cyclic write access
-                if (bytesUntilEnd < headerSize) {
-                    // Write header
-                    header.limit(bytesUntilEnd);
-                    m_buffer.put(header);
 
-                    header.limit(headerSize);
-                    m_buffer.position(0);
-                    m_buffer.put(header);
-
-                    // Write payload
-                    if (m_native) {
-                        p_importer.readBytes(m_bufferWrapper.getAddress(), m_buffer.position(), writeSize);
-                    } else {
-                        p_importer.readBytes(m_buffer.array(), m_buffer.position(), writeSize);
-                    }
-                    m_buffer.position((m_buffer.position() + writeSize) % m_buffer.capacity());
-                } else if (bytesUntilEnd > headerSize) {
-                    // Write header
-                    m_buffer.put(header);
-
-                    // Write payload
-                    if (m_native) {
-                        p_importer.readBytes(m_bufferWrapper.getAddress(), m_buffer.position(), bytesUntilEnd - headerSize);
-
-                        p_importer.readBytes(m_bufferWrapper.getAddress(), 0, writeSize - (bytesUntilEnd - headerSize));
-                    } else {
-                        p_importer.readBytes(m_buffer.array(), m_buffer.position(), bytesUntilEnd - headerSize);
-
-                        p_importer.readBytes(m_buffer.array(), 0, writeSize - (bytesUntilEnd - headerSize));
-                    }
-                    m_buffer.position((writeSize - (bytesUntilEnd - headerSize)) % m_buffer.capacity());
-                } else {
-                    // Write header
-                    m_buffer.put(header);
-
-                    // Write payload
-                    if (m_native) {
-                        p_importer.readBytes(m_bufferWrapper.getAddress(), 0, writeSize);
-                    } else {
-                        p_importer.readBytes(m_buffer.array(), 0, writeSize);
-                    }
-                    m_buffer.position((m_buffer.position() + writeSize) % m_buffer.capacity());
+                // Enter critical area by acquiring spin lock
+                while (!m_metadataLock.compareAndSet(false, true)) {
+                    // Try again
                 }
+
+                // Add bytes to write to log of combinedRangeID (optimization for sorting)
+                int conversionOffset = AbstractPrimLogEntryHeader.getConversionOffset(header, 0);
+                HashMap<Integer, Partitioning> hashMap = m_lengthAndFragmentationByBackupRange;
+                Partitioning part = hashMap.get(combinedRangeID);
+                if (part == null) {
+                    hashMap.put(combinedRangeID, new Partitioning(bytesToWrite, conversionOffset));
+                } else {
+                    part.addEntry(bytesToWrite, conversionOffset);
+                }
+
+                // Set buffer write pointer and byte counter
+                m_bufferWritePointer = writePointerAbsolute + bytesToWrite & 0x7FFFFFFF;
+
+                // Leave critical area by resetting spin lock
+                m_metadataLock.set(false);
+
+                break;
+            } else {
+                // Buffer is full -> wait
+                LockSupport.parkNanos(100);
             }
-
-            if (m_useChecksum) {
-                // Determine checksum for payload and add to header
-                AbstractPrimLogEntryHeader.addChecksum(m_bufferWrapper, writePointer, writeSize, logEntryHeader, headerSize, bytesUntilEnd);
-            }
-
-            writePointer = (writePointer + writeSize + headerSize) % m_buffer.capacity();
-            writtenBytes += writeSize + headerSize;
-        }
-
-        // ***Synchronization***//
-        // Grant writer thread access to meta-data (data available)
-        if (bytesInWriteBuffer + bytesToWrite >= SIGNAL_ON_BYTE_COUNT) {
-            // Acquires metadata lock -> changed values become visible to writer thread
-            grantAccessToWriterThread();
-        }
-
-        // Grant writer thread access to meta-data (time-out)
-        if (m_writerThreadRequestsAccessToBuffer) {
-            m_writerThreadAccessesBuffer = true;
-            m_needToLock = true;
         }
     }
 
     /**
-     * Grant the writer thread access to buffer meta-data
-     */
-    public void grantAccessToWriterThread() {
-        m_metadataLock.lock();
-        m_writerThreadAccessesBuffer = true;
-        m_needToLock = true;
-
-        // Send signal to start flushing by writer thread
-        m_dataAvailable = true;
-        m_dataAvailableCond.signalAll();
-        m_metadataLock.unlock();
-    }
-
-    /**
-     * Wakes-up writer thread and flushes data to primary log
+     * Wakes-up process thread and flushes data to primary log
      * Is only called by exclusive message handler
      */
-    public final void signalWriterThreadAndFlushToPrimLog() {
-        grantAccessToWriterThread();
-
-        m_flushingComplete = false;
-        while (!m_flushingComplete) {
-            Thread.yield();
-        }
+    public final void initiatePriorityFlush() {
+        m_priorityFlush = true;
     }
 
     // Classes
 
     /**
-     * Writer thread The writer thread flushes data from buffer to primary log
+     * The process thread flushes data from buffer to primary log
      * after being waked-up (signal or timer)
      *
      * @author Kevin Beineke 06.06.2014
      */
-    private final class PrimaryLogProcessThread extends Thread {
+    private final class PrimaryBufferProcessThread extends Thread {
 
         // Constructors
 
         /**
-         * Creates an instance of PrimaryLogProcessThread
+         * Creates an instance of PrimaryBufferProcessThread
          */
-        PrimaryLogProcessThread() {
+        PrimaryBufferProcessThread() {
         }
 
         @Override
         public void run() {
+            boolean flush = false;
+            long timeLastFlush = System.currentTimeMillis();
+            SecondaryLogsReorgThread reorgThread = m_logComponent.getReorganizationThread();
+
             ByteBuffer buffer = m_buffer.duplicate();
             buffer.order(ByteOrder.LITTLE_ENDIAN);
 
@@ -458,23 +381,46 @@ public class PrimaryWriteBuffer {
                     break;
                 }
 
-                try {
-                    m_metadataLock.lock();
-                    // Check if we got a flush request in the meantime
-                    if (!m_dataAvailable) {
-                        // Wait for flush request
-                        if (!m_dataAvailableCond.await(WRITERTHREAD_TIMEOUTTIME, TimeUnit.MILLISECONDS)) {
-                            // Time-out -> ask for meta-data access
-                            m_writerThreadRequestsAccessToBuffer = true;
-                        }
-                    }
-                    m_metadataLock.unlock();
-                } catch (final InterruptedException ignore) {
-                    continue;
+                if (m_priorityFlush) {
+                    m_priorityFlush = false;
+                    flush = true;
                 }
 
-                flushDataToPrimaryLog(buffer);
-                m_logComponent.getReorganizationThread().grantAccessToCurrentLog();
+                if (getBytesInBuffer() > FLUSH_THRESHOLD || System.currentTimeMillis() - timeLastFlush > PROCESSTHREAD_TIMEOUTTIME) {
+                    flush = true;
+                }
+
+                if (flush) {
+                    flushDataToPrimaryLog(buffer);
+
+                    if (reorgThread == null) {
+                        reorgThread = m_logComponent.getReorganizationThread();
+                    } else {
+                        m_logComponent.getReorganizationThread().grantAccessToCurrentLog();
+                    }
+                    timeLastFlush = System.currentTimeMillis();
+                } else {
+
+                    if (reorgThread == null) {
+                        reorgThread = m_logComponent.getReorganizationThread();
+                    } else {
+                        m_logComponent.getReorganizationThread().grantAccessToCurrentLog();
+                    }
+
+                    // Wait
+                    LockSupport.parkNanos(100);
+                }
+                flush = false;
+            }
+        }
+
+        int getBytesInBuffer() {
+            int readPointerUnsigned = (int) m_bufferReadPointer;
+            int writePointerUnsigned = (int) m_bufferWritePointer;
+            if (writePointerUnsigned >= readPointerUnsigned) {
+                return writePointerUnsigned - readPointerUnsigned;
+            } else {
+                return (int) (writePointerUnsigned + (long) Math.pow(2, 31) - readPointerUnsigned);
             }
         }
 
@@ -482,73 +428,43 @@ public class PrimaryWriteBuffer {
          * Flushes all data in write buffer to primary log
          */
         void flushDataToPrimaryLog(final ByteBuffer p_primaryWriteBuffer) {
-            int writtenBytes = 0;
-            int readPointer;
+            int flushedBytes = 0;
             int bytesInWriteBuffer;
+            int readPointer;
             Set<Entry<Integer, Partitioning>> lengthAndFragmentationByBackupRange;
 
-            // 1. Gain exclusive write access
-            // 2. Copy read pointer and counter
-            // 3. Set read pointer and reset counter
-            // 4. Grant access to write buffer
-            // 5. Write buffer to hard drive
-            // -> During writing to hard drive the next slot in Write Buffer can be filled
-
-            // Gain exclusive write access:
-            // If signaled by message handler the exclusive write access is already hold
-            // Else wait for acknowledgement by message handler
-            // If after 100ms (default) the access has not been granted (no log message has arrived) -> do it anyway (the exclusive message
-            // handler will know, happened before relation not guaranteed but most likely as the message handler acquires and releases a
-            // different lock after returning and writer thread waits for a long time)
-            final long timeStart = System.currentTimeMillis();
-            while (!m_writerThreadAccessesBuffer) {
-                m_logComponent.getReorganizationThread().grantAccessToCurrentLog();
-                if (System.currentTimeMillis() > timeStart + WRITERTHREAD_TIMEOUTTIME) {
-                    break;
-                }
-
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            // Enter critical area by acquiring spin lock
+            while (!m_metadataLock.compareAndSet(false, true)) {
+                // Try again
             }
 
-            m_metadataLock.lock();
-            // Copy meta-data
-            readPointer = m_bufferReadPointer;
-            bytesInWriteBuffer = m_bytesInWriteBuffer;
+            bytesInWriteBuffer = getBytesInBuffer();
+            readPointer = (int) m_bufferReadPointer % m_buffer.capacity();
+
             lengthAndFragmentationByBackupRange = m_lengthAndFragmentationByBackupRange.entrySet();
-
-            m_bufferReadPointer = m_bufferWritePointer;
-            m_bytesInWriteBuffer = 0;
             m_lengthAndFragmentationByBackupRange = new HashMap<Integer, Partitioning>();
-
-            // Release access
-            m_dataAvailable = false;
-            m_writerThreadAccessesBuffer = false;
-            m_writerThreadRequestsAccessToBuffer = false;
-            m_finishedCopyingCond.signalAll();
-            m_metadataLock.unlock();
+            // Leave critical area by resetting spin lock
+            m_metadataLock.set(false);
 
             if (bytesInWriteBuffer > 0) {
                 // Write data to secondary logs or primary log
                 try {
                     p_primaryWriteBuffer.position(readPointer);
-                    writtenBytes = bufferAndStore(p_primaryWriteBuffer, readPointer, bytesInWriteBuffer, lengthAndFragmentationByBackupRange);
+                    flushedBytes = bufferAndStore(p_primaryWriteBuffer, readPointer, bytesInWriteBuffer, lengthAndFragmentationByBackupRange);
                 } catch (final IOException | InterruptedException e) {
                     // #if LOGGER >= ERROR
                     LOGGER.error("Could not flush data", e);
                     // #endif /* LOGGER >= ERROR */
                 }
-                if (writtenBytes != bytesInWriteBuffer) {
+                if (flushedBytes != bytesInWriteBuffer) {
+                    System.out.println(flushedBytes + " != " + bytesInWriteBuffer);
                     // #if LOGGER >= ERROR
                     LOGGER.error("Flush incomplete!");
                     // #endif /* LOGGER >= ERROR */
                 }
             }
 
-            m_flushingComplete = true;
+            m_bufferReadPointer = m_bufferReadPointer + flushedBytes & 0x7FFFFFFF;
         }
 
         /**
@@ -777,7 +693,6 @@ public class PrimaryWriteBuffer {
          */
         private void writeToPrimaryLog(final DirectByteBufferWrapper p_buffer) {
             m_writerJobQueue.pushJob((byte) 1, null, p_buffer, 0);
-            //m_primaryLog.appendData(p_buffer, p_buffer.getBuffer().position());
         }
     }
 
@@ -951,7 +866,7 @@ public class PrimaryWriteBuffer {
 
         void addEntry(final int p_length, final int p_conversionOffset) {
             if ((m_bytesWithTruncatedHeaders + p_length) % m_logSegmentSize < p_length) {
-                m_bytesFragmentation += m_logSegmentSize - m_bytesWithTruncatedHeaders;
+                m_bytesFragmentation += m_logSegmentSize - m_bytesWithTruncatedHeaders % m_logSegmentSize;
             }
 
             m_totalBytes += p_length;

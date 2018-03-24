@@ -39,7 +39,7 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
     private StorageUnit m_primaryLogSize = new StorageUnit(256, StorageUnit.MB);
 
     @Expose
-    private StorageUnit m_writeBufferSize = new StorageUnit(256, StorageUnit.MB);
+    private StorageUnit m_writeBufferSize = new StorageUnit(32, StorageUnit.MB);
 
     @Expose
     private StorageUnit m_secondaryLogBufferSize = new StorageUnit(128, StorageUnit.KB);
