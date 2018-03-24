@@ -59,7 +59,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_open(JNIEnv 
     if(mode == 0) {
         // open for read/write and create if does not exist -> O_RDWR
         // 0666 -> permission mask if file is created, access rights for all users
-        fileID = open(path, O_CREAT|O_RDWR|O_SYNC|O_DIRECT, 0666);
+        fileID = open(path, O_CREAT|O_RDWR|O_DSYNC|O_DIRECT, 0666);
         if (size > 0) {
             if (fallocate(fileID, 0, 0, size) < 0) {
                 printf("fallocate not supported by file system! Using ftruncate (space not actually allocated).\n");
@@ -71,7 +71,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_open(JNIEnv 
         }
     } else {
       // open for read only and do not create -> O_RDONLY
-      fileID = open(path, O_RDONLY|O_SYNC|O_DIRECT);
+      fileID = open(path, O_RDONLY|O_DSYNC|O_DIRECT);
     }
 
     // release String-reference
