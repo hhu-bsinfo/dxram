@@ -299,7 +299,8 @@ public abstract class AbstractLogEntryHeader {
         } else if (length == 2) {
             ret = p_buffer.getShort(offset) & 0xFFFF;
         } else if (length == 3) {
-            ret = (p_buffer.get(offset) & 0xFF) + ((p_buffer.get(offset + 1) & 0xFF) << 8) + ((p_buffer.get(offset + 2) & 0xFF) << 16);
+            ret = (p_buffer.get(offset) & 0xFF) + ((p_buffer.get(offset + 1) & 0xFF) << 8) +
+                    ((p_buffer.get(offset + 2) & 0xFF) << 16);
         }
 
         return ret;
@@ -353,7 +354,8 @@ public abstract class AbstractLogEntryHeader {
         } else if (length == 2) {
             version = p_buffer.getShort(offset + LOG_ENTRY_EPO_SIZE) & 0xFFFF;
         } else if (length == 3) {
-            version = (p_buffer.get(offset + LOG_ENTRY_EPO_SIZE) & 0xFF) + ((p_buffer.get(offset + LOG_ENTRY_EPO_SIZE + 1) & 0xFF) << 8) +
+            version = (p_buffer.get(offset + LOG_ENTRY_EPO_SIZE) & 0xFF) +
+                    ((p_buffer.get(offset + LOG_ENTRY_EPO_SIZE + 1) & 0xFF) << 8) +
                     ((p_buffer.get(offset + LOG_ENTRY_EPO_SIZE + 2) & 0xFF) << 16);
         }
 
@@ -461,9 +463,9 @@ public abstract class AbstractLogEntryHeader {
         } else if (length == 2) {
             ret = (long) p_buffer.getInt(offset) & 0xFFFFFFFFL;
         } else if (length == 3) {
-            ret = (p_buffer.get(offset) & 0xFF) + ((p_buffer.get(offset + 1) & 0xFF) << 8) + ((p_buffer.get(offset + 2) & 0xFF) << 16) +
-                    (((long) p_buffer.get(offset + 3) & 0xFF) << 24) + (((long) p_buffer.get(offset + 4) & 0xFF) << 32) +
-                    (((long) p_buffer.get(offset + 5) & 0xFF) << 40);
+            ret = (p_buffer.get(offset) & 0xFF) + ((p_buffer.get(offset + 1) & 0xFF) << 8) +
+                    ((p_buffer.get(offset + 2) & 0xFF) << 16) + (((long) p_buffer.get(offset + 3) & 0xFF) << 24) +
+                    (((long) p_buffer.get(offset + 4) & 0xFF) << 32) + (((long) p_buffer.get(offset + 5) & 0xFF) << 40);
         }
 
         return ret;
@@ -631,7 +633,13 @@ public abstract class AbstractLogEntryHeader {
     }
 
     /**
-     * Returns the number of bytes necessary to store given value
+     * Generates the type field containing the information:
+     * - migrated or not
+     * - chained or not
+     * - local ID size
+     * - length size
+     * - version size
+     * The type field cannot be 0 because at least the length field is not 0
      *
      * @param p_type
      *         the type of the log entry header
@@ -643,9 +651,10 @@ public abstract class AbstractLogEntryHeader {
      *         the size of the version field
      * @param p_needsChaining
      *         whether this chunk is too large and must be split or not
-     * @return the number of bytes necessary to store given value
+     * @return the type field
      */
-    byte generateTypeField(final byte p_type, final byte p_localIDSize, final byte p_lengthSize, final byte p_versionSize, final boolean p_needsChaining) {
+    byte generateTypeField(final byte p_type, final byte p_localIDSize, final byte p_lengthSize,
+            final byte p_versionSize, final boolean p_needsChaining) {
         byte ret = p_type;
 
         // Chaining field present or not
@@ -655,7 +664,6 @@ public abstract class AbstractLogEntryHeader {
         // lengths: 1, 2, 4 ,6
         switch (p_localIDSize) {
             case 1:
-                ret |= 0;
                 break;
             case 2:
                 ret |= 1 << LID_LENGTH_SHFT;

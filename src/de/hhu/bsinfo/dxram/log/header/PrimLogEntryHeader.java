@@ -76,8 +76,8 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
 
     // Methods
     @Override
-    public ByteBuffer createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner,
-            final short p_originalOwner, final int p_timestamp) {
+    public ByteBuffer createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version,
+            final short p_rangeID, final short p_owner, final short p_originalOwner, final int p_timestamp) {
         byte lengthSize;
         byte localIDSize;
         byte versionSize;
@@ -92,7 +92,9 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
         if (ChecksumHandler.checksumsEnabled()) {
             checksumSize = ChecksumHandler.getCRCSize();
         }
-        headerSize = (byte) (ms_lidOffset + localIDSize + lengthSize + ms_timestampSize + LOG_ENTRY_EPO_SIZE + versionSize + checksumSize);
+        headerSize =
+                (byte) (ms_lidOffset + localIDSize + lengthSize + ms_timestampSize + LOG_ENTRY_EPO_SIZE + versionSize +
+                        checksumSize);
 
         if (ChunkID.getCreatorID(p_chunkID) == p_originalOwner) {
             type = 0;

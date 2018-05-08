@@ -130,8 +130,7 @@ public abstract class AbstractLog {
      *         if reading the random access file failed
      */
     static void readFromSecondaryLogFile(final DirectByteBufferWrapper p_bufferWrapper, final int p_length,
-            final long p_readPos,
-            final RandomAccessFile p_randomAccessFile) throws IOException {
+            final long p_readPos, final RandomAccessFile p_randomAccessFile) throws IOException {
         final long bytesUntilEnd = p_randomAccessFile.length() - p_readPos;
 
         if (p_length > 0) {
@@ -165,8 +164,7 @@ public abstract class AbstractLog {
      *         the HarddriveAccessMode
      */
     static void readFromSecondaryLogFile(final DirectByteBufferWrapper p_bufferWrapper, final int p_length,
-            final long p_readPos, final int p_fileID,
-            final HarddriveAccessMode p_mode) {
+            final long p_readPos, final int p_fileID, final HarddriveAccessMode p_mode) {
 
         if (p_mode == HarddriveAccessMode.ODIRECT) {
             final long bytesUntilEnd = JNIFileDirect.length(p_fileID) - p_readPos;
@@ -332,14 +330,11 @@ public abstract class AbstractLog {
      *         number of bytes to read
      * @param p_readPos
      *         the position within the log file
-     * @param p_accessed
-     *         whether the RAF is accessed by another thread or not
      * @throws IOException
      *         if reading the random access file failed
      */
     final void readFromSecondaryLog(final DirectByteBufferWrapper p_bufferWrapper, final int p_length,
-            final long p_readPos, final boolean p_accessed)
-            throws IOException {
+            final long p_readPos) throws IOException {
         final long bytesUntilEnd = m_totalUsableSpace - p_readPos;
 
         if (p_length > 0) {
@@ -465,7 +460,7 @@ public abstract class AbstractLog {
      *         buffer with data to write in log
      * @param p_bufferOffset
      *         offset in buffer
-     * @param p_readPos
+     * @param p_writePos
      *         offset in log file
      * @param p_length
      *         number of bytes to write
@@ -475,8 +470,7 @@ public abstract class AbstractLog {
      *         if reading the random access file failed
      */
     final void writeToSecondaryLog(final DirectByteBufferWrapper p_bufferWrapper, final int p_bufferOffset,
-            final long p_readPos, final int p_length,
-            final boolean p_accessed) throws IOException {
+            final long p_writePos, final int p_length, final boolean p_accessed) throws IOException {
 
         if (p_length > 0) {
 

@@ -154,7 +154,8 @@ public final class SecondaryLogBuffer {
      * @param p_entryOrRangeSize
      *         size of the log entry/range
      */
-    private static void processBuffer(final ByteBuffer p_buffer, final int p_entryOrRangeSize, final DirectByteBufferWrapper p_destination) {
+    private static void processBuffer(final ByteBuffer p_buffer, final int p_entryOrRangeSize,
+            final DirectByteBufferWrapper p_destination) {
         int oldBufferOffset = 0;
         int logEntrySize;
         AbstractPrimLogEntryHeader logEntryHeader;
@@ -162,10 +163,12 @@ public final class SecondaryLogBuffer {
         while (oldBufferOffset < p_entryOrRangeSize) {
             // Determine header of next log entry
             logEntryHeader = AbstractPrimLogEntryHeader.getHeader();
-            logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) + logEntryHeader.getLength(p_buffer, oldBufferOffset);
+            logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) +
+                    logEntryHeader.getLength(p_buffer, oldBufferOffset);
 
             // Copy primary log header, but skip NodeID and RangeID
-            AbstractPrimLogEntryHeader.convertAndPut(p_buffer, oldBufferOffset, p_destination.getBuffer(), logEntrySize, p_buffer.capacity() - oldBufferOffset,
+            AbstractPrimLogEntryHeader.convertAndPut(p_buffer, oldBufferOffset, p_destination.getBuffer(), logEntrySize,
+                    p_buffer.capacity() - oldBufferOffset,
                     AbstractPrimLogEntryHeader.getConversionOffset(p_buffer, oldBufferOffset));
             p_buffer.limit(p_buffer.capacity());
             oldBufferOffset += logEntrySize;

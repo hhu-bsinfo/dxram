@@ -89,11 +89,14 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
      *         whether the calculation should consider migrations or not
      * @return the maximum number of versions
      */
-    public static int getMaximumNumberOfVersions(final long p_maxBackupRangeSize, final int p_defaultChunkSize, final boolean p_logStoresMigrations) {
+    public static int getMaximumNumberOfVersions(final long p_maxBackupRangeSize, final int p_defaultChunkSize,
+            final boolean p_logStoresMigrations) {
         if (!p_logStoresMigrations) {
-            return (int) (p_maxBackupRangeSize / (p_defaultChunkSize + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, 0, p_defaultChunkSize)));
+            return (int) (p_maxBackupRangeSize / (p_defaultChunkSize +
+                    AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, 0, p_defaultChunkSize)));
         } else {
-            return (int) (p_maxBackupRangeSize / (p_defaultChunkSize + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(true, p_defaultChunkSize)));
+            return (int) (p_maxBackupRangeSize / (p_defaultChunkSize +
+                    AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(true, p_defaultChunkSize)));
         }
     }
 
@@ -109,12 +112,13 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
      *         the size
      * @return the maximum log entry header size for secondary log
      */
-    public static short getApproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
-        // Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version (and chaining) is an approximation because the actual version
-        // is determined during logging on backup peer (at creation time it's size is 0 but it might be bigger at some point)
-        short ret =
-                (short) (LOG_ENTRY_TYP_SIZE + getSizeForLocalIDField(p_localID) + getSizeForLengthField(p_size) + ms_timestampSize + LOG_ENTRY_EPO_SIZE + 1 +
-                        1 + ChecksumHandler.getCRCSize());
+    public static short getApproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID,
+            final int p_size) {
+        // Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version (and chaining)
+        // is an approximation because the actual version is determined during logging on backup peer (at
+        // creation time it's size is 0 but it might be bigger at some point)
+        short ret = (short) (LOG_ENTRY_TYP_SIZE + getSizeForLocalIDField(p_localID) + getSizeForLengthField(p_size) +
+                ms_timestampSize + LOG_ENTRY_EPO_SIZE + 1 + 1 + ChecksumHandler.getCRCSize());
 
         if (p_logStoresMigrations) {
             ret += LOG_ENTRY_NID_SIZE;
@@ -140,10 +144,11 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
      * @return the maximum log entry header size for secondary log
      */
     public static short getApproxSecLogHeaderSize(final boolean p_logStoresMigrations, final int p_size) {
-        // Sizes for type, length, epoch and checksum is precise, 2 bytes for LocalID, 1 byte for version (and chaining) is an approximation because the actual
-        // version is determined during logging on backup peer (at creation time it's size is 0 but it might be bigger at some point)
-        short ret =
-                (short) (LOG_ENTRY_TYP_SIZE + 4 + getSizeForLengthField(p_size) + ms_timestampSize + LOG_ENTRY_EPO_SIZE + 1 + 1 + ChecksumHandler.getCRCSize());
+        // Sizes for type, length, epoch and checksum is precise, 2 bytes for LocalID, 1 byte for version (and chaining)
+        // is an approximation because the actual version is determined during logging on backup peer (at creation time
+        // it's size is 0 but it might be bigger at some point)
+        short ret = (short) (LOG_ENTRY_TYP_SIZE + 4 + getSizeForLengthField(p_size) + ms_timestampSize +
+                LOG_ENTRY_EPO_SIZE + 1 + 1 + ChecksumHandler.getCRCSize());
 
         if (p_logStoresMigrations) {
             ret += LOG_ENTRY_NID_SIZE;

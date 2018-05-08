@@ -57,9 +57,11 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
         super(LogComponent.class, false, true);
     }
 
-    public LogComponentConfig(final String p_harddriveAccess, final String p_rawDevicePath, final boolean p_useChecksums, final boolean p_useTimestamps,
-            final int p_flashPageSize, final int p_logSegmentSize, final int p_primaryLogSize, final int p_writeBufferSize, final int p_secondaryLogBufferSize,
-            final int p_reorgUtilizationThreshold, final int p_coldDataThresholdSec) {
+    public LogComponentConfig(final String p_harddriveAccess, final String p_rawDevicePath,
+            final boolean p_useChecksums, final boolean p_useTimestamps, final int p_flashPageSize,
+            final int p_logSegmentSize, final int p_primaryLogSize, final int p_writeBufferSize,
+            final int p_secondaryLogBufferSize, final int p_utilizationActivateReorganization,
+            final int p_utilizationPromptReorganization, final int p_coldDataThresholdSec) {
         super(LogComponent.class, false, true);
 
         m_harddriveAccess = p_harddriveAccess;
@@ -158,23 +160,32 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
         StorageUnit backupRangeSize = p_config.getComponentConfig(BackupComponentConfig.class).getBackupRangeSize();
         long secondaryLogSize = backupRangeSize.getBytes() * 2;
 
-        if (m_primaryLogSize.getBytes() % m_flashPageSize.getBytes() != 0 || m_primaryLogSize.getBytes() <= m_flashPageSize.getBytes() ||
+        if (m_primaryLogSize.getBytes() % m_flashPageSize.getBytes() != 0 ||
+                m_primaryLogSize.getBytes() <= m_flashPageSize.getBytes() ||
                 secondaryLogSize % m_flashPageSize.getBytes() != 0 || secondaryLogSize <= m_flashPageSize.getBytes() ||
-                m_writeBufferSize.getBytes() % m_flashPageSize.getBytes() != 0 || m_writeBufferSize.getBytes() <= m_flashPageSize.getBytes() ||
-                m_logSegmentSize.getBytes() % m_flashPageSize.getBytes() != 0 || m_logSegmentSize.getBytes() <= m_flashPageSize.getBytes() ||
-                m_secondaryLogBufferSize.getBytes() % m_flashPageSize.getBytes() != 0 || m_secondaryLogBufferSize.getBytes() <= m_flashPageSize.getBytes()) {
+                m_writeBufferSize.getBytes() % m_flashPageSize.getBytes() != 0 ||
+                m_writeBufferSize.getBytes() <= m_flashPageSize.getBytes() ||
+                m_logSegmentSize.getBytes() % m_flashPageSize.getBytes() != 0 ||
+                m_logSegmentSize.getBytes() <= m_flashPageSize.getBytes() ||
+                m_secondaryLogBufferSize.getBytes() % m_flashPageSize.getBytes() != 0 ||
+                m_secondaryLogBufferSize.getBytes() <= m_flashPageSize.getBytes()) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Primary log size, secondary log size, write buffer size, log segment size and secondary log buffer size " +
-                    "must be a multiple (integer) of and greater than flash page size");
+            LOGGER.error(
+                    "Primary log size, secondary log size, write buffer size, log segment size and secondary log buffer size " +
+                            "must be a multiple (integer) of and greater than flash page size");
             // #endif /* LOGGER >= ERROR */
             return false;
         }
 
-        if (m_primaryLogSize.getBytes() % m_logSegmentSize.getBytes() != 0 || m_primaryLogSize.getBytes() <= m_logSegmentSize.getBytes() ||
-                secondaryLogSize % m_logSegmentSize.getBytes() != 0 || secondaryLogSize <= m_logSegmentSize.getBytes() ||
-                m_writeBufferSize.getBytes() % m_logSegmentSize.getBytes() != 0 || m_writeBufferSize.getBytes() <= m_logSegmentSize.getBytes()) {
+        if (m_primaryLogSize.getBytes() % m_logSegmentSize.getBytes() != 0 ||
+                m_primaryLogSize.getBytes() <= m_logSegmentSize.getBytes() ||
+                secondaryLogSize % m_logSegmentSize.getBytes() != 0 ||
+                secondaryLogSize <= m_logSegmentSize.getBytes() ||
+                m_writeBufferSize.getBytes() % m_logSegmentSize.getBytes() != 0 ||
+                m_writeBufferSize.getBytes() <= m_logSegmentSize.getBytes()) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Primary log size, secondary log size and write buffer size must be a multiple (integer) of and greater than segment size");
+            LOGGER.error(
+                    "Primary log size, secondary log size and write buffer size must be a multiple (integer) of and greater than segment size");
             // #endif /* LOGGER >= ERROR */
             return false;
         }

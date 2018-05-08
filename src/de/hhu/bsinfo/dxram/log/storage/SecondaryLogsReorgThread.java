@@ -242,6 +242,9 @@ public final class SecondaryLogsReorgThread extends Thread {
 
             long lowestLID = secondaryLog.getCurrentVersions(m_allVersions, true);
             if (!interrupted()) {
+
+                // TODO: flush primary and secondary log buffers
+
                 secondaryLog.reorganizeAll(m_reorgSegmentData, m_allVersions, lowestLID);
                 secondaryLog.resetReorgSegment();
                 leaveSecLog(secondaryLog);
@@ -285,7 +288,8 @@ public final class SecondaryLogsReorgThread extends Thread {
             secondaryLog = iter.next();
             iter.remove();
             // #if LOGGER == DEBUG
-            LOGGER.debug("Got reorganization request for %s. Queue length: %d", secondaryLog.getRangeID(), m_reorganizationRequests.size());
+            LOGGER.debug("Got reorganization request for %s. Queue length: %d", secondaryLog.getRangeID(),
+                    m_reorganizationRequests.size());
             // #endif /* LOGGER == DEBUG */
             m_requestLock.unlock();
 

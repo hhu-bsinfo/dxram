@@ -176,8 +176,9 @@ public class PrimaryWriteBuffer {
      * @param p_secLog
      *         the corresponding secondary log (to determine the version)
      */
-    public final void putLogData(final AbstractMessageImporter p_importer, final long p_chunkID, final int p_payloadLength, final short p_rangeID,
-            final short p_owner, final short p_originalOwner, final int p_timestamp, final SecondaryLog p_secLog) {
+    public final void putLogData(final AbstractMessageImporter p_importer, final long p_chunkID,
+            final int p_payloadLength, final short p_rangeID, final short p_owner, final short p_originalOwner,
+            final int p_timestamp, final SecondaryLog p_secLog) {
         AbstractPrimLogEntryHeader logEntryHeader;
         byte headerSize;
         int bytesToWrite;
@@ -197,7 +198,9 @@ public class PrimaryWriteBuffer {
         // Create log entry header and write it to a pooled buffer
         // -> easier to handle (overflow, chaining, ...) than writing directly into the primary write buffer
         // Checksum and chaining information are added in loop below
-        header = logEntryHeader.createLogEntryHeader(p_chunkID, p_payloadLength, version, p_rangeID, p_owner, p_originalOwner, p_timestamp);
+        header = logEntryHeader
+                .createLogEntryHeader(p_chunkID, p_payloadLength, version, p_rangeID, p_owner, p_originalOwner,
+                        p_timestamp);
         headerSize = (byte) header.limit();
 
         // Combine owner and range ID in an int to be used as a key in hash table
@@ -211,8 +214,9 @@ public class PrimaryWriteBuffer {
             throw new IllegalArgumentException("No payload for log entry!");
         }
         if (numberOfHeaders > Byte.MAX_VALUE) {
-            throw new IllegalArgumentException("Chunk is too large to log. Maximum chunk size for current configuration is " +
-                    Byte.MAX_VALUE * AbstractLogEntryHeader.getMaxLogEntrySize() + '!');
+            throw new IllegalArgumentException(
+                    "Chunk is too large to log. Maximum chunk size for current configuration is " +
+                            Byte.MAX_VALUE * AbstractLogEntryHeader.getMaxLogEntrySize() + '!');
         }
         if (bytesToWrite > m_writeBufferSize) {
             throw new IllegalArgumentException("Data to write exceeds buffer size!");
@@ -280,9 +284,11 @@ public class PrimaryWriteBuffer {
 
                             // Write payload
                             if (m_native) {
-                                p_importer.readBytes(m_bufferWrapper.getAddress(), m_buffer.position(), bytesUntilEnd - headerSize);
+                                p_importer.readBytes(m_bufferWrapper.getAddress(), m_buffer.position(),
+                                        bytesUntilEnd - headerSize);
 
-                                p_importer.readBytes(m_bufferWrapper.getAddress(), 0, writeSize - (bytesUntilEnd - headerSize));
+                                p_importer.readBytes(m_bufferWrapper.getAddress(), 0,
+                                        writeSize - (bytesUntilEnd - headerSize));
                             } else {
                                 p_importer.readBytes(m_buffer.array(), m_buffer.position(), bytesUntilEnd - headerSize);
 
@@ -305,7 +311,9 @@ public class PrimaryWriteBuffer {
 
                     if (m_useChecksum) {
                         // Determine checksum for payload and add to header
-                        AbstractPrimLogEntryHeader.addChecksum(m_bufferWrapper, writePointer, writeSize, logEntryHeader, headerSize, bytesUntilEnd);
+                        AbstractPrimLogEntryHeader
+                                .addChecksum(m_bufferWrapper, writePointer, writeSize, logEntryHeader, headerSize,
+                                        bytesUntilEnd);
                     }
 
                     writePointer = (writePointer + writeSize + headerSize) % m_buffer.capacity();
@@ -801,8 +809,8 @@ public class PrimaryWriteBuffer {
          * @param p_conversionOffset
          *         the conversion offset
          */
-        private void appendToBuffer(final ByteBuffer p_primaryWriteBuffer, final int p_offset, final int p_logEntrySize, final int p_bytesUntilEnd,
-                final short p_conversionOffset) {
+        private void appendToBuffer(final ByteBuffer p_primaryWriteBuffer, final int p_offset, final int p_logEntrySize,
+                final int p_bytesUntilEnd, final short p_conversionOffset) {
             int logEntrySize;
             ByteBuffer segment;
 

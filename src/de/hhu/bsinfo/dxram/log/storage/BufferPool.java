@@ -173,7 +173,8 @@ public final class BufferPool {
         if (p_directBufferWrapper.getBuffer().capacity() == m_logSegmentSize / LARGE_BUFFER_POOL_FACTOR) {
             // Buffer fits in large buffer pool
             while (true) {
-                // PosFront must be read before posBack to avoid missing a posBack update and thus having posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
+                // PosFront must be read before posBack to avoid missing a posBack update and thus having
+                // posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
                 posFront = m_posFrontLarge & 0x7FFFFFFF;
                 posBackSigned = m_posBackProducerLarge.get();
                 posBack = posBackSigned & 0x7FFFFFFF;
@@ -185,7 +186,8 @@ public final class BufferPool {
                 if (m_posBackProducerLarge.compareAndSet(posBackSigned, posBackSigned + 1)) {
                     m_largeBufferPool[posBack % LARGE_BUFFER_POOL_SIZE] = p_directBufferWrapper;
 
-                    // First atomic is necessary to synchronize producers, second to inform consumer after message header has been added
+                    // First atomic is necessary to synchronize producers, second to inform consumer after
+                    // message header has been added
                     while (!m_posBackConsumerLarge.compareAndSet(posBackSigned, posBackSigned + 1)) {
                         // Producer needs to wait for all other submissions prior to this one
                         // (this thread overtook at least one other producer since updating posBackProducer)
@@ -198,7 +200,8 @@ public final class BufferPool {
         if (p_directBufferWrapper.getBuffer().capacity() == m_logSegmentSize / MEDIUM_BUFFER_POOL_FACTOR) {
             // Buffer fits in medium buffer pool
             while (true) {
-                // PosFront must be read before posBack to avoid missing a posBack update and thus having posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
+                // PosFront must be read before posBack to avoid missing a posBack update and thus having
+                // posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
                 posFront = m_posFrontMedium & 0x7FFFFFFF;
                 posBackSigned = m_posBackProducerMedium.get();
                 posBack = posBackSigned & 0x7FFFFFFF;
@@ -210,7 +213,8 @@ public final class BufferPool {
                 if (m_posBackProducerMedium.compareAndSet(posBackSigned, posBackSigned + 1)) {
                     m_mediumBufferPool[posBack % MEDIUM_BUFFER_POOL_SIZE] = p_directBufferWrapper;
 
-                    // First atomic is necessary to synchronize producers, second to inform consumer after message header has been added
+                    // First atomic is necessary to synchronize producers, second to inform consumer after
+                    // message header has been added
                     while (!m_posBackConsumerMedium.compareAndSet(posBackSigned, posBackSigned + 1)) {
                         // Producer needs to wait for all other submissions prior to this one
                         // (this thread overtook at least one other producer since updating posBackProducer)
@@ -223,7 +227,8 @@ public final class BufferPool {
         if (p_directBufferWrapper.getBuffer().capacity() == m_logSegmentSize / SMALL_BUFFER_POOL_FACTOR) {
             // Buffer fits in small buffer pool
             while (true) {
-                // PosFront must be read before posBack to avoid missing a posBack update and thus having posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
+                // PosFront must be read before posBack to avoid missing a posBack update and thus having
+                // posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
                 posFront = m_posFrontSmall & 0x7FFFFFFF;
                 posBackSigned = m_posBackProducerSmall.get();
                 posBack = posBackSigned & 0x7FFFFFFF;
@@ -235,7 +240,8 @@ public final class BufferPool {
                 if (m_posBackProducerSmall.compareAndSet(posBackSigned, posBackSigned + 1)) {
                     m_smallBufferPool[posBack % SMALL_BUFFER_POOL_SIZE] = p_directBufferWrapper;
 
-                    // First atomic is necessary to synchronize producers, second to inform consumer after message header has been added
+                    // First atomic is necessary to synchronize producers, second to inform consumer after
+                    // message header has been added
                     while (!m_posBackConsumerSmall.compareAndSet(posBackSigned, posBackSigned + 1)) {
                         // Producer needs to wait for all other submissions prior to this one
                         // (this thread overtook at least one other producer since updating posBackProducer)
@@ -246,6 +252,8 @@ public final class BufferPool {
             }
         }
 
-        LOGGER.error("Buffer could not be returned! Size: %d", p_directBufferWrapper.getBuffer().capacity());
+        // #if LOGGER >= DEBUG
+        LOGGER.debug("Buffer could not be returned! Size: %d", p_directBufferWrapper.getBuffer().capacity());
+        // #endif /* LOGGER >= DEBUG */
     }
 }

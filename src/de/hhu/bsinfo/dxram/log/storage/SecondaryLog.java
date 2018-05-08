@@ -118,13 +118,17 @@ public class SecondaryLog extends AbstractLog {
      * @throws IOException
      *         if secondary log could not be created
      */
-    public SecondaryLog(final LogComponent p_logComponent, final SecondaryLogsReorgThread p_reorganizationThread, final short p_owner,
-            final short p_originalOwner, final short p_rangeID, final String p_backupDirectory, final long p_secondaryLogSize, final int p_flashPageSize,
-            final int p_logSegmentSize, final int p_reorgUtilizationThreshold, final boolean p_useChecksums, final boolean p_useTimestamps,
-            final int p_coldDataThreshold, final HarddriveAccessMode p_mode) throws IOException {
-        super(new File(p_backupDirectory + 'N' + NodeID.toHexString(p_owner) + '_' + SECLOG_PREFIX_FILENAME + NodeID.toHexString(p_owner) + '_' + p_rangeID +
-                        (p_useChecksums ? "1" : "0") + '_' + (p_useTimestamps ? "1" : "0") + '_' + SECLOG_POSTFIX_FILENAME), p_secondaryLogSize, p_mode,
-                p_logSegmentSize, p_flashPageSize);
+    public SecondaryLog(final LogComponent p_logComponent, final SecondaryLogsReorgThread p_reorganizationThread,
+            final short p_owner, final short p_originalOwner, final short p_rangeID, final String p_backupDirectory,
+            final long p_secondaryLogSize, final int p_flashPageSize, final int p_logSegmentSize,
+            final int p_reorgUtilizationThreshold, final boolean p_useChecksums, final boolean p_useTimestamps,
+            final long p_initializationTimestamp, final int p_coldDataThreshold, final HarddriveAccessMode p_mode)
+            throws IOException {
+        super(new File(p_backupDirectory + 'N' + NodeID.toHexString(p_originalOwner) + '_' + SECLOG_PREFIX_FILENAME +
+                        NodeID.toHexString(p_owner) + '_' + p_rangeID + '_' + (p_useChecksums ? "1" : "0") + '_' +
+                        (p_useTimestamps ? "1" : "0") + SECLOG_POSTFIX_FILENAME), p_secondaryLogSize, p_mode, p_logSegmentSize,
+                p_flashPageSize);
+
         if (p_secondaryLogSize < p_flashPageSize) {
             throw new IllegalArgumentException("Error: Secondary log too small");
         }
@@ -144,8 +148,8 @@ public class SecondaryLog extends AbstractLog {
         m_originalRangeID = p_rangeID;
 
         m_versionsBuffer = new VersionsBuffer(m_originalOwner, p_logComponent, m_secondaryLogSize,
-                p_backupDirectory + 'N' + NodeID.toHexString(p_owner) + '_' + SECLOG_PREFIX_FILENAME + NodeID.toHexString(p_owner) + '_' + p_rangeID + ".ver",
-                p_mode);
+                p_backupDirectory + 'N' + NodeID.toHexString(p_owner) + '_' + SECLOG_PREFIX_FILENAME +
+                        NodeID.toHexString(p_owner) + '_' + p_rangeID + ".ver", p_mode);
 
         m_reorganizationThread = p_reorganizationThread;
 
@@ -191,6 +195,8 @@ public class SecondaryLog extends AbstractLog {
      *         whether checksums are used for recovery
      * @param p_useTimestamps
      *         whether timestamps are used for segment selection
+     * @param p_initializationTimestamp
+     *         time of initialization of the logging component. Used for relative age of log entries
      * @param p_coldDataThreshold
      *         the threshold for cold data detection
      * @param p_mode
@@ -198,12 +204,14 @@ public class SecondaryLog extends AbstractLog {
      * @throws IOException
      *         if secondary log could not be created
      */
-    public SecondaryLog(final LogComponent p_logComponent, final SecondaryLogsReorgThread p_reorganizationThread, final short p_owner, final short p_rangeID,
-            final String p_backupDirectory, final long p_secondaryLogSize, final int p_flashPageSize, final int p_logSegmentSize,
-            final int p_reorgUtilizationThreshold, final boolean p_useChecksums, final boolean p_useTimestamps, final int p_coldDataThreshold,
-            final HarddriveAccessMode p_mode) throws IOException {
-        this(p_logComponent, p_reorganizationThread, p_owner, p_owner, p_rangeID, p_backupDirectory, p_secondaryLogSize, p_flashPageSize, p_logSegmentSize,
-                p_reorgUtilizationThreshold, p_useChecksums, p_useTimestamps, p_coldDataThreshold, p_mode);
+    public SecondaryLog(final LogComponent p_logComponent, final SecondaryLogsReorgThread p_reorganizationThread,
+            final short p_owner, final short p_rangeID, final String p_backupDirectory, final long p_secondaryLogSize,
+            final int p_flashPageSize, final int p_logSegmentSize, final int p_reorgUtilizationThreshold,
+            final boolean p_useChecksums, final boolean p_useTimestamps, final long p_initializationTimestamp,
+            final int p_coldDataThreshold, final HarddriveAccessMode p_mode) throws IOException {
+        this(p_logComponent, p_reorganizationThread, p_owner, p_owner, p_rangeID, p_backupDirectory, p_secondaryLogSize,
+                p_flashPageSize, p_logSegmentSize, p_reorgUtilizationThreshold, p_useChecksums, p_useTimestamps,
+                p_initializationTimestamp, p_coldDataThreshold, p_mode);
     }
 
     /**
@@ -225,8 +233,9 @@ public class SecondaryLog extends AbstractLog {
      * @throws IOException
      *         if the secondary log could not be read
      */
-    public static DataStructure[] recoverFromFile(final String p_fileName, final String p_path, final boolean p_useChecksum, final long p_secondaryLogSize,
-            final int p_logSegmentSize, final HarddriveAccessMode p_mode) throws IOException {
+    public static DataStructure[] recoverFromFile(final String p_fileName, final String p_path,
+            final boolean p_useChecksum, final long p_secondaryLogSize, final int p_logSegmentSize,
+            final HarddriveAccessMode p_mode) throws IOException {
         short nodeID;
         int i = 0;
         int offset = 0;
@@ -242,6 +251,13 @@ public class SecondaryLog extends AbstractLog {
         AbstractSecLogEntryHeader logEntryHeader;
 
         // FIXME
+
+        /*
+         * IMPORTANT: do not use version log to identify most the recent version of a chunk as the version log might
+         * have been ahead of the secondary log resulting in not recovering the chunk at all. Instead, cache all
+         * chunks from all segments (in a hash table) and overwrite entry if version is higher. Use the version log
+         * to determine deleted chunks, only.
+         */
 
         nodeID = Short.parseShort(p_fileName.split("_")[0].substring(1));
         storesMigrations = p_fileName.contains("M");
@@ -274,7 +290,8 @@ public class SecondaryLog extends AbstractLog {
                         segment.position(offset + logEntryHeader.getHeaderSize(segment, offset));
                         segment.limit(segment.position() + payloadSize);
                         payload.put(segment);
-                        if (p_useChecksum && ChecksumHandler.calculateChecksumOfPayload(segments[i], 0, payloadSize) != checksum) {
+                        if (p_useChecksum &&
+                                ChecksumHandler.calculateChecksumOfPayload(segments[i], 0, payloadSize) != checksum) {
                             // Ignore log entry
                             offset += logEntrySize;
                             continue;
@@ -307,8 +324,8 @@ public class SecondaryLog extends AbstractLog {
      *         if the secondary log could not be read
      * @note executed only by reorganization thread
      */
-    private static DirectByteBufferWrapper[] readAllSegmentsFromFile(final String p_path, final long p_secondaryLogSize, final int p_logSegmentSize,
-            final HarddriveAccessMode p_mode) throws IOException {
+    private static DirectByteBufferWrapper[] readAllSegmentsFromFile(final String p_path, final long p_secondaryLogSize,
+            final int p_logSegmentSize, final HarddriveAccessMode p_mode) throws IOException {
         DirectByteBufferWrapper[] result;
         int numberOfSegments;
 
@@ -370,7 +387,8 @@ public class SecondaryLog extends AbstractLog {
             localRanges = getRanges(p_versionStorage.getVersionsArray(), p_lowestCID);
         }
         if (p_versionStorage.getVersionsHashTable().size() > 0) {
-            System.out.println("Hashtable contains " + p_versionStorage.getVersionsHashTable().size() + " entries. " + ChunkID.toHexString(p_lowestCID));
+            System.out.println("Hashtable contains " + p_versionStorage.getVersionsHashTable().size() + " entries. " +
+                    ChunkID.toHexString(p_lowestCID));
             if (localRanges != null) {
                 System.out.println("Local ranges: ");
                 for (long chunkID : localRanges) {
@@ -420,7 +438,8 @@ public class SecondaryLog extends AbstractLog {
             ranges.add(currentCID);
             currentIndex = 1;
 
-            while (index + currentIndex < p_versionsArray.capacity() && p_versionsArray.getVersion(index + currentIndex, 0) != Version.INVALID_VERSION) {
+            while (index + currentIndex < p_versionsArray.capacity() &&
+                    p_versionsArray.getVersion(index + currentIndex, 0) != Version.INVALID_VERSION) {
                 currentIndex++;
             }
             ranges.add(currentCID + currentIndex - 1);
@@ -448,7 +467,8 @@ public class SecondaryLog extends AbstractLog {
 
         // Sort table
         if (p_versionsHT.size() < SORT_THRESHOLD) {
-            // There are only a few elements in table -> for a nearly sorted table insertion sort is much faster than quicksort
+            // There are only a few elements in table -> for a nearly sorted table
+            // insertion sort is much faster than quicksort
             insertionSort(table);
         } else {
             quickSort(table, table.length - 1);
@@ -465,7 +485,8 @@ public class SecondaryLog extends AbstractLog {
             currentIndex = 4;
 
             while (index + currentIndex < table.length &&
-                    ((long) table[index + currentIndex] << 32 | table[index + currentIndex + 1] & 0xFFFFFFFFL) == currentCID + currentIndex / 4) {
+                    ((long) table[index + currentIndex] << 32 | table[index + currentIndex + 1] & 0xFFFFFFFFL) ==
+                            currentCID + currentIndex / 4) {
                 currentIndex += 4;
             }
             ranges.add(currentCID + currentIndex - 1);
@@ -478,7 +499,8 @@ public class SecondaryLog extends AbstractLog {
     // Methods
 
     /**
-     * Sorts the versions hashtable with insertion sort; Used for a barely utilized hashtable as insertion sort is best for nearly sorted series
+     * Sorts the versions hashtable with insertion sort; Used for a barely utilized hashtable
+     * as insertion sort is best for nearly sorted series
      *
      * @param p_table
      *         the array of the versions hashtable
@@ -613,7 +635,7 @@ public class SecondaryLog extends AbstractLog {
      * @return the current time in seconds
      */
     private int getCurrentTimeInSec() {
-        return (int) ((System.currentTimeMillis() - m_creationTimestamp) / 1000);
+        return (int) ((System.currentTimeMillis() - m_initializationTimestamp) / 1000);
     }
 
     /**
@@ -682,7 +704,8 @@ public class SecondaryLog extends AbstractLog {
         for (int i = 0; i < m_segmentHeaders.length; i++) {
             header = m_segmentHeaders[i];
             if (header != null) {
-                ret.append(i).append(' ').append(header.getUsedBytes()).append(", u=").append(String.format("%.2f", header.getUtilization())).append(" | ");
+                ret.append(i).append(' ').append(header.getUsedBytes()).append(", u=")
+                        .append(String.format("%.2f", header.getUtilization())).append(" | ");
             }
         }
 
@@ -737,7 +760,8 @@ public class SecondaryLog extends AbstractLog {
     }
 
     @Override
-    public final void appendData(final DirectByteBufferWrapper p_bufferWrapper, final int p_length) throws IOException, InterruptedException {
+    public final void appendData(final DirectByteBufferWrapper p_bufferWrapper, final int p_length)
+            throws IOException, InterruptedException {
         int length = p_length;
         int logEntrySize;
         int rangeSize = 0;
@@ -750,7 +774,9 @@ public class SecondaryLog extends AbstractLog {
         }
         while (m_secondaryLogSize - determineLogSize() < length) {
             // #if LOGGER >= WARN
-            LOGGER.warn("Secondary log for range %d of 0x%X is full. Initializing reorganization and awaiting execution", m_rangeID, m_owner);
+            LOGGER.warn(
+                    "Secondary log for range %d of 0x%X is full. Initializing reorganization and awaiting execution",
+                    m_rangeID, m_owner);
             // #endif /* LOGGER >= WARN */
             signalReorganizationAndWait();
         }
@@ -857,15 +883,20 @@ public class SecondaryLog extends AbstractLog {
 
         if (determineLogSize() >= m_secondaryLogReorgThreshold && !isSignaled) {
             signalReorganization();
-            // #if LOGGER >= INFO
-            LOGGER.info("Threshold breached (%d) for secondary log %d of 0x%X. Initializing reorganization.", determineLogSize(), m_rangeID, m_owner);
-            // #endif /* LOGGER >= INFO */
+            // #if LOGGER >= TRACE
+            LOGGER.trace("Threshold breached (%d) for secondary log %d of 0x%X. Initializing reorganization.",
+                    determineLogSize(), m_rangeID, m_owner);
+            // #endif /* LOGGER >= TRACE */
         }
     }
 
     /**
      * Returns a list with all log entries wrapped in chunks
      *
+     * @param p_wrappers
+     *         the byte buffers for reading-in the segments (one per recovery thread)
+     * @param p_numberOfRecoveryHelperThreads
+     *         the number of recovery helper threads
      * @param p_versions
      *         all versions read from SSD
      * @param p_lowestCID
@@ -880,8 +911,10 @@ public class SecondaryLog extends AbstractLog {
      *         whether to check the payload or not
      * @return ChunkIDs of all recovered chunks, number of recovered chunks and bytes
      */
-    public final RecoveryMetadata recoverFromLog(final TemporaryVersionsStorage p_versions, final long p_lowestCID, final long p_timeToGetLock,
-            final long p_timeToReadVersions, final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck) {
+    public final RecoveryMetadata recoverFromLog(final DirectByteBufferWrapper[] p_wrappers,
+            final int p_numberOfRecoveryHelperThreads, final TemporaryVersionsStorage p_versions,
+            final long p_lowestCID, final long p_timeToGetLock, final long p_timeToReadVersions,
+            final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck) {
         int numberOfRecoveredLargeChunks = 0;
         long timeToPut = 0;
         boolean doCRCCheck = p_doCRCCheck;
@@ -917,7 +950,8 @@ public class SecondaryLog extends AbstractLog {
         if (m_owner == m_originalOwner) {
             LOGGER.info("Starting recovery of backup range %d of 0x%X", m_rangeID, m_owner);
         } else {
-            LOGGER.info("Starting recovery of backup range %d of 0x%X. Original owner: 0x%x", m_rangeID, m_owner, m_originalOwner);
+            LOGGER.info("Starting recovery of backup range %d of 0x%X. Original owner: 0x%x", m_rangeID, m_owner,
+                    m_originalOwner);
         }
         // #endif /* LOGGER >= INFO */
 
@@ -1013,8 +1047,8 @@ public class SecondaryLog extends AbstractLog {
         if (m_owner == m_originalOwner) {
             return "Owner: " + m_owner + " - RangeID: " + m_rangeID + " - Written bytes: " + determineLogSize();
         } else {
-            return "Owner: " + m_owner + " - RangeID: " + m_rangeID + " - Original Owner: " + m_owner + " - Original RangeID: " + m_originalRangeID +
-                    " - Written bytes: " + determineLogSize();
+            return "Owner: " + m_owner + " - RangeID: " + m_rangeID + " - Original Owner: " + m_owner +
+                    " - Original RangeID: " + m_originalRangeID + " - Written bytes: " + determineLogSize();
         }
     }
 
@@ -1058,7 +1092,8 @@ public class SecondaryLog extends AbstractLog {
      * @param p_lowestLID
      *         the lowest LID at the time the versions are read-in
      */
-    final void reorganizeAll(final DirectByteBufferWrapper p_bufferWrapper, final TemporaryVersionsStorage p_allVersions, final long p_lowestLID) {
+    final void reorganizeAll(final DirectByteBufferWrapper p_bufferWrapper,
+            final TemporaryVersionsStorage p_allVersions, final long p_lowestLID) {
         for (int i = 0; i < m_segmentHeaders.length; i++) {
             if (m_segmentHeaders[i] != null && !Thread.currentThread().isInterrupted()) {
                 if (!reorganizeSegment(i, p_bufferWrapper, p_allVersions, p_lowestLID)) {
@@ -1079,7 +1114,8 @@ public class SecondaryLog extends AbstractLog {
      * @param p_lowestLID
      *         the lowest LID at the time the versions are read-in
      */
-    final boolean reorganizeIteratively(final DirectByteBufferWrapper p_bufferWrapper, final TemporaryVersionsStorage p_allVersions, final long p_lowestLID) {
+    final boolean reorganizeIteratively(final DirectByteBufferWrapper p_bufferWrapper,
+            final TemporaryVersionsStorage p_allVersions, final long p_lowestLID) {
         return reorganizeSegment(chooseSegment(), p_bufferWrapper, p_allVersions, p_lowestLID);
     }
 
@@ -1137,6 +1173,8 @@ public class SecondaryLog extends AbstractLog {
      *
      * @param p_segmentIndex
      *         the index of the segment
+     * @param p_wrapper
+     *         the byte buffer for reading-in the segments
      * @param p_allVersions
      *         all versions
      * @param p_lowestCID
@@ -1152,9 +1190,11 @@ public class SecondaryLog extends AbstractLog {
      * @param p_stat
      *         timing statistics
      */
-    private void recoverSegment(final int p_segmentIndex, final TemporaryVersionsStorage p_allVersions, final long p_lowestCID,
-            final RecoveryMetadata p_recoveryMetadata, final HashMap<Long, DSByteBuffer> p_largeChunks, final ReentrantLock p_largeChunkLock,
-            final ChunkBackupComponent p_chunkComponent, final boolean p_doCRCCheck, final Statistics p_stat) {
+    private void recoverSegment(final int p_segmentIndex, final DirectByteBufferWrapper p_wrapper,
+            final TemporaryVersionsStorage p_allVersions, final long p_lowestCID,
+            final RecoveryMetadata p_recoveryMetadata, final HashMap<Long, DSByteBuffer> p_largeChunks,
+            final ReentrantLock p_largeChunkLock, final ChunkBackupComponent p_chunkComponent,
+            final boolean p_doCRCCheck, final Statistics p_stat) {
         int headerSize;
         int readBytes = 0;
         int segmentLength;
@@ -1228,13 +1268,15 @@ public class SecondaryLog extends AbstractLog {
                             p_largeChunkLock.lock();
                             DSByteBuffer chunk = p_largeChunks.get(chunkID);
                             if (chunk == null) {
-                                // This is the first segment for this ChunkID -> create an array large enough for holding all data for this chunk
+                                // This is the first segment for this ChunkID -> create an array large
+                                // enough for holding all data for this chunk
                                 if (chainID == chainSize - 1) {
                                     // This is the last chain link -> complete size is known
                                     chunk = new DSByteBuffer(chunkID, (chainSize - 1) * maxLogEntrySize + payloadSize);
                                     p_largeChunks.put(chunkID, chunk);
                                 } else {
-                                    // This is another chain link -> maximum size is known, only -> must be truncated later
+                                    // This is another chain link -> maximum size is known, only
+                                    // -> must be truncated later
                                     chunk = new DSByteBuffer(chunkID, chainSize * maxLogEntrySize);
                                     p_largeChunks.put(chunkID, chunk);
                                 }
@@ -1261,7 +1303,9 @@ public class SecondaryLog extends AbstractLog {
 
                                 index++;
                             } else {
-                                if (!p_chunkComponent.putRecoveredChunks(chunkIDs, bufferWrapper.getAddress(), offsets, lengths, length)) {
+                                if (!p_chunkComponent
+                                        .putRecoveredChunks(chunkIDs, p_wrapper.getAddress(), offsets, lengths,
+                                                length)) {
                                     // #if LOGGER >= ERROR
                                     LOGGER.error("Memory management failure. Could not recover chunks!");
                                     // #endif /* LOGGER >= ERROR */
@@ -1287,7 +1331,8 @@ public class SecondaryLog extends AbstractLog {
 
                 // Put other chunks in memory
                 if (index != 0) {
-                    if (!p_chunkComponent.putRecoveredChunks(chunkIDs, bufferWrapper.getAddress(), offsets, lengths, index)) {
+                    if (!p_chunkComponent
+                            .putRecoveredChunks(chunkIDs, p_wrapper.getAddress(), offsets, lengths, index)) {
                         // #if LOGGER >= ERROR
                         LOGGER.error("Memory management failure. Could not recover chunks!");
                         // #endif /* LOGGER >= ERROR */
@@ -1319,8 +1364,8 @@ public class SecondaryLog extends AbstractLog {
      *         if the secondary log could not be read
      */
 
-    private int fillPartlyUsedSegments(final DirectByteBufferWrapper p_bufferWrapper, final int p_offset, final int p_length, final boolean p_isAccessed)
-            throws IOException {
+    private int fillPartlyUsedSegments(final DirectByteBufferWrapper p_bufferWrapper, final int p_offset,
+            final int p_length, final boolean p_isAccessed) throws IOException {
         short segment;
         int offset = p_offset;
         int rangeSize;
@@ -1351,10 +1396,13 @@ public class SecondaryLog extends AbstractLog {
                     m_segmentAssignmentlock.unlock();
                 }
                 writeToSecondaryLog(p_bufferWrapper, offset, (long) segment * m_logSegmentSize, length, p_isAccessed);
+                // We do not have to update the header's utilization here as the new header was initialized with
+                // correct utilization
                 if (m_useTimestamps) {
                     // Modify segment age
                     int currentAge = header.getAge();
-                    header.setAge(currentAge - (currentAge + getCurrentTimeInSec() - m_activeSegment.m_lastAccess) * length / header.getUsedBytes() /* contains length already */);
+                    header.setAge(currentAge - (currentAge + getCurrentTimeInSec() - header.getLastAccess()) * length /
+                            header.getUsedBytes() /* contains length already */);
                 }
                 length = 0;
 
@@ -1368,12 +1416,15 @@ public class SecondaryLog extends AbstractLog {
 
                 if (length <= header.getFreeBytes()) {
                     // All data fits in this segment
-                    writeToSecondaryLog(p_bufferWrapper, offset, (long) segment * m_logSegmentSize + header.getUsedBytes(), length, p_isAccessed);
+                    writeToSecondaryLog(p_bufferWrapper, offset,
+                            (long) segment * m_logSegmentSize + header.getUsedBytes(), length, p_isAccessed);
                     header.updateUsedBytes(length);
                     if (m_useTimestamps) {
                         // Modify segment age
                         int currentAge = header.getAge();
-                        header.setAge(currentAge - (currentAge + getCurrentTimeInSec() - m_activeSegment.m_lastAccess) * length / header.getUsedBytes() /* contains length already */);
+                        header.setAge(currentAge -
+                                (currentAge + getCurrentTimeInSec() - header.getLastAccess()) * length /
+                                        header.getUsedBytes() /* contains length already */);
                     }
                     length = 0;
 
@@ -1424,8 +1475,8 @@ public class SecondaryLog extends AbstractLog {
      * @throws IOException
      *         if the secondary log could not be read
      */
-    private int createNewSegmentAndFill(final DirectByteBufferWrapper p_bufferWrapper, final int p_offset, final int p_length, final boolean p_isAccessed)
-            throws IOException {
+    private int createNewSegmentAndFill(final DirectByteBufferWrapper p_bufferWrapper, final int p_offset,
+            final int p_length, final boolean p_isAccessed) throws IOException {
         int ret = p_length;
         short segment;
         SegmentHeader header;
@@ -1444,12 +1495,14 @@ public class SecondaryLog extends AbstractLog {
                 m_activeSegment = header;
                 m_segmentAssignmentlock.unlock();
             }
-
             writeToSecondaryLog(p_bufferWrapper, p_offset, (long) segment * m_logSegmentSize, p_length, p_isAccessed);
+            // We do not have to update the header's utilization here as the new header was initialized with
             if (m_useTimestamps) {
                 // Modify segment age
                 int currentAge = header.getAge();
-                header.setAge(currentAge - (currentAge + getCurrentTimeInSec() - m_activeSegment.m_lastAccess) * p_length / header.getUsedBytes() /* contains p_length already */);
+                header.setAge(currentAge -
+                                (currentAge + getCurrentTimeInSec() - header.getLastAccess()) * p_length / header.getUsedBytes()
+                        /* contains p_length already */);
             }
             ret = 0;
         } else {
@@ -1545,7 +1598,8 @@ public class SecondaryLog extends AbstractLog {
      *         if the secondary log could not be read
      * @note executed only by reorganization thread
      */
-    private int readSegment(final DirectByteBufferWrapper p_bufferWrapper, final int p_segmentIndex) throws IOException {
+    private int readSegment(final DirectByteBufferWrapper p_bufferWrapper, final int p_segmentIndex)
+            throws IOException {
         int ret = 0;
         SegmentHeader header;
 
@@ -1553,7 +1607,7 @@ public class SecondaryLog extends AbstractLog {
         if (header != null) {
             ret = header.getUsedBytes();
             p_bufferWrapper.getBuffer().clear();
-            readFromSecondaryLog(p_bufferWrapper, ret, p_segmentIndex * m_logSegmentSize, true);
+            readFromSecondaryLog(p_bufferWrapper, ret, p_segmentIndex * m_logSegmentSize);
         }
         return ret;
     }
@@ -1571,11 +1625,12 @@ public class SecondaryLog extends AbstractLog {
      *         if the secondary log could not be read
      * @note executed only by reorganization thread
      */
-    private void updateSegment(final DirectByteBufferWrapper p_bufferWrapper, final int p_length, final int p_segmentIndex) throws IOException {
+    private void updateSegment(final DirectByteBufferWrapper p_bufferWrapper, final int p_length,
+            final int p_segmentIndex) throws IOException {
         SegmentHeader header;
 
         // Overwrite segment on log
-        writeToSecondaryLog(p_bufferWrapper, 0, (long) p_segmentIndex * m_logSegmentSize, p_length + 1, true);
+        writeToSecondaryLog(p_bufferWrapper, 0, (long) p_segmentIndex * m_logSegmentSize, p_length, true);
 
         // Update segment header
         header = m_segmentHeaders[p_segmentIndex];
@@ -1594,7 +1649,6 @@ public class SecondaryLog extends AbstractLog {
      * @note executed only by reorganization thread
      */
     private void freeSegment(final int p_segmentIndex) throws IOException {
-
         // Mark the end of the segment (a log entry header cannot start with a zero)
         writeToSecondaryLog(null, 0, (long) p_segmentIndex * m_logSegmentSize, 1, true);
         m_segmentHeaders[p_segmentIndex] = null;
@@ -1634,8 +1688,8 @@ public class SecondaryLog extends AbstractLog {
      *         the lowest CID at the time the versions were read-in
      * @return whether the reorganization was successful or not
      */
-    private boolean reorganizeSegment(final int p_segmentIndex, final DirectByteBufferWrapper p_bufferWrapper, final TemporaryVersionsStorage p_allVersions,
-            final long p_lowestCID) {
+    private boolean reorganizeSegment(final int p_segmentIndex, final DirectByteBufferWrapper p_bufferWrapper,
+            final TemporaryVersionsStorage p_allVersions, final long p_lowestCID) {
         boolean ret = true;
         int length;
         int readBytes = 0;
@@ -1757,18 +1811,22 @@ public class SecondaryLog extends AbstractLog {
             if (!Thread.currentThread().isInterrupted()) {
                 if (readBytes - writtenBytes > 0) {
                     // #if LOGGER >= INFO
-                    LOGGER.info("Freed %d bytes during reorganization of segment %d in range 0x%X,%d\t total log size: %d", readBytes - writtenBytes,
-                            p_segmentIndex, m_owner, m_rangeID, determineLogSize() / 1024 / 1024);
-                    LOGGER.info("Time to assign: %d, read: %d, process: %d, write: %d, all: %d", assignment - start, read - assignment, beforeWrite - read,
-                            afterWrite - beforeWrite, System.currentTimeMillis() - start);
+                    LOGGER.info(
+                            "Freed %d bytes during reorganization of segment %d in range 0x%X,%d\t total log size: %d",
+                            readBytes - writtenBytes, p_segmentIndex, m_owner, m_rangeID,
+                            determineLogSize() / 1024 / 1024);
+                    LOGGER.info("Time to assign: %d, read: %d, process: %d, write: %d, all: %d", assignment - start,
+                            read - assignment, beforeWrite - read, afterWrite - beforeWrite,
+                            System.currentTimeMillis() - start);
                     // #endif /* LOGGER >= INFO */
                 }
             } else {
                 // #if LOGGER >= INFO
-                LOGGER.info("Interrupted during reorganization of segment %d in range 0x%X,%d\t total log size: %d", p_segmentIndex, m_owner, m_rangeID,
-                        determineLogSize() / 1024 / 1024);
-                LOGGER.info("Time to assign: %d, read: %d, process: %d, write: %d, all: %d", assignment - start, read - assignment, beforeWrite - read,
-                        afterWrite - beforeWrite, System.currentTimeMillis() - start);
+                LOGGER.info("Interrupted during reorganization of segment %d in range 0x%X,%d\t total log size: %d",
+                        p_segmentIndex, m_owner, m_rangeID, determineLogSize() / 1024 / 1024);
+                LOGGER.info("Time to assign: %d, read: %d, process: %d, write: %d, all: %d", assignment - start,
+                        read - assignment, beforeWrite - read, afterWrite - beforeWrite,
+                        System.currentTimeMillis() - start);
                 // #endif /* LOGGER >= INFO */
             }
         }
@@ -2063,8 +2121,8 @@ public class SecondaryLog extends AbstractLog {
                 m_indexLock.unlock();
 
                 if (m_segmentHeaders[idx] != null && !m_segmentHeaders[idx].isEmpty()) {
-                    recoverSegment(idx, m_versionsForRecovery, m_lowestCID, m_recoveryMetadata, m_largeChunks, m_largeChunkLock, m_chunkComponent, m_doCRCCheck,
-                            m_stats);
+                    recoverSegment(idx, m_wrapper, m_versionsForRecovery, m_lowestCID, m_recoveryMetadata,
+                            m_largeChunks, m_largeChunkLock, m_chunkComponent, m_doCRCCheck, m_stats);
                 }
                 idx++;
             }

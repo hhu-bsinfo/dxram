@@ -28,6 +28,7 @@ import de.hhu.bsinfo.dxutils.UnsafeHandler;
 class WriterJobQueue {
 
     // Must be a power of two to work with wrap around
+    // Do not enlarge this value if you don't have a good reason
     // If you change this value, consider changing the buffer pool defaults as well
     private static final int SIZE = 4;
 
@@ -41,7 +42,8 @@ class WriterJobQueue {
     private PrimaryWriteBuffer m_primaryWriteBuffer;
     private PrimaryLog m_primaryLog;
 
-    // single producer, single consumer lock free queue (posBack and posFront are synchronized with fences and byte counter)
+    // single producer, single consumer lock free queue (posBack and posFront are synchronized
+    // with fences and byte counter)
     private int m_posBack; // 31 bits used (see incrementation)
     private int m_posFront; // 31 bits used (see incrementation)
 
