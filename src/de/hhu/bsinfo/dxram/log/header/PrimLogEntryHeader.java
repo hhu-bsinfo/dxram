@@ -25,7 +25,7 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
 /**
  * Extends AbstractPrimLogEntryHeader for a primary log log entry header
  * Fields: | Type | RangeID | Owner | NodeID | LocalID | Length  | Timestamp | Epoch | Version | Chaining | Checksum |
- * Length: |  1   |    1    |   2   |   2    | 1,2,4,6 | 0,1,2,3 |    0,4    |   2   | 0,1,2,4 |   0,2    |    0,4   |
+ * Length: |  1   |    2    |   2   |   2    | 1,2,4,6 | 0,1,2,3 |    0,4    |   2   | 0,1,2,4 |   0,2    |    0,4   |
  * Type field contains type, length of LocalID field, length of length field and length of version field
  * Timestamp field has length 0 if timestamps are deactivated in DXRAM configuration, 4 otherwise
  * Chaining field has length 0 for chunks smaller than 1/2 of segment size (4 MB max.) and 2 for larger chunks (chaining ID + chain size)
@@ -153,6 +153,9 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
         System.out.println("* NodeID: " + getNodeID(p_buffer, p_offset));
         System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
         System.out.println("* Length: " + getLength(p_buffer, p_offset));
+        if (ms_timestampSize > 0) {
+            System.out.println("* Timestamp: " + getTimestamp(p_buffer, p_offset));
+        }
         System.out.println("* Version: " + version.getEpoch() + ", " + version.getVersion());
         if (ChecksumHandler.checksumsEnabled()) {
             System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));

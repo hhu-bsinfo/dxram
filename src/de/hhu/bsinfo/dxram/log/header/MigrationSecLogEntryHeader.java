@@ -80,6 +80,9 @@ class MigrationSecLogEntryHeader extends AbstractSecLogEntryHeader {
         System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
         System.out.println("* Length: " + getLength(p_buffer, p_offset));
         System.out.println("* Version: " + version.getEpoch() + ", " + version.getVersion());
+        if (ms_timestampSize > 0) {
+            System.out.println("* Timestamp: " + getTimestamp(p_buffer, p_offset));
+        }
         if (ChecksumHandler.checksumsEnabled()) {
             System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));
         }

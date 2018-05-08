@@ -68,7 +68,11 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
         AbstractSecLogEntryHeader ret;
         byte type;
 
-        type = (byte) (p_buffer.get(p_offset) & TYPE_MASK);
+        type = p_buffer.get(p_offset);
+
+        assert type != 0;
+
+        type &= TYPE_MASK;
         if (type == 0) {
             ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
         } else {

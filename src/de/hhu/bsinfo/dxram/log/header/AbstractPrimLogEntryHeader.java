@@ -188,10 +188,11 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      * @param p_conversionOffset
      *         the conversion offset
      */
-    public static void convertAndPut(final ByteBuffer p_input, final int p_inputOffset, final ByteBuffer p_output, final int p_logEntrySize,
-            final int p_bytesUntilEnd, final short p_conversionOffset) {
+    public static void convertAndPut(final ByteBuffer p_input, final int p_inputOffset, final ByteBuffer p_output,
+            final int p_logEntrySize, final int p_bytesUntilEnd, final short p_conversionOffset) {
         // Set type field
         p_output.put(p_input.get(p_inputOffset));
+        int sizeLeft = p_logEntrySize - p_conversionOffset;
         if (p_logEntrySize <= p_bytesUntilEnd) {
             // Copy shortened header and payload
             p_input.position(p_inputOffset + p_conversionOffset);
@@ -200,17 +201,16 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
         } else {
             // Entry is bisected
             if (p_conversionOffset >= p_bytesUntilEnd) {
-                // Copy shortened header and payload
+                // Ignore bytes before wrap-around
                 p_input.position(p_conversionOffset - p_bytesUntilEnd);
-                p_input.limit(p_logEntrySize - p_bytesUntilEnd);
+                p_input.limit(p_conversionOffset - p_bytesUntilEnd + sizeLeft);
                 p_output.put(p_input);
             } else {
-                // Copy shortened header and payload in two steps
                 p_input.position(p_inputOffset + p_conversionOffset);
                 p_output.put(p_input);
 
                 p_input.position(0);
-                p_input.limit(p_logEntrySize - p_bytesUntilEnd);
+                p_input.limit(sizeLeft - (p_bytesUntilEnd - p_conversionOffset));
                 p_output.put(p_input);
             }
         }
