@@ -18,6 +18,7 @@ package de.hhu.bsinfo.dxram.log.storage;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,8 +38,9 @@ public final class SecondaryLogBuffer {
     private DirectByteBufferWrapper m_buffer;
     private SecondaryLog m_secondaryLog;
 
-    // Constructors
     private int m_logSegmentSize;
+
+    private ReentrantLock m_lock;
 
     // Getter
 
@@ -56,8 +58,10 @@ public final class SecondaryLogBuffer {
 
         m_secondaryLog = p_secondaryLog;
         m_logSegmentSize = p_logSegmentSize;
+        m_lock = new ReentrantLock(false);
 
-        m_buffer = new DirectByteBufferWrapper(p_bufferSize + 1, true); // One byte for segment terminator (0) which is set before writing to secLog
+        m_buffer = new DirectByteBufferWrapper(p_bufferSize + 1,
+                true); // One byte for segment terminator (0) which is set before writing to secLog
         // #if LOGGER == TRACE
         LOGGER.trace("Initialized secondary log buffer (%d)", p_bufferSize);
         // #endif /* LOGGER == TRACE */
@@ -107,10 +111,12 @@ public final class SecondaryLogBuffer {
      *         if the caller was interrupted
      */
     public void flushSecLogBuffer() throws IOException, InterruptedException {
+        m_lock.lock();
         if (m_buffer.getBuffer().position() > 0) {
             m_secondaryLog.appendData(m_buffer, m_buffer.getBuffer().position());
             m_buffer.getBuffer().rewind();
         }
+        m_lock.unlock();
     }
 
     /**
@@ -125,23 +131,31 @@ public final class SecondaryLogBuffer {
      */
     DirectByteBufferWrapper bufferData(final DirectByteBufferWrapper p_buffer, final int p_entryOrRangeSize) {
         DirectByteBufferWrapper bufferWrapper;
+        ByteBuffer secLogBuffer = m_buffer.getBuffer();
 
-        if (m_buffer.getBuffer().position() + p_entryOrRangeSize >= m_buffer.getBuffer().capacity() - 1) {
+        m_lock.lock();
+        if (secLogBuffer.position() + p_entryOrRangeSize + 1 >= secLogBuffer.capacity()) {
             // Merge current secondary log buffer and new buffer and write to secondary log
-            bufferWrapper = new DirectByteBufferWrapper(m_buffer.getBuffer().position() + p_entryOrRangeSize + 1,
+            bufferWrapper = new DirectByteBufferWrapper(secLogBuffer.position() + p_entryOrRangeSize + 1,
                     true); // One byte for segment terminator (0) which is set before writing to secLog
 
-            bufferWrapper.getBuffer().put(m_buffer.getBuffer());
-            m_buffer.getBuffer().rewind();
+            secLogBuffer.flip();
+            bufferWrapper.getBuffer().put(secLogBuffer);
+            secLogBuffer.clear();
 
             processBuffer(p_buffer.getBuffer(), p_entryOrRangeSize, bufferWrapper);
 
             bufferWrapper.getBuffer().flip();
+
+            // The limit might be much smaller than the capacity as log entry headers have been truncated
+
+            m_lock.unlock();
             return bufferWrapper;
         } else {
             // Append buffer to secondary log buffer
             processBuffer(p_buffer.getBuffer(), p_entryOrRangeSize, m_buffer);
 
+            m_lock.unlock();
             return null;
         }
     }
@@ -188,18 +202,44 @@ public final class SecondaryLogBuffer {
      * @throws InterruptedException
      *         if the caller was interrupted
      */
-    void flushAllDataToSecLog(final DirectByteBufferWrapper p_buffer, final int p_entryOrRangeSize) throws IOException, InterruptedException {
+    void flushAllDataToSecLog(final DirectByteBufferWrapper p_buffer, final int p_entryOrRangeSize)
+            throws IOException, InterruptedException {
         DirectByteBufferWrapper wrapper;
         ByteBuffer secLogBuffer;
         ByteBuffer dataToWrite;
 
+        assert p_buffer.getBuffer().position() == 0;
+        assert p_buffer.getBuffer().limit() == p_buffer.getBuffer().capacity();
+
+        m_lock.lock();
         if (isBufferEmpty()) {
+            m_lock.unlock();
             // No data in secondary log buffer -> Write directly in secondary log
             m_secondaryLog.appendData(p_buffer, p_entryOrRangeSize);
         } else {
             // There is data in secondary log buffer
             secLogBuffer = m_buffer.getBuffer();
-            if (secLogBuffer.position() + p_entryOrRangeSize <= m_logSegmentSize) {
+            if (secLogBuffer.position() + p_entryOrRangeSize <= p_buffer.getBuffer().capacity()) {
+                // The data in secondary log buffer does fit in the buffer to flush -> prepend it
+                ByteBuffer buffer = p_buffer.getBuffer();
+                int secLogBufSize = secLogBuffer.position();
+
+                buffer.limit(p_entryOrRangeSize);
+                ByteBuffer slice = buffer.slice();
+                buffer.position(secLogBufSize);
+                buffer.limit(buffer.capacity());
+                buffer.put(slice);
+                buffer.position(0);
+
+                secLogBuffer.flip();
+                buffer.put(secLogBuffer);
+
+                secLogBuffer.clear();
+                buffer.position(0);
+
+                m_lock.unlock();
+                m_secondaryLog.appendData(p_buffer, secLogBufSize + p_entryOrRangeSize);
+            } else if (secLogBuffer.position() + p_entryOrRangeSize <= m_logSegmentSize) {
                 // Data combined fits in one segment -> flush buffer and write new data in secondary log with one access
                 wrapper = new DirectByteBufferWrapper(secLogBuffer.position() + p_entryOrRangeSize + 1,
                         true); // One byte for segment terminator (0) which is set before writing to secLog
@@ -215,11 +255,14 @@ public final class SecondaryLogBuffer {
                 dataToWrite.put(p_buffer.getBuffer());
 
                 dataToWrite.rewind();
+
+                m_lock.unlock();
                 m_secondaryLog.appendData(wrapper, dataToWrite.capacity() - 1);
             } else {
                 // Write buffer first
                 m_secondaryLog.appendData(m_buffer, secLogBuffer.position());
                 secLogBuffer.rewind();
+                m_lock.unlock();
 
                 // Write new data
                 m_secondaryLog.appendData(p_buffer, p_entryOrRangeSize);
