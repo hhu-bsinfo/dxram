@@ -19,10 +19,8 @@ package de.hhu.bsinfo.dxram.log.storage;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
@@ -50,12 +48,12 @@ public class PrimaryWriteBuffer {
 
     // Constants
     private static final int WRITE_BUFFER_MAX_SIZE = 1024 * 1024 * 1024;
-    private static final int FLUSH_THRESHOLD = 16 * 1024 * 1024;
     private static final long PROCESSTHREAD_TIMEOUTTIME = 100L;
 
     // Attributes
     private final LogComponent m_logComponent;
     private final int m_writeBufferSize;
+    private final int m_flushThreshold;
     private final int m_flashPageSize;
     private final int m_secondaryLogBufferSize;
     private final int m_logSegmentSize;
@@ -99,10 +97,12 @@ public class PrimaryWriteBuffer {
      * @param p_useChecksum
      *         whether checksums are used
      */
-    public PrimaryWriteBuffer(final LogComponent p_logComponent, final PrimaryLog p_primaryLog, final int p_writeBufferSize, final int p_flashPageSize,
-            final int p_secondaryLogBufferSize, final int p_logSegmentSize, final boolean p_useChecksum) {
+    public PrimaryWriteBuffer(final LogComponent p_logComponent, final PrimaryLog p_primaryLog,
+            final int p_writeBufferSize, final int p_flashPageSize, final int p_secondaryLogBufferSize,
+            final int p_logSegmentSize, final boolean p_useChecksum) {
         m_logComponent = p_logComponent;
         m_writeBufferSize = p_writeBufferSize;
+        m_flushThreshold = (int) (p_writeBufferSize * 0.45);
         m_flashPageSize = p_flashPageSize;
         m_secondaryLogBufferSize = p_secondaryLogBufferSize;
         m_logSegmentSize = p_logSegmentSize;
@@ -346,6 +346,8 @@ public class PrimaryWriteBuffer {
 
                 break;
             } else {
+                m_priorityFlush = true;
+
                 // Buffer is full -> wait
                 LockSupport.parkNanos(100);
             }
@@ -397,12 +399,13 @@ public class PrimaryWriteBuffer {
                     flush = true;
                 }
 
-                if (getBytesInBuffer() > FLUSH_THRESHOLD || System.currentTimeMillis() - timeLastFlush > PROCESSTHREAD_TIMEOUTTIME) {
+                if (getBytesInBuffer() > m_flushThreshold ||
+                        System.currentTimeMillis() - timeLastFlush > PROCESSTHREAD_TIMEOUTTIME) {
                     flush = true;
                 }
 
                 if (flush) {
-                    flushDataToPrimaryLog(buffer);
+                    flushDataToLogs(buffer);
 
                     if (reorgThread == null) {
                         reorgThread = m_logComponent.getReorganizationThread();
