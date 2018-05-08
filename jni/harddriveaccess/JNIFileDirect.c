@@ -31,9 +31,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+#include <errno.h>
 
 // Use predefined blocksize for a first test - to be improved later
 #define BLOCKSIZE 4096
+
 
 /*
  * Class:     de_hhu_bsinfo_dxutils_jni_JNIFileDirect
@@ -44,7 +49,8 @@
  * size:    preallocate disk space if != 0
  * return:  the filedescriptor or negative value on error
  */
-JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_open(JNIEnv *env, jclass clazz, jstring jpath, jint mode, jlong size) {
+JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_open(JNIEnv *env, jclass clazz, jstring jpath,
+    jint mode, jlong size) {
 
     // Convert jstring path to pointer
     const jbyte *path;
@@ -113,9 +119,11 @@ long get_length(int fileID) {
 /*
  * Copy overlapping bytes in front of the buffer
  */
-long retain_preceding_bytes(int fileID, long write_buffer, long buffer_offset, long length, long aligned_start_pos, int off_start_pos) {
+long retain_preceding_bytes(int fileID, long write_buffer, long buffer_offset, long length, long aligned_start_pos,
+    int off_start_pos) {
+
     // Determine start of previous page in buffer
-    long block_start = write_buffer - BLOCKSIZE;
+    long block_start = write_buffer + buffer_offset - BLOCKSIZE;
     if (buffer_offset % BLOCKSIZE != 0) {
         block_start -= buffer_offset % BLOCKSIZE;
     }
@@ -140,24 +148,6 @@ long retain_preceding_bytes(int fileID, long write_buffer, long buffer_offset, l
 }
 
 /*
- * Copy overlapping bytes at the end of the buffer
- */
-/*int retain_succeeding_bytes(int fileID, char* write_buffer, long aligned_end_pos, long aligned_length) {
-    int read_bytes;
-    while (1) {
-        read_bytes = pread(fileID, (void*) (write_buffer + aligned_length - BLOCKSIZE), BLOCKSIZE, aligned_end_pos - BLOCKSIZE + 1);
-        if (read_bytes > 0) {
-            // We want to read less than a page -> either all or nothing is read
-            break;
-        } else if (read_bytes == -1) {
-            // Error
-            return -1;
-        }
-    }
-    return 0;
-}*/
-
-/*
  * Class:     de_hhu_bsinfo_dxutils_jni_JNIFileDirect
  * Method:    appendAndTruncate
  * appends buffer (not page-aligned) to file and truncates file afterwards
@@ -170,33 +160,30 @@ long retain_preceding_bytes(int fileID, long write_buffer, long buffer_offset, l
  * set_file_length: whether the file length must be set after writing (0) or not (1)
  * return:    0 on success or -1 on error
  */
-JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_write(JNIEnv *env, jclass clazz, jint fileID, jlong buffer, jint buffer_offset,
-    jint length, jlong pos, jbyte retain_end, jbyte set_file_length) {
+JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_write(JNIEnv *env, jclass clazz, jint fileID,
+    jlong buffer, jint buffer_offset, jint length, jlong pos, jbyte retain_end, jbyte set_file_length) {
 
     if (pos == -1) {
         // This is a file append -> determine file length and use as pos
         pos = get_length(fileID);
     }
 
-    // Get current position in file where write-access starts
-    long start_pos = lseek(fileID, pos, SEEK_SET);
-    // Get end position for write access
-    long end_pos = start_pos + length - 1;
-
-    // Get offsets to next block-aligned positions in file
-    int off_start_pos = start_pos % BLOCKSIZE;
-    int off_end_pos = BLOCKSIZE - (end_pos % BLOCKSIZE);
-
     // Calculate positions for begin and end of access with aligned startposition
-    long aligned_start_pos = start_pos - off_start_pos;
-    long aligned_end_pos = end_pos + off_end_pos - 1;
+    long aligned_start_pos = pos - (pos % BLOCKSIZE);
+    long end_pos = pos + length - 1;
+    long aligned_end_pos = end_pos + (BLOCKSIZE - (end_pos % BLOCKSIZE)) - 1;
+
     long aligned_length = aligned_end_pos - aligned_start_pos + 1;
+
+    assert(aligned_length >= length);
+
 
     long block_start = buffer;
     if (pos % BLOCKSIZE != 0) {
-        // The file start position is not page-aligned -> copy overlapping bytes in front of the buffer aligned at previous page
+        // The file start position is not page-aligned -> copy overlapping bytes
+        // in front of the buffer aligned at previous page
         // Given buffer MUST have one additional reserved preceding page!
-        block_start = retain_preceding_bytes(fileID, buffer, buffer_offset, length, aligned_start_pos, off_start_pos);
+        block_start = retain_preceding_bytes(fileID, buffer, buffer_offset, length, aligned_start_pos, pos % BLOCKSIZE);
         if (block_start == -1) {
             // Error
             return -1;
@@ -210,36 +197,26 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_write(JNIEnv
         memmove((void*) block_start, (void*) write_pos, length);
     }
 
-    /*if (retain_end == 1 && off_end_pos != 1) {
-        // The file end position is not page-aligned -> copy overlapping bytes at the end of the buffer
-        // Given buffer MUST have one additional reserved succeeding page!
-
-        // If it is only 1 byte to next blocksize-aligned position, then end_pos+1 would be block-aligned
-        // -> so end_pos is the end of the block before and the write access reaches until end_pos
-        // -> no data needs to be read because it would be overwritten by write access
-        if (retain_succeeding_bytes(fileID, write_buffer, aligned_end_pos, aligned_length) == -1) {
-            // Error
-            return -1;
-        }
-    }*/
-
     // Write the data from buffer to file
+    int bytes_to_write = aligned_length;
+    long current_position_in_buffer = block_start;
+    long current_position_in_file = aligned_start_pos;
     int written_bytes;
-    while (aligned_length > 0) {
-        written_bytes = pwrite(fileID, (void*) block_start, aligned_length, aligned_start_pos);
-        if (written_bytes == -1) {
-            // Error
+    while (bytes_to_write > 0) {
+        written_bytes = pwrite(fileID, (void*) current_position_in_buffer, bytes_to_write, current_position_in_file);
+        if (written_bytes == -1 || written_bytes == 0) {
+            // Error or EOF
             return -1;
         }
-        aligned_length -= written_bytes;
+
+        current_position_in_buffer += written_bytes;
+        current_position_in_file += written_bytes;
+        bytes_to_write -= written_bytes;
     }
 
-    // Set current position in file
-    lseek(fileID, length, SEEK_CUR);
-
     if (set_file_length == 1) {
-        // Set length of file - cut away the padding that has been added because of alignment
-        if (ftruncate(fileID, start_pos + length) == -1) {
+        // Set length of file -> remove padding
+        if (ftruncate(fileID, pos + length) == -1) {
             return -1;
         }
     }
@@ -259,34 +236,46 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_write(JNIEnv
  * w_length:  length of preallocated readbuffer
  * return:    0 on success or -1 on error
  */
-JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_read(JNIEnv *env, jclass clazz, jint fileID, jlong buffer, jint offset,
-    jint length, jlong pos) {
+JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_read(JNIEnv *env, jclass clazz, jint fileID,
+    jlong buffer, jint offset, jint length, jlong pos) {
 
     /* Every read-access with O_DIRECT has to be block-aligned.
-    Therefore, we get the boundaris for this access and extend them to block-aligned
+    Therefore, we get the boundaries for this access and extend them to block-aligned
     boundaries. */
 
-    // get current position in file where read-access starts
-    long start_pos = lseek(fileID, pos, SEEK_SET);
-    // get end position for read access
-    long end_pos = start_pos + length - 1;
+    // Calculate positions for begin and end of access with aligned startposition
+    long aligned_start_pos = pos - (pos % BLOCKSIZE);
+    long end_pos = pos + length - 1;
+    long aligned_end_pos = end_pos + (BLOCKSIZE - (end_pos % BLOCKSIZE)) - 1;
 
-    // get offsets to next block-aligned positions in file
-    int off_start = start_pos % BLOCKSIZE;
-    int off_end = BLOCKSIZE - (end_pos % BLOCKSIZE);
-
-    // calculate positions for begin and end of read access with aligned startposition and length
-    long aligned_start_pos = start_pos - off_start;
-    long aligned_end_pos = end_pos + off_end - 1;
     long aligned_length = aligned_end_pos - aligned_start_pos + 1;
 
-    // read the data from file to buffer
-    int ret = pread(fileID, (void*) buffer, aligned_length, aligned_start_pos);
+    assert(aligned_length >= length);
+    assert(aligned_start_pos == pos);
 
-    // set current position in file
-    lseek(fileID, length, SEEK_CUR);
+    // Read the data from file to buffer
+    int bytes_to_read = aligned_length;
+    long current_position_in_buffer = buffer;
+    long current_position_in_file = aligned_start_pos;
+    int read_bytes;
+    while (bytes_to_read > 0) {
+        read_bytes = pread(fileID, (void*) current_position_in_buffer, bytes_to_read, current_position_in_file);
+        if (read_bytes == -1) {
+            // Error
+            return -1;
+        }
 
-    return (jint)ret;
+        if (read_bytes == 0 || read_bytes % BLOCKSIZE != 0) {
+            // EOF
+            break;
+        }
+
+        current_position_in_buffer += read_bytes;
+        current_position_in_file += read_bytes;
+        bytes_to_read -= read_bytes;
+    }
+
+    return aligned_length - bytes_to_read;
 }
 
 /*
@@ -297,7 +286,8 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_read(JNIEnv 
  * offset:  new position in file
  * return:  new position in file or -1 on error
  */
-JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_seek(JNIEnv *env, jclass clazz, jint fileID, jlong offset) {
+JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_seek(JNIEnv *env, jclass clazz, jint fileID,
+    jlong offset) {
 
     int ret = lseek(fileID, offset, SEEK_SET);
 
@@ -323,7 +313,8 @@ JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_length(JNIE
  * length:  new length of the file
  * return:  0 on success, -1 on error
  */
-JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_setFileLength(JNIEnv *env, jclass clazz, jint fileID, jlong length) {
+JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_dxutils_jni_JNIFileDirect_setFileLength(JNIEnv *env, jclass clazz,
+    jint fileID, jlong length) {
     // assume that given file length is a multiple of BLOCKSIZE
     // Set filelength to block-aligned length
     int ret = ftruncate(fileID, length);
