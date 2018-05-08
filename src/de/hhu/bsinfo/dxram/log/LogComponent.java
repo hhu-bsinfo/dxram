@@ -71,6 +71,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     private static final TimePool SOP_LOG_BATCH = new TimePool(LogComponent.class, "LogBatch");
     private static final TimePool SOP_PUT_ENTRY_AND_HEADER = new TimePool(LogComponent.class, "PutEntryAndHeader");
 
+    public static final boolean TWO_LEVEL_LOGGING_ACTIVATED = true;
+    private static final int RECOVERY_THREADS = 4;
+
     static {
         StatisticsManager.get().registerOperation(LogComponent.class, SOP_LOG_BATCH);
         StatisticsManager.get().registerOperation(LogComponent.class, SOP_PUT_ENTRY_AND_HEADER);
@@ -104,6 +107,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     private String m_backupDirectory;
 
     private TemporaryVersionsStorage m_versionsForRecovery;
+    private DirectByteBufferWrapper[] m_byteBuffersForRecovery;
 
     /**
      * Creates the log component
@@ -590,28 +594,43 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      * Create all logs and buffers.
      */
     private void createLogsAndBuffers() {
-        // Create primary log
-        try {
-            m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, getConfig().getPrimaryLogSize().getBytes(), getConfig().useChecksums(),
-                    getConfig().useTimestamps(), (int) getConfig().getFlashPageSize().getBytes(), m_mode);
-        } catch (final IOException e) {
-            // #if LOGGER >= ERROR
-            LOGGER.error("Primary log creation failed", e);
-            // #endif /* LOGGER >= ERROR */
+        if (getConfig().getSecondaryLogBufferSize().getBytes() == 0 || !TWO_LEVEL_LOGGING_ACTIVATED) {
+            // #if LOGGER == INFO
+            LOGGER.info("Two-level logging is disabled. Performance might be impaired!");
+            // #endif /* LOGGER == INFO */
+        } else {
+            // Create primary log
+            try {
+                m_primaryLog =
+                        new PrimaryLog(this, m_backupDirectory, m_nodeID, getConfig().getPrimaryLogSize().getBytes(),
+                                getConfig().useChecksums(), getConfig().useTimestamps(),
+                                (int) getConfig().getFlashPageSize().getBytes(), m_mode);
+            } catch (final IOException e) {
+                // #if LOGGER >= ERROR
+                LOGGER.error("Primary log creation failed", e);
+                // #endif /* LOGGER >= ERROR */
+            }
+            // #if LOGGER == TRACE
+            LOGGER.trace("Initialized primary log (%d)", (int) getConfig().getLogSegmentSize().getBytes());
+            // #endif /* LOGGER == TRACE */
         }
-        // #if LOGGER == TRACE
-        LOGGER.trace("Initialized primary log (%d)", (int) getConfig().getLogSegmentSize().getBytes());
-        // #endif /* LOGGER == TRACE */
 
         // Create primary log buffer
-        m_writeBuffer =
-                new PrimaryWriteBuffer(this, m_primaryLog, (int) getConfig().getWriteBufferSize().getBytes(), (int) getConfig().getFlashPageSize().getBytes(),
-                        (int) getConfig().getSecondaryLogBufferSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes(), getConfig().useChecksums());
+        m_writeBuffer = new PrimaryWriteBuffer(this, m_primaryLog, (int) getConfig().getWriteBufferSize().getBytes(),
+                (int) getConfig().getFlashPageSize().getBytes(),
+                (int) getConfig().getSecondaryLogBufferSize().getBytes(),
+                (int) getConfig().getLogSegmentSize().getBytes(), getConfig().useChecksums());
 
         // Create secondary log and secondary log buffer catalogs
         m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
 
         m_secondaryLogCreationLock = new ReentrantReadWriteLock(false);
+
+        m_byteBuffersForRecovery = new DirectByteBufferWrapper[RECOVERY_THREADS + 1];
+        for (int i = 0; i <= RECOVERY_THREADS; i++) {
+            m_byteBuffersForRecovery[i] =
+                    new DirectByteBufferWrapper((int) getConfig().getLogSegmentSize().getBytes(), true);
+        }
     }
 
     /**
@@ -915,17 +934,19 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             return;
         }
 
+        int timestamp = 0;
+        if (getConfig().useTimestamps()) {
+            // Getting the same timestamp for all chunks to be logged
+            // This might be a little inaccurate but currentTimeMillis is expensive
+            timestamp = (int) ((System.currentTimeMillis() - m_initTime) / 1000);
+        }
+
         short originalOwner = secLog.getOriginalOwner();
         for (int i = 0; i < numberOfChunks; i++) {
             chunkID = importer.readLong(chunkID);
             length = importer.readCompactNumber(length);
 
             assert length > 0;
-
-            int timestamp = 0;
-            if (getConfig().useTimestamps()) {
-                timestamp = (int) ((System.currentTimeMillis() - m_initTime) / 1000);
-            }
 
             // #ifdef STATISTICS
             SOP_PUT_ENTRY_AND_HEADER.start();
@@ -994,7 +1015,6 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             // #endif /* STATISTICS */
 
             m_writeBuffer.putLogData(importer, chunkID, length, p_rangeID, p_owner, originalOwner, timestamp, secLog);
-            p_buffer.position(p_buffer.position() + length);
 
             // #ifdef STATISTICS
             SOP_PUT_ENTRY_AND_HEADER.stop();

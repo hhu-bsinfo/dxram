@@ -961,11 +961,11 @@ public class SecondaryLog extends AbstractLog {
         RecoveryWriterThread writerThread = p_chunkComponent.initRecoveryThread();
 
         // Determine ChunkID ranges in parallel
-        RecoveryHelperThread[] helperThreads = new RecoveryHelperThread[RECOVERY_THREADS];
-        for (int i = 0; i < RECOVERY_THREADS; i++) {
+        RecoveryHelperThread[] helperThreads = new RecoveryHelperThread[p_numberOfRecoveryHelperThreads];
+        for (int i = 0; i < p_numberOfRecoveryHelperThreads; i++) {
             RecoveryHelperThread helperThread =
-                    new RecoveryHelperThread(recoveryMetadata, p_versions, largeChunks, largeChunkLock, p_lowestCID, index, indexLock, p_doCRCCheck,
-                            p_chunkComponent);
+                    new RecoveryHelperThread(recoveryMetadata, p_wrappers[i + 1], p_versions, largeChunks,
+                            largeChunkLock, p_lowestCID, index, indexLock, p_doCRCCheck, p_chunkComponent);
             helperThread.setName("Recovery: Helper-Thread " + (i + 1));
             helperThread.start();
             helperThreads[i] = helperThread;
@@ -991,13 +991,14 @@ public class SecondaryLog extends AbstractLog {
             indexLock.unlock();
 
             if (m_segmentHeaders[idx] != null && !m_segmentHeaders[idx].isEmpty()) {
-                recoverSegment(idx, p_versions, p_lowestCID, recoveryMetadata, largeChunks, largeChunkLock, p_chunkComponent, doCRCCheck, statsCaller);
+                recoverSegment(idx, p_wrappers[0], p_versions, p_lowestCID, recoveryMetadata, largeChunks,
+                        largeChunkLock, p_chunkComponent, doCRCCheck, statsCaller);
             }
             idx++;
         }
 
         try {
-            for (int i = 0; i < RECOVERY_THREADS; i++) {
+            for (int i = 0; i < p_numberOfRecoveryHelperThreads; i++) {
                 helperThreads[i].join();
                 statsCaller.merge(helperThreads[i].getStatistics());
             }
@@ -1015,26 +1016,27 @@ public class SecondaryLog extends AbstractLog {
 
         t = System.currentTimeMillis();
         if (!largeChunks.isEmpty()) {
-            numberOfRecoveredLargeChunks =
-                    p_chunkComponent.putRecoveredChunks(recoveryMetadata, largeChunks.values().toArray(new DSByteBuffer[largeChunks.size()]));
+            numberOfRecoveredLargeChunks = p_chunkComponent.putRecoveredChunks(recoveryMetadata,
+                    largeChunks.values().toArray(new DSByteBuffer[largeChunks.size()]));
         }
         timeToPut += System.currentTimeMillis() - t;
 
         // #if LOGGER >= INFO
         LOGGER.info("Recovery of backup range finished: ");
-        LOGGER.info("\t Recovered %d chunks (large: %d) in %d ms", recoveryMetadata.getNumberOfChunks(), numberOfRecoveredLargeChunks,
-                System.currentTimeMillis() - time);
+        LOGGER.info("\t Recovered %d chunks (large: %d) in %d ms", recoveryMetadata.getNumberOfChunks(),
+                numberOfRecoveredLargeChunks, System.currentTimeMillis() - time);
         StringBuilder ranges = new StringBuilder("\t ChunkID ranges: ");
         for (long chunkID : recoveryMetadata.getCIDRanges()) {
             ranges.append(ChunkID.toHexString(chunkID)).append(' ');
         }
         LOGGER.info(ranges.toString());
-        LOGGER.info("\t Read versions from array: \t\t\t\t%.2f %%",
-                (double) (statsCaller.m_readVersionsFromArray / (statsCaller.m_readVersionsFromArray + statsCaller.m_readVersionsFromHashTable) * 100));
+        LOGGER.info("\t Read versions from array: \t\t\t\t%.2f %%", (double) (statsCaller.m_readVersionsFromArray /
+                (statsCaller.m_readVersionsFromArray + statsCaller.m_readVersionsFromHashTable) * 100));
         LOGGER.info("\t Time to acquire recovery lock: \t\t\t %d ms", p_timeToGetLock);
         LOGGER.info("\t Time to read versions from SSD: \t\t\t %d ms", p_timeToReadVersions);
         LOGGER.info("\t Time to determine ranges: \t\t\t\t %d ms", statsCaller.m_timeToDetermineRanges);
-        LOGGER.info("\t Time to read segments from SSD (sequential): \t\t %d ms", statsCaller.m_timeToReadSegmentsFromDisk);
+        LOGGER.info("\t Time to read segments from SSD (sequential): \t\t %d ms",
+                statsCaller.m_timeToReadSegmentsFromDisk);
         LOGGER.info("\t Time to read headers, check versions and checksums: \t %d ms", statsCaller.m_timeToCheck);
         LOGGER.info("\t Time to create and put chunks in memory management: \t %d ms", timeToPut);
         // #endif /* LOGGER >= INFO */
@@ -1202,7 +1204,6 @@ public class SecondaryLog extends AbstractLog {
         int combinedSize = 0;
         long chunkID;
         long time;
-        DirectByteBufferWrapper bufferWrapper;
         ByteBuffer segmentData;
         Version currentVersion;
         Version entryVersion;
@@ -1210,9 +1211,8 @@ public class SecondaryLog extends AbstractLog {
 
         try {
             time = System.currentTimeMillis();
-            bufferWrapper = new DirectByteBufferWrapper(m_logSegmentSize, true);
-            segmentLength = readSegment(bufferWrapper, p_segmentIndex);
-            segmentData = bufferWrapper.getBuffer();
+            segmentLength = readSegment(p_wrapper, p_segmentIndex);
+            segmentData = p_wrapper.getBuffer();
 
             p_stat.m_timeToReadSegmentsFromDisk += System.currentTimeMillis() - time;
 
@@ -1248,7 +1248,8 @@ public class SecondaryLog extends AbstractLog {
                         // Compare current version with element
                         // Create chunk only if log entry complete
                         if (p_doCRCCheck) {
-                            if (ChecksumHandler.calculateChecksumOfPayload(bufferWrapper, readBytes + headerSize, payloadSize) !=
+                            if (ChecksumHandler
+                                    .calculateChecksumOfPayload(p_wrapper, readBytes + headerSize, payloadSize) !=
                                     logEntryHeader.getChecksum(segmentData, readBytes)) {
                                 // #if LOGGER >= ERROR
                                 LOGGER.error("Corrupt data. Could not recover 0x%X!", chunkID);
@@ -1432,26 +1433,43 @@ public class SecondaryLog extends AbstractLog {
                 } else {
                     // This is the largest left segment -> write as long as there is space left
                     rangeSize = 0;
-                    while (true) {
-                        logEntryHeader = AbstractSecLogEntryHeader.getHeader(p_bufferWrapper.getBuffer(), offset + rangeSize);
+                    while (offset + rangeSize < p_offset + p_length) {
+                        logEntryHeader =
+                                AbstractSecLogEntryHeader.getHeader(p_bufferWrapper.getBuffer(), offset + rangeSize);
                         logEntrySize = logEntryHeader.getHeaderSize(p_bufferWrapper.getBuffer(), offset + rangeSize) +
                                 logEntryHeader.getLength(p_bufferWrapper.getBuffer(), offset + rangeSize);
-                        if (logEntrySize > header.getFreeBytes() - rangeSize) {
+                        if (rangeSize + logEntrySize > header.getFreeBytes()) {
                             break;
                         } else {
                             rangeSize += logEntrySize;
                         }
                     }
                     if (rangeSize > 0) {
-                        writeToSecondaryLog(p_bufferWrapper, offset, (long) segment * m_logSegmentSize + header.getUsedBytes(), rangeSize, p_isAccessed);
+                        writeToSecondaryLog(p_bufferWrapper, offset,
+                                (long) segment * m_logSegmentSize + header.getUsedBytes(), rangeSize, p_isAccessed);
                         header.updateUsedBytes(rangeSize);
                         if (m_useTimestamps) {
                             // Modify segment age
                             int currentAge = header.getAge();
-                            header.setAge(currentAge - (currentAge + getCurrentTimeInSec() - m_activeSegment.m_lastAccess) * rangeSize / header.getUsedBytes() /* contains rangeSize already */);
+                            header.setAge(currentAge -
+                                    (currentAge + getCurrentTimeInSec() - header.getLastAccess()) * rangeSize /
+                                            header.getUsedBytes() /* contains rangeSize already */);
                         }
                         length -= rangeSize;
                         offset += rangeSize;
+                    } else {
+                        // The segment with most free space is too small to store the first log entry to write
+                        // -> signal reorganization thread and wait for execution
+                        try {
+                            // #if LOGGER >= WARN
+                            LOGGER.warn(
+                                    "Secondary log for range %d of 0x%X is full. Cannot write log entries anymore." +
+                                            " Initializing reorganization and awaiting execution", m_rangeID, m_owner);
+                            // #endif /* LOGGER >= WARN */
+
+                            signalReorganizationAndWait();
+                        } catch (InterruptedException ignore) {
+                        }
                     }
                 }
             }

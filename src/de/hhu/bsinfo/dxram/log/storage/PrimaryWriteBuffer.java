@@ -596,8 +596,8 @@ public class PrimaryWriteBuffer {
             }
 
             // Write sorted buffers to log
-            if (primaryLogBufferSize > 0) {
-                primaryLogBuffer = new DirectByteBufferWrapper(primaryLogBufferSize, true);
+            if (primaryLogBufferSize > 0 && LogComponent.TWO_LEVEL_LOGGING_ACTIVATED) {
+                primaryLogBuffer = new DirectByteBufferWrapper(primaryLogBufferSize + 1, true);
             }
 
             iter2 = map.entrySet().iterator();
@@ -615,18 +615,29 @@ public class PrimaryWriteBuffer {
                     segment.rewind();
 
                     if (segmentLength == 0) {
+                        // We did not need this segment as log entry headers for secondary logs are smaller
+                        returnBuffer(segmentWrapper);
                         break;
                     }
 
-                    if (bufferLength < m_secondaryLogBufferSize) {
+                    if (readyForSecLog) {
+                        // Segment is larger than secondary log buffer size -> skip primary log
+                        writeToSecondaryLog(segmentWrapper, segmentLength, (short) combinedRangeID,
+                                (short) (combinedRangeID >> 16));
+                    } else {
                         // 1. Buffer in secondary log buffer
                         DirectByteBufferWrapper combinedBuffer =
-                                bufferLogEntryInSecondaryLogBuffer(segmentWrapper, segmentLength, (short) combinedRangeID, (short) (combinedRangeID >> 16));
+                                bufferLogEntryInSecondaryLogBuffer(segmentWrapper, segmentLength,
+                                        (short) combinedRangeID, (short) (combinedRangeID >> 16));
                         if (combinedBuffer != null) {
                             // Flush combined buffer (old data in secondary log buffer + new data)
-                            writeToSecondaryLog(combinedBuffer, combinedBuffer.getBuffer().limit(), (short) combinedRangeID, (short) (combinedRangeID >> 16));
-                        } else {
-                            // 2. Copy log entry/range to write it in primary log subsequently if the buffer was not flushed during appending
+                            int length = combinedBuffer.getBuffer().limit();
+                            combinedBuffer.getBuffer().limit(combinedBuffer.getBuffer().capacity());
+                            writeToSecondaryLog(combinedBuffer, length, (short) combinedRangeID,
+                                    (short) (combinedRangeID >> 16));
+                        } else if (LogComponent.TWO_LEVEL_LOGGING_ACTIVATED) {
+                            // 2. Copy log entry/range to write it in primary log subsequently if the buffer
+                            // was not flushed during appending
                             assert primaryLogBuffer != null;
 
                             segment.position(0);
