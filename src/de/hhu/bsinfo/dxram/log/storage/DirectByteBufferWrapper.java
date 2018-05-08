@@ -22,7 +22,7 @@ public class DirectByteBufferWrapper {
      * @param p_size
      *         the buffer size
      */
-    DirectByteBufferWrapper(final int p_size, final boolean p_isAccessedByDisk) {
+    public DirectByteBufferWrapper(final int p_size, final boolean p_isAccessedByDisk) {
 
         if (ms_native) {
             if (p_isAccessedByDisk) {
@@ -64,30 +64,6 @@ public class DirectByteBufferWrapper {
             m_buffer = ByteBuffer.allocate(p_size);
             m_buffer.order(ByteOrder.LITTLE_ENDIAN);
             m_addr = -1;
-        }
-    }
-
-    /**
-     * Creates an instance of DirectBufferWrapper
-     */
-    DirectByteBufferWrapper() {
-        // Assumes write position in file is page-aligned
-        // Single zeroed page (another page is needed for alignment)
-        ByteBuffer buffer = ByteBuffer.allocateDirect(2 * ms_pageSize);
-        long address = ByteBufferHelper.getDirectAddress(buffer);
-
-        if (address % ms_pageSize == 0) {
-            buffer.position(0);
-            buffer.limit(ms_pageSize);
-            m_buffer = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);
-            m_addr = address;
-        } else {
-            // Allocated ByteBuffer is NOT page-aligned -> move beginning
-            int newPosition = (int) (ms_pageSize - address % ms_pageSize);
-            buffer.position(newPosition);
-            buffer.limit(newPosition + ms_pageSize);
-            m_buffer = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);
-            m_addr = address + newPosition;
         }
     }
 

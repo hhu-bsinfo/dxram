@@ -29,8 +29,8 @@ public final class BufferPool {
 
     // If you change these values, consider changing the writer job queue size as well
     private static final int LARGE_BUFFER_POOL_SIZE = 8;
-    private static final int MEDIUM_BUFFER_POOL_SIZE = 16;
-    private static final int SMALL_BUFFER_POOL_SIZE = 32;
+    private static final int MEDIUM_BUFFER_POOL_SIZE = 32;
+    static final int SMALL_BUFFER_POOL_SIZE = 64;
 
     private static final int LARGE_BUFFER_POOL_FACTOR = 1;
     private static final int MEDIUM_BUFFER_POOL_FACTOR = 8;
@@ -107,6 +107,7 @@ public final class BufferPool {
     public DirectByteBufferWrapper getBuffer(final int p_length) {
         DirectByteBufferWrapper ret;
         int posFront;
+        boolean fallThrough = false;
 
         while (true) {
             if (p_length + 1 > m_logSegmentSize / MEDIUM_BUFFER_POOL_FACTOR) {
@@ -117,15 +118,15 @@ public final class BufferPool {
                     m_posFrontLarge++;
                     return ret;
                 } else {
-                    // #if LOGGER >= WARN
-                    LOGGER.warn("Insufficient pooled large buffers. Retrying after sleeping shortly.");
-                    // #endif /* LOGGER >= WARN */
+                    // #if LOGGER >= DEBUG
+                    LOGGER.debug("Insufficient pooled large buffers. Trying medium buffer pool.");
+                    // #endif /* LOGGER >= DEBUG */
 
-                    LockSupport.parkNanos(1);
+                    fallThrough = true;
                 }
             }
 
-            if (p_length + 1 > m_logSegmentSize / SMALL_BUFFER_POOL_FACTOR) {
+            if (p_length + 1 > m_logSegmentSize / SMALL_BUFFER_POOL_FACTOR || fallThrough) {
                 posFront = m_posFrontMedium & 0x7FFFFFFF;
                 if ((m_posBackConsumerMedium.get() + MEDIUM_BUFFER_POOL_SIZE & 0x7FFFFFFF) != posFront) {
                     // Not empty
@@ -133,11 +134,9 @@ public final class BufferPool {
                     m_posFrontMedium++;
                     return ret;
                 } else {
-                    // #if LOGGER >= WARN
-                    LOGGER.warn("Insufficient pooled medium buffers. Retrying after sleeping shortly.");
-                    // #endif /* LOGGER >= WARN */
-
-                    LockSupport.parkNanos(1);
+                    // #if LOGGER >= DEBUG
+                    LOGGER.debug("Insufficient pooled medium buffers. Trying small buffer pool.");
+                    // #endif /* LOGGER >= DEBUG */
                 }
             }
 
@@ -148,11 +147,11 @@ public final class BufferPool {
                 m_posFrontSmall++;
                 return ret;
             } else {
-                // #if LOGGER >= WARN
-                LOGGER.warn("Insufficient pooled small buffers. Retrying after sleeping shortly.");
-                // #endif /* LOGGER >= WARN */
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Insufficient pooled small buffers. Retrying after sleeping shortly.");
+                // #endif /* LOGGER >= DEBUG */
 
-                LockSupport.parkNanos(1);
+                LockSupport.parkNanos(1000);
             }
         }
     }
