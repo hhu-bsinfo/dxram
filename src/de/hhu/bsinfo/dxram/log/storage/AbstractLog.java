@@ -48,7 +48,7 @@ public abstract class AbstractLog {
     }
 
     private static byte[] ms_nullSegment = new byte[1];
-    private static DirectByteBufferWrapper ms_nullSegmentWrapper = new DirectByteBufferWrapper();
+    private static DirectByteBufferWrapper ms_nullSegmentWrapper;
 
     // Attributes
     private final long m_logFileSize;
@@ -89,6 +89,7 @@ public abstract class AbstractLog {
         m_fileID = -1;
 
         m_fileAccessLock = new ReentrantLock(false);
+        ms_nullSegmentWrapper = new DirectByteBufferWrapper(m_flashPageSize, true);
     }
 
     /**
@@ -343,11 +344,11 @@ public abstract class AbstractLog {
             SOP_READ_SECONDARY_LOG.start();
             // #endif /* STATISTICS */
 
-            if (p_accessed) {
-                m_fileAccessLock.lock();
-            }
+            // All reads might be concurrent to writes by writer thread -> lock file
+            m_fileAccessLock.lock();
 
             assert p_length <= bytesUntilEnd;
+            assert p_readPos % m_logSegmentSize + p_length <= m_logSegmentSize;
 
             if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
                 m_randomAccessFile.seek(p_readPos);
@@ -362,9 +363,7 @@ public abstract class AbstractLog {
                 }
             }
 
-            if (p_accessed) {
-                m_fileAccessLock.unlock();
-            }
+            m_fileAccessLock.unlock();
 
             // #ifdef STATISTICS
             SOP_READ_SECONDARY_LOG.stop();
@@ -388,63 +387,39 @@ public abstract class AbstractLog {
     final long appendToPrimaryLog(final DirectByteBufferWrapper p_bufferWrapper, final int p_length,
             final long p_writePos) throws IOException {
         long ret;
-        final long bytesUntilEnd;
 
         // #ifdef STATISTICS
         SOP_WRITE_PRIMARY_LOG.start();
         // #endif /* STATISTICS */
 
-        if (p_writePos + p_length <= m_totalUsableSpace) {
-            if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
-                m_randomAccessFile.seek(p_writePos);
-                m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), 0, p_length);
-            } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), 0, p_length, p_writePos, (byte) 0,
-                        (byte) 0) < 0) {
-                    throw new IOException("Error writing to log");
-                }
-            } else {
-                if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), 0, p_length, p_writePos, (byte) 0,
-                        (byte) 0) < 0) {
-                    throw new IOException("Error writing to log");
-                }
-            }
-
-            ret = p_writePos + p_length;
-        } else {
-            // Twofold cyclic write access
-            // NOTE: bytesUntilEnd is smaller than p_length -> smaller than Integer.MAX_VALUE
-            bytesUntilEnd = m_totalUsableSpace - p_writePos;
-
-            if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
-                m_randomAccessFile.seek(p_writePos);
-                m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), 0, (int) bytesUntilEnd);
-                m_randomAccessFile.seek(0);
-                m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), (int) bytesUntilEnd,
-                        p_length - (int) bytesUntilEnd);
-            } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), 0, (int) bytesUntilEnd, p_writePos,
-                        (byte) 0, (byte) 0) < 0) {
-                    throw new IOException("Error writing to log");
-                }
-                if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), (int) bytesUntilEnd,
-                        p_length - (int) bytesUntilEnd, 0, (byte) 0, (byte) 0) <
-                        0) {
-                    throw new IOException("Error writing to log");
-                }
-            } else {
-                if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), 0, (int) bytesUntilEnd, p_writePos,
-                        (byte) 0, (byte) 0) < 0) {
-                    throw new IOException("Error writing to log");
-                }
-                if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), (int) bytesUntilEnd,
-                        p_length - (int) bytesUntilEnd, 0, (byte) 0, (byte) 0) < 0) {
-                    throw new IOException("Error writing to log");
-                }
-            }
-
-            ret = p_length - bytesUntilEnd;
+        if (p_bufferWrapper == null) {
+            throw new IOException("Error writing to log. Buffer wrapper is null");
         }
+
+        assert p_writePos + p_length <= m_totalUsableSpace;
+        assert p_bufferWrapper.getBuffer().position() == 0;
+
+        // Mark the end of the write access
+        p_bufferWrapper.getBuffer().put(p_length, (byte) 0);
+
+        if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+            m_randomAccessFile.seek(p_writePos);
+            m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), 0, p_length + 1);
+        } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+            if (JNIFileDirect
+                    .write(m_fileID, p_bufferWrapper.getAddress(), 0, p_length + 1, p_writePos, (byte) 0, (byte) 0) <
+                    0) {
+                throw new IOException("Error writing to log");
+            }
+        } else {
+            if (JNIFileRaw
+                    .write(m_fileID, p_bufferWrapper.getAddress(), 0, p_length + 1, p_writePos, (byte) 0, (byte) 0) <
+                    0) {
+                throw new IOException("Error writing to log");
+            }
+        }
+
+        ret = p_writePos + p_length;
 
         // #ifdef STATISTICS
         SOP_WRITE_PRIMARY_LOG.stop();
@@ -479,18 +454,28 @@ public abstract class AbstractLog {
             SOP_WRITE_SECONDARY_LOG.start();
             // #endif /* STATISTICS */
 
+            if (p_accessed) {
+                m_fileAccessLock.lock();
+            }
+
+            assert p_writePos + p_length <= m_totalUsableSpace;
+            assert p_writePos % m_logSegmentSize + p_length <= m_logSegmentSize;
+
             if (p_bufferWrapper == null && p_length == 1) {
+                // Write 0 to the beginning of the segment
                 if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
-                    m_randomAccessFile.seek(p_readPos);
-                    m_randomAccessFile.write(ms_nullSegment, 0, p_length);
+                    m_randomAccessFile.seek(p_writePos);
+                    m_randomAccessFile.write(ms_nullSegment, 0, 1);
                 } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                    if (JNIFileDirect.write(m_fileID, ms_nullSegmentWrapper.getAddress(), 0, m_flashPageSize, p_readPos,
-                            (byte) 0, (byte) 0) < 0) {
+                    if (JNIFileDirect
+                            .write(m_fileID, ms_nullSegmentWrapper.getAddress(), 0, 1, p_writePos, (byte) 0, (byte) 0) <
+                            0) {
                         throw new IOException("Error writing to log");
                     }
                 } else {
-                    if (JNIFileRaw.write(m_fileID, ms_nullSegmentWrapper.getAddress(), 0, m_flashPageSize, p_readPos,
-                            (byte) 0, (byte) 0) < 0) {
+                    if (JNIFileRaw
+                            .write(m_fileID, ms_nullSegmentWrapper.getAddress(), 0, 1, p_writePos, (byte) 0, (byte) 0) <
+                            0) {
                         throw new IOException("Error writing to log");
                     }
                 }
@@ -499,37 +484,68 @@ public abstract class AbstractLog {
                     throw new IOException("Error writing to log. Buffer wrapper is null");
                 }
 
-                byte oldByte = 0;
-                if (p_length < m_logSegmentSize) {
+                if (p_bufferOffset + p_length + 1 < p_bufferWrapper.getBuffer().capacity() &&
+                        p_writePos % m_logSegmentSize + p_length < m_logSegmentSize) {
+
                     // Mark the end of the segment
-                    oldByte = p_bufferWrapper.getBuffer().get(p_bufferOffset + p_length);
+                    byte oldByte = p_bufferWrapper.getBuffer().get(p_bufferOffset + p_length);
                     p_bufferWrapper.getBuffer().put(p_bufferOffset + p_length, (byte) 0);
-                }
 
-                if (p_accessed) {
-                    m_fileAccessLock.lock();
-                }
-
-                assert p_readPos + p_length <= m_totalUsableSpace;
-
-                if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
-                    m_randomAccessFile.seek(p_readPos);
-                    m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), p_bufferOffset, p_length);
-                } else if (m_mode == HarddriveAccessMode.ODIRECT) {
-                    if (JNIFileDirect.write(m_fileID, p_bufferWrapper.getAddress(), p_bufferOffset, p_length, p_readPos,
-                            (byte) 0, (byte) 0) < 0) {
-                        throw new IOException("Error writing to log");
+                    if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                        m_randomAccessFile.seek(p_writePos);
+                        m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), p_bufferOffset, p_length + 1);
+                    } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                        if (JNIFileDirect
+                                .write(m_fileID, p_bufferWrapper.getAddress(), p_bufferOffset, p_length + 1, p_writePos,
+                                        (byte) 0, (byte) 0) < 0) {
+                            throw new IOException("Error writing to log");
+                        }
+                    } else {
+                        if (JNIFileRaw
+                                .write(m_fileID, p_bufferWrapper.getAddress(), p_bufferOffset, p_length + 1, p_writePos,
+                                        (byte) 0, (byte) 0) < 0) {
+                            throw new IOException("Error writing to log");
+                        }
                     }
-                } else {
-                    if (JNIFileRaw.write(m_fileID, p_bufferWrapper.getAddress(), p_bufferOffset, p_length, p_readPos,
-                            (byte) 0, (byte) 0) < 0) {
-                        throw new IOException("Error writing to log");
-                    }
-                }
 
-                // Only if necessary
-                if (p_length < m_logSegmentSize) {
+                    // Write back old byte at boundary
                     p_bufferWrapper.getBuffer().put(p_bufferOffset + p_length, oldByte);
+                } else {
+                    if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                        m_randomAccessFile.seek(p_writePos);
+                        m_randomAccessFile.write(p_bufferWrapper.getBuffer().array(), p_bufferOffset, p_length);
+                    } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                        if (JNIFileDirect
+                                .write(m_fileID, p_bufferWrapper.getAddress(), p_bufferOffset, p_length, p_writePos,
+                                        (byte) 0, (byte) 0) < 0) {
+                            throw new IOException("Error writing to log");
+                        }
+                    } else {
+                        if (JNIFileRaw
+                                .write(m_fileID, p_bufferWrapper.getAddress(), p_bufferOffset, p_length, p_writePos,
+                                        (byte) 0, (byte) 0) < 0) {
+                            throw new IOException("Error writing to log");
+                        }
+                    }
+                    if (p_writePos % m_logSegmentSize + p_length < m_logSegmentSize) {
+                        // Mark end of the segment
+                        if (m_mode == HarddriveAccessMode.RANDOM_ACCESS_FILE) {
+                            m_randomAccessFile.seek(p_writePos + p_length);
+                            m_randomAccessFile.write(ms_nullSegment, 0, 1);
+                        } else if (m_mode == HarddriveAccessMode.ODIRECT) {
+                            if (JNIFileDirect
+                                    .write(m_fileID, ms_nullSegmentWrapper.getAddress(), 0, 1, p_writePos + p_length,
+                                            (byte) 0, (byte) 0) < 0) {
+                                throw new IOException("Error writing to log");
+                            }
+                        } else {
+                            if (JNIFileRaw
+                                    .write(m_fileID, ms_nullSegmentWrapper.getAddress(), 0, 1, p_writePos + p_length,
+                                            (byte) 0, (byte) 0) < 0) {
+                                throw new IOException("Error writing to log");
+                            }
+                        }
+                    }
                 }
             }
 
