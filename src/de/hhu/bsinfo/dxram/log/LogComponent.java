@@ -488,7 +488,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
             createLogsAndBuffers();
 
-            createAndStartReorganizationThread(m_backup.getConfig().getBackupRangeSize().getBytes());
+            createAndStartReorganizationThread(m_backup.getConfig().getBackupRangeSize().getBytes(),
+                    getConfig().getUtilizationActivateReorganization());
         }
 
         return true;
@@ -534,7 +535,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
         createLogsAndBuffers();
 
-        createAndStartReorganizationThread(p_backupRangeSize);
+        createAndStartReorganizationThread(p_backupRangeSize, getConfig().getUtilizationActivateReorganization());
     }
 
     /**
@@ -618,10 +619,14 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      *
      * @param p_backupRangeSize
      *         the backup range size
+     * @param p_utilizationActivateReorganization
+     *         the threshold to consider a log for reorganization
      */
-    private void createAndStartReorganizationThread(final long p_backupRangeSize) {
+    private void createAndStartReorganizationThread(final long p_backupRangeSize,
+            final int p_utilizationActivateReorganization) {
         // Create reorganization thread for secondary logs
-        m_secondaryLogsReorgThread = new SecondaryLogsReorgThread(this, p_backupRangeSize * 2, (int) getConfig().getLogSegmentSize().getBytes());
+        m_secondaryLogsReorgThread = new SecondaryLogsReorgThread(this, p_backupRangeSize * 2,
+                (int) getConfig().getLogSegmentSize().getBytes(), p_utilizationActivateReorganization);
         m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
 
         // Start secondary logs reorganization thread
@@ -772,12 +777,14 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         try {
             if (!cat.exists(p_rangeID)) {
                 // Create new secondary log
-                secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_rangeID, m_backupDirectory, m_secondaryLogSize,
-                        (int) getConfig().getFlashPageSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes(),
-                        getConfig().getReorgUtilizationThreshold(), getConfig().useChecksums(), getConfig().useTimestamps(), getConfig().getColdDataThreshold(),
-                        m_mode);
+                secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_rangeID, m_backupDirectory,
+                        m_secondaryLogSize, (int) getConfig().getFlashPageSize().getBytes(),
+                        (int) getConfig().getLogSegmentSize().getBytes(),
+                        getConfig().getUtilizationPromptReorganization(), getConfig().useChecksums(),
+                        getConfig().useTimestamps(), m_initTime, getConfig().getColdDataThreshold(), m_mode);
                 // Insert range in log catalog
-                cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(), (int) getConfig().getLogSegmentSize().getBytes());
+                cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(),
+                        (int) getConfig().getLogSegmentSize().getBytes());
             }
         } catch (final IOException e) {
             // #if LOGGER >= ERROR
@@ -867,8 +874,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                             (int) getConfig().getLogSegmentSize().getBytes());
                 } else {
                     // #if LOGGER >= WARN
-                    LOGGER.warn("Transfer of backup range %d from 0x%X to 0x%X failed! Secondary log already exists!", p_originalRangeID, p_originalOwner,
-                            p_owner);
+                    LOGGER.warn("Transfer of backup range %d from 0x%X to 0x%X failed! Secondary log already exists!",
+                            p_originalRangeID, p_originalOwner, p_owner);
                     // #endif /* LOGGER >= WARN */
                 }
             }

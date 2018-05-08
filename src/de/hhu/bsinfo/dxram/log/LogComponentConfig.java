@@ -45,7 +45,10 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
     private StorageUnit m_secondaryLogBufferSize = new StorageUnit(128, StorageUnit.KB);
 
     @Expose
-    private int m_reorgUtilizationThreshold = 70;
+    private int m_utilizationActivateReorganization = 60;
+
+    @Expose
+    private int m_utilizationPromptReorganization = 85;
 
     @Expose
     private int m_coldDataThresholdInSec = COLD_DATA_THRESHOLD;
@@ -73,7 +76,8 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
         m_primaryLogSize = new StorageUnit(p_primaryLogSize, StorageUnit.MB);
         m_writeBufferSize = new StorageUnit(p_writeBufferSize, StorageUnit.MB);
         m_secondaryLogBufferSize = new StorageUnit(p_secondaryLogBufferSize, StorageUnit.KB);
-        m_reorgUtilizationThreshold = p_reorgUtilizationThreshold;
+        m_utilizationActivateReorganization = p_utilizationActivateReorganization;
+        m_utilizationPromptReorganization = p_utilizationPromptReorganization;
         m_coldDataThresholdInSec = p_coldDataThresholdSec;
     }
 
@@ -141,10 +145,17 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
     }
 
     /**
+     * Threshold to activate automatic reorganization.
+     **/
+    public int getUtilizationActivateReorganization() {
+        return m_utilizationActivateReorganization;
+    }
+
+    /**
      * Threshold to trigger low-priority reorganization (high-priority -> not enough space to write data).
      **/
-    public int getReorgUtilizationThreshold() {
-        return m_reorgUtilizationThreshold;
+    public int getUtilizationPromptReorganization() {
+        return m_utilizationPromptReorganization;
     }
 
     /**
@@ -197,7 +208,7 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
             return false;
         }
 
-        if (m_reorgUtilizationThreshold <= 50) {
+        if (m_utilizationPromptReorganization <= 50) {
             // #if LOGGER >= WARN
             LOGGER.warn("Reorganization threshold is < 50. Reorganization is triggered continuously!");
             // #endif /* LOGGER >= WARN */
@@ -210,8 +221,11 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
             // #endif /* LOGGER >= WARN */
         }
 
-        if (secondaryLogSize < p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize().getBytes() ||
-                m_writeBufferSize.getBytes() < p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize().getBytes()) {
+        if (secondaryLogSize <
+                p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize()
+                        .getBytes() || m_writeBufferSize.getBytes() <
+                p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize()
+                        .getBytes()) {
             // #if LOGGER >= ERROR
             LOGGER.error("Secondary log and write buffer size must be greater than the max size of a chunk");
             // #endif /* LOGGER >= ERROR */
