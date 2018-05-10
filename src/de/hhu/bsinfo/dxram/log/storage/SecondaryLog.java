@@ -2016,7 +2016,7 @@ public class SecondaryLog extends AbstractLog {
          * @return the utilization
          */
         private double getUtilization() {
-            return (double) m_logSegmentSize / m_usedBytes;
+            return (double) m_usedBytes / m_logSegmentSize;
         }
 
         /**
