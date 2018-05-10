@@ -271,24 +271,25 @@ public class SecondaryLog extends AbstractLog {
             segment = segments[i].getBuffer();
             if (segment != null) {
                 while (offset < segment.capacity() && segment.get(offset) != 0) {
+                    short type = (short) (segment.get(offset) & 0xFF);
                     // Determine header of next log entry
-                    logEntryHeader = AbstractSecLogEntryHeader.getHeader(segment, offset);
+                    logEntryHeader = AbstractSecLogEntryHeader.getHeader(type);
                     if (storesMigrations) {
                         chunkID = logEntryHeader.getCID(segment, offset);
                     } else {
                         chunkID = ((long) nodeID << 48) + logEntryHeader.getCID(segment, offset);
                     }
-                    payloadSize = logEntryHeader.getLength(segment, offset);
+                    payloadSize = logEntryHeader.getLength(type, segment, offset);
                     if (p_useChecksum) {
-                        checksum = logEntryHeader.getChecksum(segment, offset);
+                        checksum = logEntryHeader.getChecksum(type, segment, offset);
                     }
-                    logEntrySize = logEntryHeader.getHeaderSize(segment, offset) + payloadSize;
+                    logEntrySize = logEntryHeader.getHeaderSize(type) + payloadSize;
 
                     // Read payload and create chunk
                     if (offset + logEntrySize <= segment.capacity()) {
                         // Create chunk only if log entry complete
                         payload = ByteBuffer.allocate(payloadSize);
-                        segment.position(offset + logEntryHeader.getHeaderSize(segment, offset));
+                        segment.position(offset + logEntryHeader.getHeaderSize(type));
                         segment.limit(segment.position() + payloadSize);
                         payload.put(segment);
                         if (p_useChecksum &&
@@ -830,9 +831,10 @@ public class SecondaryLog extends AbstractLog {
                     // There is not enough space in active segment to store the whole buffer -> first fill current one
                     header = m_segmentHeaders[m_activeSegment.getIndex()];
                     while (true) {
-                        logEntryHeader = AbstractSecLogEntryHeader.getHeader(p_bufferWrapper.getBuffer(), rangeSize);
-                        logEntrySize = logEntryHeader.getHeaderSize(p_bufferWrapper.getBuffer(), rangeSize) +
-                                logEntryHeader.getLength(p_bufferWrapper.getBuffer(), rangeSize);
+                        short type = (short) (p_bufferWrapper.getBuffer().get(rangeSize) & 0xFF);
+                        logEntryHeader = AbstractSecLogEntryHeader.getHeader(type);
+                        logEntrySize = logEntryHeader.getHeaderSize(type) +
+                                logEntryHeader.getLength(type, p_bufferWrapper.getBuffer(), rangeSize);
                         if (rangeSize + logEntrySize > header.getFreeBytes()) {
                             break;
                         } else {
@@ -1232,11 +1234,12 @@ public class SecondaryLog extends AbstractLog {
 
                 while (readBytes < segmentLength) {
                     time = System.currentTimeMillis();
-                    logEntryHeader = AbstractSecLogEntryHeader.getHeader(segmentData, readBytes);
-                    headerSize = logEntryHeader.getHeaderSize(segmentData, readBytes);
-                    payloadSize = logEntryHeader.getLength(segmentData, readBytes);
+                    short type = (short) (segmentData.get(readBytes) & 0xFF);
+                    logEntryHeader = AbstractSecLogEntryHeader.getHeader(type);
+                    headerSize = logEntryHeader.getHeaderSize(type);
+                    payloadSize = logEntryHeader.getLength(type, segmentData, readBytes);
                     chunkID = logEntryHeader.getCID(segmentData, readBytes);
-                    entryVersion = logEntryHeader.getVersion(segmentData, readBytes);
+                    entryVersion = logEntryHeader.getVersion(type, segmentData, readBytes);
 
                     // Get current version
                     if (logEntryHeader.isMigrated()) {
@@ -1257,7 +1260,7 @@ public class SecondaryLog extends AbstractLog {
                         if (p_doCRCCheck) {
                             if (ChecksumHandler
                                     .calculateChecksumOfPayload(p_wrapper, readBytes + headerSize, payloadSize) !=
-                                    logEntryHeader.getChecksum(segmentData, readBytes)) {
+                                    logEntryHeader.getChecksum(type, segmentData, readBytes)) {
                                 // #if LOGGER >= ERROR
                                 LOGGER.error("Corrupt data. Could not recover 0x%X!", chunkID);
                                 // #endif /* LOGGER >= ERROR */
@@ -1268,9 +1271,9 @@ public class SecondaryLog extends AbstractLog {
                         }
                         p_stat.m_timeToCheck += System.currentTimeMillis() - time;
 
-                        if (logEntryHeader.isChained(segmentData, readBytes)) {
-                            byte chainID = logEntryHeader.getChainID(segmentData, readBytes);
-                            byte chainSize = logEntryHeader.getChainSize(segmentData, readBytes);
+                        if (logEntryHeader.isChained(type)) {
+                            byte chainID = logEntryHeader.getChainID(type, segmentData, readBytes);
+                            byte chainSize = logEntryHeader.getChainSize(type, segmentData, readBytes);
                             int maxLogEntrySize = AbstractLogEntryHeader.getMaxLogEntrySize();
 
                             p_largeChunkLock.lock();
@@ -1441,10 +1444,10 @@ public class SecondaryLog extends AbstractLog {
                     // This is the largest left segment -> write as long as there is space left
                     rangeSize = 0;
                     while (offset + rangeSize < p_offset + p_length) {
-                        logEntryHeader =
-                                AbstractSecLogEntryHeader.getHeader(p_bufferWrapper.getBuffer(), offset + rangeSize);
-                        logEntrySize = logEntryHeader.getHeaderSize(p_bufferWrapper.getBuffer(), offset + rangeSize) +
-                                logEntryHeader.getLength(p_bufferWrapper.getBuffer(), offset + rangeSize);
+                        short type = p_bufferWrapper.getBuffer().get(offset + rangeSize);
+                        logEntryHeader = AbstractSecLogEntryHeader.getHeader(type);
+                        logEntrySize = logEntryHeader.getHeaderSize(type) +
+                                logEntryHeader.getLength(type, p_bufferWrapper.getBuffer(), offset + rangeSize);
                         if (rangeSize + logEntrySize > header.getFreeBytes()) {
                             break;
                         } else {
@@ -1753,11 +1756,12 @@ public class SecondaryLog extends AbstractLog {
 
                     if (segmentLength > 0) {
                         while (readBytes < segmentLength && !Thread.currentThread().isInterrupted()) {
-                            logEntryHeader = AbstractSecLogEntryHeader.getHeader(segmentData, readBytes);
-                            length = logEntryHeader.getHeaderSize(segmentData, readBytes) +
-                                    logEntryHeader.getLength(segmentData, readBytes);
-                            chunkID = logEntryHeader.getCID(segmentData, readBytes);
-                            entryVersion = logEntryHeader.getVersion(segmentData, readBytes);
+                            short type = (short) (segmentData.get(readBytes) & 0xFF);
+                            logEntryHeader = AbstractSecLogEntryHeader.getHeader(type);
+                            length = logEntryHeader.getHeaderSize(type) +
+                                    logEntryHeader.getLength(type, segmentData, readBytes);
+                            chunkID = logEntryHeader.getCID(type, segmentData, readBytes);
+                            entryVersion = logEntryHeader.getVersion(type, segmentData, readBytes);
 
                             // Get current version
                             if (logEntryHeader.isMigrated()) {
@@ -1797,7 +1801,7 @@ public class SecondaryLog extends AbstractLog {
 
                                 if (m_useTimestamps) {
                                     int entryAge = getCurrentTimeInSec() -
-                                            logEntryHeader.getTimestamp(segmentData, writtenBytes - length);
+                                            logEntryHeader.getTimestamp(type, segmentData, writtenBytes - length);
                                     if (entryAge < m_coldDataThreshold) {
                                         // Do not consider cold data for calculation
                                         ageAllBytes += entryAge * length;

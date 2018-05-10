@@ -65,6 +65,11 @@ class DefaultSecLogEntryHeader extends AbstractSecLogEntryHeader {
     }
 
     @Override
+    public long getCID(final short p_type, final ByteBuffer p_buffer, final int p_offset) {
+        return getLID(p_type, p_buffer, p_offset);
+    }
+
+    @Override
     public boolean isMigrated() {
         return false;
     }

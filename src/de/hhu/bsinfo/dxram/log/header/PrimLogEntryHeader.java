@@ -109,7 +109,8 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
             type = generateTypeField(type, localIDSize, lengthSize, versionSize, true);
         }
 
-        // It is faster to fill a pooled byte buffer in Java heap and copy it to native memory than filling the native primary write buffer directly
+        // It is faster to fill a pooled byte buffer in Java heap and copy it to native memory than filling
+        // the native primary write buffer directly
         ms_result.clear();
         ms_result.limit(headerSize);
 

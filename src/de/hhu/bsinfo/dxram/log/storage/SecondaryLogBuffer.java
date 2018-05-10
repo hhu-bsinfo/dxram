@@ -177,13 +177,13 @@ public final class SecondaryLogBuffer {
         while (oldBufferOffset < p_entryOrRangeSize) {
             // Determine header of next log entry
             logEntryHeader = AbstractPrimLogEntryHeader.getHeader();
-            logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) +
-                    logEntryHeader.getLength(p_buffer, oldBufferOffset);
+            short type = (short) (p_buffer.get(oldBufferOffset) & 0xFF);
+            logEntrySize =
+                    logEntryHeader.getHeaderSize(type) + logEntryHeader.getLength(type, p_buffer, oldBufferOffset);
 
             // Copy primary log header, but skip NodeID and RangeID
             AbstractPrimLogEntryHeader.convertAndPut(p_buffer, oldBufferOffset, p_destination.getBuffer(), logEntrySize,
-                    p_buffer.capacity() - oldBufferOffset,
-                    AbstractPrimLogEntryHeader.getConversionOffset(p_buffer, oldBufferOffset));
+                    p_buffer.capacity() - oldBufferOffset, AbstractPrimLogEntryHeader.getConversionOffset(type));
             p_buffer.limit(p_buffer.capacity());
             oldBufferOffset += logEntrySize;
         }

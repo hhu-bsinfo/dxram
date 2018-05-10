@@ -558,6 +558,8 @@ public class PrimaryWriteBuffer {
                 offset = (p_offset + bytesRead) % p_primaryWriteBuffer.capacity();
                 bytesUntilEnd = p_primaryWriteBuffer.capacity() - offset;
 
+                short type = (short) (p_primaryWriteBuffer.get(offset) & 0xFF);
+
                 logEntryHeader = AbstractPrimLogEntryHeader.getHeader();
                 /*
                  * Because of the log's wrap around three cases must be distinguished
@@ -565,19 +567,18 @@ public class PrimaryWriteBuffer {
                  * 2. Offset pointer is already in next iteration
                  * 3. Log entry must be split over two iterations
                  */
-                if (logEntryHeader.isReadable(p_primaryWriteBuffer, offset, bytesUntilEnd)) {
-                    logEntrySize = logEntryHeader.getHeaderSize(p_primaryWriteBuffer, offset) +
-                            logEntryHeader.getLength(p_primaryWriteBuffer, offset);
+                if (logEntryHeader.isReadable(type, bytesUntilEnd)) {
+                    logEntrySize = logEntryHeader.getHeaderSize(type) +
+                            logEntryHeader.getLength(type, p_primaryWriteBuffer, offset);
                     combinedRangeID = (logEntryHeader.getOwner(p_primaryWriteBuffer, offset) << 16) +
                             logEntryHeader.getRangeID(p_primaryWriteBuffer, offset);
 
                     bufferNode = m_rangeBufferMap.get(combinedRangeID);
                     bufferNode.appendToBuffer(p_primaryWriteBuffer, offset, logEntrySize, bytesUntilEnd,
-                            AbstractPrimLogEntryHeader.getConversionOffset(p_primaryWriteBuffer, offset));
+                            AbstractPrimLogEntryHeader.getConversionOffset(type));
                 } else {
                     // Buffer overflow -> header is split
-                    // To get header size only the first byte is necessary
-                    headerSize = logEntryHeader.getHeaderSize(p_primaryWriteBuffer, offset);
+                    headerSize = logEntryHeader.getHeaderSize(type);
                     if (m_native) {
                         header = ByteBuffer.allocateDirect(headerSize);
                     } else {
@@ -592,12 +593,13 @@ public class PrimaryWriteBuffer {
                     header.put(p_primaryWriteBuffer);
                     p_primaryWriteBuffer.limit(p_primaryWriteBuffer.capacity());
 
-                    logEntrySize = headerSize + logEntryHeader.getLength(header, 0);
+                    type = (short) (header.get(0) & 0xFF);
+                    logEntrySize = headerSize + logEntryHeader.getLength(type, header, 0);
                     combinedRangeID = (logEntryHeader.getOwner(header, 0) << 16) + logEntryHeader.getRangeID(header, 0);
 
                     bufferNode = m_rangeBufferMap.get(combinedRangeID);
                     bufferNode.appendToBuffer(p_primaryWriteBuffer, offset, logEntrySize, bytesUntilEnd,
-                            AbstractPrimLogEntryHeader.getConversionOffset(header, 0));
+                            AbstractPrimLogEntryHeader.getConversionOffset(type));
                 }
                 bytesRead += logEntrySize;
             }

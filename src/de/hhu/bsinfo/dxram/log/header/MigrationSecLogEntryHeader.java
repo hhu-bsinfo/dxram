@@ -67,6 +67,11 @@ class MigrationSecLogEntryHeader extends AbstractSecLogEntryHeader {
     }
 
     @Override
+    public long getCID(final short p_type, final ByteBuffer p_buffer, final int p_offset) {
+        return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_type, p_buffer, p_offset);
+    }
+
+    @Override
     public boolean isMigrated() {
         return true;
     }

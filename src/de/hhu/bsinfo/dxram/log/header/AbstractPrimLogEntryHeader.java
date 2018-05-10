@@ -237,9 +237,28 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
         return ret;
     }
 
+    public static short getConversionOffset(final short p_type) {
+        short ret;
+
+        if ((p_type & TYPE_MASK) == 0) {
+            // Convert into DefaultSecLogEntryHeader by skipping NodeID
+            ret = PRIM_LOG_ENTRY_HEADER.getLIDOffset();
+        } else {
+            // Convert into MigrationSecLogEntryHeader
+            ret = PRIM_LOG_ENTRY_HEADER.getNIDOffset();
+        }
+
+        return ret;
+    }
+
     @Override
     public long getCID(final ByteBuffer p_buffer, final int p_offset) {
         return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_buffer, p_offset);
+    }
+
+    @Override
+    public long getCID(final short p_type, final ByteBuffer p_buffer, final int p_offset) {
+        return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_type, p_buffer, p_offset);
     }
 
     @Override

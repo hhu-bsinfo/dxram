@@ -43,6 +43,9 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
     @Override
     public abstract long getCID(final ByteBuffer p_buffer, final int p_offset);
 
+    @Override
+    public abstract long getCID(final short p_type, final ByteBuffer p_buffer, final int p_offset);
+
     public abstract boolean isMigrated();
 
     /**
@@ -69,6 +72,29 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
         byte type;
 
         type = p_buffer.get(p_offset);
+
+        assert type != 0;
+
+        type &= TYPE_MASK;
+        if (type == 0) {
+            ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
+        } else {
+            ret = MIGRATION_SEC_LOG_ENTRY_HEADER;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the corresponding AbstractSecLogEntryHeader (faster if the type was already read)
+     *
+     * @param p_type
+     *         the type field of the log entry
+     * @return the AbstractSecLogEntryHeader
+     */
+    public static AbstractSecLogEntryHeader getHeader(final short p_type) {
+        AbstractSecLogEntryHeader ret;
+        byte type = (byte) p_type;
 
         assert type != 0;
 
