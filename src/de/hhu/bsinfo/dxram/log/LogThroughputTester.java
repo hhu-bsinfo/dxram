@@ -166,6 +166,8 @@ public final class LogThroughputTester {
         StatisticsManager.get().stopPeriodicPrinting();
         StatisticsManager.get().printStatistics(System.out);
 
+        ms_log.shutdownComponent();
+
         System.exit(0);
     }
 
