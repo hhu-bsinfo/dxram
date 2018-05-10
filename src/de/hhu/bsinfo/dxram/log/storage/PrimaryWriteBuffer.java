@@ -211,7 +211,10 @@ public class PrimaryWriteBuffer {
         combinedRangeID = (p_owner << 16) + p_rangeID;
 
         // Large chunks are split and chained -> there might be more than one header
-        numberOfHeaders = (int) Math.ceil((float) p_payloadLength / AbstractLogEntryHeader.getMaxLogEntrySize());
+        numberOfHeaders = p_payloadLength / AbstractLogEntryHeader.getMaxLogEntrySize();
+        if (p_payloadLength % AbstractLogEntryHeader.getMaxLogEntrySize() != 0) {
+            numberOfHeaders++;
+        }
         bytesToWrite = numberOfHeaders * headerSize + p_payloadLength;
 
         if (p_payloadLength <= 0) {

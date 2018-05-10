@@ -141,7 +141,8 @@ public abstract class AbstractLogEntryHeader {
     static byte getSizeForLocalIDField(final long p_localID) {
         byte ret;
 
-        ret = (byte) Math.ceil(Math.log10(p_localID + 1) / Math.log10(2) / 8);
+        int bits = Long.SIZE - Long.numberOfLeadingZeros(p_localID);
+        ret = (byte) ((bits % 8 != 0 ? 1 : 0) + bits / 8);
 
         // Only allow sizes 1, 2, 4 and 6, because there are only four states
         if (ret == 0) {
@@ -165,7 +166,8 @@ public abstract class AbstractLogEntryHeader {
     static byte getSizeForLengthField(final int p_length) {
         byte ret;
 
-        ret = (byte) Math.ceil(Math.log10(p_length + 1) / Math.log10(2) / 8);
+        int bits = (byte) (Integer.SIZE - Integer.numberOfLeadingZeros(p_length));
+        ret = (byte) ((bits % 8 != 0 ? 1 : 0) + bits / 8);
 
         // #if LOGGER >= ERROR
         if (ret > 3) {
@@ -187,7 +189,8 @@ public abstract class AbstractLogEntryHeader {
         byte ret = 0;
 
         if (p_version != 1) {
-            ret = (byte) Math.ceil(Math.log10(p_version + 1) / Math.log10(2) / 8);
+            int bits = (byte) (Integer.SIZE - Integer.numberOfLeadingZeros(p_version));
+            ret = (byte) ((bits % 8 != 0 ? 1 : 0) + bits / 8);
 
             // #if LOGGER >= ERROR
             if (ret > 3) {
