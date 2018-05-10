@@ -48,7 +48,7 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
     private int m_utilizationActivateReorganization = 60;
 
     @Expose
-    private int m_utilizationPromptReorganization = 85;
+    private int m_utilizationPromptReorganization = 75;
 
     @Expose
     private int m_coldDataThresholdInSec = COLD_DATA_THRESHOLD;
