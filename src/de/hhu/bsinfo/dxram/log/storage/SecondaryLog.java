@@ -78,6 +78,8 @@ public class SecondaryLog extends AbstractLog {
     private ReentrantLock m_segmentAssignmentlock;
     private byte[] m_reorgVector;
     private int m_segmentReorgCounter;
+    private static int m_avgBytesFreedInReorganization = 0;
+    private static long m_numberOfReorganizations = 0;
 
     private volatile boolean m_isAccessedByReorgThread;
     private volatile boolean m_isClosed;
@@ -213,6 +215,15 @@ public class SecondaryLog extends AbstractLog {
         this(p_logComponent, p_reorganizationThread, p_owner, p_owner, p_rangeID, p_backupDirectory, p_secondaryLogSize,
                 p_flashPageSize, p_logSegmentSize, p_reorgUtilizationThreshold, p_useChecksums, p_useTimestamps,
                 p_initializationTimestamp, p_coldDataThreshold, p_mode);
+    }
+
+    /**
+     * Returns the average number of bytes freed per reorganized segment.
+     *
+     * @return the average number of bytes freed per reorganized segment.
+     */
+    static int getAvgBytesFreedInReorganization() {
+        return m_avgBytesFreedInReorganization;
     }
 
     /**
@@ -1849,6 +1860,9 @@ public class SecondaryLog extends AbstractLog {
 
             if (!Thread.currentThread().isInterrupted()) {
                 if (readBytes - writtenBytes > 0) {
+                    m_avgBytesFreedInReorganization +=
+                            (readBytes - writtenBytes - m_avgBytesFreedInReorganization) / ++m_numberOfReorganizations;
+
                     // #if LOGGER >= INFO
                     LOGGER.info(
                             "Freed %d bytes during reorganization of segment %d in range 0x%X,%d\t total log size: %d",

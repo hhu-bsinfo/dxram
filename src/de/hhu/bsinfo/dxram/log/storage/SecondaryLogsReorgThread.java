@@ -112,6 +112,7 @@ public final class SecondaryLogsReorgThread extends Thread {
      * Shutdown
      */
     public void shutdown() {
+        System.out.println("Average bytes freed: " + SecondaryLog.getAvgBytesFreedInReorganization());
         m_shutdown = true;
     }
 
