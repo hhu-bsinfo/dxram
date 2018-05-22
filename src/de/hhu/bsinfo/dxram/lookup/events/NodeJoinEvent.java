@@ -25,11 +25,13 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * An event for node joining
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.03.2017
+ * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
 public class NodeJoinEvent extends AbstractEvent {
 
     private short m_nodeID = NodeID.INVALID_ID;
     private NodeRole m_role = NodeRole.PEER;
+    private int m_capabilities;
     private short m_rack = 0;
     private short m_switch = 0;
     private boolean m_availableForBackup;
@@ -37,20 +39,20 @@ public class NodeJoinEvent extends AbstractEvent {
 
     /**
      * Creates an instance of NodeJoinEvent
-     *
      * @param p_sourceClass
      *         the calling class
      * @param p_nodeID
      *         the NodeID of the failed peer
-     * @param p_role
-     *         the joined peer's role
+     * @param p_role The node's role.
+     * @param p_capabilities The node's capabilities.
      */
-    public NodeJoinEvent(final String p_sourceClass, final short p_nodeID, final NodeRole p_role, final short p_rack, final short p_switch,
-            final boolean p_availableForBackup, final IPV4Unit p_address) {
+    public NodeJoinEvent(final String p_sourceClass, final short p_nodeID, final NodeRole p_role, final int p_capabilities, final short p_rack, final short p_switch,
+                         final boolean p_availableForBackup, final IPV4Unit p_address) {
         super(p_sourceClass);
 
         m_nodeID = p_nodeID;
         m_role = p_role;
+        m_capabilities = p_capabilities;
         m_rack = p_rack;
         m_switch = p_switch;
         m_availableForBackup = p_availableForBackup;
@@ -73,6 +75,15 @@ public class NodeJoinEvent extends AbstractEvent {
      */
     public NodeRole getRole() {
         return m_role;
+    }
+
+    /**
+     * Returns the capabilities.
+     *
+     * @return The joined peer's capabilities.
+     */
+    public int getCapabilities() {
+        return m_capabilities;
     }
 
     /**

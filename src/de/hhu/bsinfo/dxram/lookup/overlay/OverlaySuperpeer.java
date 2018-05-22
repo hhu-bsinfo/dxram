@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -1222,7 +1223,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         // Inform all superpeers
         for (short superpeer : m_superpeers) {
             InetSocketAddress socketAddress = m_boot.getNodeAddress(m_nodeID);
-            NodeJoinEventRequest request = new NodeJoinEventRequest(superpeer, m_nodeID, NodeRole.SUPERPEER, m_boot.getRack(), m_boot.getSwitch(), false,
+            NodeJoinEventRequest request = new NodeJoinEventRequest(superpeer, m_nodeID, NodeRole.SUPERPEER, NodeCapabilities.NONE, m_boot.getRack(), m_boot.getSwitch(), false,
                     new IPV4Unit(socketAddress.getHostName(), socketAddress.getPort()));
             try {
                 m_network.sendSync(request);
@@ -1237,7 +1238,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         // Inform own peers
         for (short peer : m_peers) {
             InetSocketAddress socketAddress = m_boot.getNodeAddress(m_nodeID);
-            NodeJoinEventRequest request = new NodeJoinEventRequest(peer, m_nodeID, NodeRole.SUPERPEER, m_boot.getRack(), m_boot.getSwitch(), false,
+            NodeJoinEventRequest request = new NodeJoinEventRequest(peer, m_nodeID, NodeRole.SUPERPEER, NodeCapabilities.NONE, m_boot.getRack(), m_boot.getSwitch(), false,
                     new IPV4Unit(socketAddress.getHostName(), socketAddress.getPort()));
             try {
                 m_network.sendSync(request);
@@ -1468,7 +1469,7 @@ public class OverlaySuperpeer implements MessageReceiver {
             // Inform all superpeers
             for (short superpeer : m_superpeers) {
                 NodeJoinEventRequest request =
-                        new NodeJoinEventRequest(superpeer, newPeer, NodeRole.PEER, p_finishedStartupMessage.getRack(), p_finishedStartupMessage.getSwitch(),
+                        new NodeJoinEventRequest(superpeer, newPeer, NodeRole.PEER, NodeCapabilities.NONE, p_finishedStartupMessage.getRack(), p_finishedStartupMessage.getSwitch(),
                                 p_finishedStartupMessage.isAvailableForBackup(), p_finishedStartupMessage.getAddress());
                 try {
                     m_network.sendSync(request);
@@ -1484,7 +1485,7 @@ public class OverlaySuperpeer implements MessageReceiver {
             for (short peer : m_peers) {
                 if (peer != newPeer) {
                     NodeJoinEventRequest request =
-                            new NodeJoinEventRequest(peer, newPeer, NodeRole.PEER, p_finishedStartupMessage.getRack(), p_finishedStartupMessage.getSwitch(),
+                            new NodeJoinEventRequest(peer, newPeer, NodeRole.PEER, NodeCapabilities.NONE, p_finishedStartupMessage.getRack(), p_finishedStartupMessage.getSwitch(),
                                     p_finishedStartupMessage.isAvailableForBackup(), p_finishedStartupMessage.getAddress());
                     try {
                         m_network.sendSync(request);
@@ -1502,7 +1503,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         new Thread(task).start();
 
         // Notify other components/services
-        m_event.fireEvent(new NodeJoinEvent(getClass().getSimpleName(), p_finishedStartupMessage.getSource(), NodeRole.PEER, p_finishedStartupMessage.getRack(),
+        m_event.fireEvent(new NodeJoinEvent(getClass().getSimpleName(), p_finishedStartupMessage.getSource(), NodeRole.PEER, NodeCapabilities.NONE, p_finishedStartupMessage.getRack(),
                 p_finishedStartupMessage.getSwitch(), p_finishedStartupMessage.isAvailableForBackup(), p_finishedStartupMessage.getAddress()));
     }
 
@@ -2040,7 +2041,7 @@ public class OverlaySuperpeer implements MessageReceiver {
             // Inform own peers
             for (short p : m_peers) {
                 NodeJoinEventRequest request =
-                        new NodeJoinEventRequest(p, p_peerJoinEventRequest.getJoinedPeer(), p_peerJoinEventRequest.getRole(), p_peerJoinEventRequest.getRack(),
+                        new NodeJoinEventRequest(p, p_peerJoinEventRequest.getJoinedPeer(), p_peerJoinEventRequest.getRole(), NodeCapabilities.NONE, p_peerJoinEventRequest.getRack(),
                                 p_peerJoinEventRequest.getSwitch(), p_peerJoinEventRequest.isAvailableForBackup(), p_peerJoinEventRequest.getAddress());
                 try {
                     m_network.sendSync(request);
@@ -2063,7 +2064,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         // Notify other components/services
         m_event.fireEvent(new NodeJoinEvent(getClass().getSimpleName(), p_peerJoinEventRequest.getJoinedPeer(), p_peerJoinEventRequest.getRole(),
-                p_peerJoinEventRequest.getRack(), p_peerJoinEventRequest.getSwitch(), p_peerJoinEventRequest.isAvailableForBackup(),
+                NodeCapabilities.NONE, p_peerJoinEventRequest.getRack(), p_peerJoinEventRequest.getSwitch(), p_peerJoinEventRequest.isAvailableForBackup(),
                 p_peerJoinEventRequest.getAddress()));
     }
 

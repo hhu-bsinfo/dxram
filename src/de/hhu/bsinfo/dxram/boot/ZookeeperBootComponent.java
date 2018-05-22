@@ -19,8 +19,11 @@ package de.hhu.bsinfo.dxram.boot;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -50,6 +53,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * Implementation of the BootComponent interface with zookeeper.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
 public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> implements Watcher, EventListener<AbstractEvent> {
     // component dependencies
@@ -178,6 +182,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     }
 
     @Override
+    public List<Short> getSupportingNodes(final int p_capabilities) {
+
+        return Arrays.stream(m_nodes.getNodes())
+                .filter(node -> NodeCapabilities.supports(node.getCapabilities(), p_capabilities))
+                .map(NodeEntry::getNodeID)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public short getNodeID() {
         return m_nodes.getOwnNodeID();
     }
@@ -238,6 +251,19 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         }
 
         return entry.getRole();
+    }
+
+    @Override
+    public int getNodeCapabilities(short p_nodeId) {
+        NodeEntry entry = m_nodes.getNode(p_nodeId);
+        if (entry == null) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Could not find node %s", NodeID.toHexString(p_nodeId));
+            // #endif /* LOGGER >= WARN */
+            return 0;
+        }
+
+        return entry.getCapabilities();
     }
 
     @Override
@@ -324,7 +350,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         } else if (p_event instanceof NodeJoinEvent) {
             NodeJoinEvent event = (NodeJoinEvent) p_event;
             boolean readFromFile = m_nodes.getNode(event.getNodeID()) != null;
-            m_nodes.addNode(new NodeEntry(event.getAddress(), event.getNodeID(), event.getRack(), event.getSwitch(), event.getRole(), readFromFile,
+            m_nodes.addNode(new NodeEntry(event.getAddress(), event.getNodeID(), event.getRack(), event.getSwitch(), event.getRole(), event.getCapabilities(), readFromFile,
                     event.isAvailableForBackup(), true));
         }
     }

@@ -46,22 +46,18 @@ public class TcmdNodeinfo extends AbstractTerminalCommand {
     @Override
     public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
             final TerminalServiceAccessor p_services) {
-        short nid = p_cmd.getArgNodeId(0, NodeID.INVALID_ID);
 
         BootService boot = p_services.getService(BootService.class);
 
-        if (nid != NodeID.INVALID_ID) {
-            if (boot.nodeAvailable(nid)) {
-                p_stdout.printfln("Node info 0x%X:", nid);
-                p_stdout.printfln("\tRole: %s", boot.getNodeRole(nid));
-                p_stdout.printfln("\tAddress: %s", boot.getNodeAddress(nid));
-            } else {
-                p_stdout.printfln("Not available.");
-            }
+        short nid = p_cmd.getArgNodeId(0, boot.getNodeID());
+
+        if (boot.nodeAvailable(nid)) {
+            p_stdout.printfln("Node info 0x%X:", nid);
+            p_stdout.printfln("\tRole: %s", boot.getNodeRole(nid));
+            p_stdout.printfln("\tAddress: %s", boot.getNodeAddress(nid));
+            p_stdout.printfln("\tCapabilities: %d", boot.getNodeCapabilities(nid));
         } else {
-            p_stdout.printfln("Node info 0x%X:", boot.getNodeID());
-            p_stdout.printfln("\tRole: %s", boot.getNodeRole());
-            p_stdout.printfln("\tAddress: %s", boot.getNodeAddress(boot.getNodeID()));
+            p_stdout.printfln("Not available.");
         }
     }
 

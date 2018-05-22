@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -1569,7 +1570,7 @@ public class OverlayPeer implements MessageReceiver {
 
         // Notify other components/services
         m_event.fireEvent(new NodeJoinEvent(getClass().getSimpleName(), p_nodeJoinEventRequest.getJoinedPeer(), p_nodeJoinEventRequest.getRole(),
-                p_nodeJoinEventRequest.getRack(), p_nodeJoinEventRequest.getSwitch(), p_nodeJoinEventRequest.isAvailableForBackup(),
+                NodeCapabilities.NONE, p_nodeJoinEventRequest.getRack(), p_nodeJoinEventRequest.getSwitch(), p_nodeJoinEventRequest.isAvailableForBackup(),
                 p_nodeJoinEventRequest.getAddress()));
     }
 
