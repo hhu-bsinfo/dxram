@@ -185,7 +185,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     public List<Short> getSupportingNodes(final int p_capabilities) {
 
         return Arrays.stream(m_nodes.getNodes())
-                .filter(node -> NodeCapabilities.supports(node.getCapabilities(), p_capabilities))
+                .filter(node -> NodeCapabilities.supportsAll(node.getCapabilities(), p_capabilities))
                 .map(NodeEntry::getNodeID)
                 .collect(Collectors.toList());
     }

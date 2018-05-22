@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
 import de.hhu.bsinfo.dxterm.TerminalServerStdin;
@@ -39,8 +40,9 @@ public class TcmdNodeinfo extends AbstractTerminalCommand {
 
     @Override
     public String getHelp() {
-        return "Get information about either the current node or another node in the network\n" + "Usage (1): nodeinfo [nid]\n" +
-                "  nid: If specified, gets information of this node";
+        return "Get information about either the current node or another node in the network\n\n" +
+                "Usage (1): nodeinfo [nid]\n" +
+                "\t nid \t If specified, gets information of this node";
     }
 
     @Override
@@ -55,7 +57,7 @@ public class TcmdNodeinfo extends AbstractTerminalCommand {
             p_stdout.printfln("Node info 0x%X:", nid);
             p_stdout.printfln("\tRole: %s", boot.getNodeRole(nid));
             p_stdout.printfln("\tAddress: %s", boot.getNodeAddress(nid));
-            p_stdout.printfln("\tCapabilities: %d", boot.getNodeCapabilities(nid));
+            p_stdout.printfln("\tCapabilities: %s", NodeCapabilities.toString(boot.getNodeCapabilities(nid)));
         } else {
             p_stdout.printfln("Not available.");
         }

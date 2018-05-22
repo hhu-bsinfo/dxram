@@ -60,21 +60,21 @@ public class TcmdNodelist extends AbstractTerminalCommand {
 
         List<Short> nodeIds = boot.getOnlineNodeIDs();
 
-        NodeRole nodeRole = p_cmd.getNamedArgument(ARG_NODEROLE, NodeRole::toNodeRole, null);
+        final NodeRole nodeRole = p_cmd.getNamedArgument(ARG_NODEROLE, NodeRole::toNodeRole, null);
 
-        int capability = p_cmd.getNamedArgument(ARG_CAPABILITIES, Integer::valueOf, NodeCapabilities.NONE);
+        final int capability = p_cmd.getNamedArgument(ARG_CAPABILITIES, Integer::valueOf, NodeCapabilities.NONE);
 
         List<NodeEntry> filteredNodes = nodeIds.stream()
                 .map(nodeId -> new NodeEntry(nodeId, boot.getNodeRole(nodeId), boot.getNodeCapabilities(nodeId)))
                 .filter(entry -> nodeRole == null || entry.getRole() == nodeRole)
-                .filter(entry -> NodeCapabilities.supports(entry.getCapabilities(), capability))
+                .filter(entry -> NodeCapabilities.supportsAll(entry.getCapabilities(), capability))
                 .collect(Collectors.toList());
 
         p_stdout.printfln("Total available nodes (%d):", nodeIds.size());
 
         for (NodeEntry entry : filteredNodes) {
 
-            p_stdout.printfln("\t0x%04X \t %s \t %d", entry.getId(), entry.getRole(), entry.getCapabilities());
+            p_stdout.printfln("\t0x%04X \t %s \t %s", entry.getId(), entry.getRole(), NodeCapabilities.toString(entry.getCapabilities()));
         }
     }
 
@@ -105,7 +105,7 @@ public class TcmdNodelist extends AbstractTerminalCommand {
 
         private final int m_capabilities;
 
-        public NodeEntry(short p_id, NodeRole p_role, int p_capabilities) {
+        NodeEntry(short p_id, NodeRole p_role, int p_capabilities) {
             m_id = p_id;
 
             m_role = p_role;
