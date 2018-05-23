@@ -1369,7 +1369,7 @@ public class OverlayPeer implements MessageReceiver {
             m_overlayLock.readLock().unlock();
 
             try {
-                m_network.sendMessage(new FinishedStartupMessage(responsibleSuperpeer, p_rack, p_switch, p_availableForBackup, p_address));
+                m_network.sendMessage(new FinishedStartupMessage(responsibleSuperpeer, p_rack, p_switch, p_availableForBackup, NodeCapabilities.NONE, p_address));
             } catch (final NetworkException ignore) {
                 // Try again. Responsible superpeer is changed automatically.
                 continue;
