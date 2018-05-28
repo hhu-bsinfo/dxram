@@ -169,6 +169,31 @@ public class NodeCapabilities {
     }
 
     /**
+     * Creates a bitmask representing the specified capabilities.
+     *
+     * <pre>
+     * <u>Example</u>
+     * {@code
+     * int capabilities = NodeCapabilities.fromStringArray("[STORAGE, BACKUP_SRC]");
+     * }
+     * </pre>
+     *
+     * @param p_capabilities The formatted capabilities.
+     * @return A bitmask representing the capability.
+     */
+    public static int fromStringArray(String p_capabilities) {
+
+        if (!p_capabilities.startsWith("[") || !p_capabilities.endsWith("]")) {
+
+            return NodeCapabilities.INVALID;
+        }
+
+        String[] capabilities = p_capabilities.substring(1, p_capabilities.length() - 1).replaceAll(" ", "").split(",");
+
+        return NodeCapabilities.fromStrings(capabilities);
+    }
+
+    /**
      * Creates a bitmask representing all specified capabilities.
      *
      * @implNote This implementation filters out all invalid capabilities.

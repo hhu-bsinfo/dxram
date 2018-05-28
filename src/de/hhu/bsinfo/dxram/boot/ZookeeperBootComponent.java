@@ -201,6 +201,16 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     }
 
     @Override
+    public int getNodeCapabilities() {
+        return m_nodes.getOwnNodeEntry().getCapabilities();
+    }
+
+    @Override
+    public void updateNodeCapabilities(int p_capibilities) {
+        m_nodes.getOwnNodeEntry().setCapabilities(p_capibilities);
+    }
+
+    @Override
     public short getRack() {
         return m_nodes.getOwnNodeEntry().getRack();
     }
@@ -349,6 +359,11 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             m_nodes.getNode(((NodeFailureEvent) p_event).getNodeID()).setStatus(false);
         } else if (p_event instanceof NodeJoinEvent) {
             NodeJoinEvent event = (NodeJoinEvent) p_event;
+
+            // #if LOGGER >= INFO
+            LOGGER.info(String.format("Node %s with capabilities %s joined", NodeID.toHexString(event.getNodeID()), NodeCapabilities.toString(event.getCapabilities())));
+            // #endif /* LOGGER >= INFO */
+
             boolean readFromFile = m_nodes.getNode(event.getNodeID()) != null;
             m_nodes.addNode(new NodeEntry(event.getAddress(), event.getNodeID(), event.getRack(), event.getSwitch(), event.getRole(), event.getCapabilities(), readFromFile,
                     event.isAvailableForBackup(), true));
@@ -357,6 +372,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
     @Override
     public boolean finishInitComponent() {
+
+        // Set own status to online
+        m_nodes.getOwnNodeEntry().setStatus(true);
 
         m_isStarting = false;
 

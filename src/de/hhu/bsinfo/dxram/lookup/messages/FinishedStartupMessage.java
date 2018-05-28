@@ -27,6 +27,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * Message to inform all nodes about finished startup.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.04.2017
+ * @author Filip Krakowski, Filip.Krakowski@Uni-Duesseldorf.de, 24.05.2018
  */
 public class FinishedStartupMessage extends Message {
 
@@ -98,6 +99,15 @@ public class FinishedStartupMessage extends Message {
      */
     public IPV4Unit getAddress() {
         return m_address;
+    }
+
+    /**
+     * Returns the capabilities.
+     *
+     * @return The joined peer's capabilities.
+     */
+    public int getCapabilities() {
+        return m_capabilities;
     }
 
     @Override

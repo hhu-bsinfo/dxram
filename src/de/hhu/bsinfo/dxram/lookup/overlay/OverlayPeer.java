@@ -112,6 +112,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * Peer functionality for overlay
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
+ * @author Filip Krakowski, Filip.Krakowski@hhu.de, 24.05.2018
  */
 public class OverlayPeer implements MessageReceiver {
     private static final Logger LOGGER = LogManager.getFormatterLogger(OverlayPeer.class.getSimpleName());
@@ -1360,7 +1361,7 @@ public class OverlayPeer implements MessageReceiver {
     /**
      * Informs responsible superpeer about finished startup
      */
-    public boolean finishStartup(final short p_rack, final short p_switch, final boolean p_availableForBackup, final IPV4Unit p_address) {
+    public boolean finishStartup(final short p_rack, final short p_switch, final boolean p_availableForBackup, int p_capabilities, final IPV4Unit p_address) {
         short responsibleSuperpeer;
 
         while (true) {
@@ -1369,7 +1370,7 @@ public class OverlayPeer implements MessageReceiver {
             m_overlayLock.readLock().unlock();
 
             try {
-                m_network.sendMessage(new FinishedStartupMessage(responsibleSuperpeer, p_rack, p_switch, p_availableForBackup, NodeCapabilities.NONE, p_address));
+                m_network.sendMessage(new FinishedStartupMessage(responsibleSuperpeer, p_rack, p_switch, p_availableForBackup, p_capabilities, p_address));
             } catch (final NetworkException ignore) {
                 // Try again. Responsible superpeer is changed automatically.
                 continue;
@@ -1570,7 +1571,7 @@ public class OverlayPeer implements MessageReceiver {
 
         // Notify other components/services
         m_event.fireEvent(new NodeJoinEvent(getClass().getSimpleName(), p_nodeJoinEventRequest.getJoinedPeer(), p_nodeJoinEventRequest.getRole(),
-                NodeCapabilities.NONE, p_nodeJoinEventRequest.getRack(), p_nodeJoinEventRequest.getSwitch(), p_nodeJoinEventRequest.isAvailableForBackup(),
+                p_nodeJoinEventRequest.getCapabilities(), p_nodeJoinEventRequest.getRack(), p_nodeJoinEventRequest.getSwitch(), p_nodeJoinEventRequest.isAvailableForBackup(),
                 p_nodeJoinEventRequest.getAddress()));
     }
 

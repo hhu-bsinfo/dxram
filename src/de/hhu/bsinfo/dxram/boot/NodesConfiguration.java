@@ -20,9 +20,11 @@ import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
 
+import com.google.gson.annotations.JsonAdapter;
 import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.adapter.NodeCapabilitiesAdapter;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
@@ -179,12 +181,6 @@ public final class NodesConfiguration {
         private NodeRole m_role = NodeRole.PEER;
 
         /**
-         * The node's capabilities.
-         */
-        @Expose
-        private int m_capabilities = NodeCapabilities.NONE;
-
-        /**
          * Rack id
          */
         @Expose
@@ -205,6 +201,11 @@ public final class NodesConfiguration {
         private short m_nodeID = NodeID.INVALID_ID;
         private boolean m_online = false;
         private boolean m_availableForBackup = true;
+
+        /**
+         * The node's capabilities.
+         */
+        private int m_capabilities = NodeCapabilities.NONE;
 
         // Tmp. state for import
         private String m_addrStr;
@@ -354,6 +355,10 @@ public final class NodesConfiguration {
          */
         void setStatus(final boolean p_online) {
             m_online = p_online;
+        }
+
+        void setCapabilities(final int p_capabilities) {
+            m_capabilities = p_capabilities;
         }
 
         @Override

@@ -118,6 +118,20 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
     public abstract NodeRole getNodeRole();
 
     /**
+     * Returns the capabilities of this node.
+     *
+     * @return The capabilities of this node.
+     */
+    public abstract int getNodeCapabilities();
+
+    /**
+     * Updates this node's capabilities.
+     *
+     * @param p_capibilities The updated capabilities.
+     */
+    public abstract void updateNodeCapabilities(int p_capibilities);
+
+    /**
      * Get the rack, this node is in.
      *
      * @return the rack.

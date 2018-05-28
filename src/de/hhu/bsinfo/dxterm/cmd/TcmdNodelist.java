@@ -17,6 +17,7 @@
 package de.hhu.bsinfo.dxterm.cmd;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,7 +63,7 @@ public class TcmdNodelist extends AbstractTerminalCommand {
 
         final NodeRole nodeRole = p_cmd.getNamedArgument(ARG_NODEROLE, NodeRole::toNodeRole, null);
 
-        final int capability = p_cmd.getNamedArgument(ARG_CAPABILITIES, Integer::valueOf, NodeCapabilities.NONE);
+        final int capability = p_cmd.getNamedArgument(ARG_CAPABILITIES, NodeCapabilities::fromStringArray, NodeCapabilities.NONE);
 
         List<NodeEntry> filteredNodes = nodeIds.stream()
                 .map(nodeId -> new NodeEntry(nodeId, boot.getNodeRole(nodeId), boot.getNodeCapabilities(nodeId)))
@@ -70,11 +71,13 @@ public class TcmdNodelist extends AbstractTerminalCommand {
                 .filter(entry -> NodeCapabilities.supportsAll(entry.getCapabilities(), capability))
                 .collect(Collectors.toList());
 
-        p_stdout.printfln("Total available nodes (%d):", nodeIds.size());
+        p_stdout.printfln("Total available nodes (%d):", filteredNodes.size());
+        
+        filteredNodes.sort(Comparator.comparingInt(p_o -> p_o.getRole().toString().length()));
 
         for (NodeEntry entry : filteredNodes) {
 
-            p_stdout.printfln("\t0x%04X \t %s \t %s", entry.getId(), entry.getRole(), NodeCapabilities.toString(entry.getCapabilities()));
+            p_stdout.printfln("\t0x%04X\t%10s %s", entry.getId(), entry.getRole(), NodeCapabilities.toString(entry.getCapabilities()));
         }
     }
 
