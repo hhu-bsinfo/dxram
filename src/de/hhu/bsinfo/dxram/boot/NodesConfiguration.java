@@ -20,11 +20,9 @@ import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
 
-import com.google.gson.annotations.JsonAdapter;
 import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
-import de.hhu.bsinfo.dxutils.adapter.NodeCapabilitiesAdapter;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
