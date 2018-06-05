@@ -90,7 +90,6 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
 
         LOGGER.debug("Registering job type %s for class %s", p_typeID, p_clazz);
 
-
         AbstractJob.registerType(p_typeID, p_clazz);
     }
 
@@ -204,6 +203,11 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
             // now check for remote peers
             List<Short> peers = m_boot.getIDsOfOnlinePeers();
             for (short peer : peers) {
+                // filter own node id
+                if (peer == m_boot.getNodeID()) {
+                    continue;
+                }
+
                 StatusRequest request = new StatusRequest(peer);
 
                 try {
@@ -462,13 +466,11 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
                 }
             } else {
                 // should not happen, because we registered for specific events, only
-
                 LOGGER.error("Getting remote callback for unregistered event '%d' on job id '0x%X'",
                         p_message.getEventId(), p_message.getJobID());
 
             }
         } else {
-
             LOGGER.error("Getting stored callbacks from map for callback to job id '0x%X' failed",
                     p_message.getJobID());
 
