@@ -12,7 +12,6 @@ log.txt
 .idea
 .gradle
 *.swp
-*.jar
 *.iml
 dxram.iml
 .dxram_term_hist
