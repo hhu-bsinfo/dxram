@@ -1,0 +1,42 @@
+buildscript {
+
+    repositories {
+
+        mavenCentral()
+
+        maven {
+
+            url "https://plugins.gradle.org/m2/"
+        }
+
+        maven {
+
+            url  "https://dl.bintray.com/hhu-bsinfo/dxram"
+        }
+    }
+
+    dependencies {
+
+        classpath "de.hhu.bsinfo:dxgradle:1.0.1"
+    }
+}
+
+allprojects {
+
+    repositories {
+
+        mavenCentral()
+
+    	jcenter()
+
+        maven {
+
+            url  "https://dl.bintray.com/hhu-bsinfo/dxram"
+        }
+    }
+}
+
+task wrapper(type: Wrapper) {
+
+    gradleVersion = "4.7"
+}

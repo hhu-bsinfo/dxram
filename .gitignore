@@ -1,5 +1,5 @@
 /bin
-/build/
+**/build/
 .checkstyle
 .classpath
 .project
@@ -10,8 +10,10 @@ cmd_*
 *.DS_Store
 log.txt
 .idea
+.gradle
 *.swp
 *.jar
+*.iml
 dxram.iml
 .dxram_term_hist
 out/*

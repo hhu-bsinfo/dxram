@@ -1,0 +1,34 @@
+buildTypes {
+
+    debug {
+
+        buildConfig {
+
+            typedField "DEBUG", Boolean, true
+
+            typedField "GIT_COMMIT", String, gitCommit
+
+            field "DXRAM_VERSION", "de.hhu.bsinfo.dxram.engine", "DXRAMVersion", "DXRAMVersion.fromString(\"${project.version}\")"
+        }
+    }
+
+    release {
+
+        excludeInvocations 'org.apache.logging.log4j.Logger'
+
+        buildConfig {
+
+            inheritsFrom 'debug'
+
+            typedField "DEBUG", Boolean, false
+        }
+    }
+
+    statistics {
+
+        buildConfig {
+
+            inheritsFrom 'debug'
+        }
+    }
+}

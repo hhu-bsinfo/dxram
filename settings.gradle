@@ -1,0 +1,9 @@
+include ':dxram', ':native'
+
+// Development mode switch
+boolean isDevelop = false
+
+if (isDevelop) {
+    includeBuild '../dxnet'
+    includeBuild '../dxutils'
+}
