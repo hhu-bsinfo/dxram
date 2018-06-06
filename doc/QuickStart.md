@@ -4,36 +4,24 @@ DXRAM requires Java 1.8 to run on a Linux distribution of your choice
 DXRAM uses [ZooKeeper](https://zookeeper.apache.org/) for bootstrapping.
 
 ## Dependencies
-The following dependencies are required and are already included with
-DXRAM in the "lib" folder:
-* ant-contrib (0.6) for building
-* AutoValue (1.4.1) for DXRAM
-* gson (2.7) for DXRAM
-* jline (2.15) for DXRAM
-* Log4j (version 1) for Zookeeper
-* Log4j2 (2.7) for DXRAM
-* sl4j (version 1) for Zookeeper
-* sl4j-log4j12 for Zookeeper
-* ZooKeeper (3.4.3) for DXRAM
 
-DXRAM uses submodules like dxutils and dxnet. Make sure to load them as well after cloning:
-```
-git submodule update --init --recursive
-```
+DXRAM requires a few dependencies such as ZooKeeper, gson or Log4j. The build system downloads them automatically.
+
+Furthermore, DXRAM uses DXNet, DXUtils, DXMon and DXMem which, by default, are also downloaded. If you prefer to use a
+local copy of them (for development), change set *isDevelop=true* in the *settings.gradle* file. You have to provide
+local copies of the repositories listed in that file and put them on the same directory level as DXRAM's.
 
 # ZooKeeper
 Download, install and setup [ZooKeeper](https://zookeeper.apache.org/).
 See System Requirements in the admin guide of ZooKeeper (a packaged
 version is included with DXRAM, see *util/zookeeper.zip*)
 
-# Building
-A build script (Ant) is included for building the project. Ensure Ant
-is installed and run *build.sh*. The ant scripts used for building are
-located in the subfolder *ant/*. The build output is located in
-the *build/* sub-directory.
-
-# Deploying to a remote machine (cluster)
-Copy the *build/dxram* directory to your cluster.
+# Building and install
+Our build system uses gradle and the project comes with a gradle-wrapper included, so you don't have to install gradle.
+Run *./gradlew installDist* to build the project with default settings. Use *-PbuildType=* to specify different build
+types such as *debug* or *release*, e.g. *./gradlew installDist -PbuildType=release*. The output with all necessary
+assets to run DXRAM is located in the *build* directory. Grab the *dxram.zip* and unpack it to a location of your
+choice to install it.
 
 # Starting DXRAM - Deployment
 To easily deploy instances to either localhost or nodes of a cluster,
