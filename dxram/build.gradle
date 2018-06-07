@@ -1,14 +1,36 @@
 import org.gradle.internal.jvm.Jvm
 
+plugins {
+
+    id 'maven-publish'
+
+    id 'com.jfrog.bintray' version '1.8.0'
+}
+
 apply plugin: 'dxram'
 
 group = 'de.hhu.bsinfo'
 
-version = '0.3.0'
+version = '0.4.0-SNAPSHOT'
 
 tasks.withType(JavaCompile) {
 
     options.compilerArgs += ["-Werror", "-Xlint:sunapi", "-XDenableSunApiLintControl"]
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+
+    classifier = 'sources'
+
+    from sourceSets.main.allSource
+}
+
+javadoc.failOnError = false
+task javadocJar(type: Jar, dependsOn: javadoc) {
+
+    classifier = 'javadoc'
+
+    from javadoc.destinationDir
 }
 
 dependencies {
@@ -45,5 +67,14 @@ dependencies {
 sourceCompatibility = '1.8'
 
 targetCompatibility = '1.8'
+
+artifacts {
+
+    archives sourcesJar
+
+    archives javadocJar
+}
+
+apply from: 'publish.gradle'
 
 apply from: 'types.gradle'
