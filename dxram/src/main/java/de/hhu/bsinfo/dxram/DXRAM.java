@@ -42,6 +42,7 @@ import de.hhu.bsinfo.dxram.engine.NullComponent;
 import de.hhu.bsinfo.dxram.engine.NullService;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.failure.FailureComponent;
+import de.hhu.bsinfo.dxram.generated.BuildConfig;
 import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.job.JobWorkStealingComponent;
 import de.hhu.bsinfo.dxram.lock.PeerLockComponent;
@@ -71,9 +72,9 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public final class DXRAM {
-    public static final DXRAMVersion VERSION = new DXRAMVersion(0, 3, 0);
-    public static final String GIT_COMMIT = "Not Available"; //@GITCOMMIT@
-    public static final String BUILD_TYPE = "Not Available"; //@BUILDTYPE@
+    public static final DXRAMVersion VERSION = BuildConfig.DXRAM_VERSION;
+    public static final String GIT_COMMIT = BuildConfig.GIT_COMMIT;
+    public static final String BUILD_TYPE = BuildConfig.BUILD_TYPE;
     private static final String STARTUP_DONE_STR = "!---ooo---!";
 
     private DXRAMEngine m_engine;

@@ -6,9 +6,11 @@ buildTypes {
 
             typedField "DEBUG", Boolean, true
 
+            typedField "BUILD_TYPE", String, buildType
+
             typedField "GIT_COMMIT", String, gitCommit
 
-            field "DXRAM_VERSION", "de.hhu.bsinfo.dxram.engine", "DXRAMVersion", "DXRAMVersion.fromString(\"${project.version}\")"
+            field "DXRAM_VERSION", "de.hhu.bsinfo.dxram.engine", "DXRAMVersion", "DXRAMVersion.fromString(\"${version}\")"
         }
     }
 

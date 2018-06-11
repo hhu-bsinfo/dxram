@@ -239,7 +239,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         }
 
         // sort list by initialization priority
-        comp = (p_o1, p_o2) -> new Integer(p_o1.getPriorityInit()).compareTo(p_o2.getPriorityInit());
+        comp = Comparator.comparingInt(AbstractDXRAMComponent::getPriorityInit);
         list.sort(comp);
 
         // #if LOGGER >= INFO
@@ -365,7 +365,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());
 
-        comp = (p_o1, p_o2) -> new Integer(p_o1.getPriorityShutdown()).compareTo(p_o2.getPriorityShutdown());
+        comp = Comparator.comparingInt(AbstractDXRAMComponent::getPriorityShutdown);
 
         list.sort(comp);
 
