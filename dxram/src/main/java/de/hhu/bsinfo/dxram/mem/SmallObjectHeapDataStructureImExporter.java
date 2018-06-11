@@ -16,6 +16,8 @@
 
 package de.hhu.bsinfo.dxram.mem;
 
+import java.nio.charset.StandardCharsets;
+
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
@@ -129,7 +131,7 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
 
     @Override
     public void writeString(final String p_str) {
-        writeByteArray(p_str.getBytes());
+        writeByteArray(p_str.getBytes(StandardCharsets.US_ASCII));
     }
 
     @Override

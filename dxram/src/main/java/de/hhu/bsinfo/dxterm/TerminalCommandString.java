@@ -26,17 +26,23 @@ import java.util.regex.Pattern;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxterm.converter.ArgumentConverter;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Process a string and create a terminal command which splits the input text into tokens of command name and arguments for the command
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
+ * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
 public class TerminalCommandString implements Serializable {
     private String m_name = "";
     private String[] m_args = new String[0];
     private boolean m_isComment = false;
+
+    private static final String SEPERATOR = "=";
+
+    private static final String NO_ARG = "";
 
     /**
      * Constructor
@@ -126,6 +132,36 @@ public class TerminalCommandString implements Serializable {
         }
 
         return Boolean.parseBoolean(m_args[p_pos]);
+    }
+
+    /**
+     * Searches the specified argument within the argument list.
+     *
+     * @param p_name The argument's name.
+     * @return The argument's value if it's present; otherwise an empty String.
+     */
+    public String getNamedArgument(final String p_name) {
+
+        final String prefix = p_name + SEPERATOR;
+
+        return Arrays.stream(m_args)
+                .filter(arg -> arg.startsWith(prefix))
+                .map(arg -> arg.split(SEPERATOR)[1])
+                .findFirst()
+                .orElse(NO_ARG);
+    }
+
+    /**
+     * Searches the specified argument within the argument list and converts it using the provided converter.
+     *
+     * @param p_name The argument's name.
+     * @return The argument's value if it's present; otherwise the specified default value.
+     */
+    public <T> T getNamedArgument(final String p_name, final ArgumentConverter<T> p_converter, T p_default) {
+
+        String arg = getNamedArgument(p_name);
+
+        return arg.equals(NO_ARG) ? p_default : p_converter.convert(arg);
     }
 
     /**

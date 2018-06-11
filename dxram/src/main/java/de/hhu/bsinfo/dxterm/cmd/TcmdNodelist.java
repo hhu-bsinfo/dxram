@@ -17,9 +17,12 @@
 package de.hhu.bsinfo.dxterm.cmd;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxterm.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxterm.TerminalCommandString;
@@ -33,32 +36,48 @@ import de.hhu.bsinfo.dxterm.TerminalServiceAccessor;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.04.2017
  */
 public class TcmdNodelist extends AbstractTerminalCommand {
+
+    private static final String ARG_CAPABILITIES = "cap";
+
+    private static final String ARG_NODEROLE = "role";
+
     public TcmdNodelist() {
         super("nodelist");
     }
 
     @Override
     public String getHelp() {
-        return "List all available nodes or nodes of a specific type\n" + "Usage: nodelist [role]\n" + "  role: Filter list by role if specified";
+        return "List all available nodes or nodes of a specific type\n\n" +
+                "Usage: nodelist [role] [cap]\n\n" +
+                "\t role \t\t Filter list by role if specified\n" +
+                "\t cap \t\t Filter list by capabilities";
     }
 
     @Override
     public void exec(final TerminalCommandString p_cmd, final TerminalServerStdout p_stdout, final TerminalServerStdin p_stdin,
             final TerminalServiceAccessor p_services) {
-        NodeRole nodeRole = p_cmd.getArgNodeRole(0, null);
 
         BootService boot = p_services.getService(BootService.class);
 
         List<Short> nodeIds = boot.getOnlineNodeIDs();
 
-        p_stdout.printfln("Total available nodes (%d):", nodeIds.size());
+        final NodeRole nodeRole = p_cmd.getNamedArgument(ARG_NODEROLE, NodeRole::toNodeRole, null);
 
-        for (Short nodeId : nodeIds) {
-            NodeRole curRole = boot.getNodeRole(nodeId);
+        final int capability = p_cmd.getNamedArgument(ARG_CAPABILITIES, NodeCapabilities::fromStringArray, NodeCapabilities.NONE);
 
-            if (nodeRole == null || curRole == nodeRole) {
-                p_stdout.printfln("\t0x%04X   %s", nodeId, curRole);
-            }
+        List<NodeEntry> filteredNodes = nodeIds.stream()
+                .map(nodeId -> new NodeEntry(nodeId, boot.getNodeRole(nodeId), boot.getNodeCapabilities(nodeId)))
+                .filter(entry -> nodeRole == null || entry.getRole() == nodeRole)
+                .filter(entry -> NodeCapabilities.supportsAll(entry.getCapabilities(), capability))
+                .collect(Collectors.toList());
+
+        p_stdout.printfln("Total available nodes (%d):", filteredNodes.size());
+        
+        filteredNodes.sort(Comparator.comparingInt(p_o -> p_o.getRole().toString().length()));
+
+        for (NodeEntry entry : filteredNodes) {
+
+            p_stdout.printfln("\t0x%04X\t%10s %s", entry.getId(), entry.getRole(), NodeCapabilities.toString(entry.getCapabilities()));
         }
     }
 
@@ -79,5 +98,37 @@ public class TcmdNodelist extends AbstractTerminalCommand {
         }
 
         return list;
+    }
+
+    private static class NodeEntry {
+
+        private final short m_id;
+
+        private final NodeRole m_role;
+
+        private final int m_capabilities;
+
+        NodeEntry(short p_id, NodeRole p_role, int p_capabilities) {
+            m_id = p_id;
+
+            m_role = p_role;
+
+            m_capabilities = p_capabilities;
+        }
+
+        public short getId() {
+
+            return m_id;
+        }
+
+        public NodeRole getRole() {
+
+            return m_role;
+        }
+
+        public int getCapabilities() {
+
+            return m_capabilities;
+        }
     }
 }

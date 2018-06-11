@@ -16,6 +16,7 @@ package de.hhu.bsinfo.dxram.log;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.Locale;
 
 import org.apache.logging.log4j.LogManager;
@@ -44,14 +45,26 @@ public final class LogThroughputTester {
     private static LogComponent ms_log;
     private static LogComponentConfig ms_conf;
 
+    private static String ms_workload;
+    private static int ms_updates;
     private static int ms_batchSize = 10;
     private static int ms_size = 64;
     private static int ms_backupRangeSize = 256 * 1024 * 1024;
     private static String ms_accessMode = "raf";
+    private static boolean ms_timestampsEnabled = false;
+    private static int ms_logSegmentSize = 8;
+    private static int ms_primaryBufferSize = 32;
+    private static int ms_secondaryLogBufferSize = 128;
+    private static int ms_utilizationReorgActivation = 60;
+    private static int ms_utilizationReorgPrompt = 75;
+    private static int ms_coldDataThresholdSec = 90;
 
-    private static long ms_chunkCount;
-    private static volatile long ms_timeStart;
+    private static int ms_chunkCount;
+    private static volatile long ms_timeStartLoading;
+    private static volatile long ms_timeStartUpdating;
     private static long ms_chunksLogged = 0;
+    private static long ms_chunksUpdated = 0;
+    private static boolean ms_isLoading = true;
 
     /**
      * Hidden constructor.
@@ -73,56 +86,87 @@ public final class LogThroughputTester {
 
         setup();
 
-        Workload thread = new Workload();
-        thread.setName(String.valueOf(0));
+        long[] rangeMapping = null;
+        Load loadThread = new Load();
+        loadThread.setName(String.valueOf(0));
 
-        LOGGER.info("Starting workload...");
         ProgressThread progressThread = new ProgressThread(1000);
 
         progressThread.start();
 
-        ms_timeStart = System.nanoTime();
+        LOGGER.info("Starting load phase...");
+        ms_timeStartLoading = System.nanoTime();
 
-        thread.start();
+        loadThread.start();
 
-        try
-
-        {
-            thread.join();
-        } catch (InterruptedException ignore)
-
-        {
+        try {
+            loadThread.join();
+            rangeMapping = loadThread.getRangeMapping();
+        } catch (InterruptedException ignore) {
+            System.out.println("Interrupt. Aborting.");
+            System.exit(-1);
         }
 
-        LOGGER.info("Workload finished.");
+        long timeEndLoading = System.nanoTime();
 
-        while (ms_chunksLogged < ms_chunkCount)
+        LOGGER.info("Load phase finished.");
 
-        {
+        if (!"none".equals(ms_workload)) {
+            LOGGER.info("Waiting...");
             try {
-                Thread.sleep(1);
-            } catch (InterruptedException ignored) {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+
+            LOGGER.info("Starting workload...");
+            Workload thread = null;
+            if ("sequential".equals(ms_workload)) {
+                thread = new Sequential(rangeMapping);
+            } else if ("random".equals(ms_workload)) {
+                thread = new Random(rangeMapping);
+            } else if ("zipf".equals(ms_workload)) {
+                thread = new Zipf(rangeMapping);
+            } else if ("hotncold".equals(ms_workload)) {
+                thread = new HotAndCold(rangeMapping);
+            }
+
+            assert thread != null;
+            thread.setName(String.valueOf(0));
+
+            thread.start();
+
+            try {
+                thread.join();
+            } catch (InterruptedException ignore) {
+            }
+
+            LOGGER.info("Workload finished.");
+
+            /*while (ms_chunksLogged < ms_chunkCount) {
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {
+                }
+            }*/
         }
 
-        long timeEnd = System.nanoTime();
+        long timeEndUpdating = System.nanoTime();
 
         progressThread.shutdown();
 
-        printResults(timeEnd - ms_timeStart);
+        printResults(timeEndLoading - ms_timeStartLoading, timeEndUpdating - ms_timeStartUpdating);
 
-        try
-
-        {
+        try {
             Thread.sleep(3000);
-        } catch (InterruptedException e)
-
-        {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
         StatisticsManager.get().stopPeriodicPrinting();
         StatisticsManager.get().printStatistics(System.out);
+
+        ms_log.shutdownComponent();
 
         System.exit(0);
     }
@@ -134,9 +178,17 @@ public final class LogThroughputTester {
      *         the program arguments.
      */
     private static void processArgs(final String[] p_arguments) {
-        if (p_arguments.length != 4) {
+        if (p_arguments.length != 6 && p_arguments.length != 13) {
             System.out.println("To execute benchmark:");
-            System.out.println("Args: <access mode (raf, dir or raw)> <chunk count> <batch size> <chunk size>");
+            System.out.println("Normal:");
+            System.out.println("Args: " + " <access mode (raf, dir or raw)> <chunk count> <chunk size> <batch size> " +
+                    "<workload (none, sequential, random, zipf or hotncold)> <number of updates>");
+            System.out.println("Extended:");
+            System.out.println("Args: " + " <access mode (raf, dir or raw)> <chunk count> <chunk size> <batch size> " +
+                    "<workload (none, sequential, random, zipf or hotncold)> <number of updates> " +
+                    "<timestamps enabled> <segment size in MB> <primary buffer size in MB> " +
+                    "<secondary log buffer size in KB> <utilization for reorganization activation (in percent)> " +
+                    "<utilization to prompt reorganization (in percent)> <cold data threshold in sec>");
             System.exit(-1);
         }
 
@@ -145,16 +197,41 @@ public final class LogThroughputTester {
             System.out.println("Invalid access mode! Using RandomAccessFile.");
             ms_accessMode = "raf";
         }
-        ms_chunkCount = Long.parseLong(p_arguments[1]);
-        ms_batchSize = Integer.parseInt(p_arguments[2]);
-        ms_size = Integer.parseInt(p_arguments[3]);
+        ms_chunkCount = Integer.parseInt(p_arguments[1]);
+        ms_size = Integer.parseInt(p_arguments[2]);
+        ms_batchSize = Integer.parseInt(p_arguments[3]);
 
-        System.out.printf("Parameters: log count %d, batch size %d, size %d\n", ms_chunkCount, ms_batchSize, ms_size);
+        ms_workload = p_arguments[4];
+        if (!"none".equals(ms_workload) && !"sequential".equals(ms_workload) && !"random".equals(ms_workload) &&
+                !"zipf".equals(ms_workload) && !"hotncold".equals(ms_workload)) {
+            System.out.println("Invalid workload! Starting with \"none\".");
+            ms_workload = "none";
+        }
+        ms_updates = Integer.parseInt(p_arguments[5]);
+
+        if (p_arguments.length == 13) {
+            ms_timestampsEnabled = Boolean.parseBoolean(p_arguments[6]);
+            ms_logSegmentSize = Integer.parseInt(p_arguments[7]);
+            ms_primaryBufferSize = Integer.parseInt(p_arguments[8]);
+            ms_secondaryLogBufferSize = Integer.parseInt(p_arguments[9]);
+            ms_utilizationReorgActivation = Integer.parseInt(p_arguments[10]);
+            ms_utilizationReorgPrompt = Integer.parseInt(p_arguments[11]);
+            ms_coldDataThresholdSec = Integer.parseInt(p_arguments[12]);
+        }
+
+        System.out.printf("Parameters: access_mode=%s chunk_count=%d chunk_size=%d batch_size=%d " +
+                        "workload=%s updates=%d timestamps=%s segment_size=%d primary_buffer_size=%d " +
+                        "secondary_log_buffer_size=%d reorg_activation_utilization=%d " +
+                        "reorg_prompt_utilization=%d cold_data_threshold_sec=%d\n", ms_accessMode, ms_chunkCount, ms_size,
+                ms_batchSize, ms_workload, ms_updates, ms_timestampsEnabled, ms_logSegmentSize, ms_primaryBufferSize,
+                ms_secondaryLogBufferSize, ms_utilizationReorgActivation, ms_utilizationReorgPrompt,
+                ms_coldDataThresholdSec);
     }
 
     /**
      * Setup files and classes for the benchmark.
      */
+
     private static void setup() {
         String pathLogFiles = "/media/ssd/dxram_log/";
         File[] files = new File(pathLogFiles).listFiles();
@@ -169,71 +246,92 @@ public final class LogThroughputTester {
         }
 
         ms_log = new LogComponent();
-        ms_conf = new LogComponentConfig(ms_accessMode, "/dev/raw/raw1", true, false, 4, 8, 256, 256, 128, 70, 9000);
+        ms_conf =
+                new LogComponentConfig(ms_accessMode, "/dev/raw/raw1", true, ms_timestampsEnabled, 4, ms_logSegmentSize,
+                        256, ms_primaryBufferSize, ms_secondaryLogBufferSize, ms_utilizationReorgActivation,
+                        ms_utilizationReorgPrompt, ms_coldDataThresholdSec);
         ms_log.initComponent(ms_conf, pathLogFiles, ms_backupRangeSize);
     }
 
     /**
      * Print results.
      *
-     * @param p_timeDiffNs
-     *         time difference between start and end.
+     * @param p_timeDiffLoadingNs
+     *         time difference between start and end of loading phase.
+     * @param p_timeDiffUpdatingNs
+     *         time difference between start and end of updating phase.
      */
-    private static void printResults(final long p_timeDiffNs) {
-        System.out.printf("[RESULTS]\n" + "[CHUNK SIZE] %d\n" + "[BATCH SIZE] %d\n" + "[RUNTIME] %d ms\n" +
-                        "[TIME PER CHUNK] %d ns\n" +
-                        "[THROUGHPUT] %f MB/s\n" + "[THROUGHPUT OVERHEAD] %f MB/s\n", ms_size, ms_batchSize,
-                p_timeDiffNs / 1000 / 1000,
-                ms_chunkCount != 0 ? p_timeDiffNs / ms_chunkCount : ms_chunkCount,
-                ms_chunkCount != 0 ?
-                        (double) ms_chunkCount * ms_size / 1024 / 1024 / ((double) p_timeDiffNs / 1000 / 1000 / 1000) :
-                        0, ms_chunkCount != 0 ?
-                        (double) ms_chunkCount * (ms_size + ObjectSizeUtil.sizeofCompactedNumber(ms_size) + 10) / 1024 /
-                                1024 /
-                                ((double) p_timeDiffNs / 1000 / 1000 / 1000) : 0);
+    private static void printResults(final long p_timeDiffLoadingNs, final long p_timeDiffUpdatingNs) {
+        System.out.printf("[RESULTS LOADING]\n" + "[CHUNK SIZE] %d\n" + "[BATCH SIZE] %d\n" + "[RUNTIME] %d ms\n" +
+                        "[TIME PER CHUNK] %d ns\n" + "[THROUGHPUT] %f MB/s\n" + "[THROUGHPUT OVERHEAD] %f MB/s\n", ms_size,
+                ms_batchSize, p_timeDiffLoadingNs / 1000 / 1000,
+                ms_chunkCount != 0 ? p_timeDiffLoadingNs / ms_chunkCount : ms_chunkCount, ms_chunkCount != 0 ?
+                        (double) ms_chunkCount * ms_size / 1024 / 1024 /
+                                ((double) p_timeDiffLoadingNs / 1000 / 1000 / 1000) : 0, ms_chunkCount != 0 ?
+                        (double) ms_chunkCount * (ms_size + ObjectSizeUtil.sizeofCompactedNumber(ms_size) +
+                                AbstractSecLogEntryHeader
+                                        .getApproxSecLogHeaderSize(false, ms_chunkCount / 2, ms_size)) / 1024 / 1024 /
+                                ((double) p_timeDiffLoadingNs / 1000 / 1000 / 1000) : 0);
+
+        System.out.printf("[RESULTS UPDATING]\n" + "[RUNTIME] %d ms\n" + "[TIME PER CHUNK] %d ns\n" +
+                        "[THROUGHPUT] %f MB/s\n" + "[THROUGHPUT OVERHEAD] %f MB/s\n", p_timeDiffUpdatingNs / 1000 / 1000,
+                ms_updates != 0 ? p_timeDiffUpdatingNs / ms_updates : ms_updates, ms_updates != 0 ?
+                        (double) ms_updates * ms_size / 1024 / 1024 /
+                                ((double) p_timeDiffUpdatingNs / 1000 / 1000 / 1000) : 0, ms_updates != 0 ?
+                        (double) ms_updates * (ms_size + ObjectSizeUtil.sizeofCompactedNumber(ms_size) +
+                                AbstractSecLogEntryHeader
+                                        .getApproxSecLogHeaderSize(false, ms_chunkCount / 2, ms_size)) / 1024 / 1024 /
+                                ((double) p_timeDiffUpdatingNs / 1000 / 1000 / 1000) : 0);
     }
 
-    /**
-     * The worker thread executing the workload.
-     */
-    private static class Workload extends Thread {
+    private static class Load extends Thread {
+
+        private long[] m_rangeMapping;
 
         /**
          * Constructor
          */
-        Workload() {
+        Load() {
             super();
+        }
+
+        long[] getRangeMapping() {
+            return m_rangeMapping;
         }
 
         @Override
         public void run() {
-            long chunkID = ((long) 2 << 48) + 1;
             int entrySize = ms_size + Long.BYTES + ObjectSizeUtil.sizeofCompactedNumber(ms_size);
-            int chunksPerRange = ms_backupRangeSize / (ms_size + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(
-                    false, ms_chunkCount, ms_size));
+            int chunksPerRange = ms_backupRangeSize /
+                    (ms_size + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, ms_chunkCount, ms_size));
+            m_rangeMapping = new long[ms_chunkCount / chunksPerRange];
 
             ByteBuffer buffer = ByteBuffer.allocateDirect(ms_batchSize * (ms_size + 8 + 4));
             buffer.order(ByteOrder.LITTLE_ENDIAN);
 
+            byte[] array = new byte[ms_size];
+            Arrays.fill(array, (byte) 5);
             ByteBufferImExporter imExporter = new ByteBufferImExporter(buffer);
             for (int i = 0; i < ms_batchSize; i++) {
-                DataStructure ds = new DSByteArray(chunkID, ms_size);
+                DataStructure ds = new DSByteArray(array);
                 imExporter.writeLong(ds.getID());
                 imExporter.writeCompactNumber(ms_size);
                 imExporter.exportObject(ds);
             }
 
+            long chunkID = ((long) 2 << 48) + 1;
             short rangeID = (short) 0;
             ms_log.incomingInitBackupRange(rangeID, (short) 2);
             for (int i = 0; i < ms_chunkCount / ms_batchSize; i++) {
                 // Create a new range if necessary
                 if ((ms_chunksLogged + ms_batchSize) / chunksPerRange > rangeID) {
+                    m_rangeMapping[rangeID] = ms_chunksLogged;
                     ms_log.incomingInitBackupRange(++rangeID, (short) 2);
                 }
 
                 // Update ChunkIDs
                 for (int j = 0; j < ms_batchSize; j++) {
-                    buffer.putLong(j * entrySize, ++chunkID);
+                    buffer.putLong(j * entrySize, chunkID++);
                 }
 
                 buffer.position(0);
@@ -241,194 +339,431 @@ public final class LogThroughputTester {
                 ms_chunksLogged += ms_batchSize;
             }
         }
+    }
 
-        static void bufferTest() {
-            System.out.println("ByteBuffer performance test:");
-            int length = 8 * 1024 * 1024;
-            int iterations = 1000;
-            long start;
-            long timeWrite = 0;
-            long timeRead = 0;
-            long l2 = 0;
+    /**
+     * The worker thread executing the workload.
+     */
+    private abstract static class Workload extends Thread {
 
-            ByteBuffer[] buffersDirect = new ByteBuffer[iterations];
-            for (int j = 0; j < iterations; j++) {
-                buffersDirect[j] = ByteBuffer.allocateDirect(length);
+        long[] m_rangeMapping;
+
+        abstract void initializeDistribution();
+
+        abstract long getNextChunkID();
+
+        Workload(final long[] p_rangeMapping) {
+            m_rangeMapping = p_rangeMapping;
+        }
+    }
+
+    private static class Sequential extends Workload {
+
+        private long m_chunkID;
+
+        /**
+         * Constructor
+         */
+        Sequential(final long[] p_rangeMapping) {
+            super(p_rangeMapping);
+        }
+
+        @Override
+        void initializeDistribution() {
+            m_chunkID = ((long) 2 << 48) + 1;
+
+            ms_timeStartUpdating = System.nanoTime();
+            ms_isLoading = false;
+        }
+
+        @Override
+        long getNextChunkID() {
+            return m_chunkID++;
+        }
+
+        @Override
+        public void run() {
+            initializeDistribution();
+
+            int entrySize = ms_size + Long.BYTES + ObjectSizeUtil.sizeofCompactedNumber(ms_size);
+
+            ByteBuffer buffer = ByteBuffer.allocateDirect(ms_batchSize * (ms_size + 8 + 4));
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+            byte[] array = new byte[ms_size];
+            Arrays.fill(array, (byte) 7);
+            ByteBufferImExporter imExporter = new ByteBufferImExporter(buffer);
+            for (int i = 0; i < ms_batchSize; i++) {
+                DataStructure ds = new DSByteArray(array);
+                imExporter.writeLong(ds.getID());
+                imExporter.writeCompactNumber(ms_size);
+                imExporter.exportObject(ds);
             }
-            for (int j = 0; j < iterations; j++) {
-                start = System.nanoTime();
-                buffersDirect[j].position(0);
-                for (int i = 0; i < length / 13; i++) {
-                    buffersDirect[j].putLong(37);
-                    buffersDirect[j].putShort((short) 12);
-                    buffersDirect[j].put((byte) 7);
-                    buffersDirect[j].put((byte) 3);
-                    buffersDirect[j].put((byte) 16);
-                }
-                timeWrite += System.nanoTime() - start;
 
-                start = System.nanoTime();
-                buffersDirect[j].position(0);
-                for (int i = 0; i < length / 13; i++) {
-                    long l = buffersDirect[j].getLong();
-                    short sh = buffersDirect[j].getShort();
-                    byte b1 = buffersDirect[j].get();
-                    byte b2 = buffersDirect[j].get();
-                    byte b3 = buffersDirect[j].get();
-                    l2 = l + sh + b1 + b2 + b3;
+            long chunksLogged;
+            short rangeID;
+            while (ms_chunksUpdated < ms_updates) {
+                chunksLogged = 0;
+                rangeID = (short) 0;
+                for (int i = 0; i < ms_chunkCount / ms_batchSize && ms_chunksUpdated < ms_updates; i++) {
+                    if (m_rangeMapping.length > rangeID && chunksLogged == m_rangeMapping[rangeID]) {
+                        rangeID++;
+                    }
+
+                    // Update ChunkIDs
+                    for (int j = 0; j < ms_batchSize; j++) {
+                        buffer.putLong(j * entrySize, getNextChunkID());
+                    }
+
+                    buffer.position(0);
+                    ms_log.incomingLogChunks(rangeID, ms_batchSize, buffer, (short) 2);
+                    chunksLogged += ms_batchSize;
+                    ms_chunksUpdated += ms_batchSize;
                 }
-                timeRead += System.nanoTime() - start;
             }
-            System.out.println(
-                    "DirectByteBuffer: write: " + timeWrite / 1000 + ", read: " + timeRead / 1000 + ", " + l2);
+        }
+    }
 
-            timeWrite = 0;
-            timeRead = 0;
-            buffersDirect = new ByteBuffer[iterations];
-            for (int j = 0; j < iterations; j++) {
-                buffersDirect[j] = ByteBuffer.allocateDirect(length);
-                buffersDirect[j].order(ByteOrder.LITTLE_ENDIAN);
+    private static class Random extends Workload {
+
+        private java.util.Random m_rand;
+
+        /**
+         * Constructor
+         */
+        Random(final long[] p_rangeMapping) {
+            super(p_rangeMapping);
+        }
+
+        @Override
+        void initializeDistribution() {
+            long time = System.nanoTime();
+            LOGGER.info("Initializing random distribution (seed: %d)", time);
+            LOGGER.info("\tEstimated memory consumption: 0 MB");
+
+            m_rand = new java.util.Random(time);
+
+            LOGGER.info("Finished initializing distribution");
+
+            ms_timeStartUpdating = System.nanoTime();
+            ms_isLoading = false;
+        }
+
+        @Override
+        long getNextChunkID() {
+            long next = (m_rand.nextLong() & 0xFFFFFFFFFFFFL) % ms_chunkCount;
+            return ((long) 2 << 48) + next + 1;
+        }
+
+        @Override
+        public void run() {
+            initializeDistribution();
+
+            int entrySize = ms_size + Long.BYTES + ObjectSizeUtil.sizeofCompactedNumber(ms_size);
+
+            ByteBuffer buffer = ByteBuffer.allocateDirect(ms_batchSize * (ms_size + 8 + 4));
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+            byte[] array = new byte[ms_size];
+            Arrays.fill(array, (byte) 7);
+            ByteBufferImExporter imExporter = new ByteBufferImExporter(buffer);
+            for (int i = 0; i < ms_batchSize; i++) {
+                DataStructure ds = new DSByteArray(array);
+                imExporter.writeLong(ds.getID());
+                imExporter.writeCompactNumber(ms_size);
+                imExporter.exportObject(ds);
             }
-            for (int j = 0; j < iterations; j++) {
-                start = System.nanoTime();
-                buffersDirect[j].position(0);
-                for (int i = 0; i < length / 13; i++) {
-                    buffersDirect[j].putLong(37);
-                    buffersDirect[j].putShort((short) 12);
-                    buffersDirect[j].put((byte) 7);
-                    buffersDirect[j].put((byte) 3);
-                    buffersDirect[j].put((byte) 16);
-                }
-                timeWrite += System.nanoTime() - start;
 
-                start = System.nanoTime();
-                buffersDirect[j].position(0);
-                for (int i = 0; i < length / 13; i++) {
-                    long l = buffersDirect[j].getLong();
-                    short sh = buffersDirect[j].getShort();
-                    byte b1 = buffersDirect[j].get();
-                    byte b2 = buffersDirect[j].get();
-                    byte b3 = buffersDirect[j].get();
-                    l2 = l + sh + b1 + b2 + b3;
+            short rangeID;
+            for (int i = 0; i < ms_updates / ms_batchSize; i++) {
+                long chunkID = getNextChunkID();
+                long localID = chunkID & 0x0000FFFFFFFFFFFFL;
+                rangeID = 0;
+                if (m_rangeMapping.length > 0) {
+                    while (localID > m_rangeMapping[rangeID] && rangeID < m_rangeMapping.length - 1) {
+                        rangeID++;
+                    }
+
+                    // All chunks must belong to the same backup range. Check barrier and move ChunkID if necessary
+                    if (localID + ms_batchSize > m_rangeMapping[rangeID]) {
+                        chunkID = (chunkID & 0xFFFF000000000000L) + m_rangeMapping[rangeID] - ms_batchSize;
+                    }
+                } else {
+                    if (localID + ms_batchSize > ms_chunkCount) {
+                        chunkID = (chunkID & 0xFFFF000000000000L) + ms_chunkCount - ms_batchSize;
+                    }
                 }
-                timeRead += System.nanoTime() - start;
+
+                // Update ChunkIDs
+                for (int j = 0; j < ms_batchSize; j++) {
+                    buffer.putLong(j * entrySize, chunkID++);
+                }
+
+                buffer.position(0);
+                ms_log.incomingLogChunks(rangeID, ms_batchSize, buffer, (short) 2);
+                ms_chunksUpdated += ms_batchSize;
             }
-            System.out.println(
-                    "DirectByteBuffer littleEndian: write: " + timeWrite / 1000 + ", read: " + timeRead / 1000 + ", " +
-                            l2);
+        }
+    }
 
-            timeWrite = 0;
-            timeRead = 0;
-            ByteBuffer[] buffers = new ByteBuffer[iterations];
-            for (int j = 0; j < iterations; j++) {
-                buffers[j] = ByteBuffer.allocate(length);
-            }
-            for (int j = 0; j < iterations; j++) {
-                start = System.nanoTime();
-                buffers[j].position(0);
-                for (int i = 0; i < length / 13; i++) {
-                    buffers[j].putLong(37);
-                    buffers[j].putShort((short) 12);
-                    buffers[j].put((byte) 7);
-                    buffers[j].put((byte) 3);
-                    buffers[j].put((byte) 16);
+    private static class Zipf extends Workload {
+
+        private double m_skew = 1.0f;
+        private java.util.Random m_rand;
+
+        private double[] m_probs;
+        private int[] m_permutation;
+
+        /**
+         * Constructor
+         */
+        Zipf(final long[] p_rangeMapping) {
+            super(p_rangeMapping);
+        }
+
+        @Override
+        void initializeDistribution() {
+            LOGGER.info("Initializing zipf distribution (size: %d, skew: %f)", ms_chunkCount, m_skew);
+            LOGGER.info("\tEstimated memory consumption: %d MB",
+                    (long) ms_chunkCount * (Double.BYTES + Integer.BYTES) / 1024 / 1024);
+
+            m_rand = new java.util.Random(System.nanoTime());
+            m_probs = new double[ms_chunkCount];
+
+            LOGGER.info("\tCreating probability map");
+            if (Double.compare(m_skew, 1.0f) == 0) {
+                double div = 0;
+                for (int i = 1; i <= ms_chunkCount; i++) {
+                    div += 1 / (double) i;
                 }
-                timeWrite += System.nanoTime() - start;
 
-                start = System.nanoTime();
-                buffers[j].position(0);
-                for (int i = 0; i < length / 13; i++) {
-                    long l = buffers[j].getLong();
-                    short sh = buffers[j].getShort();
-                    byte b1 = buffers[j].get();
-                    byte b2 = buffers[j].get();
-                    byte b3 = buffers[j].get();
-                    l2 = l + sh + b1 + b2 + b3;
+                double sum = 0;
+                for (int i = 1; i <= ms_chunkCount; i++) {
+                    double p = 1.0f / (double) i / div;
+                    sum += p;
+                    m_probs[i - 1] = sum;
+
+                    if (i % (ms_chunkCount / 10) == 0) {
+                        LOGGER.info("\t\t Progress: %d%%", (int) ((double) i / ms_chunkCount * 100));
+                    }
                 }
-                timeRead += System.nanoTime() - start;
-            }
-            System.out.println("HeapByteBuffer: write: " + timeWrite / 1000 + ", read: " + timeRead / 1000 + ", " + l2);
-
-            timeWrite = 0;
-            timeRead = 0;
-            buffers = new ByteBuffer[iterations];
-            for (int j = 0; j < iterations; j++) {
-                buffers[j] = ByteBuffer.allocate(length);
-                buffers[j].order(ByteOrder.LITTLE_ENDIAN);
-            }
-            for (int j = 0; j < iterations; j++) {
-                start = System.nanoTime();
-                buffers[j].position(0);
-                for (int i = 0; i < length / 13; i++) {
-                    buffers[j].putLong(37);
-                    buffers[j].putShort((short) 12);
-                    buffers[j].put((byte) 7);
-                    buffers[j].put((byte) 3);
-                    buffers[j].put((byte) 16);
+            } else {
+                double div = 0;
+                for (int i = 1; i <= ms_chunkCount; i++) {
+                    div += 1 / Math.pow(i, m_skew);
                 }
-                timeWrite += System.nanoTime() - start;
 
-                start = System.nanoTime();
-                buffers[j].position(0);
-                for (int i = 0; i < length / 13; i++) {
-                    long l = buffers[j].getLong();
-                    short sh = buffers[j].getShort();
-                    byte b1 = buffers[j].get();
-                    byte b2 = buffers[j].get();
-                    byte b3 = buffers[j].get();
-                    l2 = l + sh + b1 + b2 + b3;
+                double sum = 0;
+                for (int i = 1; i <= ms_chunkCount; i++) {
+                    double p = 1.0f / Math.pow(i, m_skew) / div;
+                    sum += p;
+                    m_probs[i - 1] = sum;
+
+                    if (i % (ms_chunkCount / 10) == 0) {
+                        LOGGER.info("\t\t Progress: %d%%", (int) ((double) i / ms_chunkCount * 100));
+                    }
                 }
-                timeRead += System.nanoTime() - start;
             }
-            System.out.println(
-                    "HeapByteBuffer littleEndian: write: " + timeWrite / 1000 + ", read: " + timeRead / 1000 + ", " +
-                            l2);
 
-            timeWrite = 0;
-            timeRead = 0;
-            byte[][] arrays = new byte[iterations][];
-            for (int j = 0; j < iterations; j++) {
-                arrays[j] = new byte[length];
+            LOGGER.info("\tCreating permutation map");
+            m_permutation = new int[ms_chunkCount];
+            for (int i = 0; i < ms_chunkCount; i++) {
+                m_permutation[i] = i;
             }
-            for (int j = 0; j < iterations; j++) {
-                start = System.nanoTime();
-                for (int i = 0; i < length / 13; i++) {
-                    arrays[j][i * 13] = (byte) 37;
-                    arrays[j][i * 13 + 1] = (byte) (37 << 8);
-                    arrays[j][i * 13 + 2] = (byte) (37 << 16);
-                    arrays[j][i * 13 + 3] = (byte) ((long) 37 << 24);
-                    arrays[j][i * 13 + 4] = (byte) ((long) 37 << 32);
-                    arrays[j][i * 13 + 5] = (byte) ((long) 37 << 40);
-                    arrays[j][i * 13 + 6] = (byte) ((long) 37 << 48);
-                    arrays[j][i * 13 + 7] = (byte) ((long) 37 << 56);
+            for (int i = 0; i < ms_chunkCount; i++) {
+                int rand = i + m_rand.nextInt(ms_chunkCount - i);
 
-                    arrays[j][i * 13 + 8] = (byte) 12;
-                    arrays[j][i * 13 + 9] = (byte) (12 << 8);
+                int element = m_permutation[rand];
+                m_permutation[rand] = m_permutation[i];
+                m_permutation[i] = element;
 
-                    arrays[j][i * 13 + 10] = (byte) 7;
-                    arrays[j][i * 13 + 11] = (byte) 3;
-                    arrays[j][i * 13 + 12] = (byte) 16;
+                if (i % (ms_chunkCount / 10) == 0 && i != 0) {
+                    LOGGER.info("\t\t Progress: %d%%", (int) Math.ceil((double) i / ms_chunkCount * 100));
                 }
-                timeWrite += System.nanoTime() - start;
-
-                start = System.nanoTime();
-                for (int i = 0; i < length / 13; i++) {
-                    long l = arrays[j][i * 13] + (arrays[j][i * 13 + 1] << 8) + (arrays[j][i * 13 + 2] << 16) +
-                            ((long) arrays[j][i * 13 + 3] << 24) +
-                            ((long) arrays[j][i * 13 + 4] << 32) + ((long) arrays[j][i * 13 + 5] << 40) +
-                            ((long) arrays[j][i * 13 + 6] << 48) +
-                            ((long) arrays[j][i * 13 + 7] << 56);
-
-                    short sh = (short) (arrays[j][i * 13 + 8] + (arrays[j][i * 13 + 9] << 8));
-
-                    byte b1 = arrays[j][i * 13 + 10];
-                    byte b2 = arrays[j][i * 13 + 11];
-                    byte b3 = arrays[j][i * 13 + 12];
-                    l2 = l + sh + b1 + b2 + b3;
-                }
-                timeRead += System.nanoTime() - start;
             }
-            System.out.println("Array: write: " + timeWrite / 1000 + ", read: " + timeRead / 1000 + ", " + l2);
+
+            LOGGER.info("Finished initializing distribution");
+
+            ms_timeStartUpdating = System.nanoTime();
+            ms_isLoading = false;
+        }
+
+        @Override
+        long getNextChunkID() {
+            float value = m_rand.nextFloat();
+            int index = Arrays.binarySearch(m_probs, value);
+            if (index < 0) {
+                index = index * -1 + 1;
+            }
+
+            return ((long) 2 << 48) + m_permutation[index];
+        }
+
+        @Override
+        public void run() {
+            initializeDistribution();
+
+            int entrySize = ms_size + Long.BYTES + ObjectSizeUtil.sizeofCompactedNumber(ms_size);
+
+            ByteBuffer buffer = ByteBuffer.allocateDirect(ms_batchSize * (ms_size + 8 + 4));
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+            byte[] array = new byte[ms_size];
+            Arrays.fill(array, (byte) 7);
+            ByteBufferImExporter imExporter = new ByteBufferImExporter(buffer);
+            for (int i = 0; i < ms_batchSize; i++) {
+                DataStructure ds = new DSByteArray(array);
+                imExporter.writeLong(ds.getID());
+                imExporter.writeCompactNumber(ms_size);
+                imExporter.exportObject(ds);
+            }
+
+            short rangeID;
+            for (int i = 0; i < ms_updates / ms_batchSize; i++) {
+                long chunkID = getNextChunkID();
+                long localID = chunkID & 0x0000FFFFFFFFFFFFL;
+                rangeID = 0;
+                if (m_rangeMapping.length > 0) {
+                    while (localID > m_rangeMapping[rangeID] && rangeID < m_rangeMapping.length - 1) {
+                        rangeID++;
+                    }
+
+                    // All chunks must belong to the same backup range -> check barrier and move ChunkID if necessary
+                    if (localID + ms_batchSize > m_rangeMapping[rangeID]) {
+                        chunkID = (chunkID & 0xFFFF000000000000L) + m_rangeMapping[rangeID] - ms_batchSize;
+                    }
+                } else {
+                    if (localID + ms_batchSize > ms_chunkCount) {
+                        chunkID = (chunkID & 0xFFFF000000000000L) + ms_chunkCount - ms_batchSize;
+                    }
+                }
+
+                // Update ChunkIDs
+                for (int j = 0; j < ms_batchSize; j++) {
+                    buffer.putLong(j * entrySize, chunkID++);
+                }
+
+                buffer.position(0);
+                ms_log.incomingLogChunks(rangeID, ms_batchSize, buffer, (short) 2);
+                ms_chunksUpdated += ms_batchSize;
+            }
+        }
+    }
+
+    private static class HotAndCold extends Workload {
+
+        private static final float HOT_FRACTION = 0.1f;
+        private static final float HOT_PROBABILITY = 0.9f;
+
+        private int[] m_hot;
+        private int[] m_cold;
+
+        private java.util.Random m_rand;
+
+        /**
+         * Constructor
+         */
+        HotAndCold(final long[] p_rangeMapping) {
+            super(p_rangeMapping);
+        }
+
+        @Override
+        void initializeDistribution() {
+            LOGGER.info("Initializing hot-and-cold distribution (hot fraction: %f, hot probability: %f)", HOT_FRACTION,
+                    HOT_PROBABILITY);
+            LOGGER.info("\tEstimated memory consumption: %d MB", ms_chunkCount * Integer.BYTES / 1024 / 1024);
+
+            m_rand = new java.util.Random(System.nanoTime());
+
+            int numberOfHotObjects = (int) (ms_chunkCount * HOT_FRACTION);
+            int numberOfColdObjects = ms_chunkCount - numberOfHotObjects;
+            int indexHot = 0;
+            int indexCold = 0;
+
+            m_hot = new int[numberOfHotObjects];
+            m_cold = new int[numberOfColdObjects];
+
+            float prob;
+            for (int i = 0; i < ms_chunkCount; i++) {
+                prob = m_rand.nextFloat();
+                if (prob < HOT_FRACTION && indexHot != numberOfHotObjects || indexCold == numberOfColdObjects) {
+                    m_hot[indexHot++] = i;
+                } else {
+                    m_cold[indexCold++] = i;
+                }
+
+                if (i % (ms_chunkCount / 10) == 0 && i != 0) {
+                    LOGGER.info("\t\t Progress: %d%%", (int) Math.ceil((double) i / ms_chunkCount * 100));
+                }
+            }
+
+            LOGGER.info("Finished initializing distribution");
+
+            ms_timeStartUpdating = System.nanoTime();
+            ms_isLoading = false;
+        }
+
+        @Override
+        long getNextChunkID() {
+            int index;
+            float prob = m_rand.nextFloat();
+            if (prob < HOT_PROBABILITY) {
+                index = m_rand.nextInt((int) (ms_chunkCount * HOT_FRACTION));
+                return ((long) 2 << 48) + m_hot[index] + 1;
+            } else {
+                index = m_rand.nextInt(ms_chunkCount - (int) (ms_chunkCount * HOT_FRACTION));
+                return ((long) 2 << 48) + m_cold[index] + 1;
+            }
+        }
+
+        @Override
+        public void run() {
+            initializeDistribution();
+
+            int entrySize = ms_size + Long.BYTES + ObjectSizeUtil.sizeofCompactedNumber(ms_size);
+
+            ByteBuffer buffer = ByteBuffer.allocateDirect(ms_batchSize * (ms_size + 8 + 4));
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+            byte[] array = new byte[ms_size];
+            Arrays.fill(array, (byte) 7);
+            ByteBufferImExporter imExporter = new ByteBufferImExporter(buffer);
+            for (int i = 0; i < ms_batchSize; i++) {
+                DataStructure ds = new DSByteArray(array);
+                imExporter.writeLong(ds.getID());
+                imExporter.writeCompactNumber(ms_size);
+                imExporter.exportObject(ds);
+            }
+
+            short rangeID;
+            for (int i = 0; i < ms_updates / ms_batchSize; i++) {
+                long chunkID = getNextChunkID();
+                long localID = chunkID & 0x0000FFFFFFFFFFFFL;
+                rangeID = 0;
+                if (m_rangeMapping.length > 0) {
+                    while (localID > m_rangeMapping[rangeID] && rangeID < m_rangeMapping.length - 1) {
+                        rangeID++;
+                    }
+
+                    // All chunks must belong to the same backup range -> check barrier and move ChunkID if necessary
+                    if (localID + ms_batchSize > m_rangeMapping[rangeID]) {
+                        chunkID = (chunkID & 0xFFFF000000000000L) + m_rangeMapping[rangeID] - ms_batchSize;
+                    }
+                } else {
+                    if (localID + ms_batchSize > ms_chunkCount) {
+                        chunkID = (chunkID & 0xFFFF000000000000L) + ms_chunkCount - ms_batchSize;
+                    }
+                }
+
+                // Update ChunkIDs
+                for (int j = 0; j < ms_batchSize; j++) {
+                    buffer.putLong(j * entrySize, chunkID++);
+                }
+
+                buffer.position(0);
+                ms_log.incomingLogChunks(rangeID, ms_batchSize, buffer, (short) 2);
+                ms_chunksUpdated += ms_batchSize;
+            }
         }
     }
 
@@ -471,16 +806,25 @@ public final class LogThroughputTester {
 
                 }
 
-                long chunksLogged = ms_chunksLogged;
-                long timeDiff = System.nanoTime() - ms_timeStart;
+                long chunksLogged;
+                long timeDiff;
+                long allChunks;
+                if (ms_isLoading) {
+                    chunksLogged = ms_chunksLogged;
+                    allChunks = ms_chunkCount;
+                    timeDiff = System.nanoTime() - ms_timeStartLoading;
+                } else {
+                    chunksLogged = ms_chunksUpdated;
+                    allChunks = ms_updates;
+                    timeDiff = System.nanoTime() - ms_timeStartUpdating;
+                }
                 System.out.printf("[PROGRESS] %d sec: Logged %d%% (%d), Throughput %f, Throughput(Overhead) %f\n",
                         timeDiff / 1000 / 1000 / 1000,
-                        ms_chunkCount != 0 ? (int) ((float) chunksLogged / ms_chunkCount * 100) : 0, chunksLogged,
+                        allChunks != 0 ? (int) ((float) chunksLogged / allChunks * 100) : 0, chunksLogged,
                         (double) chunksLogged * ms_size / 1024 / 1024 / ((double) timeDiff / 1000 / 1000 / 1000),
-                        (double) chunksLogged *
-                                (ms_size + ObjectSizeUtil.sizeofCompactedNumber(ms_size) +
-                                        AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, ms_chunkCount / 2,
-                                                ms_size)) / 1024 / 1024 /
+                        (double) chunksLogged * (ms_size + ObjectSizeUtil.sizeofCompactedNumber(ms_size) +
+                                AbstractSecLogEntryHeader
+                                        .getApproxSecLogHeaderSize(false, ms_chunkCount / 2, ms_size)) / 1024 / 1024 /
                                 ((double) timeDiff / 1000 / 1000 / 1000));
             }
         }

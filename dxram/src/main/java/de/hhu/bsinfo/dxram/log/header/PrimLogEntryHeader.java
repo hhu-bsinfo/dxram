@@ -25,7 +25,7 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
 /**
  * Extends AbstractPrimLogEntryHeader for a primary log log entry header
  * Fields: | Type | RangeID | Owner | NodeID | LocalID | Length  | Timestamp | Epoch | Version | Chaining | Checksum |
- * Length: |  1   |    1    |   2   |   2    | 1,2,4,6 | 0,1,2,3 |    0,4    |   2   | 0,1,2,4 |   0,2    |    0,4   |
+ * Length: |  1   |    2    |   2   |   2    | 1,2,4,6 | 0,1,2,3 |    0,4    |   2   | 0,1,2,4 |   0,2    |    0,4   |
  * Type field contains type, length of LocalID field, length of length field and length of version field
  * Timestamp field has length 0 if timestamps are deactivated in DXRAM configuration, 4 otherwise
  * Chaining field has length 0 for chunks smaller than 1/2 of segment size (4 MB max.) and 2 for larger chunks (chaining ID + chain size)
@@ -76,8 +76,8 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
 
     // Methods
     @Override
-    public ByteBuffer createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner,
-            final short p_originalOwner, final int p_timestamp) {
+    public ByteBuffer createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version,
+            final short p_rangeID, final short p_owner, final short p_originalOwner, final int p_timestamp) {
         byte lengthSize;
         byte localIDSize;
         byte versionSize;
@@ -92,7 +92,9 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
         if (ChecksumHandler.checksumsEnabled()) {
             checksumSize = ChecksumHandler.getCRCSize();
         }
-        headerSize = (byte) (ms_lidOffset + localIDSize + lengthSize + ms_timestampSize + LOG_ENTRY_EPO_SIZE + versionSize + checksumSize);
+        headerSize =
+                (byte) (ms_lidOffset + localIDSize + lengthSize + ms_timestampSize + LOG_ENTRY_EPO_SIZE + versionSize +
+                        checksumSize);
 
         if (ChunkID.getCreatorID(p_chunkID) == p_originalOwner) {
             type = 0;
@@ -107,7 +109,8 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
             type = generateTypeField(type, localIDSize, lengthSize, versionSize, true);
         }
 
-        // It is faster to fill a pooled byte buffer in Java heap and copy it to native memory than filling the native primary write buffer directly
+        // It is faster to fill a pooled byte buffer in Java heap and copy it to native memory than filling
+        // the native primary write buffer directly
         ms_result.clear();
         ms_result.limit(headerSize);
 
@@ -151,6 +154,9 @@ public class PrimLogEntryHeader extends AbstractPrimLogEntryHeader {
         System.out.println("* NodeID: " + getNodeID(p_buffer, p_offset));
         System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
         System.out.println("* Length: " + getLength(p_buffer, p_offset));
+        if (ms_timestampSize > 0) {
+            System.out.println("* Timestamp: " + getTimestamp(p_buffer, p_offset));
+        }
         System.out.println("* Version: " + version.getEpoch() + ", " + version.getVersion());
         if (ChecksumHandler.checksumsEnabled()) {
             System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));

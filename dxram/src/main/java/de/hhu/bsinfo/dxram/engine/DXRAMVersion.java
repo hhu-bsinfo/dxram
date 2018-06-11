@@ -1,7 +1,5 @@
 package de.hhu.bsinfo.dxram.engine;
 
-import java.util.Arrays;
-
 /**
  * DXRAM version object
  *
@@ -43,16 +41,6 @@ public class DXRAMVersion {
      */
     public int getRevision() {
         return m_revision;
-    }
-
-    public static final DXRAMVersion fromString(String p_version) {
-
-        int[] components = Arrays.stream(p_version.split("."))
-                .mapToInt(Integer::valueOf)
-                .limit(3)
-                .toArray();
-
-        return new DXRAMVersion(components[0], components[1], components[2]);
     }
 
     @Override

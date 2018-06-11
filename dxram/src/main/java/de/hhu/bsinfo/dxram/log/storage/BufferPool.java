@@ -29,8 +29,8 @@ public final class BufferPool {
 
     // If you change these values, consider changing the writer job queue size as well
     private static final int LARGE_BUFFER_POOL_SIZE = 8;
-    private static final int MEDIUM_BUFFER_POOL_SIZE = 16;
-    private static final int SMALL_BUFFER_POOL_SIZE = 32;
+    private static final int MEDIUM_BUFFER_POOL_SIZE = 32;
+    static final int SMALL_BUFFER_POOL_SIZE = 64;
 
     private static final int LARGE_BUFFER_POOL_FACTOR = 1;
     private static final int MEDIUM_BUFFER_POOL_FACTOR = 8;
@@ -107,6 +107,7 @@ public final class BufferPool {
     public DirectByteBufferWrapper getBuffer(final int p_length) {
         DirectByteBufferWrapper ret;
         int posFront;
+        boolean fallThrough = false;
 
         while (true) {
             if (p_length + 1 > m_logSegmentSize / MEDIUM_BUFFER_POOL_FACTOR) {
@@ -117,15 +118,15 @@ public final class BufferPool {
                     m_posFrontLarge++;
                     return ret;
                 } else {
-                    // #if LOGGER >= WARN
-                    LOGGER.warn("Insufficient pooled large buffers. Retrying after sleeping shortly.");
-                    // #endif /* LOGGER >= WARN */
+                    // #if LOGGER >= DEBUG
+                    LOGGER.debug("Insufficient pooled large buffers. Trying medium buffer pool.");
+                    // #endif /* LOGGER >= DEBUG */
 
-                    LockSupport.parkNanos(1);
+                    fallThrough = true;
                 }
             }
 
-            if (p_length + 1 > m_logSegmentSize / SMALL_BUFFER_POOL_FACTOR) {
+            if (p_length + 1 > m_logSegmentSize / SMALL_BUFFER_POOL_FACTOR || fallThrough) {
                 posFront = m_posFrontMedium & 0x7FFFFFFF;
                 if ((m_posBackConsumerMedium.get() + MEDIUM_BUFFER_POOL_SIZE & 0x7FFFFFFF) != posFront) {
                     // Not empty
@@ -133,11 +134,9 @@ public final class BufferPool {
                     m_posFrontMedium++;
                     return ret;
                 } else {
-                    // #if LOGGER >= WARN
-                    LOGGER.warn("Insufficient pooled medium buffers. Retrying after sleeping shortly.");
-                    // #endif /* LOGGER >= WARN */
-
-                    LockSupport.parkNanos(1);
+                    // #if LOGGER >= DEBUG
+                    LOGGER.debug("Insufficient pooled medium buffers. Trying small buffer pool.");
+                    // #endif /* LOGGER >= DEBUG */
                 }
             }
 
@@ -148,11 +147,11 @@ public final class BufferPool {
                 m_posFrontSmall++;
                 return ret;
             } else {
-                // #if LOGGER >= WARN
-                LOGGER.warn("Insufficient pooled small buffers. Retrying after sleeping shortly.");
-                // #endif /* LOGGER >= WARN */
+                // #if LOGGER >= DEBUG
+                LOGGER.debug("Insufficient pooled small buffers. Retrying after sleeping shortly.");
+                // #endif /* LOGGER >= DEBUG */
 
-                LockSupport.parkNanos(1);
+                LockSupport.parkNanos(1000);
             }
         }
     }
@@ -173,7 +172,8 @@ public final class BufferPool {
         if (p_directBufferWrapper.getBuffer().capacity() == m_logSegmentSize / LARGE_BUFFER_POOL_FACTOR) {
             // Buffer fits in large buffer pool
             while (true) {
-                // PosFront must be read before posBack to avoid missing a posBack update and thus having posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
+                // PosFront must be read before posBack to avoid missing a posBack update and thus having
+                // posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
                 posFront = m_posFrontLarge & 0x7FFFFFFF;
                 posBackSigned = m_posBackProducerLarge.get();
                 posBack = posBackSigned & 0x7FFFFFFF;
@@ -185,7 +185,8 @@ public final class BufferPool {
                 if (m_posBackProducerLarge.compareAndSet(posBackSigned, posBackSigned + 1)) {
                     m_largeBufferPool[posBack % LARGE_BUFFER_POOL_SIZE] = p_directBufferWrapper;
 
-                    // First atomic is necessary to synchronize producers, second to inform consumer after message header has been added
+                    // First atomic is necessary to synchronize producers, second to inform consumer after
+                    // message header has been added
                     while (!m_posBackConsumerLarge.compareAndSet(posBackSigned, posBackSigned + 1)) {
                         // Producer needs to wait for all other submissions prior to this one
                         // (this thread overtook at least one other producer since updating posBackProducer)
@@ -198,7 +199,8 @@ public final class BufferPool {
         if (p_directBufferWrapper.getBuffer().capacity() == m_logSegmentSize / MEDIUM_BUFFER_POOL_FACTOR) {
             // Buffer fits in medium buffer pool
             while (true) {
-                // PosFront must be read before posBack to avoid missing a posBack update and thus having posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
+                // PosFront must be read before posBack to avoid missing a posBack update and thus having
+                // posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
                 posFront = m_posFrontMedium & 0x7FFFFFFF;
                 posBackSigned = m_posBackProducerMedium.get();
                 posBack = posBackSigned & 0x7FFFFFFF;
@@ -210,7 +212,8 @@ public final class BufferPool {
                 if (m_posBackProducerMedium.compareAndSet(posBackSigned, posBackSigned + 1)) {
                     m_mediumBufferPool[posBack % MEDIUM_BUFFER_POOL_SIZE] = p_directBufferWrapper;
 
-                    // First atomic is necessary to synchronize producers, second to inform consumer after message header has been added
+                    // First atomic is necessary to synchronize producers, second to inform consumer after
+                    // message header has been added
                     while (!m_posBackConsumerMedium.compareAndSet(posBackSigned, posBackSigned + 1)) {
                         // Producer needs to wait for all other submissions prior to this one
                         // (this thread overtook at least one other producer since updating posBackProducer)
@@ -223,7 +226,8 @@ public final class BufferPool {
         if (p_directBufferWrapper.getBuffer().capacity() == m_logSegmentSize / SMALL_BUFFER_POOL_FACTOR) {
             // Buffer fits in small buffer pool
             while (true) {
-                // PosFront must be read before posBack to avoid missing a posBack update and thus having posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
+                // PosFront must be read before posBack to avoid missing a posBack update and thus having
+                // posBack % BUFFER_SIZE == posFront % BUFFER_SIZE
                 posFront = m_posFrontSmall & 0x7FFFFFFF;
                 posBackSigned = m_posBackProducerSmall.get();
                 posBack = posBackSigned & 0x7FFFFFFF;
@@ -235,7 +239,8 @@ public final class BufferPool {
                 if (m_posBackProducerSmall.compareAndSet(posBackSigned, posBackSigned + 1)) {
                     m_smallBufferPool[posBack % SMALL_BUFFER_POOL_SIZE] = p_directBufferWrapper;
 
-                    // First atomic is necessary to synchronize producers, second to inform consumer after message header has been added
+                    // First atomic is necessary to synchronize producers, second to inform consumer after
+                    // message header has been added
                     while (!m_posBackConsumerSmall.compareAndSet(posBackSigned, posBackSigned + 1)) {
                         // Producer needs to wait for all other submissions prior to this one
                         // (this thread overtook at least one other producer since updating posBackProducer)
@@ -246,6 +251,8 @@ public final class BufferPool {
             }
         }
 
-        LOGGER.error("Buffer could not be returned! Size: %d", p_directBufferWrapper.getBuffer().capacity());
+        // #if LOGGER >= DEBUG
+        LOGGER.debug("Buffer could not be returned! Size: %d", p_directBufferWrapper.getBuffer().capacity());
+        // #endif /* LOGGER >= DEBUG */
     }
 }

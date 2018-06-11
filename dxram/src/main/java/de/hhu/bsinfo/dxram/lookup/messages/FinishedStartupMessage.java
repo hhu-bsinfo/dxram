@@ -27,6 +27,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * Message to inform all nodes about finished startup.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.04.2017
+ * @author Filip Krakowski, Filip.Krakowski@Uni-Duesseldorf.de, 24.05.2018
  */
 public class FinishedStartupMessage extends Message {
 
@@ -34,6 +35,7 @@ public class FinishedStartupMessage extends Message {
     private short m_rack;
     private short m_switch;
     private boolean m_availableForBackup;
+    private int m_capabilities;
     private IPV4Unit m_address;
 
     // Temp. state
@@ -51,13 +53,15 @@ public class FinishedStartupMessage extends Message {
      *
      * @param p_destination
      *         the destination
+     * @param p_capabilities
      */
     public FinishedStartupMessage(final short p_destination, final short p_rack, final short p_switch, final boolean p_availableForBackup,
-            final IPV4Unit p_address) {
+                                  int p_capabilities, final IPV4Unit p_address) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_FINISHED_STARTUP_MESSAGE);
         m_rack = p_rack;
         m_switch = p_switch;
         m_availableForBackup = p_availableForBackup;
+        m_capabilities = p_capabilities;
         m_address = p_address;
     }
 
@@ -97,9 +101,18 @@ public class FinishedStartupMessage extends Message {
         return m_address;
     }
 
+    /**
+     * Returns the capabilities.
+     *
+     * @return The joined peer's capabilities.
+     */
+    public int getCapabilities() {
+        return m_capabilities;
+    }
+
     @Override
     protected final int getPayloadLength() {
-        return 2 * Short.BYTES + Byte.BYTES + ObjectSizeUtil.sizeofString(m_address.getAddressStr());
+        return 2 * Short.BYTES + Byte.BYTES + Integer.BYTES + ObjectSizeUtil.sizeofString(m_address.getAddressStr());
     }
 
     // Methods
@@ -108,6 +121,7 @@ public class FinishedStartupMessage extends Message {
         p_exporter.writeShort(m_rack);
         p_exporter.writeShort(m_switch);
         p_exporter.writeBoolean(m_availableForBackup);
+        p_exporter.writeInt(m_capabilities);
         p_exporter.writeString(m_address.getAddressStr());
     }
 
@@ -116,6 +130,7 @@ public class FinishedStartupMessage extends Message {
         m_rack = p_importer.readShort(m_rack);
         m_switch = p_importer.readShort(m_switch);
         m_availableForBackup = p_importer.readBoolean(m_availableForBackup);
+        m_capabilities = p_importer.readInt(m_capabilities);
         m_addrStr = p_importer.readString(m_addrStr);
         String[] splitAddr = m_addrStr.split(":");
         m_address = new IPV4Unit(splitAddr[0], Integer.parseInt(splitAddr[1]));

@@ -20,6 +20,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
@@ -39,11 +42,8 @@ import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
 import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeResponse;
 import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
 import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
 
 /**
  * This service provides all recovery functionality.
@@ -351,7 +351,6 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                 // Initialize backup ranges in backup, lookup and log modules by joining recovered chunks with migrated chunks
                 replacementBackupPeer = m_backup.registerRecoveredChunks(recoveryMetadata, backupRange, p_request.getOwner());
 
-
                 // Store recovery metadata for replication of recovered backup range to be handled by another thread after initialization by superpeer
                 m_replicationLock.lock();
                 m_finishedRecoveries.add(new FinishedRecovery(replacementBackupPeer, recoveryMetadata.getCIDRanges(), recoveryMetadata.getNumberOfChunks(),
@@ -360,8 +359,8 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                 m_replicationLock.unlock();
 
                 try {
-                    m_network.sendMessage(new RecoverBackupRangeResponse(p_request, backupRange, recoveryMetadata.getNumberOfChunks(),
-                            recoveryMetadata.getCIDRanges()));
+                    m_network.sendMessage(
+                            new RecoverBackupRangeResponse(p_request, backupRange, recoveryMetadata.getNumberOfChunks(), recoveryMetadata.getCIDRanges()));
                 } catch (final NetworkException ignored) {
 
                 }
@@ -369,7 +368,6 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
         };
         new Thread(task).start();
     }
-
 
     /**
      * Recovers all Chunks of given backup range
@@ -397,7 +395,6 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
             }
         }
     }
-
 
     /**
      * Handles an incoming ReplicateBackupRangeRequest

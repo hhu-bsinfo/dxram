@@ -43,11 +43,13 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
+import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponentConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.sync.SynchronizationServiceConfig;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageServiceConfig;
 import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.Cache;
 import de.hhu.bsinfo.dxutils.NodeID;
@@ -66,6 +68,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     private AbstractBootComponent m_boot;
     private EventComponent m_event;
     private NetworkComponent m_network;
+    private MemoryManagerComponent m_memory;
 
     private OverlaySuperpeer m_superpeer;
     private OverlayPeer m_peer;
@@ -808,8 +811,32 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         if (m_boot.getNodeRole() == NodeRole.PEER) {
             InetSocketAddress socketAddress = m_boot.getNodeAddress(m_boot.getNodeID());
+
+            int capabilities = 0;
+
+            if (m_memory.getConfig().getKeyValueStoreSize().getBytes() > 0L) {
+
+                capabilities |= NodeCapabilities.STORAGE;
+            }
+
+            if (m_backup.isActive()) {
+
+                capabilities |= NodeCapabilities.BACKUP_SRC;
+            }
+
+            if (m_backup.isActiveAndAvailableForBackup()) {
+
+                capabilities |= NodeCapabilities.BACKUP_DST;
+            }
+            
+            // #if LOGGER >= INFO
+            LOGGER.info(String.format("Detected capabilities %s", NodeCapabilities.toString(capabilities)));
+            // #endif /* LOGGER >= INFO */
+
+            m_boot.updateNodeCapabilities(capabilities);
+
             m_peer.finishStartup(m_boot.getRack(), m_boot.getSwitch(), m_backup.isActiveAndAvailableForBackup(),
-                    new IPV4Unit(socketAddress.getHostString(), socketAddress.getPort()));
+                    capabilities, new IPV4Unit(socketAddress.getHostString(), socketAddress.getPort()));
         }
 
         return true;
@@ -831,13 +858,15 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_memory = p_componentAccessor.getComponent(MemoryManagerComponent.class);
     }
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
         // Set static values for backup range (cannot be set in BackupComponent as superpeers do not initialize it)
-        BackupRange.setReplicationFactor(p_config.getComponentConfig(BackupComponentConfig.class).getReplicationFactor());
-        BackupRange.setBackupRangeSize(p_config.getComponentConfig(BackupComponentConfig.class).getBackupRangeSize().getBytes());
+        BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponentConfig.class);
+        BackupRange.setReplicationFactor(backupConfig.getReplicationFactor());
+        BackupRange.setBackupRangeSize(backupConfig.getBackupRangeSize().getBytes());
 
         if (getConfig().cachesEnabled()) {
             m_chunkIDCacheTree = new CacheTree(ORDER, getConfig().getCacheTtl().getMs(), getConfig().getMaxCacheEntries());

@@ -30,6 +30,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
@@ -41,6 +42,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * node ids, node roles, addresses etc.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
 public class BootService extends AbstractDXRAMService<BootServiceConfig> implements MessageReceiver {
     // component dependencies
@@ -133,6 +135,16 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
     }
 
     /**
+     * Collects all node ids supporting the specified capabilities.
+     *
+     * @param p_capabilities The requested capabilities.
+     * @return A list containing all matching node ids.
+     */
+    public List<Short> getSupportingNodes(int p_capabilities) {
+        return m_boot.getSupportingNodes(p_capabilities);
+    }
+
+    /**
      * Check if a specific node is online.
      *
      * @param p_nodeID
@@ -152,6 +164,16 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
      */
     public NodeRole getNodeRole(final short p_nodeID) {
         return m_boot.getNodeRole(p_nodeID);
+    }
+
+    /**
+     * Returns the specified node's capabilities.
+     *
+     * @param p_nodeId The node's id.
+     * @return The specified node's capabilities.
+     */
+    public int getNodeCapabilities(final short p_nodeId) {
+        return m_boot.getNodeCapabilities(p_nodeId);
     }
 
     /**

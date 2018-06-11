@@ -58,14 +58,14 @@ import de.hhu.bsinfo.dxutils.stats.Value;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.03.2017
  */
 public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfig> implements MessageReceiver {
-    private static final ThroughputPool SOP_GET_ANON = new ThroughputPool(ChunkAnonService.class, "GetAnon",
-            Value.Base.B_10);
-    private static final ThroughputPool SOP_INCOMING_GET_ANON = new ThroughputPool(ChunkAnonService.class,
-            "IncomingGetAnon", Value.Base.B_10);
-    private static final ThroughputPool SOP_PUT_ANON = new ThroughputPool(ChunkAnonService.class, "PutAnon",
-            Value.Base.B_10);
-    private static final ThroughputPool SOP_INCOMING_PUT_ANON = new ThroughputPool(ChunkAnonService.class,
-            "IncomingPutAnon", Value.Base.B_10);
+    private static final ThroughputPool SOP_GET_ANON =
+            new ThroughputPool(ChunkAnonService.class, "GetAnon", Value.Base.B_10);
+    private static final ThroughputPool SOP_INCOMING_GET_ANON =
+            new ThroughputPool(ChunkAnonService.class, "IncomingGetAnon", Value.Base.B_10);
+    private static final ThroughputPool SOP_PUT_ANON =
+            new ThroughputPool(ChunkAnonService.class, "PutAnon", Value.Base.B_10);
+    private static final ThroughputPool SOP_INCOMING_PUT_ANON =
+            new ThroughputPool(ChunkAnonService.class, "IncomingPutAnon", Value.Base.B_10);
 
     static {
         StatisticsManager.get().registerOperation(ChunkAnon.class, SOP_GET_ANON);
@@ -139,8 +139,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                     if (lookupRange.getState() == LookupState.OK) {
                         short peer = lookupRange.getPrimaryPeer();
 
-                        ArrayList<Integer> remoteChunkIDsOfPeer = remoteChunkIDsByPeers.computeIfAbsent(peer,
-                                a -> new ArrayList<>());
+                        ArrayList<Integer> remoteChunkIDsOfPeer =
+                                remoteChunkIDsByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
                         // Add the index in ChunkID array not the ChunkID itself
                         remoteChunkIDsOfPeer.add(i);
                     }
@@ -363,8 +363,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                         p_chunks[i + p_offset].setState(ChunkState.UNDEFINED);
                         short peer = location.getPrimaryPeer();
 
-                        ArrayList<ChunkAnon> remoteChunksOfPeer = remoteChunksByPeers.computeIfAbsent(peer,
-                                a -> new ArrayList<>());
+                        ArrayList<ChunkAnon> remoteChunksOfPeer =
+                                remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
                         remoteChunksOfPeer.add(p_chunks[i + p_offset]);
                     } else if (location.getState() == LookupState.DOES_NOT_EXIST) {
                         p_chunks[i + p_offset].setState(ChunkState.DOES_NOT_EXIST);
@@ -398,8 +398,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
             } else {
                 // Remote put
                 ArrayList<ChunkAnon> chunksToPut = entry.getValue();
-                PutAnonRequest request = new PutAnonRequest(peer, p_chunkUnlockOperation, chunksToPut.toArray(
-                        new ChunkAnon[chunksToPut.size()]));
+                PutAnonRequest request = new PutAnonRequest(peer, p_chunkUnlockOperation,
+                        chunksToPut.toArray(new ChunkAnon[chunksToPut.size()]));
 
                 try {
                     m_network.sendSync(request);
@@ -459,8 +459,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                         // #endif /* LOGGER == TRACE */
 
                         try {
-                            m_network.sendMessage(new LogAnonMessage(backupPeer.getNodeID(), backupRange.getRangeID(),
-                                    chunks));
+                            m_network.sendMessage(
+                                    new LogAnonMessage(backupPeer.getNodeID(), backupRange.getRangeID(), chunks));
                         } catch (final NetworkException ignore) {
 
                         }
@@ -656,8 +656,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                 if (m_backup.isActive()) {
                     // sort by backup peers
                     BackupRange backupRange = m_backup.getBackupRange(chunkIDs[i]);
-                    ArrayList<ChunkAnon> remoteChunksOfBackupRange = remoteChunksByBackupRange.computeIfAbsent(
-                            backupRange, k -> new ArrayList<>());
+                    ArrayList<ChunkAnon> remoteChunksOfBackupRange =
+                            remoteChunksByBackupRange.computeIfAbsent(backupRange, k -> new ArrayList<>());
                     remoteChunksOfBackupRange.add(new ChunkAnon(chunkIDs[i], data[i]));
                 }
             }
@@ -711,8 +711,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                         // #endif /* LOGGER == TRACE */
 
                         try {
-                            m_network.sendMessage(new LogAnonMessage(backupPeer.getNodeID(), backupRange.getRangeID(),
-                                    chunks));
+                            m_network.sendMessage(
+                                    new LogAnonMessage(backupPeer.getNodeID(), backupRange.getRangeID(), chunks));
                         } catch (final NetworkException ignore) {
 
                         }

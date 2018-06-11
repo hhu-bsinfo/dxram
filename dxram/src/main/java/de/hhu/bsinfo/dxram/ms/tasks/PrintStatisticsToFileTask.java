@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import com.google.gson.annotations.Expose;
 
@@ -126,6 +127,6 @@ public class PrintStatisticsToFileTask implements Task {
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES + m_path.getBytes().length;
+        return Integer.BYTES + m_path.getBytes(StandardCharsets.US_ASCII).length;
     }
 }

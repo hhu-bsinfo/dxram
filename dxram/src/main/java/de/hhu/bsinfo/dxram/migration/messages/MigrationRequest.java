@@ -86,17 +86,17 @@ public class MigrationRequest extends Request {
         if (m_dataStructures != null) {
             size += ObjectSizeUtil.sizeofCompactedNumber(m_dataStructures.length);
             size += m_dataStructures.length * Long.BYTES;
-            size += m_dataStructures.length * Integer.BYTES;
 
             for (DataStructure dataStructure : m_dataStructures) {
+                size += ObjectSizeUtil.sizeofCompactedNumber(dataStructure.sizeofObject());
                 size += dataStructure.sizeofObject();
             }
         } else {
             size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length);
             size += m_chunkIDs.length * Long.BYTES;
-            size += m_chunkIDs.length * Integer.BYTES;
 
             for (int i = 0; i < m_data.length; i++) {
+                size += ObjectSizeUtil.sizeofCompactedNumber(m_data[i].length);
                 size += m_data[i].length;
             }
         }
@@ -109,7 +109,7 @@ public class MigrationRequest extends Request {
         p_exporter.writeCompactNumber(m_dataStructures.length);
         for (DataStructure dataStructure : m_dataStructures) {
             p_exporter.writeLong(dataStructure.getID());
-            p_exporter.writeInt(dataStructure.sizeofObject());
+            p_exporter.writeCompactNumber(dataStructure.sizeofObject());
             p_exporter.exportObject(dataStructure);
         }
     }

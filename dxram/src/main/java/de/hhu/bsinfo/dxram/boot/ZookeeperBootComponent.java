@@ -17,9 +17,13 @@
 package de.hhu.bsinfo.dxram.boot;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -49,6 +53,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * Implementation of the BootComponent interface with zookeeper.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
 public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> implements Watcher, EventListener<AbstractEvent> {
     // component dependencies
@@ -177,6 +182,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     }
 
     @Override
+    public List<Short> getSupportingNodes(final int p_capabilities) {
+
+        return Arrays.stream(m_nodes.getNodes())
+                .filter(node -> NodeCapabilities.supportsAll(node.getCapabilities(), p_capabilities))
+                .map(NodeEntry::getNodeID)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public short getNodeID() {
         return m_nodes.getOwnNodeID();
     }
@@ -184,6 +198,16 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     @Override
     public NodeRole getNodeRole() {
         return m_nodes.getOwnNodeEntry().getRole();
+    }
+
+    @Override
+    public int getNodeCapabilities() {
+        return m_nodes.getOwnNodeEntry().getCapabilities();
+    }
+
+    @Override
+    public void updateNodeCapabilities(int p_capibilities) {
+        m_nodes.getOwnNodeEntry().setCapabilities(p_capibilities);
     }
 
     @Override
@@ -237,6 +261,19 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         }
 
         return entry.getRole();
+    }
+
+    @Override
+    public int getNodeCapabilities(short p_nodeId) {
+        NodeEntry entry = m_nodes.getNode(p_nodeId);
+        if (entry == null) {
+            // #if LOGGER >= WARN
+            LOGGER.warn("Could not find node %s", NodeID.toHexString(p_nodeId));
+            // #endif /* LOGGER >= WARN */
+            return 0;
+        }
+
+        return entry.getCapabilities();
     }
 
     @Override
@@ -322,14 +359,22 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             m_nodes.getNode(((NodeFailureEvent) p_event).getNodeID()).setStatus(false);
         } else if (p_event instanceof NodeJoinEvent) {
             NodeJoinEvent event = (NodeJoinEvent) p_event;
+
+            // #if LOGGER >= INFO
+            LOGGER.info(String.format("Node %s with capabilities %s joined", NodeID.toHexString(event.getNodeID()), NodeCapabilities.toString(event.getCapabilities())));
+            // #endif /* LOGGER >= INFO */
+
             boolean readFromFile = m_nodes.getNode(event.getNodeID()) != null;
-            m_nodes.addNode(new NodeEntry(event.getAddress(), event.getNodeID(), event.getRack(), event.getSwitch(), event.getRole(), readFromFile,
+            m_nodes.addNode(new NodeEntry(event.getAddress(), event.getNodeID(), event.getRack(), event.getSwitch(), event.getRole(), event.getCapabilities(), readFromFile,
                     event.isAvailableForBackup(), true));
         }
     }
 
     @Override
     public boolean finishInitComponent() {
+
+        // Set own status to online
+        m_nodes.getOwnNodeEntry().setStatus(true);
 
         m_isStarting = false;
 
@@ -445,7 +490,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         currentBootstrap = Short.parseShort(entry);
         if (currentBootstrap == m_bootstrap) {
             try {
-                if (!zookeeperSetData("nodes/bootstrap", String.valueOf(p_nodeID).getBytes(), status.getVersion())) {
+                if (!zookeeperSetData("nodes/bootstrap", String.valueOf(p_nodeID).getBytes(StandardCharsets.US_ASCII), status.getVersion())) {
                     m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
                 } else {
                     m_bootstrap = p_nodeID;
@@ -599,7 +644,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             // Register superpeer
             // register only if we are the superpeer. don't add node as superpeer
             if (m_nodes.getOwnNodeEntry().getRole() == NodeRole.SUPERPEER) {
-                m_zookeeper.create("nodes/bootstrap", String.valueOf(m_bootstrap).getBytes());
+                m_zookeeper.create("nodes/bootstrap", String.valueOf(m_bootstrap).getBytes(StandardCharsets.US_ASCII));
             }
         } catch (final ZooKeeperException | KeeperException | InterruptedException e) {
             // #if LOGGER >= ERROR
@@ -711,7 +756,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 if (!childs.isEmpty()) {
                     nodeID = Short.parseShort(childs.get(0));
                     m_nodes.setOwnNodeID(nodeID);
-                    m_zookeeper.create("nodes/new/" + nodeID, node.getBytes());
+                    m_zookeeper.create("nodes/new/" + nodeID, node.getBytes(StandardCharsets.US_ASCII));
                     m_zookeeper.delete("nodes/free/" + nodeID);
                 } else {
                     splits = m_ownAddress.getIP().split("\\.");
@@ -723,7 +768,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                     m_bloomFilter.add(nodeID);
                     // Set own NodeID
                     m_nodes.setOwnNodeID(nodeID);
-                    m_zookeeper.create("nodes/new/" + nodeID, node.getBytes());
+                    m_zookeeper.create("nodes/new/" + nodeID, node.getBytes(StandardCharsets.US_ASCII));
                 }
 
                 // Set routing information for that node

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
 
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
@@ -160,6 +161,7 @@ public final class NodesConfiguration {
      * Describes a nodes configuration entry
      *
      * @author Florian Klein, florian.klein@hhu.de, 03.09.2013
+     * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
      */
     public static final class NodeEntry implements Importable, Exportable {
 
@@ -169,21 +171,25 @@ public final class NodesConfiguration {
          */
         @Expose
         private IPV4Unit m_address = new IPV4Unit("127.0.0.1", 22222);
+
         /**
          * Role of the node (superpeer, peer, terminal)
          */
         @Expose
         private NodeRole m_role = NodeRole.PEER;
+
         /**
          * Rack id
          */
         @Expose
         private short m_rack = 0;
+
         /**
          * Switch id
          */
         @Expose
         private short m_switch = 0;
+
         /**
          * If 1, this entry is read from file, 0 if the node joined the system without being part of the initial configuration
          */
@@ -193,6 +199,11 @@ public final class NodesConfiguration {
         private short m_nodeID = NodeID.INVALID_ID;
         private boolean m_online = false;
         private boolean m_availableForBackup = true;
+
+        /**
+         * The node's capabilities.
+         */
+        private int m_capabilities = NodeCapabilities.NONE;
 
         // Tmp. state for import
         private String m_addrStr;
@@ -207,24 +218,23 @@ public final class NodesConfiguration {
 
         /**
          * Creates an instance of NodesConfigurationEntry
-         *
-         * @param p_address
+         *  @param p_address
          *         addres of the node
          * @param p_rack
          *         the rack of the node
          * @param p_switch
-         *         the switcharea of the node
+ *         the switcharea of the node
          * @param p_role
-         *         the role of the node
+*         the role of the node
+         * @param p_capabilities
          * @param p_readFromFile
          *         whether this node's information was read from nodes file or not
          * @param p_availableForBackup
-         *         whether this peer is available for backup/logging or not
+ *         whether this peer is available for backup/logging or not
          * @param p_isOnline
-         *         true, if this node is online
          */
-        NodeEntry(final IPV4Unit p_address, final short p_nodeID, final short p_rack, final short p_switch, final NodeRole p_role, final boolean p_readFromFile,
-                final boolean p_availableForBackup, final boolean p_isOnline) {
+        NodeEntry(final IPV4Unit p_address, final short p_nodeID, final short p_rack, final short p_switch, final NodeRole p_role, int p_capabilities, final boolean p_readFromFile,
+                  final boolean p_availableForBackup, final boolean p_isOnline) {
             assert p_rack >= 0;
             assert p_switch >= 0;
             assert p_role != null;
@@ -234,6 +244,7 @@ public final class NodesConfiguration {
             m_rack = p_rack;
             m_switch = p_switch;
             m_role = p_role;
+            m_capabilities = p_capabilities;
             m_readFromFile = (byte) (p_readFromFile ? 1 : 0);
             m_availableForBackup = p_availableForBackup;
             m_online = p_isOnline;
@@ -294,11 +305,20 @@ public final class NodesConfiguration {
             return m_role;
         }
 
+        /**
+         * Returns the node's capabilities.
+         *
+         * @return The node's capabilities.
+         */
+        public int getCapabilities() {
+            return m_capabilities;
+        }
+
         @Override
         public String toString() {
             return "NodesConfigurationEntry [m_address=" + m_address + ", m_nodeID=" + m_nodeID + ", m_rack=" + m_rack + ", m_switch=" + m_switch +
-                    ", m_role=" + m_role.getAcronym() + ", m_online=" + m_online + ", m_availableForBackup=" + m_availableForBackup + ", m_readFromFile=" +
-                    (m_readFromFile == 1 ? "true" : "false") + ']';
+                    ", m_role=" + m_role.getAcronym() + ", m_capabilities=" + m_capabilities +  ", m_online=" + m_online + ", m_availableForBackup="
+                    + m_availableForBackup + ", m_readFromFile=" + (m_readFromFile == 1 ? "true" : "false") + ']';
         }
 
         /**
@@ -335,11 +355,16 @@ public final class NodesConfiguration {
             m_online = p_online;
         }
 
+        void setCapabilities(final int p_capabilities) {
+            m_capabilities = p_capabilities;
+        }
+
         @Override
         public void exportObject(Exporter p_exporter) {
             p_exporter.writeString(m_address.getAddressStr());
             p_exporter.writeShort(m_nodeID);
             p_exporter.writeShort((short) m_role.getAcronym());
+            p_exporter.writeInt(m_capabilities);
             p_exporter.writeShort(m_rack);
             p_exporter.writeShort(m_switch);
             p_exporter.writeBoolean(m_availableForBackup);
@@ -353,6 +378,7 @@ public final class NodesConfiguration {
             m_nodeID = p_importer.readShort(m_nodeID);
             m_acr = p_importer.readShort(m_acr);
             m_role = NodeRole.getRoleByAcronym((char) m_acr);
+            m_capabilities = p_importer.readInt(m_capabilities);
             m_rack = p_importer.readShort(m_rack);
             m_switch = p_importer.readShort(m_switch);
             m_availableForBackup = p_importer.readBoolean(m_availableForBackup);
@@ -360,7 +386,7 @@ public final class NodesConfiguration {
 
         @Override
         public int sizeofObject() {
-            return ObjectSizeUtil.sizeofString(m_address.getAddressStr()) + 4 * Short.BYTES + Byte.BYTES;
+            return ObjectSizeUtil.sizeofString(m_address.getAddressStr()) + 4 * Short.BYTES + Byte.BYTES + Integer.BYTES;
         }
     }
 }

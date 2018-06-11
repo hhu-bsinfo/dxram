@@ -43,6 +43,9 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
     @Override
     public abstract long getCID(final ByteBuffer p_buffer, final int p_offset);
 
+    @Override
+    public abstract long getCID(final short p_type, final ByteBuffer p_buffer, final int p_offset);
+
     public abstract boolean isMigrated();
 
     /**
@@ -68,7 +71,34 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
         AbstractSecLogEntryHeader ret;
         byte type;
 
-        type = (byte) (p_buffer.get(p_offset) & TYPE_MASK);
+        type = p_buffer.get(p_offset);
+
+        assert type != 0;
+
+        type &= TYPE_MASK;
+        if (type == 0) {
+            ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
+        } else {
+            ret = MIGRATION_SEC_LOG_ENTRY_HEADER;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the corresponding AbstractSecLogEntryHeader (faster if the type was already read)
+     *
+     * @param p_type
+     *         the type field of the log entry
+     * @return the AbstractSecLogEntryHeader
+     */
+    public static AbstractSecLogEntryHeader getHeader(final short p_type) {
+        AbstractSecLogEntryHeader ret;
+        byte type = (byte) p_type;
+
+        assert type != 0;
+
+        type &= TYPE_MASK;
         if (type == 0) {
             ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
         } else {
@@ -89,11 +119,14 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
      *         whether the calculation should consider migrations or not
      * @return the maximum number of versions
      */
-    public static int getMaximumNumberOfVersions(final long p_maxBackupRangeSize, final int p_defaultChunkSize, final boolean p_logStoresMigrations) {
+    public static int getMaximumNumberOfVersions(final long p_maxBackupRangeSize, final int p_defaultChunkSize,
+            final boolean p_logStoresMigrations) {
         if (!p_logStoresMigrations) {
-            return (int) (p_maxBackupRangeSize / (p_defaultChunkSize + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, 0, p_defaultChunkSize)));
+            return (int) (p_maxBackupRangeSize / (p_defaultChunkSize +
+                    AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(false, 0, p_defaultChunkSize)));
         } else {
-            return (int) (p_maxBackupRangeSize / (p_defaultChunkSize + AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(true, p_defaultChunkSize)));
+            return (int) (p_maxBackupRangeSize / (p_defaultChunkSize +
+                    AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(true, p_defaultChunkSize)));
         }
     }
 
@@ -109,12 +142,13 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
      *         the size
      * @return the maximum log entry header size for secondary log
      */
-    public static short getApproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
-        // Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version (and chaining) is an approximation because the actual version
-        // is determined during logging on backup peer (at creation time it's size is 0 but it might be bigger at some point)
-        short ret =
-                (short) (LOG_ENTRY_TYP_SIZE + getSizeForLocalIDField(p_localID) + getSizeForLengthField(p_size) + ms_timestampSize + LOG_ENTRY_EPO_SIZE + 1 +
-                        1 + ChecksumHandler.getCRCSize());
+    public static short getApproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID,
+            final int p_size) {
+        // Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version (and chaining)
+        // is an approximation because the actual version is determined during logging on backup peer (at
+        // creation time it's size is 0 but it might be bigger at some point)
+        short ret = (short) (LOG_ENTRY_TYP_SIZE + getSizeForLocalIDField(p_localID) + getSizeForLengthField(p_size) +
+                ms_timestampSize + LOG_ENTRY_EPO_SIZE + 1 + 1 + ChecksumHandler.getCRCSize());
 
         if (p_logStoresMigrations) {
             ret += LOG_ENTRY_NID_SIZE;
@@ -140,10 +174,11 @@ public abstract class AbstractSecLogEntryHeader extends AbstractLogEntryHeader {
      * @return the maximum log entry header size for secondary log
      */
     public static short getApproxSecLogHeaderSize(final boolean p_logStoresMigrations, final int p_size) {
-        // Sizes for type, length, epoch and checksum is precise, 2 bytes for LocalID, 1 byte for version (and chaining) is an approximation because the actual
-        // version is determined during logging on backup peer (at creation time it's size is 0 but it might be bigger at some point)
-        short ret =
-                (short) (LOG_ENTRY_TYP_SIZE + 4 + getSizeForLengthField(p_size) + ms_timestampSize + LOG_ENTRY_EPO_SIZE + 1 + 1 + ChecksumHandler.getCRCSize());
+        // Sizes for type, length, epoch and checksum is precise, 2 bytes for LocalID, 1 byte for version (and chaining)
+        // is an approximation because the actual version is determined during logging on backup peer (at creation time
+        // it's size is 0 but it might be bigger at some point)
+        short ret = (short) (LOG_ENTRY_TYP_SIZE + 4 + getSizeForLengthField(p_size) + ms_timestampSize +
+                LOG_ENTRY_EPO_SIZE + 1 + 1 + ChecksumHandler.getCRCSize());
 
         if (p_logStoresMigrations) {
             ret += LOG_ENTRY_NID_SIZE;

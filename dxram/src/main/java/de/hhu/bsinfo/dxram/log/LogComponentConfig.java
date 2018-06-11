@@ -39,13 +39,16 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
     private StorageUnit m_primaryLogSize = new StorageUnit(256, StorageUnit.MB);
 
     @Expose
-    private StorageUnit m_writeBufferSize = new StorageUnit(256, StorageUnit.MB);
+    private StorageUnit m_writeBufferSize = new StorageUnit(32, StorageUnit.MB);
 
     @Expose
     private StorageUnit m_secondaryLogBufferSize = new StorageUnit(128, StorageUnit.KB);
 
     @Expose
-    private int m_reorgUtilizationThreshold = 70;
+    private int m_utilizationActivateReorganization = 60;
+
+    @Expose
+    private int m_utilizationPromptReorganization = 75;
 
     @Expose
     private int m_coldDataThresholdInSec = COLD_DATA_THRESHOLD;
@@ -57,9 +60,11 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
         super(LogComponent.class, false, true);
     }
 
-    public LogComponentConfig(final String p_harddriveAccess, final String p_rawDevicePath, final boolean p_useChecksums, final boolean p_useTimestamps,
-            final int p_flashPageSize, final int p_logSegmentSize, final int p_primaryLogSize, final int p_writeBufferSize, final int p_secondaryLogBufferSize,
-            final int p_reorgUtilizationThreshold, final int p_coldDataThresholdSec) {
+    public LogComponentConfig(final String p_harddriveAccess, final String p_rawDevicePath,
+            final boolean p_useChecksums, final boolean p_useTimestamps, final int p_flashPageSize,
+            final int p_logSegmentSize, final int p_primaryLogSize, final int p_writeBufferSize,
+            final int p_secondaryLogBufferSize, final int p_utilizationActivateReorganization,
+            final int p_utilizationPromptReorganization, final int p_coldDataThresholdSec) {
         super(LogComponent.class, false, true);
 
         m_harddriveAccess = p_harddriveAccess;
@@ -71,7 +76,8 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
         m_primaryLogSize = new StorageUnit(p_primaryLogSize, StorageUnit.MB);
         m_writeBufferSize = new StorageUnit(p_writeBufferSize, StorageUnit.MB);
         m_secondaryLogBufferSize = new StorageUnit(p_secondaryLogBufferSize, StorageUnit.KB);
-        m_reorgUtilizationThreshold = p_reorgUtilizationThreshold;
+        m_utilizationActivateReorganization = p_utilizationActivateReorganization;
+        m_utilizationPromptReorganization = p_utilizationPromptReorganization;
         m_coldDataThresholdInSec = p_coldDataThresholdSec;
     }
 
@@ -139,10 +145,17 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
     }
 
     /**
+     * Threshold to activate automatic reorganization.
+     **/
+    public int getUtilizationActivateReorganization() {
+        return m_utilizationActivateReorganization;
+    }
+
+    /**
      * Threshold to trigger low-priority reorganization (high-priority -> not enough space to write data).
      **/
-    public int getReorgUtilizationThreshold() {
-        return m_reorgUtilizationThreshold;
+    public int getUtilizationPromptReorganization() {
+        return m_utilizationPromptReorganization;
     }
 
     /**
@@ -158,23 +171,32 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
         StorageUnit backupRangeSize = p_config.getComponentConfig(BackupComponentConfig.class).getBackupRangeSize();
         long secondaryLogSize = backupRangeSize.getBytes() * 2;
 
-        if (m_primaryLogSize.getBytes() % m_flashPageSize.getBytes() != 0 || m_primaryLogSize.getBytes() <= m_flashPageSize.getBytes() ||
+        if (m_primaryLogSize.getBytes() % m_flashPageSize.getBytes() != 0 ||
+                m_primaryLogSize.getBytes() <= m_flashPageSize.getBytes() ||
                 secondaryLogSize % m_flashPageSize.getBytes() != 0 || secondaryLogSize <= m_flashPageSize.getBytes() ||
-                m_writeBufferSize.getBytes() % m_flashPageSize.getBytes() != 0 || m_writeBufferSize.getBytes() <= m_flashPageSize.getBytes() ||
-                m_logSegmentSize.getBytes() % m_flashPageSize.getBytes() != 0 || m_logSegmentSize.getBytes() <= m_flashPageSize.getBytes() ||
-                m_secondaryLogBufferSize.getBytes() % m_flashPageSize.getBytes() != 0 || m_secondaryLogBufferSize.getBytes() <= m_flashPageSize.getBytes()) {
+                m_writeBufferSize.getBytes() % m_flashPageSize.getBytes() != 0 ||
+                m_writeBufferSize.getBytes() <= m_flashPageSize.getBytes() ||
+                m_logSegmentSize.getBytes() % m_flashPageSize.getBytes() != 0 ||
+                m_logSegmentSize.getBytes() <= m_flashPageSize.getBytes() ||
+                m_secondaryLogBufferSize.getBytes() % m_flashPageSize.getBytes() != 0 ||
+                m_secondaryLogBufferSize.getBytes() <= m_flashPageSize.getBytes()) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Primary log size, secondary log size, write buffer size, log segment size and secondary log buffer size " +
-                    "must be a multiple (integer) of and greater than flash page size");
+            LOGGER.error(
+                    "Primary log size, secondary log size, write buffer size, log segment size and secondary log buffer size " +
+                            "must be a multiple (integer) of and greater than flash page size");
             // #endif /* LOGGER >= ERROR */
             return false;
         }
 
-        if (m_primaryLogSize.getBytes() % m_logSegmentSize.getBytes() != 0 || m_primaryLogSize.getBytes() <= m_logSegmentSize.getBytes() ||
-                secondaryLogSize % m_logSegmentSize.getBytes() != 0 || secondaryLogSize <= m_logSegmentSize.getBytes() ||
-                m_writeBufferSize.getBytes() % m_logSegmentSize.getBytes() != 0 || m_writeBufferSize.getBytes() <= m_logSegmentSize.getBytes()) {
+        if (m_primaryLogSize.getBytes() % m_logSegmentSize.getBytes() != 0 ||
+                m_primaryLogSize.getBytes() <= m_logSegmentSize.getBytes() ||
+                secondaryLogSize % m_logSegmentSize.getBytes() != 0 ||
+                secondaryLogSize <= m_logSegmentSize.getBytes() ||
+                m_writeBufferSize.getBytes() % m_logSegmentSize.getBytes() != 0 ||
+                m_writeBufferSize.getBytes() <= m_logSegmentSize.getBytes()) {
             // #if LOGGER >= ERROR
-            LOGGER.error("Primary log size, secondary log size and write buffer size must be a multiple (integer) of and greater than segment size");
+            LOGGER.error(
+                    "Primary log size, secondary log size and write buffer size must be a multiple (integer) of and greater than segment size");
             // #endif /* LOGGER >= ERROR */
             return false;
         }
@@ -186,7 +208,7 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
             return false;
         }
 
-        if (m_reorgUtilizationThreshold <= 50) {
+        if (m_utilizationPromptReorganization <= 50) {
             // #if LOGGER >= WARN
             LOGGER.warn("Reorganization threshold is < 50. Reorganization is triggered continuously!");
             // #endif /* LOGGER >= WARN */
@@ -199,8 +221,11 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
             // #endif /* LOGGER >= WARN */
         }
 
-        if (secondaryLogSize < p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize().getBytes() ||
-                m_writeBufferSize.getBytes() < p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize().getBytes()) {
+        if (secondaryLogSize <
+                p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize()
+                        .getBytes() || m_writeBufferSize.getBytes() <
+                p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize()
+                        .getBytes()) {
             // #if LOGGER >= ERROR
             LOGGER.error("Secondary log and write buffer size must be greater than the max size of a chunk");
             // #endif /* LOGGER >= ERROR */

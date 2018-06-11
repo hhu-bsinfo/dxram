@@ -32,7 +32,8 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
  */
 public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPrimLogEntryHeader.class.getSimpleName());
+    private static final Logger LOGGER =
+            LogManager.getFormatterLogger(AbstractPrimLogEntryHeader.class.getSimpleName());
     private static final AbstractPrimLogEntryHeader PRIM_LOG_ENTRY_HEADER = new PrimLogEntryHeader();
 
     // Methods
@@ -61,8 +62,8 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      * @param p_timestamp
      *         the timestamp or 0 if timestamps are disabled
      */
-    public abstract ByteBuffer createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final short p_rangeID, final short p_owner,
-            final short p_originalOwner, final int p_timestamp);
+    public abstract ByteBuffer createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version,
+            final short p_rangeID, final short p_owner, final short p_originalOwner, final int p_timestamp);
 
     /**
      * Returns RangeID of a log entry
@@ -119,8 +120,8 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      * @param p_logEntryHeader
      *         the LogEntryHeader
      */
-    public static void addChainingIDAndChainSize(final ByteBuffer p_buffer, final int p_offset, final byte p_chainingID, final byte p_chainSize,
-            final AbstractPrimLogEntryHeader p_logEntryHeader) {
+    public static void addChainingIDAndChainSize(final ByteBuffer p_buffer, final int p_offset, final byte p_chainingID,
+            final byte p_chainSize, final AbstractPrimLogEntryHeader p_logEntryHeader) {
         int offset = p_logEntryHeader.getCHAOffset(p_buffer, p_offset);
 
         p_buffer.put(offset, (byte) (p_chainingID & 0xFF));
@@ -139,7 +140,8 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      * @param p_logEntryHeader
      *         the LogEntryHeader
      */
-    public static void adjustLength(final ByteBuffer p_buffer, final int p_offset, final int p_newLength, final AbstractPrimLogEntryHeader p_logEntryHeader) {
+    public static void adjustLength(final ByteBuffer p_buffer, final int p_offset, final int p_newLength,
+            final AbstractPrimLogEntryHeader p_logEntryHeader) {
         int offset = p_logEntryHeader.getLENOffset(p_buffer, p_offset);
         int lengthSize = p_logEntryHeader.getVEROffset(p_buffer, p_offset) - offset;
 
@@ -186,10 +188,11 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
      * @param p_conversionOffset
      *         the conversion offset
      */
-    public static void convertAndPut(final ByteBuffer p_input, final int p_inputOffset, final ByteBuffer p_output, final int p_logEntrySize,
-            final int p_bytesUntilEnd, final short p_conversionOffset) {
+    public static void convertAndPut(final ByteBuffer p_input, final int p_inputOffset, final ByteBuffer p_output,
+            final int p_logEntrySize, final int p_bytesUntilEnd, final short p_conversionOffset) {
         // Set type field
         p_output.put(p_input.get(p_inputOffset));
+        int sizeLeft = p_logEntrySize - p_conversionOffset;
         if (p_logEntrySize <= p_bytesUntilEnd) {
             // Copy shortened header and payload
             p_input.position(p_inputOffset + p_conversionOffset);
@@ -198,17 +201,16 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
         } else {
             // Entry is bisected
             if (p_conversionOffset >= p_bytesUntilEnd) {
-                // Copy shortened header and payload
+                // Ignore bytes before wrap-around
                 p_input.position(p_conversionOffset - p_bytesUntilEnd);
-                p_input.limit(p_logEntrySize - p_bytesUntilEnd);
+                p_input.limit(p_conversionOffset - p_bytesUntilEnd + sizeLeft);
                 p_output.put(p_input);
             } else {
-                // Copy shortened header and payload in two steps
                 p_input.position(p_inputOffset + p_conversionOffset);
                 p_output.put(p_input);
 
                 p_input.position(0);
-                p_input.limit(p_logEntrySize - p_bytesUntilEnd);
+                p_input.limit(sizeLeft - (p_bytesUntilEnd - p_conversionOffset));
                 p_output.put(p_input);
             }
         }
@@ -235,9 +237,28 @@ public abstract class AbstractPrimLogEntryHeader extends AbstractLogEntryHeader 
         return ret;
     }
 
+    public static short getConversionOffset(final short p_type) {
+        short ret;
+
+        if ((p_type & TYPE_MASK) == 0) {
+            // Convert into DefaultSecLogEntryHeader by skipping NodeID
+            ret = PRIM_LOG_ENTRY_HEADER.getLIDOffset();
+        } else {
+            // Convert into MigrationSecLogEntryHeader
+            ret = PRIM_LOG_ENTRY_HEADER.getNIDOffset();
+        }
+
+        return ret;
+    }
+
     @Override
     public long getCID(final ByteBuffer p_buffer, final int p_offset) {
         return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_buffer, p_offset);
+    }
+
+    @Override
+    public long getCID(final short p_type, final ByteBuffer p_buffer, final int p_offset) {
+        return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_type, p_buffer, p_offset);
     }
 
     @Override

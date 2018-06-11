@@ -64,11 +64,12 @@ public final class PrimaryLog extends AbstractLog {
      * @throws IOException
      *         if primary log could not be created
      */
-    public PrimaryLog(final LogComponent p_logComponent, final String p_backupDirectory, final short p_nodeID, final long p_primaryLogSize,
-            final boolean p_useChecksums, final boolean p_useTimestamps, final int p_flashPageSize, final HarddriveAccessMode p_mode) throws IOException {
-        super(new File(
-                        p_backupDirectory + 'N' + p_nodeID + '_' + (p_useChecksums ? "1" : "0") + '_' + (p_useTimestamps ? "1" : "0") + '_' + PRIMLOG_SUFFIX_FILENAME),
-                p_primaryLogSize, p_mode, 0, p_flashPageSize);
+    public PrimaryLog(final LogComponent p_logComponent, final String p_backupDirectory, final short p_nodeID,
+            final long p_primaryLogSize, final boolean p_useChecksums, final boolean p_useTimestamps,
+            final int p_flashPageSize, final HarddriveAccessMode p_mode) throws IOException {
+        super(new File(p_backupDirectory + 'N' + p_nodeID + '_' + (p_useChecksums ? "1" : "0") + '_' +
+                        (p_useTimestamps ? "1" : "0") + '_' + PRIMLOG_SUFFIX_FILENAME), p_primaryLogSize, p_mode, 0,
+                p_flashPageSize);
         m_primaryLogSize = p_primaryLogSize;
 
         m_writePos = 0;
@@ -92,7 +93,8 @@ public final class PrimaryLog extends AbstractLog {
     }
 
     @Override
-    public void appendData(final DirectByteBufferWrapper p_data, final int p_length) throws IOException, InterruptedException {
+    public void appendData(final DirectByteBufferWrapper p_data, final int p_length)
+            throws IOException, InterruptedException {
         if (m_primaryLogSize - m_numberOfBytes < p_length) {
             // Not enough free space in primary log -> flush to secondary logs and reset primary log
             m_logComponent.flushDataToSecondaryLogs();

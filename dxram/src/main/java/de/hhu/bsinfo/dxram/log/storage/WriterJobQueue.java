@@ -28,6 +28,7 @@ import de.hhu.bsinfo.dxutils.UnsafeHandler;
 class WriterJobQueue {
 
     // Must be a power of two to work with wrap around
+    // Do not enlarge this value if you don't have a good reason
     // If you change this value, consider changing the buffer pool defaults as well
     private static final int SIZE = 4;
 
@@ -41,7 +42,8 @@ class WriterJobQueue {
     private PrimaryWriteBuffer m_primaryWriteBuffer;
     private PrimaryLog m_primaryLog;
 
-    // single producer, single consumer lock free queue (posBack and posFront are synchronized with fences and byte counter)
+    // single producer, single consumer lock free queue (posBack and posFront are synchronized
+    // with fences and byte counter)
     private int m_posBack; // 31 bits used (see incrementation)
     private int m_posFront; // 31 bits used (see incrementation)
 
@@ -92,9 +94,11 @@ class WriterJobQueue {
         SecondaryLogBuffer secLogBuffer = m_secLogBuffers[posBack];
         DirectByteBufferWrapper bufferWrapper = m_bufferWrappers[posBack];
         int entrySize = m_entrySizes[posBack];
+        UnsafeHandler.getInstance().getUnsafe().storeFence();
 
         // & 0x7FFFFFFF kill sign
         m_posBack = m_posBack + 1 & 0x7FFFFFFF;
+        UnsafeHandler.getInstance().getUnsafe().storeFence();
 
         if (jobID == 0) {
             secLogBuffer.flushAllDataToSecLog(bufferWrapper, entrySize);
@@ -118,14 +122,17 @@ class WriterJobQueue {
      * @param p_logEntrySize
      *         the length
      */
-    void pushJob(final byte p_jobID, final SecondaryLogBuffer p_secLogBuffer, final DirectByteBufferWrapper p_bufferWrapper, final int p_logEntrySize) {
+    void pushJob(final byte p_jobID, final SecondaryLogBuffer p_secLogBuffer,
+            final DirectByteBufferWrapper p_bufferWrapper, final int p_logEntrySize) {
         int front;
 
+        UnsafeHandler.getInstance().getUnsafe().loadFence();
         if ((m_posBack + SIZE & 0x7FFFFFFF) == m_posFront) {
             // Queue is full -> wait
             while ((m_posBack + SIZE & 0x7FFFFFFF) == m_posFront) {
                 //LockSupport.parkNanos(100);
                 Thread.yield();
+                UnsafeHandler.getInstance().getUnsafe().loadFence();
             }
         }
 
@@ -133,13 +140,12 @@ class WriterJobQueue {
 
         m_jobIDs[front] = p_jobID;
         m_bufferWrappers[front] = p_bufferWrapper;
-        if (p_jobID == 0) {
-            m_secLogBuffers[front] = p_secLogBuffer;
-            m_entrySizes[front] = p_logEntrySize;
-        }
+        m_entrySizes[front] = p_logEntrySize;
+        m_secLogBuffers[front] = p_secLogBuffer;
 
         // & 0x7FFFFFFF kill sign
         m_posFront = m_posFront + 1 & 0x7FFFFFFF;
+        UnsafeHandler.getInstance().getUnsafe().storeFence();
     }
 
     /**

@@ -23,6 +23,7 @@ import java.util.List;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
@@ -32,6 +33,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * failure report...)
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
+ * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
 public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
     /**
@@ -94,6 +96,14 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
     public abstract List<Short> getIDsOfOnlineSuperpeers();
 
     /**
+     * Collects all node ids supporting the specified capabilities.
+     *
+     * @param p_capabilities The requested capabilities.
+     * @return A list containing all matching node ids.
+     */
+    public abstract List<Short> getSupportingNodes(int p_capabilities);
+
+    /**
      * Get the node ID, which is currently assigned to this running instance.
      *
      * @return Own NodeID.
@@ -106,6 +116,20 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      * @return Own Role.
      */
     public abstract NodeRole getNodeRole();
+
+    /**
+     * Returns the capabilities of this node.
+     *
+     * @return The capabilities of this node.
+     */
+    public abstract int getNodeCapabilities();
+
+    /**
+     * Updates this node's capabilities.
+     *
+     * @param p_capibilities The updated capabilities.
+     */
+    public abstract void updateNodeCapabilities(int p_capibilities);
 
     /**
      * Get the rack, this node is in.
@@ -152,6 +176,14 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      * @return Role of other nodeID or null if node does not exist.
      */
     public abstract NodeRole getNodeRole(short p_nodeID);
+
+    /**
+     * Returns the capabilities of the specified node.
+     *
+     * @param p_nodeId The node's id.
+     * @return The capabilities of the specified node.
+     */
+    public abstract int getNodeCapabilities(short p_nodeId);
 
     /**
      * Get the IP and port of another node.

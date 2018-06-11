@@ -40,7 +40,8 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2017
  */
 public class ChunkDataModifySequentialTask implements Task {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkDataModifySequentialTask.class.getSimpleName());
+    private static final Logger LOGGER =
+            LogManager.getFormatterLogger(ChunkDataModifySequentialTask.class.getSimpleName());
 
     private static final int PATTERN_GET_LOCAL = 0;
     private static final int PATTERN_GET_PUT_LOCAL = 1;
@@ -78,7 +79,8 @@ public class ChunkDataModifySequentialTask implements Task {
         ChunkIDRanges allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern / 2, p_ctx, chunkService);
         long totalChunkCount = allChunkRanges.getTotalChunkIDsOfRanges();
         long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(totalChunkCount, m_numThreads);
-        ChunkIDRanges[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
+        ChunkIDRanges[] chunkRangesPerThread =
+                ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
 
         Thread[] threads = new Thread[m_numThreads];
         Stopwatch[] time = new Stopwatch[m_numThreads];
@@ -86,8 +88,9 @@ public class ChunkDataModifySequentialTask implements Task {
             time[i] = new Stopwatch();
         }
 
-        System.out.printf("Modifying (and checking %b) %d chunks sequentially %d times (pattern %d) in batches of %d chunk(s) with %d thread(s)...\n",
-                m_writeContentsAndVerify, totalChunkCount, m_iterations, m_pattern, m_chunkBatch, m_numThreads);
+        System.out
+                .printf("Modifying (and checking %b) %d chunks sequentially %d times (pattern %d) in batches of %d chunk(s) with %d thread(s)...\n",
+                        m_writeContentsAndVerify, totalChunkCount, m_iterations, m_pattern, m_chunkBatch, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
@@ -102,11 +105,15 @@ public class ChunkDataModifySequentialTask implements Task {
                 // happens if no chunks were created
                 if (!chunkRanges.isEmpty()) {
                     for (int iteration = 0; iteration < m_iterations; iteration++) {
+                        long startTime = System.currentTimeMillis();
                         long counter = 1;
                         long operations = operationsPerIteration;
+                        long processedBytes = 0;
                         int rangeCounter = 0;
                         long currentOffset = 0;
                         long currentChunkID = chunkRanges.getRangeStart(rangeCounter);
+                        ChunkAnon[] chunks = new ChunkAnon[chunkIds.length];
+
                         while (operations > 0) {
                             int batchCnt = (int) Math.min(m_chunkBatch, operations);
                             operations -= batchCnt;
@@ -123,7 +130,6 @@ public class ChunkDataModifySequentialTask implements Task {
                                 }
                             }
 
-                            ChunkAnon[] chunks = new ChunkAnon[chunkIds.length];
                             time[threadIdx].start();
                             int ret = chunkAnonService.get(chunks, chunkIds);
                             time[threadIdx].stopAndAccumulate();
@@ -134,6 +140,10 @@ public class ChunkDataModifySequentialTask implements Task {
                                         LOGGER.error("Error getting chunk %s\n", chunks[j]);
                                     }
                                 }
+                            }
+
+                            for (int j = 0; j < chunks.length; j++) {
+                                processedBytes += chunks[j].getDataSize();
                             }
 
                             if (m_writeContentsAndVerify) {
@@ -182,15 +192,21 @@ public class ChunkDataModifySequentialTask implements Task {
 
                                         for (int k = 0; k < buffer.length; k++) {
                                             if (buffer[k] != (byte) k) {
-                                                LOGGER.error("Contents of chunk %s are not matching written contents: 0x%X != 0x%X", chunksToVerify[j],
-                                                        buffer[k], k);
+                                                LOGGER.error(
+                                                        "Contents of chunk %s are not matching written contents: 0x%X != 0x%X",
+                                                        chunksToVerify[j], buffer[k], k);
                                             }
                                         }
                                     }
                                 }
                             }
-                            if (operationsPerIteration - operations > counter * (operationsPerIteration / 10)) {
-                                System.out.println(threadIdx + " - Progress in current iteration " + iteration + ": " + counter * 10 + '%');
+                            if (operationsPerIteration - operations > counter * (operationsPerIteration / 100)) {
+                                System.out.println(
+                                        threadIdx + " - Progress in current iteration " + iteration + ": " + counter +
+                                                '%' + "\n Throughput: " +
+                                                processedBytes / (System.currentTimeMillis() - startTime) * 1000 /
+                                                        1024 / 1024 + " MB/s");
+
                                 counter++;
                             }
                         }
@@ -233,7 +249,8 @@ public class ChunkDataModifySequentialTask implements Task {
         }
 
         System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
-        System.out.printf("Throughput: %f chunks/sec\n", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / (totalChunkCount * m_iterations)));
+        System.out.printf("Throughput: %f chunks/sec\n",
+                1000.0 * 1000.0 * 1000.0 / ((double) totalTime / (totalChunkCount * m_iterations)));
 
         return 0;
     }
