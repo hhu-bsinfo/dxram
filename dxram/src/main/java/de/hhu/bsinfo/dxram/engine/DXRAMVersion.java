@@ -47,6 +47,13 @@ public class DXRAMVersion {
 
     public static final DXRAMVersion fromString(String p_version) {
 
+        if (p_version.contains("-")) {
+
+            int index = p_version.indexOf('-');
+
+            p_version = p_version.substring(0, index);
+        }
+
         int[] components = Arrays.stream(p_version.split("."))
                 .mapToInt(Integer::valueOf)
                 .limit(3)
