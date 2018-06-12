@@ -83,9 +83,9 @@ public final class ZooKeeperHandler {
      *     if ZooKeeper could not accessed
      */
     public synchronized void connect() throws ZooKeeperException {
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering connect");
-        // #endif /* LOGGER == TRACE */
+
 
         if (m_zookeeper == null) {
             try {
@@ -104,9 +104,9 @@ public final class ZooKeeperHandler {
                 throw new ZooKeeperException("Could not access ZooKeeper", e);
             }
         }
-        // #if LOGGER == TRACE
+
         LOGGER.trace(getClass().getName(), "Exiting connect");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     /**
@@ -618,11 +618,11 @@ public final class ZooKeeperHandler {
         // Methods
         @Override
         public void process(final WatchedEvent p_event) {
-            // #if LOGGER >= ERROR
+
             if (p_event.getType() == Event.EventType.None && p_event.getState() == KeeperState.Expired) {
                 LOGGER.error(getClass().getName(), "ZooKeeper state expired");
             }
-            // #endif /* LOGGER >= ERROR */
+
         }
 
     }

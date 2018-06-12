@@ -146,9 +146,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering getLookupRange with: p_chunkID=0x%X", p_chunkID);
-        // #endif /* LOGGER == TRACE */
+
 
         if (getConfig().cachesEnabled()) {
             // Read from cache
@@ -167,9 +167,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
             ret = m_peer.getLookupRange(p_chunkID);
         }
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting getLookupRange");
-        // #endif /* LOGGER == TRACE */
+
         return ret;
     }
 
@@ -186,9 +186,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering remove with %d chunkIDs", p_chunkIDs.getSize());
-        // #endif /* LOGGER == TRACE */
+
 
         if (getConfig().cachesEnabled()) {
             invalidate(p_chunkIDs);
@@ -196,9 +196,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         m_peer.removeChunkIDs(p_chunkIDs);
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting remove");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     /**
@@ -217,9 +217,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         // #endif /* ASSERT_NODE_ROLE */
 
         // Insert ChunkID <-> ApplicationID mapping
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering insertID with: p_id=%d, p_chunkID=0x%X", p_id, p_chunkID);
-        // #endif /* LOGGER == TRACE */
+
 
         if (getConfig().cachesEnabled()) {
             m_applicationIDCache.put(p_id, p_chunkID);
@@ -227,9 +227,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         m_peer.insertNameserviceEntry(p_id, p_chunkID);
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting insertID");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     /**
@@ -252,9 +252,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         // #endif /* ASSERT_NODE_ROLE */
 
         // Resolve ChunkID <-> ApplicationID mapping to return corresponding ChunkID
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering getChunkID with: p_id=%d", p_id);
-        // #endif /* LOGGER == TRACE */
+
 
         if (getConfig().cachesEnabled()) {
             // Read from application cache first
@@ -262,9 +262,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
             if (chunkID == null) {
                 // Cache miss -> ask superpeer
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Value not cached for application cache: %d", p_id);
-                // #endif /* LOGGER == TRACE */
+
 
                 ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
 
@@ -277,9 +277,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
             ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
         }
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting getChunkID");
-        // #endif /* LOGGER == TRACE */
+
 
         return ret;
     }
@@ -299,9 +299,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering migrate with: p_chunkID=0x%X, p_nodeID=0x%X", p_chunkID, p_nodeID);
-        // #endif /* LOGGER == TRACE */
+
 
         if (getConfig().cachesEnabled()) {
             invalidate(p_chunkID);
@@ -309,9 +309,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         m_peer.migrate(p_chunkID, p_nodeID);
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting migrate");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     /**
@@ -331,9 +331,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering migrateRange with: p_startChunkID=0x%X, p_endChunkID=0x%X, p_nodeID=0x%X", p_startCID, p_endCID, p_nodeID);
-        // #endif /* LOGGER == TRACE */
+
 
         if (getConfig().cachesEnabled()) {
             invalidate(p_startCID, p_endCID);
@@ -341,9 +341,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         m_peer.migrateRange(p_startCID, p_endCID, p_nodeID);
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting migrateRange");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     //
@@ -362,15 +362,15 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering initRange with: p_backupRange=%s", p_backupRange);
-        // #endif /* LOGGER == TRACE */
+
 
         m_peer.initRange(p_backupRange);
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting initRange");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     /**
@@ -389,15 +389,15 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering getAllBackupRanges with: p_nodeID=0x%X", p_nodeID);
-        // #endif /* LOGGER == TRACE */
+
 
         ret = m_peer.getAllBackupRanges(p_nodeID);
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting getAllBackupRanges");
-        // #endif /* LOGGER == TRACE */
+
         return ret;
     }
 
@@ -601,9 +601,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         // #endif /* ASSERT_NODE_ROLE */
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Invalid id 0x%X for data struct to allocate memory in superpeer storage", p_dataStructure.getID());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -625,9 +625,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         // #endif /* ASSERT_NODE_ROLE */
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Invalid id 0x%X for data struct to put data into superpeer storage", p_dataStructure.getID());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -649,9 +649,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         // #endif /* ASSERT_NODE_ROLE */
 
         if (p_chunk.getID() > 0x7FFFFFFF || p_chunk.getID() < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Invalid id 0x%X for anonymous chunk to put data into superpeer storage", p_chunk.getID());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -673,9 +673,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         // #endif /* ASSERT_NODE_ROLE */
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Invalid id 0x%X for data struct to get data from superpeer storage", p_dataStructure.getID());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -697,9 +697,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         // #endif /* ASSERT_NODE_ROLE */
 
         if (p_chunk.getID() > 0x7FFFFFFF || p_chunk.getID() < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Invalid id 0x%X for anonymous chunk to get data from superpeer storage", p_chunk.getID());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -739,9 +739,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         // #endif /* ASSERT_NODE_ROLE */
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Invalid id 0x%X for data struct to remove data from superpeer storage", p_dataStructure.getID());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -829,9 +829,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
                 capabilities |= NodeCapabilities.BACKUP_DST;
             }
             
-            // #if LOGGER >= INFO
+
             LOGGER.info(String.format("Detected capabilities %s", NodeCapabilities.toString(capabilities)));
-            // #endif /* LOGGER >= INFO */
+
 
             m_boot.updateNodeCapabilities(capabilities);
 
@@ -938,9 +938,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering getPrimaryPeer with: p_chunkID=0x%X", p_chunkID);
-        // #endif /* LOGGER == TRACE */
+
 
         if (getConfig().cachesEnabled()) {
             // Read from cache
@@ -964,9 +964,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
             }
         }
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting getPrimaryPeer");
-        // #endif /* LOGGER == TRACE */
+
 
         return ret;
     }
@@ -1007,9 +1007,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-        // #if LOGGER >= TRACE
+
         LOGGER.trace("Entering getSuperPeerLookUpTree with: p_nodeID=0x%X", p_nodeID);
-        // #endif /* LOGGER >= TRACE */
+
 
         ret = m_superpeer.getLookupTree(p_nodeID);
 

@@ -200,9 +200,9 @@ public final class SecondaryLogsReorgThread extends Thread {
 
             // Reorganize one segment
             if (secondaryLog != null) {
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Going to reorganize %s", secondaryLog.getRangeID());
-                // #endif /* LOGGER == TRACE */
+
                 getAccessToSecLog(secondaryLog);
 
                 if (!interrupted()) {
@@ -213,14 +213,14 @@ public final class SecondaryLogsReorgThread extends Thread {
                     }
 
                     if (!interrupted()) {
-                        // #if LOGGER == TRACE
+
                         LOGGER.trace("Time to reorganize segment: %d", System.currentTimeMillis() - start);
-                        // #endif /* LOGGER == TRACE */
+
                     } else {
-                        // #if LOGGER == TRACE
+
                         LOGGER.debug("Reorganization of segment was interrupted! Time: %d",
                                 System.currentTimeMillis() - start);
-                        // #endif /* LOGGER == TRACE */
+
                     }
 
                     if (counter++ == m_iterationsPerLog || !secondaryLog.needToBeReorganized() &&
@@ -244,9 +244,9 @@ public final class SecondaryLogsReorgThread extends Thread {
         // Reorganize complete secondary log
         SecondaryLog secondaryLog = m_secLog;
 
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Got urgent reorganization request for %s", m_secLog.getRangeID());
-        // #endif /* LOGGER >= DEBUG */
+
 
         m_reorganizationLock.unlock();
         getAccessToSecLog(secondaryLog);
@@ -300,10 +300,10 @@ public final class SecondaryLogsReorgThread extends Thread {
             iter = m_reorganizationRequests.iterator();
             secondaryLog = iter.next();
             iter.remove();
-            // #if LOGGER == DEBUG
+
             LOGGER.debug("Got reorganization request for %s. Queue length: %d", secondaryLog.getRangeID(),
                     m_reorganizationRequests.size());
-            // #endif /* LOGGER == DEBUG */
+
             m_requestLock.unlock();
 
             long start = System.currentTimeMillis();
@@ -330,9 +330,9 @@ public final class SecondaryLogsReorgThread extends Thread {
             leaveSecLog(secondaryLog);
             m_allVersions.clear();
 
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Time to reorganize complete log: %d", System.currentTimeMillis() - start);
-            // #endif /* LOGGER == TRACE */
+
         }
     }
 

@@ -107,26 +107,26 @@ public class GraphLoadPartitionIndexTask implements Task {
 
             // store the index for our current cLompute group
             if (!tmpStorage.create(graphPartIndex)) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Creating chunk for partition index failed");
-                // #endif /* LOGGER >= ERROR */
+
                 return -2;
             }
 
             if (!tmpStorage.put(graphPartIndex)) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Putting partition index failed");
-                // #endif /* LOGGER >= ERROR */
+
                 return -3;
             }
 
             // register chunk at nameservice that other slaves can find it
             nameserviceService.register(graphPartIndex, MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId());
 
-            // #if LOGGER >= INFO
+
             LOGGER.info("Successfully loaded and stored graph partition index, nameservice entry name %s:\n%s",
                     MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId(), graphPartIndex);
-            // #endif /* LOGGER >= INFO */
+
         }
 
         return 0;
@@ -199,9 +199,9 @@ public class GraphLoadPartitionIndexTask implements Task {
         try {
             reader = new BufferedReader(new FileReader(p_pathFile));
         } catch (final FileNotFoundException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Missing index file %s to create graph index for loading graph", p_pathFile);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
@@ -221,9 +221,9 @@ public class GraphLoadPartitionIndexTask implements Task {
 
             String[] tokens = line.split(",");
             if (tokens.length != 4) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Invalid index entry %d in file %s, ignoring", line, p_pathFile);
-                // #endif /* LOGGER >= ERROR */
+
                 continue;
             }
 

@@ -56,16 +56,16 @@ public class MemoryManagerComponentConfig extends AbstractDXRAMComponentConfig {
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (m_keyValueStoreSize.getBytes() < KEY_VALUE_STORE_SIZE_MIN.getBytes()) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Min m_keyValueStoreSize: %s", KEY_VALUE_STORE_SIZE_MIN);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         if (m_keyValueStoreSize.getBytes() > KEY_VALUE_STORE_SIZE_MAX.getBytes()) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Max m_keyValueStoreSize: %s", KEY_VALUE_STORE_SIZE_MAX);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 

@@ -159,9 +159,9 @@ public final class MetadataHandler {
         PeerHandler peerHandler;
 
         m_dataLock.readLock().lock();
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Serializing metadata of area: 0x%X, 0x%X", p_beginOfArea, p_endOfArea);
-        // #endif /* LOGGER == TRACE */
+
 
         // Get all corresponding nameservice entries
         nameserviceEntries = m_nameservice.receiveMetadataInRange(p_beginOfArea, p_endOfArea);
@@ -217,9 +217,9 @@ public final class MetadataHandler {
             index = startIndex;
             currentPeer = m_assignedPeersIncludingBackups.get(index++);
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_beginOfArea, p_endOfArea)) {
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Including LookupTree of 0x%X", currentPeer);
-                // #endif /* LOGGER == TRACE */
+
 
                 peerHandler = getPeerHandler(currentPeer);
                 // no tree available -> no chunks were created or backup system is deactivated
@@ -275,9 +275,9 @@ public final class MetadataHandler {
         ByteBuffer data;
 
         m_dataLock.readLock().lock();
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Serializing all metadata");
-        // #endif /* LOGGER == TRACE */
+
 
         // Get all nameservice entries
         nameserviceEntries = m_nameservice.receiveAllMetadata();
@@ -315,9 +315,9 @@ public final class MetadataHandler {
             peerHandler = getPeerHandler((short) i);
             // no tree available -> no chunks were created or backup system is deactivated
             if (peerHandler != null) {
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Including LookupTree of 0x%X", (short) i);
-                // #endif /* LOGGER == TRACE */
+
 
                 data.putShort((short) i);
                 peerHandler.receiveMetadata(data);
@@ -459,9 +459,9 @@ public final class MetadataHandler {
         PeerHandler peerHandler;
 
         m_dataLock.readLock().lock();
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Compare and return metadata of area: 0x%X, 0x%X", p_predecessor, p_nodeID);
-        // #endif /* LOGGER == TRACE */
+
 
         // TODO: Inefficient to send all data (nameservice, storages, barriers) in corresponding area if quantity differs
         size = 4 * Integer.BYTES;
@@ -545,9 +545,9 @@ public final class MetadataHandler {
             currentPeer = m_assignedPeersIncludingBackups.get(index++);
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_predecessor, p_nodeID)) {
                 if (Collections.binarySearch(p_peers, currentPeer) < 0) {
-                    // #if LOGGER == TRACE
+
                     LOGGER.trace("Including LookupTree of 0x%X", currentPeer);
-                    // #endif /* LOGGER == TRACE */
+
 
                     peerHandler = getPeerHandler(currentPeer);
                     // no tree available -> no chunks were created or backup system is deactivated
@@ -616,9 +616,9 @@ public final class MetadataHandler {
         int count = 0;
 
         m_dataLock.writeLock().lock();
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Deleting all uneccessary metadata outside of area: 0x%X, 0x%X", p_responsibleArea[0], p_responsibleArea[1]);
-        // #endif /* LOGGER == TRACE */
+
 
         if (!m_assignedPeersIncludingBackups.isEmpty()) {
             ret = new short[m_assignedPeersIncludingBackups.size()];
@@ -633,9 +633,9 @@ public final class MetadataHandler {
             currentPeer = m_assignedPeersIncludingBackups.get(index);
             while (!OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_responsibleArea[0], p_responsibleArea[1])) {
                 // Remove lookup tree
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Removing LookupTree of 0x%X", currentPeer);
-                // #endif /* LOGGER == TRACE */
+
 
                 m_peerHandlers[currentPeer & 0xFFFF] = null;
                 ret[count++] = currentPeer;
@@ -681,48 +681,48 @@ public final class MetadataHandler {
             data = ByteBuffer.wrap(p_metadata);
 
             m_dataLock.writeLock().lock();
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Storing metadata. Length: %d", p_metadata.length);
-            // #endif /* LOGGER == TRACE */
+
 
             // Put all nameservice entries
             size = data.getInt();
             pos = data.position();
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Storing nameservice entries. Length: %d", size);
-            // #endif /* LOGGER == TRACE */
+
             m_nameservice.storeMetadata(p_metadata, pos, size);
             data.position(pos + size);
 
             // Put all storages
             size = data.getInt();
             pos = data.position();
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Storing superpeer storages. Length: %d", size);
-            // #endif /* LOGGER == TRACE */
+
             m_storage.storeMetadata(p_metadata, pos, size);
             data.position(pos + size);
 
             // Put all barriers
             size = data.getInt();
             pos = data.position();
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Storing barriers. Length: %d", size);
-            // #endif /* LOGGER == TRACE */
+
             m_barriers.storeMetadata(p_metadata, pos, size);
             data.position(pos + size);
 
             // Put all lookup trees
             size = data.getInt();
             ret = new short[size];
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Storing lookup trees. Length: %d", size);
-            // #endif /* LOGGER == TRACE */
+
             for (int i = 0; i < size; i++) {
                 nodeID = data.getShort();
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Storing lookup tree of 0x%X", nodeID);
-                // #endif /* LOGGER == TRACE */
+
 
                 peerHandler = new PeerHandler(OverlayHelper.ORDER, nodeID);
                 peerHandler.storeMetadata(data);

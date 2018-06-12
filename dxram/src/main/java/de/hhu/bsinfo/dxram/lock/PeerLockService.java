@@ -95,9 +95,9 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
         try {
             m_network.sendSync(request);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending request to get locked list from node 0x%X failed: %s", p_nodeId, e);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
@@ -257,24 +257,24 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
     @Override
     public void eventTriggered(final NodeFailureEvent p_event) {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            // #if LOGGER >= DEBUG
+
             LOGGER.debug("Connection to peer 0x%X lost, unlocking all chunks locked by lost instance",
                     p_event.getNodeID());
-            // #endif /* LOGGER >= DEBUG */
+
 
             if (!m_lock.unlockAllByNodeID(p_event.getNodeID())) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Unlocking all locked chunks of crashed peer 0x%X failed", p_event.getNodeID());
-                // #endif /* LOGGER >= ERROR */
+
             }
         }
     }
 
     @Override
     public void onIncomingMessage(final Message p_message) {
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
-        // #endif /* LOGGER == TRACE */
+
 
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.LOCK_MESSAGES_TYPE) {
@@ -294,9 +294,9 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
             }
         }
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting incomingMessage");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     @Override
@@ -411,9 +411,9 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
         try {
             m_network.sendMessage(response);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending locked list response for request %s failed: %s", p_request, e);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 }

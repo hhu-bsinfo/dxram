@@ -81,29 +81,29 @@ public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentCon
 
         m_parentEngine = p_engine;
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Initializing component...");
-        // #endif /* LOGGER >= INFO */
+
 
         resolveComponentDependencies(p_engine);
 
         try {
             ret = initComponent(m_parentEngine.getConfig());
         } catch (final Exception e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Initializing component failed", e);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         if (!ret) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Initializing component failed");
-            // #endif /* LOGGER >= ERROR */
+
         } else {
-            // #if LOGGER >= INFO
+
             LOGGER.info("Initializing component successful");
-            // #endif /* LOGGER >= INFO */
+
 
             m_isInitialized = true;
         }
@@ -129,18 +129,18 @@ public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentCon
         boolean ret = true;
 
         if (m_isInitialized) {
-            // #if LOGGER >= INFO
+
             LOGGER.info("Shutting down component...");
-            // #endif /* LOGGER >= INFO */
+
             ret = shutdownComponent();
             if (!ret) {
-                // #if LOGGER >= WARN
+
                 LOGGER.warn("Shutting down component failed");
-                // #endif /* LOGGER >= WARN */
+
             } else {
-                // #if LOGGER >= INFO
+
                 LOGGER.info("Shutting down component successful");
-                // #endif /* LOGGER >= INFO */
+
             }
 
             m_isInitialized = false;

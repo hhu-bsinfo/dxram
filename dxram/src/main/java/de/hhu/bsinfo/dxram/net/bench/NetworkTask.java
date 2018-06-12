@@ -277,9 +277,9 @@ public class NetworkTask implements Task, MessageReceiver {
 
     @Override
     public void onIncomingMessage(final Message p_message) {
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
-        // #endif /* LOGGER == TRACE */
+
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.NETWORK_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
@@ -297,9 +297,9 @@ public class NetworkTask implements Task, MessageReceiver {
                 }
             }
         }
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting incomingMessage");
-        // #endif /* LOGGER == TRACE */
+
 
     }
 
@@ -317,9 +317,9 @@ public class NetworkTask implements Task, MessageReceiver {
         try {
             m_networkService.sendMessage(response);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending NetworkTestResponse for %s failed: %s", p_request, e);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 

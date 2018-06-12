@@ -116,18 +116,18 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
                 service = p_class.cast(tmpService);
             }
 
-            // #if LOGGER >= WARN
+
             if (service == null) {
                 LOGGER.warn("Service not available %s", p_class);
             }
-            // #endif /* LOGGER >= WARN */
+
         }
 
-        // #if LOGGER >= WARN
+
         if (service == null) {
             LOGGER.warn("Service '%s' not available", p_class.getSimpleName());
         }
-        // #endif /* LOGGER >= WARN */
+
 
         return service;
     }
@@ -140,11 +140,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             service = m_contextHandler.getContext().getServices().get(m_servicesShortName.get(p_shortName));
         }
 
-        // #if LOGGER >= WARN
+
         if (service == null) {
             LOGGER.warn("Service '%s' not available", p_shortName);
         }
-        // #endif /* LOGGER >= WARN */
+
 
         return service;
     }
@@ -194,11 +194,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             component = p_class.cast(tmpComponent);
         }
 
-        // #if LOGGER >= WARN
+
         if (component == null) {
             LOGGER.warn("Getting component '%s', not available", p_class.getSimpleName());
         }
-        // #endif /* LOGGER >= WARN */
+
 
         return component;
     }
@@ -214,9 +214,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         final List<AbstractDXRAMComponent> list;
         final Comparator<AbstractDXRAMComponent> comp;
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Initializing engine (version %s)...", m_version);
-        // #endif /* LOGGER >= INFO */
+
 
         if (!bootstrap()) {
             // false indicates here that a configuration file was created
@@ -242,22 +242,22 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         comp = Comparator.comparingInt(AbstractDXRAMComponent::getPriorityInit);
         list.sort(comp);
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Initializing %d components...", list.size());
-        // #endif /* LOGGER >= INFO */
+
         for (AbstractDXRAMComponent component : list) {
             if (!component.init(this)) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Initializing component '%s' failed, aborting init", component.getComponentName());
-                // #endif /* LOGGER >= ERROR */
+
                 return false;
             }
         }
-        // #if LOGGER >= INFO
+
         LOGGER.info("Initializing components done");
         //
         LOGGER.info("Starting %d services...", m_contextHandler.getContext().getServices().size());
-        // #endif /* LOGGER >= INFO */
+
 
         for (AbstractDXRAMService service : m_contextHandler.getContext().getServices().values()) {
             // check for null -> invalid service
@@ -267,30 +267,30 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             }
 
             if (!service.start(this)) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Starting service '%s' failed, aborting init", service.getServiceName());
-                // #endif /* LOGGER >= ERROR */
+
                 return false;
             }
         }
-        // #if LOGGER >= INFO
+
         LOGGER.info("Starting services done");
         //
         LOGGER.info("Finishing initialization of components");
-        // #endif /* LOGGER >= INFO */
+
 
         for (AbstractDXRAMComponent component : list) {
             if (!component.finishInitComponent()) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Finishing initialization of component '%s' failed, aborting init", component.getComponentName());
-                // #endif /* LOGGER >= ERROR */
+
                 return false;
             }
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Initializing engine done");
-        // #endif /* LOGGER >= INFO */
+
 
         m_isInitialized = true;
 
@@ -345,23 +345,23 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         final List<AbstractDXRAMComponent> list;
         final Comparator<AbstractDXRAMComponent> comp;
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Shutting down engine...");
-        // #endif /* LOGGER >= INFO */
-        // #if LOGGER >= INFO
+
+
         LOGGER.info("Shutting down %d services...", m_contextHandler.getContext().getServices().size());
-        // #endif /* LOGGER >= INFO */
+
 
         m_contextHandler.getContext().getServices().values().stream().filter(service -> !service.shutdown()).forEach(service -> {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Shutting down service '%s' failed.", service.getServiceName());
-            // #endif /* LOGGER >= ERROR */
+
         });
         m_servicesShortName.clear();
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Shutting down services done");
-        // #endif /* LOGGER >= INFO */
+
 
         list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());
 
@@ -369,18 +369,18 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         list.sort(comp);
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Shutting down %d components...", list.size());
-        // #endif /* LOGGER >= INFO */
+
 
         list.forEach(AbstractDXRAMComponent::shutdown);
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Shutting down components done");
-        // #endif /* LOGGER >= INFO */
-        // #endif /* LOGGER >= INFO */
+
+
         LOGGER.info("Shutting down engine done");
-        // #endif /* LOGGER >= INFO */
+
 
         m_contextHandler = null;
 
@@ -418,25 +418,25 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         if (config == null) {
             config = "";
         } else {
-            // #if LOGGER >= INFO
+
             LOGGER.info("Loading configuration file: %s", config);
-            // #endif /* LOGGER >= INFO */
+
         }
 
         // check if a config needs to be created
         if (config.isEmpty() || !new File(config).exists()) {
             m_contextHandler.createDefaultConfiguration(config);
-            // #if LOGGER >= INFO
+
             LOGGER.info("Default configuration created (%s), please restart DXRAM", config);
-            // #endif /* LOGGER >= INFO */
+
             return false;
         }
 
         // load existing configuration
         if (!m_contextHandler.loadConfiguration(config)) {
-            // #if LOGGER >= ERROR
+
             LOGGER.info("Loading configuration failed: %s", config);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 

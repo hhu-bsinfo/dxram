@@ -89,11 +89,11 @@ public final class LogCatalog {
         SecondaryLog ret;
 
         ret = m_logs[p_rangeID & 0xFFFF];
-        // #if LOGGER >= ERROR
+
         if (ret == null) {
             LOGGER.error("There is no secondary log for RID=%d", p_rangeID);
         }
-        // #endif /* LOGGER >= ERROR */
+
 
         return ret;
     }
@@ -110,11 +110,11 @@ public final class LogCatalog {
 
         ret = m_buffers[p_rangeID & 0xFFFF];
 
-        // #if LOGGER >= ERROR
+
         if (ret == null) {
             LOGGER.error("There is no secondary log buffer for RID=%d", p_rangeID);
         }
-        // #endif /* LOGGER >= ERROR */
+
 
         return ret;
     }

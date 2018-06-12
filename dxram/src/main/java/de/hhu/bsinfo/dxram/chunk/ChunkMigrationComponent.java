@@ -72,9 +72,9 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
             m_memoryManager.create(p_chunkIDs[i], p_data[i].length);
             m_memoryManager.put(p_chunkIDs[i], p_data[i]);
 
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Stored migrated chunk 0x%X locally", p_chunkIDs[i]);
-            // #endif /* LOGGER == TRACE */
+
 
             if (m_backup.isActive()) {
                 backupRange = m_backup.registerChunk(p_chunkIDs[i], p_data[i].length);

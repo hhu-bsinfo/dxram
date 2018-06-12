@@ -79,9 +79,9 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
             try {
                 m_network.sendSync(request);
             } catch (NetworkException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Sending GetUtilizationRequest failed", e);
-                // #endif /* LOGGER >= ERROR */
+
             }
 
             GetUtilizationResponse response = (GetUtilizationResponse) request.getResponse();
@@ -140,9 +140,9 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
         try {
             m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Could not answer GetUtilizationRequest", e);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 
@@ -230,9 +230,9 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
         try {
             m_network.sendMessage(new InitBackupRangeResponse(p_request, res));
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Could not acknowledge initialization of backup range", e);
-            // #endif /* LOGGER >= ERROR */
+
 
         }
     }
@@ -252,9 +252,9 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
         try {
             m_network.sendMessage(new InitRecoveredBackupRangeResponse(p_request, res));
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Could not acknowledge initialization of backup range", e);
-            // #endif /* LOGGER >= ERROR */
+
 
         }
     }

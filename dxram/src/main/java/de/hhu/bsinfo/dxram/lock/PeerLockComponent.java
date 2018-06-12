@@ -116,17 +116,17 @@ public class PeerLockComponent extends AbstractLockComponent<PeerLockComponentCo
         LockEntry lockEntry = m_lockedChunks.get(ChunkID.getLocalID(p_chunkId));
         if (lockEntry == null) {
             // trying to unlock non locked chunk
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Unlocking previously non locked chunk 0x%X by node 0x%X not possible", p_chunkId, p_unlockingNodeID);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         if (lockEntry.m_nodeID != p_unlockingNodeID) {
             // trying to unlock a chunk we have not locked
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Unlocking chunk 0x%X locked by node 0x%X not allowed for node 0x%X", p_chunkId, lockEntry.m_nodeID, p_unlockingNodeID);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 

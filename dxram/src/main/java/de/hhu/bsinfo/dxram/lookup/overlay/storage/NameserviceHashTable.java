@@ -119,9 +119,9 @@ public class NameserviceHashTable extends AbstractMetadata {
             data = ByteBuffer.wrap(p_data, p_offset, p_size);
 
             for (int i = 0; i < data.limit() / 12; i++) {
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Storing nameservice entry");
-                // #endif /* LOGGER == TRACE */
+
 
                 put(data.getInt(), data.getLong());
                 ret++;
@@ -141,9 +141,9 @@ public class NameserviceHashTable extends AbstractMetadata {
         for (int i = 0; i < m_elementCapacity; i++) {
             iter = getKey(i);
             if (iter != 0) {
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Including nameservice entry: %s <-> %s", iter - 1, getValue(i));
-                // #endif /* LOGGER == TRACE */
+
 
                 data.putInt(iter - 1);
                 data.putLong(getValue(i));
@@ -164,9 +164,9 @@ public class NameserviceHashTable extends AbstractMetadata {
             iter = getKey(i);
             if (iter != 0) {
                 if (OverlayHelper.isHashInSuperpeerRange(CRC16.hash(iter - 1), p_bound1, p_bound2)) {
-                    // #if LOGGER == TRACE
+
                     LOGGER.trace("Including nameservice entry: %s <-> %s", iter - 1, getValue(i));
-                    // #endif /* LOGGER == TRACE */
+
 
                     data.putInt(iter - 1);
                     data.putLong(getValue(i));
@@ -186,9 +186,9 @@ public class NameserviceHashTable extends AbstractMetadata {
             iter = getKey(i);
             if (iter != 0) {
                 if (!OverlayHelper.isHashInSuperpeerRange(CRC16.hash(iter - 1), p_bound1, p_bound2)) {
-                    // #if LOGGER == TRACE
+
                     LOGGER.trace("Removing nameservice entry: %s <-> %s", iter - 1, getValue(i));
-                    // #endif /* LOGGER == TRACE */
+
 
                     count++;
                     remove(iter);
@@ -418,9 +418,9 @@ public class NameserviceHashTable extends AbstractMetadata {
         m_threshold = (int) (m_elementCapacity * m_loadFactor);
         m_table = newTable;
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Reached threshold (%d) -> Rehashing. New size: %d... ", oldThreshold, m_elementCapacity);
-        // #endif /* LOGGER == TRACE */
+
 
         m_count = 0;
         while (index < oldElementCapacity) {
@@ -430,9 +430,9 @@ public class NameserviceHashTable extends AbstractMetadata {
             index = (index + 1) % m_elementCapacity;
         }
         m_count = oldCount;
-        // #if LOGGER == TRACE
+
         LOGGER.trace("done");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     /**

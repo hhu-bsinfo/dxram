@@ -249,9 +249,9 @@ public final class TerminalClient implements TerminalSession.Listener {
      */
     private void quit() {
         if (!m_session.write(new TerminalLogout())) {
-            // #if LOGGER == ERROR
+
             LOGGER.error("Sending logout to server failed");
-            // #endif /* LOGGER == ERROR */
+
         }
 
         m_session.close();

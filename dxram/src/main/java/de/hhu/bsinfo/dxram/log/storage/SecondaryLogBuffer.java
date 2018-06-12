@@ -62,9 +62,9 @@ public final class SecondaryLogBuffer {
 
         m_buffer = new DirectByteBufferWrapper(p_bufferSize + 1,
                 true); // One byte for segment terminator (0) which is set before writing to secLog
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Initialized secondary log buffer (%d)", p_bufferSize);
-        // #endif /* LOGGER == TRACE */
+
     }
 
     // Methods
@@ -95,9 +95,9 @@ public final class SecondaryLogBuffer {
             flushSecLogBuffer();
         } catch (final IOException | InterruptedException e) {
 
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Could not flush secondary log buffer", e);
-            // #endif /* LOGGER >= ERROR */
+
         }
         m_buffer = null;
     }

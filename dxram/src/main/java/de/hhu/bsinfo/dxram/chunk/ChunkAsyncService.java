@@ -103,14 +103,14 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
         }
 
         if (p_dataStructures[0] == null) {
-            // #if LOGGER == TRACE
+
             LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_dataStructures.length);
-            // #endif /* LOGGER == TRACE */
+
         } else {
-            // #if LOGGER == TRACE
+
             LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation,
                     p_dataStructures.length, ChunkID.toHexString(p_dataStructures[0].getID()));
-            // #endif /* LOGGER == TRACE */
+
         }
 
         // #ifdef STATISTICS
@@ -177,9 +177,9 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
                 m_memoryManager.lockAccess();
                 for (final DataStructure dataStructure : entry.getValue()) {
                     if (!m_memoryManager.put(dataStructure)) {
-                        // #if LOGGER >= ERROR
+
                         LOGGER.error("Putting local chunk 0x%X failed, does not exist", dataStructure.getID());
-                        // #endif /* LOGGER >= ERROR */
+
                     }
                 }
                 m_memoryManager.unlockAccess();
@@ -191,9 +191,9 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
                 try {
                     m_network.sendMessage(message);
                 } catch (final NetworkException e) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Sending chunk put message to peer %s failed: %s", NodeID.toHexString(peer), e);
-                    // #endif /* LOGGER >= ERROR */
+
 
                     for (DataStructure ds : chunksToPut) {
                         m_lookup.invalidate(ds.getID());
@@ -211,14 +211,14 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
         // #endif /* STATISTICS */
 
         if (p_dataStructures[0] == null) {
-            // #if LOGGER == TRACE
+
             LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_dataStructures.length);
-            // #endif /* LOGGER == TRACE */
+
         } else {
-            // #if LOGGER == TRACE
+
             LOGGER.trace("put[unlockOp %s, dataStructures(%d) %s, ...]", p_chunkUnlockOperation,
                     p_dataStructures.length, ChunkID.toHexString(p_dataStructures[0].getID()));
-            // #endif /* LOGGER == TRACE */
+
         }
 
         return chunksPut;
@@ -226,9 +226,9 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
 
     @Override
     public void onIncomingMessage(final Message p_message) {
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
-        // #endif /* LOGGER == TRACE */
+
 
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
@@ -242,9 +242,9 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
             }
         }
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting incomingMessage");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     @Override
@@ -315,11 +315,11 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
         m_memoryManager.lockAccess();
         try {
             for (int i = 0; i < chunkIDs.length; i++) {
-                // #if LOGGER >= WARN
+
                 if (!m_memoryManager.put(chunkIDs[i], data[i])) {
                     LOGGER.error("Putting chunk 0x%X failed, does not exist", chunkIDs[i]);
                 }
-                // #endif /* LOGGER >= WARN */
+
             }
         } finally {
             m_memoryManager.unlockAccess();

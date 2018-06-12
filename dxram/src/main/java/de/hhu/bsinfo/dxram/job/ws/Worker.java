@@ -129,9 +129,9 @@ public class Worker extends Thread {
 
     @Override
     public void run() {
-        // #if LOGGER >= INFO
+
         LOGGER.info("Worker %d: Running...", m_id);
-        // #endif /* LOGGER >= INFO */
+
 
         m_running = true;
 
@@ -142,9 +142,9 @@ public class Worker extends Thread {
             if (job != null) {
                 m_isIdle = false;
 
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Worker %d: Executing job %s from queue", m_id, job);
-                // #endif /* LOGGER >= DEBUG */
+
 
                 m_workerDelegate.executingJob(job);
                 job.execute(m_workerDelegate.getNodeID());
@@ -156,9 +156,9 @@ public class Worker extends Thread {
             if (job != null) {
                 m_isIdle = false;
 
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Worker %d: Executing stolen job %s", m_id, job);
-                // #endif /* LOGGER >= DEBUG */
+
 
                 m_workerDelegate.executingJob(job);
                 job.execute(m_workerDelegate.getNodeID());
@@ -177,9 +177,9 @@ public class Worker extends Thread {
             }
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Worker %d: Shut down", m_id);
-        // #endif /* LOGGER >= INFO */
+
 
         m_running = false;
     }

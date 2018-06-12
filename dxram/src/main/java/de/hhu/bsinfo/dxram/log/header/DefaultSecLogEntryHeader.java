@@ -53,9 +53,9 @@ class DefaultSecLogEntryHeader extends AbstractSecLogEntryHeader {
 
     @Override
     public short getNodeID(final ByteBuffer p_buffer, final int p_offset) {
-        // #if LOGGER >= ERROR
+
         LOGGER.error("No NodeID available!");
-        // #endif /* LOGGER >= ERROR */
+
         return -1;
     }
 
@@ -95,9 +95,9 @@ class DefaultSecLogEntryHeader extends AbstractSecLogEntryHeader {
     // Getter
     @Override
     protected short getNIDOffset() {
-        // #if LOGGER >= ERROR
+
         LOGGER.error("No NodeID available!");
-        // #endif /* LOGGER >= ERROR */
+
         return -1;
     }
 

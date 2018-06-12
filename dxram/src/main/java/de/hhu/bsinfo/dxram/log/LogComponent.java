@@ -197,9 +197,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                 }
             }
         }
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Time to initialize range: %d", System.currentTimeMillis() - time);
-        // #endif /* LOGGER == TRACE */
+
     }
 
     /**
@@ -261,13 +261,13 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         response = request.getResponse(InitRecoveredBackupRangeResponse.class);
 
         if (response == null || !response.getStatus()) {
-            // #if LOGGER == ERROR
+
             LOGGER.error("Backup range could not be initialized on 0x%X!", p_backupPeer);
-            // #endif /* LOGGER == ERROR */
+
         }
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Time to initialize range: %d", System.currentTimeMillis() - time);
-        // #endif /* LOGGER == TRACE */
+
     }
 
     /**
@@ -289,9 +289,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             try {
                 cat.removeAndCloseBufferAndLog(p_rangeID);
             } catch (IOException e) {
-                // #if LOGGER == WARN
+
                 LOGGER.trace("Backup range could not be removed from hard drive.");
-                // #endif /* LOGGER == WARN */
+
             }
         }
         m_secondaryLogCreationLock.writeLock().unlock();
@@ -334,14 +334,14 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                 ret = secLog.recoverFromLog(m_byteBuffersForRecovery, RECOVERY_THREADS, m_versionsForRecovery,
                         lowestCID, timeToGetLock, timeToReadVersions, m_chunk, true);
             } else {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Backup range %d could not be recovered. Secondary log is missing!", p_rangeID);
-                // #endif /* LOGGER >= ERROR */
+
             }
         } catch (final IOException | InterruptedException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Backup range recovery failed: %s", e);
-            // #endif /* LOGGER >= ERROR */
+
         } finally {
             m_secondaryLogsReorgThread.unblock();
         }
@@ -365,9 +365,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             ret = SecondaryLog.recoverFromFile(p_fileName, p_path, getConfig().useChecksums(), m_secondaryLogSize,
                     (int) getConfig().getLogSegmentSize().getBytes(), m_mode);
         } catch (final IOException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Could not recover from file %s: %s", p_path, e);
-            // #endif /* LOGGER >= ERROR */
+
         }
 
         return ret;
@@ -595,9 +595,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      */
     private void createLogsAndBuffers() {
         if (getConfig().getSecondaryLogBufferSize().getBytes() == 0 || !TWO_LEVEL_LOGGING_ACTIVATED) {
-            // #if LOGGER == INFO
+
             LOGGER.info("Two-level logging is disabled. Performance might be impaired!");
-            // #endif /* LOGGER == INFO */
+
         } else {
             // Create primary log
             try {
@@ -606,13 +606,13 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                                 getConfig().useChecksums(), getConfig().useTimestamps(),
                                 (int) getConfig().getFlashPageSize().getBytes(), m_mode);
             } catch (final IOException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Primary log creation failed", e);
-                // #endif /* LOGGER >= ERROR */
+
             }
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Initialized primary log (%d)", (int) getConfig().getLogSegmentSize().getBytes());
-            // #endif /* LOGGER == TRACE */
+
         }
 
         // Create primary log buffer
@@ -666,13 +666,13 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             m_secondaryLogsReorgThread.shutdown();
             try {
                 m_secondaryLogsReorgThread.join();
-                // #if LOGGER >= INFO
+
                 LOGGER.info("Shutdown of SecondaryLogsReorgThread successful");
-                // #endif /* LOGGER >= INFO */
+
             } catch (final InterruptedException e1) {
-                // #if LOGGER >= WARN
+
                 LOGGER.warn("Could not wait for reorganization thread to finish. Interrupted");
-                // #endif /* LOGGER >= WARN */
+
             }
             m_secondaryLogsReorgThread = null;
 
@@ -681,9 +681,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                 try {
                     m_primaryLog.close();
                 } catch (final IOException e) {
-                    // #if LOGGER >= WARN
+
                     LOGGER.warn("Could not close primary log!");
-                    // #endif /* LOGGER >= WARN */
+
                 }
                 m_primaryLog = null;
             }
@@ -696,9 +696,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                         cat.closeLogsAndBuffers();
                     }
                 } catch (final IOException e) {
-                    // #if LOGGER >= WARN
+
                     LOGGER.warn("Could not close secondary log buffer %d", i);
-                    // #endif /* LOGGER >= WARN */
+
                 }
             }
             m_logCatalogs = null;
@@ -806,9 +806,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                         (int) getConfig().getLogSegmentSize().getBytes());
             }
         } catch (final IOException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Initialization of backup range %d failed: %s", p_rangeID, e);
-            // #endif /* LOGGER >= ERROR */
+
             ret = false;
         }
         m_secondaryLogCreationLock.writeLock().unlock();
@@ -853,16 +853,16 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                     cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(),
                             (int) getConfig().getLogSegmentSize().getBytes());
                 } else {
-                    // #if LOGGER >= WARN
+
                     LOGGER.warn("Transfer of backup range %d from 0x%X to 0x%X failed! Secondary log already exists!",
                             p_originalRangeID, p_originalOwner, p_owner);
-                    // #endif /* LOGGER >= WARN */
+
                 }
             } catch (final IOException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Transfer of backup range %d from 0x%X to 0x%X failed! %s", p_originalRangeID,
                         p_originalOwner, p_owner, e);
-                // #endif /* LOGGER >= ERROR */
+
                 ret = false;
             }
             m_secondaryLogCreationLock.writeLock().unlock();
@@ -892,10 +892,10 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                     cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(),
                             (int) getConfig().getLogSegmentSize().getBytes());
                 } else {
-                    // #if LOGGER >= WARN
+
                     LOGGER.warn("Transfer of backup range %d from 0x%X to 0x%X failed! Secondary log already exists!",
                             p_originalRangeID, p_originalOwner, p_owner);
-                    // #endif /* LOGGER >= WARN */
+
                 }
             }
             m_secondaryLogCreationLock.writeLock().unlock();
@@ -928,9 +928,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
         SecondaryLog secLog = getSecondaryLog(owner, rangeID);
         if (secLog == null) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Logging of chunks failed. SecondaryLog for range %s,%d is missing!", owner, rangeID);
-            // #endif /* LOGGER >= ERROR */
+
             return;
         }
 
@@ -988,9 +988,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
         SecondaryLog secLog = getSecondaryLog(p_owner, p_rangeID);
         if (secLog == null) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Logging of chunks failed. SecondaryLog for range %s,%d is missing!", p_owner, p_rangeID);
-            // #endif /* LOGGER >= ERROR */
+
             return;
         }
 
@@ -1050,9 +1050,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             if (secLog != null) {
                 secLog.invalidateChunk(chunkID);
             } else {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Removing of chunk 0x%X failed: %s. SecondaryLog is missing!", chunkID);
-                // #endif /* LOGGER >= ERROR */
+
             }
         }
     }
@@ -1075,9 +1075,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         cat = m_logCatalogs[p_owner & 0xFFFF];
 
         if (cat == null) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Log catalog for peer 0x%X is empty!", p_owner);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 

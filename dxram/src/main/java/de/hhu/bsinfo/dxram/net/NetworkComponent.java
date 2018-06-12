@@ -79,10 +79,10 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 
         if (p_type == Messages.DEFAULT_MESSAGES_TYPE) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Registering network message %s for type %s and subtype %s failed, type 0 is used for " +
                     "internal messages and not allowed", p_class.getSimpleName(), p_type, p_subtype);
-            // #endif /* LOGGER >= ERROR */
+
             return;
         }
 
@@ -110,16 +110,16 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      *         If the destination is unreachable
      */
     public void connectNode(final short p_nodeID) throws NetworkException {
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Connecting node 0x%X", p_nodeID);
-        // #endif /* LOGGER == TRACE */
+
 
         try {
             m_dxnet.connectNode(p_nodeID);
         } catch (final NetworkDestinationUnreachableException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Connecting node 0x%X failed: %s", p_nodeID, e);
-            // #endif /* LOGGER >= ERROR */
+
             throw e;
         }
     }
@@ -133,25 +133,25 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
      *         If sending the message failed
      */
     public void sendMessage(final Message p_message) throws NetworkException {
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Sending message %s", p_message);
-        // #endif /* LOGGER == TRACE */
+
 
         try {
             m_dxnet.sendMessage(p_message);
         } catch (final NetworkDestinationUnreachableException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending message %s failed: %s", p_message.getClass().getSimpleName(), e);
-            // #endif /* LOGGER >= ERROR */
+
 
             // Connection creation failed -> trigger failure handling
             m_event.fireEvent(new ConnectionLostEvent(getClass().getSimpleName(), p_message.getDestination()));
 
             throw e;
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending message %s failed: %s", p_message, e);
-            // #endif /* LOGGER >= ERROR */
+
 
             throw e;
         }
@@ -250,25 +250,25 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
 
     @Override
     public void eventTriggered(final NodeFailureEvent p_event) {
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Connection to peer 0x%X lost, aborting and removing all pending requests", p_event.getNodeID());
-        // #endif /* LOGGER >= DEBUG */
+
 
         m_dxnet.cancelAllRequests(p_event.getNodeID());
     }
 
     @Override
     public void connectionCreated(final short p_destination) {
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Connection to node 0x%X created", p_destination);
-        // #endif /* LOGGER >= DEBUG */
+
     }
 
     @Override
     public void connectionLost(final short p_destination) {
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Connection to node 0x%X lost", p_destination);
-        // #endif /* LOGGER >= DEBUG */
+
 
         m_event.fireEvent(new ConnectionLostEvent(getClass().getSimpleName(), p_destination));
     }
@@ -307,24 +307,24 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
                     while (addresses.hasMoreElements()) {
                         InetAddress currentAddress = addresses.nextElement();
                         if (myAddress.equals(currentAddress)) {
-                            // #if LOGGER >= INFO
+
                             LOGGER.info("%s is bound to %s", myAddress.getHostAddress(),
                                     currentNetworkInterface.getDisplayName());
-                            // #endif /* LOGGER >= INFO */
+
                             found = true;
                             break outerloop;
                         }
                     }
                 }
             } catch (final SocketException e1) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not get network interfaces for ip confirmation");
-                // #endif /* LOGGER >= ERROR */
+
             } finally {
                 if (!found) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Could not find network interface with address %s", myAddress.getHostAddress());
-                    // #endif /* LOGGER >= ERROR */
+
                     return false;
                 }
             }

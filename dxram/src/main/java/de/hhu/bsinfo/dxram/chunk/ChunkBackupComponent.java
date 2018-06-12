@@ -105,9 +105,9 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
         try {
             m_network.sendSync(request);
         } catch (final NetworkException e) {
-            // #if LOGGER == ERROR
+
             LOGGER.error("Replicating backup range 0x%X to 0x%X failed. Could not initialize backup range", p_rangeID, p_backupPeer);
-            // #endif /* LOGGER == ERROR */
+
             return 0;
         }
 
@@ -138,9 +138,9 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
                 }
 
                 if (bytes == -1) {
-                    // #if LOGGER == ERROR
+
                     LOGGER.error("Could not replicate 0x%X", currentChunkID);
-                    // #endif /* LOGGER == ERROR */
+
                     continue;
                 }
 
@@ -194,9 +194,9 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
         }
         m_recoveryChunkQueue.add(new Entry(p_chunkIDs, p_dataAddress, p_offsets, p_lengths, p_usedEntries));
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Stored %d recovered chunks locally", p_usedEntries);
-        // #endif /* LOGGER == TRACE */
+
 
         return true;
     }

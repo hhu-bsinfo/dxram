@@ -74,22 +74,22 @@ public class PrintMemoryStatusToFileTask implements Task {
         File file = new File(m_path);
         if (file.exists()) {
             if (!file.delete()) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Deleting file %s failed", file);
-                // #endif /* LOGGER >= ERROR */
+
                 return -2;
             }
             try {
                 if (!file.createNewFile()) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Creating output file %s for memory status failed", m_path);
-                    // #endif /* LOGGER >= ERROR */
+
                     return -3;
                 }
             } catch (final IOException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Creating output file %s for memory status failed: %s", m_path, e);
-                // #endif /* LOGGER >= ERROR */
+
                 return -4;
             }
         }
@@ -98,9 +98,9 @@ public class PrintMemoryStatusToFileTask implements Task {
         try {
             out = new PrintStream(file);
         } catch (final FileNotFoundException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Creating print stream for memory status failed", e);
-            // #endif /* LOGGER >= ERROR */
+
             return -5;
         }
         PrintMemoryStatus.printMemoryStatusToOutput(out, chunkService.getStatus());

@@ -79,16 +79,16 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
     public void register(final long p_chunkId, final String p_name) {
         try {
             final int id = m_converter.convert(p_name);
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Registering chunkID 0x%X, name %s, id %d", p_chunkId, p_name, id);
-            // #endif /* LOGGER == TRACE */
+
 
             m_lookup.insertNameserviceEntry(id, p_chunkId);
             insertMapping(id, p_chunkId);
         } catch (final IllegalArgumentException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Lookup in name service failed", e);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 
@@ -106,28 +106,28 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
         long ret = ChunkID.INVALID_ID;
         try {
             final int id = m_converter.convert(p_name);
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Lookup name %s, id %d", p_name, id);
-            // #endif /* LOGGER == TRACE */
+
 
             ret = m_lookup.getChunkIDForNameserviceEntry(id, p_timeoutMs);
 
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Lookup name %s, resulting chunkID 0x%X", p_name, ret);
-            // #endif /* LOGGER == TRACE */
+
         } catch (final IllegalArgumentException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Lookup in name service failed", e);
-            // #endif /* LOGGER >= ERROR */
+
         }
 
         return ret;
     }
 
     public void reinit() {
-        // #if LOGGER == WARN
+
         LOGGER.warn("Re-initializing");
-        // #endif /* LOGGER == WARN */
+
 
         shutdownName();
         initName();
@@ -199,9 +199,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
 
         m_indexData.setID(m_chunk.createIndexChunk(m_indexData.sizeofObject()));
         if (m_indexData.getID() == ChunkID.INVALID_ID) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Creating root index chunk failed");
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
         m_indexDataRegistered = false;
@@ -241,9 +241,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
             final NameServiceIndexData nextIndexChunk = new NameServiceIndexData();
             nextIndexChunk.setID(m_chunk.createIndexChunk(nextIndexChunk.sizeofObject()));
             if (nextIndexChunk.getID() == ChunkID.INVALID_ID) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Creating next index chunk failed");
-                // #endif /* LOGGER >= ERROR */
+
                 m_indexDataLock.unlock();
                 return false;
             }
@@ -251,9 +251,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
             // link previous to new and update
             m_indexData.setNextIndexDataChunk(nextIndexChunk.getID());
             if (!m_chunk.putChunk(m_indexData)) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Updating current index chunk with successor failed");
-                // #endif /* LOGGER >= ERROR */
+
                 m_indexDataLock.unlock();
                 return false;
             }
@@ -264,9 +264,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
         // insert mapping into current chunk and update
         m_indexData.insertMapping(p_key, p_chunkID);
         if (!m_chunk.putChunk(m_indexData)) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Updating current index chunk failed");
-            // #endif /* LOGGER >= ERROR */
+
             m_indexDataLock.unlock();
             return false;
         }

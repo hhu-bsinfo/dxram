@@ -241,9 +241,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     public boolean isNodeOnline(final short p_nodeID) {
         NodeEntry entry = m_nodes.getNode(p_nodeID);
         if (entry == null) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Could not find node %s", NodeID.toHexString(p_nodeID));
-            // #endif /* LOGGER >= WARN */
+
             return false;
         }
 
@@ -254,9 +254,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     public NodeRole getNodeRole(final short p_nodeID) {
         NodeEntry entry = m_nodes.getNode(p_nodeID);
         if (entry == null) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Could not find node %s", NodeID.toHexString(p_nodeID));
-            // #endif /* LOGGER >= WARN */
+
             return null;
         }
 
@@ -267,9 +267,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     public int getNodeCapabilities(short p_nodeId) {
         NodeEntry entry = m_nodes.getNode(p_nodeId);
         if (entry == null) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Could not find node %s", NodeID.toHexString(p_nodeId));
-            // #endif /* LOGGER >= WARN */
+
             return 0;
         }
 
@@ -282,9 +282,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         InetSocketAddress address;
         // return "proper" invalid address if entry does not exist
         if (entry == null) {
-            // #if LOGGER >= WARN
+
             //LOGGER.warn("Could not find ip and port for node id %s", NodeID.toHexString(p_nodeID));
-            // #endif /* LOGGER >= WARN */
+
             address = new InetSocketAddress("255.255.255.255", 0xFFFF);
         } else {
             address = entry.getAddress().getInetSocketAddress();
@@ -314,9 +314,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             if (p_nodeID == m_bootstrap) {
                 setBootstrapPeer(m_nodes.getOwnNodeID());
 
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Failed node %s was bootstrap. New bootstrap is %s", NodeID.toHexString(p_nodeID), NodeID.toHexString(m_bootstrap));
-                // #endif /* LOGGER >= DEBUG */
+
             }
         } else if (p_role == NodeRole.PEER) {
             // Remove peer
@@ -346,9 +346,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     public void process(final WatchedEvent p_event) {
         if (!m_shutdown) {
             if (p_event.getType() == Event.EventType.None && p_event.getState() == KeeperState.Expired) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("ZooKeeper state expired");
-                // #endif /* LOGGER >= ERROR */
+
             }
         }
     }
@@ -360,9 +360,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         } else if (p_event instanceof NodeJoinEvent) {
             NodeJoinEvent event = (NodeJoinEvent) p_event;
 
-            // #if LOGGER >= INFO
+
             LOGGER.info(String.format("Node %s with capabilities %s joined", NodeID.toHexString(event.getNodeID()), NodeCapabilities.toString(event.getCapabilities())));
-            // #endif /* LOGGER >= INFO */
+
 
             boolean readFromFile = m_nodes.getNode(event.getNodeID()) != null;
             m_nodes.addNode(new NodeEntry(event.getAddress(), event.getNodeID(), event.getRack(), event.getSwitch(), event.getRole(), event.getCapabilities(), readFromFile,
@@ -402,9 +402,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         m_ownAddress = p_config.getEngineConfig().getAddress();
         NodeRole role = p_config.getEngineConfig().getRole();
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Initializing with address %s, role %s", m_ownAddress, role);
-        // #endif /* LOGGER >= INFO */
+
 
         m_event.registerListener(this, NodeFailureEvent.class);
         m_event.registerListener(this, NodeJoinEvent.class);
@@ -415,9 +415,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         m_nodes = new NodesConfiguration();
 
         if (!parseNodes(getConfig().getNodesConfig(), role, getConfig().getRack(), getConfig().getSwitch())) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Parsing nodes failed");
-            // #endif /* LOGGER >= ERROR */
+
 
             return false;
         }
@@ -431,15 +431,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
         if (m_lookup != null && m_lookup.isResponsibleForBootstrapCleanup()) {
             try {
-                // #if LOGGER >= INFO
+
                 LOGGER.info("Cleaning-up ZooKeeper folder");
-                // #endif /* LOGGER >= INFO */
+
 
                 m_zookeeper.close(true);
             } catch (final ZooKeeperException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Closing zookeeper failed", e);
-                // #endif /* LOGGER >= ERROR */
+
             }
         } else {
             // LookupComponent has not been initialized or this node is not responsible for clean-up
@@ -452,9 +452,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             try {
                 m_zookeeper.close(false);
             } catch (final ZooKeeperException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Closing zookeeper failed", e);
-                // #endif /* LOGGER >= ERROR */
+
             }
         }
 
@@ -479,9 +479,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         } catch (final ZooKeeperException e) {
             // Entry should be available, even if another node updated the bootstrap first
 
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting status from zookeeper failed", e);
-            // #endif /* LOGGER >= ERROR */
+
 
             return;
         }
@@ -532,17 +532,17 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                     // Set barrier object
                     m_zookeeper.createBarrier(barrier);
                     if (p_cmdLineNodeRole != NodeRole.SUPERPEER) {
-                        // #if LOGGER >= ERROR
+
                         LOGGER.error("Bootstrap superpeer has differing command line NodeRole");
-                        // #endif /* LOGGER >= ERROR */
+
                         m_zookeeper.close(true);
                         return false;
                     }
 
                     if (p_nodes == null) {
-                        // #if LOGGER >= ERROR
+
                         LOGGER.error("Missing nodes configuration or reading nodes configuration from config file failed");
-                        // #endif /* LOGGER >= ERROR */
+
                         m_zookeeper.close(true);
                         return false;
                     }
@@ -563,9 +563,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 ret = parseNodesNormal(p_nodes, p_cmdLineNodeRole, p_cmdLineRack, p_cmdLineSwitch);
             }
         } catch (final ZooKeeperException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Could not access zookeeper while parsing nodes", e);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -585,9 +585,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         short nodeID;
         int seed;
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering parseNodesBootstrap");
-        // #endif /* LOGGER == TRACE */
+
 
         try {
             if (!m_zookeeper.exists("nodes")) {
@@ -610,16 +610,16 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 if (m_ownAddress.equals(entry.getAddress())) {
                     m_nodes.setOwnNodeID(nodeID);
                     m_bootstrap = nodeID;
-                    // #if LOGGER >= INFO
+
                     LOGGER.info("Own node assigned: %s", entry);
-                    // #endif /* LOGGER >= INFO */
+
                 }
 
                 entry.setNodeID((short) (nodeID & 0x0000FFFF));
                 m_nodes.addNode(entry);
-                // #if LOGGER >= INFO
+
                 LOGGER.info("Node added: %s", entry);
-                // #endif /* LOGGER >= INFO */
+
             }
 
             if (!m_zookeeper.exists("nodes/new")) {
@@ -634,9 +634,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
             // check if own node entry was correctly assigned to a valid node ID
             if (m_nodes.getOwnNodeEntry() == null) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Bootstrap entry for node in nodes configuration missing");
-                // #endif /* LOGGER >= ERROR */
+
                 m_zookeeper.close(true);
                 return false;
             }
@@ -647,15 +647,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 m_zookeeper.create("nodes/bootstrap", String.valueOf(m_bootstrap).getBytes(StandardCharsets.US_ASCII));
             }
         } catch (final ZooKeeperException | KeeperException | InterruptedException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Parsing nodes bootstrap failed", e);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting parseNodesBootstrap");
-        // #endif /* LOGGER == TRACE */
+
 
         return true;
     }
@@ -683,9 +683,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
         String[] splits;
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering parseNodesNormal");
-        // #endif /* LOGGER == TRACE */
+
 
         try {
             // Parse node information
@@ -702,24 +702,24 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
                 if (m_ownAddress.equals(entry.getAddress())) {
                     if (entry.getRole() != p_cmdLineNodeRole) {
-                        // #if LOGGER >= ERROR
+
                         LOGGER.error("NodeRole in configuration differs from command line given NodeRole: %s != %s", entry.getRole(), p_cmdLineNodeRole);
-                        // #endif /* LOGGER >= ERROR */
+
                         return false;
                     }
 
                     m_nodes.setOwnNodeID(nodeID);
                     m_bootstrap = nodeID;
-                    // #if LOGGER >= INFO
+
                     LOGGER.info("Own node assigned: %s", entry);
-                    // #endif /* LOGGER >= INFO */
+
                 }
 
                 entry.setNodeID((short) (nodeID & 0x0000FFFF));
                 m_nodes.addNode(entry);
-                // #if LOGGER >= INFO
+
                 LOGGER.info("Node added: %s", entry);
-                // #endif /* LOGGER >= INFO */
+
             }
 
             m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
@@ -746,9 +746,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
             if (m_nodes.getOwnNodeID() == NodeID.INVALID_ID) {
                 // Add this node if it was not in start configuration
-                // #if LOGGER >= WARN
+
                 LOGGER.warn("Node not in nodes.config (%s)", m_ownAddress);
-                // #endif /* LOGGER >= WARN */
+
 
                 node = m_ownAddress + ":" + p_cmdLineNodeRole.getAcronym() + ':' + p_cmdLineRack + ':' + p_cmdLineSwitch;
 
@@ -784,15 +784,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             m_zookeeper.setChildrenWatch("nodes/new", this);
             m_zookeeper.setChildrenWatch("nodes/free", this);
         } catch (final ZooKeeperException | KeeperException | InterruptedException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Parsing nodes normal failed", e);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting parseNodesNormal");
-        // #endif /* LOGGER == TRACE */
+
 
         return true;
     }
@@ -807,9 +807,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         try {
             m_zookeeper.create(p_path);
         } catch (final ZooKeeperException | KeeperException | InterruptedException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Creating path in zookeeper failed", e);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 
@@ -853,9 +853,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         try {
             data = m_zookeeper.getData(p_path);
         } catch (final ZooKeeperException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting data from zookeeper failed", e);
-            // #endif /* LOGGER >= ERROR */
+
         }
 
         return data;
@@ -876,9 +876,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         try {
             data = m_zookeeper.getData(p_path, p_status);
         } catch (final ZooKeeperException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting data from zookeeper failed", e);
-            // #endif /* LOGGER >= ERROR */
+
         }
 
         return data;
@@ -915,9 +915,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         try {
             ret = m_zookeeper.exists(p_path);
         } catch (final ZooKeeperException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Checking if path exists in zookeeper failed", e);
-            // #endif /* LOGGER >= ERROR */
+
         }
 
         return ret;

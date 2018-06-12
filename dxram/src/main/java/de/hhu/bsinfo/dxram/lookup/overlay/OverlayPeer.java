@@ -200,9 +200,9 @@ public class OverlayPeer implements MessageReceiver {
             try {
                 m_network.sendSync(request);
             } catch (final NetworkException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not determine nameservice entry count");
-                // #endif /* LOGGER >= ERROR */
+
                 ret = -1;
                 break;
             }
@@ -234,9 +234,9 @@ public class OverlayPeer implements MessageReceiver {
             try {
                 m_network.sendSync(request);
             } catch (final NetworkException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not determine nameservice entries");
-                // #endif /* LOGGER >= ERROR */
+
                 entries = null;
                 break;
             }
@@ -556,9 +556,9 @@ public class OverlayPeer implements MessageReceiver {
 
         creator = ChunkID.getCreatorID(p_startCID);
         if (creator != ChunkID.getCreatorID(p_endCID)) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Start and end object's creators not equal");
-            // #endif /* LOGGER >= ERROR */
+
         } else {
             while (!finished) {
                 m_overlayLock.readLock().lock();
@@ -721,9 +721,9 @@ public class OverlayPeer implements MessageReceiver {
         try {
             m_network.sendSync(request);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Allocating barrier with size %d on superpeer 0x%X failed: %s", p_size, m_mySuperpeer, e);
-            // #endif /* LOGGER >= ERROR */
+
             return BarrierID.INVALID_ID;
         }
 
@@ -749,17 +749,17 @@ public class OverlayPeer implements MessageReceiver {
         try {
             m_network.sendSync(message);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Freeing barrier 0x%X on superpeer 0x%X failed: %s", p_barrierId, responsibleSuperpeer, e);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         BarrierFreeResponse response = (BarrierFreeResponse) message.getResponse();
         if (response.getStatus() == -1) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Freeing barrier 0x%X on superpeer 0x%X failed: barrier does not exist", p_barrierId, responsibleSuperpeer);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -785,18 +785,18 @@ public class OverlayPeer implements MessageReceiver {
         try {
             m_network.sendSync(request);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending barrier change size request to superpeer 0x%X failed: %s", responsibleSuperpeer, e);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         BarrierChangeSizeResponse response = (BarrierChangeSizeResponse) request.getResponse();
-        // #if LOGGER >= ERROR
+
         if (response.getStatus() != 0) {
             LOGGER.error("Changing size of barrier 0x%X failed", p_barrierId);
         }
-        // #endif /* LOGGER >= ERROR */
+
 
         return response.getStatus() == 0;
     }
@@ -849,9 +849,9 @@ public class OverlayPeer implements MessageReceiver {
         try {
             m_network.sendSync(request);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sign on barrier 0x%X failed: %s", p_barrierId, e);
-            // #endif /* LOGGER >= ERROR */
+
 
             if (p_waitForRelease) {
                 m_network.unregister(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
@@ -862,9 +862,9 @@ public class OverlayPeer implements MessageReceiver {
 
         BarrierSignOnResponse response = (BarrierSignOnResponse) request.getResponse();
         if (response.getBarrierId() != p_barrierId || response.getStatus() != 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sign on barrier 0x%X failed", p_barrierId);
-            // #endif /* LOGGER >= ERROR */
+
 
             if (p_waitForRelease) {
                 m_network.unregister(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE, msg);
@@ -906,17 +906,17 @@ public class OverlayPeer implements MessageReceiver {
         try {
             m_network.sendSync(request);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting status request of barrier 0x%X failed: %s", p_barrierId, e);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
         BarrierGetStatusResponse response = (BarrierGetStatusResponse) request.getResponse();
         if (response.getStatus() == -1) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting status request of barrier 0x%X failed: barrier does not exist", p_barrierId);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
@@ -967,10 +967,10 @@ public class OverlayPeer implements MessageReceiver {
 
                 SuperpeerStorageCreateResponse response = request.getResponse(SuperpeerStorageCreateResponse.class);
                 if (response.getStatus() != 0) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Allocating temporary storage on superpeer 0x%X for 0x%X, size %d failed: %d", response.getSource(), p_storageId, p_size,
                             response.getStatus());
-                    // #endif /* LOGGER >= ERROR */
+
                     return false;
                 } else {
                     return true;
@@ -992,9 +992,9 @@ public class OverlayPeer implements MessageReceiver {
      */
     public boolean superpeerStoragePut(final DataStructure p_dataStructure) {
         if (p_dataStructure.getID() > 0x7FFFFFFF && p_dataStructure.getID() < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot put data structure into superpeer storage, invalid id 0x%X", p_dataStructure.getID());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -1049,9 +1049,9 @@ public class OverlayPeer implements MessageReceiver {
      */
     public boolean superpeerStoragePutAnon(final ChunkAnon p_chunk) {
         if (p_chunk.getID() > 0x7FFFFFFF && p_chunk.getID() < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot put data structure into superpeer storage, invalid id 0x%X", p_chunk.getID());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -1106,9 +1106,9 @@ public class OverlayPeer implements MessageReceiver {
      */
     public boolean superpeerStorageGet(final DataStructure p_dataStructure) {
         if (p_dataStructure.getID() > 0x7FFFFFFF && p_dataStructure.getID() < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot get data structure from superpeer storage, invalid id 0x%X", p_dataStructure.getID());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -1163,9 +1163,9 @@ public class OverlayPeer implements MessageReceiver {
      */
     public boolean superpeerStorageGetAnon(final ChunkAnon p_chunk) {
         if (p_chunk.getID() > 0x7FFFFFFF && p_chunk.getID() < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot get data structure from superpeer storage, invalid id 0x%X", p_chunk.getID());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -1275,9 +1275,9 @@ public class OverlayPeer implements MessageReceiver {
                 m_network.sendSync(request);
                 statusArray[i] = request.getResponse(SuperpeerStorageStatusResponse.class).getStatus();
             } catch (final NetworkException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Getting superpeer 0x%X storage status failed", superpeer);
-                // #endif /* LOGGER >= ERROR */
+
                 statusArray[i] = null;
             }
 
@@ -1325,9 +1325,9 @@ public class OverlayPeer implements MessageReceiver {
         try {
             m_network.sendSync(request);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Replacing backup peer on 0x%X failed", responsibleSuperpeer);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 
@@ -1394,23 +1394,23 @@ public class OverlayPeer implements MessageReceiver {
         JoinRequest joinRequest;
         JoinResponse joinResponse = null;
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering joinSuperpeerOverlay with: p_contactSuperpeer=0x%X", p_contactSuperpeer);
-        // #endif /* LOGGER == TRACE */
+
 
         contactSuperpeer = p_contactSuperpeer;
 
         if (p_contactSuperpeer == NodeID.INVALID_ID) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot join superpeer overlay, no bootstrap superpeer available to contact.");
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         while (contactSuperpeer != NodeID.INVALID_ID) {
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Contacting 0x%X to get the responsible superpeer, I am 0x%X", contactSuperpeer, m_nodeID);
-            // #endif /* LOGGER == TRACE */
+
 
             joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, false);
             try {
@@ -1431,9 +1431,9 @@ public class OverlayPeer implements MessageReceiver {
 
         m_boot.putOnlineNodes(joinResponse.getOnlineNodes());
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting joinSuperpeerOverlay");
-        // #endif /* LOGGER == TRACE */
+
 
         return true;
     }
@@ -1456,9 +1456,9 @@ public class OverlayPeer implements MessageReceiver {
         AskAboutSuccessorRequest request;
         AskAboutSuccessorResponse response;
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering getResponsibleSuperpeer with: p_nodeID=0x%X", p_nodeID);
-        // #endif /* LOGGER == TRACE */
+
 
         if (!m_superpeers.isEmpty()) {
             index = Collections.binarySearch(m_superpeers, p_nodeID);
@@ -1504,13 +1504,13 @@ public class OverlayPeer implements MessageReceiver {
                 }
             }
         } else {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Do not know any superpeer");
-            // #endif /* LOGGER >= WARN */
+
         }
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting getResponsibleSuperpeer");
-        // #endif /* LOGGER == TRACE */
+
 
         return responsibleSuperpeer;
     }
@@ -1525,9 +1525,9 @@ public class OverlayPeer implements MessageReceiver {
         short source;
 
         source = p_sendSuperpeersMessage.getSource();
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Got Message: SEND_SUPERPEERS_MESSAGE from 0x%X", source);
-        // #endif /* LOGGER == TRACE */
+
 
         m_overlayLock.writeLock().lock();
         m_superpeers = p_sendSuperpeersMessage.getSuperpeers();
@@ -1559,9 +1559,9 @@ public class OverlayPeer implements MessageReceiver {
      */
     private void incomingNodeJoinEventRequest(final NodeJoinEventRequest p_nodeJoinEventRequest) {
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Got request: NodeJoinEventRequest 0x%X", p_nodeJoinEventRequest.getSource());
-        // #endif /* LOGGER == TRACE */
+
 
         try {
             m_network.sendMessage(new NodeJoinEventResponse(p_nodeJoinEventRequest));

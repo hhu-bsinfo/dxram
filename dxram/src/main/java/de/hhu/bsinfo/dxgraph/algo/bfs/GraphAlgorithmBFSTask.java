@@ -200,35 +200,35 @@ public class GraphAlgorithmBFSTask implements Task {
         long graphPartitionIndexChunkId =
                 m_nameserviceService.getChunkID(GraphLoadPartitionIndexTask.MS_PART_INDEX_IDENT + m_ctx.getCtxData().getComputeGroupId(), 5000);
         if (graphPartitionIndexChunkId == ChunkID.INVALID_ID) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot find graph partition index for compute group %d", m_ctx.getCtxData().getComputeGroupId());
-            // #endif /* LOGGER >= ERROR */
+
             return -1;
         }
 
         m_graphPartitionIndex = new GraphPartitionIndex();
         m_graphPartitionIndex.setID(graphPartitionIndexChunkId);
         if (!m_temporaryStorageService.get(m_graphPartitionIndex)) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting graph partition index from temporary memory chunk 0x%X failed", graphPartitionIndexChunkId);
-            // #endif /* LOGGER >= ERROR */
+
             return -2;
         }
 
         // get entry vertices for bfs
         long tmpStorageIdRootVertices = m_nameserviceService.getChunkID(m_bfsRootNameserviceEntry, 5000);
         if (tmpStorageIdRootVertices == ChunkID.INVALID_ID) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting BFS entry vertex %s failed, not valid", m_bfsRootNameserviceEntry);
-            // #endif /* LOGGER >= ERROR */
+
             return -3;
         }
 
         GraphRootList rootList = new GraphRootList(tmpStorageIdRootVertices);
         if (!m_temporaryStorageService.get(rootList)) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting root list 0x%X of vertices for bfs from temporary storage failed", tmpStorageIdRootVertices);
-            // #endif /* LOGGER >= ERROR */
+
             return -4;
         }
 
@@ -236,9 +236,9 @@ public class GraphAlgorithmBFSTask implements Task {
             List<GarbageCollectorMXBean> gcList = ManagementFactory.getGarbageCollectorMXBeans();
             for (GarbageCollectorMXBean gc : gcList) {
                 if (gc.getCollectionCount() > 0 || gc.getCollectionTime() > 0) {
-                    // #if LOGGER >= INFO
+
                     LOGGER.info("Using garbage collector %s for BFS", gc.getName());
-                    // #endif /* LOGGER >= INFO */
+
                 }
             }
         }
@@ -252,17 +252,17 @@ public class GraphAlgorithmBFSTask implements Task {
             m_barrierId0 = (int) m_nameserviceService.getChunkID(MS_BARRIER_IDENT_0 + m_ctx.getCtxData().getComputeGroupId(), -1);
         }
 
-        // #if LOGGER >= INFO
+
         if (m_markVertices) {
             LOGGER.info("Marking vertices mode (graph data will be altered)");
         } else {
             LOGGER.info("Not marking vertices mode (graph data read only)");
         }
-        // #endif /* LOGGER >= INFO */
 
-        // #if LOGGER >= INFO
+
+
         LOGGER.info("BFS mode: %s", m_beamerMode ? "BEAMER" : "TOP DOWN ONLY");
-        // #endif /* LOGGER >= INFO */
+
 
         int iteration = 0;
         for (long root : rootList.getRoots()) {
@@ -270,18 +270,18 @@ public class GraphAlgorithmBFSTask implements Task {
                 break;
             }
 
-            // #if LOGGER >= INFO
+
             LOGGER.info("Triggering GC...");
-            // #endif /* LOGGER >= INFO */
+
             System.gc();
             try {
                 Thread.sleep(2000);
             } catch (final InterruptedException ignored) {
             }
 
-            // #if LOGGER >= INFO
+
             LOGGER.info("Executing BFS with root 0x%X", root);
-            // #endif /* LOGGER >= INFO */
+
 
             m_signalLock.lock();
             m_curBFS = new BFS(root);
@@ -447,9 +447,9 @@ public class GraphAlgorithmBFSTask implements Task {
             m_syncBFSFinished = new SyncBFSFinished(m_ctx.getCtxData().getSlaveNodeIds(), m_ctx.getCtxData().getSlaveNodeIds()[m_ctx.getCtxData().getSlaveId()],
                     m_networkService);
 
-            // #if LOGGER >= INFO
+
             LOGGER.info("Running BFS with %d threads on 0x%X local vertices", m_numberOfThreadsPerNode, p_totalVertexCount);
-            // #endif /* LOGGER >= INFO */
+
 
             m_threads = new BFSThread[m_numberOfThreadsPerNode];
             for (int i = 0; i < m_threads.length; i++) {
@@ -479,9 +479,9 @@ public class GraphAlgorithmBFSTask implements Task {
             long fullGraphNextFrontEdgeCount = 0;
 
             if (p_entryVertex != ChunkID.INVALID_ID) {
-                // #if LOGGER >= INFO
+
                 LOGGER.info("I am starting BFS with entry vertex 0x%X", p_entryVertex);
-                // #endif /* LOGGER >= INFO */
+
 
                 VertexSimple vertex = new VertexSimple(p_entryVertex);
                 if (m_chunkService.get(vertex) != 1) {
@@ -569,10 +569,10 @@ public class GraphAlgorithmBFSTask implements Task {
                     }
                 }
 
-                // #if LOGGER >= INFO
+
                 LOGGER.info("BFS Level %d finished, verts %d, edges %d so far visited/traversed", m_bfsLocalResult.m_totalBFSDepth,
                         m_statisticsThread.getTotalVertexCount(), m_statisticsThread.getTotalEdgeCount());
-                // #endif /* LOGGER >= INFO */
+
 
                 // --------------------------------
                 // barrier
@@ -641,10 +641,10 @@ public class GraphAlgorithmBFSTask implements Task {
 
                 // check if we are done
                 if (m_terminateBfs) {
-                    // #if LOGGER >= INFO
+
                     LOGGER.info("BFS terminated signal, last iteration level %d, total edges traversed %d, num vertices of " + "graph visited %d",
                             m_bfsLocalResult.m_totalBFSDepth, m_bfsLocalResult.m_totalVisitedVertices, m_visitedFrontier.size());
-                    // #endif /* LOGGER >= INFO */
+
 
                     break;
                 }
@@ -672,9 +672,9 @@ public class GraphAlgorithmBFSTask implements Task {
                 // now we are good, allow new delegates from remotes
                 m_remoteDelegatesForNextFrontier.writeLock().unlock();
 
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Frontier swap, new cur frontier size: %d", m_curFrontier.size());
-                // #endif /* LOGGER >= DEBUG */
+
 
                 // go for next run
                 m_bfsLocalResult.m_totalBFSDepth++;
@@ -722,9 +722,9 @@ public class GraphAlgorithmBFSTask implements Task {
                 thread.exitThread();
             }
 
-            // #if LOGGER >= DEBUG
+
             LOGGER.debug("Joining BFS threads...");
-            // #endif /* LOGGER >= DEBUG */
+
 
             for (BFSThread thread : m_threads) {
                 try {
@@ -739,9 +739,9 @@ public class GraphAlgorithmBFSTask implements Task {
             m_networkService.unregisterReceiver(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_TERMINATE_MESSAGE, this);
             m_networkService.unregisterReceiver(DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE, this);
 
-            // #if LOGGER >= DEBUG
+
             LOGGER.debug("BFS shutdown");
-            // #endif /* LOGGER >= DEBUG */
+
         }
 
         @Override
@@ -792,9 +792,9 @@ public class GraphAlgorithmBFSTask implements Task {
                     try {
                         m_networkService.sendMessage(reply);
                     } catch (final NetworkException e) {
-                        // #if LOGGER >= ERROR
+
                         LOGGER.error("Sending reply for bottom up vertices next frontier failed: %s", e);
-                        // #endif /* LOGGER >= ERROR */
+
                     }
 
                     m_syncBFSFinished.incrementSentVertexMsgCountLocal();
@@ -1220,9 +1220,9 @@ public class GraphAlgorithmBFSTask implements Task {
                                 try {
                                     m_networkService.sendMessage(msg);
                                 } catch (final NetworkException e) {
-                                    // #if LOGGER >= ERROR
+
                                     LOGGER.error("Sending vertex message to node 0x%X failed", msg.getDestination());
-                                    // #endif /* LOGGER >= ERROR */
+
                                     if (m_abortBFSOnError) {
                                         m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
                                         return;
@@ -1245,9 +1245,9 @@ public class GraphAlgorithmBFSTask implements Task {
 
                 int gett = m_chunkService.getLocal(m_vertexBatch, 0, validVertsInBatch);
                 if (gett != validVertsInBatch) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Error on getting vertices in BFS Thread %d: %d != %d", m_id, gett, validVertsInBatch);
-                    // #endif /* LOGGER >= ERROR */
+
                     if (m_abortBFSOnError) {
                         m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
                         return;
@@ -1272,17 +1272,17 @@ public class GraphAlgorithmBFSTask implements Task {
                     for (long neighbour : neighbours) {
                         // check if neighbors are valid, otherwise something's not ok with the data
                         if (neighbour == ChunkID.INVALID_ID) {
-                            // #if LOGGER >= WARN
+
                             LOGGER.warn("Invalid neighbor found on vertex %s", vertex);
-                            // #endif /* LOGGER >= WARN */
+
                             continue;
                         }
 
                         // don't allow access to the index chunk
                         if (ChunkID.getLocalID(neighbour) == 0) {
-                            // #if LOGGER >= WARN
+
                             LOGGER.warn("Neighbor id refers to index chunk 0x%X, vertex %s", neighbour, vertex);
-                            // #endif /* LOGGER >= WARN */
+
                             continue;
                         }
 
@@ -1311,9 +1311,9 @@ public class GraphAlgorithmBFSTask implements Task {
                                     try {
                                         m_networkService.sendMessage(msg);
                                     } catch (final NetworkException e) {
-                                        // #if LOGGER >= ERROR
+
                                         LOGGER.error("Sending vertex message to node 0x%X failed", neighborCreatorId);
-                                        // #endif /* LOGGER >= ERROR */
+
                                         if (m_abortBFSOnError) {
                                             m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
                                             return;
@@ -1366,9 +1366,9 @@ public class GraphAlgorithmBFSTask implements Task {
                                     try {
                                         m_networkService.sendMessage(msg);
                                     } catch (final NetworkException e) {
-                                        // #if LOGGER >= ERROR
+
                                         LOGGER.error("Sending vertex message to node 0x%X failed", neighborCreatorId);
-                                        // #endif /* LOGGER >= ERROR */
+
                                         if (m_abortBFSOnError) {
                                             m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
                                             return;

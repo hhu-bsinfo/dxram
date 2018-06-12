@@ -247,9 +247,9 @@ public final class CIDTable {
             m_cache[i] = new TranslationCache(10);
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("CIDTable: init success (page directory at: 0x%X)", m_addressTableDirectory);
-        // #endif /* LOGGER >= INFO */
+
     }
 
     /**

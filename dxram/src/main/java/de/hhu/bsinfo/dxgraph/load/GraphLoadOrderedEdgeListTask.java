@@ -123,9 +123,9 @@ public class GraphLoadOrderedEdgeListTask implements Task {
         long chunkIdPartitionIndex =
                 nameserviceService.getChunkID(GraphLoadPartitionIndexTask.MS_PART_INDEX_IDENT + m_ctx.getCtxData().getComputeGroupId(), 5000);
         if (chunkIdPartitionIndex == ChunkID.INVALID_ID) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Could not find partition index for current compute group %d", m_ctx.getCtxData().getComputeGroupId());
-            // #endif /* LOGGER >= ERROR */
+
             return -1;
         }
 
@@ -134,34 +134,34 @@ public class GraphLoadOrderedEdgeListTask implements Task {
 
         // get the index
         if (!temporaryStorageService.get(graphPartitionIndex)) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting partition index from temporary memory failed");
-            // #endif /* LOGGER >= ERROR */
+
             return -2;
         }
 
         OrderedEdgeList graphPartitionOel = setupOrderedEdgeListForCurrentSlave(m_path, graphPartitionIndex);
         if (graphPartitionOel == null) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Setting up graph partition for current slave failed");
-            // #endif /* LOGGER >= ERROR */
+
             return -3;
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Chunkservice status BEFORE load:\n%s", m_chunkService.getStatus());
-        // #endif /* LOGGER >= INFO */
+
 
         if (!loadGraphPartition(graphPartitionOel, graphPartitionIndex)) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Loading graph partition failed");
-            // #endif /* LOGGER >= ERROR */
+
             return -4;
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Chunkservice status AFTER load:\n%s", m_chunkService.getStatus());
-        // #endif /* LOGGER >= INFO */
+
 
         return 0;
     }
@@ -215,16 +215,16 @@ public class GraphLoadOrderedEdgeListTask implements Task {
         // check if directory exists
         File tmpFile = new File(p_path);
         if (!tmpFile.exists()) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot setup edge lists, path does not exist: %s", p_path);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
         if (!tmpFile.isDirectory()) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot setup edge lists, path is not a directory: %s", p_path);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
@@ -243,9 +243,9 @@ public class GraphLoadOrderedEdgeListTask implements Task {
         });
 
         // add filtered files
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Setting up oel for current slave, iterating files in %s", p_path);
-        // #endif /* LOGGER >= DEBUG */
+
 
         for (File file : files) {
             long startOffset = p_graphPartitionIndex.getPartitionIndex(m_ctx.getCtxData().getSlaveId()).getFileStartOffset();
@@ -258,9 +258,9 @@ public class GraphLoadOrderedEdgeListTask implements Task {
                 endOffset = p_graphPartitionIndex.getPartitionIndex(m_ctx.getCtxData().getSlaveId() + 1).getFileStartOffset();
             }
 
-            // #if LOGGER >= INFO
+
             LOGGER.info("Partition for slave %dgraph data file: start %d, end %d", m_ctx.getCtxData().getSlaveId(), startOffset, endOffset);
-            // #endif /* LOGGER >= INFO */
+
 
             // get the first vertex id of the partition to load
             long startVertexId = 0;
@@ -293,9 +293,9 @@ public class GraphLoadOrderedEdgeListTask implements Task {
 
         GraphPartitionIndex.Entry currentPartitionIndexEntry = p_graphPartitionIndex.getPartitionIndex(m_ctx.getCtxData().getSlaveId());
         if (currentPartitionIndexEntry == null) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot load graph, missing partition index entry for partition %d", m_ctx.getCtxData().getSlaveId());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -304,10 +304,10 @@ public class GraphLoadOrderedEdgeListTask implements Task {
         long totalVerticesLoaded = 0;
         long totalEdgesLoaded = 0;
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Loading started, target vertex/edge count of partition %d: %d/%d", currentPartitionIndexEntry.getPartitionId(),
                 currentPartitionIndexEntry.getVertexCount(), currentPartitionIndexEntry.getEdgeCount());
-        // #endif /* LOGGER >= INFO */
+
 
         while (true) {
             readCount = 0;
@@ -322,18 +322,18 @@ public class GraphLoadOrderedEdgeListTask implements Task {
                 // also add current node ID
                 long[] neighbours = vertex.getNeighbours();
                 if (!p_graphPartitionIndex.rebaseGlobalVertexIdToLocalPartitionVertexId(neighbours)) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Rebasing of neighbors of %s failed, out of vertex id range of graph: %s", vertex, Arrays.toString(neighbours));
-                    // #endif /* LOGGER >= ERROR */
+
                 }
 
                 // for now: check if we exceed the max number of neighbors that fit into a chunk
                 // this needs to be changed later to split the neighbor list and have a linked list
                 // we don't get this very often, so there aren't any real performance issues
                 if (neighbours.length > 134217660) {
-                    // #if LOGGER >= WARNING
+
                     LOGGER.warn("Neighbor count of vertex %s exceeds total number of neighbors that fit into a " + "single vertex; will be truncated", vertex);
-                    // #endif /* LOGGER >= WARNING */
+
 
                     vertex.setNeighbourCount(134217660);
                 }
@@ -356,9 +356,9 @@ public class GraphLoadOrderedEdgeListTask implements Task {
 
             int count = m_chunkService.put((DataStructure[]) vertexBuffer);
             if (count != readCount) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Putting vertex data for chunks failed: %d != %d", count, readCount);
-                // #endif /* LOGGER >= ERROR */
+
                 // return false;
             }
 
@@ -367,29 +367,29 @@ public class GraphLoadOrderedEdgeListTask implements Task {
             float curProgress = (float) totalVerticesLoaded / currentPartitionIndexEntry.getVertexCount();
             if (curProgress - previousProgress > 0.01) {
                 previousProgress = curProgress;
-                // #if LOGGER >= INFO
+
                 LOGGER.info("Loading progress: %d", (int) (curProgress * 100));
-                // #endif /* LOGGER >= INFO */
+
             }
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Loading done, vertex/edge count: %d/%d", totalVerticesLoaded, totalEdgesLoaded);
-        // #endif /* LOGGER >= INFO */
+
 
         // filtering removes edges, so this would always fail
         if (!m_filterSelfLoops && !m_filterDupEdges) {
             if (currentPartitionIndexEntry.getVertexCount() != totalVerticesLoaded || currentPartitionIndexEntry.getEdgeCount() != totalEdgesLoaded) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Loading failed, vertex/edge count (%d/%d) does not match data in graph partition " + "index (%d/%d)", totalVerticesLoaded,
                         totalEdgesLoaded, currentPartitionIndexEntry.getVertexCount(), currentPartitionIndexEntry.getEdgeCount());
-                // #endif /* LOGGER >= ERROR */
+
                 return false;
             }
         } else {
-            // #if LOGGER >= INFO
+
             LOGGER.info("Graph was filtered during loadin: duplicate edges %b, self loops %b", m_filterDupEdges, m_filterSelfLoops);
-            // #endif /* LOGGER >= INFO */
+
         }
 
         return true;

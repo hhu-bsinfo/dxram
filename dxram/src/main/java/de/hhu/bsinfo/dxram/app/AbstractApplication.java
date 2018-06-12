@@ -79,21 +79,21 @@ public abstract class AbstractApplication extends Thread {
     public void run() {
         setName(getApplicationName());
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Starting '%s'...", getName());
-        // #endif /* LOGGER >= INFO */
+
 
         try {
             main();
         } catch (final Exception e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.info("Exception in application", e);
-            // #endif /* LOGGER >= ERROR */
+
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("'%s' finished", getName());
-        // #endif /* LOGGER >= INFO */
+
     }
 
     /**

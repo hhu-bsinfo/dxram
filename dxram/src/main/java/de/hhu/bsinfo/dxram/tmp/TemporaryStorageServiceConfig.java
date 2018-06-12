@@ -45,30 +45,30 @@ public class TemporaryStorageServiceConfig extends AbstractDXRAMServiceConfig {
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (m_storageMaxNumEntries < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Invalid value m_storageMaxNumEntries: %d", m_storageMaxNumEntries);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         if (m_storageMaxNumEntries > STORAGE_MAX_NUM_ENTRIES_MAX) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Max m_storageMaxNumEntries: %d", m_storageMaxNumEntries);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         if (m_storageMaxSize.getBytes() < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Invalid value m_storageMaxSize: %d", m_storageMaxSize.getBytes());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         if (m_storageMaxSize.getBytes() > STORAGE_MAX_SIZE_MAX.getBytes()) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Max m_storageMaxSize: %s", STORAGE_MAX_SIZE_MAX);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 

@@ -65,6 +65,7 @@ import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.dxutils.ManifestHelper;
 import de.hhu.bsinfo.dxutils.NodeID;
+import picocli.CommandLine;
 
 /**
  * Main class/entry point for DXRAM.

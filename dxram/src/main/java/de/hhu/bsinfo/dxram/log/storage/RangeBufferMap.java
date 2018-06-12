@@ -220,9 +220,9 @@ public class RangeBufferMap {
         Object[] oldTable;
         Object[] newTable;
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Re-hashing (count:  %d)", m_count);
-        // #endif /* LOGGER == TRACE */
+
 
         oldCount = m_count;
         oldElementCapacity = m_elementCapacity;

@@ -69,9 +69,9 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
-        // #if LOGGER >= INFO
+
         LOGGER.info("Loading application %s", getConfig().getApplicationPath());
-        // #endif /* LOGGER >= INFO */
+
 
         File dir = new File(getConfig().getApplicationPath());
 
@@ -84,9 +84,9 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
                 }
             }
         } else {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Can't load applications from %s, no such directory", getConfig().getApplicationPath());
-            // #endif /* LOGGER >= WARN */
+
         }
 
         return true;
@@ -115,9 +115,9 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
         try {
             ucl = new URLClassLoader(new URL[] {p_jar.toURI().toURL()}, classLoader);
         } catch (final MalformedURLException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error(e);
-            // #endif /* LOGGER >= ERROR */
+
 
             return classes;
         }
@@ -127,9 +127,9 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
         try {
             jarFile = new JarInputStream(new FileInputStream(p_jar));
         } catch (final IOException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Opening jar %s failed: %s", p_jar.getAbsolutePath(), e.getMessage());
-            // #endif /* LOGGER >= ERROR */
+
 
             return classes;
         }
@@ -147,9 +147,9 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
                 Class<?> clazz = Class.forName(classname, true, ucl);
 
                 if (AbstractApplicationDependency.class.equals(clazz.getSuperclass())) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.info("Found Dependency Class: " + clazz.getName());
-                    // #endif /* LOGGER >= ERROR */
+
                     String[] dependencies = ((AbstractApplicationDependency) clazz.newInstance()).getDependency();
                     loadDeps(dependencies);
                 }
@@ -163,9 +163,9 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
         try {
             jarFile = new JarInputStream(new FileInputStream(p_jar));
         } catch (final IOException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Opening jar %s failed: %s", p_jar.getAbsolutePath(), e.getMessage());
-            // #endif /* LOGGER >= ERROR */
+
 
             return classes;
         }
@@ -183,9 +183,9 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
                 Class<?> clazz = Class.forName(classname, true, ucl);
 
                 if (AbstractApplication.class.equals(clazz.getSuperclass())) {
-                    // #if LOGGER >= INFO
+
                     LOGGER.info("Found application %s", clazz.getName());
-                    // #endif /* LOGGER >= INFO */
+
 
                     // check for default constructor
                     clazz.getConstructor();
@@ -193,14 +193,14 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
                     classes.add((Class<? extends AbstractApplication>) clazz);
                 }
             } catch (final ClassNotFoundException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not find class %s in jar %s", classname, p_jar.getAbsolutePath());
-                // #endif /* LOGGER >= ERROR */
+
             } catch (final NoSuchMethodException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not load class %s in jar %s, missing default constructor", classname,
                         p_jar.getAbsolutePath());
-                // #endif /* LOGGER >= ERROR */
+
             }
         }
 
@@ -223,13 +223,13 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
                 Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
                 method.setAccessible(true);
                 method.invoke(loader, url);
-                // #if LOGGER >= INFO
+
                 LOGGER.info("Load dependency %s", dep);
-                // #endif /* LOGGER >= INFO */
+
             } catch (final NoSuchMethodException | IllegalAccessException | MalformedURLException | InvocationTargetException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not load dependency %s", dep, e);
-                // #endif /* LOGGER >= ERROR */
+
             }
         }
     }
@@ -240,9 +240,9 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
         try {
             jarEntry = p_jarFile.getNextJarEntry();
         } catch (final IOException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting next jar entry from %s failed: %s", p_jar.getAbsolutePath(), e.getMessage());
-            // #endif /* LOGGER >= ERROR */
+
         }
 
         if (jarEntry == null) {

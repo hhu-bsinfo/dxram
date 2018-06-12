@@ -44,9 +44,9 @@ public final class DXRAMJNIManager {
      *         the module to load.
      */
     public static void loadJNIModule(final String p_module) {
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Setting up JNI class for %s", p_module);
-        // #endif /* LOGGER >= DEBUG */
+
 
         String path;
         final String cwd = System.getProperty("user.dir");
@@ -57,18 +57,18 @@ public final class DXRAMJNIManager {
         } else if (OSValidator.isMac()) {
             extension = ".dylib";
         } else {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Non supported OS");
-            // #endif /* LOGGER >= ERROR */
+
             return;
         }
 
         // Load JNI-lib for given module
         path = cwd + '/' + ms_jniPath + "/lib" + p_module + extension;
 
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Loading %s: %s", p_module, path);
-        // #endif /* LOGGER >= DEBUG */
+
 
         System.load(path);
     }

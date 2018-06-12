@@ -98,9 +98,9 @@ public class GraphLoadBFSRootListTask implements Task {
             long chunkIdPartitionIndex =
                     nameserviceService.getChunkID(GraphLoadPartitionIndexTask.MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId(), 5000);
             if (chunkIdPartitionIndex == ChunkID.INVALID_ID) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not find partition index for current compute group %d", p_ctx.getCtxData().getComputeGroupId());
-                // #endif /* LOGGER >= ERROR */
+
                 return -1;
             }
 
@@ -109,25 +109,25 @@ public class GraphLoadBFSRootListTask implements Task {
 
             // get the index
             if (!temporaryStorageService.get(graphPartitionIndex)) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Getting partition index from temporary memory failed");
-                // #endif /* LOGGER >= ERROR */
+
                 return -2;
             }
 
             OrderedEdgeListRoots orderedEdgeListRoots = setupOrderedEdgeListRoots(m_path);
             if (orderedEdgeListRoots == null) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Setting up ordered edge list roots failed");
-                // #endif /* LOGGER >= ERROR */
+
                 return -3;
             }
 
             GraphRootList rootList = loadRootList(orderedEdgeListRoots, graphPartitionIndex);
             if (rootList == null) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Loading root list failed");
-                // #endif /* LOGGER >= ERROR */
+
                 return -4;
             }
 
@@ -135,26 +135,26 @@ public class GraphLoadBFSRootListTask implements Task {
 
             // store the root list for our current compute group
             if (!temporaryStorageService.create(rootList)) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Creating chunk for root list failed");
-                // #endif /* LOGGER >= ERROR */
+
                 return -5;
             }
 
             if (!temporaryStorageService.put(rootList)) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Putting root list failed");
-                // #endif /* LOGGER >= ERROR */
+
                 return -6;
             }
 
             // register chunk at nameservice that other slaves can find it
             nameserviceService.register(rootList, MS_BFS_ROOTS + p_ctx.getCtxData().getComputeGroupId());
 
-            // #if LOGGER >= INFO
+
             LOGGER.info("Successfully loaded and stored root list, nameservice entry name %s:\n%s", MS_BFS_ROOTS + p_ctx.getCtxData().getComputeGroupId(),
                     rootList);
-            // #endif /* LOGGER >= INFO */
+
         }
 
         return 0;
@@ -198,16 +198,16 @@ public class GraphLoadBFSRootListTask implements Task {
         // check if directory exists
         File tmpFile = new File(p_path);
         if (!tmpFile.exists()) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot setup order ededge list roots, path does not exist: %s", p_path);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
         if (!tmpFile.isDirectory()) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot setup ordered edge list roots, path is not a directory: %s", p_path);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
@@ -227,15 +227,15 @@ public class GraphLoadBFSRootListTask implements Task {
         });
 
         // add filtered files
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Setting up root oel, iterating files in %s", p_path);
-        // #endif /* LOGGER >= DEBUG */
+
 
         if (files != null) {
             for (File file : files) {
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Found root list: %s", file);
-                // #endif /* LOGGER >= DEBUG */
+
 
                 orderedEdgeListRoots = new OrderedEdgeListRootsBinaryFile(file.getAbsolutePath());
                 break;

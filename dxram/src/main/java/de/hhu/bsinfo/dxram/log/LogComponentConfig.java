@@ -180,11 +180,11 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
                 m_logSegmentSize.getBytes() <= m_flashPageSize.getBytes() ||
                 m_secondaryLogBufferSize.getBytes() % m_flashPageSize.getBytes() != 0 ||
                 m_secondaryLogBufferSize.getBytes() <= m_flashPageSize.getBytes()) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error(
                     "Primary log size, secondary log size, write buffer size, log segment size and secondary log buffer size " +
                             "must be a multiple (integer) of and greater than flash page size");
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
@@ -194,31 +194,31 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
                 secondaryLogSize <= m_logSegmentSize.getBytes() ||
                 m_writeBufferSize.getBytes() % m_logSegmentSize.getBytes() != 0 ||
                 m_writeBufferSize.getBytes() <= m_logSegmentSize.getBytes()) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error(
                     "Primary log size, secondary log size and write buffer size must be a multiple (integer) of and greater than segment size");
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         if (m_secondaryLogBufferSize.getBytes() > m_logSegmentSize.getBytes()) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Secondary log buffer size must not exceed segment size!");
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         if (m_utilizationPromptReorganization <= 50) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Reorganization threshold is < 50. Reorganization is triggered continuously!");
-            // #endif /* LOGGER >= WARN */
+
             return true;
         }
 
         if (!m_useTimestamps && m_coldDataThresholdInSec != COLD_DATA_THRESHOLD) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Cold data threshold was modified, but timestamps are disabled!");
-            // #endif /* LOGGER >= WARN */
+
         }
 
         if (secondaryLogSize <
@@ -226,9 +226,9 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
                         .getBytes() || m_writeBufferSize.getBytes() <
                 p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize()
                         .getBytes()) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Secondary log and write buffer size must be greater than the max size of a chunk");
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 

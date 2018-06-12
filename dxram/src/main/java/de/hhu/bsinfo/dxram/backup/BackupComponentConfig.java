@@ -118,9 +118,9 @@ public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
     protected boolean verify(final DXRAMContext.Config p_config) {
 
         if (m_replicationFactor < 1 || m_replicationFactor > 4) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Replication factor must be in [1, 4]!");
-            // #endif /* LOGGER >= ERROR */
+
 
             return false;
         }

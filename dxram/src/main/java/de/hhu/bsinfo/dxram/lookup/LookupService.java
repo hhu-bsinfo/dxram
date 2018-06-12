@@ -212,9 +212,9 @@ public class LookupService extends AbstractDXRAMService<LookupServiceConfig> imp
         try {
             m_network.sendMessage(new GetLookupTreeResponse(p_message, tree));
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Could not acknowledge initilization of backup range: %s", e);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 

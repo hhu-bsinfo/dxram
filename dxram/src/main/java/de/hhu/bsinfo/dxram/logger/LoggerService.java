@@ -165,9 +165,9 @@ public class LoggerService extends AbstractDXRAMService<LoggerServiceConfig> imp
             try {
                 m_network.sendMessage(message);
             } catch (final NetworkException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Setting log level of node 0x%X failed: %s", p_nodeId, e);
-                // #endif /* LOGGER >= ERROR */
+
             }
         }
     }

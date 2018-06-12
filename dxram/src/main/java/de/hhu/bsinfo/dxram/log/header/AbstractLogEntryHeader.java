@@ -182,11 +182,11 @@ public abstract class AbstractLogEntryHeader {
         int bits = (byte) (Integer.SIZE - Integer.numberOfLeadingZeros(p_length));
         ret = (byte) ((bits % 8 != 0 ? 1 : 0) + bits / 8);
 
-        // #if LOGGER >= ERROR
+
         if (ret > 3) {
             LOGGER.error("Log Entry too large!");
         }
-        // #endif /* LOGGER >= ERROR */
+
 
         return ret;
     }
@@ -205,11 +205,11 @@ public abstract class AbstractLogEntryHeader {
             int bits = (byte) (Integer.SIZE - Integer.numberOfLeadingZeros(p_version));
             ret = (byte) ((bits % 8 != 0 ? 1 : 0) + bits / 8);
 
-            // #if LOGGER >= ERROR
+
             if (ret > 3) {
                 LOGGER.error("Log Entry version too high!");
             }
-            // #endif /* LOGGER >= ERROR */
+
         }
 
         return ret;
@@ -307,9 +307,9 @@ public abstract class AbstractLogEntryHeader {
                 lenOffset += 6;
                 break;
             default:
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("LocalID's length unknown!");
-                // #endif /* LOGGER >= ERROR */
+
                 break;
         }
 
@@ -327,9 +327,9 @@ public abstract class AbstractLogEntryHeader {
             if (ChecksumHandler.checksumsEnabled()) {
                 crcOffset += chainSize;
             } else {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("No checksum available!");
-                // #endif /* LOGGER >= ERROR */
+
                 crcOffset = -1;
             }
 
@@ -375,9 +375,9 @@ public abstract class AbstractLogEntryHeader {
                 lenOffset += 6;
                 break;
             default:
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("LocalID's length unknown!");
-                // #endif /* LOGGER >= ERROR */
+
                 break;
         }
 
@@ -460,9 +460,9 @@ public abstract class AbstractLogEntryHeader {
             offset = p_offset + getTSPOffset(p_type);
             ret = p_buffer.getInt(offset);
         } else {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("No timestamp available!");
-            // #endif /* LOGGER >= ERROR */
+
             ret = -1;
         }
 
@@ -545,9 +545,9 @@ public abstract class AbstractLogEntryHeader {
             offset = p_offset + getCHAOffset(p_type);
             ret = p_buffer.get(offset);
         } else {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Log entry is not chained!");
-            // #endif /* LOGGER >= ERROR */
+
             ret = -1;
         }
 
@@ -586,9 +586,9 @@ public abstract class AbstractLogEntryHeader {
             offset = p_offset + getCHAOffset(p_type) + 1;
             ret = p_buffer.get(offset);
         } else {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Log entry is not chained!");
-            // #endif /* LOGGER >= ERROR */
+
             ret = -1;
         }
 
@@ -627,9 +627,9 @@ public abstract class AbstractLogEntryHeader {
             offset = p_offset + getCRCOffset(p_type);
             ret = p_buffer.getInt(offset);
         } else {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("No checksum available!");
-            // #endif /* LOGGER >= ERROR */
+
             ret = -1;
         }
 
@@ -718,9 +718,9 @@ public abstract class AbstractLogEntryHeader {
                 ret += 6;
                 break;
             default:
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("LocalID's length unknown!");
-                // #endif /* LOGGER >= ERROR */
+
                 break;
         }
 
@@ -832,9 +832,9 @@ public abstract class AbstractLogEntryHeader {
         if (ChecksumHandler.checksumsEnabled()) {
             ret += chainSize;
         } else {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("No checksum available!");
-            // #endif /* LOGGER >= ERROR */
+
             ret = -1;
         }
 
@@ -884,9 +884,9 @@ public abstract class AbstractLogEntryHeader {
                 ret |= 3 << LID_LENGTH_SHFT;
                 break;
             default:
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Unknown LocalID!");
-                // #endif /* LOGGER >= ERROR */
+
                 break;
         }
 

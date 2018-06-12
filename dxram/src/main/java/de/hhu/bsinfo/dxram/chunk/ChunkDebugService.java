@@ -54,25 +54,25 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      *         File to dump memory to
      */
     public void dumpChunkMemory(final String p_fileName) {
-        // #if LOGGER >= INFO
+
         LOGGER.info("Dumping chunk memory to %s, wait", p_fileName);
-        // #endif /* LOGGER >= INFO */
+
 
         try {
             m_memoryManager.lockManage();
 
-            // #if LOGGER >= INFO
+
             LOGGER.info("Dumping chunk memory to %s...", p_fileName);
-            // #endif /* LOGGER >= INFO */
+
 
             m_memoryManager.dumpMemory(p_fileName);
         } finally {
             m_memoryManager.unlockManage();
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Dumping chunk memory to %s, done", p_fileName);
-        // #endif /* LOGGER >= INFO */
+
     }
 
     /**
@@ -83,24 +83,24 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      * @return True if dumping memory of remote peer successful, false on failure
      */
     public boolean dumpChunkMemory(final String p_fileName, final short p_remoteNodeId) {
-        // #if LOGGER >= INFO
+
         LOGGER.info("Dumping remote chunk memory of 0x%X to %s...", p_remoteNodeId, p_fileName);
-        // #endif /* LOGGER >= INFO */
+
 
         DumpMemoryMessage message = new DumpMemoryMessage(p_remoteNodeId, p_fileName);
 
         try {
             m_network.sendMessage(message);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending request to dump memory of node 0x%X failed: %s", p_remoteNodeId, e);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Triggered async chunk memory dump to %s", p_fileName);
-        // #endif /* LOGGER >= INFO */
+
 
         return true;
     }
@@ -111,9 +111,9 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      * not properly reset anything involved in the backup or nameservice
      */
     public void resetMemory() {
-        // #if LOGGER >= WARN
+
         LOGGER.warn("FULL chunk memory reset/wipe...");
-        // #endif /* LOGGER >= WARN */
+
 
         m_memoryManager.lockManage();
         m_memoryManager.reset();
@@ -123,9 +123,9 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
 
         // don't unlock after the reset because the lock is also reset'd
 
-        // #if LOGGER >= WARN
+
         LOGGER.warn("Resetting chunk memory finished. Backup and nameservice are NOW BROKEN because they were not involved in this reset process");
-        // #endif /* LOGGER >= WARN */
+
     }
 
     /**
@@ -137,30 +137,30 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      *         Remote peer to reset the memory of
      */
     public void resetMemory(final short p_nodeId) {
-        // #if LOGGER >= INFO
+
         LOGGER.info("Resetting remote chunk memory of 0x%X ", p_nodeId);
-        // #endif /* LOGGER >= INFO */
+
 
         ResetMemoryMessage message = new ResetMemoryMessage(p_nodeId);
 
         try {
             m_network.sendMessage(message);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending request to reset memory of node 0x%X failed: %s", p_nodeId, e);
-            // #endif /* LOGGER >= ERROR */
+
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Triggered async chunk memory reset");
-        // #endif /* LOGGER >= INFO */
+
     }
 
     @Override
     public void onIncomingMessage(final Message p_message) {
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
-        // #endif /* LOGGER == TRACE */
+
 
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
@@ -177,9 +177,9 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
             }
         }
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting incomingMessage");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     @Override
@@ -239,27 +239,27 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      *         Message to handle
      */
     private void incomingDumpMemoryMessage(final DumpMemoryMessage p_message) {
-        // #if LOGGER >= INFO
+
         LOGGER.info("Async dumping chunk memory to %s, (remote req 0x%X)", p_message.getFileName(), p_message.getSource());
-        // #endif /* LOGGER >= INFO */
+
 
         // don't block message handler, this might take a few seconds depending on the memory size
         new Thread(() -> {
             try {
                 m_memoryManager.lockManage();
 
-                // #if LOGGER >= INFO
+
                 LOGGER.info("Dumping chunk memory to %s...", p_message.getFileName());
-                // #endif /* LOGGER >= INFO */
+
 
                 m_memoryManager.dumpMemory(p_message.getFileName());
             } finally {
                 m_memoryManager.unlockManage();
             }
 
-            // #if LOGGER >= INFO
+
             LOGGER.info("Dumping chunk memory to %s, done", p_message.getFileName());
-            // #endif /* LOGGER >= INFO */
+
         }).start();
     }
 
@@ -270,9 +270,9 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      *         Message to handle
      */
     private void incomingResetMemoryMessage(final ResetMemoryMessage p_message) {
-        // #if LOGGER >= WARN
+
         LOGGER.warn("Remote memory reset from 0x%X...", p_message.getSource());
-        // #endif /* LOGGER >= WARN */
+
 
         // don't block message handler, this might take a few seconds depending on the memory size
         new Thread(this::resetMemory).start();

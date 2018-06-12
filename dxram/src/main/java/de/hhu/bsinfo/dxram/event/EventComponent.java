@@ -61,9 +61,9 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
         }
 
         listeners.add(p_listener);
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Registered listener %s for event %s", p_listener.getClass().getName(), p_class.getName());
-        // #endif /* LOGGER >= DEBUG */
+
     }
 
     /**
@@ -76,9 +76,9 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
      */
     @Override
     public <T extends AbstractEvent> void fireEvent(final T p_event) {
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Event fired: %s", p_event);
-        // #endif /* LOGGER == TRACE */
+
 
         ArrayList<EventListener<?>> listeners = m_eventListener.get(p_event.getClass().getName());
         if (listeners != null) {
@@ -105,9 +105,9 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
-        // #if LOGGER >= INFO
+
         LOGGER.info("EventExecutor: Initialising %d threads", getConfig().getThreadCount());
-        // #endif /* LOGGER >= INFO */
+
         m_executor = new TaskExecutor("EventExecutor", getConfig().getThreadCount());
 
         return true;
@@ -118,13 +118,13 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
         m_executor.shutdown();
         try {
             m_executor.awaitTermination();
-            // #if LOGGER >= INFO
+
             LOGGER.info("Shutdown of EventExecutor successful");
-            // #endif /* LOGGER >= INFO */
+
         } catch (final InterruptedException e) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Could not wait for event executor thread pool to finish. Interrupted");
-            // #endif /* LOGGER >= WARN */
+
         }
         m_executor = null;
 

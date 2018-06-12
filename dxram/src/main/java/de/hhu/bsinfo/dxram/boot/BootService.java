@@ -218,9 +218,9 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
                     try {
                         m_network.sendMessage(message);
                     } catch (final NetworkException e) {
-                        // #if LOGGER >= ERROR
+
                         LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(nodeId), e);
-                        // #endif /* LOGGER >= ERROR */
+
                         return false;
                     }
                 }
@@ -241,9 +241,9 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
                     try {
                         m_network.sendMessage(message);
                     } catch (final NetworkException e) {
-                        // #if LOGGER >= ERROR
+
                         LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(nodeId), e);
-                        // #endif /* LOGGER >= ERROR */
+
                         return false;
                     }
                 }
@@ -261,15 +261,15 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
                 try {
                     m_network.sendMessage(message);
                 } catch (final NetworkException e) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Shutting down node %s failed: %s", NodeID.toHexString(p_nodeID), e);
-                    // #endif /* LOGGER >= ERROR */
+
                     return false;
                 }
 
-                // #if LOGGER >= INFO
+
                 LOGGER.info("Sent remote shutdown to node %s", NodeID.toHexString(p_nodeID));
-                // #endif /* LOGGER >= INFO */
+
             }
         }
 
@@ -299,15 +299,15 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
         try {
             m_network.sendMessage(message);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Rebooting node %s failed: %s", NodeID.toHexString(p_nodeID), e);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Sent reboot message to node %s", NodeID.toHexString(p_nodeID));
-        // #endif /* LOGGER >= INFO */
+
 
         return true;
     }

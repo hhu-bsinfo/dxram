@@ -87,9 +87,9 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      *         Class to register for the specified ID.
      */
     public void registerJobType(final short p_typeID, final Class<? extends AbstractJob> p_clazz) {
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Registering job type %s for class %s", p_typeID, p_clazz);
-        // #endif /* LOGGER >= DEBUG */
+
 
         AbstractJob.registerType(p_typeID, p_clazz);
     }
@@ -162,9 +162,9 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
         try {
             m_network.sendMessage(message);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending push job queue message to node 0x%X failed: %s", p_nodeID, e);
-            // #endif /* LOGGER >= ERROR */
+
             jobId = JobID.INVALID_ID;
         }
 
@@ -209,9 +209,9 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
                 try {
                     m_network.sendSync(request);
                 } catch (final NetworkException e) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Sending get status request to wait for termination to 0x%X failed: %s", peer, e);
-                    // #endif /* LOGGER >= ERROR */
+
                     // abort here as well, as we do not know what happened exactly
                     return false;
                 }
@@ -241,9 +241,9 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
 
     @Override
     public void onIncomingMessage(final Message p_message) {
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
-        // #endif /* LOGGER == TRACE */
+
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.JOB_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
@@ -261,9 +261,9 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
                 }
             }
         }
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting incomingMessage");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     // --------------------------------------------------------------------------------------------
@@ -296,15 +296,15 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
                 try {
                     m_network.sendMessage(message);
                 } catch (final NetworkException e) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Triggering job event '%s' for job '%s' failed: %s", p_eventId, job.getJob(), e);
-                    // #endif /* LOGGER >= ERROR */
+
                 }
             }
         } else {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting stored callbacks from map for callback to job id '0x%X' failed", p_jobId);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 
@@ -392,9 +392,9 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
         m_remoteJobCallbackMap.put(job.getID(), new JobEventEntry(p_request.getCallbackJobEventBitMask(), job));
 
         if (!m_job.pushJob(job)) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Scheduling job %s failed", job);
-            // #endif /* LOGGER >= ERROR */
+
             m_remoteJobCallbackMap.remove(job.getID());
         }
 
@@ -418,9 +418,9 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
         try {
             m_network.sendMessage(response);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending StatusResponse for %s failed: %s", p_request, e);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 
@@ -462,16 +462,16 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
                 }
             } else {
                 // should not happen, because we registered for specific events, only
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Getting remote callback for unregistered event '%d' on job id '0x%X'",
                         p_message.getEventId(), p_message.getJobID());
-                // #endif /* LOGGER >= ERROR */
+
             }
         } else {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting stored callbacks from map for callback to job id '0x%X' failed",
                     p_message.getJobID());
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 

@@ -54,9 +54,9 @@ public class TerminalServerSession implements Runnable {
         TerminalLogin login = new TerminalLogin(m_session.getSessionId(), m_server.getNodeId(), m_server.getTerminalCommandList());
 
         if (!m_session.write(login)) {
-            // #if LOGGER == ERROR
+
             LOGGER.error("Sending login object failed");
-            // #endif /* LOGGER == ERROR */
+
 
             m_session.close();
             return;
@@ -83,9 +83,9 @@ public class TerminalServerSession implements Runnable {
                         break;
                     }
                 } else {
-                    // #if LOGGER == ERROR
+
                     LOGGER.error("Received invalid object", object);
-                    // #endif /* LOGGER == ERROR */
+
                 }
             } else {
                 try {

@@ -276,9 +276,9 @@ public final class OverlayHelper {
         short responsibleSuperpeer = NodeID.INVALID_ID;
         int index;
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering getResponsibleSuperpeer with: p_nodeID=0x%X", p_nodeID);
-        // #endif /* LOGGER == TRACE */
+
 
         if (!p_superpeers.isEmpty()) {
             index = Collections.binarySearch(p_superpeers, p_nodeID);
@@ -290,13 +290,13 @@ public final class OverlayHelper {
             }
             responsibleSuperpeer = p_superpeers.get(index);
         } else {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Do not know any other superpeer");
-            // #endif /* LOGGER >= WARN */
+
         }
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting getResponsibleSuperpeer");
-        // #endif /* LOGGER == TRACE */
+
 
         return responsibleSuperpeer;
     }

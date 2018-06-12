@@ -92,13 +92,13 @@ public class DXRAMContext {
      */
     boolean verifyConfigurationValuesComponents() {
         for (AbstractDXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
-            // #if LOGGER >= DEBUG
+
             LOGGER.debug("Verifying component configuration values of %s...", config.getClassName());
-            // #endif /* LOGGER >= DEBUG */
+
             if (!config.verify(m_config)) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Verifying component configuration values failed (%s)", config.getClassName());
-                // #endif /* LOGGER >= ERROR */
+
                 return false;
             }
         }
@@ -113,13 +113,13 @@ public class DXRAMContext {
      */
     boolean verifyConfigurationValuesServices() {
         for (AbstractDXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
-            // #if LOGGER >= DEBUG
+
             LOGGER.debug("Verifying service configuration values of %s...", config.getClassName());
-            // #endif /* LOGGER >= DEBUG */
+
             if (!config.verify(m_config)) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Verifying service configuration values failed (%s)", config.getClassName());
-                // #endif /* LOGGER >= ERROR */
+
                 return false;
             }
         }
@@ -146,10 +146,10 @@ public class DXRAMContext {
                 if (p_nodeRole == NodeRole.SUPERPEER && comp.supportsSuperpeer() || p_nodeRole == NodeRole.PEER && comp.supportsPeer()) {
                     m_components.put(comp.getClass().getSimpleName(), comp);
                 } else {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Creating instance of component '%s' not possible on current node type '%s', not supported", comp.getComponentName(),
                             p_nodeRole);
-                    // #endif /* LOGGER >= ERROR */
+
                 }
             }
         }
@@ -174,9 +174,9 @@ public class DXRAMContext {
                 if (p_nodeRole == NodeRole.SUPERPEER && serv.supportsSuperpeer() || p_nodeRole == NodeRole.PEER && serv.supportsPeer()) {
                     m_services.put(serv.getClass().getSimpleName(), serv);
                 } else {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Creating instance of service '%s' not possible on current node type '%s', not supported", serv.getServiceName(), p_nodeRole);
-                    // #endif /* LOGGER >= ERROR */
+
                 }
             }
         }

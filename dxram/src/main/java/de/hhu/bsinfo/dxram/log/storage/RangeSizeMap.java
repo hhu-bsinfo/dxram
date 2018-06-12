@@ -229,9 +229,9 @@ public class RangeSizeMap {
         int[] oldTable;
         int[] newTable;
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Re-hashing (count:  %d)", m_count);
-        // #endif /* LOGGER == TRACE */
+
 
         oldCount = m_count;
         oldElementCapacity = m_elementCapacity;

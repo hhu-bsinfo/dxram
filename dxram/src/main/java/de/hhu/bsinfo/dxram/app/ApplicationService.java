@@ -56,9 +56,9 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
 
         m_applications = new ArrayList<>();
 
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Loading %d applications...", applicationClasses.size());
-        // #endif /* LOGGER >= DEBUG */
+
 
         DXRAMVersion curVersion = getParentEngine().getVersion();
 
@@ -78,18 +78,18 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
                 try {
                     app = appClass.newInstance();
                 } catch (IllegalAccessException | InstantiationException e) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Creating instance of application class %s failed: %s", appClass.getName(), e.getMessage());
-                    // #endif /* LOGGER >= ERROR */
+
 
                     continue;
                 }
 
                 // generate configuration file
                 if (app.useConfigurationFile()) {
-                    // #if LOGGER >= DEBUG
+
                     LOGGER.debug("Missing config for application '%s', creating...", app.getName());
-                    // #endif /* LOGGER >= DEBUG */
+
 
                     if (!createDefaultConfiguration(app, configFile.getAbsolutePath())) {
                         continue;
@@ -98,9 +98,9 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
             }
 
             if (!app.isEnabled()) {
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Application '%s' disabled", app.getApplicationName());
-                // #endif /* LOGGER >= DEBUG */
+
 
                 continue;
             }
@@ -109,18 +109,18 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
             DXRAMVersion version = app.getBuiltAgainstVersion();
 
             if (version.getMajor() < curVersion.getMajor()) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Cannot load application '%s', major version (%s) not matching current DXRAM version (%s), update your application and ensure " +
                         "compatibility with the current DXRAM version", app.getName(), version, curVersion);
-                // #endif /* LOGGER >= ERROR */
+
                 continue;
             }
 
             if (version.getMinor() < curVersion.getMinor()) {
-                // #if LOGGER >= WARN
+
                 LOGGER.warn("Application '%s' built against DXRAM version %s, current version %s. Your application might need minor updating to ensure full " +
                         "compatibility with the current version.", app.getName(), version, curVersion);
-                // #endif /* LOGGER >= WARN */
+
             }
 
             app.setEngine(getParentEngine());
@@ -133,18 +133,18 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
 
     @Override
     protected boolean shutdownService() {
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Shutting down all running applications (%d)...", m_applications.size());
-        // #endif /* LOGGER >= DEBUG */
+
 
         for (AbstractApplication app : m_applications) {
             app.signalShutdown();
         }
 
         for (AbstractApplication app : m_applications) {
-            // #if LOGGER >= DEBUG
+
             LOGGER.debug("Waiting for application '%s' to finish shutdown...", app.getApplicationName());
-            // #endif /* LOGGER >= DEBUG */
+
 
             try {
                 app.join();
@@ -152,9 +152,9 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
 
             }
 
-            // #if LOGGER >= INFO
+
             LOGGER.debug("Application '%s' shut down", app.getApplicationName());
-            // #endif /* LOGGER >= INFO */
+
         }
 
         m_applications.clear();
@@ -188,9 +188,9 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     private AbstractApplication loadFromConfiguration(Class<? extends AbstractApplication> p_appClass, final String p_configFilePath) {
         AbstractApplication app;
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Loading configuration '%s'...", p_configFilePath);
-        // #endif /* LOGGER >= INFO */
+
 
         Gson gson = ApplicationGsonContext.createGsonInstance(p_appClass);
 
@@ -198,18 +198,18 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
         try {
             element = gson.fromJson(new String(Files.readAllBytes(Paths.get(p_configFilePath))), JsonElement.class);
         } catch (final Exception e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Could not load configuration '%s': %s", p_configFilePath, e.getMessage());
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
         try {
             app = gson.fromJson(element, AbstractApplication.class);
         } catch (final Exception e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Loading configuration '%s' failed: %s", p_configFilePath, e.getMessage());
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
@@ -229,24 +229,24 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
         File file = new File(p_configFilePath);
         if (file.exists()) {
             if (!file.delete()) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Deleting existing config file %s failed", file);
-                // #endif /* LOGGER >= ERROR */
+
                 return false;
             }
         }
 
         try {
             if (!file.createNewFile()) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Creating new config file %s failed", file);
-                // #endif /* LOGGER >= ERROR */
+
                 return false;
             }
         } catch (final IOException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Creating new config file %s failed: %s", file, e.getMessage());
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 

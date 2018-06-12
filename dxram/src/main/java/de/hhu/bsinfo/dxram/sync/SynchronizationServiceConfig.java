@@ -33,16 +33,16 @@ public class SynchronizationServiceConfig extends AbstractDXRAMServiceConfig {
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (m_maxBarriersPerSuperpeer < 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Invalid value m_maxBarriersPerSuperpeer: %d", m_maxBarriersPerSuperpeer);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         if (m_maxBarriersPerSuperpeer > MAX_BARRIERS_PER_SUPERPEER_MAX) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Max m_maxBarriersPerSuperpeer: %d", MAX_BARRIERS_PER_SUPERPEER_MAX);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 

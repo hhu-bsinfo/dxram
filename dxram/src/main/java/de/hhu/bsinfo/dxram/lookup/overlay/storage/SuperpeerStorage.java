@@ -99,9 +99,9 @@ public class SuperpeerStorage extends AbstractMetadata {
             currentData = new byte[size];
             data.get(currentData);
 
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Storing superpeer storage: %d <-> %d", id, size);
-            // #endif /* LOGGER == TRACE */
+
 
             create(id, size);
             put(id, currentData);
@@ -124,9 +124,9 @@ public class SuperpeerStorage extends AbstractMetadata {
         while (iter.hasNext()) {
             Map.Entry<Integer, byte[]> pair = iter.next();
 
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Including superpeer storage: %s <-> %d", pair.getKey(), pair.getValue().length);
-            // #endif /* LOGGER == TRACE */
+
 
             data.putInt(pair.getKey());
             data.putInt(pair.getValue().length);
@@ -155,9 +155,9 @@ public class SuperpeerStorage extends AbstractMetadata {
             currentData = pair.getValue();
 
             if (OverlayHelper.isHashInSuperpeerRange(CRC16.hash(id), p_bound1, p_bound2)) {
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Including superpeer storage: %d <-> %d", id, currentData.length);
-                // #endif /* LOGGER == TRACE */
+
 
                 data.putInt(id);
                 data.putInt(currentData.length);
@@ -180,9 +180,9 @@ public class SuperpeerStorage extends AbstractMetadata {
             id = iter.next().getKey();
 
             if (!OverlayHelper.isHashInSuperpeerRange(CRC16.hash(id), p_bound1, p_bound2)) {
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Removing superpeer storage: %d", id);
-                // #endif /* LOGGER == TRACE */
+
 
                 iter.remove();
                 ret++;

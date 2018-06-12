@@ -49,6 +49,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * Migration service providing migration of chunks.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
+ * @author Filip Krakowski, Filip.Krakowski@Uni-Duesseldorf.de, 12.06.2018
  */
 public class MigrationService extends AbstractDXRAMService<MigrationServiceConfig> implements MessageReceiver {
     // component dependencies
@@ -92,25 +93,25 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
 
             chunk = new DSByteArray(p_chunkID, data);
 
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Sending migration request to %s", p_target);
-            // #endif /* LOGGER == TRACE */
+
 
             MigrationRequest request = new MigrationRequest(p_target, chunk);
             try {
                 m_network.sendSync(request);
             } catch (final NetworkException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not migrate chunks");
-                // #endif /* LOGGER >= ERROR */
+
                 return false;
             }
 
             MigrationResponse response = (MigrationResponse) request.getResponse();
             if (response.getStatus() == -1) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not migrate chunks");
-                // #endif /* LOGGER >= ERROR */
+
                 return false;
             }
 
@@ -140,9 +141,9 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
             }
             ret = true;
         } else {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", p_chunkID);
-            // #endif /* LOGGER >= ERROR */
+
             ret = false;
         }
         m_migrationLock.unlock();
@@ -211,23 +212,23 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
                             chunkIDs[counter++] = chunk.getID();
                             size += chunk.sizeofObject();
                         } else {
-                            // #if LOGGER >= ERROR
+
                             LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", iter);
-                            // #endif /* LOGGER >= ERROR */
+
                         }
                         iter++;
                     }
                     m_memoryManager.unlockAccess();
 
-                    // #if LOGGER >= INFO
+
                     LOGGER.info("Sending %d Chunks (%d Bytes) to 0x%X", counter, size, p_target);
-                    // #endif /* LOGGER >= INFO */
+
                     try {
                         m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter)));
                     } catch (final NetworkException e) {
-                        // #if LOGGER >= ERROR
+
                         LOGGER.error("Could not migrate chunks");
-                        // #endif /* LOGGER >= ERROR */
+
                     }
 
                     if (iter > p_endChunkID) {
@@ -267,22 +268,22 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
                 }
                 ret = true;
             } else {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Chunks could not be migrated because end of range is before start of range");
-                // #endif /* LOGGER >= ERROR */
+
                 ret = false;
             }
         } else {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Chunks could not be migrated");
-            // #endif /* LOGGER >= ERROR */
+
             ret = false;
         }
         m_migrationLock.unlock();
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("All chunks migrated");
-        // #endif /* LOGGER >= INFO */
+
 
         return ret;
     }
@@ -416,9 +417,9 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
             boolean success = migrate(p_message.getChunkID(), p_message.getTargetNode());
 
             if (!success) {
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Failure! Could not migrate chunk 0x%X to node 0x%X", p_message.getChunkID(), p_message.getTargetNode());
-                // #endif /* LOGGER == TRACE */
+
             }
         };
         new Thread(task).start();

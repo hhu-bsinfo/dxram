@@ -118,9 +118,9 @@ public final class BufferPool {
                     m_posFrontLarge++;
                     return ret;
                 } else {
-                    // #if LOGGER >= DEBUG
+
                     LOGGER.debug("Insufficient pooled large buffers. Trying medium buffer pool.");
-                    // #endif /* LOGGER >= DEBUG */
+
 
                     fallThrough = true;
                 }
@@ -134,9 +134,9 @@ public final class BufferPool {
                     m_posFrontMedium++;
                     return ret;
                 } else {
-                    // #if LOGGER >= DEBUG
+
                     LOGGER.debug("Insufficient pooled medium buffers. Trying small buffer pool.");
-                    // #endif /* LOGGER >= DEBUG */
+
                 }
             }
 
@@ -147,9 +147,9 @@ public final class BufferPool {
                 m_posFrontSmall++;
                 return ret;
             } else {
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Insufficient pooled small buffers. Retrying after sleeping shortly.");
-                // #endif /* LOGGER >= DEBUG */
+
 
                 LockSupport.parkNanos(1000);
             }
@@ -251,8 +251,8 @@ public final class BufferPool {
             }
         }
 
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Buffer could not be returned! Size: %d", p_directBufferWrapper.getBuffer().capacity());
-        // #endif /* LOGGER >= DEBUG */
+
     }
 }

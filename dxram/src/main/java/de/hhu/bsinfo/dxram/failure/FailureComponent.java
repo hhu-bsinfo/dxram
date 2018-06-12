@@ -110,20 +110,20 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
                          * are ignored for given interval.
                          */
 
-                        // #if LOGGER == DEBUG
+
                         LOGGER.debug("ConnectionLostEvent triggered: 0x%X", nodeID);
-                        // #endif /* LOGGER == DEBUG */
+
 
                         try {
                             m_network.connectNode(nodeID);
 
-                            // #if LOGGER == DEBUG
+
                             LOGGER.debug("Re-connect successful, continuing");
-                            // #endif /* LOGGER == DEBUG */
+
                         } catch (final NetworkException e) {
-                            // #if LOGGER == DEBUG
+
                             LOGGER.debug("Node is unreachable. Initiating failure handling");
-                            // #endif /* LOGGER == DEBUG */
+
 
                             failureHandling(nodeID, false);
                         }
@@ -153,9 +153,9 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
                          * the same NodeID. All other ResponseDelayedEvents for given NodeID are ignored for given interval.
                          */
 
-                        // #if LOGGER == DEBUG
+
                         LOGGER.debug("ResponseDelayedEvent triggered: 0x%X. Sending default message and return.", nodeID);
-                        // #endif /* LOGGER == DEBUG */
+
 
                         try {
                             // Sending default message to detect connection failure. If the connection is broken, a ConnectionLostEvent will be triggered
@@ -294,10 +294,10 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
          */
 
         if (ownRole == NodeRole.SUPERPEER) {
-            // #if LOGGER >= DEBUG
+
             LOGGER.debug("********** ********** Node Failure ********** **********");
             LOGGER.debug("Remote detection: " + p_remoteDetect);
-            // #endif /* LOGGER >= DEBUG */
+
 
             // Restore superpeer overlay, cleanup ZooKeeper and/or initiate recovery
             responsible = m_lookup.superpeersNodeFailureHandling(p_nodeID, roleOfFailedNode);
@@ -305,13 +305,13 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
             if (responsible) {
                 // Failed node was either the predecessor superpeer or a peer this superpeer is responsible for
 
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Failed node was a %s, NodeID: 0x%X", roleOfFailedNode, p_nodeID);
-                // #endif /* LOGGER >= DEBUG */
+
             } else {
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Not responsible for failed node, NodeID: 0x%X", p_nodeID);
-                // #endif /* LOGGER >= DEBUG */
+
             }
         } else {
             // This is a peer
@@ -319,9 +319,9 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
                 if (!p_remoteDetect) {
                     short responsibleSuperpeer = m_lookup.getResponsibleSuperpeer(m_boot.getNodeID());
 
-                    // #if LOGGER >= DEBUG
+
                     LOGGER.debug("Detected failure of 0x%X. Informing own superpeer 0x%X.", p_nodeID, responsibleSuperpeer);
-                    // #endif /* LOGGER >= DEBUG */
+
 
                     // Notify superpeer
                     FailureRequest request = new FailureRequest(responsibleSuperpeer, p_nodeID);

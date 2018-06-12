@@ -217,25 +217,25 @@ public abstract class AbstractPlacementStrategy {
             }
 
             if (m_rackAware && racks.size() < m_replicationFactor) {
-                // #if LOGGER >= WARN
+
                 LOGGER.warn("Rack-awareness not applicable with %d racks in initial set of peers!", racks.size());
-                // #endif /* LOGGER >= WARN */
+
                 m_rackAware = false;
             } else if (m_rackAware && racks.size() <= 2 * m_replicationFactor) {
-                // #if LOGGER >= WARN
+
                 LOGGER.warn("Rack-awareness restricts replica placement with only %d racks in initial set of peers!", racks.size());
-                // #endif /* LOGGER >= WARN */
+
             }
 
             if (m_switchAware && switches.size() < m_replicationFactor) {
-                // #if LOGGER >= WARN
+
                 LOGGER.warn("Switch-awareness not applicable with %d switches in initial set of peers!", switches.size());
-                // #endif /* LOGGER >= WARN */
+
                 m_switchAware = false;
             } else if (m_switchAware && switches.size() <= 2 * m_replicationFactor) {
-                // #if LOGGER >= WARN
+
                 LOGGER.warn("Switch-awareness restricts replica placement with only %d switches in initial set of peers!", switches.size());
-                // #endif /* LOGGER >= WARN */
+
             }
         }
     }

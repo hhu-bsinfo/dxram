@@ -111,9 +111,9 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
     protected boolean verify(final DXRAMContext.Config p_config) {
 
         if (m_bitfieldSize.getBytes() < 2048 * 1024) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Bitfield size is rather small. Not all node IDs may be addressable because of high false positives rate!");
-            // #endif /* LOGGER >= WARN */
+
         }
 
         return true;

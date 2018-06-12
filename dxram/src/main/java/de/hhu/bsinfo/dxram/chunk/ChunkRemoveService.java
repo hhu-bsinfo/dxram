@@ -97,9 +97,9 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             return chunksRemoved;
         }
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("remove[dataStructures(%d) %s, ...]", p_chunkIDs.length, ChunkID.toHexString(p_chunkIDs[0]));
-        // #endif /* LOGGER == TRACE */
+
 
         // #ifdef STATISTICS
         SOP_REMOVE.add(p_chunkIDs.length);
@@ -174,9 +174,9 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                     chunksRemoved++;
                     m_backup.deregisterChunk(localChunks.get(i), size);
                 } else {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Removing chunk ID 0x%X failed, does not exist", localChunks.get(i));
-                    // #endif /* LOGGER >= ERROR */
+
                 }
             }
         } finally {
@@ -194,9 +194,9 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             try {
                 m_network.sendMessage(message);
             } catch (final NetworkException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Sending reuse chunk ID message to peer 0x%X failed: %s", peer, e);
-                // #endif /* LOGGER >= ERROR */
+
             }
         }
 
@@ -218,9 +218,9 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                             chunksRemoved++;
                             m_backup.deregisterChunk(localChunks.get(i), size);
                         } else {
-                            // #if LOGGER >= ERROR
+
                             LOGGER.error("Removing chunk ID 0x%X failed, does not exist", remoteChunks.get(i));
-                            // #endif /* LOGGER >= ERROR */
+
                         }
                     }
                 } finally {
@@ -232,9 +232,9 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                 try {
                     m_network.sendMessage(message);
                 } catch (final NetworkException e) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Sending chunk remove to peer 0x%X failed: %s", peer, e);
-                    // #endif /* LOGGER >= ERROR */
+
                     continue;
                 }
 
@@ -269,18 +269,18 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
         SOP_REMOVE_TIME.stop();
         // #endif /* STATISTICS */
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("remove[dataStructures(%d) 0x%X, ...] -> %d", p_chunkIDs.length, p_chunkIDs[0], chunksRemoved);
-        // #endif /* LOGGER == TRACE */
+
 
         return chunksRemoved;
     }
 
     @Override
     public void onIncomingMessage(final Message p_message) {
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
-        // #endif /* LOGGER == TRACE */
+
 
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
@@ -297,9 +297,9 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             }
         }
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Exiting incomingMessage");
-        // #endif /* LOGGER == TRACE */
+
     }
 
     @Override
@@ -353,9 +353,9 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
      */
     private void incomingRemoveMessage(final RemoveMessage p_message) {
         while (!m_remover.push(p_message.getChunkIDs())) {
-            // #if LOGGER == WARN
+
             LOGGER.warn("Remover queue full, delaying remove and retry...");
-            // #endif /* LOGGER == WARN */
+
 
             try {
                 Thread.sleep(50);
@@ -512,9 +512,9 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                 for (int i = 0; i < p_chunkIDs.length; i++) {
                     size = m_memoryManager.remove(p_chunkIDs[i], false);
                     if (size == -1) {
-                        // #if LOGGER >= ERROR
+
                         LOGGER.warn("Removing chunk 0x%X failed, does not exist", p_chunkIDs[i]);
-                        // #endif /* LOGGER >= ERROR */
+
                     } else {
                         m_backup.deregisterChunk(p_chunkIDs[i], size);
 
@@ -541,9 +541,9 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                 try {
                     m_network.sendMessage(message);
                 } catch (final NetworkException e) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Sending reuse chunk ID message to peer 0x%X failed: %s", peer, e);
-                    // #endif /* LOGGER >= ERROR */
+
                 }
             }
 

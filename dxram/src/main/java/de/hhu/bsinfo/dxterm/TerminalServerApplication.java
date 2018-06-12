@@ -141,9 +141,9 @@ public class TerminalServerApplication extends AbstractApplication implements Te
             m_socket = new ServerSocket(m_port);
             m_socket.setSoTimeout(1000);
         } catch (final IOException e) {
-            // #if LOGGER == ERROR
+
             LOGGER.error("Creating server socket failed", e);
-            // #endif /* LOGGER == ERROR */
+
             return;
         }
 
@@ -166,23 +166,23 @@ public class TerminalServerApplication extends AbstractApplication implements Te
                 // accept timeout, just continue
                 continue;
             } catch (final IOException e) {
-                // #if LOGGER == ERROR
+
                 LOGGER.error("Accepting client connection failed", e);
-                // #endif /* LOGGER == ERROR */
+
                 continue;
             }
 
-            // #if LOGGER == DEBUG
+
             LOGGER.debug("Accepted connection: %s", sock);
-            // #endif /* LOGGER == DEBUG */
+
 
             TerminalSession session;
             try {
                 session = new TerminalSession((byte) m_sessions.size(), sock, this);
             } catch (final TerminalException e) {
-                // #if LOGGER == ERROR
+
                 LOGGER.error("Creating terminal session failed", e);
-                // #endif /* LOGGER == ERROR */
+
 
                 try {
                     sock.close();
@@ -193,17 +193,17 @@ public class TerminalServerApplication extends AbstractApplication implements Te
                 continue;
             }
 
-            // #if LOGGER == INFO
+
             LOGGER.info("Created terminal client session: %s", session);
-            // #endif /* LOGGER == INFO */
+
 
             m_sessions.add(session);
             m_threadPool.submit(new TerminalServerSession(m_terminalServer, session, this));
 
             if (m_sessions.size() == m_maxSessions) {
-                // #if LOGGER == DEBUG
+
                 LOGGER.debug("Max session limit (%d) reached, further sessions won't be accepted", m_maxSessions);
-                // #endif /* LOGGER == DEBUG */
+
             }
         }
     }

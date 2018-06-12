@@ -334,9 +334,9 @@ public class DXGraph {
             LoggerService logger = getService(LoggerService.class);
             ChunkService chunkService = getService(ChunkService.class);
 
-            // #if LOGGER >= DEBUG
+
             LOGGER.debug("Starting BFS traversal at 0x%X", m_startVertexId);
-            // #endif /* LOGGER >= DEBUG */
+
 
             int depth = 0;
             ArrayList<Vertex> current = new ArrayList<>();

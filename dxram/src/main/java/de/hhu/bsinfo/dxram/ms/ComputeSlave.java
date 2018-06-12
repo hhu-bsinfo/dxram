@@ -158,9 +158,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
         try {
             m_network.sendMessage(new SignalMessage(m_masterNodeId, p_signal));
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending signal to master 0x%X failed: %s", m_masterNodeId, e);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 
@@ -168,18 +168,18 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      * Setup state of the slave. Connect to the master of the compute group assigend to.
      */
     private void stateSetup() {
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Setting up slave for compute group %d", m_computeGroupId);
-        // #endif /* LOGGER >= DEBUG */
+
 
         // bootstrap: get master node id from nameservice
         if (m_masterNodeId == NodeID.INVALID_ID) {
             long tmp = m_nameservice.getChunkID(m_nameserviceMasterNodeIdKey, 0);
             if (tmp == -1) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Setting up slave, cannot find nameservice entry for master node id for key %s of compute group %d", m_nameserviceMasterNodeIdKey,
                         m_computeGroupId);
-                // #endif /* LOGGER >= ERROR */
+
                 try {
                     Thread.sleep(1000);
                 } catch (final InterruptedException ignored) {
@@ -205,21 +205,21 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
                 } catch (final InterruptedException ignored) {
                 }
             } else {
-                // #if LOGGER >= INFO
+
                 LOGGER.info("Successfully joined compute group %d with master 0x%X", m_computeGroupId, m_masterNodeId);
-                // #endif /* LOGGER >= INFO */
+
 
                 m_masterExecutionBarrierId = response.getExecutionBarrierId();
                 m_state = State.STATE_IDLE;
 
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Entering idle state");
-                // #endif /* LOGGER >= DEBUG */
+
             }
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending join request to master 0x%X failed: %s", m_masterNodeId, e);
-            // #endif /* LOGGER >= ERROR */
+
             try {
                 Thread.sleep(1000);
             } catch (final InterruptedException ignored) {
@@ -241,9 +241,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             if (m_lastPingMs + m_pingIntervalMs < System.currentTimeMillis()) {
                 if (!m_boot.isNodeOnline(m_masterNodeId)) {
                     // master is gone, go back to sign on
-                    // #if LOGGER >= INFO
+
                     LOGGER.info("Master 0x%X went offline, logout", m_masterNodeId);
-                    // #endif /* LOGGER >= INFO */
+
 
                     m_masterNodeId = NodeID.INVALID_ID;
                     m_state = State.STATE_SETUP;
@@ -252,9 +252,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
                 m_lastPingMs = System.currentTimeMillis();
 
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Pinging master 0x%X: online", m_masterNodeId);
-                // #endif /* LOGGER == TRACE */
+
             }
 
             try {
@@ -268,9 +268,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      * Execute state. Execute the assigned task.
      */
     private void stateExecute() {
-        // #if LOGGER >= INFO
+
         LOGGER.info("Starting execution of task script %s", m_taskScript);
-        // #endif /* LOGGER >= INFO */
+
 
         m_executeTaskScriptLock.lock();
 
@@ -283,9 +283,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             }
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Execution finished, return code: %d", result);
-        // #endif /* LOGGER >= INFO */
+
 
         m_handleSignalLock.lock();
         m_taskScript = null;
@@ -300,9 +300,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
         // taking a different path in the task script thus taking longer to finish
         Long masterRetCode;
         do {
-            // #if LOGGER >= DEBUG
+
             LOGGER.debug("Final syncing with master 0x%X ...", m_masterNodeId);
-            // #endif /* LOGGER >= DEBUG */
+
 
             BarrierStatus barrierResult = m_lookup.barrierSignOn(m_masterExecutionBarrierId, result);
 
@@ -312,9 +312,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             }
         } while (masterRetCode != 0);
 
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Syncing done, entering idle state");
-        // #endif /* LOGGER >= DEBUG */
+
     }
 
     /**
@@ -322,9 +322,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      * of a single task statement of a task script
      */
     private void syncStepMaster() {
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Sync step with master 0x%X ...", m_masterNodeId);
-        // #endif /* LOGGER >= DEBUG */
+
 
         m_lookup.barrierSignOn(m_masterExecutionBarrierId, 1L << 32);
     }
@@ -345,9 +345,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             if (p_taskScriptNode instanceof TaskResultCondition) {
                 TaskResultCondition condition = (TaskResultCondition) p_taskScriptNode;
 
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Executing condition: %s", condition);
-                // #endif /* LOGGER >= DEBUG */
+
 
                 TaskScript script = condition.evaluate(result);
                 syncStepMaster();
@@ -361,9 +361,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             } else if (p_taskScriptNode instanceof Task) {
                 Task task = (Task) p_taskScriptNode;
 
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Executing task: %s", task);
-                // #endif /* LOGGER >= DEBUG */
+
 
                 try {
                     result = task.execute(new TaskContext(m_ctxData, this, getServiceAccessor()));
@@ -375,9 +375,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             } else if (p_taskScriptNode instanceof TaskResultSwitch) {
                 TaskResultSwitch resSwitch = (TaskResultSwitch) p_taskScriptNode;
 
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Executing switch: %s", resSwitch);
-                // #endif /* LOGGER >= DEBUG */
+
 
                 TaskScript script = resSwitch.evaluate(result);
                 syncStepMaster();
@@ -391,9 +391,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             } else if (p_taskScriptNode instanceof TaskAbort) {
                 TaskAbort abort = (TaskAbort) p_taskScriptNode;
 
-                // #if LOGGER >= DEBUG
+
                 LOGGER.debug("Executing abort: %s", abort);
-                // #endif /* LOGGER >= DEBUG */
+
 
                 System.out.printf("Aborting task script: %s\n", abort.getAbortMsg());
                 result = null;
@@ -435,9 +435,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
                 m_taskScript = taskScript;
             }
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending response for executing task to 0x%X failed: %s", p_message.getSource(), e);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 

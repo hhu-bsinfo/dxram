@@ -72,9 +72,9 @@ final class TaskExecutor {
         try {
             m_executor.execute(p_runnable);
         } catch (final RejectedExecutionException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error(e);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 

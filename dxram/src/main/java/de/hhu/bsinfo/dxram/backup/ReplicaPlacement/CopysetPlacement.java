@@ -78,9 +78,9 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
                     // Put the peer back and try again
                     p_availablePeers.add(currentPeer);
                     if (tries++ == 1000000) {
-                        // #if LOGGER >= WARN
+
                         LOGGER.warn("Unable to find enough copysets meeting the requirements. Fallback to random replication!");
-                        // #endif /* LOGGER >= WARN */
+
                         return false;
                     }
                     continue;
@@ -141,17 +141,17 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
         numberOfPeers = (short) p_availablePeers.size();
 
         if (numberOfPeers < m_replicationFactor) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Less than three peers for backup available. Replication will be incomplete!");
-            // #endif /* LOGGER >= WARN */
+
 
             return null;
         }
 
         if (numberOfPeers < m_replicationFactor * 2) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Less than six peers for backup available. Some peers may store more" + " than one backup range of a node!");
-            // #endif /* LOGGER >= WARN */
+
         }
 
         // Initialize Random with seed based on current backup peers to determine the same replacement on all peers
@@ -197,9 +197,9 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
         newBackupPeers = new BackupPeer[m_replicationFactor];
 
         if (numberOfPeers < m_replicationFactor) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Less than %d peers for backup available. Replication will be incomplete!", m_replicationFactor);
-            // #endif /* LOGGER >= WARN */
+
 
             insufficientPeers = true;
         }
@@ -223,10 +223,10 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
                         availablePeers.removeAll(m_usedBackupPeers);
                     } else {
                         // Not enough backup peers available to be picky
-                        // #if LOGGER >= WARN
+
                         LOGGER.warn("Insufficient peers available for disjunctive backup strategy." +
                                 " Backup peers might be used more than once as a first backup peer!");
-                        // #endif /* LOGGER >= WARN */
+
 
                         m_usedBackupPeers.clear();
                         availablePeers = p_availablePeers;

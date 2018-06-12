@@ -105,9 +105,9 @@ public class TerminalSession {
      * Close the session
      */
     public void close() {
-        // #if LOGGER == DEBUG
+
         LOGGER.debug("Closing session: %s", m_socket);
-        // #endif /* LOGGER == DEBUG */
+
 
         m_in = null;
         m_out = null;

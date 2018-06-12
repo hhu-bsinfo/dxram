@@ -33,16 +33,16 @@ public class JobWorkStealingComponentConfig extends AbstractDXRAMComponentConfig
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (m_numWorkers < 1) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Invalid value (%d) for m_numWorkers", m_numWorkers);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 
         if (m_numWorkers > NUM_WORKERS_MAX) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Max limit m_numWorkers: %d", NUM_WORKERS_MAX);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 

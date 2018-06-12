@@ -126,9 +126,9 @@ class VersionsBuffer {
                 }
                 m_versionsFile = new RandomAccessFile(file, "rw");
             } catch (final FileNotFoundException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not create versions file", e);
-                // #endif /* LOGGER >= ERROR */
+
             }
         } else if (m_mode == HarddriveAccessMode.ODIRECT) {
             try {
@@ -143,9 +143,9 @@ class VersionsBuffer {
                     throw new IOException("JNI Error: Could not create Version Buffer.");
                 }
             } catch (final IOException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not create versions file", e);
-                // #endif /* LOGGER >= ERROR */
+
             }
         } else {
             try {
@@ -155,9 +155,9 @@ class VersionsBuffer {
                     throw new IOException("JNI Error: Could not create Version Buffer.");
                 }
             } catch (final IOException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not create versions file", e);
-                // #endif /* LOGGER >= ERROR */
+
             }
         }
 
@@ -278,9 +278,9 @@ class VersionsBuffer {
             try {
                 return m_versionsFile.length();
             } catch (final IOException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could not read versions file's size", e);
-                // #endif /* LOGGER >= ERROR */
+
                 return -1;
             }
         } else if (m_mode == HarddriveAccessMode.ODIRECT) {
@@ -345,9 +345,9 @@ class VersionsBuffer {
         if (m_count == WAIT_THRESHOLD) {
             m_logComponent.flushDataToPrimaryLog();
 
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Could not transfer log entry to new eon as current epoch is full");
-            // #endif /* LOGGER >= WARN */
+
 
             return;
         }
@@ -484,9 +484,9 @@ class VersionsBuffer {
                     }
                 }
             } catch (final IOException e) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Could write to versions file", e);
-                // #endif /* LOGGER >= ERROR */
+
             }
         } else
 
@@ -692,9 +692,9 @@ class VersionsBuffer {
                 }
             }
         } catch (final IOException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Could not update versions file", e);
-            // #endif /* LOGGER >= ERROR */
+
         }
 
         return lowestCID;

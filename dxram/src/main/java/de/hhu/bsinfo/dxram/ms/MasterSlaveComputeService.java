@@ -152,9 +152,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
      */
     public StatusMaster getStatusMaster() {
         if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot get status on non master node type");
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
@@ -186,9 +186,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         {
             long tmp = m_nameservice.getChunkID(AbstractComputeMSBase.NAMESERVICE_ENTRY_IDENT + p_computeGroupId, 0);
             if (tmp == -1) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Cannot find master node of compute gropu id %d", p_computeGroupId);
-                // #endif /* LOGGER >= ERROR */
+
                 return null;
             }
             masterNodeId = ChunkID.getCreatorID(tmp);
@@ -199,17 +199,17 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         try {
             m_network.sendSync(request);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Getting status of master 0x%X failed: %s", masterNodeId, e);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
         GetMasterStatusResponse response = (GetMasterStatusResponse) request.getResponse();
         if (response.getStatus() != 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot get status on non master node 0x%X", masterNodeId);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
@@ -227,9 +227,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
      */
     public TaskScriptState submitTaskScript(final TaskScript p_taskScript, final TaskListener... p_listener) {
         if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot submit task %s on non master node type", p_taskScript);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
@@ -268,9 +268,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         {
             long tmp = m_nameservice.getChunkID(AbstractComputeMSBase.NAMESERVICE_ENTRY_IDENT + p_computeGroupId, 0);
             if (tmp == -1) {
-                // #if LOGGER >= ERROR
+
                 LOGGER.error("Cannot find master node of compute group id %d", p_computeGroupId);
-                // #endif /* LOGGER >= ERROR */
+
                 return null;
             }
             masterNodeId = ChunkID.getCreatorID(tmp);
@@ -281,17 +281,17 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         try {
             m_network.sendSync(request);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending submit task script request to node 0x%X failed: %s", masterNodeId, e);
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
         SubmitTaskResponse response = (SubmitTaskResponse) request.getResponse();
         if (response.getStatus() != 0) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Error submitting task script, code %d", response.getStatus());
-            // #endif /* LOGGER >= ERROR */
+
             return null;
         }
 
@@ -302,9 +302,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         state.registerTaskListener(p_listener);
         m_remoteTasks.put(state.getTaskScriptIdAssigned(), state);
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Submitted task to compute group %d with master node 0x%X: %s", p_computeGroupId, masterNodeId, p_taskScript);
-        // #endif /* LOGGER >= INFO */
+
 
         return state;
     }
@@ -318,9 +318,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         try {
             m_network.sendMessage(message);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending remote callback before execution to node %d failed", p_taskScriptState.getNodeIdSubmitted());
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 
@@ -334,9 +334,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         try {
             m_network.sendMessage(message);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending remote callback completed to node 0x%X failed", p_taskScriptState.getNodeIdSubmitted());
-            // #endif /* LOGGER >= ERROR */
+
         }
 
         // we don't have to remember this remote task anymore
@@ -427,9 +427,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
                 break;
         }
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Started compute node type '%s' with compute group id %d", getConfig().getRole(), getConfig().getComputeGroupId());
-        // #endif /* LOGGER >= INFO */
+
 
         return true;
     }
@@ -451,23 +451,23 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
     private void incomingSubmitTaskRequest(final SubmitTaskRequest p_request) {
         SubmitTaskResponse response;
 
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Incoming remote submit task script request %s", p_request);
-        // #endif /* LOGGER >= DEBUG */
+
 
         // check if we were able to create an instance (missing task class registration)
         if (p_request.getTaskScript() == null) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Creating instance for task script of request %s failed, most likely non registered task payload type", p_request);
-            // #endif /* LOGGER >= ERROR */
+
             response = new SubmitTaskResponse(p_request, (short) -1, -1, (byte) 3);
             return;
         }
 
         if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Cannot submit remote task script %s on non master node type", p_request.getTaskScript());
-            // #endif /* LOGGER >= ERROR */
+
 
             response = new SubmitTaskResponse(p_request, (short) -1, -1, (byte) 1);
         } else {
@@ -490,9 +490,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         try {
             m_network.sendMessage(response);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending response to submit task request to master %s failed", p_request);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 
@@ -516,9 +516,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         try {
             m_network.sendMessage(response);
         } catch (final NetworkException e) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Sending response to master status request %s failed", p_request);
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 

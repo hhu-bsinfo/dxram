@@ -134,9 +134,9 @@ public class PrimaryWriteBuffer {
         m_processThread.setName("Logging: Process Thread");
         m_processThread.start();
 
-        // #if LOGGER == TRACE
+
         LOGGER.trace("Initialized primary write buffer (%d)", m_writeBufferSize);
-        // #endif /* LOGGER == TRACE */
+
     }
 
     // Methods
@@ -471,14 +471,14 @@ public class PrimaryWriteBuffer {
                     flushedBytes =
                             bufferAndStore(p_primaryWriteBuffer, readPointer, bytesInWriteBuffer, lengthByBackupRange);
                 } catch (final IOException | InterruptedException e) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Could not flush data", e);
-                    // #endif /* LOGGER >= ERROR */
+
                 }
                 if (flushedBytes != bytesInWriteBuffer) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("Flush incomplete!");
-                    // #endif /* LOGGER >= ERROR */
+
                 }
             }
 

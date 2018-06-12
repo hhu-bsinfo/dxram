@@ -115,11 +115,11 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
         registerNetworkMessages();
         registerNetworkMessageListener();
 
-        // #if LOGGER >= WARN
+
         if (!m_backup.isActiveAndAvailableForBackup()) {
             LOGGER.warn("Backup is not activated/available. Recovery service will not work!");
         }
-        // #endif /* LOGGER >= WARN */
+
         m_backupDirectory = m_backup.getConfig().getBackupDirectory();
 
         m_recoveryLock = new ReentrantLock(false);
@@ -153,9 +153,9 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
             DataStructure[] chunks;
 
             if (!m_backup.isActiveAndAvailableForBackup()) {
-                // #if LOGGER >= WARN
+
                 LOGGER.warn("Backup is not activated. Cannot recover!");
-                // #endif /* LOGGER >= WARN */
+
             } else {
                 folderToScan = new File(m_backupDirectory);
                 listOfFiles = folderToScan.listFiles();
@@ -167,14 +167,14 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                             chunks = m_log.recoverBackupRangeFromFile(fileName, m_backupDirectory);
 
                             if (chunks == null) {
-                                // #if LOGGER >= ERROR
+
                                 LOGGER.error("Cannot recover Chunks! Trying next file.");
-                                // #endif /* LOGGER >= ERROR */
+
                                 continue;
                             }
-                            // #if LOGGER >= INFO
+
                             LOGGER.info("Retrieved %d Chunks from file", chunks.length);
-                            // #endif /* LOGGER >= INFO */
+
 
                             // Store recovered Chunks
                             //m_chunkBackup.putRecoveredChunks(chunks);
@@ -202,9 +202,9 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
             DataStructure[] chunks;
 
             if (!m_backup.isActiveAndAvailableForBackup()) {
-                // #if LOGGER >= WARN
+
                 LOGGER.warn("Backup is not activated. Cannot recover!");
-                // #endif /* LOGGER >= WARN */
+
             } else {
                 // Get list of all files in RAW device
                 files = JNIFileRaw.getFileList();
@@ -216,14 +216,14 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                         chunks = m_log.recoverBackupRangeFromFile(fileName, m_backupDirectory);
 
                         if (chunks == null) {
-                            // #if LOGGER >= ERROR
+
                             LOGGER.error("Cannot recover Chunks! Trying next file.");
-                            // #endif /* LOGGER >= ERROR */
+
                             continue;
                         }
-                        // #if LOGGER >= INFO
+
                         LOGGER.info("Retrieved %d Chunks from file", chunks.length);
-                        // #endif /* LOGGER >= INFO */
+
 
                         // Store recovered Chunks
                         //m_chunkBackup.putRecoveredChunks(chunks);
@@ -343,9 +343,9 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                 try {
                     m_network.sendMessage(new RecoverBackupRangeResponse(p_request, null, 0, null));
                 } catch (final NetworkException ignored) {
-                    // #if LOGGER >= ERROR
+
                     LOGGER.error("RecoverBackupRangeResponse could not be sent!");
-                    // #endif /* LOGGER >= ERROR */
+
                 }
             } else {
                 // Initialize backup ranges in backup, lookup and log modules by joining recovered chunks with migrated chunks

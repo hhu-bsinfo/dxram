@@ -61,14 +61,14 @@ public class TerminalServer {
      *         Terminal command to register
      */
     public void registerTerminalCommand(final AbstractTerminalCommand p_cmd) {
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Registering terminal command: %s", p_cmd.getName());
-        // #endif /* LOGGER >= DEBUG */
+
 
         if (m_commands.putIfAbsent(p_cmd.getName(), p_cmd) != null) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Registering command %s, class %s failed, name already used", p_cmd.getName(), p_cmd.getClass().getSimpleName());
-            // #endif /* LOGGER >= ERROR */
+
         }
     }
 

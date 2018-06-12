@@ -31,9 +31,9 @@ public class ChunkRemoveServiceConfig extends AbstractDXRAMServiceConfig {
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (m_removerQueueSize < 1) {
-            // #if LOGGER >= ERROR
+
             LOGGER.error("Invalid value (%d) for m_removerQueueSize", m_removerQueueSize);
-            // #endif /* LOGGER >= ERROR */
+
             return false;
         }
 

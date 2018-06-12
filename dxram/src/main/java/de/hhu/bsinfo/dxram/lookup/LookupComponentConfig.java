@@ -63,19 +63,19 @@ public class LookupComponentConfig extends AbstractDXRAMComponentConfig {
     protected boolean verify(final DXRAMContext.Config p_config) {
 
         if (m_cacheTtl.getMs() < 1000L) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("A high effort is needed to satisfy TTL!");
-            // #endif /* LOGGER >= WARN */
+
         }
 
         if (m_stabilizationBreakTime.getMs() < 100L) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Low break time might cause high CPU load!");
-            // #endif /* LOGGER >= WARN */
+
         } else if (m_stabilizationBreakTime.getMs() > 1000L) {
-            // #if LOGGER >= WARN
+
             LOGGER.warn("Failure detection might be impeded by high break time!");
-            // #endif /* LOGGER >= WARN */
+
         }
 
         return true;

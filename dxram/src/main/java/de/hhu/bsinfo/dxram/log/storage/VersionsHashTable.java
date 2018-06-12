@@ -234,9 +234,9 @@ class VersionsHashTable {
         newTable = new int[m_elementCapacity * 4];
         m_table = newTable;
 
-        // #if LOGGER == DEBUG
+
         LOGGER.debug("Reached threshold -> Rehashing. New size: %d... ", m_elementCapacity);
-        // #endif /* LOGGER == DEBUG */
+
 
         m_count = 0;
         while (index < oldElementCapacity) {
@@ -247,8 +247,8 @@ class VersionsHashTable {
         }
         m_count = oldCount;
 
-        // #if LOGGER == DEBUG
+
         LOGGER.debug("Done rehashing");
-        // #endif /* LOGGER == DEBUG */
+
     }
 }

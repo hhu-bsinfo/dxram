@@ -77,9 +77,9 @@ public class BarriersTable extends AbstractMetadata {
             barrierData = new long[m_maxNumBarriers][];
             barrierState = new short[m_maxNumBarriers][];
 
-            // #if LOGGER == TRACE
+
             LOGGER.trace("Storing barriers of 0x%X", nodeId);
-            // #endif /* LOGGER == TRACE */
+
 
             for (int i = 0; i < allSize; i++) {
                 size = data.getInt();
@@ -110,9 +110,9 @@ public class BarriersTable extends AbstractMetadata {
         for (int i = 0; i < m_barrierNodes.length; i++) {
             barrierNode = m_barrierNodes[i & 0xFFFF];
             if (barrierNode != null) {
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Including barriers of 0x%X", (short) i);
-                // #endif /* LOGGER == TRACE */
+
 
                 data.put(barrierNode.toByteArray());
             }
@@ -134,9 +134,9 @@ public class BarriersTable extends AbstractMetadata {
             if (OverlayHelper.isPeerInSuperpeerRange((short) i, p_bound1, p_bound2)) {
                 barrierNode = m_barrierNodes[i & 0xFFFF];
                 if (barrierNode != null) {
-                    // #if LOGGER == TRACE
+
                     LOGGER.trace("Including barriers of 0x%X", (short) i);
-                    // #endif /* LOGGER == TRACE */
+
 
                     currentData = barrierNode.toByteArray();
                     data.put(currentData);
@@ -163,9 +163,9 @@ public class BarriersTable extends AbstractMetadata {
                         break;
                     }
 
-                    // #if LOGGER == TRACE
+
                     LOGGER.trace("Removing barriers of 0x%X", (short) i);
-                    // #endif /* LOGGER == TRACE */
+
 
                     res = node.freeBarrier(counter++);
                     if (res != -1) {
@@ -644,9 +644,9 @@ public class BarriersTable extends AbstractMetadata {
             for (int i = 0; i < m_allocatedBarriersCount; i++) {
                 data.putInt(m_barrierData[i].length);
 
-                // #if LOGGER == TRACE
+
                 LOGGER.trace("Including barrier with id %d", i);
-                // #endif /* LOGGER == TRACE */
+
 
                 for (int j = 0; j < m_barrierData[i].length; j++) {
                     data.putLong(m_barrierData[i][j]);

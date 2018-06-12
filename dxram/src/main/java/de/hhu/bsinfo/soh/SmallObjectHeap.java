@@ -68,9 +68,9 @@ public final class SmallObjectHeap implements Importable, Exportable {
         m_status.m_size = p_size;
         m_status.m_maxBlockSize = p_maxBlockSize;
 
-        // #if LOGGER >= INFO
+
         LOGGER.info("Creating SmallObjectHeap, size %d bytes, max block size %d bytes", p_size, p_maxBlockSize);
-        // #endif /* LOGGER >= INFO */
+
 
         m_memory.allocate(p_size);
 
@@ -105,10 +105,10 @@ public final class SmallObjectHeap implements Importable, Exportable {
             m_freeBlockListSizes[i] = (long) Math.pow(2, i + 2);
         }
 
-        // #if LOGGER >= DEBUG
+
         LOGGER.debug("Created free block lists, m_freeBlocksListCount %d, m_freeBlocksListSize %d, m_baseFreeBlockList %d", m_freeBlocksListCount,
         m_freeBlocksListSize, m_baseFreeBlockList);
-        // #endif /* LOGGER >= DEBUG */
+
 
         // Create one big free block
         // -2 for the marker bytes
