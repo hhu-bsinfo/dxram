@@ -1,6 +1,9 @@
 package de.hhu.bsinfo.dxram.engine;
 
 import java.util.Arrays;
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * DXRAM version object
@@ -47,19 +50,19 @@ public class DXRAMVersion {
 
     public static final DXRAMVersion fromString(String p_version) {
 
-        if (p_version.contains("-")) {
+        Pattern pattern = Pattern.compile("^(\\d).(\\d).(\\d)(?:-\\w+)*$");
 
-            int index = p_version.indexOf('-');
+        Matcher matcher = pattern.matcher(p_version);
 
-            p_version = p_version.substring(0, index);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid version string");
         }
 
-        int[] components = Arrays.stream(p_version.split("."))
-                .mapToInt(Integer::valueOf)
-                .limit(3)
-                .toArray();
+        int major = Integer.valueOf(matcher.group(1));
+        int minor = Integer.valueOf(matcher.group(2));
+        int revision = Integer.valueOf(matcher.group(3));
 
-        return new DXRAMVersion(components[0], components[1], components[2]);
+        return new DXRAMVersion(major, minor, revision);
     }
 
     @Override
