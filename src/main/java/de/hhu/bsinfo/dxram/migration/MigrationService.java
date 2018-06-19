@@ -63,6 +63,8 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
 
     private Lock m_migrationLock;
 
+    private MigrationManager m_migrationManager = null;
+
     /**
      * Creates an instance of MigrationService
      */
@@ -71,13 +73,11 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
     }
 
     /**
-     * Migrates the corresponding Chunk for the giving ID to another Node
+     * Migrates a single chunk to another node.
      *
-     * @param p_chunkID
-     *         the ID
-     * @param p_target
-     *         the Node where to migrate the Chunk
-     * @return true=success, false=failed
+     * @param p_chunkID The chunk id.
+     * @param p_target The target's node id.
+     * @return true, if the chunk was migrated; false else
      */
     public boolean migrate(final long p_chunkID, final short p_target) {
         short[] backupPeers;
@@ -145,10 +145,9 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
     }
 
     /**
-     * Triggers a migrate call to the node a specified chunk
+     * Triggers a migrate call on the specified node.
      *
-     * @param p_chunkID
-     *         the ID
+     * @param p_chunkID The chunk id.
      * @param p_target
      *         the Node where to migrate the Chunk
      */
@@ -165,114 +164,86 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
     /**
      * Migrates the corresponding Chunks for the giving ID range to another Node
      *
-     * @param p_startChunkID
-     *         the first ID
-     * @param p_endChunkID
-     *         the last ID
-     * @param p_target
-     *         the Node where to migrate the Chunks
-     * @return true=success, false=failed
+     * @param p_startChunkID The first chunk id
+     * @param p_endChunkID The last chunk id
+     * @param p_target The target node
      */
-    public boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
-        long[] chunkIDs;
-        short[] backupPeers;
-        int counter;
-        int chunkSize;
-        long iter;
-        long size;
-        AbstractChunk chunk;
-        AbstractChunk[] chunks;
-        boolean ret;
+    public void migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
 
-        // TODO: Handle range properly
-
-        if (p_startChunkID <= p_endChunkID) {
-            chunkIDs = new long[(int) (p_endChunkID - p_startChunkID + 1)];
-            m_migrationLock.lock();
-            if (p_target != m_boot.getNodeId()) {
-                iter = p_startChunkID;
-                while (true) {
-                    // Send chunks to p_target
-                    chunks = new AbstractChunk[(int) (p_endChunkID - iter + 1)];
-                    counter = 0;
-                    size = 0;
-
-                    while (iter <= p_endChunkID) {
-                        if (m_chunk.getMemory().exists().exists(iter)) {
-                            chunk = m_chunk.getMemory().get().get(iter);
-
-                            chunks[counter] = chunk;
-                            chunkIDs[counter++] = chunk.getID();
-                            size += chunk.sizeofObject();
-                        } else {
-                            LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", iter);
-                        }
-
-                        iter++;
-                    }
-
-                    LOGGER.info("Sending %d Chunks (%d Bytes) to 0x%X", counter, size, p_target);
-
-                    try {
-                        m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter)));
-                    } catch (final NetworkException e) {
-                        LOGGER.error("Could not migrate chunks");
-                    }
-
-                    if (iter > p_endChunkID) {
-                        break;
-                    }
-                }
-
-                // Update superpeers
-                m_lookup.migrateRange(p_startChunkID, p_endChunkID, p_target);
-
-                if (m_backup.isActive()) {
-                    // Update logging
-                    backupPeers = m_backup.getArrayOfBackupPeersForLocalChunks(iter);
-                    if (backupPeers != null) {
-                        for (int i = 0; i < backupPeers.length; i++) {
-                            if (backupPeers[i] != m_boot.getNodeId() && backupPeers[i] != NodeID.INVALID_ID) {
-                                try {
-                                    m_network.sendMessage(new RemoveMessage(backupPeers[i], chunkIDs));
-                                } catch (final NetworkException ignored) {
-
-                                }
-                            }
-                        }
-                    }
-                }
-
-                iter = p_startChunkID;
-                while (iter <= p_endChunkID) {
-                    // TODO:
-                    // Remove all locks
-                    // m_lock.unlockAll(iter);
-
-                    // Update local memory management
-                    chunkSize = m_chunk.getMemory().remove().remove(iter, true);
-                    m_backup.deregisterChunk(iter, chunkSize);
-                    iter++;
-                }
-                ret = true;
-            } else {
-
-                LOGGER.error("Chunks could not be migrated because end of range is before start of range");
-
-                ret = false;
-            }
-        } else {
-
-            LOGGER.error("Chunks could not be migrated");
-
-            ret = false;
-        }
-        m_migrationLock.unlock();
-
-        LOGGER.info("All chunks migrated");
-
-        return ret;
+        m_migrationManager.migrate(p_target, p_startChunkID, p_endChunkID);
     }
+
+
+    // TODO(krakowski)
+    //  Remove old method
+//    public boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
+//        long[] chunkIDs;
+//        short[] backupPeers;
+//        int counter;
+//        int chunkSize;
+//        long iter;
+//        long size;
+//        DataStructure chunk;
+//        DataStructure[] chunks;
+//
+//        if (p_startChunkID > p_endChunkID) {
+//            throw new IllegalArgumentException("Start id must be less than end id");
+//        }
+//
+//        if (p_target == m_boot.getNodeID()) {
+//            throw new IllegalArgumentException("Target has to be another node");
+//        }
+//
+//        m_migrationLock.lock();
+//
+//        iter = p_startChunkID;
+//
+//        while (true) {
+//            // Send chunks to p_target
+//            chunks = new DataStructure[(int) (p_endChunkID - iter + 1)];
+//            counter = 0;
+//            size = 0;
+//            m_memoryManager.lockAccess();
+//            while (iter <= p_endChunkID) {
+//                if (m_memoryManager.exists(iter)) {
+//                    chunk = new DSByteArray(iter, m_memoryManager.get(iter));
+//
+//                    chunks[counter] = chunk;
+//                    chunkIDs[counter++] = chunk.getID();
+//                    size += chunk.sizeofObject();
+//                } else {
+//
+//                    LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", iter);
+//
+//                }
+//                iter++;
+//            }
+//            m_memoryManager.unlockAccess();
+//
+//
+//            LOGGER.info("Sending %d Chunks (%d Bytes) to 0x%X", counter, size, p_target);
+//
+//            try {
+//                m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter)));
+//            } catch (final NetworkException e) {
+//
+//                LOGGER.error("Could not migrate chunks");
+//
+//            }
+//
+//            if (iter > p_endChunkID) {
+//                break;
+//            }
+//        }
+//
+//        ret = true;
+//
+//        m_migrationLock.unlock();
+//
+//        LOGGER.info("All chunks migrated");
+//
+//        return ret;
+//    }
 
     /**
      * Migrates all chunks to another node.
@@ -354,6 +325,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_migrationManager = new MigrationManager(16, p_componentAccessor);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);

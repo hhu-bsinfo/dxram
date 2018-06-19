@@ -14,23 +14,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.migration.messages;
+package de.hhu.bsinfo.dxram.migration;
 
-/**
- * Different migration message types.
- *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
- */
-public final class MigrationMessages {
-    public static final byte SUBTYPE_MIGRATION_REQUEST = 1;
-    public static final byte SUBTYPE_MIGRATION_RESPONSE = 2;
-    public static final byte SUBTYPE_MIGRATION_REMOTE_MESSAGE = 3;
-    public static final byte SUBTYPE_MIGRATION_PUSH = 4;
-    public static final byte SUBTYPE_MIGRATION_FINISH = 5;
+public interface ChunkMigrator {
 
-    /**
-     * Hidden constructor
-     */
-    private MigrationMessages() {
+    enum Status {
+        SENT, NOT_SENT, INVALID_ARG
     }
+
+    Status migrate(long[] p_chunkIds, short p_nodeId);
+
+    void onStatus(long[] p_chunkIds, ChunkMigrator.Status p_result);
 }

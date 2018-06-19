@@ -99,6 +99,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.assertj:assertj-core:3.9.0'
+    testImplementation "org.mockito:mockito-core:2.19.0"
 
     dxramTestImplementation 'org.projectlombok:lombok:1.18.2'
     dxramTestImplementation 'com.google.guava:guava:26.0-jre'

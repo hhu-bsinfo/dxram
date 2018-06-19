@@ -14,23 +14,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.migration.messages;
+package de.hhu.bsinfo.dxram.migration;
 
-/**
- * Different migration message types.
- *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
- */
-public final class MigrationMessages {
-    public static final byte SUBTYPE_MIGRATION_REQUEST = 1;
-    public static final byte SUBTYPE_MIGRATION_RESPONSE = 2;
-    public static final byte SUBTYPE_MIGRATION_REMOTE_MESSAGE = 3;
-    public static final byte SUBTYPE_MIGRATION_PUSH = 4;
-    public static final byte SUBTYPE_MIGRATION_FINISH = 5;
+@SuppressWarnings("WeakerAccess")
+public class MigrationTask implements Runnable {
 
-    /**
-     * Hidden constructor
-     */
-    private MigrationMessages() {
+    public enum Direction {
+        IN, OUT
+    }
+
+    private final short m_target;
+
+    private final long[] m_chunkIds;
+
+    private final ChunkMigrator m_migrator;
+
+
+    public MigrationTask(ChunkMigrator p_migrator, short p_target, long[] p_chunkIds) {
+
+        m_migrator = p_migrator;
+
+        m_target = p_target;
+
+        m_chunkIds = p_chunkIds;
+    }
+
+    public int getChunkCount() {
+
+        return m_chunkIds.length;
+    }
+
+    @Override
+    public void run() {
+
+        ChunkMigrator.Status status = m_migrator.migrate(m_chunkIds, m_target);
+
+        m_migrator.onStatus(m_chunkIds, status);
     }
 }
