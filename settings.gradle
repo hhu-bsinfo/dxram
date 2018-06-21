@@ -3,7 +3,18 @@ include ':dxram', ':native'
 // Development mode switch
 boolean isDevelop = false
 
-if (isDevelop) {
-    includeBuild '../dxnet'
+if (isDevelop && new File('../dxutils').exists()) {
     includeBuild '../dxutils'
+}
+
+if (isDevelop && new File('../dxmon').exists()) {
+    includeBuild '../dxmon'
+}
+
+if (isDevelop && new File('../dxnet').exists()) {
+    includeBuild( '../dxnet')
+}
+
+if (isDevelop && new File('../dxgraph').exists()) {
+    includeBuild('../dxgraph')
 }
