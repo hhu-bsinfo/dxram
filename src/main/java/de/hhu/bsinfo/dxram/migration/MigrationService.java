@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.migration;
 
-import java.util.Arrays;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -168,11 +168,14 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      * @param p_endChunkID The last chunk id
      * @param p_target The target node
      */
-    public void migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
+    public Future<Void> migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
 
-        m_migrationManager.migrate(p_target, p_startChunkID, p_endChunkID);
+        return m_migrationManager.migrateRangeAsync(p_target, p_startChunkID, p_endChunkID);
     }
 
+    public MigrationManager getMigrationManager() {
+        return m_migrationManager;
+    }
 
     // TODO(krakowski)
     //  Remove old method
@@ -392,6 +395,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      * Register network messages we use in here.
      */
     private void registerNetworkMessages() {
+        m_migrationManager.registerMessages();
         m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE,
                 MigrationMessages.SUBTYPE_MIGRATION_REQUEST, MigrationRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE,

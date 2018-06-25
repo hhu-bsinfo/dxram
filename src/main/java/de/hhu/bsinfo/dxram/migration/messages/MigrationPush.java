@@ -20,14 +20,29 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.migration.data.ChunkRange;
+import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
 
 public class MigrationPush extends Message {
 
-    private final ChunkCollection m_data;
+    private MigrationIdentifier m_identifier;
 
-    public MigrationPush(short p_destination, ChunkCollection p_data) {
+    private ChunkRange m_data;
 
-        super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_PUSH);
+    public MigrationPush() {
+
+        super();
+
+        m_identifier = new MigrationIdentifier();
+
+        m_data = new ChunkRange();
+    }
+
+    public MigrationPush(MigrationIdentifier p_identifier, ChunkRange p_data) {
+
+        super(p_identifier.getTarget(), DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_PUSH);
+
+        m_identifier = p_identifier;
 
         m_data = p_data;
     }
@@ -35,10 +50,12 @@ public class MigrationPush extends Message {
     @Override
     protected int getPayloadLength() {
 
-        return m_data.sizeofObject();
+        return m_identifier.sizeofObject() + m_data.sizeofObject();
     }
     @Override
     protected void readPayload(AbstractMessageImporter p_importer) {
+
+        p_importer.importObject(m_identifier);
 
         p_importer.importObject(m_data);
     }
@@ -46,10 +63,17 @@ public class MigrationPush extends Message {
     @Override
     protected void writePayload(AbstractMessageExporter p_exporter) {
 
+        p_exporter.exportObject(m_identifier);
+
         p_exporter.exportObject(m_data);
     }
 
-    public ChunkCollection getChunkCollection() {
+    public MigrationIdentifier getIdentifier() {
+
+        return m_identifier;
+    }
+
+    public ChunkRange getChunkRange() {
 
         return m_data;
     }

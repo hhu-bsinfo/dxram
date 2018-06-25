@@ -16,39 +16,47 @@
 
 package de.hhu.bsinfo.dxram.migration;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @SuppressWarnings("WeakerAccess")
 public class MigrationTask implements Runnable {
 
-    public enum Direction {
-        IN, OUT
-    }
+    private static final Logger log = LoggerFactory.getLogger(MigrationTask.class);
 
-    private final short m_target;
+    private final MigrationIdentifier m_identifier;
 
-    private final long[] m_chunkIds;
+    private final long m_startId;
+
+    private final long m_endId;
 
     private final ChunkMigrator m_migrator;
 
-
-    public MigrationTask(ChunkMigrator p_migrator, short p_target, long[] p_chunkIds) {
+    public MigrationTask(ChunkMigrator p_migrator, MigrationIdentifier p_identifier, long p_startId, long p_endId) {
 
         m_migrator = p_migrator;
 
-        m_target = p_target;
+        m_identifier = p_identifier;
 
-        m_chunkIds = p_chunkIds;
+        m_startId = p_startId;
+
+        m_endId = p_endId;
     }
 
     public int getChunkCount() {
 
-        return m_chunkIds.length;
+        return (int) (m_endId - m_startId + 1);
     }
 
     @Override
     public void run() {
 
-        ChunkMigrator.Status status = m_migrator.migrate(m_chunkIds, m_target);
+        log.debug("Starting Migration for Chunks [{} , {}]", ChunkID.toHexString(m_startId), ChunkID.toHexString(m_endId));
 
-        m_migrator.onStatus(m_chunkIds, status);
+        ChunkMigrator.Status status = m_migrator.migrate(m_identifier, m_startId, m_endId);
+
+        m_migrator.onStatus(m_identifier, m_startId, m_endId, status);
     }
 }

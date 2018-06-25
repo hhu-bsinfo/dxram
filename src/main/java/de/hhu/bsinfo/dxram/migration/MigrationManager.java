@@ -24,24 +24,25 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
-import de.hhu.bsinfo.dxram.data.DSByteArray;
-import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
+import de.hhu.bsinfo.dxram.migration.data.ChunkRange;
+import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
 import de.hhu.bsinfo.dxram.migration.messages.*;
+import de.hhu.bsinfo.dxram.migration.util.CountDownFuture;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxutils.NodeID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.LongStream;
 
@@ -65,6 +66,10 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
     private final NetworkComponent m_network;
 
+    private Random m_random = new Random();
+
+    private final Map<MigrationIdentifier, CountDownFuture> m_progressMap = new HashMap<>();
+
     public MigrationManager(int p_workerCount, final DXRAMComponentAccessor p_componentAccessor) {
 
         m_workerCount = p_workerCount;
@@ -84,30 +89,78 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
-    public void migrate(final short p_target, final long p_startId, final long p_endId) {
+    public Future<Void> migrateRangeAsync(final short p_target, final long p_startId, final long p_endId) {
 
-        MigrationTask[] tasks = createMigrationTasks(p_target, p_startId, p_endId);
+        MigrationIdentifier identifier = new MigrationIdentifier(m_boot.getNodeID(), p_target, p_startId, p_endId);
+
+        MigrationTask[] tasks = createMigrationTasks(identifier);
+
+        CountDownFuture future = new CountDownFuture(tasks.length);
+
+        m_progressMap.put(identifier, future);
 
         for (int i = 0; i < tasks.length; i++) {
 
             m_executor.execute(tasks[i]);
         }
+
+        return future;
     }
 
-    public MigrationTask[] createMigrationTasks(final short p_target, final long p_startId, final long p_endId) {
+    public MigrationTask[] createMigrationTasks(MigrationIdentifier p_identifier) {
 
         MigrationTask[] tasks = new MigrationTask[m_workerCount];
 
-        long[] result = LongStream.rangeClosed(p_startId, p_endId).toArray();
+        long[] result = LongStream.rangeClosed(p_identifier.getStartId(), p_identifier.getEndId()).toArray();
 
-        long[][] partitions = partitionChunks(result, m_workerCount);
+        long[] partitions = partition(p_identifier.getStartId(), p_identifier.getEndId(), m_workerCount);
 
-        for (int i = 0; i < partitions.length; i++) {
+        for (int i = 0; i < partitions.length / 2; i += 2) {
 
-            tasks[i] = new MigrationTask(this, p_target, partitions[i]);
+            tasks[i] = new MigrationTask(this, p_identifier, partitions[i], partitions[i + 1]);
         }
 
         return tasks;
+    }
+
+    // TODO(krakowski)
+    //  Move this method to dxutils
+    public static long[] partition(long p_start, long p_end, int p_count) {
+
+        int chunkCount = (int) (p_end - p_start + 1);
+
+        if (p_count > chunkCount) {
+
+            throw new IllegalArgumentException("Insufficient number of chunks for " + p_count + " partitions");
+        }
+
+        long[] result = new long[p_count * 2];
+
+        int length = (chunkCount / p_count) + 1;
+
+        long split = p_start;
+
+        for (int i = 0; i < chunkCount % p_count; i++) {
+
+            result[i * 2] = length * i + p_start;
+
+            result[(i * 2) + 1] = result[i * 2] + length - 1;
+
+            split = result[(i * 2) + 1];
+        }
+
+        length = chunkCount / p_count;
+
+        p_start = split + 1;
+
+        for (int i = chunkCount % p_count; i < p_count; i++) {
+
+            result[i * 2] = length * (i - (chunkCount % p_count)) + p_start;
+
+            result[(i * 2) + 1] = result[i * 2] + length - 1;
+        }
+
+        return result;
     }
 
     // TODO(krakowski)
@@ -147,55 +200,95 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
             log.warn("Received wrong message type {}", p_message.getType());
         }
 
-        switch (p_message.getSubtype()) {
+//        log.debug("Received message {} {}", p_message.getType(), p_message.getSubtype());
 
-            case MigrationMessages.SUBTYPE_MIGRATION_PUSH:
-                handle((MigrationPush) p_message);
-                break;
+        m_executor.execute(() -> {
 
-            case MigrationMessages.SUBTYPE_MIGRATION_FINISH:
-                handle((MigrationFinish) p_message);
-                break;
-        }
+            switch (p_message.getSubtype()) {
+
+                case MigrationMessages.SUBTYPE_MIGRATION_PUSH:
+                    handle((MigrationPush) p_message);
+                    break;
+
+                case MigrationMessages.SUBTYPE_MIGRATION_FINISH:
+                    handle((MigrationFinish) p_message);
+                    break;
+            }
+        });
     }
 
     @Override
-    public void onStatus(long[] p_chunkIds, Status p_result) {
+    public void onStatus(MigrationIdentifier p_identifier, long p_startId, long p_endId, Status p_result) {
 
-        log.trace("Received Result {} for {} chunks", p_result, p_chunkIds.length);
+        log.debug("Received Result {} for chunk range [{}, {}]", p_result, ChunkID.toHexString(p_startId), ChunkID.toHexString(p_endId));
     }
 
     @Override
-    public Status migrate(final long[] p_chunkIds, final short p_target) {
+    public Status migrate(MigrationIdentifier p_identifier, long p_startId, long p_endId) {
 
-        if (m_boot.getNodeID() == p_target) {
+        int chunkCount = (int) (p_endId - p_startId + 1);
+
+        if (m_boot.getNodeID() == p_identifier.getTarget()) {
 
             log.error("The migration target has to be another node");
 
             return Status.INVALID_ARG;
         }
 
-        byte[][] data = new byte[p_chunkIds.length][];
+        byte[][] data = new byte[chunkCount][];
 
-        for (int i = 0; i < p_chunkIds.length; i++) {
+        log.debug("Collecting {} chunks from memory", chunkCount);
+
+        int index = 0;
+
+        for (long cid = p_startId; cid <= p_endId; cid++) {
 
             m_memoryManager.lockAccess();
 
-            // TODO(krakowski)
-            //  Check if the requested chunk does exist
+            if (!m_memoryManager.exists(cid)) {
 
-            // TODO(krakowski)
-            //  Get a pointer pointing directly to the chunk's data
-            data[i] = m_memoryManager.get(p_chunkIds[i]);
+                log.warn("Chunk {} does not exist", ChunkID.toHexString(cid));
 
+                m_memoryManager.unlockAccess();
+
+                throw new IllegalArgumentException("Can't migrate non-existent chunks");
+            }
+//
+//            // TODO(krakowski)
+//            //  Get a pointer pointing directly to the chunk's data
+            data[index] = m_memoryManager.get(cid);
+//
             m_memoryManager.unlockAccess();
+
+//            data[index] = new byte[64];
+//
+//            Arrays.fill(data[index], (byte) 0xBB);
+
+//            m_random.nextBytes(data[index]);
+
+            index++;
         }
 
-        ChunkCollection chunkCollection = new ChunkCollection(p_chunkIds, data);
+        log.debug("Creating chunk range [{} , {}] and migration push message for node {}",
+                ChunkID.toHexString(p_startId),
+                ChunkID.toHexString(p_endId),
+                NodeID.toHexString(p_identifier.getTarget()));
 
-        MigrationPush migrationPush = new MigrationPush(p_target, chunkCollection);
+        ChunkRange chunkRange = new ChunkRange(p_startId, p_endId, data);
+
+        MigrationPush migrationPush = new MigrationPush(p_identifier, chunkRange);
+
+        int size = Arrays.stream(data)
+                .map(a -> a.length)
+                .reduce(0, (a, b) -> a + b);
 
         try {
+
+            log.debug("Sending chunk range [{} , {}] to {} containing {}",
+                    ChunkID.toHexString(migrationPush.getChunkRange().getStartId()),
+                    ChunkID.toHexString(migrationPush.getChunkRange().getEndId()),
+                    NodeID.toHexString(migrationPush.getDestination()),
+                    readableFileSize(size));
 
             m_network.sendMessage(migrationPush);
 
@@ -209,34 +302,45 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
         return Status.SENT;
     }
 
+    public static String readableFileSize(long size) {
+
+        if(size <= 0) return "0";
+
+        final String[] units = new String[] { "B", "kB", "MB", "GB", "TB" };
+
+        int digitGroups = (int) (Math.log10(size)/Math.log10(1024));
+
+        return new DecimalFormat("###0.#").format(size/Math.pow(1024, digitGroups)) + " " + units[digitGroups];
+    }
+
     private void handle(final MigrationPush p_migrationPush) {
 
-        final MigrationFinish migrationFinish;
+        int size = Arrays.stream(p_migrationPush.getChunkRange().getData())
+                .map(a -> a.length)
+                .reduce(0, (a, b) -> a + b);
 
-        final ChunkCollection chunkCollection = p_migrationPush.getChunkCollection();
+        log.debug("Received chunk range [{} , {}] from {} containing {}",
+                ChunkID.toHexString(p_migrationPush.getChunkRange().getStartId()),
+                ChunkID.toHexString(p_migrationPush.getChunkRange().getEndId()),
+                NodeID.toHexString(p_migrationPush.getSource()),
+                readableFileSize(size));
 
-        final long[] chunkIds = chunkCollection.getChunkIds();
+        final ChunkRange chunkRange = p_migrationPush.getChunkRange();
 
-        if (m_chunk.putMigratedChunks(chunkIds, chunkCollection.getData())) {
+        final long[] chunkIds = LongStream.rangeClosed(chunkRange.getStartId(), chunkRange.getEndId()).toArray();
 
-            // TODO(krakowski)
-            //  Use asynchronous messages within lookup migration
+        log.debug("Saving received chunks");
 
-//            short ownNodeId = m_boot.getNodeID();
-//
-//            for (int i = 0; i < chunkIds.length; i++) {
-//
-//                m_lookup.migrate(chunkIds[i], ownNodeId);
-//            }
+        boolean status = m_chunk.putMigratedChunks(chunkIds, chunkRange.getData());
+//        boolean status = true;
 
-            migrationFinish = new MigrationFinish(p_migrationPush.getSource(), chunkCollection.getChunkIds(), true);
+        log.debug("Storing migrated chunks {}", status ? "succeeded" : "failed");
 
-        } else {
-
-            migrationFinish = new MigrationFinish(p_migrationPush.getSource(), chunkCollection.getChunkIds(), true);
-        }
+        final MigrationFinish migrationFinish = new MigrationFinish(p_migrationPush.getIdentifier(), chunkRange.getStartId(), chunkRange.getEndId(), status);
 
         try {
+
+            log.debug("Sending response to {}", NodeID.toHexString(migrationFinish.getDestination()));
 
             m_network.sendMessage(migrationFinish);
 
@@ -248,27 +352,32 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
     private void handle(final MigrationFinish p_migrationFinish) {
 
-        final long[] chunkIds = p_migrationFinish.getChunkIds();
-
         if (!p_migrationFinish.isFinished()) {
 
             log.warn("Migration was not successful on node {}", NodeID.toHexString(p_migrationFinish.getSource()));
         }
 
-        for (int i = 0; i < chunkIds.length; i++) {
+        log.debug("Successfully migrated chunk range [{} , {}]", ChunkID.toHexString(p_migrationFinish.getStartId()), ChunkID.toHexString(p_migrationFinish.getEndId()));
 
-            long chunkId = chunkIds[i];
+        log.debug("Removing migrated chunks from local memory");
 
-            m_memoryManager.remove(chunkId, true);
+        long startId = p_migrationFinish.getStartId();
 
-            // TODO(krakowski)
-            //  Send chunk sizes within MigrationFinish message
-//            m_backup.deregisterChunk(chunkId, chunk.sizeofObject());
+        long endId = p_migrationFinish.getEndId();
+
+        m_memoryManager.lockManage();
+
+        for (long cid = startId; cid <= endId; cid++) {
+
+            int chunkSize = m_memoryManager.remove(cid, true);
+
+            m_backup.deregisterChunk(cid, chunkSize);
         }
 
+        m_memoryManager.unlockManage();
 
         // TODO(krakowski)
-        //  Handle backup
+        //  Handle backup (async)
 //        if (m_backup.isActive()) {
 //
 //            short[] backupPeers;
@@ -292,9 +401,17 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 //                }
 //            }
 //        }
+
+        CountDownFuture countDownFuture = m_progressMap.get(p_migrationFinish.getIdentifier());
+
+        countDownFuture.countDown();
     }
 
     public void registerMessages() {
+
+        m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_PUSH, MigrationPush.class);
+
+        m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_FINISH, MigrationFinish.class);
 
         m_network.register(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_PUSH, this);
 

@@ -16,13 +16,15 @@
 
 package de.hhu.bsinfo.dxram.migration;
 
+import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
+
 public interface ChunkMigrator {
 
     enum Status {
         SENT, NOT_SENT, INVALID_ARG
     }
 
-    Status migrate(long[] p_chunkIds, short p_nodeId);
+    Status migrate(MigrationIdentifier p_identifier, long p_startId, long p_endId);
 
-    void onStatus(long[] p_chunkIds, ChunkMigrator.Status p_result);
+    void onStatus(MigrationIdentifier p_identifier, long p_startId, long p_endId, Status p_result);
 }

@@ -17,6 +17,7 @@
 package de.hhu.bsinfo.dxram.migration;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -26,6 +27,7 @@ import java.util.Arrays;
 import java.util.stream.LongStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MigrationManagerTest {
@@ -38,7 +40,8 @@ public class MigrationManagerTest {
 
     private static final int WORKER_COUNT = 16;
 
-    private static final short TARGET = 42;
+    private static final MigrationIdentifier IDENTIFIER =
+            new MigrationIdentifier((short) 0x00, (short) 0x42, CHUNK_START_ID, CHUNK_END_ID);
 
     private MigrationManager manager = null;
 
@@ -50,7 +53,7 @@ public class MigrationManagerTest {
 
         manager = new MigrationManager(WORKER_COUNT, componentAccessor);
 
-        MigrationTask[] tasks = manager.createMigrationTasks(TARGET, CHUNK_START_ID, CHUNK_END_ID);
+        MigrationTask[] tasks = manager.createMigrationTasks(IDENTIFIER);
 
         assertEquals(WORKER_COUNT, tasks.length);
 
@@ -75,5 +78,27 @@ public class MigrationManagerTest {
                 .reduce(0, (a, b) -> a + b);
 
         assertEquals(TOTAL_CHUNKS, totalChunks);
+    }
+
+    @Test
+    public void partition() {
+
+        long[] partitions = MigrationManager.partition(CHUNK_START_ID, CHUNK_END_ID, 16);
+
+        assertEquals(16 * 2, partitions.length);
+
+        int chunkCount = 0;
+
+        for (int i = 0; i < partitions.length; i += 2) {
+
+            chunkCount += partitions[i + 1] - partitions[i] + 1;
+        }
+
+        assertEquals(TOTAL_CHUNKS, chunkCount);
+
+        for (int i = 1; i < partitions.length - 2; i++) {
+
+            assertNotEquals(partitions[i], partitions[i + 1]);
+        }
     }
 }
