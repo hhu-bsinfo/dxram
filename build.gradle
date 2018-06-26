@@ -17,7 +17,7 @@ buildscript {
 
     dependencies {
 
-        classpath "de.hhu.bsinfo:dxgradle:1.0.4"
+        classpath "de.hhu.bsinfo:dxgradle:1.0.5"
     }
 }
 
