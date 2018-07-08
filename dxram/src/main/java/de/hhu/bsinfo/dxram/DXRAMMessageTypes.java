@@ -36,6 +36,7 @@ public final class DXRAMMessageTypes {
     public static final byte JOB_MESSAGES_TYPE = 11;
     public static final byte MASTERSLAVE_MESSAGES_TYPE = 12;
     public static final byte NETWORK_MESSAGES_TYPE = 13;
+    public static final byte MONITORING_MESSAGES_TYPE = 14;
 
     /**
      * Static class
