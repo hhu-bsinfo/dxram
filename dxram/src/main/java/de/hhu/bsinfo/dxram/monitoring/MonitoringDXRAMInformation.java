@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.monitoring;
  * Wrapper class which provides information about DXRAM (compile type, git commit, ...)
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 08.06.2018
+ *
  */
 public class MonitoringDXRAMInformation {
     private static String ms_buildDate;
