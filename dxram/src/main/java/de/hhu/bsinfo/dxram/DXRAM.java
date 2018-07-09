@@ -54,6 +54,8 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupService;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.migration.MigrationService;
+import de.hhu.bsinfo.dxram.monitoring.MonitoringComponent;
+import de.hhu.bsinfo.dxram.monitoring.MonitoringService;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
@@ -199,6 +201,7 @@ public final class DXRAM {
         p_engine.registerComponent(LogComponent.class);
         p_engine.registerComponent(LookupComponent.class);
         p_engine.registerComponent(MemoryManagerComponent.class);
+        p_engine.registerComponent(MonitoringComponent.class);
         p_engine.registerComponent(NameserviceComponent.class);
         p_engine.registerComponent(NetworkComponent.class);
         p_engine.registerComponent(NullComponent.class);
@@ -227,6 +230,7 @@ public final class DXRAM {
         p_engine.registerService(LookupService.class);
         p_engine.registerService(MasterSlaveComputeService.class);
         p_engine.registerService(MigrationService.class);
+        p_engine.registerService(MonitoringService.class);
         p_engine.registerService(NameserviceService.class);
         p_engine.registerService(NetworkService.class);
         p_engine.registerService(NullService.class);
