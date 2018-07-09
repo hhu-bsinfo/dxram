@@ -13,7 +13,7 @@ import java.io.File;
 public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Expose
-    private String m_nic = "ens33";
+    private String m_nic = "enp4s0f0";
 
     @Expose
     private String m_disk = "sda1";
@@ -25,7 +25,7 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
     private short m_collectsPerWindow = 10;
 
     @Expose
-    private String m_monitoringFolder = "~/dxmon";
+    private String m_monitoringFolder = System.getProperty("user.home") + "/dxmon";
 
     private TimeUnit m_csvTimeWindow;
 
@@ -43,20 +43,19 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
         }
 
         if(!DeviceLister.getNICs().contains(m_nic)) {
-            LOGGER.error("Monitoring component - m_nicIdentifier is invalid");
+            LOGGER.error("Monitoring component - m_nic ["+ m_nic +"] is invalid");
             return false;
         }
 
         if(!DeviceLister.getDisks().contains(m_disk)) {
-            LOGGER.error("Monitoring component - m_diskIdentifier is invalid");
+            LOGGER.error("Monitoring component - m_diskIdentifier ["+ m_disk +"] is invalid");
             return false;
         }
 
-        // TODO test this :)
         File file = new File(m_monitoringFolder);
         if(!file.exists()) {
-            if(!file.mkdir()) {
-                LOGGER.error("Monitoring folder seems to be invalid - didn't exist and couldn't create!");
+            if(!file.mkdirs()) {
+                LOGGER.error("Monitoring folder ["+ m_monitoringFolder +"] seems to be invalid - didn't exist and couldn't be created!");
                 return false;
             }
         }
