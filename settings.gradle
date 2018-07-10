@@ -3,6 +3,11 @@ include ':dxram', ':native'
 // Development mode switch
 boolean isDevelop = false
 
+// Do not include other builds if this build is included
+if (isDevelop && gradle.parent != null) {
+    return
+}
+
 if (isDevelop && new File('../dxutils').exists()) {
     includeBuild '../dxutils'
 }
