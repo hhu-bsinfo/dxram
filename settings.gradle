@@ -1,7 +1,7 @@
 include ':dxram', ':native'
 
 // Development mode switch
-boolean isDevelop = false
+boolean isDevelop = true
 
 // Do not include other builds if this build is included
 if (isDevelop && gradle.parent != null) {

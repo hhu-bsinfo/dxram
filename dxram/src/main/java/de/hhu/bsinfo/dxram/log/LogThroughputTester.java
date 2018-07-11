@@ -32,7 +32,7 @@ import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 /**
  * Class for testing the logging and reorganization without starting DXRAM. Chunks are NOT send over network.
  * Example:
- * java -Dlog4j.configurationFile=config/log4j.xml -cp lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:
+ * java -Dlog4j.configurationFile=config/log4j2.xml -cp lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:
  * dxram.jar
  * de.hhu.bsinfo.dxram.log.LogThroughputTester
  * 10000000 10 1024
