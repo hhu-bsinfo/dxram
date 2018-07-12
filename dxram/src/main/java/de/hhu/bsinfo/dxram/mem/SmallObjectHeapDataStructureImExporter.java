@@ -47,7 +47,8 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
      * @param p_offset
      *         The start offset within the allocated block.
      */
-    SmallObjectHeapDataStructureImExporter(final SmallObjectHeap p_heap, final long p_allocatedMemoryStartAddress, final int p_offset) {
+    SmallObjectHeapDataStructureImExporter(final SmallObjectHeap p_heap, final long p_allocatedMemoryStartAddress,
+            final int p_offset) {
         m_heap = p_heap;
         m_allocatedMemoryStartAddress = p_allocatedMemoryStartAddress;
         m_offset = p_offset;
@@ -94,6 +95,12 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     public void writeShort(final short p_v) {
         m_heap.writeShort(m_allocatedMemoryStartAddress, m_offset, p_v);
         m_offset += Short.BYTES;
+    }
+
+    @Override
+    public void writeChar(final char p_v) {
+        m_heap.writeChar(m_allocatedMemoryStartAddress, m_offset, p_v);
+        m_offset += Character.BYTES;
     }
 
     @Override
@@ -175,6 +182,13 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public char readChar(final char p_char) {
+        char v = m_heap.readChar(m_allocatedMemoryStartAddress, m_offset);
+        m_offset += Character.BYTES;
+        return v;
+    }
+
+    @Override
     public int readInt(final int p_int) {
         int v = m_heap.readInt(m_allocatedMemoryStartAddress, m_offset);
         m_offset += Integer.BYTES;
@@ -249,6 +263,13 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public char[] readCharArray(final char[] p_array) {
+        char[] arr = new char[readCompactNumber(0)];
+        readChars(arr);
+        return arr;
+    }
+
+    @Override
     public int[] readIntArray(final int[] p_array) {
         int[] arr = new int[readCompactNumber(0)];
         readInts(arr);
@@ -268,6 +289,11 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public int writeChars(final char[] p_array) {
+        return readChars(p_array, 0, p_array.length);
+    }
+
+    @Override
     public int writeInts(final int[] p_array) {
         return writeInts(p_array, 0, p_array.length);
     }
@@ -282,6 +308,15 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
         int written = m_heap.writeShorts(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
         if (written != -1) {
             m_offset += written * Short.BYTES;
+        }
+        return written;
+    }
+
+    @Override
+    public int writeChars(char[] p_array, int p_offset, int p_length) {
+        int written = m_heap.writeChars(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
+        if (written != -1) {
+            m_offset += written * Character.BYTES;
         }
         return written;
     }
@@ -317,6 +352,12 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public void writeCharArray(char[] p_array) {
+        writeCompactNumber(p_array.length);
+        writeChars(p_array);
+    }
+
+    @Override
     public void writeIntArray(final int[] p_array) {
         writeCompactNumber(p_array.length);
         writeInts(p_array);
@@ -334,6 +375,11 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
     }
 
     @Override
+    public int readChars(final char[] p_array) {
+        return readChars(p_array, 0, p_array.length);
+    }
+
+    @Override
     public int readInts(final int[] p_array) {
         return readInts(p_array, 0, p_array.length);
     }
@@ -348,6 +394,15 @@ class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
         int read = m_heap.readShorts(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
         if (read != -1) {
             m_offset += read * Short.BYTES;
+        }
+        return read;
+    }
+
+    @Override
+    public int readChars(final char[] p_array, final int p_offset, final int p_length) {
+        int read = m_heap.readChars(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
+        if (read != -1) {
+            m_offset += read * Character.BYTES;
         }
         return read;
     }

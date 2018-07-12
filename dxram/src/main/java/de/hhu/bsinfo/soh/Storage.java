@@ -88,6 +88,21 @@ public interface Storage {
     int readShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length);
 
     /**
+     * Read data from the storage into a char array.
+     *
+     * @param p_ptr
+     *         Start position in storage.
+     * @param p_array
+     *         Array to read the data into.
+     * @param p_arrayOffset
+     *         Start offset in array to start writing the chars to.
+     * @param p_length
+     *         Number of chars to read from specified start.
+     * @return Number of read elements.
+     */
+    int readChars(long p_ptr, char[] p_array, int p_arrayOffset, int p_length);
+
+    /**
      * Read data from the storage into an int array.
      *
      * @param p_ptr
@@ -134,6 +149,15 @@ public interface Storage {
      * @return Short read.
      */
     short readShort(long p_ptr);
+
+    /**
+     * Read a single char value.
+     *
+     * @param p_ptr
+     *         Position to read from.
+     * @return ShoCharrt read.
+     */
+    char readChar(long p_ptr);
 
     /**
      * Read a single int value.
@@ -199,6 +223,21 @@ public interface Storage {
     int writeShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length);
 
     /**
+     * Write an array of chars to the storage.
+     *
+     * @param p_ptr
+     *         Start address to write to.
+     * @param p_array
+     *         Array with data to write.
+     * @param p_arrayOffset
+     *         Offset in array to start reading the data from.
+     * @param p_length
+     *         Number of elements to write.
+     * @return Number of written elements
+     */
+    int writeChars(long p_ptr, char[] p_array, int p_arrayOffset, int p_length);
+
+    /**
      * Write an array of ints to the storage.
      *
      * @param p_ptr
@@ -247,6 +286,16 @@ public interface Storage {
      *         Value to write.
      */
     void writeShort(long p_ptr, short p_value);
+
+    /**
+     * Write a single char value to the storage.
+     *
+     * @param p_ptr
+     *         Address to write to.
+     * @param p_value
+     *         Value to write.
+     */
+    void writeChar(long p_ptr, char p_value);
 
     /**
      * Write a single int value to the storage.

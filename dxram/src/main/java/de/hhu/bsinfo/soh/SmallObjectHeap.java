@@ -68,9 +68,7 @@ public final class SmallObjectHeap implements Importable, Exportable {
         m_status.m_size = p_size;
         m_status.m_maxBlockSize = p_maxBlockSize;
 
-
         LOGGER.info("Creating SmallObjectHeap, size %d bytes, max block size %d bytes", p_size, p_maxBlockSize);
-
 
         m_memory.allocate(p_size);
 
@@ -105,10 +103,10 @@ public final class SmallObjectHeap implements Importable, Exportable {
             m_freeBlockListSizes[i] = (long) Math.pow(2, i + 2);
         }
 
-
-        LOGGER.debug("Created free block lists, m_freeBlocksListCount %d, m_freeBlocksListSize %d, m_baseFreeBlockList %d", m_freeBlocksListCount,
-        m_freeBlocksListSize, m_baseFreeBlockList);
-
+        LOGGER.debug(
+                "Created free block lists, m_freeBlocksListCount %d, m_freeBlocksListSize %d, m_baseFreeBlockList %d",
+                m_freeBlocksListCount,
+                m_freeBlocksListSize, m_baseFreeBlockList);
 
         // Create one big free block
         // -2 for the marker bytes
@@ -489,6 +487,28 @@ public final class SmallObjectHeap implements Importable, Exportable {
     }
 
     /**
+     * Read a single char from the specified address + offset.
+     *
+     * @param p_address
+     *         Address.
+     * @param p_offset
+     *         Offset to add to the address.
+     * @return Char read.
+     */
+    public char readChar(final long p_address, final long p_offset) {
+        assert assertMemoryBounds(p_address, p_offset);
+
+        int lengthFieldSize;
+        // skip length byte(s)
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+
+        assert assertMemoryBlockBounds(p_address, lengthFieldSize, read(p_address, lengthFieldSize), p_offset,
+                Character.BYTES);
+
+        return m_memory.readChar(p_address + lengthFieldSize + p_offset);
+    }
+
+    /**
      * Read a single int from the specified address + offset.
      *
      * @param p_address
@@ -588,6 +608,35 @@ public final class SmallObjectHeap implements Importable, Exportable {
                 p_length * Short.BYTES);
 
         return m_memory.readShorts(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+    }
+
+    /**
+     * Read data into a char array.
+     *
+     * @param p_address
+     *         Address in heap to start at.
+     * @param p_offset
+     *         Offset to add to start address.
+     * @param p_buffer
+     *         Buffer to read into.
+     * @param p_offsetArray
+     *         Offset within the buffer.
+     * @param p_length
+     *         Number of elements to read.
+     * @return Number of elements read.
+     */
+    public int readChars(final long p_address, final long p_offset, final char[] p_buffer, final int p_offsetArray,
+            final int p_length) {
+        assert assertMemoryBounds(p_address, p_offset);
+
+        int lengthFieldSize;
+        // skip length byte(s)
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+
+        assert assertMemoryBlockBounds(p_address, lengthFieldSize, read(p_address, lengthFieldSize), p_offset,
+                p_length * Character.BYTES);
+
+        return m_memory.readChars(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
     }
 
     /**
@@ -692,6 +741,29 @@ public final class SmallObjectHeap implements Importable, Exportable {
                 Short.BYTES);
 
         m_memory.writeShort(p_address + lengthFieldSize + p_offset, p_value);
+    }
+
+    /**
+     * Write a short to the specified address + offset.
+     *
+     * @param p_address
+     *         Address.
+     * @param p_offset
+     *         Offset to add to the address.
+     * @param p_value
+     *         Short to write.
+     */
+    public void writeChar(final long p_address, final long p_offset, final char p_value) {
+        assert assertMemoryBounds(p_address, p_offset);
+
+        int lengthFieldSize;
+        // skip length byte(s)
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+
+        assert assertMemoryBlockBounds(p_address, lengthFieldSize, read(p_address, lengthFieldSize), p_offset,
+                Character.BYTES);
+
+        m_memory.writeChar(p_address + lengthFieldSize + p_offset, p_value);
     }
 
     /**
@@ -827,7 +899,34 @@ public final class SmallObjectHeap implements Importable, Exportable {
         return m_memory.writeShorts(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
     }
 
-    // -------------------------------------------------------------------------------------------
+    /**
+     * Write an array of chars to the heap.
+     *
+     * @param p_address
+     *         Address of an allocated block of memory.
+     * @param p_offset
+     *         Offset within the block of memory to start at.
+     * @param p_value
+     *         Array to write.
+     * @param p_offsetArray
+     *         Offset within the array.
+     * @param p_length
+     *         Number of elements to write.
+     * @return Number of elements written.
+     */
+    public int writeChars(final long p_address, final long p_offset, final char[] p_value, final int p_offsetArray,
+            final int p_length) {
+        assert assertMemoryBounds(p_address, p_offset);
+
+        int lengthFieldSize;
+        // skip length byte(s)
+        lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+
+        assert assertMemoryBlockBounds(p_address, lengthFieldSize, read(p_address, lengthFieldSize), p_offset,
+                Character.BYTES);
+
+        return m_memory.writeChars(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
+    }
 
     /**
      * Write an array of ints to the heap.

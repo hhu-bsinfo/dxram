@@ -95,6 +95,13 @@ public class StorageUnsafeMemory implements Storage {
     }
 
     @Override
+    public int readChars(long p_ptr, char[] p_array, int p_arrayOffset, int p_length) {
+        assert assertMemoryBounds(p_ptr, Character.BYTES * p_length);
+
+        return UnsafeMemory.readChars(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
+    }
+
+    @Override
     public int readInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
         assert assertMemoryBounds(p_ptr, Integer.BYTES * p_length);
 
@@ -120,6 +127,13 @@ public class StorageUnsafeMemory implements Storage {
         assert assertMemoryBounds(p_ptr, Short.BYTES);
 
         return UnsafeMemory.readShort(m_memoryBase + p_ptr);
+    }
+
+    @Override
+    public char readChar(long p_ptr) {
+        assert assertMemoryBounds(p_ptr, Character.BYTES);
+
+        return UnsafeMemory.readChar(m_memoryBase + p_ptr);
     }
 
     @Override
@@ -159,6 +173,13 @@ public class StorageUnsafeMemory implements Storage {
     }
 
     @Override
+    public int writeChars(final long p_ptr, final char[] p_array, final int p_arrayOffset, final int p_length) {
+        assert assertMemoryBounds(p_ptr, Character.BYTES * p_length);
+
+        return UnsafeMemory.writeChars(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
+    }
+
+    @Override
     public int writeInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
         assert assertMemoryBounds(p_ptr, Integer.BYTES * p_length);
 
@@ -184,6 +205,13 @@ public class StorageUnsafeMemory implements Storage {
         assert assertMemoryBounds(p_ptr, Short.BYTES);
 
         UnsafeMemory.writeShort(m_memoryBase + p_ptr, p_value);
+    }
+
+    @Override
+    public void writeChar(final long p_ptr, final char p_value) {
+        assert assertMemoryBounds(p_ptr, Character.BYTES);
+
+        UnsafeMemory.writeChar(m_memoryBase + p_ptr, p_value);
     }
 
     @Override
@@ -230,7 +258,8 @@ public class StorageUnsafeMemory implements Storage {
 
         if (p_ptr + p_length > m_memorySize || p_ptr + p_length < 0) {
             throw new MemoryRuntimeException(
-                    "Accessing memory at " + p_ptr + ", length " + p_length + " out of bounds: base " + m_memoryBase + ", size " + m_memorySize);
+                    "Accessing memory at " + p_ptr + ", length " + p_length + " out of bounds: base " + m_memoryBase +
+                            ", size " + m_memorySize);
         }
 
         return true;
