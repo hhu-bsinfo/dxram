@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.monitoring;
 
+import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -30,9 +31,9 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     private LookupComponent m_lookup;
     private EventComponent m_event;
 
-
     public MonitoringComponent() {
-        super(DXRAMComponentOrder.Init.MONITORING, DXRAMComponentOrder.Shutdown.MONITORING, MonitoringComponentConfig.class);
+        super(DXRAMComponentOrder.Init.MONITORING, DXRAMComponentOrder.Shutdown.MONITORING,
+                MonitoringComponentConfig.class);
     }
 
     @Override
@@ -48,14 +49,30 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
         MonitoringComponentConfig componentConfig = p_config.getComponentConfig(MonitoringComponentConfig.class);
 
         String diskIdentifier = componentConfig.getDisk();
+
+        if (diskIdentifier.isEmpty()) {
+            // pick first disk found
+            diskIdentifier = DeviceLister.getDisks().get(0);
+
+            LOGGER.warn("Empty disk identifier from config, auto assigning disk: %s", diskIdentifier);
+        }
+
         String nicIdentifier = componentConfig.getNic();
+
+        if (nicIdentifier.isEmpty()) {
+            nicIdentifier = DeviceLister.getNICs().get(0);
+
+            LOGGER.warn("Empty NIC identifier from config, auto assigning interface: %s", nicIdentifier);
+        }
+
         String monitoringFolder = componentConfig.getMonitoringFolder();
         float secondDelay = componentConfig.getSecondsTimeWindow();
 
         // check if kernel buffer is in use
         boolean isPageCacheInUse = false;
         String hardwareAccessMode = p_config.getComponentConfig(LogComponentConfig.class).getHarddriveAccess();
-        if(hardwareAccessMode.equals("raf")) {
+
+        if (hardwareAccessMode.equals("raf")) {
             isPageCacheInUse = true;
         }
 
@@ -70,25 +87,26 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
         short numberOfCollects = componentConfig.getCollectsPerWindow();
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-
-            m_superpeerHandler = new SuperpeerMonitoringHandler(componentConfig.getCSVSecondsTimeWindow(), m_boot, m_event, monitoringFolder);
+            m_superpeerHandler = new SuperpeerMonitoringHandler(componentConfig.getCSVSecondsTimeWindow(), m_boot,
+                    m_event, monitoringFolder);
             m_superpeerHandler.start();
         } else {
-
             short ownNid = m_boot.getNodeID();
             short superpeerNid = m_lookup.getResponsibleSuperpeer(ownNid);
 
-            if(superpeerNid == NodeID.INVALID_ID) {
+            if (superpeerNid == NodeID.INVALID_ID) {
                 LOGGER.error("Found no responsible superpeer for node 0x%x", ownNid);
                 return false; // need superpeer to monitor
             }
 
             m_peerHandler = new PeerMonitoringHandler(ownNid, superpeerNid, m_network);
-            m_peerHandler.setConfigParameters(monitoringFolder, secondDelay, numberOfCollects, nicIdentifier, diskIdentifier);
+            m_peerHandler.setConfigParameters(monitoringFolder, secondDelay, numberOfCollects, nicIdentifier,
+                    diskIdentifier);
             m_peerHandler.setupComponents();
             m_peerHandler.start();
 
-            m_dxramPeerHandler = new PeerDXRAMMonitoringHandler(ownNid, numberOfCollects, secondDelay, monitoringFolder);
+            m_dxramPeerHandler = new PeerDXRAMMonitoringHandler(ownNid, numberOfCollects, secondDelay,
+                    monitoringFolder);
             m_dxramPeerHandler.start();
 
         }
@@ -100,6 +118,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     protected boolean shutdownComponent() {
         if (m_peerHandler != null) {
             m_peerHandler.setShouldShutdown();
+
             try {
                 m_peerHandler.join();
             } catch (InterruptedException e) {
@@ -109,6 +128,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
 
         if (m_dxramPeerHandler != null) {
             m_dxramPeerHandler.setShouldShutdown();
+
             try {
                 m_dxramPeerHandler.join();
             } catch (InterruptedException e) {
@@ -118,6 +138,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
 
         if (m_superpeerHandler != null) {
             m_superpeerHandler.setShouldShutdown();
+
             try {
                 m_superpeerHandler.join();
             } catch (InterruptedException e) {
@@ -131,7 +152,6 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     MonitoringDataStructure getCurrentMonitoringData() {
         return m_peerHandler.getMonitoringData();
     }
-
 
     /****** WRAPPER FOR HANDLER ******/
     void addMonitoringDataToWriter(MonitoringDataStructure p_data) {

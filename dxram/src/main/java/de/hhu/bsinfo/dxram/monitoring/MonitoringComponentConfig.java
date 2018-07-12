@@ -40,12 +40,12 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
             return false;
         }
 
-        if (!DeviceLister.getNICs().contains(m_nic)) {
+        if (!m_nic.isEmpty() && !DeviceLister.getNICs().contains(m_nic)) {
             LOGGER.error("Monitoring component - m_nic [" + m_nic + "] is invalid");
             return false;
         }
 
-        if (!DeviceLister.getDisks().contains(m_disk)) {
+        if (!m_disk.isEmpty() && !DeviceLister.getDisks().contains(m_disk)) {
             LOGGER.error("Monitoring component - m_diskIdentifier [" + m_disk + "] is invalid");
             return false;
         }
