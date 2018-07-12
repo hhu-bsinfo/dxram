@@ -9,7 +9,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.log.LogComponentConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
-import de.hhu.bsinfo.dxram.monitoring.config.MonitoringComponentConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.ManifestHelper;

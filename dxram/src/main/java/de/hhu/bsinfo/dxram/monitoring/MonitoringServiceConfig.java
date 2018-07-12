@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.monitoring.config;
+package de.hhu.bsinfo.dxram.monitoring;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;

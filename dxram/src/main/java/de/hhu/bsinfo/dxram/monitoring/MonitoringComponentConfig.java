@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.monitoring.config;
+package de.hhu.bsinfo.dxram.monitoring;
 
 import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
