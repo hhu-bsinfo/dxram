@@ -17,9 +17,13 @@ if (isDevelop && new File('../dxmon').exists()) {
 }
 
 if (isDevelop && new File('../dxnet').exists()) {
-    includeBuild( '../dxnet')
+    includeBuild('../dxnet')
 }
 
 if (isDevelop && new File('../dxgraph').exists()) {
     includeBuild('../dxgraph')
+}
+
+if (isDevelop && new File('../dxgradle').exists()) {
+    includeBuild('../dxgradle')
 }
