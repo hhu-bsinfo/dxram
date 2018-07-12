@@ -1,22 +1,22 @@
 package de.hhu.bsinfo.dxram.monitoring;
 
+import java.io.File;
+
 import com.google.gson.annotations.Expose;
+
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.monitoring.MonitoringComponent;
 import de.hhu.bsinfo.dxutils.OSValidator;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
-
-import java.io.File;
 
 public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Expose
-    private String m_nic = "enp4s0f0";
+    private String m_nic = "";
 
     @Expose
-    private String m_disk = "sda1";
+    private String m_disk = "";
 
     @Expose
     private TimeUnit m_timeWindow = new TimeUnit(2, "sec");
@@ -29,33 +29,33 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
 
     private TimeUnit m_csvTimeWindow;
 
-
-
     public MonitoringComponentConfig() {
         super(MonitoringComponent.class, true, true);
     }
 
     @Override
     protected boolean verify(DXRAMContext.Config p_config) {
-        if(!OSValidator.isUnix()) {
-            LOGGER.error("Monitoring is only supported for unix operating systems. Fix your configuration");
+        if (!OSValidator.isUnix()) {
+            LOGGER.error("Monitoring is only supported for unix operating systems.");
             return false;
         }
 
-        if(!DeviceLister.getNICs().contains(m_nic)) {
-            LOGGER.error("Monitoring component - m_nic ["+ m_nic +"] is invalid");
+        if (!DeviceLister.getNICs().contains(m_nic)) {
+            LOGGER.error("Monitoring component - m_nic [" + m_nic + "] is invalid");
             return false;
         }
 
-        if(!DeviceLister.getDisks().contains(m_disk)) {
-            LOGGER.error("Monitoring component - m_diskIdentifier ["+ m_disk +"] is invalid");
+        if (!DeviceLister.getDisks().contains(m_disk)) {
+            LOGGER.error("Monitoring component - m_diskIdentifier [" + m_disk + "] is invalid");
             return false;
         }
 
         File file = new File(m_monitoringFolder);
-        if(!file.exists()) {
-            if(!file.mkdirs()) {
-                LOGGER.error("Monitoring folder ["+ m_monitoringFolder +"] seems to be invalid - didn't exist and couldn't be created!");
+
+        if (!file.exists()) {
+            if (!file.mkdirs()) {
+                LOGGER.error("Monitoring folder [" + m_monitoringFolder +
+                        "] seems to be invalid - didn't exist and couldn't be created!");
                 return false;
             }
         }
@@ -89,5 +89,4 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
     public float getCSVSecondsTimeWindow() {
         return m_csvTimeWindow.getSec();
     }
-
 }
