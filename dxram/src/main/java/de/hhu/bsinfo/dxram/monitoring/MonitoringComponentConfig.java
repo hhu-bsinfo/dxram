@@ -25,7 +25,7 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
     private short m_collectsPerWindow = 10;
 
     @Expose
-    private String m_monitoringFolder = System.getProperty("user.home") + "/dxmon";
+    private String m_monitoringFolder = System.getProperty("user.dir") + "/mon";
 
     private TimeUnit m_csvTimeWindow;
 
@@ -59,6 +59,8 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
                 return false;
             }
         }
+
+        LOGGER.debug("Monitoring data output folder: %s", file);
 
         // after 8 "windows" the data will be written to file
         m_csvTimeWindow = new TimeUnit(m_timeWindow.getSec() * 8, "sec");
