@@ -30,11 +30,14 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
     private TimeUnit m_csvTimeWindow;
 
     public MonitoringComponentConfig() {
-        super(MonitoringComponent.class, true, true);
+        // FIXME temporarily disable the component by default due to several bugs that must be fixed first
+        super(MonitoringComponent.class, false, false);
+        //super(MonitoringComponent.class, true, true);
     }
 
     @Override
     protected boolean verify(DXRAMContext.Config p_config) {
+
         if (!OSValidator.isUnix()) {
             LOGGER.error("Monitoring is only supported for unix operating systems.");
             return false;
