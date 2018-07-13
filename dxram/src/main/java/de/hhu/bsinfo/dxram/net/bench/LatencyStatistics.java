@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.dxram.net.bench;
 
-import de.hhu.bsinfo.dxutils.eval.Stopwatch;
+import de.hhu.bsinfo.dxutils.Stopwatch;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**

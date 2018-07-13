@@ -29,7 +29,7 @@ import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
-import de.hhu.bsinfo.dxutils.eval.Stopwatch;
+import de.hhu.bsinfo.dxutils.Stopwatch;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
