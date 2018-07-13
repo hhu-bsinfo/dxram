@@ -1,6 +1,23 @@
 package de.hhu.bsinfo.dxram.monitoring;
 
-import de.hhu.bsinfo.dxmonitor.monitor.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import de.hhu.bsinfo.dxmonitor.monitor.CpuMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.DiskMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.JVMMemMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.JVMThreadsMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.MemMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.Monitor;
+import de.hhu.bsinfo.dxmonitor.monitor.MultipleThresholdDouble;
+import de.hhu.bsinfo.dxmonitor.monitor.NetworkMonitor;
 import de.hhu.bsinfo.dxmonitor.state.StateUpdateException;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringDataMessage;
@@ -9,15 +26,6 @@ import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringSysInfoMessage;
 import de.hhu.bsinfo.dxram.monitoring.metric.AverageMetric;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxutils.NodeID;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * PeerMonitoringHandler class
@@ -60,7 +68,8 @@ public class PeerMonitoringHandler extends Thread {
         m_networkComponent = p_networkComponent;
     }
 
-    void setConfigParameters(final String p_monFolder, float p_secondDelay, short p_numberOfCollects, String p_nicIdentifier, String p_diskIdentifier) {
+    void setConfigParameters(final String p_monFolder, float p_secondDelay, short p_numberOfCollects,
+            String p_nicIdentifier, String p_diskIdentifier) {
         m_monitorFolder = p_monFolder;
         m_secondDelay = p_secondDelay;
         m_numberOfCollects = p_numberOfCollects;
@@ -71,13 +80,14 @@ public class PeerMonitoringHandler extends Thread {
     void setupComponents() {
 
         CpuMonitor cpu = new CpuMonitor();
-        cpu.addThresholdCpuUsagePercent(new MultipleThresholdDouble("CpuUsage1", 3.9, true, 3, this::callbackCpuUsageThresholdExceed));
+        cpu.addThresholdCpuUsagePercent(
+                new MultipleThresholdDouble("CpuUsage1", 3.9, true, 3, this::callbackCpuUsageThresholdExceed));
         m_monitors.put("cpu", cpu);
 
         MemMonitor memMonitor = new MemMonitor();
-        memMonitor.addThresholdMemoryFree(new MultipleThresholdDouble("MemFree1", 0.8, true, 2, this::callbackMemThresholdExceed));
+        memMonitor.addThresholdMemoryFree(
+                new MultipleThresholdDouble("MemFree1", 0.8, true, 2, this::callbackMemThresholdExceed));
         m_monitors.put("memory", new MemMonitor());
-
 
         m_monitors.put("network", new NetworkMonitor(m_nicIdentifier));
         m_monitors.put("disk", new DiskMonitor(m_diskIdentifier));
@@ -106,9 +116,7 @@ public class PeerMonitoringHandler extends Thread {
             try {
                 sleep((long) (m_secondDelay * 1000) / m_numberOfCollects);
             } catch (InterruptedException e) {
-                // #if LOGGER >= ERROR
                 LOGGER.error("InterruptedException for %s", e);
-                // #endif /* LOGGER >= ERROR */
             }
         }
     }
@@ -120,9 +128,7 @@ public class PeerMonitoringHandler extends Thread {
         try {
             m_networkComponent.sendMessage(dataMessage);
         } catch (NetworkException e) {
-            // #if LOGGER >= ERROR
             LOGGER.error("Sending MonitoringDataMessage for %f failed: %s", m_superpeerNid, e);
-            // #endif /* LOGGER >= ERROR */
         }
 
         appendDataToFile(data);
@@ -134,7 +140,7 @@ public class PeerMonitoringHandler extends Thread {
 
     MonitoringDataStructure getMonitoringData() {
         MonitoringDataStructure monitoringData = new MonitoringDataStructure(m_ownNid, System.nanoTime());
-        for(Monitor monitor : m_monitors.values()) {
+        for (Monitor monitor : m_monitors.values()) {
             try {
                 monitor.update();
             } catch (StateUpdateException e) {
@@ -149,12 +155,11 @@ public class PeerMonitoringHandler extends Thread {
         m_shouldShutdown = true;
     }
 
-
     private void createPrintWriter() {
         try {
             String path = m_monitorFolder + File.separator + "node" + NodeID.toHexString(m_ownNid);
             File tmp = new File(path);
-            if(!tmp.exists()) {
+            if (!tmp.exists()) {
                 tmp.mkdir();
             }
 
@@ -166,7 +171,7 @@ public class PeerMonitoringHandler extends Thread {
 
             FileOutputStream fos = new FileOutputStream(file);
             OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF8");
-            m_writer= new PrintWriter(osw);
+            m_writer = new PrintWriter(osw);
             m_writer.println("nid,cpu,memory,rxThroughput,rxError,txThroughput,txError,readPercent,writePercent," +
                     "jvmHeapUsage,jvmEdenUsage,jvmSurvivorUsage,jvmOldUsage,jvmThreadDaemon,jvmThreadNonDaemon,jvmThreadCnt,jvmPeakCnt,timestamp");
             m_writer.flush();
@@ -227,28 +232,25 @@ public class PeerMonitoringHandler extends Thread {
         builder.append(threadTmp[3]);
         builder.append(DEFAULT_SEPARATOR);
 
-
         builder.append(p_data.getTimestamp());
 
         m_writer.println(builder.toString());
         m_writer.flush();
     }
 
-
     private void sendProposeToSuperpeer(final String p_component, final double p_value) {
         MonitoringProposeMessage proposeMessage = new MonitoringProposeMessage(m_superpeerNid, p_component, p_value);
         try {
             m_networkComponent.sendMessage(proposeMessage);
         } catch (NetworkException e) {
-            // #if LOGGER >= ERROR
             LOGGER.error("Sending MonitoringDataMessage for %f failed: %s", m_superpeerNid, e);
-            // #endif /* LOGGER >= ERROR */
         }
     }
 
     /******* Callback functions ********/
     // TODO implement better callbacks
-    private void callbackCpuUsageThresholdExceed(final double p_currentValue, final MultipleThresholdDouble p_threshold) {
+    private void callbackCpuUsageThresholdExceed(final double p_currentValue,
+            final MultipleThresholdDouble p_threshold) {
         sendProposeToSuperpeer("cpu", p_currentValue);
     }
 

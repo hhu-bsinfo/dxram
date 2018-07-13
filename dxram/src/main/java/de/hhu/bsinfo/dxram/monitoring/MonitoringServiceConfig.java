@@ -15,9 +15,7 @@ public class MonitoringServiceConfig extends AbstractDXRAMServiceConfig {
     @Override
     protected boolean verify(DXRAMContext.Config p_config) {
         if (!OSValidator.isUnix()) {
-            // #if LOGGER == ERROR
             LOGGER.error("Monitoring is only supported for unix operating systems. Fix your configuration");
-            // #endif /* LOGGER == ERROR */
             return false;
         }
 

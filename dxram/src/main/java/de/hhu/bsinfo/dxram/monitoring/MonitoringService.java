@@ -102,9 +102,7 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
                         }
                         break;
                     case MonitoringMessages.SUBTYPE_MONITORING_DATA:
-                        // #if LOGGER == TRACE
                         LOGGER.trace("Received Monitoring-Data");
-                        // #endif /* LOGGER == TRACE */
                         if (m_peerIsSuperpeer) {
                             incomingMonitoringData((MonitoringDataMessage) p_message);
                         }
