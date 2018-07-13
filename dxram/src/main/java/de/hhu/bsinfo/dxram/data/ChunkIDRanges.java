@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.data;
 
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;

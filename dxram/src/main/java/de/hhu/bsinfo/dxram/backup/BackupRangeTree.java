@@ -17,7 +17,7 @@
 package de.hhu.bsinfo.dxram.backup;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
 
 /**
  * Btree to store backup ranges of migrated chunks.

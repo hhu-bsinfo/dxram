@@ -42,7 +42,7 @@ import de.hhu.bsinfo.dxram.migration.messages.MigrationRemoteMessage;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**

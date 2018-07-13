@@ -22,7 +22,7 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
 import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 
 /**

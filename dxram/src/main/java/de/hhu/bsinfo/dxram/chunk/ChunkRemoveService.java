@@ -27,7 +27,7 @@ import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
 import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 import de.hhu.bsinfo.dxutils.stats.TimePool;
 import de.hhu.bsinfo.dxutils.stats.ValuePool;

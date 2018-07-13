@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
 import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 import de.hhu.bsinfo.dxutils.stats.TimePool;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
@@ -246,7 +246,6 @@ public final class CIDTable {
         for (int i = 0; i < m_cache.length; i++) {
             m_cache[i] = new TranslationCache(10);
         }
-
 
         LOGGER.info("CIDTable: init success (page directory at: 0x%X)", m_addressTableDirectory);
 

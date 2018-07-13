@@ -21,7 +21,7 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
-import de.hhu.bsinfo.dxram.util.ArrayListLong;
+import de.hhu.bsinfo.dxutils.ArrayListLong;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
