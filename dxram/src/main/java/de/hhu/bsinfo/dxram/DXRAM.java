@@ -67,6 +67,7 @@ import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.dxutils.ManifestHelper;
 import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.Process;
 
 /**
  * Main class/entry point for DXRAM.
@@ -260,6 +261,7 @@ public final class DXRAM {
         }
 
         str += "Cwd: " + System.getProperty("user.dir") + '\n';
+        str += "PID: " + Process.getCurrentPID() + '\n';
 
         BootService bootService = m_engine.getService(BootService.class);
 
