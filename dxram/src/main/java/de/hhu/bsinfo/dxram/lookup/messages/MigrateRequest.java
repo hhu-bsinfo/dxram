@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -60,7 +60,8 @@ public class MigrateRequest extends Request {
      * @param p_isBackup
      *         whether this is a backup message or not
      */
-    public MigrateRequest(final short p_destination, final long p_chunkID, final short p_nodeID, final boolean p_isBackup) {
+    public MigrateRequest(final short p_destination, final long p_chunkID, final short p_nodeID,
+            final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST);
 
         m_chunkID = p_chunkID;

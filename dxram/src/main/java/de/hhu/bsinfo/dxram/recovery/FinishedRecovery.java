@@ -31,7 +31,8 @@ public class FinishedRecovery {
     /**
      * Constructor
      */
-    public FinishedRecovery(final short p_replacementBackupPeer, final long[] p_chunkIDRanges, final int p_numberOfChunks, final short p_rangeID) {
+    public FinishedRecovery(final short p_replacementBackupPeer, final long[] p_chunkIDRanges,
+            final int p_numberOfChunks, final short p_rangeID) {
         m_replacementBackupPeer = p_replacementBackupPeer;
         m_chunkIDRanges = p_chunkIDRanges;
         m_numberOfChunks = p_numberOfChunks;
@@ -64,7 +65,6 @@ public class FinishedRecovery {
     public int getNumberOfChunks() {
         return m_numberOfChunks;
     }
-
 
     /**
      * Returns the RangeID

@@ -55,7 +55,8 @@ public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
 
     /**
      * This parameter can be set to false for single peers to avoid storing backups and the associated overhead.
-     * If this peer is not available for backup, it will not log and recover chunks but all other backup functions, like replicating own chunks, are enabled.
+     * If this peer is not available for backup, it will not log and recover chunks but all other backup functions,
+     * like replicating own chunks, are enabled.
      * Do not set this parameter globally to deactivate backup. Use backupActive parameter for that purpose.
      */
     boolean availableForBackup() {
@@ -120,7 +121,6 @@ public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
         if (m_replicationFactor < 1 || m_replicationFactor > 4) {
 
             LOGGER.error("Replication factor must be in [1, 4]!");
-
 
             return false;
         }

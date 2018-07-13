@@ -223,9 +223,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
 
         assert p_size > 0 && p_count > 0;
 
-
         LOGGER.trace("create[size %d, count %d, consecutive %b]", p_size, p_count, p_consecutive);
-
 
         // #ifdef STATISTICS
         SOP_CREATE.start(p_count);
@@ -264,10 +262,8 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         SOP_CREATE.stop();
         // #endif /* STATISTICS */
 
-
         LOGGER.trace("create[size %d, count %d, consecutive %b] -> %s, ...", p_size, p_count, p_consecutive,
                 ChunkID.toHexString(chunkIDs[0]));
-
 
         return chunkIDs;
     }
@@ -300,9 +296,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             return;
         }
 
-
         LOGGER.trace("create[p_consecutive %b, numDataStructures %d...]", p_consecutive, p_dataStructures.length);
-
 
         // #ifdef STATISTICS
         SOP_CREATE.start(p_dataStructures.length);
@@ -339,7 +333,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         SOP_CREATE.stop();
         // #endif /* STATISTICS */
 
-
         LOGGER.trace("create[numDataStructures(%d)]", p_dataStructures.length);
 
     }
@@ -371,9 +364,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             return new long[0];
         }
 
-
         LOGGER.trace("create[consecutive(%s), sizes(%d) %d, ...]", p_consecutive, p_sizes.length, p_sizes[0]);
-
 
         // #ifdef STATISTICS
         SOP_CREATE.start(p_sizes.length);
@@ -409,10 +400,8 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         SOP_CREATE.stop();
         // #endif /* STATISTICS */
 
-
         LOGGER.trace("create[consecutive(%s), sizes(%d) %d, ...] -> %s, ...", p_consecutive, p_sizes.length,
                 p_sizes[0], ChunkID.toHexString(chunkIDs[0]));
-
 
         return chunkIDs;
     }
@@ -461,10 +450,8 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             return new long[0];
         }
 
-
         LOGGER.trace("createRemote[peer %s, sizes(%d) %d, ...]", NodeID.toHexString(p_peer), p_sizes.length,
                 p_sizes[0]);
-
 
         // check if remote node is a peer
         NodeRole role = m_boot.getNodeRole(p_peer);
@@ -555,9 +542,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             return totalChunksPut;
         }
 
-
         LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_chunks.length);
-
 
         // #ifdef STATISTICS
         SOP_PUT.start(p_count);
@@ -652,7 +637,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
 
                 try {
                     m_network.sendSync(request);
-                } catch (final NetworkException e) {
+                } catch (final NetworkException ignored) {
                     if (m_backup.isActive()) {
                         for (DataStructure ds : chunksToPut) {
                             ds.setState(ChunkState.DATA_TEMPORARY_UNAVAILABLE);
@@ -706,7 +691,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
 
                         LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeer.getNodeID());
 
-
                         try {
                             m_network.sendMessage(new LogMessage(backupPeer.getNodeID(), backupRange.getRangeID(),
                                     dataStructures));
@@ -722,10 +706,8 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         SOP_PUT.stop();
         // #endif /* STATISTICS */
 
-
         LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...] -> %d", p_chunkUnlockOperation, p_chunks.length,
                 totalChunksPut);
-
 
         return totalChunksPut;
     }
@@ -757,9 +739,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
 
         assert p_offset >= 0 && p_count >= 0;
 
-
         LOGGER.trace("get[dataStructures(%d) ...]", p_count);
-
 
         // #ifdef STATISTICS
         SOP_GET.start(p_count);
@@ -840,7 +820,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
 
                 try {
                     m_network.sendSync(request);
-                } catch (final NetworkException e) {
+                } catch (final NetworkException ignored) {
                     if (m_backup.isActive()) {
                         for (DataStructure chunk : remoteChunks) {
                             chunk.setState(ChunkState.DATA_TEMPORARY_UNAVAILABLE);
@@ -874,9 +854,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         SOP_GET.stop();
         // #endif /* STATISTICS */
 
-
         LOGGER.trace("get[dataStructures(%d) ...] -> %d", p_chunks.length, totalChunksGot);
-
 
         return totalChunksGot;
     }
@@ -916,9 +894,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             return totalChunksGot;
         }
 
-
         LOGGER.trace("getLocal[dataStructures(%d) ...]", p_count);
-
 
         // #ifdef STATISTICS
         SOP_GET.start(p_count);
@@ -950,9 +926,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         SOP_GET.stop();
         // #endif /* STATISTICS */
 
-
         LOGGER.trace("getLocal[dataStructures(%d) ...] -> %d", p_chunks.length, totalChunksGot);
-
 
         return totalChunksGot;
     }
@@ -1048,7 +1022,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
 
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
 
-
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
@@ -1075,7 +1048,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                 }
             }
         }
-
 
         LOGGER.trace("Exiting incomingMessage");
 
@@ -1307,7 +1279,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
 
                         LOGGER.trace("Logging %d chunks to 0x%X", dataStructures.length, backupPeer.getNodeID());
 
-
                         try {
                             m_network.sendMessage(new LogMessage(backupPeer.getNodeID(), backupRange.getRangeID(),
                                     dataStructures));
@@ -1365,7 +1336,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             if (chunkIDs == null) {
 
                 LOGGER.error("Multi create chunks failed");
-
 
                 chunkIDs = new long[sizes.length];
                 for (int i = 0; i < chunkIDs.length; i++) {

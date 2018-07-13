@@ -29,9 +29,9 @@ public class NameserviceEntry {
      * Constructor
      *
      * @param p_id
-     *     Id of the entry
+     *         Id of the entry
      * @param p_value
-     *     Value of the entry
+     *         Value of the entry
      */
     public NameserviceEntry(final int p_id, final long p_value) {
         m_id = p_id;

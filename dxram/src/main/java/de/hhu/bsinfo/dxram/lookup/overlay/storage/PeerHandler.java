@@ -26,7 +26,8 @@ import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 
 /**
- * Wrapper class for all data belonging to one peer: One Btree to store ranges, one to store backup range affiliation and an ArrayList for the backup ranges
+ * Wrapper class for all data belonging to one peer: One Btree to store ranges, one to store backup range
+ * affiliation and an ArrayList for the backup ranges
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 14.02.2017
  */
@@ -210,7 +211,8 @@ public final class PeerHandler {
         if (p_toBeReplacedPeer == -1) {
             backupPeers = BackupRange.addBackupPeer(m_backupRanges.get(p_rangeID), p_replacement);
         } else {
-            backupPeers = BackupRange.replaceBackupPeer(m_backupRanges.get(p_rangeID), p_toBeReplacedPeer, p_replacement);
+            backupPeers = BackupRange.replaceBackupPeer(m_backupRanges.get(p_rangeID), p_toBeReplacedPeer,
+                    p_replacement);
         }
 
         m_backupRanges.set(p_rangeID, backupPeers);

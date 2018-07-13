@@ -38,7 +38,7 @@ public class ReplicateBackupRangeResponse extends Response {
      * Creates an instance of ReplicateBackupRangeResponse
      *
      * @param p_request
-     *     the corresponding ReplicateBackupRangeResponse
+     *         the corresponding ReplicateBackupRangeResponse
      */
     public ReplicateBackupRangeResponse(final ReplicateBackupRangeRequest p_request) {
         super(p_request, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_RESPONSE);

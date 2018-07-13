@@ -17,8 +17,8 @@
 package de.hhu.bsinfo.dxram.data;
 
 /**
- * Different states for a chunk or data structure. DXRAM operations set the state of a chunk/data structure to indicate failure/success
- * and allow the user to handle errors
+ * Different states for a chunk or data structure. DXRAM operations set the state of a chunk/data structure to
+ * indicate failure/success and allow the user to handle errors
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 28.03.2017
  */
@@ -44,7 +44,8 @@ public enum ChunkState {
     DOES_NOT_EXIST,
 
     /**
-     * Data for the chunk/data structure was temporary unavailable on the last operation (migration or recovery in progress)
+     * Data for the chunk/data structure was temporary unavailable on the last operation
+     * (migration or recovery in progress)
      */
     DATA_TEMPORARY_UNAVAILABLE,
 

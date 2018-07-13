@@ -41,7 +41,8 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
  */
 public class PrintMemoryStatusToFileTask implements Task {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(PrintMemoryStatusToFileTask.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(
+            PrintMemoryStatusToFileTask.class.getSimpleName());
 
     @Expose
     private String m_path = "";
@@ -72,37 +73,33 @@ public class PrintMemoryStatusToFileTask implements Task {
         }
 
         File file = new File(m_path);
+
         if (file.exists()) {
             if (!file.delete()) {
-
                 LOGGER.error("Deleting file %s failed", file);
-
                 return -2;
             }
+
             try {
                 if (!file.createNewFile()) {
-
                     LOGGER.error("Creating output file %s for memory status failed", m_path);
-
                     return -3;
                 }
             } catch (final IOException e) {
-
                 LOGGER.error("Creating output file %s for memory status failed: %s", m_path, e);
-
                 return -4;
             }
         }
 
         PrintStream out;
+
         try {
             out = new PrintStream(file);
         } catch (final FileNotFoundException e) {
-
             LOGGER.error("Creating print stream for memory status failed", e);
-
             return -5;
         }
+
         PrintMemoryStatus.printMemoryStatusToOutput(out, chunkService.getStatus());
 
         out.close();

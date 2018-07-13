@@ -18,13 +18,15 @@ package de.hhu.bsinfo.dxram.ms;
 
 /**
  * Interface to send signals to the master
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 16.07.2016
  */
 public interface TaskSignalInterface {
     /**
      * Send a signal to the master of the slave this task is running on.
+     *
      * @param p_signal
-     *            Signal to send
+     *         Signal to send
      */
     void sendSignalToMaster(final Signal p_signal);
 }

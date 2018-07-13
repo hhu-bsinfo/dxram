@@ -35,7 +35,7 @@ public final class NameServiceStringConverter {
      * Creates an instance of StringConverter
      *
      * @param p_nameserviceType
-     *     Type of the string converter to use
+     *         Type of the string converter to use
      */
     public NameServiceStringConverter(final String p_nameserviceType) {
         m_nameserviceType = p_nameserviceType;
@@ -184,7 +184,7 @@ public final class NameServiceStringConverter {
      * If the string is longer, all other characters are ignored.
      *
      * @param p_name
-     *     the String
+     *         the String
      * @return the integer
      */
     public int convert(final String p_name) {
@@ -194,8 +194,8 @@ public final class NameServiceStringConverter {
 
         if ("NAME".equals(m_nameserviceType)) {
             if (p_name.length() > 5) {
-                throw new IllegalArgumentException(
-                    "String " + p_name + " is too long! Only five characters are allowed. For greater numbers set configuration to ID");
+                throw new IllegalArgumentException("String " + p_name + " is too long! Only five characters are " +
+                        " allowed. For greater numbers set configuration to ID");
             }
 
             chars = p_name.toCharArray();
@@ -214,25 +214,26 @@ public final class NameServiceStringConverter {
      * Converts an integer index to a string. String length is is 5 chars.
      *
      * @param p_index
-     *     Index to convert
+     *         Index to convert
      * @return String representation
      */
     public String convert(final int p_index) {
-        String ret;
+        StringBuilder ret;
 
         if ("NAME".equals(m_nameserviceType)) {
-            ret = "";
+            ret = new StringBuilder();
 
             for (int i = 0; i < 32 / 6; i++) {
                 Character c = m_inverseCharMap.get(p_index >> i * 6 & 0x3F);
+
                 if (c != null) {
-                    ret += c;
+                    ret.append(c);
                 }
             }
         } else {
-            ret = Integer.toString(p_index);
+            ret = new StringBuilder(Integer.toString(p_index));
         }
 
-        return ret;
+        return ret.toString();
     }
 }

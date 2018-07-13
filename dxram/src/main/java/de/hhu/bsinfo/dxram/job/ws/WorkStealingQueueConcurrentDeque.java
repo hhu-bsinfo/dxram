@@ -23,6 +23,7 @@ import de.hhu.bsinfo.dxram.job.AbstractJob;
 
 /**
  * Work stealing queue implementation using Java's ConcurrentLinkedDeque
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 14.03.2016
  */
 public class WorkStealingQueueConcurrentDeque implements WorkStealingQueue {

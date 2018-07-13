@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 
 /**
  * Response to a GetChunkIDRequest
@@ -50,7 +50,8 @@ public class GetChunkIDForNameserviceEntryResponse extends Response {
      * @param p_chunkID
      *         the ChunkID
      */
-    public GetChunkIDForNameserviceEntryResponse(final GetChunkIDForNameserviceEntryRequest p_request, final long p_chunkID) {
+    public GetChunkIDForNameserviceEntryResponse(final GetChunkIDForNameserviceEntryRequest p_request,
+            final long p_chunkID) {
         super(p_request, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_RESPONSE);
 
         m_chunkID = p_chunkID;

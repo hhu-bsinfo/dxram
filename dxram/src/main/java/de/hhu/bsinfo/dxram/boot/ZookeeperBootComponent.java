@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -41,6 +40,7 @@ import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxram.util.ZooKeeperHandler;
 import de.hhu.bsinfo.dxram.util.ZooKeeperHandler.ZooKeeperException;
@@ -55,7 +55,8 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
-public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> implements Watcher, EventListener<AbstractEvent> {
+public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig>
+        implements Watcher, EventListener<AbstractEvent> {
     // component dependencies
     private EventComponent m_event;
     private LookupComponent m_lookup;
@@ -106,7 +107,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         for (int i = 0; i < allNodes.length; i++) {
             currentEntry = allNodes[i];
             if (currentEntry != null) {
-                if (currentEntry.getRole() == NodeRole.PEER && currentEntry.getStatus() && currentEntry.isAvailableForBackup()) {
+                if (currentEntry.getRole() == NodeRole.PEER && currentEntry.getStatus() &&
+                        currentEntry.isAvailableForBackup()) {
                     ret.add(new BackupPeer((short) (i & 0xFFFF), currentEntry.getRack(), currentEntry.getSwitch()));
                 }
             }
@@ -314,8 +316,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             if (p_nodeID == m_bootstrap) {
                 setBootstrapPeer(m_nodes.getOwnNodeID());
 
-
-                LOGGER.debug("Failed node %s was bootstrap. New bootstrap is %s", NodeID.toHexString(p_nodeID), NodeID.toHexString(m_bootstrap));
+                LOGGER.debug("Failed node %s was bootstrap. New bootstrap is %s", NodeID.toHexString(p_nodeID),
+                        NodeID.toHexString(m_bootstrap));
 
             }
         } else if (p_role == NodeRole.PEER) {
@@ -360,12 +362,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         } else if (p_event instanceof NodeJoinEvent) {
             NodeJoinEvent event = (NodeJoinEvent) p_event;
 
-
-            LOGGER.info(String.format("Node %s with capabilities %s joined", NodeID.toHexString(event.getNodeID()), NodeCapabilities.toString(event.getCapabilities())));
-
+            LOGGER.info(String.format("Node %s with capabilities %s joined", NodeID.toHexString(event.getNodeID()),
+                    NodeCapabilities.toString(event.getCapabilities())));
 
             boolean readFromFile = m_nodes.getNode(event.getNodeID()) != null;
-            m_nodes.addNode(new NodeEntry(event.getAddress(), event.getNodeID(), event.getRack(), event.getSwitch(), event.getRole(), event.getCapabilities(), readFromFile,
+            m_nodes.addNode(new NodeEntry(event.getAddress(), event.getNodeID(), event.getRack(), event.getSwitch(),
+                    event.getRole(), event.getCapabilities(), readFromFile,
                     event.isAvailableForBackup(), true));
         }
     }
@@ -402,14 +404,13 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         m_ownAddress = p_config.getEngineConfig().getAddress();
         NodeRole role = p_config.getEngineConfig().getRole();
 
-
         LOGGER.info("Initializing with address %s, role %s", m_ownAddress, role);
-
 
         m_event.registerListener(this, NodeFailureEvent.class);
         m_event.registerListener(this, NodeJoinEvent.class);
 
-        m_zookeeper = new ZooKeeperHandler(getConfig().getPath(), getConfig().getConnection().getAddressStr(), (int) getConfig().getTimeout().getMs());
+        m_zookeeper = new ZooKeeperHandler(getConfig().getPath(), getConfig().getConnection().getAddressStr(),
+                (int) getConfig().getTimeout().getMs());
         m_isStarting = true;
 
         m_nodes = new NodesConfiguration();
@@ -417,7 +418,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         if (!parseNodes(getConfig().getNodesConfig(), role, getConfig().getRack(), getConfig().getSwitch())) {
 
             LOGGER.error("Parsing nodes failed");
-
 
             return false;
         }
@@ -433,7 +433,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             try {
 
                 LOGGER.info("Cleaning-up ZooKeeper folder");
-
 
                 m_zookeeper.close(true);
             } catch (final ZooKeeperException e) {
@@ -479,9 +478,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         } catch (final ZooKeeperException e) {
             // Entry should be available, even if another node updated the bootstrap first
 
-
             LOGGER.error("Getting status from zookeeper failed", e);
-
 
             return;
         }
@@ -490,7 +487,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         currentBootstrap = Short.parseShort(entry);
         if (currentBootstrap == m_bootstrap) {
             try {
-                if (!zookeeperSetData("nodes/bootstrap", String.valueOf(p_nodeID).getBytes(StandardCharsets.US_ASCII), status.getVersion())) {
+                if (!zookeeperSetData("nodes/bootstrap", String.valueOf(p_nodeID).getBytes(StandardCharsets.US_ASCII),
+                        status.getVersion())) {
                     m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
                 } else {
                     m_bootstrap = p_nodeID;
@@ -517,7 +515,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      *         the switch this node is connected to (irrelevant for nodes in nodes file)
      * @return the parsed nodes
      */
-    private boolean parseNodes(final ArrayList<NodeEntry> p_nodes, final NodeRole p_cmdLineNodeRole, final short p_cmdLineRack, final short p_cmdLineSwitch) {
+    private boolean parseNodes(final ArrayList<NodeEntry> p_nodes, final NodeRole p_cmdLineNodeRole,
+            final short p_cmdLineRack, final short p_cmdLineSwitch) {
         boolean ret = false;
         String barrier;
         boolean parsed = false;
@@ -541,7 +540,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
                     if (p_nodes == null) {
 
-                        LOGGER.error("Missing nodes configuration or reading nodes configuration from config file failed");
+                        LOGGER.error(
+                                "Missing nodes configuration or reading nodes configuration from config file failed");
 
                         m_zookeeper.close(true);
                         return false;
@@ -585,9 +585,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         short nodeID;
         int seed;
 
-
         LOGGER.trace("Entering parseNodesBootstrap");
-
 
         try {
             if (!m_zookeeper.exists("nodes")) {
@@ -653,9 +651,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             return false;
         }
 
-
         LOGGER.trace("Exiting parseNodesBootstrap");
-
 
         return true;
     }
@@ -674,7 +670,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      * @return whether parsing was successful or not
      * @note this method is called by every node except bootstrap
      */
-    private boolean parseNodesNormal(final ArrayList<NodeEntry> p_nodes, final NodeRole p_cmdLineNodeRole, final short p_cmdLineRack,
+    private boolean parseNodesNormal(final ArrayList<NodeEntry> p_nodes, final NodeRole p_cmdLineNodeRole,
+            final short p_cmdLineRack,
             final short p_cmdLineSwitch) {
         short nodeID;
         int seed;
@@ -683,9 +680,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
         String[] splits;
 
-
         LOGGER.trace("Entering parseNodesNormal");
-
 
         try {
             // Parse node information
@@ -703,7 +698,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 if (m_ownAddress.equals(entry.getAddress())) {
                     if (entry.getRole() != p_cmdLineNodeRole) {
 
-                        LOGGER.error("NodeRole in configuration differs from command line given NodeRole: %s != %s", entry.getRole(), p_cmdLineNodeRole);
+                        LOGGER.error("NodeRole in configuration differs from command line given NodeRole: %s != %s",
+                                entry.getRole(), p_cmdLineNodeRole);
 
                         return false;
                     }
@@ -735,7 +731,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 splits = node.split(":");
 
                 m_nodes.addNode(
-                        new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), nodeID, Short.parseShort(splits[3]), Short.parseShort(splits[4]),
+                        new NodeEntry(new IPV4Unit(splits[0], Integer.parseInt(splits[1])), nodeID,
+                                Short.parseShort(splits[3]), Short.parseShort(splits[4]),
                                 NodeRole.toNodeRole(splits[2]), false, true));
 
                 if (nodeID == m_nodes.getOwnNodeID()) {
@@ -749,8 +746,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
                 LOGGER.warn("Node not in nodes.config (%s)", m_ownAddress);
 
-
-                node = m_ownAddress + ":" + p_cmdLineNodeRole.getAcronym() + ':' + p_cmdLineRack + ':' + p_cmdLineSwitch;
+                node = m_ownAddress + ":" + p_cmdLineNodeRole.getAcronym() + ':' + p_cmdLineRack + ':' +
+                        p_cmdLineSwitch;
 
                 childs = m_zookeeper.getChildren("nodes/free");
                 if (!childs.isEmpty()) {
@@ -760,7 +757,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                     m_zookeeper.delete("nodes/free/" + nodeID);
                 } else {
                     splits = m_ownAddress.getIP().split("\\.");
-                    seed = (Integer.parseInt(splits[1]) << 16) + (Integer.parseInt(splits[2]) << 8) + Integer.parseInt(splits[3]);
+                    seed = (Integer.parseInt(splits[1]) << 16) + (Integer.parseInt(splits[2]) << 8) + Integer.parseInt(
+                            splits[3]);
                     nodeID = CRC16.continuousHash(seed);
                     while (m_bloomFilter.contains(nodeID) || nodeID == NodeID.INVALID_ID) {
                         nodeID = CRC16.continuousHash(--seed);
@@ -772,7 +770,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 }
 
                 // Set routing information for that node
-                //m_nodes.addNode(new NodeEntry(m_ownAddress, nodeID, p_cmdLineRack, p_cmdLineSwitch, p_cmdLineNodeRole, false, true));
+                //m_nodes.addNode(new NodeEntry(m_ownAddress, nodeID, p_cmdLineRack, p_cmdLineSwitch,
+                //  p_cmdLineNodeRole, false, true));
             } else {
                 // Remove NodeID if this node failed before
                 nodeID = m_nodes.getOwnNodeID();
@@ -790,9 +789,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             return false;
         }
 
-
         LOGGER.trace("Exiting parseNodesNormal");
-
 
         return true;
     }
@@ -897,7 +894,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      * @throws ZooKeeperException
      *         if data could not be set
      */
-    private boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version) throws ZooKeeperException {
+    private boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version)
+            throws ZooKeeperException {
         m_zookeeper.setData(p_path, p_data, p_version);
         return true;
     }

@@ -21,6 +21,9 @@ import java.lang.management.ManagementFactory;
 import java.net.InetSocketAddress;
 import java.util.List;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.messages.BootMessages;
 import de.hhu.bsinfo.dxram.boot.messages.RebootMessage;
@@ -30,11 +33,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -137,7 +136,8 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
     /**
      * Collects all node ids supporting the specified capabilities.
      *
-     * @param p_capabilities The requested capabilities.
+     * @param p_capabilities
+     *         The requested capabilities.
      * @return A list containing all matching node ids.
      */
     public List<Short> getSupportingNodes(int p_capabilities) {
@@ -169,7 +169,8 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
     /**
      * Returns the specified node's capabilities.
      *
-     * @param p_nodeId The node's id.
+     * @param p_nodeId
+     *         The node's id.
      * @return The specified node's capabilities.
      */
     public int getNodeCapabilities(final short p_nodeId) {
@@ -267,7 +268,6 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
                     return false;
                 }
 
-
                 LOGGER.info("Sent remote shutdown to node %s", NodeID.toHexString(p_nodeID));
 
             }
@@ -305,9 +305,7 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
             return false;
         }
 
-
         LOGGER.info("Sent reboot message to node %s", NodeID.toHexString(p_nodeID));
-
 
         return true;
     }
@@ -353,8 +351,10 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
 
     @Override
     protected boolean startService(final DXRAMContext.Config p_config) {
-        m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE, RebootMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE, ShutdownMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE,
+                RebootMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE,
+                ShutdownMessage.class);
 
         m_network.register(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE, this);
         m_network.register(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE, this);

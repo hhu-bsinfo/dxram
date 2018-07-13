@@ -22,6 +22,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsResponse;
@@ -33,9 +36,6 @@ import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewSuccessorMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SendBackupsMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -45,7 +45,8 @@ import de.hhu.bsinfo.dxutils.NodeID;
  */
 class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(SuperpeerStabilizationThread.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(
+            SuperpeerStabilizationThread.class.getSimpleName());
 
     // Attributes
     private NetworkComponent m_network;
@@ -83,8 +84,9 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * @param p_network
      *         the network component
      */
-    SuperpeerStabilizationThread(final OverlaySuperpeer p_superpeer, final short p_nodeID, final ReentrantReadWriteLock p_overlayLock,
-            final int p_initialNumberOfSuperpeers, final ArrayList<Short> p_superpeers, final int p_sleepInterval, final NetworkComponent p_network) {
+    SuperpeerStabilizationThread(final OverlaySuperpeer p_superpeer, final short p_nodeID,
+            final ReentrantReadWriteLock p_overlayLock, final int p_initialNumberOfSuperpeers,
+            final ArrayList<Short> p_superpeers, final int p_sleepInterval, final NetworkComponent p_network) {
         m_superpeer = p_superpeer;
 
         m_network = p_network;
@@ -184,14 +186,15 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
     /**
      * Performs stabilization protocol
      *
-     * @note without disappearing superpeers this method does not do anything important; All the setup is done with joining
+     * @note without disappearing superpeers this method does not do anything important;
+     * All the setup is done with joining
      */
     private void performStabilization() {
-
         m_overlayLock.readLock().lock();
         while (m_superpeer.getPredecessor() != NodeID.INVALID_ID && m_nodeID != m_superpeer.getPredecessor()) {
 
-            LOGGER.trace("Performing stabilization by sending NodeID to predecessor=0x%X", m_superpeer.getPredecessor());
+            LOGGER.trace("Performing stabilization by sending NodeID to predecessor=0x%X",
+                    m_superpeer.getPredecessor());
 
             try {
                 m_network.sendMessage(new NotifyAboutNewSuccessorMessage(m_superpeer.getPredecessor(), m_nodeID));
@@ -208,9 +211,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
         }
 
         while (m_superpeer.getSuccessor() != NodeID.INVALID_ID && m_nodeID != m_superpeer.getSuccessor()) {
-
             LOGGER.trace("Performing stabilization by sending NodeID to successor=0x%X", m_superpeer.getSuccessor());
-
 
             try {
                 m_network.sendMessage(new NotifyAboutNewPredecessorMessage(m_superpeer.getSuccessor(), m_nodeID));
@@ -312,7 +313,6 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 
                 LOGGER.trace("Pinging 0x%X for heartbeat protocol", peer);
 
-
                 try {
                     m_network.sendMessage(new SendSuperpeersMessage(peer, m_otherSuperpeers));
                 } catch (final NetworkException e) {
@@ -332,9 +332,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
         responsibleArea = OverlayHelper.getResponsibleArea(m_nodeID, m_superpeer.getPredecessor(), m_otherSuperpeers);
         m_overlayLock.readLock().unlock();
 
-
         LOGGER.trace("Responsible backup area: 0x%X, 0x%X", responsibleArea[0], responsibleArea[1]);
-
 
         gatherBackups(responsibleArea);
 
@@ -368,20 +366,21 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
                 currentSuperpeer = m_superpeer.getSuccessor();
             } else {
                 oldSuperpeer = p_responsibleArea[0];
-                currentSuperpeer = OverlayHelper.getResponsibleSuperpeer((short) (p_responsibleArea[0] + 1), m_otherSuperpeers);
+                currentSuperpeer = OverlayHelper.getResponsibleSuperpeer((short) (p_responsibleArea[0] + 1),
+                        m_otherSuperpeers);
             }
             while (currentSuperpeer != NodeID.INVALID_ID) {
                 peers = m_superpeer.getPeersInResponsibleArea(oldSuperpeer, currentSuperpeer);
 
-
-                LOGGER.trace("Gathering backups by requesting all backups in responsible area from 0x%X", currentSuperpeer);
-
+                LOGGER.trace("Gathering backups by requesting all backups in responsible area from 0x%X",
+                        currentSuperpeer);
 
                 currentResponsibleArea = new short[] {oldSuperpeer, currentSuperpeer};
                 numberOfNameserviceEntries = m_superpeer.getNumberOfNameserviceEntries(currentResponsibleArea);
                 numberOfStorages = m_superpeer.getNumberOfStorages(currentResponsibleArea);
                 numberOfBarriers = m_superpeer.getNumberOfBarriers(currentResponsibleArea);
-                request = new AskAboutBackupsRequest(currentSuperpeer, peers, numberOfNameserviceEntries, numberOfStorages, numberOfBarriers);
+                request = new AskAboutBackupsRequest(currentSuperpeer, peers, numberOfNameserviceEntries,
+                        numberOfStorages, numberOfBarriers);
                 m_overlayLock.readLock().unlock();
 
                 try {
@@ -390,7 +389,8 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
                     // CurrentSuperpeer is not available anymore, will be removed from superpeer array by failure
                     // handling
                     m_overlayLock.readLock().lock();
-                    currentSuperpeer = OverlayHelper.getResponsibleSuperpeer((short) (oldSuperpeer + 1), m_otherSuperpeers);
+                    currentSuperpeer = OverlayHelper.getResponsibleSuperpeer((short) (oldSuperpeer + 1),
+                            m_otherSuperpeers);
                     peers.clear();
                     continue;
                 }
@@ -403,7 +403,8 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
                 m_overlayLock.readLock().lock();
                 m_overlayLock.writeLock().unlock();
 
-                if (currentSuperpeer == m_superpeer.getPredecessor() || !OverlayHelper.isSuperpeerInRange(currentSuperpeer, p_responsibleArea[0], m_nodeID)) {
+                if (currentSuperpeer == m_superpeer.getPredecessor() || !OverlayHelper.isSuperpeerInRange(
+                        currentSuperpeer, p_responsibleArea[0], m_nodeID)) {
                     // Second case is for predecessor failure
                     break;
                 }
@@ -411,7 +412,8 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
                 peers.clear();
 
                 oldSuperpeer = currentSuperpeer;
-                currentSuperpeer = OverlayHelper.getResponsibleSuperpeer((short) (currentSuperpeer + 1), m_otherSuperpeers);
+                currentSuperpeer = OverlayHelper.getResponsibleSuperpeer((short) (currentSuperpeer + 1),
+                        m_otherSuperpeers);
             }
         }
         m_overlayLock.readLock().unlock();
@@ -424,40 +426,40 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
         boolean printed = false;
         short superpeer;
         short peer;
-        String superpeersFigure = "Superpeers: ";
-        String peersFigure = "Peers: ";
+        StringBuilder superpeersFigure = new StringBuilder("Superpeers: ");
+        StringBuilder peersFigure = new StringBuilder("Peers: ");
 
         m_overlayLock.readLock().lock();
         for (int i = 0; i < m_otherSuperpeers.size(); i++) {
             superpeer = m_otherSuperpeers.get(i);
             if (!printed && superpeer > m_nodeID) {
-                superpeersFigure += " \'" + NodeID.toHexString(m_nodeID) + '\'';
+                superpeersFigure.append(" \'").append(NodeID.toHexString(m_nodeID)).append('\'');
                 printed = true;
             }
-            superpeersFigure += ' ' + NodeID.toHexString(superpeer);
+            superpeersFigure.append(' ').append(NodeID.toHexString(superpeer));
         }
         if (!printed) {
-            superpeersFigure += " \'" + NodeID.toHexString(m_nodeID) + '\'';
+            superpeersFigure.append(" \'").append(NodeID.toHexString(m_nodeID)).append('\'');
         }
 
         final ArrayList<Short> peers = m_superpeer.getPeers();
         if (peers != null && !peers.isEmpty()) {
             for (int i = 0; i < peers.size(); i++) {
                 peer = peers.get(i);
-                peersFigure += ' ' + NodeID.toHexString(peer);
+                peersFigure.append(' ').append(NodeID.toHexString(peer));
             }
         }
         m_overlayLock.readLock().unlock();
 
-        if (!(superpeersFigure + peersFigure).equals(m_overlayFigure)) {
+        if (!(superpeersFigure + peersFigure.toString()).equals(m_overlayFigure)) {
 
-            LOGGER.info(superpeersFigure);
-            if (!"Peers: ".equals(peersFigure)) {
-                LOGGER.info(peersFigure);
+            LOGGER.info(superpeersFigure.toString());
+            if (!"Peers: ".equals(peersFigure.toString())) {
+                LOGGER.info(peersFigure.toString());
             }
 
         }
-        m_overlayFigure = superpeersFigure + peersFigure;
+        m_overlayFigure = superpeersFigure + peersFigure.toString();
     }
 
     /**
@@ -468,9 +470,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      */
     private void incomingSendBackupsMessage(final SendBackupsMessage p_sendBackupsMessage) {
 
-
         LOGGER.trace("Got Message: SEND_BACKUPS_MESSAGE from 0x%X", p_sendBackupsMessage.getSource());
-
 
         m_overlayLock.writeLock().lock();
         m_superpeer.storeIncomingBackups(p_sendBackupsMessage.getMetadata());
@@ -486,12 +486,11 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
     private void incomingAskAboutBackupsRequest(final AskAboutBackupsRequest p_askAboutBackupsRequest) {
         byte[] missingMetadata;
 
-
         LOGGER.trace("Got request: ASK_ABOUT_SUCCESSOR_REQUEST from 0x%X", p_askAboutBackupsRequest.getSource());
 
-
         m_overlayLock.readLock().lock();
-        missingMetadata = m_superpeer.compareAndReturnBackups(p_askAboutBackupsRequest.getPeers(), p_askAboutBackupsRequest.getNumberOfNameserviceEntries(),
+        missingMetadata = m_superpeer.compareAndReturnBackups(p_askAboutBackupsRequest.getPeers(),
+                p_askAboutBackupsRequest.getNumberOfNameserviceEntries(),
                 p_askAboutBackupsRequest.getNumberOfStorages(), p_askAboutBackupsRequest.getNumberOfBarriers());
         m_overlayLock.readLock().unlock();
 
@@ -512,9 +511,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
     private void incomingAskAboutSuccessorRequest(final AskAboutSuccessorRequest p_askAboutSuccessorRequest) {
         short successor;
 
-
         LOGGER.trace("Got request: ASK_ABOUT_SUCCESSOR_REQUEST from 0x%X", p_askAboutSuccessorRequest.getSource());
-
 
         m_overlayLock.readLock().lock();
         successor = m_superpeer.getSuccessor();
@@ -533,12 +530,12 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * @param p_notifyAboutNewPredecessorMessage
      *         the NotifyAboutNewPredecessorMessage
      */
-    private void incomingNotifyAboutNewPredecessorMessage(final NotifyAboutNewPredecessorMessage p_notifyAboutNewPredecessorMessage) {
+    private void incomingNotifyAboutNewPredecessorMessage(
+            final NotifyAboutNewPredecessorMessage p_notifyAboutNewPredecessorMessage) {
         short possiblePredecessor;
 
-
-        LOGGER.trace("Got Message: NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE from 0x%X", p_notifyAboutNewPredecessorMessage.getSource());
-
+        LOGGER.trace("Got Message: NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE from 0x%X",
+                p_notifyAboutNewPredecessorMessage.getSource());
 
         possiblePredecessor = p_notifyAboutNewPredecessorMessage.getNewPredecessor();
         m_overlayLock.writeLock().lock();
@@ -556,12 +553,12 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * @param p_notifyAboutNewSuccessorMessage
      *         the NotifyAboutNewSuccessorMessage
      */
-    private void incomingNotifyAboutNewSuccessorMessage(final NotifyAboutNewSuccessorMessage p_notifyAboutNewSuccessorMessage) {
+    private void incomingNotifyAboutNewSuccessorMessage(
+            final NotifyAboutNewSuccessorMessage p_notifyAboutNewSuccessorMessage) {
         short possibleSuccessor;
 
-
-        LOGGER.trace("Got Message: NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE from 0x%X", p_notifyAboutNewSuccessorMessage.getSource());
-
+        LOGGER.trace("Got Message: NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE from 0x%X",
+                p_notifyAboutNewSuccessorMessage.getSource());
 
         possibleSuccessor = p_notifyAboutNewSuccessorMessage.getNewSuccessor();
         m_overlayLock.writeLock().lock();
@@ -579,10 +576,14 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST, this);
-        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST,
+                this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST,
+                this);
         m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE, this);
-        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE, this);
-        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE, this);
     }
 }

@@ -38,7 +38,7 @@ public final class TaskScriptState {
      * Constructor
      *
      * @param p_script
-     *     Task script to encapsulate
+     *         Task script to encapsulate
      */
     public TaskScriptState(final TaskScript p_script) {
         m_script = p_script;
@@ -94,7 +94,7 @@ public final class TaskScriptState {
      * Register a TaskListener for this task.
      *
      * @param p_listeners
-     *     Listeners to register.
+     *         Listeners to register.
      */
     public void registerTaskListener(final TaskListener... p_listeners) {
         Collections.addAll(m_completionListeners, p_listeners);
@@ -102,7 +102,8 @@ public final class TaskScriptState {
 
     @Override
     public String toString() {
-        return "TaskScriptState[" + m_taskScriptIdAssigned + "][" + NodeID.toHexString(m_nodeIdSubmitted) + "]: " + m_script;
+        return "TaskScriptState[" + m_taskScriptIdAssigned + "][" + NodeID.toHexString(m_nodeIdSubmitted) + "]: " +
+                m_script;
     }
 
     /**
@@ -118,7 +119,7 @@ public final class TaskScriptState {
      * Assign a task id to this task.
      *
      * @param p_id
-     *     Id to assign.
+     *         Id to assign.
      */
     void assignTaskId(final int p_id) {
         m_taskScriptIdAssigned = p_id;
@@ -128,7 +129,7 @@ public final class TaskScriptState {
      * Set the node id that submitted this task.
      *
      * @param p_id
-     *     Node id.
+     *         Node id.
      */
     void setNodeIdSubmitted(final short p_id) {
         m_nodeIdSubmitted = p_id;
@@ -147,7 +148,7 @@ public final class TaskScriptState {
      * Trigger callbacks of all listeners: execution finished.
      *
      * @param p_returnCodes
-     *     Return codes of the slave nodes after execution has finished.
+     *         Return codes of the slave nodes after execution has finished.
      */
     void notifyListenersExecutionCompleted(final int[] p_returnCodes) {
         m_returnCodes = p_returnCodes;

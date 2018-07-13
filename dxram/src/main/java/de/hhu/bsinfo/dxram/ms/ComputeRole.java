@@ -34,7 +34,7 @@ public enum ComputeRole {
      * Creates an instance of Role
      *
      * @param p_acronym
-     *     the role's acronym
+     *         the role's acronym
      */
     ComputeRole(final char p_acronym) {
         m_acronym = p_acronym;
@@ -44,7 +44,7 @@ public enum ComputeRole {
      * Get the node role from a full string.
      *
      * @param p_str
-     *     String to parse.
+     *         String to parse.
      * @return Role node of string.
      */
     public static ComputeRole toComputeRole(final String p_str) {
@@ -85,7 +85,7 @@ public enum ComputeRole {
      * Gets the role for the given acronym
      *
      * @param p_acronym
-     *     the acronym
+     *         the acronym
      * @return the corresponding role
      */
     public static ComputeRole getRoleByAcronym(final char p_acronym) {

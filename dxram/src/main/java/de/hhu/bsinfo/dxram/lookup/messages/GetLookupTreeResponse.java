@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 
 /**
  * Response to a GetLookupTreeRequest

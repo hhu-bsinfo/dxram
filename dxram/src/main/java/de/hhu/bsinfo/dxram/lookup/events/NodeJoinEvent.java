@@ -18,7 +18,6 @@ package de.hhu.bsinfo.dxram.lookup.events;
 
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
@@ -28,26 +27,29 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
 public class NodeJoinEvent extends AbstractEvent {
-
-    private short m_nodeID = NodeID.INVALID_ID;
-    private NodeRole m_role = NodeRole.PEER;
+    private short m_nodeID;
+    private NodeRole m_role;
     private int m_capabilities;
-    private short m_rack = 0;
-    private short m_switch = 0;
+    private short m_rack;
+    private short m_switch;
     private boolean m_availableForBackup;
     private IPV4Unit m_address;
 
     /**
      * Creates an instance of NodeJoinEvent
+     *
      * @param p_sourceClass
      *         the calling class
      * @param p_nodeID
      *         the NodeID of the failed peer
-     * @param p_role The node's role.
-     * @param p_capabilities The node's capabilities.
+     * @param p_role
+     *         The node's role.
+     * @param p_capabilities
+     *         The node's capabilities.
      */
-    public NodeJoinEvent(final String p_sourceClass, final short p_nodeID, final NodeRole p_role, final int p_capabilities, final short p_rack, final short p_switch,
-                         final boolean p_availableForBackup, final IPV4Unit p_address) {
+    public NodeJoinEvent(final String p_sourceClass, final short p_nodeID, final NodeRole p_role,
+            final int p_capabilities, final short p_rack, final short p_switch, final boolean p_availableForBackup,
+            final IPV4Unit p_address) {
         super(p_sourceClass);
 
         m_nodeID = p_nodeID;

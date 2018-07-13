@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Request for getting the ChunkID to corresponding id on a remote node
@@ -51,7 +51,8 @@ public class GetChunkIDForNameserviceEntryRequest extends Request {
      *         the id
      */
     public GetChunkIDForNameserviceEntryRequest(final short p_destination, final int p_id) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST);
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST);
 
         m_id = p_id;
     }

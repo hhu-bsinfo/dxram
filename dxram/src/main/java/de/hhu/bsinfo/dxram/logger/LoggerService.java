@@ -22,6 +22,9 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -30,9 +33,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.messages.LoggerMessages;
 import de.hhu.bsinfo.dxram.logger.messages.SetLogLevelMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 
 /**
  * Service to allow the application to use the same logger as DXRAM.
@@ -137,7 +137,8 @@ public class LoggerService extends AbstractDXRAMService<LoggerServiceConfig> imp
 
     @Override
     protected boolean startService(final DXRAMContext.Config p_config) {
-        m_network.registerMessageType(DXRAMMessageTypes.LOGGER_MESSAGES_TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE, SetLogLevelMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOGGER_MESSAGES_TYPE,
+                LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE, SetLogLevelMessage.class);
 
         m_network.register(DXRAMMessageTypes.LOGGER_MESSAGES_TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE, this);
 

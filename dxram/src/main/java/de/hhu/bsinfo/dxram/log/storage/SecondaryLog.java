@@ -129,8 +129,8 @@ public class SecondaryLog extends AbstractLog {
             throws IOException {
         super(new File(p_backupDirectory + 'N' + NodeID.toHexString(p_originalOwner) + '_' + SECLOG_PREFIX_FILENAME +
                         NodeID.toHexString(p_owner) + '_' + p_rangeID + '_' + (p_useChecksums ? "1" : "0") + '_' +
-                        (p_useTimestamps ? "1" : "0") + SECLOG_POSTFIX_FILENAME), p_secondaryLogSize, p_mode, p_logSegmentSize,
-                p_flashPageSize);
+                        (p_useTimestamps ? "1" : "0") + SECLOG_POSTFIX_FILENAME), p_secondaryLogSize, p_mode,
+                p_logSegmentSize, p_flashPageSize);
 
         if (p_secondaryLogSize < p_flashPageSize) {
             throw new IllegalArgumentException("Error: Secondary log too small");
@@ -166,7 +166,6 @@ public class SecondaryLog extends AbstractLog {
         if (!createLogAndWriteHeader()) {
             throw new IOException("Error: Secondary log " + p_rangeID + " could not be created");
         }
-
 
         LOGGER.trace("Initialized secondary log (%d)", m_secondaryLogSize);
 
@@ -873,7 +872,6 @@ public class SecondaryLog extends AbstractLog {
                     // There is no free segment -> fill partly used segments
                     length = fillPartlyUsedSegments(p_bufferWrapper, rangeSize, length, true);
 
-
                     if (length > 0) {
                         LOGGER.error("Secondary log is full!");
                     }
@@ -892,7 +890,6 @@ public class SecondaryLog extends AbstractLog {
             if (length > 0) {
                 // Fill partly used segments if log iteration (remove task) is not in progress
                 length = fillPartlyUsedSegments(p_bufferWrapper, 0, length, false);
-
 
                 if (length > 0) {
                     LOGGER.error("Secondary log is full!");
@@ -957,7 +954,6 @@ public class SecondaryLog extends AbstractLog {
 
             LOGGER.warn("Unable do check for data corruption as no checksums are stored (configurable)!");
 
-
             doCRCCheck = false;
         }
 
@@ -966,14 +962,12 @@ public class SecondaryLog extends AbstractLog {
         // HashMap to store large Chunks in
         largeChunks = new HashMap<>();
 
-
         if (m_owner == m_originalOwner) {
             LOGGER.info("Starting recovery of backup range %d of 0x%X", m_rangeID, m_owner);
         } else {
             LOGGER.info("Starting recovery of backup range %d of 0x%X. Original owner: 0x%x", m_rangeID, m_owner,
                     m_originalOwner);
         }
-
 
         long time = System.currentTimeMillis();
 
@@ -1041,7 +1035,6 @@ public class SecondaryLog extends AbstractLog {
         }
         timeToPut += System.currentTimeMillis() - t;
 
-
         LOGGER.info("Recovery of backup range finished: ");
         LOGGER.info("\t Recovered %d chunks (large: %d) in %d ms", recoveryMetadata.getNumberOfChunks(),
                 numberOfRecoveredLargeChunks, System.currentTimeMillis() - time);
@@ -1059,7 +1052,6 @@ public class SecondaryLog extends AbstractLog {
                 statsCaller.m_timeToReadSegmentsFromDisk);
         LOGGER.info("\t Time to read headers, check versions and checksums: \t %d ms", statsCaller.m_timeToCheck);
         LOGGER.info("\t Time to create and put chunks in memory management: \t %d ms", timeToPut);
-
 
         return recoveryMetadata;
     }
@@ -1275,7 +1267,6 @@ public class SecondaryLog extends AbstractLog {
 
                                 LOGGER.error("Corrupt data. Could not recover 0x%X!", chunkID);
 
-
                                 readBytes += headerSize + payloadSize;
                                 continue;
                             }
@@ -1487,7 +1478,6 @@ public class SecondaryLog extends AbstractLog {
                                     "Secondary log for range %d of 0x%X is full. Cannot write log entries anymore." +
                                             " Initializing reorganization and awaiting execution", m_rangeID, m_owner);
 
-
                             signalReorganizationAndWait();
                         } catch (InterruptedException ignore) {
                         }
@@ -1539,8 +1529,8 @@ public class SecondaryLog extends AbstractLog {
             if (m_useTimestamps) {
                 // Modify segment age
                 int currentAge = header.getAge();
-                header.setAge(currentAge -
-                                (currentAge + getCurrentTimeInSec() - header.getLastAccess()) * p_length / header.getUsedBytes()
+                header.setAge(currentAge - (currentAge + getCurrentTimeInSec() - header.getLastAccess()) *
+                                p_length / header.getUsedBytes()
                         /* contains p_length already */);
             }
             ret = 0;
@@ -1760,10 +1750,8 @@ public class SecondaryLog extends AbstractLog {
                     writeCopy.order(ByteOrder.LITTLE_ENDIAN);
                     read = System.currentTimeMillis();
 
-
                     LOGGER.debug("Read segment %d in range 0x%X,%d: %d", p_segmentIndex, m_owner, m_rangeID,
                             m_segmentHeaders[p_segmentIndex].getUsedBytes());
-
 
                     if (segmentLength > 0) {
                         while (readBytes < segmentLength && !Thread.currentThread().isInterrupted()) {
@@ -1796,7 +1784,8 @@ public class SecondaryLog extends AbstractLog {
                                                 .getMaximumNumberOfVersions(m_secondaryLogSize / 2, 256, false),
                                         readBytes);
 
-                            } else if (currentVersion.isEqual(entryVersion)) { /* TODO: do not delete log entry if epoch is current epoch */
+                            } else if (currentVersion.isEqual(
+                                    entryVersion)) { /* TODO: do not delete log entry if epoch is current epoch */
                                 // Compare current version with element
                                 if (readBytes != writtenBytes) {
                                     segmentData.position(readBytes);
@@ -1862,7 +1851,6 @@ public class SecondaryLog extends AbstractLog {
                 if (readBytes - writtenBytes > 0) {
                     m_avgBytesFreedInReorganization +=
                             (readBytes - writtenBytes - m_avgBytesFreedInReorganization) / ++m_numberOfReorganizations;
-
 
                     LOGGER.info(
                             "Freed %d bytes during reorganization of segment %d in range 0x%X,%d\t total log size: %d",

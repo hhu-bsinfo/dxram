@@ -18,6 +18,7 @@ package de.hhu.bsinfo.dxram.job.messages;
 
 /**
  * Different message types used by the job package.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public final class JobMessages {

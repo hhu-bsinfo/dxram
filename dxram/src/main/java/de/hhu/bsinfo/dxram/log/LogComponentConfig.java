@@ -82,7 +82,8 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
     }
 
     /**
-     * Harddrive access mode ("raf" -> RandomAccessFile, "dir" -> file access with ODirect (skips kernel buffer), "raw" -> direct access to raw partition).
+     * Harddrive access mode ("raf" -> RandomAccessFile, "dir" -> file access with ODirect (skips kernel buffer),
+     * "raw" -> direct access to raw partition).
      */
     public String getHarddriveAccess() {
         return m_harddriveAccess;
@@ -103,7 +104,8 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
     }
 
     /**
-     * Whether to log with timestamp for every log entry or not (if true, timestamps are used for improved segment selection).
+     * Whether to log with timestamp for every log entry or not
+     * (if true, timestamps are used for improved segment selection).
      */
     public boolean useTimestamps() {
         return m_useTimestamps;
@@ -159,7 +161,8 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
     }
 
     /**
-     * Log entries older than this threshold are not considered for segment age calculation (relevant, only, if timestamps are enabled).
+     * Log entries older than this threshold are not considered for segment age calculation
+     * (relevant, only, if timestamps are enabled).
      **/
     public int getColdDataThreshold() {
         return m_coldDataThresholdInSec;
@@ -180,11 +183,8 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
                 m_logSegmentSize.getBytes() <= m_flashPageSize.getBytes() ||
                 m_secondaryLogBufferSize.getBytes() % m_flashPageSize.getBytes() != 0 ||
                 m_secondaryLogBufferSize.getBytes() <= m_flashPageSize.getBytes()) {
-
-            LOGGER.error(
-                    "Primary log size, secondary log size, write buffer size, log segment size and secondary log buffer size " +
-                            "must be a multiple (integer) of and greater than flash page size");
-
+            LOGGER.error("Primary log size, secondary log size, write buffer size, log segment size and secondary " +
+                    "log buffer size must be a multiple (integer) of and greater than flash page size");
             return false;
         }
 
@@ -194,31 +194,23 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
                 secondaryLogSize <= m_logSegmentSize.getBytes() ||
                 m_writeBufferSize.getBytes() % m_logSegmentSize.getBytes() != 0 ||
                 m_writeBufferSize.getBytes() <= m_logSegmentSize.getBytes()) {
-
-            LOGGER.error(
-                    "Primary log size, secondary log size and write buffer size must be a multiple (integer) of and greater than segment size");
-
+            LOGGER.error("Primary log size, secondary log size and write buffer size must be a multiple " +
+                    "(integer) of and greater than segment size");
             return false;
         }
 
         if (m_secondaryLogBufferSize.getBytes() > m_logSegmentSize.getBytes()) {
-
             LOGGER.error("Secondary log buffer size must not exceed segment size!");
-
             return false;
         }
 
         if (m_utilizationPromptReorganization <= 50) {
-
             LOGGER.warn("Reorganization threshold is < 50. Reorganization is triggered continuously!");
-
             return true;
         }
 
         if (!m_useTimestamps && m_coldDataThresholdInSec != COLD_DATA_THRESHOLD) {
-
             LOGGER.warn("Cold data threshold was modified, but timestamps are disabled!");
-
         }
 
         if (secondaryLogSize <
@@ -226,9 +218,7 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
                         .getBytes() || m_writeBufferSize.getBytes() <
                 p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize()
                         .getBytes()) {
-
             LOGGER.error("Secondary log and write buffer size must be greater than the max size of a chunk");
-
             return false;
         }
 

@@ -18,6 +18,7 @@ package de.hhu.bsinfo.dxram.ms;
 
 /**
  * Signal codes the slave can send to the master and vice versa
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.07.2016
  */
 public enum Signal {

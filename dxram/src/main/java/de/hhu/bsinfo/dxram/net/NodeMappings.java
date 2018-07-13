@@ -18,8 +18,8 @@ package de.hhu.bsinfo.dxram.net;
 
 import java.net.InetSocketAddress;
 
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxnet.NodeMap;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 
 /**
  * Wrapper interface to hide the boot component for dxnet
@@ -35,7 +35,7 @@ class NodeMappings implements NodeMap {
      * Constructor
      *
      * @param p_bootComponent
-     *     Boot component instance to wrap.
+     *         Boot component instance to wrap.
      */
     NodeMappings(final AbstractBootComponent p_bootComponent) {
         m_boot = p_bootComponent;

@@ -80,7 +80,8 @@ public class ChunkDataModifyRandomTask implements Task {
         ChunkIDRanges allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern / 2, p_ctx, chunkService);
         long totalChunkCount = allChunkRanges.getTotalChunkIDsOfRanges();
         long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(totalChunkCount, m_numThreads);
-        ChunkIDRanges[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
+        ChunkIDRanges[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread,
+                allChunkRanges);
         long[] operationsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_opCount, m_numThreads);
 
         Thread[] threads = new Thread[m_numThreads];
@@ -89,8 +90,9 @@ public class ChunkDataModifyRandomTask implements Task {
             time[i] = new Stopwatch();
         }
 
-        System.out.printf("Modifying (and checking %d) %d random chunks (pattern %d) in batches of %d chunk(s) with %d thread(s)...\n",
-                m_writeContentsAndVerify ? 1 : 0, m_opCount, m_pattern, m_chunkBatch, m_numThreads);
+        System.out.printf("Modifying (and checking %d) %d random chunks (pattern %d) in batches of %d chunk(s) " +
+                        "with %d thread(s)...\n", m_writeContentsAndVerify ? 1 : 0, m_opCount, m_pattern, m_chunkBatch,
+                m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
@@ -197,8 +199,8 @@ public class ChunkDataModifyRandomTask implements Task {
 
                                     for (int k = 0; k < buffer.length; k++) {
                                         if (buffer[k] != (byte) k) {
-                                            LOGGER.error("Contents of chunk %s are not matching written contents: 0x%X != 0x%X", chunksToVerify[j], buffer[k],
-                                                    k);
+                                            LOGGER.error("Contents of chunk %s are not matching written contents: " +
+                                                    "0x%X != 0x%X", chunksToVerify[j], buffer[k], k);
                                         }
                                     }
                                 }

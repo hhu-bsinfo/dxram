@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.backup.RangeID;
-import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
@@ -65,9 +65,10 @@ public class UpdateMetadataAfterRecoveryMessage extends Message {
      * @param p_chunkIDRanges
      *         all recovered ChunkIDs in ranges
      */
-    public UpdateMetadataAfterRecoveryMessage(final short p_destination, final short p_rangeID, final short p_creator, final short p_restorer,
-            final long[] p_chunkIDRanges) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_UPDATE_METADATA_AFTER_RECOVERY_MESSAGE);
+    public UpdateMetadataAfterRecoveryMessage(final short p_destination, final short p_rangeID, final short p_creator,
+            final short p_restorer, final long[] p_chunkIDRanges) {
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_UPDATE_METADATA_AFTER_RECOVERY_MESSAGE);
 
         m_rangeID = p_rangeID;
         m_creator = p_creator;

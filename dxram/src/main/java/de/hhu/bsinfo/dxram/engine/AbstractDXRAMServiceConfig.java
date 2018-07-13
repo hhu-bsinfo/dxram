@@ -35,8 +35,8 @@ public abstract class AbstractDXRAMServiceConfig {
      * @param p_enabledForPeer
      *         True to enable the service if the node is a peer, false to disable
      */
-    protected AbstractDXRAMServiceConfig(final Class<? extends AbstractDXRAMService> p_class, final boolean p_enabledForSuperpeer,
-            final boolean p_enabledForPeer) {
+    protected AbstractDXRAMServiceConfig(final Class<? extends AbstractDXRAMService> p_class,
+            final boolean p_enabledForSuperpeer, final boolean p_enabledForPeer) {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_class = getClass().getName();
         m_serviceClass = p_class.getSimpleName();

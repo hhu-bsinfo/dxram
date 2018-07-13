@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 
 /**
  * Message to get the current status of an active barrier.
@@ -48,7 +48,8 @@ public class BarrierGetStatusResponse extends Response {
      * @param p_barrierStatus
      *         Status of the barrier
      */
-    public BarrierGetStatusResponse(final BarrierGetStatusRequest p_request, final BarrierStatus p_barrierStatus, final byte p_status) {
+    public BarrierGetStatusResponse(final BarrierGetStatusRequest p_request, final BarrierStatus p_barrierStatus,
+            final byte p_status) {
         super(p_request, LookupMessages.SUBTYPE_BARRIER_STATUS_RESPONSE);
 
         m_barrierId = p_request.getBarrierId();

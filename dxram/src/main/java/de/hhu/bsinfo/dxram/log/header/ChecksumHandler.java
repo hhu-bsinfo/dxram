@@ -48,7 +48,8 @@ public final class ChecksumHandler {
      *         the offset within b
      * @return the checksum
      */
-    public static int calculateChecksumOfPayload(final DirectByteBufferWrapper p_bufferWrapper, final int p_offset, final int p_length) {
+    public static int calculateChecksumOfPayload(final DirectByteBufferWrapper p_bufferWrapper, final int p_offset,
+            final int p_length) {
         if (ms_native) {
             return JNINativeCRCGenerator.hashNative(0, p_bufferWrapper.getAddress(), p_offset, p_length);
         } else {
@@ -122,18 +123,22 @@ public final class ChecksumHandler {
 
         if (p_size + p_headerSize <= p_bytesUntilEnd) {
             if (ms_native) {
-                checksum = JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(), p_offset + p_headerSize, p_size);
+                checksum = JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(),
+                        p_offset + p_headerSize, p_size);
             } else {
-                checksum = JNINativeCRCGenerator.hashHeap(checksum, p_bufferWrapper.getBuffer().array(), p_offset + p_headerSize, p_size);
+                checksum = JNINativeCRCGenerator.hashHeap(checksum, p_bufferWrapper.getBuffer().array(),
+                        p_offset + p_headerSize, p_size);
             }
 
             buffer.putInt(p_offset + crcOffset, checksum);
         } else {
             if (p_bytesUntilEnd < p_headerSize) {
                 if (ms_native) {
-                    checksum = JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(), p_headerSize - p_bytesUntilEnd, p_size);
+                    checksum = JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(),
+                            p_headerSize - p_bytesUntilEnd, p_size);
                 } else {
-                    checksum = JNINativeCRCGenerator.hashHeap(checksum, p_bufferWrapper.getBuffer().array(), p_headerSize - p_bytesUntilEnd, p_size);
+                    checksum = JNINativeCRCGenerator.hashHeap(checksum, p_bufferWrapper.getBuffer().array(),
+                            p_headerSize - p_bytesUntilEnd, p_size);
                 }
 
                 if (p_bytesUntilEnd <= crcOffset) {
@@ -150,12 +155,16 @@ public final class ChecksumHandler {
             } else if (p_bytesUntilEnd > p_headerSize) {
                 if (ms_native) {
                     checksum =
-                            JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(), p_offset + p_headerSize, p_bytesUntilEnd - p_headerSize);
-                    checksum = JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(), 0, p_size - (p_bytesUntilEnd - p_headerSize));
+                            JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(),
+                                    p_offset + p_headerSize, p_bytesUntilEnd - p_headerSize);
+                    checksum = JNINativeCRCGenerator.hashNative(checksum, p_bufferWrapper.getAddress(), 0,
+                            p_size - (p_bytesUntilEnd - p_headerSize));
                 } else {
                     checksum = JNINativeCRCGenerator
-                            .hashHeap(checksum, p_bufferWrapper.getBuffer().array(), p_offset + p_headerSize, p_bytesUntilEnd - p_headerSize);
-                    checksum = JNINativeCRCGenerator.hashHeap(checksum, p_bufferWrapper.getBuffer().array(), 0, p_size - (p_bytesUntilEnd - p_headerSize));
+                            .hashHeap(checksum, p_bufferWrapper.getBuffer().array(), p_offset + p_headerSize,
+                                    p_bytesUntilEnd - p_headerSize);
+                    checksum = JNINativeCRCGenerator.hashHeap(checksum, p_bufferWrapper.getBuffer().array(), 0,
+                            p_size - (p_bytesUntilEnd - p_headerSize));
                 }
 
                 buffer.putInt(p_offset + crcOffset, checksum);

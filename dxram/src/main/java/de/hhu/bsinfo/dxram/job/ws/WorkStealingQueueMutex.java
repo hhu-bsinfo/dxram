@@ -26,6 +26,7 @@ import de.hhu.bsinfo.dxram.job.AbstractJob;
 
 /**
  * Simple mutex implementation of a work stealing queue.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class WorkStealingQueueMutex implements WorkStealingQueue {

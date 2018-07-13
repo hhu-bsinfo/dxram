@@ -12,7 +12,10 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
-import static de.hhu.bsinfo.dxram.util.NodeCapabilities.*;
+import static de.hhu.bsinfo.dxram.util.NodeCapabilities.COMPUTE;
+import static de.hhu.bsinfo.dxram.util.NodeCapabilities.NONE;
+import static de.hhu.bsinfo.dxram.util.NodeCapabilities.STORAGE;
+import static de.hhu.bsinfo.dxram.util.NodeCapabilities.toMask;
 
 /**
  * Config for the ZookeeperBootComponent
@@ -36,10 +39,12 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
     private ArrayList<NodesConfiguration.NodeEntry> m_nodesConfig = new ArrayList<NodesConfiguration.NodeEntry>() {
         {
             // default values for local testing
-            add(new NodesConfiguration.NodeEntry(new IPV4Unit("127.0.0.1", 22221), NodeID.INVALID_ID, (short) 0, (short) 0, NodeRole.SUPERPEER, NONE, true, true,
-                    false));
-            add(new NodesConfiguration.NodeEntry(new IPV4Unit("127.0.0.1", 22222), NodeID.INVALID_ID, (short) 0, (short) 0, NodeRole.PEER, toMask(STORAGE, COMPUTE), true, true, false));
-            add(new NodesConfiguration.NodeEntry(new IPV4Unit("127.0.0.1", 22223), NodeID.INVALID_ID, (short) 0, (short) 0, NodeRole.PEER, toMask(STORAGE, COMPUTE), true, true, false));
+            add(new NodesConfiguration.NodeEntry(new IPV4Unit("127.0.0.1", 22221), NodeID.INVALID_ID, (short) 0,
+                    (short) 0, NodeRole.SUPERPEER, NONE, true, true, false));
+            add(new NodesConfiguration.NodeEntry(new IPV4Unit("127.0.0.1", 22222), NodeID.INVALID_ID, (short) 0,
+                    (short) 0, NodeRole.PEER, toMask(STORAGE, COMPUTE), true, true, false));
+            add(new NodesConfiguration.NodeEntry(new IPV4Unit("127.0.0.1", 22223), NodeID.INVALID_ID, (short) 0,
+                    (short) 0, NodeRole.PEER, toMask(STORAGE, COMPUTE), true, true, false));
         }
     };
 
@@ -109,10 +114,10 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
-
         if (m_bitfieldSize.getBytes() < 2048 * 1024) {
 
-            LOGGER.warn("Bitfield size is rather small. Not all node IDs may be addressable because of high false positives rate!");
+            LOGGER.warn("Bitfield size is rather small. Not all node IDs may be addressable because of high " +
+                    "false positives rate!");
 
         }
 

@@ -95,7 +95,8 @@ public class SynchronizationService extends AbstractDXRAMService<Synchronization
      * @param p_customData
      *         Custom data to pass along with the sign on
      * @param p_waitForRelease
-     *         True to wait for the barrier to be released, false to just sign on and don't wait for release (e.g. signal for remotes)
+     *         True to wait for the barrier to be released, false to just sign on and don't wait for release
+     *         (e.g. signal for remotes)
      * @return BarrierStatus, null on error like barrier does not exist
      */
     public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData, final boolean p_waitForRelease) {

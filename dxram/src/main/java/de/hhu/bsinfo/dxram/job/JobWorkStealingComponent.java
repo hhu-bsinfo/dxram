@@ -30,7 +30,8 @@ import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkStealingComponentConfig> implements WorkerDelegate {
+public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkStealingComponentConfig>
+        implements WorkerDelegate {
     // component dependencies
     private AbstractBootComponent m_boot;
 
@@ -41,7 +42,8 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
      * Constructor
      */
     public JobWorkStealingComponent() {
-        super(DXRAMComponentOrder.Init.JOB_WORK_STEALING, DXRAMComponentOrder.Shutdown.JOB_WORK_STEALING, JobWorkStealingComponentConfig.class);
+        super(DXRAMComponentOrder.Init.JOB_WORK_STEALING, DXRAMComponentOrder.Shutdown.JOB_WORK_STEALING,
+                JobWorkStealingComponentConfig.class);
     }
 
     @Override
@@ -56,17 +58,14 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
 
                 LOGGER.debug("Submitted job %s to worker %s", p_job, worker);
 
-
                 success = true;
                 break;
             }
         }
 
-
         if (!success) {
             LOGGER.warn("Submiting job %s failed", p_job);
         }
-
 
         return success;
     }
@@ -116,6 +115,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
         // wait until all workers are running
         for (Worker worker : m_workers) {
             while (!worker.isRunning()) {
+                Thread.yield();
             }
         }
 
@@ -124,9 +124,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
 
     @Override
     protected boolean shutdownComponent() {
-
         LOGGER.debug("Waiting for unfinished jobs...");
-
 
         while (m_unfinishedJobs.get() > 0) {
             Thread.yield();
@@ -136,9 +134,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
             worker.shutdown();
         }
 
-
         LOGGER.debug("Waiting for workers to shut down...");
-
 
         for (Worker worker : m_workers) {
             while (worker.isRunning()) {
@@ -161,7 +157,6 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
 
             job = worker.stealJob();
             if (job != null) {
-
                 LOGGER.trace("Job %s stolen from worker %s", job, worker);
 
                 break;

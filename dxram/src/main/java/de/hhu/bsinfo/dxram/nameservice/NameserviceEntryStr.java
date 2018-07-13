@@ -29,9 +29,9 @@ public class NameserviceEntryStr {
      * Constructor
      *
      * @param p_name
-     *     Name of the entry
+     *         Name of the entry
      * @param p_value
-     *     Value of the entry
+     *         Value of the entry
      */
     public NameserviceEntryStr(final String p_name, final long p_value) {
         m_name = p_name;

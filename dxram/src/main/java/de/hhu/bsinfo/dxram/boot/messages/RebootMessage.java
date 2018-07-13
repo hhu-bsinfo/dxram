@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.boot.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Message to trigger a soft reboot of DXRAM
@@ -37,7 +37,7 @@ public class RebootMessage extends Message {
      * Creates an instance of RebootMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      */
     public RebootMessage(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE);

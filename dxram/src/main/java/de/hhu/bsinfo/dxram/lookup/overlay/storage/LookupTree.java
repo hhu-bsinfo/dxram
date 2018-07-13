@@ -388,7 +388,8 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         numberOfBytesWritten += Integer.BYTES;
 
         // Size of the b tree list
-        // Integer represents the bytes where the size of the list is stored, m_size + 1 for number of entries including the
+        // Integer represents the bytes where the size of the list is stored, m_size + 1 for number of
+        // entries including the
         // default (LocalID: 0x1000000000000 NodeID: 0xNID), long and short for key and value
         if (m_root != null) {
             numberOfBytesWritten += m_size * (Long.BYTES + Short.BYTES);
@@ -445,8 +446,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
         Node node;
 
         localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
-
-        assert localID >= 0;
 
         if (m_root == null) {
             createOrReplaceEntry(ChunkID.MAX_LOCALID, m_creator);
@@ -1275,7 +1274,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * Auxiliary object to return LocalID and NodeID at once
      *
      * @author Kevin Beineke
-     *         13.06.2013
+     * 13.06.2013
      */
     private static final class Entry implements Serializable {
 
@@ -1333,7 +1332,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
      * A single node of the btree
      *
      * @author Kevin Beineke
-     *         13.06.2013
+     * 13.06.2013
      */
     private static final class Node implements Comparable<Node>, Serializable {
 

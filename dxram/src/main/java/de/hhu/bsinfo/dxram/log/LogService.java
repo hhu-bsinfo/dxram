@@ -183,7 +183,8 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      *         the LogMessage
      */
     private void incomingLogMessage(final LogMessage p_message) {
-        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(), p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(),
+                p_message.getMessageBuffer(), p_message.getSource());
     }
 
     /**
@@ -193,7 +194,8 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      *         the LogAnonMessage
      */
     private void incomingLogAnonMessage(final LogAnonMessage p_message) {
-        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(), p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(),
+                p_message.getMessageBuffer(), p_message.getSource());
     }
 
     /**
@@ -203,7 +205,8 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      *         the LogBufferMessage
      */
     private void incomingLogBufferMessage(final LogBufferMessage p_message) {
-        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(), p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(),
+                p_message.getMessageBuffer(), p_message.getSource());
     }
 
     /**
@@ -233,7 +236,6 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
 
             LOGGER.error("Could not acknowledge initialization of backup range", e);
 
-
         }
     }
 
@@ -246,7 +248,8 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
     private void incomingInitRecoveredBackupRangeRequest(final InitRecoveredBackupRangeRequest p_request) {
         boolean res;
 
-        res = m_log.incomingInitRecoveredBackupRange(p_request.getRangeID(), p_request.getSource(), p_request.getOriginalRangeID(),
+        res = m_log.incomingInitRecoveredBackupRange(p_request.getRangeID(), p_request.getSource(),
+                p_request.getOriginalRangeID(),
                 p_request.getOriginalOwner(), p_request.isNewBackupRange());
 
         try {
@@ -254,7 +257,6 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
         } catch (final NetworkException e) {
 
             LOGGER.error("Could not acknowledge initialization of backup range", e);
-
 
         }
     }
@@ -265,14 +267,21 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      * Register network messages we use in here.
      */
     private void registerNetworkMessages() {
-        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, LogMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_ANON_MESSAGE, LogAnonMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE, LogBufferMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST, GetUtilizationRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE, GetUtilizationResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE,
+                LogMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_ANON_MESSAGE,
+                LogAnonMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE,
+                LogBufferMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE,
+                RemoveMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST,
+                GetUtilizationRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE,
+                GetUtilizationResponse.class);
 
-        m_network.registerSpecialReceiveMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_ANON_MESSAGE);
+        m_network.registerSpecialReceiveMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
+                LogMessages.SUBTYPE_LOG_ANON_MESSAGE);
     }
 
     /**
@@ -284,7 +293,8 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
         m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE, this);
         m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, this);
         m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_BACKUP_RANGE_REQUEST, this);
-        m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST,
+                this);
         m_network.register(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST, this);
     }
 }

@@ -69,8 +69,9 @@ public final class MetadataHandler {
      * @param p_assignedPeersIncludingBackups
      *         reference to all assigned peers including backups
      */
-    public MetadataHandler(final PeerHandler[] p_peerHandlers, final NameserviceHashTable p_nameservice, final SuperpeerStorage p_storage,
-            final BarriersTable p_barriers, final ArrayList<Short> p_assignedPeersIncludingBackups) {
+    public MetadataHandler(final PeerHandler[] p_peerHandlers, final NameserviceHashTable p_nameservice,
+            final SuperpeerStorage p_storage, final BarriersTable p_barriers,
+            final ArrayList<Short> p_assignedPeersIncludingBackups) {
         m_peerHandlers = p_peerHandlers;
         m_nameservice = p_nameservice;
         m_storage = p_storage;
@@ -162,7 +163,6 @@ public final class MetadataHandler {
 
         LOGGER.trace("Serializing metadata of area: 0x%X, 0x%X", p_beginOfArea, p_endOfArea);
 
-
         // Get all corresponding nameservice entries
         nameserviceEntries = m_nameservice.receiveMetadataInRange(p_beginOfArea, p_endOfArea);
         // Get all corresponding storages
@@ -219,7 +219,6 @@ public final class MetadataHandler {
             while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_beginOfArea, p_endOfArea)) {
 
                 LOGGER.trace("Including LookupTree of 0x%X", currentPeer);
-
 
                 peerHandler = getPeerHandler(currentPeer);
                 // no tree available -> no chunks were created or backup system is deactivated
@@ -278,7 +277,6 @@ public final class MetadataHandler {
 
         LOGGER.trace("Serializing all metadata");
 
-
         // Get all nameservice entries
         nameserviceEntries = m_nameservice.receiveAllMetadata();
         // Get all storages
@@ -317,7 +315,6 @@ public final class MetadataHandler {
             if (peerHandler != null) {
 
                 LOGGER.trace("Including LookupTree of 0x%X", (short) i);
-
 
                 data.putShort((short) i);
                 peerHandler.receiveMetadata(data);
@@ -395,34 +392,37 @@ public final class MetadataHandler {
      * @lock overlay lock must be read-locked
      */
     public String getSummary(final short p_nodeID, final short p_predecessor) {
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         PeerHandler peerHandler;
 
         m_dataLock.readLock().lock();
-        ret += "Number of nameservice entries: " + m_nameservice.quantifyMetadata(p_nodeID, p_nodeID) + ", assigned: " +
-                m_nameservice.quantifyMetadata(p_predecessor, p_nodeID) + '\n';
 
-        ret += "Number of storages: \t\t " + m_storage.quantifyMetadata(p_nodeID, p_nodeID) + ", assigned: " +
-                m_storage.quantifyMetadata(p_predecessor, p_nodeID) + '\n';
+        ret.append("Number of nameservice entries: ").append(m_nameservice.quantifyMetadata(p_nodeID, p_nodeID)).append(
+                ", assigned: ").append(m_nameservice.quantifyMetadata(p_predecessor, p_nodeID)).append('\n');
 
-        ret += "Number of barriers: \t\t " + m_barriers.quantifyMetadata(p_nodeID, p_nodeID) + ", assigned: " +
-                m_barriers.quantifyMetadata(p_predecessor, p_nodeID) + '\n';
+        ret.append("Number of storages: \t\t ").append(m_storage.quantifyMetadata(p_nodeID, p_nodeID)).append(
+                ", assigned: ").append(m_storage.quantifyMetadata(p_predecessor, p_nodeID)).append('\n');
 
-        ret += "Storing LookupTrees of following peers:\n";
+        ret.append("Number of barriers: \t\t ").append(m_barriers.quantifyMetadata(p_nodeID, p_nodeID)).append(
+                ", assigned: ").append(m_barriers.quantifyMetadata(p_predecessor, p_nodeID)).append('\n');
+
+        ret.append("Storing LookupTrees of following peers:\n");
+
         for (int i = 0; i < Short.MAX_VALUE * 2; i++) {
             peerHandler = getPeerHandler((short) i);
             // no tree available -> no chunks were created or backup system is deactivated
             if (peerHandler != null) {
                 if (OverlayHelper.isPeerInSuperpeerRange((short) i, p_predecessor, p_nodeID)) {
-                    ret += "--> " + NodeID.toHexString((short) i);
+                    ret.append("--> ").append(NodeID.toHexString((short) i));
                 } else {
-                    ret += "--> " + NodeID.toHexString((short) i) + " (Backup)";
+                    ret.append("--> ").append(NodeID.toHexString((short) i)).append(" (Backup)");
                 }
             }
         }
+
         m_dataLock.readLock().unlock();
 
-        return ret;
+        return ret.toString();
     }
 
     /**
@@ -444,7 +444,8 @@ public final class MetadataHandler {
      * @return the backup data of missing peers in given peer list
      * @lock overlay lock must be read-locked
      */
-    public byte[] compareAndReturnBackups(final ArrayList<Short> p_peers, final int p_numberOfNameserviceEntries, final int p_numberOfStorages,
+    public byte[] compareAndReturnBackups(final ArrayList<Short> p_peers, final int p_numberOfNameserviceEntries,
+            final int p_numberOfStorages,
             final int p_numberOfBarriers, final short p_predecessor, final short p_nodeID) {
         int size;
         int count = 0;
@@ -461,7 +462,6 @@ public final class MetadataHandler {
         m_dataLock.readLock().lock();
 
         LOGGER.trace("Compare and return metadata of area: 0x%X, 0x%X", p_predecessor, p_nodeID);
-
 
         // TODO: Inefficient to send all data (nameservice, storages, barriers) in corresponding area if quantity differs
         size = 4 * Integer.BYTES;
@@ -548,7 +548,6 @@ public final class MetadataHandler {
 
                     LOGGER.trace("Including LookupTree of 0x%X", currentPeer);
 
-
                     peerHandler = getPeerHandler(currentPeer);
                     // no tree available -> no chunks were created or backup system is deactivated
                     if (peerHandler != null) {
@@ -617,8 +616,8 @@ public final class MetadataHandler {
 
         m_dataLock.writeLock().lock();
 
-        LOGGER.trace("Deleting all uneccessary metadata outside of area: 0x%X, 0x%X", p_responsibleArea[0], p_responsibleArea[1]);
-
+        LOGGER.trace("Deleting all uneccessary metadata outside of area: 0x%X, 0x%X", p_responsibleArea[0],
+                p_responsibleArea[1]);
 
         if (!m_assignedPeersIncludingBackups.isEmpty()) {
             ret = new short[m_assignedPeersIncludingBackups.size()];
@@ -635,7 +634,6 @@ public final class MetadataHandler {
                 // Remove lookup tree
 
                 LOGGER.trace("Removing LookupTree of 0x%X", currentPeer);
-
 
                 m_peerHandlers[currentPeer & 0xFFFF] = null;
                 ret[count++] = currentPeer;
@@ -684,7 +682,6 @@ public final class MetadataHandler {
 
             LOGGER.trace("Storing metadata. Length: %d", p_metadata.length);
 
-
             // Put all nameservice entries
             size = data.getInt();
             pos = data.position();
@@ -723,7 +720,6 @@ public final class MetadataHandler {
 
                 LOGGER.trace("Storing lookup tree of 0x%X", nodeID);
 
-
                 peerHandler = new PeerHandler(OverlayHelper.ORDER, nodeID);
                 peerHandler.storeMetadata(data);
 
@@ -748,7 +744,8 @@ public final class MetadataHandler {
      * @param p_chunkIDRanges
      *         ChunkIDs of all recovered chunks arranged in ranges
      */
-    public void updateMetadataAfterRecovery(final short p_rangeID, final short p_creator, final short p_recoveryPeer, final long[] p_chunkIDRanges) {
+    public void updateMetadataAfterRecovery(final short p_rangeID, final short p_creator, final short p_recoveryPeer,
+            final long[] p_chunkIDRanges) {
 
         m_dataLock.writeLock().lock();
         PeerHandler peerHandler = m_peerHandlers[p_creator & 0xFFFF];
@@ -826,8 +823,10 @@ public final class MetadataHandler {
             ret = peerHandler.getMetadata(p_chunkID);
         } else {
             if (!p_backupActive) {
-                // With backup deactivated a lookup tree is only created for migrations -> no migrations -> return complete range
-                ret = new LookupRange(ChunkID.getCreatorID(p_chunkID), new long[] {0, (long) Math.pow(2, 48) - 1}, LookupState.OK);
+                // With backup deactivated a lookup tree is only created for migrations -> no migrations
+                // -> return complete range
+                ret = new LookupRange(ChunkID.getCreatorID(p_chunkID), new long[] {0, (long) Math.pow(2, 48) - 1},
+                        LookupState.OK);
             } else {
                 ret = new LookupRange(LookupState.DOES_NOT_EXIST);
             }
@@ -884,7 +883,8 @@ public final class MetadataHandler {
      *         the NodeID of the new owner
      * @return whether the ChunkID could be put or not
      */
-    public boolean putChunkIDRangeInLookupTree(final long p_firstChunkID, final long p_lastChunkID, final short p_owner, final boolean p_backupActive) {
+    public boolean putChunkIDRangeInLookupTree(final long p_firstChunkID, final long p_lastChunkID, final short p_owner,
+            final boolean p_backupActive) {
         boolean ret;
         PeerHandler peerHandler;
 
@@ -976,7 +976,8 @@ public final class MetadataHandler {
      * @param p_newBackupPeer
      *         the replacement
      */
-    public void replaceFailedPeerInLookupTree(final short p_rangeID, final short p_nodeID, final short p_failedPeer, final short p_newBackupPeer) {
+    public void replaceFailedPeerInLookupTree(final short p_rangeID, final short p_nodeID, final short p_failedPeer,
+            final short p_newBackupPeer) {
         PeerHandler peerHandler;
 
         m_dataLock.writeLock().lock();
@@ -1206,7 +1207,8 @@ public final class MetadataHandler {
      *         the barrier data
      * @return the number of peers left to sign on, -1 on failure
      */
-    public int signOnBarrier(final short p_nodeID, final int p_barrierID, final short p_nodeIDToSignOn, final long p_barrierData) {
+    public int signOnBarrier(final short p_nodeID, final int p_barrierID, final short p_nodeIDToSignOn,
+            final long p_barrierData) {
         int ret;
 
         m_dataLock.writeLock().lock();

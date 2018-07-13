@@ -47,7 +47,6 @@ public final class DXRAMJNIManager {
 
         LOGGER.debug("Setting up JNI class for %s", p_module);
 
-
         String path;
         final String cwd = System.getProperty("user.dir");
         String extension;
@@ -66,9 +65,7 @@ public final class DXRAMJNIManager {
         // Load JNI-lib for given module
         path = cwd + '/' + ms_jniPath + "/lib" + p_module + extension;
 
-
         LOGGER.debug("Loading %s: %s", p_module, path);
-
 
         System.load(path);
     }

@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.recovery.messages;
 
-import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -59,8 +59,8 @@ public class RecoverBackupRangeResponse extends Response {
      * @param p_chunkIDRanges
      *         all ChunkIDs in ranges
      */
-    public RecoverBackupRangeResponse(final RecoverBackupRangeRequest p_request, final BackupRange p_newBackupRange, final int p_numberOfChunks,
-            final long[] p_chunkIDRanges) {
+    public RecoverBackupRangeResponse(final RecoverBackupRangeRequest p_request, final BackupRange p_newBackupRange,
+            final int p_numberOfChunks, final long[] p_chunkIDRanges) {
         super(p_request, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE);
 
         m_newBackupRange = p_newBackupRange;

@@ -40,7 +40,7 @@ class DXRAMServiceManager {
      * Register a service
      *
      * @param p_class
-     *     Serivce class to register
+     *         Serivce class to register
      */
     public void register(final Class<? extends AbstractDXRAMService> p_class) {
         m_registeredServices.put(p_class.getSimpleName(), p_class);
@@ -50,7 +50,7 @@ class DXRAMServiceManager {
      * Create an instance of a service
      *
      * @param p_className
-     *     Name of the class (without package path)
+     *         Name of the class (without package path)
      * @return Instance of the service
      */
     AbstractDXRAMService createInstance(final String p_className) {

@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 
 /**
  * Response with status information about the key value store memory

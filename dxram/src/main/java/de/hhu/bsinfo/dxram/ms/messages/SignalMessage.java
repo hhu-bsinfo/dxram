@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.ms.Signal;
-import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.ms.Signal;
 
 /**
  * Message to send signal codes from master to slave or vice versa
@@ -49,7 +49,8 @@ public class SignalMessage extends Message {
      *         signal to send
      */
     public SignalMessage(final short p_destination, final Signal p_signal) {
-        super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE);
+        super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE);
 
         m_signal = p_signal;
     }

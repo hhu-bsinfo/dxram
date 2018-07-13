@@ -16,12 +16,12 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
+import de.hhu.bsinfo.dxram.data.DSByteArray;
 
 /**
  * Request to put data into the superpeer storage.
@@ -57,8 +57,10 @@ public class SuperpeerStoragePutAnonRequest extends Request {
      * @param p_replicate
      *         True if this message is a replication to other superpeer message, false if normal message
      */
-    public SuperpeerStoragePutAnonRequest(final short p_destination, final ChunkAnon p_chunk, final boolean p_replicate) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_ANON_REQUEST);
+    public SuperpeerStoragePutAnonRequest(final short p_destination, final ChunkAnon p_chunk,
+            final boolean p_replicate) {
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_ANON_REQUEST);
 
         m_chunk = p_chunk;
         m_isReplicate = p_replicate;

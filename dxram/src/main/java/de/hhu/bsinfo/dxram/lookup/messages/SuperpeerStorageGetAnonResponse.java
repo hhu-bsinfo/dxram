@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -51,7 +51,8 @@ public class SuperpeerStorageGetAnonResponse extends Response {
      * @param p_data
      *         Data read from memory
      */
-    public SuperpeerStorageGetAnonResponse(final SuperpeerStorageGetAnonRequest p_request, final byte[] p_data, final byte p_status) {
+    public SuperpeerStorageGetAnonResponse(final SuperpeerStorageGetAnonRequest p_request, final byte[] p_data,
+            final byte p_status) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_RESPONSE);
         m_data = p_data;
         m_status = p_status;

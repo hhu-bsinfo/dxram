@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -52,7 +52,8 @@ public class GetAllBackupRangesRequest extends Request {
      *         the NodeID
      */
     public GetAllBackupRangesRequest(final short p_destination, final short p_nodeID) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST);
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST);
 
         m_nodeID = p_nodeID;
     }

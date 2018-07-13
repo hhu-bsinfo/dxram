@@ -227,7 +227,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
                     // not done, yet...sleep a little and try again
                     try {
                         Thread.sleep(1000);
-                    } catch (final InterruptedException e) {
+                    } catch (final InterruptedException ignored) {
                     }
                     continue;
                 }
@@ -461,7 +461,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
                         job.getJob().notifyListenersJobFinishedExecution(p_message.getSource());
                         break;
                     default:
-                        assert 1 == 2;
+                        assert false;
                         break;
                 }
             } else {

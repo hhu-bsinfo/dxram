@@ -25,12 +25,13 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxutils.StorageUnitGsonSerializer;
 import de.hhu.bsinfo.dxutils.TimeUnitGsonSerializer;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Gson context for handling serialization and deserialization of task scripts
@@ -50,11 +51,12 @@ final class TaskScriptGsonContext {
 
     /**
      * Create a Gson instance with all adapters attached for serialization/deserialization
+     *
      * @return Gson context
      */
     static Gson createGsonInstance() {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation()
-            .registerTypeAdapter(TaskScriptNode.class, new TaskScriptNodeSerializer())
+                .registerTypeAdapter(TaskScriptNode.class, new TaskScriptNodeSerializer())
                 .registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer())
                 .registerTypeAdapter(TimeUnit.class, new TimeUnitGsonSerializer()).create();
     }
@@ -64,7 +66,8 @@ final class TaskScriptGsonContext {
      */
     private static class TaskScriptNodeSerializer implements JsonDeserializer<TaskScriptNode> {
         @Override
-        public TaskScriptNode deserialize(final JsonElement p_jsonElement, final Type p_type, final JsonDeserializationContext p_jsonDeserializationContext) {
+        public TaskScriptNode deserialize(final JsonElement p_jsonElement, final Type p_type,
+                final JsonDeserializationContext p_jsonDeserializationContext) {
 
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
 

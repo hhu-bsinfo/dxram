@@ -55,8 +55,8 @@ public class FinishedStartupMessage extends Message {
      *         the destination
      * @param p_capabilities
      */
-    public FinishedStartupMessage(final short p_destination, final short p_rack, final short p_switch, final boolean p_availableForBackup,
-                                  int p_capabilities, final IPV4Unit p_address) {
+    public FinishedStartupMessage(final short p_destination, final short p_rack, final short p_switch,
+            final boolean p_availableForBackup, int p_capabilities, final IPV4Unit p_address) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_FINISHED_STARTUP_MESSAGE);
         m_rack = p_rack;
         m_switch = p_switch;

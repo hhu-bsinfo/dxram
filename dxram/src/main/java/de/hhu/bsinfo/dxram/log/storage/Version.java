@@ -79,7 +79,8 @@ public class Version {
      */
     @Override
     public boolean equals(final Object p_cmp) {
-        return p_cmp instanceof Version && m_epoch == ((Version) p_cmp).m_epoch && m_version == ((Version) p_cmp).m_version;
+        return p_cmp instanceof Version && m_epoch == ((Version) p_cmp).m_epoch &&
+                m_version == ((Version) p_cmp).m_version;
     }
 
     @Override

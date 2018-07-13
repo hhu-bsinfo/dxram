@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Request for getting the a metadata summary
@@ -42,7 +42,8 @@ public class GetMetadataSummaryRequest extends Request {
      *         the destination
      */
     public GetMetadataSummaryRequest(final short p_destination) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST);
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST);
     }
 
 }

@@ -72,9 +72,7 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
             m_memoryManager.create(p_chunkIDs[i], p_data[i].length);
             m_memoryManager.put(p_chunkIDs[i], p_data[i]);
 
-
             LOGGER.trace("Stored migrated chunk 0x%X locally", p_chunkIDs[i]);
-
 
             if (m_backup.isActive()) {
                 backupRange = m_backup.registerChunk(p_chunkIDs[i], p_data[i].length);
@@ -133,9 +131,11 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
      * @param p_backupRanges
      *         a list of all relevant backup ranges
      * @param p_cutChunkIDs
-     *         a list of ChunkIDs. For every listed ChunkID the backup range must be replaced by next element in p_backupRanges
+     *         a list of ChunkIDs. For every listed ChunkID the backup range must be replaced by next
+     *         element in p_backupRanges
      */
-    private void replicateMigratedChunks(final long[] p_chunkIDs, final byte[][] p_data, final ArrayList<BackupRange> p_backupRanges,
+    private void replicateMigratedChunks(final long[] p_chunkIDs, final byte[][] p_data,
+            final ArrayList<BackupRange> p_backupRanges,
             final ArrayList<Long> p_cutChunkIDs) {
         int counter = 1;
         short rangeID;
@@ -162,7 +162,8 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
             for (BackupPeer backupPeer : backupPeers) {
                 if (backupPeer != null) {
                     try {
-                        m_network.sendMessage(new LogMessage(backupPeer.getNodeID(), rangeID, new DSByteArray(p_chunkIDs[i], p_data[i])));
+                        m_network.sendMessage(new LogMessage(backupPeer.getNodeID(), rangeID,
+                                new DSByteArray(p_chunkIDs[i], p_data[i])));
                     } catch (final NetworkException ignore) {
 
                     }

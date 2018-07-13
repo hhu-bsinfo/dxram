@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.sync;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 
 /**
  * Config for the SynchronizationService
@@ -33,16 +33,12 @@ public class SynchronizationServiceConfig extends AbstractDXRAMServiceConfig {
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (m_maxBarriersPerSuperpeer < 0) {
-
             LOGGER.error("Invalid value m_maxBarriersPerSuperpeer: %d", m_maxBarriersPerSuperpeer);
-
             return false;
         }
 
         if (m_maxBarriersPerSuperpeer > MAX_BARRIERS_PER_SUPERPEER_MAX) {
-
             LOGGER.error("Max m_maxBarriersPerSuperpeer: %d", MAX_BARRIERS_PER_SUPERPEER_MAX);
-
             return false;
         }
 

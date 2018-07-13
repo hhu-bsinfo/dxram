@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Message to free an allocation item on the superpeer storage.
@@ -48,7 +48,8 @@ public class SuperpeerStorageRemoveMessage extends Message {
      *         True if replicate message, false if not
      */
     public SuperpeerStorageRemoveMessage(final short p_destination, final int p_storageId, final boolean p_replicate) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE);
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE);
 
         m_storageId = p_storageId;
         m_replicate = p_replicate;

@@ -76,7 +76,8 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
 
         ret = new BackupPeer[ms_replicationFactor];
         for (int i = 0; i < ms_replicationFactor; i++) {
-            ret[i] = new BackupPeer((short) ((p_backupPeers & 0x000000000000FFFFL << i * 16) >> i * 16), (short) 0, (short) 0);
+            ret[i] = new BackupPeer((short) ((p_backupPeers & 0x000000000000FFFFL << i * 16) >> i * 16), (short) 0,
+                    (short) 0);
         }
 
         return ret;
@@ -273,7 +274,8 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      *
      * @param p_otherBackupRange
      *         the other backup range
-     * @return 0 if backup ranges are equal; value smaller than 0 if this backup range is smaller; value greater than 0 if the other backup range is smaller
+     * @return 0 if backup ranges are equal; value smaller than 0 if this backup range is smaller; value greater
+     * than 0 if the other backup range is smaller
      */
     @Override
     public int compareTo(BackupRange p_otherBackupRange) {

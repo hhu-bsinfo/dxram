@@ -16,12 +16,12 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.DSByteArray;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.data.DSByteArray;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 
 /**
  * Request to put data into the superpeer storage.
@@ -60,8 +60,10 @@ public class SuperpeerStoragePutRequest extends Request {
      * @param p_replicate
      *         True if this message is a replication to other superpeer message, false if normal message
      */
-    public SuperpeerStoragePutRequest(final short p_destination, final DataStructure p_dataStructure, final boolean p_replicate) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST);
+    public SuperpeerStoragePutRequest(final short p_destination, final DataStructure p_dataStructure,
+            final boolean p_replicate) {
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST);
 
         m_dataStructure = p_dataStructure;
         m_isReplicate = p_replicate;

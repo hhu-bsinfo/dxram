@@ -182,11 +182,9 @@ public abstract class AbstractLogEntryHeader {
         int bits = (byte) (Integer.SIZE - Integer.numberOfLeadingZeros(p_length));
         ret = (byte) ((bits % 8 != 0 ? 1 : 0) + bits / 8);
 
-
         if (ret > 3) {
             LOGGER.error("Log Entry too large!");
         }
-
 
         return ret;
     }
@@ -204,7 +202,6 @@ public abstract class AbstractLogEntryHeader {
         if (p_version != 1) {
             int bits = (byte) (Integer.SIZE - Integer.numberOfLeadingZeros(p_version));
             ret = (byte) ((bits % 8 != 0 ? 1 : 0) + bits / 8);
-
 
             if (ret > 3) {
                 LOGGER.error("Log Entry version too high!");

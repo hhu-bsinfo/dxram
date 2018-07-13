@@ -28,7 +28,7 @@ public abstract class AbstractEvent {
      * Constructor
      *
      * @param p_sourceClass
-     *     Source class this event originates from.
+     *         Source class this event originates from.
      */
     protected AbstractEvent(final String p_sourceClass) {
         m_sourceClass = p_sourceClass;

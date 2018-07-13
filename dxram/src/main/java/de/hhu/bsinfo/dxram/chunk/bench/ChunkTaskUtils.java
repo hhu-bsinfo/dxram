@@ -44,14 +44,15 @@ public final class ChunkTaskUtils {
      * Get a chunk range for the specified test pattern
      *
      * @param p_pattern
-     *     Pattern id (refer to static ints)
+     *         Pattern id (refer to static ints)
      * @param p_ctx
-     *     Context of the task this is called from
+     *         Context of the task this is called from
      * @param p_chunkService
-     *     Chunk service instance
+     *         Chunk service instance
      * @return Chunk ranges for the specified test pattern
      */
-    static ChunkIDRanges getChunkRangesForTestPattern(final int p_pattern, final TaskContext p_ctx, final ChunkService p_chunkService) {
+    static ChunkIDRanges getChunkRangesForTestPattern(final int p_pattern, final TaskContext p_ctx,
+            final ChunkService p_chunkService) {
         ChunkIDRanges allChunkRanges;
 
         switch (p_pattern) {
@@ -63,7 +64,8 @@ public final class ChunkTaskUtils {
                 short slaveId = p_ctx.getCtxData().getSlaveId();
                 short successorSlaveId = (short) ((slaveId + 1) % p_ctx.getCtxData().getSlaveNodeIds().length);
 
-                allChunkRanges = p_chunkService.getAllLocalChunkIDRanges(p_ctx.getCtxData().getSlaveNodeIds()[successorSlaveId]);
+                allChunkRanges = p_chunkService.getAllLocalChunkIDRanges(
+                        p_ctx.getCtxData().getSlaveNodeIds()[successorSlaveId]);
 
                 break;
 
@@ -73,7 +75,8 @@ public final class ChunkTaskUtils {
                 allChunkRanges = new ChunkIDRanges();
                 for (int i = 0; i < p_ctx.getCtxData().getSlaveNodeIds().length; i++) {
                     if (p_ctx.getCtxData().getSlaveNodeIds()[i] != ownNodeId) {
-                        allChunkRanges.addAll(p_chunkService.getAllLocalChunkIDRanges(p_ctx.getCtxData().getSlaveNodeIds()[i]));
+                        allChunkRanges.addAll(
+                                p_chunkService.getAllLocalChunkIDRanges(p_ctx.getCtxData().getSlaveNodeIds()[i]));
                     }
                 }
 
@@ -82,7 +85,8 @@ public final class ChunkTaskUtils {
             case PATTERN_REMOTE_LOCAL_MIXED_RANDOM:
                 allChunkRanges = new ChunkIDRanges();
                 for (int i = 0; i < p_ctx.getCtxData().getSlaveNodeIds().length; i++) {
-                    allChunkRanges.addAll(p_chunkService.getAllLocalChunkIDRanges(p_ctx.getCtxData().getSlaveNodeIds()[i]));
+                    allChunkRanges.addAll(
+                            p_chunkService.getAllLocalChunkIDRanges(p_ctx.getCtxData().getSlaveNodeIds()[i]));
                 }
 
                 break;
@@ -106,9 +110,9 @@ public final class ChunkTaskUtils {
      * Distribute a total number of chunks (if possible) equally to multiple threads
      *
      * @param p_chunkCount
-     *     Total number of chunks to distribute
+     *         Total number of chunks to distribute
      * @param p_threadCount
-     *     Number of threads to distribute to
+     *         Number of threads to distribute to
      * @return Array if chunk counts for each thread
      */
     public static long[] distributeChunkCountsToThreads(final long p_chunkCount, final int p_threadCount) {
@@ -131,12 +135,13 @@ public final class ChunkTaskUtils {
      * Distribute chunk ranges to multiple threads
      *
      * @param p_chunkCountsPerThread
-     *     Array with total number of chunk IDs for each thread
+     *         Array with total number of chunk IDs for each thread
      * @param p_ranges
-     *     Ranges to distribute
+     *         Ranges to distribute
      * @return Array of chunk ID ranges distributed to each thread
      */
-    public static ChunkIDRanges[] distributeChunkRangesToThreads(final long[] p_chunkCountsPerThread, final ChunkIDRanges p_ranges) {
+    public static ChunkIDRanges[] distributeChunkRangesToThreads(final long[] p_chunkCountsPerThread,
+            final ChunkIDRanges p_ranges) {
         ChunkIDRanges[] distRanges = new ChunkIDRanges[p_chunkCountsPerThread.length];
         for (int i = 0; i < distRanges.length; i++) {
             distRanges[i] = new ChunkIDRanges();
@@ -180,9 +185,9 @@ public final class ChunkTaskUtils {
      * Get a random node id except the current node's own one
      *
      * @param p_slaveNodeIds
-     *     List of node IDs to select a random id from
+     *         List of node IDs to select a random id from
      * @param p_ownNodeId
-     *     Own node id
+     *         Own node id
      * @return Random node id
      */
     static short getRandomNodeIdExceptOwn(final short[] p_slaveNodeIds, final short p_ownNodeId) {
@@ -199,7 +204,7 @@ public final class ChunkTaskUtils {
      * Get a random node id from an array of node ids
      *
      * @param p_slaveNodeIds
-     *     Array of node ids to pick from
+     *         Array of node ids to pick from
      * @return Random node id
      */
     static short getRandomNodeId(final short[] p_slaveNodeIds) {
@@ -211,9 +216,9 @@ public final class ChunkTaskUtils {
      * The successor is simply the node id in the array following the specified id
      *
      * @param p_slaveNodeIds
-     *     Array of node ids
+     *         Array of node ids
      * @param p_ownSlaveId
-     *     Own node id
+     *         Own node id
      * @return Successor to own node id from array
      */
     static short getSuccessorSlaveNodeId(final short[] p_slaveNodeIds, final short p_ownSlaveId) {

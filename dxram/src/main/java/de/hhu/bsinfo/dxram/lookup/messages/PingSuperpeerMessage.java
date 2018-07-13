@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Ping Superpeer Message
@@ -39,7 +39,7 @@ public class PingSuperpeerMessage extends Message {
      * Creates an instance of PingSuperpeerMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      */
     public PingSuperpeerMessage(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE);

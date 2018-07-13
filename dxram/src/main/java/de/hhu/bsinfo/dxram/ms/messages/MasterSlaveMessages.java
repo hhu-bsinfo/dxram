@@ -18,6 +18,7 @@ package de.hhu.bsinfo.dxram.ms.messages;
 
 /**
  * Different message types used for the master slave framework
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.02.2016
  */
 public final class MasterSlaveMessages {

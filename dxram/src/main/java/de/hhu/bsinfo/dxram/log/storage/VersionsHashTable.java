@@ -40,7 +40,7 @@ class VersionsHashTable {
      * Creates an instance of VersionsHashTable
      *
      * @param p_initialElementCapacity
-     *     the initial capacity of VersionsHashTable
+     *         the initial capacity of VersionsHashTable
      */
     VersionsHashTable(final int p_initialElementCapacity) {
         super();
@@ -99,7 +99,7 @@ class VersionsHashTable {
      * Returns the value to which the specified key is mapped in VersionsHashTable
      *
      * @param p_key
-     *     the searched key (is incremented before insertion to avoid 0)
+     *         the searched key (is incremented before insertion to avoid 0)
      * @return the value to which the key is mapped in VersionsHashTable
      */
     protected final Version get(final long p_key) {
@@ -126,11 +126,11 @@ class VersionsHashTable {
      * Maps the given key to the given value in VersionsHashTable
      *
      * @param p_key
-     *     the key (is incremented before insertion to avoid 0)
+     *         the key (is incremented before insertion to avoid 0)
      * @param p_epoch
-     *     the epoch
+     *         the epoch
      * @param p_version
-     *     the version
+     *         the version
      */
     protected void put(final long p_key, final int p_epoch, final int p_version) {
         int index;
@@ -162,7 +162,7 @@ class VersionsHashTable {
      * Gets the key at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @return the key
      */
     private long getKey(final int p_index) {
@@ -176,7 +176,7 @@ class VersionsHashTable {
      * Gets the epoch at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @return the epoch
      */
     private int getEpoch(final int p_index) {
@@ -187,7 +187,7 @@ class VersionsHashTable {
      * Gets the version at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @return the version
      */
     private int getVersion(final int p_index) {
@@ -198,13 +198,13 @@ class VersionsHashTable {
      * Sets the key-value tuple at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @param p_key
-     *     the key
+     *         the key
      * @param p_epoch
-     *     the epoch
+     *         the epoch
      * @param p_version
-     *     the version
+     *         the version
      */
     private void set(final int p_index, final long p_key, final int p_epoch, final int p_version) {
         int index;
@@ -234,19 +234,17 @@ class VersionsHashTable {
         newTable = new int[m_elementCapacity * 4];
         m_table = newTable;
 
-
         LOGGER.debug("Reached threshold -> Rehashing. New size: %d... ", m_elementCapacity);
-
 
         m_count = 0;
         while (index < oldElementCapacity) {
             if (oldTable[index * 4] != 0) {
-                put(((long) oldTable[index * 4] << 32 | (long) oldTable[index * 4 + 1] & 0xFFFFFFFFL) - 1, oldTable[index * 4 + 2], oldTable[index * 4 + 3]);
+                put(((long) oldTable[index * 4] << 32 | (long) oldTable[index * 4 + 1] & 0xFFFFFFFFL) - 1,
+                        oldTable[index * 4 + 2], oldTable[index * 4 + 3]);
             }
             index++;
         }
         m_count = oldCount;
-
 
         LOGGER.debug("Done rehashing");
 

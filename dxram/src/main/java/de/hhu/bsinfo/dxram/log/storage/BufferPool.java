@@ -121,7 +121,6 @@ public final class BufferPool {
 
                     LOGGER.debug("Insufficient pooled large buffers. Trying medium buffer pool.");
 
-
                     fallThrough = true;
                 }
             }
@@ -149,7 +148,6 @@ public final class BufferPool {
             } else {
 
                 LOGGER.debug("Insufficient pooled small buffers. Retrying after sleeping shortly.");
-
 
                 LockSupport.parkNanos(1000);
             }
@@ -250,7 +248,6 @@ public final class BufferPool {
                 }
             }
         }
-
 
         LOGGER.debug("Buffer could not be returned! Size: %d", p_directBufferWrapper.getBuffer().capacity());
 

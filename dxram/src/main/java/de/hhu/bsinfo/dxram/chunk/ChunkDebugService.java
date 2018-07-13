@@ -16,6 +16,9 @@
 
 package de.hhu.bsinfo.dxram.chunk;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.DumpMemoryMessage;
@@ -26,9 +29,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 
 /**
  * Special and separate service for debug/benchmark only ChunkService related calls
@@ -57,19 +57,15 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
 
         LOGGER.info("Dumping chunk memory to %s, wait", p_fileName);
 
-
         try {
             m_memoryManager.lockManage();
 
-
             LOGGER.info("Dumping chunk memory to %s...", p_fileName);
-
 
             m_memoryManager.dumpMemory(p_fileName);
         } finally {
             m_memoryManager.unlockManage();
         }
-
 
         LOGGER.info("Dumping chunk memory to %s, done", p_fileName);
 
@@ -86,7 +82,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
 
         LOGGER.info("Dumping remote chunk memory of 0x%X to %s...", p_remoteNodeId, p_fileName);
 
-
         DumpMemoryMessage message = new DumpMemoryMessage(p_remoteNodeId, p_fileName);
 
         try {
@@ -98,9 +93,7 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
             return false;
         }
 
-
         LOGGER.info("Triggered async chunk memory dump to %s", p_fileName);
-
 
         return true;
     }
@@ -114,7 +107,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
 
         LOGGER.warn("FULL chunk memory reset/wipe...");
 
-
         m_memoryManager.lockManage();
         m_memoryManager.reset();
 
@@ -123,8 +115,8 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
 
         // don't unlock after the reset because the lock is also reset'd
 
-
-        LOGGER.warn("Resetting chunk memory finished. Backup and nameservice are NOW BROKEN because they were not involved in this reset process");
+        LOGGER.warn("Resetting chunk memory finished. Backup and nameservice are NOW BROKEN because they were " +
+                "not involved in this reset process");
 
     }
 
@@ -140,7 +132,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
 
         LOGGER.info("Resetting remote chunk memory of 0x%X ", p_nodeId);
 
-
         ResetMemoryMessage message = new ResetMemoryMessage(p_nodeId);
 
         try {
@@ -151,7 +142,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
 
         }
 
-
         LOGGER.info("Triggered async chunk memory reset");
 
     }
@@ -160,7 +150,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
     public void onIncomingMessage(final Message p_message) {
 
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
-
 
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
@@ -176,7 +165,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
                 }
             }
         }
-
 
         LOGGER.trace("Exiting incomingMessage");
 
@@ -218,8 +206,10 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      * Register network messages we use in here.
      */
     private void registerNetworkMessages() {
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_DUMP_MEMORY_MESSAGE, DumpMemoryMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_RESET_MEMORY_MESSAGE, ResetMemoryMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_DUMP_MEMORY_MESSAGE,
+                DumpMemoryMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_RESET_MEMORY_MESSAGE,
+                ResetMemoryMessage.class);
     }
 
     /**
@@ -240,23 +230,20 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
      */
     private void incomingDumpMemoryMessage(final DumpMemoryMessage p_message) {
 
-        LOGGER.info("Async dumping chunk memory to %s, (remote req 0x%X)", p_message.getFileName(), p_message.getSource());
-
+        LOGGER.info("Async dumping chunk memory to %s, (remote req 0x%X)", p_message.getFileName(),
+                p_message.getSource());
 
         // don't block message handler, this might take a few seconds depending on the memory size
         new Thread(() -> {
             try {
                 m_memoryManager.lockManage();
 
-
                 LOGGER.info("Dumping chunk memory to %s...", p_message.getFileName());
-
 
                 m_memoryManager.dumpMemory(p_message.getFileName());
             } finally {
                 m_memoryManager.unlockManage();
             }
-
 
             LOGGER.info("Dumping chunk memory to %s, done", p_message.getFileName());
 
@@ -272,7 +259,6 @@ public class ChunkDebugService extends AbstractDXRAMService<ChunkDebugServiceCon
     private void incomingResetMemoryMessage(final ResetMemoryMessage p_message) {
 
         LOGGER.warn("Remote memory reset from 0x%X...", p_message.getSource());
-
 
         // don't block message handler, this might take a few seconds depending on the memory size
         new Thread(this::resetMemory).start();

@@ -117,8 +117,8 @@ public class BarrierStatus implements Importable, Exportable {
 
     @Override
     public String toString() {
-        return "m_numSignedOnPeers " + m_numSignedOnPeers + ", m_signedOnNodeIDs " + NodeID.nodeIDArrayToString(m_signedOnNodeIDs) + ", m_customData " +
-                ChunkID.chunkIDArrayToString(m_customData);
+        return "m_numSignedOnPeers " + m_numSignedOnPeers + ", m_signedOnNodeIDs " + NodeID.nodeIDArrayToString(
+                m_signedOnNodeIDs) + ", m_customData " + ChunkID.chunkIDArrayToString(m_customData);
     }
 
     @Override
@@ -137,7 +137,8 @@ public class BarrierStatus implements Importable, Exportable {
 
     @Override
     public int sizeofObject() {
-        return Short.BYTES + ObjectSizeUtil.sizeofShortArray(m_signedOnNodeIDs) + ObjectSizeUtil.sizeofLongArray(m_customData);
+        return Short.BYTES + ObjectSizeUtil.sizeofShortArray(m_signedOnNodeIDs) + ObjectSizeUtil.sizeofLongArray(
+                m_customData);
     }
 
     @FunctionalInterface

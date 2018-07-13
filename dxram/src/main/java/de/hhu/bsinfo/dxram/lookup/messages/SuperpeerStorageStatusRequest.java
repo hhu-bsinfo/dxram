@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Requesting the status of the superpeer storage.
@@ -36,9 +36,10 @@ public class SuperpeerStorageStatusRequest extends Request {
      * Creates an instance of SuperpeerStorageCreateRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      */
     public SuperpeerStorageStatusRequest(final short p_destination) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST);
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST);
     }
 }

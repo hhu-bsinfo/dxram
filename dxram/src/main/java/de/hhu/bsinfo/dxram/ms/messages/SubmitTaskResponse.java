@@ -49,7 +49,8 @@ public class SubmitTaskResponse extends Response {
      * @param p_assignedPayloadId
      *         The payload id assigned by the master of the compute group.
      */
-    public SubmitTaskResponse(final SubmitTaskRequest p_request, final short p_assignedComputeGroupId, final int p_assignedPayloadId, final byte p_status) {
+    public SubmitTaskResponse(final SubmitTaskRequest p_request, final short p_assignedComputeGroupId,
+            final int p_assignedPayloadId, final byte p_status) {
         super(p_request, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_RESPONSE);
         m_assignedComputeGroupId = p_assignedComputeGroupId;
         m_assignedPayloadId = p_assignedPayloadId;

@@ -30,47 +30,41 @@ import java.util.stream.Collectors;
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
-public class NodeCapabilities {
+public final class NodeCapabilities {
 
     public static final int INVALID = -1;
-
     public static final int NONE = 0;
-
     public static final int STORAGE = 1;
-
     public static final int BACKUP_SRC = 2;
-
     public static final int BACKUP_DST = 4;
-
     public static final int COMPUTE = 8;
 
     public static final String INVALID_STRING = "INVALID";
-
     public static final String NONE_STRING = "NONE";
-
     public static final String STORAGE_STRING = "STORAGE";
-
     public static final String BACKUP_SRC_STRING = "BACKUP_SRC";
-
-    public static final String BACKUP_DST__STRING = "BACKUP_DST";
-
-    public static final String COMPUTE__STRING = "COMPUTE";
+    public static final String BACKUP_DST_STRING = "BACKUP_DST";
+    public static final String COMPUTE_STRING = "COMPUTE";
 
     /**
      * Integer masking operator.
      */
     private static final IntBinaryOperator MASK_OPERATOR = (a, b) -> a | b;
 
-    private NodeCapabilities() {}
+    /**
+     * Private constructor (utility class)
+     */
+    private NodeCapabilities() {
+    }
 
     /**
      * Indicates if the specified capabilities are supported.
      *
-     * @param p_capabilities The capabilities to check.
+     * @param p_capabilities
+     *         The capabilities to check.
      * @return true, if <b>all</b> specified capabilities are supported; false otherwise.
      */
     public static boolean supportsAll(int p_nodeCapabilities, int... p_capabilities) {
-
         int mask = toMask(p_capabilities);
 
         return (p_nodeCapabilities & mask) == mask;
@@ -79,11 +73,11 @@ public class NodeCapabilities {
     /**
      * Indicates if at least one of the specified capabilities is supported.
      *
-     * @param p_capabilities The capabilities to check.
+     * @param p_capabilities
+     *         The capabilities to check.
      * @return true, if <b>at least one</b> of the specified capabilities is supported; false otherwise.
      */
     public static boolean supports(int p_nodeCapabilities, int... p_capabilities) {
-
         int mask = toMask(p_capabilities);
 
         return (p_nodeCapabilities & mask) != NONE;
@@ -92,28 +86,27 @@ public class NodeCapabilities {
     /**
      * Creates a bitmask representing the specified capabilities.
      *
-     * @param p_capabilities The capabilities.
+     * @param p_capabilities
+     *         The capabilities.
      * @return A bitmask representing the specified capabilities.
      */
     public static int toMask(int... p_capabilities) {
-
         return Arrays.stream(p_capabilities).reduce(0, MASK_OPERATOR);
     }
 
     /**
      * Creates a human-readable representation for the specified capabilities.
      *
-     * @param p_capabilities A bitmask representing some capabilities.
+     * @param p_capabilities
+     *         A bitmask representing some capabilities.
      * @return A String representing the capabilities.
      */
     public static String toString(int p_capabilities) {
-
         List<String> capabilities = new ArrayList<>();
 
-        BitSet bitSet = BitSet.valueOf(new long[]{p_capabilities});
+        BitSet bitSet = BitSet.valueOf(new long[] {p_capabilities});
 
         for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
-
             if (i == Integer.MAX_VALUE) {
                 break;
             }
@@ -131,11 +124,13 @@ public class NodeCapabilities {
                     capabilities.add(BACKUP_SRC_STRING);
                     break;
                 case BACKUP_DST:
-                    capabilities.add(BACKUP_DST__STRING);
+                    capabilities.add(BACKUP_DST_STRING);
                     break;
                 case COMPUTE:
-                    capabilities.add(COMPUTE__STRING);
+                    capabilities.add(COMPUTE_STRING);
                     break;
+                default:
+                    throw new IllegalStateException();
             }
         }
 
@@ -145,11 +140,11 @@ public class NodeCapabilities {
     /**
      * Creates a bitmask representing the specified capability.
      *
-     * @param p_capability The capability.
+     * @param p_capability
+     *         The capability.
      * @return A bitmask representing the capability.
      */
     public static int fromString(String p_capability) {
-
         switch (p_capability) {
             case INVALID_STRING:
                 return INVALID;
@@ -159,18 +154,17 @@ public class NodeCapabilities {
                 return STORAGE;
             case BACKUP_SRC_STRING:
                 return BACKUP_SRC;
-            case BACKUP_DST__STRING:
+            case BACKUP_DST_STRING:
                 return BACKUP_DST;
-            case COMPUTE__STRING:
+            case COMPUTE_STRING:
                 return COMPUTE;
+            default:
+                return INVALID;
         }
-
-        return INVALID;
     }
 
     /**
      * Creates a bitmask representing the specified capabilities.
-     *
      * <pre>
      * <u>Example</u>
      * {@code
@@ -178,11 +172,11 @@ public class NodeCapabilities {
      * }
      * </pre>
      *
-     * @param p_capabilities The formatted capabilities.
+     * @param p_capabilities
+     *         The formatted capabilities.
      * @return A bitmask representing the capability.
      */
     public static int fromStringArray(String p_capabilities) {
-
         if (!p_capabilities.startsWith("[") || !p_capabilities.endsWith("]")) {
 
             return NodeCapabilities.INVALID;
@@ -196,12 +190,12 @@ public class NodeCapabilities {
     /**
      * Creates a bitmask representing all specified capabilities.
      *
-     * @implNote This implementation filters out all invalid capabilities.
-     * @param p_capabilities The capabilities.
+     * @param p_capabilities
+     *         The capabilities.
      * @return A bitmask representing all specified capabilities.
+     * @implNote This implementation filters out all invalid capabilities.
      */
     public static int fromStrings(String... p_capabilities) {
-
         return Arrays.stream(p_capabilities)
                 .mapToInt(NodeCapabilities::fromString)
                 .filter(capability -> capability != INVALID)

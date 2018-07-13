@@ -28,7 +28,7 @@ public interface Task extends TaskScriptNode {
      * Execute function to implement with the task/code to execute.
      *
      * @param p_ctx
-     *     Context for this task containing DXRAM access and task parameters.
+     *         Context for this task containing DXRAM access and task parameters.
      * @return Return code of your task. 0 on success, everything else indicates an error.
      */
     int execute(final TaskContext p_ctx);
@@ -37,7 +37,7 @@ public interface Task extends TaskScriptNode {
      * Handle a signal from the master
      *
      * @param p_signal
-     *     Signal from the master
+     *         Signal from the master
      */
     void handleSignal(final Signal p_signal);
 }

@@ -116,10 +116,12 @@ public class NetworkTask implements Task, MessageReceiver {
         LatencyStatistics latencyStatistics = new LatencyStatistics(m_threadCnt);
 
         if (m_debugMessage) {
-            System.out.printf("!!! DEBUG !!! Network benchmark, pattern %d, message count %d, %d thread(s)...\n", m_pattern, m_messageCnt, m_threadCnt);
+            System.out.printf("!!! DEBUG !!! Network benchmark, pattern %d, message count %d, %d thread(s)...\n",
+                    m_pattern, m_messageCnt, m_threadCnt);
         } else {
-            System.out.printf("Network benchmark, pattern %d, message count %d, message size %d byte, isMessages %b with %d thread(s)...\n", m_pattern,
-                    m_messageCnt, m_messageSize, m_isMessage, m_threadCnt);
+            System.out.printf("Network benchmark, pattern %d, message count %d, message size %d byte, " +
+                            " isMessages %b with %d thread(s)...\n", m_pattern, m_messageCnt, m_messageSize, m_isMessage,
+                    m_threadCnt);
         }
 
         // thread runnables
@@ -300,7 +302,6 @@ public class NetworkTask implements Task, MessageReceiver {
 
         LOGGER.trace("Exiting incomingMessage");
 
-
     }
 
     private void incomingNetworkTestRequest(final NetworkTestRequest p_request) {
@@ -346,18 +347,28 @@ public class NetworkTask implements Task, MessageReceiver {
     }
 
     private void registerReceiverAndMessageTypes() {
-        m_networkService.registerReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE, this);
-        m_networkService.registerReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST, this);
-        m_networkService.registerReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEBUG_MESSAGE, this);
-        m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE, NetworkTestMessage.class);
-        m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST, NetworkTestRequest.class);
-        m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_RESPONSE, NetworkTestResponse.class);
-        m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEBUG_MESSAGE, NetworkDebugMessage.class);
+        m_networkService.registerReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE,
+                this);
+        m_networkService.registerReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST,
+                this);
+        m_networkService.registerReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE,
+                NetworkMessages.SUBTYPE_DEBUG_MESSAGE, this);
+        m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE,
+                NetworkMessages.SUBTYPE_TEST_MESSAGE, NetworkTestMessage.class);
+        m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE,
+                NetworkMessages.SUBTYPE_TEST_REQUEST, NetworkTestRequest.class);
+        m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE,
+                NetworkMessages.SUBTYPE_TEST_RESPONSE, NetworkTestResponse.class);
+        m_networkService.registerMessageType(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE,
+                NetworkMessages.SUBTYPE_DEBUG_MESSAGE, NetworkDebugMessage.class);
     }
 
     private void unregisterReceiver() {
-        m_networkService.unregisterReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_MESSAGE, this);
-        m_networkService.unregisterReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST, this);
-        m_networkService.unregisterReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_DEBUG_MESSAGE, this);
+        m_networkService.unregisterReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE,
+                NetworkMessages.SUBTYPE_TEST_MESSAGE, this);
+        m_networkService.unregisterReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE,
+                NetworkMessages.SUBTYPE_TEST_REQUEST, this);
+        m_networkService.unregisterReceiver(DXRAMMessageTypes.NETWORK_MESSAGES_TYPE,
+                NetworkMessages.SUBTYPE_DEBUG_MESSAGE, this);
     }
 }

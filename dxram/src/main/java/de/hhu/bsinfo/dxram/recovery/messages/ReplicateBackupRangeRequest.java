@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.recovery.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.RangeID;
 
 /**
  * Replicate Backup Range Message
@@ -52,7 +52,8 @@ public class ReplicateBackupRangeRequest extends Request {
      *         the range ID
      */
     public ReplicateBackupRangeRequest(final short p_destination, final short p_rangeID) {
-        super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST);
+        super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
+                RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST);
 
         m_rangeID = p_rangeID;
     }

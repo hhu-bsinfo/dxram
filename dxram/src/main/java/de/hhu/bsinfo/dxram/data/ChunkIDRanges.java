@@ -41,11 +41,11 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Constructor with one range
      *
      * @param p_start
-     *     Start of range (including)
+     *         Start of range (including)
      * @param p_end
-     *     End of range (including)
+     *         End of range (including)
      * @throws IllegalArgumentException
-     *     If p_start > p_end
+     *         If p_start > p_end
      */
     public ChunkIDRanges(final long p_start, final long p_end) {
         if (!isLessThanOrEqualsUnsigned(p_start, p_end)) {
@@ -61,11 +61,11 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Constructor
      *
      * @param p_ranges
-     *     Ranges to use (either copy or wrap)
+     *         Ranges to use (either copy or wrap)
      * @param p_copy
-     *     True to copy the contents of the array, false to wrap the array
+     *         True to copy the contents of the array, false to wrap the array
      * @throws IllegalArgumentException
-     *     If Range size % 2 != 0
+     *         If Range size % 2 != 0
      */
     private ChunkIDRanges(final long[] p_ranges, final boolean p_copy) {
         if (p_ranges.length % 2 != 0) {
@@ -83,11 +83,11 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Constructor
      *
      * @param p_arrayList
-     *     ArrayListLong to use (either copy or wrap)
+     *         ArrayListLong to use (either copy or wrap)
      * @param p_copy
-     *     True to copy the contents of the list, false to wrap the list
+     *         True to copy the contents of the list, false to wrap the list
      * @throws IllegalArgumentException
-     *     If Range size % 2 != 0
+     *         If Range size % 2 != 0
      */
     private ChunkIDRanges(final ArrayListLong p_arrayList, final boolean p_copy) {
         if (p_arrayList.getSize() % 2 != 0) {
@@ -105,7 +105,7 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Create a new ChunkIDRanges object based on a copy of a provided range array
      *
      * @param p_ranges
-     *     Range array with contents to copy
+     *         Range array with contents to copy
      * @return New ChunkIDRanges object with copied contents of array
      */
     public static ChunkIDRanges copy(final long[] p_ranges) {
@@ -116,7 +116,7 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Create a new ChunkIDRanges object wrapping an existing array with ranges
      *
      * @param p_ranges
-     *     Array with ranges to wrap
+     *         Array with ranges to wrap
      * @return ChunkIDRanges Object with wrapped array
      */
     public static ChunkIDRanges wrap(final long[] p_ranges) {
@@ -127,7 +127,7 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Create a new ChunkIDRanges object based on a copy of a provided range list
      *
      * @param p_arrayList
-     *     ArrayListLong with ranges to copy
+     *         ArrayListLong with ranges to copy
      * @return ChunkIDRanges object with copied contents of the list
      */
     public static ChunkIDRanges copy(final ArrayListLong p_arrayList) {
@@ -138,7 +138,7 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Create a new ChunkIDRanges object wrapping an existing ArrayListLong with ranges
      *
      * @param p_arrayList
-     *     ArrayListLong with ranges to wrap
+     *         ArrayListLong with ranges to wrap
      * @return ChunkIDRanges Object with wrapped array
      */
     public static ChunkIDRanges wrap(final ArrayListLong p_arrayList) {
@@ -167,11 +167,11 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Add a range
      *
      * @param p_start
-     *     Start of the range (including)
+     *         Start of the range (including)
      * @param p_end
-     *     End of the range (including)
+     *         End of the range (including)
      * @throws IllegalArgumentException
-     *     If p_start > p_end
+     *         If p_start > p_end
      */
     public void addRange(final long p_start, final long p_end) {
         if (!isLessThanOrEqualsUnsigned(p_start, p_end)) {
@@ -186,7 +186,7 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Add all the ranges of another ChunkIDRanges instance
      *
      * @param p_other
-     *     Other instance to add the ranges of
+     *         Other instance to add the ranges of
      */
     public void addAll(final ChunkIDRanges p_other) {
         m_ranges.addAll(p_other.m_ranges);
@@ -196,7 +196,7 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Get the start of a range
      *
      * @param p_rangeIndex
-     *     Index of the range
+     *         Index of the range
      * @return Start value
      */
     public long getRangeStart(final int p_rangeIndex) {
@@ -207,7 +207,7 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Get the end of a range
      *
      * @param p_rangeIndex
-     *     Index of the range
+     *         Index of the range
      * @return End value
      */
     public long getRangeEnd(final int p_rangeIndex) {
@@ -218,9 +218,9 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Set the start of a specific range
      *
      * @param p_rangeIndex
-     *     Index of the range to modify
+     *         Index of the range to modify
      * @param p_val
-     *     New value for the start of the range
+     *         New value for the start of the range
      */
     public void setRangeStart(final int p_rangeIndex, final long p_val) {
         m_ranges.set(p_rangeIndex * 2, p_val);
@@ -230,9 +230,9 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Set the end of a specific range
      *
      * @param p_rangeIndex
-     *     Index of the range to modify
+     *         Index of the range to modify
      * @param p_val
-     *     New value for the end of the range
+     *         New value for the end of the range
      */
     public void setRangeEnd(final int p_rangeIndex, final long p_val) {
         m_ranges.set(p_rangeIndex * 2 + 1, p_val);
@@ -242,7 +242,7 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Check if a chunk ID is within the ranges
      *
      * @param p_chunkID
-     *     Chunk ID to test
+     *         Chunk ID to test
      * @return True if chunk ID is within a range (including)
      */
     public boolean isInRanges(final long p_chunkID) {
@@ -301,22 +301,22 @@ public class ChunkIDRanges implements Importable, Exportable {
 
     @Override
     public String toString() {
-        String str = "";
+        StringBuilder builder = new StringBuilder();
 
         for (int i = 0; i < m_ranges.getSize(); i += 2) {
-            str += String.format("[0x%X, 0x%X]", m_ranges.get(i), m_ranges.get(i + 1));
+            builder.append(String.format("[0x%X, 0x%X]", m_ranges.get(i), m_ranges.get(i + 1)));
         }
 
-        return str;
+        return builder.toString();
     }
 
     /**
      * Get a random chunk ID from a range
      *
      * @param p_start
-     *     Start of the range (including)
+     *         Start of the range (including)
      * @param p_end
-     *     End of the range (including)
+     *         End of the range (including)
      * @return Random chunk ID of range
      */
     private static long getRandomChunkId(final long p_start, final long p_end) {
@@ -331,9 +331,9 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Get a random range
      *
      * @param p_start
-     *     Start (including)
+     *         Start (including)
      * @param p_end
-     *     End (including)
+     *         End (including)
      * @return Random range
      */
     private static int getRandomRange(final int p_start, final int p_end) {
@@ -348,9 +348,9 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Get a random range excluding the end
      *
      * @param p_start
-     *     Start (including)
+     *         Start (including)
      * @param p_end
-     *     End (excluding)
+     *         End (excluding)
      * @return Random range
      */
     private static int getRandomRangeExclEnd(final int p_start, final int p_end) {
@@ -361,9 +361,9 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Get a random range
      *
      * @param p_start
-     *     Start (including)
+     *         Start (including)
      * @param p_end
-     *     End (including)
+     *         End (including)
      * @return Random range
      */
     private static long getRandomRange(final long p_start, final long p_end) {
@@ -379,9 +379,9 @@ public class ChunkIDRanges implements Importable, Exportable {
      * Unsigned comparison of two long values
      *
      * @param p_n1
-     *     Value 1
+     *         Value 1
      * @param p_n2
-     *     Value 2
+     *         Value 2
      * @return True if p_n1 <= p_n2
      */
     private static boolean isLessThanOrEqualsUnsigned(final long p_n1, final long p_n2) {

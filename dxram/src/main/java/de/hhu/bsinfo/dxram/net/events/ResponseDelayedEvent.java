@@ -17,7 +17,6 @@
 package de.hhu.bsinfo.dxram.net.events;
 
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
-import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * An event for a delayed request. Triggered by application thread.
@@ -26,16 +25,15 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 05.10.2016
  */
 public class ResponseDelayedEvent extends AbstractEvent {
-
-    private short m_nodeID = NodeID.INVALID_ID;
+    private short m_nodeID;
 
     /**
      * Creates an instance of NodeFailureEvent
      *
      * @param p_sourceClass
-     *     the calling class
+     *         the calling class
      * @param p_nodeID
-     *     the NodeID of the failed peer
+     *         the NodeID of the failed peer
      */
     public ResponseDelayedEvent(final String p_sourceClass, final short p_nodeID) {
         super(p_sourceClass);

@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -50,8 +50,10 @@ public class TaskExecutionFinishedMessage extends Message {
      * @param p_executionReturnCodes
      *         Return codes of all slaves that executed the task (Indexable by slave id).
      */
-    public TaskExecutionFinishedMessage(final short p_destination, final int p_taskPayloadId, final int[] p_executionReturnCodes) {
-        super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE);
+    public TaskExecutionFinishedMessage(final short p_destination, final int p_taskPayloadId,
+            final int[] p_executionReturnCodes) {
+        super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE);
 
         m_taskPayloadId = p_taskPayloadId;
         m_executionReturnCodes = p_executionReturnCodes;

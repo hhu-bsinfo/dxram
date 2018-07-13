@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.job.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Request the status of a the job service from a remote node.
@@ -38,7 +38,7 @@ public class StatusRequest extends Request {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      */
     public StatusRequest(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_REQUEST);

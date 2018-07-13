@@ -16,12 +16,12 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.ms.TaskContextData;
-import de.hhu.bsinfo.dxram.ms.TaskScript;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.ms.TaskContextData;
+import de.hhu.bsinfo.dxram.ms.TaskScript;
 
 /**
  * Request to execute a task script on another slave compute node.
@@ -53,8 +53,10 @@ public class ExecuteTaskScriptRequest extends Request {
      * @param p_script
      *         TaskScript to execute.
      */
-    public ExecuteTaskScriptRequest(final short p_destination, final int p_barrierIdentifier, final TaskContextData p_ctxData, final TaskScript p_script) {
-        super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST);
+    public ExecuteTaskScriptRequest(final short p_destination, final int p_barrierIdentifier,
+            final TaskContextData p_ctxData, final TaskScript p_script) {
+        super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST);
         m_barrierIdentifier = p_barrierIdentifier;
         m_ctxData = p_ctxData;
         m_script = p_script;
@@ -97,13 +99,17 @@ public class ExecuteTaskScriptRequest extends Request {
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
         m_barrierIdentifier = p_importer.readInt(m_barrierIdentifier);
+
         if (m_ctxData == null) {
             m_ctxData = new TaskContextData();
         }
+
         p_importer.importObject(m_ctxData);
+
         if (m_script == null) {
             m_script = new TaskScript();
         }
+
         p_importer.importObject(m_script);
     }
 

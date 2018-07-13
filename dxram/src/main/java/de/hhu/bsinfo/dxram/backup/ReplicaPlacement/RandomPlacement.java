@@ -25,7 +25,8 @@ public class RandomPlacement extends AbstractPlacementStrategy {
     /**
      * Creates an instance of RandomPlacement
      */
-    public RandomPlacement(final int p_replicationFactor, final boolean p_disjunctiveFirstBackupPeer, final boolean p_rackAware, final boolean p_switchAware) {
+    public RandomPlacement(final int p_replicationFactor, final boolean p_disjunctiveFirstBackupPeer,
+            final boolean p_rackAware, final boolean p_switchAware) {
         super(p_replicationFactor, p_disjunctiveFirstBackupPeer, p_rackAware, p_switchAware);
         m_rand = new Random(System.nanoTime());
     }
@@ -42,7 +43,8 @@ public class RandomPlacement extends AbstractPlacementStrategy {
     }
 
     @Override
-    public BackupPeer determineReplacementBackupPeer(final BackupPeer[] p_currentBackupPeers, final List<BackupPeer> p_availablePeers) {
+    public BackupPeer determineReplacementBackupPeer(final BackupPeer[] p_currentBackupPeers,
+            final List<BackupPeer> p_availablePeers) {
         BackupPeer ret;
         BackupPeer currentPeer;
         short numberOfPeers;
@@ -53,13 +55,13 @@ public class RandomPlacement extends AbstractPlacementStrategy {
 
             LOGGER.warn("Less than three peers for backup available. Replication will be incomplete!");
 
-
             return null;
         }
 
         if (numberOfPeers < m_replicationFactor * 2) {
 
-            LOGGER.warn("Less than six peers for backup available. Some peers may store more" + " than one backup range of a node!");
+            LOGGER.warn("Less than six peers for backup available. Some peers may store more" +
+                    " than one backup range of a node!");
 
         }
 
@@ -86,7 +88,8 @@ public class RandomPlacement extends AbstractPlacementStrategy {
     }
 
     @Override
-    public BackupRange determineBackupPeers(final short p_backupRangeID, final List<BackupPeer> p_availablePeers, final BackupRange p_currentBackupRange) {
+    public BackupRange determineBackupPeers(final short p_backupRangeID, final List<BackupPeer> p_availablePeers,
+            final BackupRange p_currentBackupRange) {
         BackupRange ret;
         boolean insufficientPeers = false;
         BackupPeer[] oldBackupPeers = null;
@@ -97,15 +100,15 @@ public class RandomPlacement extends AbstractPlacementStrategy {
 
         if (numberOfPeers < m_replicationFactor) {
 
-            LOGGER.warn("Less than %d peers for backup available. Replication will be incomplete!", m_replicationFactor);
-
+            LOGGER.warn("Less than %d peers for backup available. Replication will be incomplete!",
+                    m_replicationFactor);
 
             newBackupPeers = new BackupPeer[m_replicationFactor];
             insufficientPeers = true;
         } else if (numberOfPeers < m_replicationFactor * 2) {
 
-            LOGGER.warn("Less than %d peers for backup available. Some peers may store more than one backup range of a node!", 2 * m_replicationFactor);
-
+            LOGGER.warn("Less than %d peers for backup available. Some peers may store more than one backup " +
+                    "range of a node!", 2 * m_replicationFactor);
 
             oldBackupPeers = new BackupPeer[m_replicationFactor];
             newBackupPeers = new BackupPeer[m_replicationFactor];
@@ -139,9 +142,8 @@ public class RandomPlacement extends AbstractPlacementStrategy {
                 } else {
                     // Not enough backup peers available to be picky
 
-                    LOGGER.warn(
-                            "Insufficient peers available for disjunctive backup strategy. Backup peers might be used more than once as a first backup peer!");
-
+                    LOGGER.warn("Insufficient peers available for disjunctive backup strategy. Backup peers might be " +
+                            "used more than once as a first backup peer!");
 
                     m_usedBackupPeers.clear();
                     availablePeers = p_availablePeers;

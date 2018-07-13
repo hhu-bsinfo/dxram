@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.ms.TaskScript;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.ms.TaskScript;
 
 /**
  * Submit a task script to a remote master compute node.
@@ -49,7 +49,8 @@ public class SubmitTaskRequest extends Request {
      *         TaskScript to submit to the remote master node.
      */
     public SubmitTaskRequest(final short p_destination, final TaskScript p_taskScript) {
-        super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST);
+        super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST);
         m_taskScript = p_taskScript;
     }
 

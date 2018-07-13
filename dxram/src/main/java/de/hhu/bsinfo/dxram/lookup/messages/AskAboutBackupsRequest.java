@@ -18,10 +18,10 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -64,8 +64,8 @@ public class AskAboutBackupsRequest extends Request {
      * @param p_numberOfBarriers
      *         the number of expected barriers
      */
-    public AskAboutBackupsRequest(final short p_destination, final ArrayList<Short> p_peers, final int p_numberOfNameserviceEntries,
-            final int p_numberOfStorages, final int p_numberOfBarriers) {
+    public AskAboutBackupsRequest(final short p_destination, final ArrayList<Short> p_peers,
+            final int p_numberOfNameserviceEntries, final int p_numberOfStorages, final int p_numberOfBarriers) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST);
 
         m_peers = p_peers;
@@ -114,7 +114,7 @@ public class AskAboutBackupsRequest extends Request {
 
     @Override
     protected final int getPayloadLength() {
-        int ret = 0;
+        int ret;
 
         if (m_peers != null && !m_peers.isEmpty()) {
             ret = ObjectSizeUtil.sizeofCompactedNumber(m_peers.size()) + Short.BYTES * m_peers.size();

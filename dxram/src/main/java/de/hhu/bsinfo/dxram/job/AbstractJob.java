@@ -50,7 +50,8 @@ public abstract class AbstractJob implements Importable, Exportable {
     // external/user code
     private DXRAMServiceAccessor m_serviceAccessor;
 
-    private static Map<Short, Class<? extends AbstractJob>> m_registeredJobTypes = new HashMap<Short, Class<? extends AbstractJob>>();
+    private static Map<Short, Class<? extends AbstractJob>> m_registeredJobTypes =
+            new HashMap<Short, Class<? extends AbstractJob>>();
 
     /**
      * Constructor
@@ -61,12 +62,8 @@ public abstract class AbstractJob implements Importable, Exportable {
      */
     public AbstractJob(final long... p_parameterChunkIDs) {
         assert p_parameterChunkIDs.length <= 255;
-        assert p_parameterChunkIDs.length >= 0;
-        if (p_parameterChunkIDs != null) {
-            m_parameterChunkIDs = p_parameterChunkIDs;
-        } else {
-            m_parameterChunkIDs = new long[0];
-        }
+
+        m_parameterChunkIDs = p_parameterChunkIDs;
     }
 
     /**
@@ -87,7 +84,7 @@ public abstract class AbstractJob implements Importable, Exportable {
      *         If creating an instance failed or no Job class is registered for the specified type ID.
      */
     public static AbstractJob createInstance(final short p_typeID) {
-        AbstractJob job = null;
+        AbstractJob job;
         Class<? extends AbstractJob> clazz = m_registeredJobTypes.get(p_typeID);
 
         if (clazz != null) {
@@ -97,7 +94,9 @@ public abstract class AbstractJob implements Importable, Exportable {
                 throw new JobRuntimeException("Creating instance for job type ID " + p_typeID + " failed.", e);
             }
         } else {
-            throw new JobRuntimeException("Creating instance for job type ID " + p_typeID + " failed, no class registered for type " + p_typeID);
+            throw new JobRuntimeException(
+                    "Creating instance for job type ID " + p_typeID + " failed, no class registered for type " +
+                            p_typeID);
         }
 
         return job;
@@ -148,7 +147,7 @@ public abstract class AbstractJob implements Importable, Exportable {
 
     @Override
     public String toString() {
-        return "Job[m_ID " + Long.toHexString(m_id) + "]";
+        return "Job[m_ID " + Long.toHexString(m_id) + ']';
     }
 
     /**

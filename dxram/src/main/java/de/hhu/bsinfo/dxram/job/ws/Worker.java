@@ -122,7 +122,8 @@ public class Worker extends Thread {
 
     @Override
     public String toString() {
-        return "Worker[m_id " + m_id + ", m_running " + m_running + ", m_shutdown " + m_shutdown + ", m_isIdle " + m_isIdle + "]";
+        return "Worker[m_id " + m_id + ", m_running " + m_running + ", m_shutdown " + m_shutdown + ", m_isIdle " +
+                m_isIdle + "]";
     }
 
     // -------------------------------------------------------------------
@@ -131,7 +132,6 @@ public class Worker extends Thread {
     public void run() {
 
         LOGGER.info("Worker %d: Running...", m_id);
-
 
         m_running = true;
 
@@ -142,9 +142,7 @@ public class Worker extends Thread {
             if (job != null) {
                 m_isIdle = false;
 
-
                 LOGGER.debug("Worker %d: Executing job %s from queue", m_id, job);
-
 
                 m_workerDelegate.executingJob(job);
                 job.execute(m_workerDelegate.getNodeID());
@@ -156,9 +154,7 @@ public class Worker extends Thread {
             if (job != null) {
                 m_isIdle = false;
 
-
                 LOGGER.debug("Worker %d: Executing stolen job %s", m_id, job);
-
 
                 m_workerDelegate.executingJob(job);
                 job.execute(m_workerDelegate.getNodeID());
@@ -173,13 +169,11 @@ public class Worker extends Thread {
             m_isIdle = true;
             try {
                 Thread.sleep(10);
-            } catch (final InterruptedException e) {
+            } catch (final InterruptedException ignored) {
             }
         }
 
-
         LOGGER.info("Worker %d: Shut down", m_id);
-
 
         m_running = false;
     }

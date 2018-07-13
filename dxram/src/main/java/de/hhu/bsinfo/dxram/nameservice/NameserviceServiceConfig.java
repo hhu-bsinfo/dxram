@@ -1,7 +1,7 @@
 package de.hhu.bsinfo.dxram.nameservice;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 
 /**
  * Config for the NameserviceService

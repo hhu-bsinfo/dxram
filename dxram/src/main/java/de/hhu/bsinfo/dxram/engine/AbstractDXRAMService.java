@@ -76,30 +76,22 @@ public abstract class AbstractDXRAMService<T extends AbstractDXRAMServiceConfig>
 
         m_parentEngine = p_engine;
 
-
         LOGGER.info("Starting service...");
-
 
         resolveComponentDependencies(p_engine);
 
         try {
             ret = startService(m_parentEngine.getConfig());
         } catch (final Exception e) {
-
             LOGGER.error("Starting service failed", e);
-
 
             return false;
         }
 
         if (!ret) {
-
             LOGGER.error("Starting service failed");
-
         } else {
-
             LOGGER.info("Starting service successful");
-
 
             m_isStarted = true;
         }
@@ -116,18 +108,13 @@ public abstract class AbstractDXRAMService<T extends AbstractDXRAMServiceConfig>
         boolean ret = true;
 
         if (m_isStarted) {
-
             LOGGER.info("Shutting down service...");
 
             ret = shutdownService();
             if (!ret) {
-
                 LOGGER.warn("Shutting down service failed");
-
             } else {
-
                 LOGGER.info("Shutting down service successful");
-
             }
 
             m_isStarted = false;

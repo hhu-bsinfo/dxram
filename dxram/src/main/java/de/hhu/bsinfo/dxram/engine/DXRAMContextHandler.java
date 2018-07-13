@@ -76,7 +76,8 @@ class DXRAMContextHandler {
      * @return True if creating config file successful, false otherwise
      */
     boolean createDefaultConfiguration(final String p_configFilePath) {
-        LOGGER.info("No valid configuration found or specified via vm argument -Ddxram.config, creating default configuration '%s'...", p_configFilePath);
+        LOGGER.info("No valid configuration found or specified via vm argument -Ddxram.config, creating default " +
+                " configuration '%s'...", p_configFilePath);
 
         String configFilePath;
 
@@ -234,7 +235,8 @@ class DXRAMContextHandler {
                 String propertyKey = props.getProperty(key);
 
                 // try to determine type, not a very nice way =/
-                if (propertyKey.matches("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                if (propertyKey.matches("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
                         "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$")) {
                     // ip address
                     parent.addProperty(tokens[tokens.length - 1], propertyKey);

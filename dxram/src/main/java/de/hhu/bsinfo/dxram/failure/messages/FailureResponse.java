@@ -38,7 +38,7 @@ public class FailureResponse extends Response {
      * Creates an instance of FailureResponse
      *
      * @param p_request
-     *     the corresponding FailureRequest
+     *         the corresponding FailureRequest
      */
     public FailureResponse(final FailureRequest p_request) {
         super(p_request, FailureMessages.SUBTYPE_FAILURE_RESPONSE);

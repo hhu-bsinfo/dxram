@@ -87,7 +87,8 @@ final class TaskResultCondition implements TaskScriptNode {
 
     @Override
     public String toString() {
-        return "TaskResultCondition[res " + m_cond + ' ' + m_param + "] ? " + m_true.getTasks().length + " : " + m_false.getTasks().length;
+        return "TaskResultCondition[res " + m_cond + ' ' + m_param + "] ? " + m_true.getTasks().length + " : " +
+                m_false.getTasks().length;
     }
 
     @Override

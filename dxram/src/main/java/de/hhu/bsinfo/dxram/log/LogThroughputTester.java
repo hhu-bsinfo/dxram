@@ -1,11 +1,14 @@
 /*
- * Copyright (C) 2017 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science, Department Operating Systems
+ * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
  *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
@@ -263,7 +266,8 @@ public final class LogThroughputTester {
      */
     private static void printResults(final long p_timeDiffLoadingNs, final long p_timeDiffUpdatingNs) {
         System.out.printf("[RESULTS LOADING]\n" + "[CHUNK SIZE] %d\n" + "[BATCH SIZE] %d\n" + "[RUNTIME] %d ms\n" +
-                        "[TIME PER CHUNK] %d ns\n" + "[THROUGHPUT] %f MB/s\n" + "[THROUGHPUT OVERHEAD] %f MB/s\n", ms_size,
+                        "[TIME PER CHUNK] %d ns\n" + "[THROUGHPUT] %f MB/s\n" + "[THROUGHPUT OVERHEAD] %f MB/s\n",
+                ms_size,
                 ms_batchSize, p_timeDiffLoadingNs / 1000 / 1000,
                 ms_chunkCount != 0 ? p_timeDiffLoadingNs / ms_chunkCount : ms_chunkCount, ms_chunkCount != 0 ?
                         (double) ms_chunkCount * ms_size / 1024 / 1024 /
@@ -274,7 +278,8 @@ public final class LogThroughputTester {
                                 ((double) p_timeDiffLoadingNs / 1000 / 1000 / 1000) : 0);
 
         System.out.printf("[RESULTS UPDATING]\n" + "[RUNTIME] %d ms\n" + "[TIME PER CHUNK] %d ns\n" +
-                        "[THROUGHPUT] %f MB/s\n" + "[THROUGHPUT OVERHEAD] %f MB/s\n", p_timeDiffUpdatingNs / 1000 / 1000,
+                        "[THROUGHPUT] %f MB/s\n" + "[THROUGHPUT OVERHEAD] %f MB/s\n",
+                p_timeDiffUpdatingNs / 1000 / 1000,
                 ms_updates != 0 ? p_timeDiffUpdatingNs / ms_updates : ms_updates, ms_updates != 0 ?
                         (double) ms_updates * ms_size / 1024 / 1024 /
                                 ((double) p_timeDiffUpdatingNs / 1000 / 1000 / 1000) : 0, ms_updates != 0 ?

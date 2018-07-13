@@ -134,7 +134,6 @@ public class PrimaryWriteBuffer {
         m_processThread.setName("Logging: Process Thread");
         m_processThread.start();
 
-
         LOGGER.trace("Initialized primary write buffer (%d)", m_writeBufferSize);
 
     }
@@ -234,7 +233,7 @@ public class PrimaryWriteBuffer {
             long writePointerAbsolute = m_bufferWritePointer; // We need this value for compareAndSet operation
             if (((readPointerAbsolute + m_writeBufferSize & 0x7FFFFFFF) >
                     (writePointerAbsolute + bytesToWrite & 0x7FFFFFFF) ||
-                        /* 31-bit overflow in readPointer but not posFront */
+                    /* 31-bit overflow in readPointer but not posFront */
                     (readPointerAbsolute + m_writeBufferSize & 0x7FFFFFFF) < readPointerAbsolute &&
                             (writePointerAbsolute + bytesToWrite & 0x7FFFFFFF) > readPointerAbsolute) &&
                     /* too many zones registered? */
@@ -684,8 +683,7 @@ public class PrimaryWriteBuffer {
          * @return the DirectByteBufferWrapper for flushing or null if data was appended to buffer
          */
         private DirectByteBufferWrapper bufferLogEntryInSecondaryLogBuffer(final DirectByteBufferWrapper p_buffer,
-                final int p_logEntrySize, final short p_rangeID, final short p_owner)
-                throws IOException, InterruptedException {
+                final int p_logEntrySize, final short p_rangeID, final short p_owner) {
 
             assert p_buffer.getBuffer().limit() == p_buffer.getBuffer().capacity();
 
@@ -705,13 +703,9 @@ public class PrimaryWriteBuffer {
          *         the RangeID
          * @param p_owner
          *         the owner NodeID
-         * @throws IOException
-         *         if secondary log could not be written
-         * @throws InterruptedException
-         *         if caller is interrupted
          */
         private void writeToSecondaryLog(final DirectByteBufferWrapper p_buffer, final int p_logEntrySize,
-                final short p_rangeID, final short p_owner) throws IOException, InterruptedException {
+                final short p_rangeID, final short p_owner) {
 
             assert p_buffer.getBuffer().limit() == p_buffer.getBuffer().capacity();
 

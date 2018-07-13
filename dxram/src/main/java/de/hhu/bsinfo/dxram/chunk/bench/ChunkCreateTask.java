@@ -82,8 +82,9 @@ public class ChunkCreateTask implements Task {
             time[i] = new Stopwatch();
         }
 
-        System.out.printf("Creating (pattern %d) %d chunks in batches of %d chunk(s) of random sizes between %s and %s with %d thread(s)...\n", m_pattern,
-                m_chunkCount, m_chunkBatch, m_chunkSizeBytesBegin, m_chunkSizeBytesEnd, m_numThreads);
+        System.out.printf("Creating (pattern %d) %d chunks in batches of %d chunk(s) of random sizes between %s " +
+                        "and %s with %d thread(s)...\n", m_pattern, m_chunkCount, m_chunkBatch, m_chunkSizeBytesBegin,
+                m_chunkSizeBytesEnd, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
@@ -127,7 +128,8 @@ public class ChunkCreateTask implements Task {
                     }
 
                     case PATTERN_REMOTE_ONLY_SUCCESSOR: {
-                        short destNodeId = ChunkTaskUtils.getSuccessorSlaveNodeId(p_ctx.getCtxData().getSlaveNodeIds(), p_ctx.getCtxData().getSlaveId());
+                        short destNodeId = ChunkTaskUtils.getSuccessorSlaveNodeId(p_ctx.getCtxData().getSlaveNodeIds(),
+                                p_ctx.getCtxData().getSlaveId());
 
                         for (int j = 0; j < batches; j++) {
                             for (int k = 0; k < m_chunkBatch; k++) {
@@ -139,7 +141,8 @@ public class ChunkCreateTask implements Task {
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
-                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed",
+                                        Arrays.toString(sizes), destNodeId);
                             }
                         }
 
@@ -154,7 +157,8 @@ public class ChunkCreateTask implements Task {
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
-                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed",
+                                        Arrays.toString(sizes), destNodeId);
                             }
                         }
 
@@ -165,7 +169,8 @@ public class ChunkCreateTask implements Task {
                         short ownNodeId = p_ctx.getCtxData().getSlaveNodeIds()[p_ctx.getCtxData().getSlaveId()];
 
                         for (int j = 0; j < batches; j++) {
-                            short destNodeId = ChunkTaskUtils.getRandomNodeIdExceptOwn(p_ctx.getCtxData().getSlaveNodeIds(), ownNodeId);
+                            short destNodeId = ChunkTaskUtils.getRandomNodeIdExceptOwn(
+                                    p_ctx.getCtxData().getSlaveNodeIds(), ownNodeId);
 
                             for (int k = 0; k < m_chunkBatch; k++) {
                                 sizes[k] = RandomUtils.getRandomSize(m_chunkSizeBytesBegin, m_chunkSizeBytesEnd);
@@ -176,12 +181,14 @@ public class ChunkCreateTask implements Task {
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
-                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed",
+                                        Arrays.toString(sizes), destNodeId);
                             }
                         }
 
                         if (lastBatchRemainder > 0) {
-                            short destNodeId = ChunkTaskUtils.getRandomNodeIdExceptOwn(p_ctx.getCtxData().getSlaveNodeIds(), ownNodeId);
+                            short destNodeId = ChunkTaskUtils.getRandomNodeIdExceptOwn(
+                                    p_ctx.getCtxData().getSlaveNodeIds(), ownNodeId);
                             sizes = new int[(int) lastBatchRemainder];
 
                             for (int k = 0; k < sizes.length; k++) {
@@ -193,7 +200,8 @@ public class ChunkCreateTask implements Task {
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
-                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed",
+                                        Arrays.toString(sizes), destNodeId);
                             }
                         }
 
@@ -224,13 +232,15 @@ public class ChunkCreateTask implements Task {
                                 time[threadIdx].stopAndAccumulate();
 
                                 if (chunkIDs == null) {
-                                    LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                                    LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed",
+                                            Arrays.toString(sizes), destNodeId);
                                 }
                             }
                         }
 
                         if (lastBatchRemainder > 0) {
-                            short destNodeId = ChunkTaskUtils.getRandomNodeIdExceptOwn(p_ctx.getCtxData().getSlaveNodeIds(), ownNodeId);
+                            short destNodeId = ChunkTaskUtils.getRandomNodeIdExceptOwn(
+                                    p_ctx.getCtxData().getSlaveNodeIds(), ownNodeId);
                             sizes = new int[(int) lastBatchRemainder];
 
                             for (int k = 0; k < sizes.length; k++) {
@@ -242,7 +252,8 @@ public class ChunkCreateTask implements Task {
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
-                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed", Arrays.toString(sizes), destNodeId);
+                                LOGGER.error("Creating chunks for sizes %s on remote 0x%X failed",
+                                        Arrays.toString(sizes), destNodeId);
                             }
                         }
 
@@ -290,7 +301,8 @@ public class ChunkCreateTask implements Task {
         }
 
         System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
-        System.out.printf("Throughput: %f chunks/sec\n", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_chunkCount));
+        System.out.printf("Throughput: %f chunks/sec\n",
+                1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_chunkCount));
 
         ChunkIDRanges allChunkRanges = chunkService.getAllLocalChunkIDRanges();
 
@@ -328,6 +340,7 @@ public class ChunkCreateTask implements Task {
 
     @Override
     public int sizeofObject() {
-        return Integer.BYTES + Long.BYTES + Integer.BYTES + m_chunkSizeBytesBegin.sizeofObject() + m_chunkSizeBytesEnd.sizeofObject() + Integer.BYTES;
+        return Integer.BYTES + Long.BYTES + Integer.BYTES + m_chunkSizeBytesBegin.sizeofObject() +
+                m_chunkSizeBytesEnd.sizeofObject() + Integer.BYTES;
     }
 }

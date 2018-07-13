@@ -194,7 +194,6 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
 
                     LOGGER.error("Sending chunk put message to peer %s failed: %s", NodeID.toHexString(peer), e);
 
-
                     for (DataStructure ds : chunksToPut) {
                         m_lookup.invalidate(ds.getID());
                     }
@@ -229,7 +228,6 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
 
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
 
-
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
@@ -241,7 +239,6 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
                 }
             }
         }
-
 
         LOGGER.trace("Exiting incomingMessage");
 

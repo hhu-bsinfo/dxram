@@ -47,7 +47,8 @@ public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentCon
      * @param p_priorityShutdown
      *         Default shutdown priority for this component
      */
-    protected AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown, final Class<T> p_configClass) {
+    protected AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown,
+            final Class<T> p_configClass) {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_priorityInit = p_priorityInit;
         m_priorityShutdown = p_priorityShutdown;
@@ -81,29 +82,22 @@ public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentCon
 
         m_parentEngine = p_engine;
 
-
         LOGGER.info("Initializing component...");
-
 
         resolveComponentDependencies(p_engine);
 
         try {
             ret = initComponent(m_parentEngine.getConfig());
         } catch (final Exception e) {
-
             LOGGER.error("Initializing component failed", e);
 
             return false;
         }
 
         if (!ret) {
-
             LOGGER.error("Initializing component failed");
-
         } else {
-
             LOGGER.info("Initializing component successful");
-
 
             m_isInitialized = true;
         }
@@ -129,18 +123,13 @@ public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentCon
         boolean ret = true;
 
         if (m_isInitialized) {
-
             LOGGER.info("Shutting down component...");
 
             ret = shutdownComponent();
             if (!ret) {
-
                 LOGGER.warn("Shutting down component failed");
-
             } else {
-
                 LOGGER.info("Shutting down component successful");
-
             }
 
             m_isInitialized = false;

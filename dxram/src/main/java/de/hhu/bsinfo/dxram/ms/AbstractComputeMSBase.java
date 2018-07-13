@@ -62,7 +62,7 @@ abstract class AbstractComputeMSBase extends Thread {
 
     protected volatile State m_state = State.STATE_SETUP;
     protected ComputeRole m_role;
-    protected short m_computeGroupId = -1;
+    protected short m_computeGroupId;
     protected long m_pingIntervalMs;
     protected long m_lastPingMs;
     protected String m_nameserviceMasterNodeIdKey;
@@ -71,27 +71,29 @@ abstract class AbstractComputeMSBase extends Thread {
      * Constructor
      *
      * @param p_role
-     *     Compute role of the instance.
+     *         Compute role of the instance.
      * @param p_computeGroupId
-     *     Compute group id the instance is assigned to.
+     *         Compute group id the instance is assigned to.
      * @param p_pingIntervalMs
-     *     Ping interval in ms to check back with the compute group if still alive.
+     *         Ping interval in ms to check back with the compute group if still alive.
      * @param p_serviceAccessor
-     *     Service accessor for tasks.
+     *         Service accessor for tasks.
      * @param p_network
-     *     NetworkComponent
+     *         NetworkComponent
      * @param p_nameservice
-     *     NameserviceComponent
+     *         NameserviceComponent
      * @param p_boot
-     *     BootComponent
+     *         BootComponent
      * @param p_lookup
-     *     LookupComponent
+     *         LookupComponent
      */
-    AbstractComputeMSBase(final ComputeRole p_role, final short p_computeGroupId, final long p_pingIntervalMs, final DXRAMServiceAccessor p_serviceAccessor,
-        final NetworkComponent p_network, final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
+    AbstractComputeMSBase(final ComputeRole p_role, final short p_computeGroupId, final long p_pingIntervalMs,
+            final DXRAMServiceAccessor p_serviceAccessor,
+            final NetworkComponent p_network, final NameserviceComponent p_nameservice,
+            final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
         super("ComputeMS-" + p_role + '-' + p_computeGroupId);
 
-        LOGGER = LogManager.getFormatterLogger(this.getClass().getSimpleName());
+        LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
 
         m_role = p_role;
         m_computeGroupId = p_computeGroupId;
@@ -106,12 +108,16 @@ abstract class AbstractComputeMSBase extends Thread {
         m_boot = p_boot;
         m_lookup = p_lookup;
 
-        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
         m_network
-            .registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskScriptRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE,
-            ExecuteTaskScriptResponse.class);
+                .registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                        MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskScriptRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE,
+                ExecuteTaskScriptResponse.class);
     }
 
     /**
@@ -140,9 +146,6 @@ abstract class AbstractComputeMSBase extends Thread {
     short getComputeGroupId() {
         return m_computeGroupId;
     }
-
-    @Override
-    public abstract void run();
 
     /**
      * Shut down this compute node.

@@ -30,7 +30,8 @@ import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
  * Length: |  1   |   2    | 1,2,4,6 | 0,1,2,3 |    0,4    |   2   | 0,1,2,4 |   0,2    |    0,4   |
  * Type field contains type, length of LocalID field, length of length field and length of version field
  * Timestamp field has length 0 if timestamps are deactivated in DXRAM configuration, 4 otherwise
- * Chaining field has length 0 for chunks smaller than 1/2 of segment size (4 MB default) and 2 for larger chunks (chaining ID + chain size)
+ * Chaining field has length 0 for chunks smaller than 1/2 of segment size (4 MB default) and 2 for larger chunks
+ * (chaining ID + chain size)
  * Checksum field has length 0 if checksums are deactivated in DXRAM configuration, 4 otherwise
  * Log entry headers are read and written with absolute methods (position is untouched), only!
  *

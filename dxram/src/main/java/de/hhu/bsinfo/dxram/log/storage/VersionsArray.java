@@ -35,7 +35,7 @@ class VersionsArray {
      * Creates an instance of VersionsArray
      *
      * @param p_initialElementCapacity
-     *     the initial capacity of VersionsArray
+     *         the initial capacity of VersionsArray
      */
     VersionsArray(final int p_initialElementCapacity) {
         super();
@@ -86,9 +86,9 @@ class VersionsArray {
      * Returns the value to which the specified key is mapped in VersionsArray
      *
      * @param p_key
-     *     the searched key (is incremented before insertion to avoid 0)
+     *         the searched key (is incremented before insertion to avoid 0)
      * @param p_lowestCID
-     *     the lowest CID at the time the versions were read-in
+     *         the lowest CID at the time the versions were read-in
      * @return the value to which the key is mapped in VersionsArray
      */
     final Version get(final long p_key, final long p_lowestCID) {
@@ -106,13 +106,13 @@ class VersionsArray {
      * Maps the given key to the given value in VersionsArray
      *
      * @param p_key
-     *     the key (is incremented before insertion to avoid 0)
+     *         the key (is incremented before insertion to avoid 0)
      * @param p_epoch
-     *     the epoch
+     *         the epoch
      * @param p_version
-     *     the version
+     *         the version
      * @param p_idOffset
-     *     the lowest ChunkID in range
+     *         the lowest ChunkID in range
      */
     final void put(final long p_key, final int p_epoch, final int p_version, final long p_idOffset) {
         if (set((int) ((p_key - p_idOffset) * 2), p_epoch, p_version)) {
@@ -124,9 +124,9 @@ class VersionsArray {
      * Returns the value to which the specified key is mapped in VersionsArray
      *
      * @param p_key
-     *     the searched key (is incremented before insertion to avoid 0)
+     *         the searched key (is incremented before insertion to avoid 0)
      * @param p_idOffset
-     *     the lowest ChunkID in range
+     *         the lowest ChunkID in range
      * @return the value to which the key is mapped in VersionsArray
      */
     final short getEpoch(final long p_key, final long p_idOffset) {
@@ -138,9 +138,9 @@ class VersionsArray {
      * Returns the value to which the specified key is mapped in VersionsArray
      *
      * @param p_key
-     *     the searched key (is incremented before insertion to avoid 0)
+     *         the searched key (is incremented before insertion to avoid 0)
      * @param p_idOffset
-     *     the lowest ChunkID in range
+     *         the lowest ChunkID in range
      * @return the value to which the key is mapped in VersionsArray
      */
     final int getVersion(final long p_key, final long p_idOffset) {
@@ -152,7 +152,7 @@ class VersionsArray {
      * Gets the epoch at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @return the epoch
      */
     private int getEpoch(final int p_index) {
@@ -163,7 +163,7 @@ class VersionsArray {
      * Gets the version at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @return the version
      */
     private int getVersion(final int p_index) {
@@ -174,11 +174,11 @@ class VersionsArray {
      * Sets the key-value tuple at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @param p_epoch
-     *     the epoch
+     *         the epoch
      * @param p_version
-     *     the version
+     *         the version
      * @return whether this is a new entry or not
      */
     private boolean set(final int p_index, final int p_epoch, final int p_version) {

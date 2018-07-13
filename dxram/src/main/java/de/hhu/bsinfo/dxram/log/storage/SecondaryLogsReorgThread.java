@@ -244,9 +244,7 @@ public final class SecondaryLogsReorgThread extends Thread {
         // Reorganize complete secondary log
         SecondaryLog secondaryLog = m_secLog;
 
-
         LOGGER.debug("Got urgent reorganization request for %s", m_secLog.getRangeID());
-
 
         m_reorganizationLock.unlock();
         getAccessToSecLog(secondaryLog);
@@ -329,7 +327,6 @@ public final class SecondaryLogsReorgThread extends Thread {
             secondaryLog.resetReorgSegment();
             leaveSecLog(secondaryLog);
             m_allVersions.clear();
-
 
             LOGGER.trace("Time to reorganize complete log: %d", System.currentTimeMillis() - start);
 

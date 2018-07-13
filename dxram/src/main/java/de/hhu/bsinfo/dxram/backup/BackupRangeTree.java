@@ -18,7 +18,6 @@ package de.hhu.bsinfo.dxram.backup;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.util.ArrayListLong;
-import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Btree to store backup ranges of migrated chunks.
@@ -40,14 +39,12 @@ public final class BackupRangeTree {
     private Node m_root;
     private int m_entrySize;
 
-    private short m_creator = NodeID.INVALID_ID;
+    private short m_creator;
     private boolean m_initNeeded = false;
     private short m_oldRangeID = RangeID.INVALID_ID;
     private short m_newRangeID = RangeID.INVALID_ID;
 
     private Entry m_changedEntry;
-
-    private int m_elementsInTree; // Used for serialization, only
 
     // Constructors
 
@@ -1761,7 +1758,7 @@ public final class BackupRangeTree {
      * Auxiliary object to return ChunkID and backup range ID at once
      *
      * @author Kevin Beineke
-     *         13.06.2013
+     * 13.06.2013
      */
     private static final class Entry {
         // Attributes

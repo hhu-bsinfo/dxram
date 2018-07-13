@@ -40,8 +40,9 @@ public class RecoveryMetadata {
 
     /**
      * Sets the ChunkID ranges
+     *
      * @param p_chunkIDRanges
-     * the ChunkID ranges of all recovered chunks
+     *         the ChunkID ranges of all recovered chunks
      */
     public void setChunkIDRanges(final long[] p_chunkIDRanges) {
         m_chunkIDRanges = p_chunkIDRanges;
@@ -51,7 +52,7 @@ public class RecoveryMetadata {
      * Registers chunk (very expensive)
      *
      * @param p_size
-     *     the size of the chunk (header + payload)
+     *         the size of the chunk (header + payload)
      */
     public void add(final int p_size) {
         m_numberOfChunks.incrementAndGet();
@@ -62,9 +63,9 @@ public class RecoveryMetadata {
      * Registers multiple chunks
      *
      * @param p_count
-     *     the number of chunks to add
+     *         the number of chunks to add
      * @param p_size
-     *     the size of all chunks (header + payload each)
+     *         the size of all chunks (header + payload each)
      */
     public void add(final int p_count, final int p_size) {
         m_numberOfChunks.addAndGet(p_count);

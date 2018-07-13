@@ -58,14 +58,16 @@ final class DXRAMGsonContext {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation()
                 .registerTypeAdapter(AbstractDXRAMComponentConfig.class, new ComponentConfigSerializer())
                 .registerTypeAdapter(AbstractDXRAMServiceConfig.class, new ServiceConfigSerializer())
-                .registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer()).registerTypeAdapter(TimeUnit.class, new TimeUnitGsonSerializer())
+                .registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer()).registerTypeAdapter(
+                        TimeUnit.class, new TimeUnitGsonSerializer())
                 .create();
     }
 
     /**
      * Gson serializer and deserializer for component configs
      */
-    private static class ComponentConfigSerializer implements JsonDeserializer<AbstractDXRAMComponentConfig>, JsonSerializer<AbstractDXRAMComponentConfig> {
+    private static class ComponentConfigSerializer
+            implements JsonDeserializer<AbstractDXRAMComponentConfig>, JsonSerializer<AbstractDXRAMComponentConfig> {
         @Override
         public AbstractDXRAMComponentConfig deserialize(final JsonElement p_jsonElement, final Type p_type,
                 final JsonDeserializationContext p_jsonDeserializationContext) {
@@ -85,7 +87,8 @@ final class DXRAMGsonContext {
                 // check if there is an "interface"/abstract class between DXRAMComponent and the instance to
                 // create
                 if (!clazz.getSuperclass().getSuperclass().equals(AbstractDXRAMComponentConfig.class)) {
-                    LOGGER.fatal("Class '%s' is not a subclass of AbstractDXRAMComponentConfig, check your config file", className);
+                    LOGGER.fatal("Class '%s' is not a subclass of AbstractDXRAMComponentConfig, check your config file",
+                            className);
                     return null;
                 }
             }
@@ -94,7 +97,8 @@ final class DXRAMGsonContext {
         }
 
         @Override
-        public JsonElement serialize(final AbstractDXRAMComponentConfig p_abstractAbstractDXRAMComponentConfig, final Type p_type,
+        public JsonElement serialize(final AbstractDXRAMComponentConfig p_abstractAbstractDXRAMComponentConfig,
+                final Type p_type,
                 final JsonSerializationContext p_jsonSerializationContext) {
 
             Class<?> clazz;
@@ -111,7 +115,8 @@ final class DXRAMGsonContext {
     /**
      * Gson serializer and deserializer for service configs
      */
-    private static class ServiceConfigSerializer implements JsonDeserializer<AbstractDXRAMServiceConfig>, JsonSerializer<AbstractDXRAMServiceConfig> {
+    private static class ServiceConfigSerializer
+            implements JsonDeserializer<AbstractDXRAMServiceConfig>, JsonSerializer<AbstractDXRAMServiceConfig> {
         @Override
         public AbstractDXRAMServiceConfig deserialize(final JsonElement p_jsonElement, final Type p_type,
                 final JsonDeserializationContext p_jsonDeserializationContext) {
@@ -131,7 +136,8 @@ final class DXRAMGsonContext {
                 // check if there is an "interface"/abstract class between DXRAMService and the instance to
                 // create
                 if (!clazz.getSuperclass().getSuperclass().equals(AbstractDXRAMServiceConfig.class)) {
-                    LOGGER.fatal("Class '%s' is not a subclass of AbstractDXRAMServiceConfig, check your config file", className);
+                    LOGGER.fatal("Class '%s' is not a subclass of AbstractDXRAMServiceConfig, check your config file",
+                            className);
                     return null;
                 }
             }

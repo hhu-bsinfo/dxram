@@ -39,11 +39,11 @@ public class SlavePrintInfoTask implements Task {
 
     @Override
     public int execute(final TaskContext p_ctx) {
-
         System.out.println("TaskScript " + getClass().getSimpleName() + ": ");
         System.out.println("OwnSlaveId: " + p_ctx.getCtxData().getSlaveId());
         System.out.println("List of slaves in current compute group " + p_ctx.getCtxData().getComputeGroupId() + ": ");
         short[] slaves = p_ctx.getCtxData().getSlaveNodeIds();
+
         for (int i = 0; i < slaves.length; i++) {
             System.out.println(i + ": " + NodeID.toHexString(slaves[i]));
         }

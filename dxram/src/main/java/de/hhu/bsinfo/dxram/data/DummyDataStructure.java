@@ -14,7 +14,7 @@ public class DummyDataStructure extends DataStructure {
      * Constructor
      *
      * @param p_chunkID
-     *     Chunk ID to assign
+     *         Chunk ID to assign
      */
     public DummyDataStructure(final long p_chunkID) {
         super(p_chunkID);

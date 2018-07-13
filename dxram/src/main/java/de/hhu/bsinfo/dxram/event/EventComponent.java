@@ -79,7 +79,6 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
 
         LOGGER.trace("Event fired: %s", p_event);
 
-
         ArrayList<EventListener<?>> listeners = m_eventListener.get(p_event.getClass().getName());
         if (listeners != null) {
             FireEvent<T> task = new FireEvent<>(p_event, listeners);
@@ -105,7 +104,6 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
-
         LOGGER.info("EventExecutor: Initialising %d threads", getConfig().getThreadCount());
 
         m_executor = new TaskExecutor("EventExecutor", getConfig().getThreadCount());
@@ -116,16 +114,15 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
     @Override
     protected boolean shutdownComponent() {
         m_executor.shutdown();
+
         try {
             m_executor.awaitTermination();
 
             LOGGER.info("Shutdown of EventExecutor successful");
-
         } catch (final InterruptedException e) {
-
             LOGGER.warn("Could not wait for event executor thread pool to finish. Interrupted");
-
         }
+
         m_executor = null;
 
         return true;
@@ -140,7 +137,6 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
      * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
      */
     private static class FireEvent<T extends AbstractEvent> implements Runnable {
-
         private AbstractEvent m_event;
         private ArrayList<EventListener<?>> m_listener;
 

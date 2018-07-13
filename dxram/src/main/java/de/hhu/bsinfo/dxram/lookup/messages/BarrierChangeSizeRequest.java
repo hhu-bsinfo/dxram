@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Change the size of an existing barrier.
@@ -50,8 +50,10 @@ public class BarrierChangeSizeRequest extends Request {
      * @param p_isReplicate
      *         wether it is a replicate or not
      */
-    public BarrierChangeSizeRequest(final short p_destination, final int p_barrierId, final int p_size, final boolean p_isReplicate) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST);
+    public BarrierChangeSizeRequest(final short p_destination, final int p_barrierId, final int p_size,
+            final boolean p_isReplicate) {
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST);
 
         m_barrierId = p_barrierId;
         m_size = p_size;

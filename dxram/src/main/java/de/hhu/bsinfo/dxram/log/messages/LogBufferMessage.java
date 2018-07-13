@@ -66,7 +66,8 @@ public class LogBufferMessage extends Message {
      * @param p_buffer
      *         the chunks to store with ChunkID and payload size prepended
      */
-    public LogBufferMessage(final short p_destination, final short p_rangeID, final int p_numberOfDSs, final ByteBuffer p_buffer) {
+    public LogBufferMessage(final short p_destination, final short p_rangeID, final int p_numberOfDSs,
+            final ByteBuffer p_buffer) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_BUFFER_MESSAGE, true);
 
         m_rangeID = p_rangeID;

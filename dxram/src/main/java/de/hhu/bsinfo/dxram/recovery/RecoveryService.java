@@ -115,7 +115,6 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
         registerNetworkMessages();
         registerNetworkMessageListener();
 
-
         if (!m_backup.isActiveAndAvailableForBackup()) {
             LOGGER.warn("Backup is not activated/available. Recovery service will not work!");
         }
@@ -175,7 +174,6 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
 
                             LOGGER.info("Retrieved %d Chunks from file", chunks.length);
 
-
                             // Store recovered Chunks
                             //m_chunkBackup.putRecoveredChunks(chunks);
 
@@ -223,7 +221,6 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                         }
 
                         LOGGER.info("Retrieved %d Chunks from file", chunks.length);
-
 
                         // Store recovered Chunks
                         //m_chunkBackup.putRecoveredChunks(chunks);
@@ -290,10 +287,12 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
          *      e) Read all versions in array (do not write back!)
          *      f) For all not empty segments in log (backup range):
          *          i)   Read the whole segment from SSD
-         *          ii)  Create an array for ChunkIDs, offsets in segment buffer and lengths for a batch of to be stored chunks
-         *          iii) Iterate over all log entries. If an entry is valid and uncorrupted, store its ChunkID, offset length in the arrays
-         *              in ChunkBackupComponent
-         *          iv)  If batch size is reached or segment is fully iterated, store all chunks in memory management with one call
+         *          ii)  Create an array for ChunkIDs, offsets in segment buffer and lengths for a batch of to be
+         *               stored chunks
+         *          iii) Iterate over all log entries. If an entry is valid and uncorrupted, store its ChunkID, offset
+         *               length in the arrays in ChunkBackupComponent
+         *          iv)  If batch size is reached or segment is fully iterated, store all chunks in memory management
+         *               with one call
          *      g) Release MemoryManager write lock
          *      h) Unblock reorganization thread
          *      i) Remove backup range from log module:
@@ -310,17 +309,23 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
          *      b) Block reorganization thread
          *      c) Get MemoryManager write lock
          *      d) Create a version hashtable:
-         *          i) Number of chunks in backup range is unknown, at the beginning hashtable is large enough for an average chunk size of 32 bytes
+         *          i) Number of chunks in backup range is unknown, at the beginning hashtable is large enough for
+         *             an average chunk size of 32 bytes
          *      e) Read all versions in hashtable (do not write back!):
-         *          i)   If there are more versions written to hard drive than fitting in hashtable, resize hashtable to number of written versions
-         *          ii)  After reading all versions from hard drive: If there are too many new versions in version buffer, resize hashtable again
+         *          i)   If there are more versions written to hard drive than fitting in hashtable, resize hashtable
+         *               to number of written versions
+         *          ii)  After reading all versions from hard drive: If there are too many new versions in version
+         *               buffer, resize hashtable again
          *          iii) Hashtable is always sized for the worst case scenario to prevent rehashing during filling
          *      f) For all not empty segments in log (backup range):
          *          i)   Read the whole segment from SSD
-         *          ii)  Create an array for ChunkIDs, offsets in segment buffer and lengths for a batch of to be stored chunks
-         *          iii) Iterate over all log entries. If an entry is valid and uncorrupted, store its ChunkID, offset length in the arrays
+         *          ii)  Create an array for ChunkIDs, offsets in segment buffer and lengths for a batch of to be
+         *               stored chunks
+         *          iii) Iterate over all log entries. If an entry is valid and uncorrupted, store its ChunkID, offset
+         *              length in the arrays
          *          In ChunkBackupComponent
-         *          iv)  If batch size is reached or segment is fully iterated, store all chunks in memory management with one call
+         *          iv)  If batch size is reached or segment is fully iterated, store all chunks in memory management
+         *               with one call
          *      g) Release MemoryManager write lock
          *      h) Unblock reorganization thread
          *      i) Remove backup range from log module:
@@ -348,19 +353,24 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
 
                 }
             } else {
-                // Initialize backup ranges in backup, lookup and log modules by joining recovered chunks with migrated chunks
-                replacementBackupPeer = m_backup.registerRecoveredChunks(recoveryMetadata, backupRange, p_request.getOwner());
+                // Initialize backup ranges in backup, lookup and log modules by joining recovered chunks with
+                // migrated chunks
+                replacementBackupPeer = m_backup.registerRecoveredChunks(recoveryMetadata, backupRange,
+                        p_request.getOwner());
 
-                // Store recovery metadata for replication of recovered backup range to be handled by another thread after initialization by superpeer
+                // Store recovery metadata for replication of recovered backup range to be handled by another thread
+                // after initialization by superpeer
                 m_replicationLock.lock();
-                m_finishedRecoveries.add(new FinishedRecovery(replacementBackupPeer, recoveryMetadata.getCIDRanges(), recoveryMetadata.getNumberOfChunks(),
+                m_finishedRecoveries.add(new FinishedRecovery(replacementBackupPeer, recoveryMetadata.getCIDRanges(),
+                        recoveryMetadata.getNumberOfChunks(),
                         backupRange.getRangeID()));
 
                 m_replicationLock.unlock();
 
                 try {
                     m_network.sendMessage(
-                            new RecoverBackupRangeResponse(p_request, backupRange, recoveryMetadata.getNumberOfChunks(), recoveryMetadata.getCIDRanges()));
+                            new RecoverBackupRangeResponse(p_request, backupRange, recoveryMetadata.getNumberOfChunks(),
+                                    recoveryMetadata.getCIDRanges()));
                 } catch (final NetworkException ignored) {
 
                 }
@@ -390,7 +400,8 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
         if (finishedRecovery != null) {
             // Send replicas to backup peers
             if (finishedRecovery.getReplacementBackupPeer() != NodeID.INVALID_ID) {
-                m_chunkBackup.replicateBackupRange(finishedRecovery.getReplacementBackupPeer(), finishedRecovery.getCIDRanges(),
+                m_chunkBackup.replicateBackupRange(finishedRecovery.getReplacementBackupPeer(),
+                        finishedRecovery.getCIDRanges(),
                         finishedRecovery.getNumberOfChunks(), finishedRecovery.getRangeID());
             }
         }
@@ -418,13 +429,17 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
      * Register network messages we use in here.
      */
     private void registerNetworkMessages() {
-        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST,
+        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
+                RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST,
                 RecoverBackupRangeRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE,
+        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
+                RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE,
                 RecoverBackupRangeResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST,
+        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
+                RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST,
                 ReplicateBackupRangeRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_RESPONSE,
+        m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
+                RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_RESPONSE,
                 ReplicateBackupRangeResponse.class);
     }
 
@@ -432,8 +447,10 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, this);
-        m_network.register(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
+                RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
+                RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST, this);
     }
 
 }

@@ -33,16 +33,12 @@ public class EventComponentConfig extends AbstractDXRAMComponentConfig {
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (m_threadCount < 1) {
-
             LOGGER.error("Invalid value (%d) for m_threadCount", m_threadCount);
-
             return false;
         }
 
         if (m_threadCount > THREAD_COUNT_MAX) {
-
             LOGGER.error("Max limit m_threadCount: %d", THREAD_COUNT_MAX);
-
             return false;
         }
 

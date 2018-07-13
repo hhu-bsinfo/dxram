@@ -88,9 +88,9 @@ public class ChunkDataModifySequentialTask implements Task {
             time[i] = new Stopwatch();
         }
 
-        System.out
-                .printf("Modifying (and checking %b) %d chunks sequentially %d times (pattern %d) in batches of %d chunk(s) with %d thread(s)...\n",
-                        m_writeContentsAndVerify, totalChunkCount, m_iterations, m_pattern, m_chunkBatch, m_numThreads);
+        System.out.printf("Modifying (and checking %b) %d chunks sequentially %d times (pattern %d) in batches of " +
+                        "%d chunk(s) with %d thread(s)...\n", m_writeContentsAndVerify, totalChunkCount, m_iterations,
+                m_pattern, m_chunkBatch, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
             int threadIdx = i;
@@ -192,9 +192,8 @@ public class ChunkDataModifySequentialTask implements Task {
 
                                         for (int k = 0; k < buffer.length; k++) {
                                             if (buffer[k] != (byte) k) {
-                                                LOGGER.error(
-                                                        "Contents of chunk %s are not matching written contents: 0x%X != 0x%X",
-                                                        chunksToVerify[j], buffer[k], k);
+                                                LOGGER.error("Contents of chunk %s are not matching written " +
+                                                        "contents: 0x%X != 0x%X", chunksToVerify[j], buffer[k], k);
                                             }
                                         }
                                     }

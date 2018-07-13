@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Get the current status of a master compute node.
@@ -38,9 +38,10 @@ public class GetMasterStatusRequest extends Request {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      */
     public GetMasterStatusRequest(final short p_destination) {
-        super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST);
+        super(p_destination, DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST);
     }
 }

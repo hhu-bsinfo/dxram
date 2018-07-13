@@ -57,7 +57,8 @@ public abstract class AbstractApplication extends Thread {
     public abstract String getApplicationName();
 
     /**
-     * Tell the ApplicationService that your application wants to use a dedicated standalone DXRAM style configuration file.
+     * Tell the ApplicationService that your application wants to use a dedicated standalone DXRAM style
+     * configuration file.
      *
      * @return True if your application wants to use a configuration file, false otherwise
      */
@@ -65,7 +66,8 @@ public abstract class AbstractApplication extends Thread {
 
     /**
      * The main entry point for your application.
-     * Your application will run in its own thread started by the ApplicationService. If this call returns, your application has terminated.
+     * Your application will run in its own thread started by the ApplicationService. If this call returns, your
+     * application has terminated.
      */
     public abstract void main();
 
@@ -79,9 +81,7 @@ public abstract class AbstractApplication extends Thread {
     public void run() {
         setName(getApplicationName());
 
-
         LOGGER.info("Starting '%s'...", getName());
-
 
         try {
             main();
@@ -90,7 +90,6 @@ public abstract class AbstractApplication extends Thread {
             LOGGER.info("Exception in application", e);
 
         }
-
 
         LOGGER.info("'%s' finished", getName());
 

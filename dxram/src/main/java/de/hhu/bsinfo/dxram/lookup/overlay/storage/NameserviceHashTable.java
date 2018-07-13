@@ -52,9 +52,9 @@ public class NameserviceHashTable extends AbstractMetadata {
      * Creates an instance of IDHashTable
      *
      * @param p_initialElementCapacity
-     *     the initial capacity of IDHashTable
+     *         the initial capacity of IDHashTable
      * @param p_loadFactor
-     *     the load factor of IDHashTable
+     *         the load factor of IDHashTable
      */
     public NameserviceHashTable(final int p_initialElementCapacity, final float p_loadFactor) {
         super();
@@ -76,7 +76,7 @@ public class NameserviceHashTable extends AbstractMetadata {
      * Converts an byte array with all entries to an ArrayList with Pairs.
      *
      * @param p_array
-     *     all serialized nameservice entries
+     *         all serialized nameservice entries
      * @return Array list with entries as pairs of index + value
      */
     public static ArrayList<NameserviceEntry> convert(final byte[] p_array) {
@@ -95,7 +95,7 @@ public class NameserviceHashTable extends AbstractMetadata {
      * Hashes the given key
      *
      * @param p_key
-     *     the key
+     *         the key
      * @return the hash value
      */
     private static int hash(final int p_key) {
@@ -122,7 +122,6 @@ public class NameserviceHashTable extends AbstractMetadata {
 
                 LOGGER.trace("Storing nameservice entry");
 
-
                 put(data.getInt(), data.getLong());
                 ret++;
             }
@@ -143,7 +142,6 @@ public class NameserviceHashTable extends AbstractMetadata {
             if (iter != 0) {
 
                 LOGGER.trace("Including nameservice entry: %s <-> %s", iter - 1, getValue(i));
-
 
                 data.putInt(iter - 1);
                 data.putLong(getValue(i));
@@ -167,7 +165,6 @@ public class NameserviceHashTable extends AbstractMetadata {
 
                     LOGGER.trace("Including nameservice entry: %s <-> %s", iter - 1, getValue(i));
 
-
                     data.putInt(iter - 1);
                     data.putLong(getValue(i));
                     count++;
@@ -188,7 +185,6 @@ public class NameserviceHashTable extends AbstractMetadata {
                 if (!OverlayHelper.isHashInSuperpeerRange(CRC16.hash(iter - 1), p_bound1, p_bound2)) {
 
                     LOGGER.trace("Removing nameservice entry: %s <-> %s", iter - 1, getValue(i));
-
 
                     count++;
                     remove(iter);
@@ -221,7 +217,7 @@ public class NameserviceHashTable extends AbstractMetadata {
      * Returns the value to which the specified key is mapped in IDHashTable
      *
      * @param p_key
-     *     the searched key (is incremented before insertion to avoid 0)
+     *         the searched key (is incremented before insertion to avoid 0)
      * @return the value to which the key is mapped in IDHashTable
      */
     public final long get(final int p_key) {
@@ -248,9 +244,9 @@ public class NameserviceHashTable extends AbstractMetadata {
      * Maps the given key to the given value in IDHashTable
      *
      * @param p_key
-     *     the key (is incremented before insertion to avoid 0)
+     *         the key (is incremented before insertion to avoid 0)
      * @param p_value
-     *     the value
+     *         the value
      * @return the old value
      */
     public final long put(final int p_key, final long p_value) {
@@ -286,7 +282,7 @@ public class NameserviceHashTable extends AbstractMetadata {
      * Removes the given key from IDHashTable
      *
      * @param p_key
-     *     the key (is incremented before insertion to avoid 0)
+     *         the key (is incremented before insertion to avoid 0)
      * @return the value
      */
     public final long remove(final int p_key) {
@@ -357,11 +353,11 @@ public class NameserviceHashTable extends AbstractMetadata {
      * Sets the key-value tuple at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @param p_key
-     *     the key
+     *         the key
      * @param p_value
-     *     the value
+     *         the value
      */
     private void set(final int p_index, final int p_key, final long p_value) {
         int index;
@@ -376,7 +372,7 @@ public class NameserviceHashTable extends AbstractMetadata {
      * Gets the key at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @return the key
      */
     private int getKey(final int p_index) {
@@ -387,7 +383,7 @@ public class NameserviceHashTable extends AbstractMetadata {
      * Gets the value at given index
      *
      * @param p_index
-     *     the index
+     *         the index
      * @return the value
      */
     private long getValue(final int p_index) {
@@ -418,21 +414,19 @@ public class NameserviceHashTable extends AbstractMetadata {
         m_threshold = (int) (m_elementCapacity * m_loadFactor);
         m_table = newTable;
 
-
         LOGGER.trace("Reached threshold (%d) -> Rehashing. New size: %d... ", oldThreshold, m_elementCapacity);
-
 
         m_count = 0;
         while (index < oldElementCapacity) {
             if (oldTable[index * 3] != 0) {
-                put(oldTable[index * 3] - 1, (long) oldTable[index * 3 + 1] << 32 | oldTable[index * 3 + 2] & 0xFFFFFFFFL);
+                put(oldTable[index * 3] - 1,
+                        (long) oldTable[index * 3 + 1] << 32 | oldTable[index * 3 + 2] & 0xFFFFFFFFL);
             }
             index = (index + 1) % m_elementCapacity;
         }
         m_count = oldCount;
 
         LOGGER.trace("done");
-
     }
 
     /**
@@ -450,9 +444,9 @@ public class NameserviceHashTable extends AbstractMetadata {
          * Creates an instance of Entry
          *
          * @param p_key
-         *     the key
+         *         the key
          * @param p_value
-         *     the value
+         *         the value
          */
         protected Entry(final int p_key, final long p_value) {
             m_key = p_key;

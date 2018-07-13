@@ -26,8 +26,8 @@ public abstract class AbstractPlacementStrategy {
     boolean m_rackAware;
     boolean m_switchAware;
 
-    AbstractPlacementStrategy(final int p_replicationFactor, final boolean p_disjunctiveFirstBackupPeer, final boolean p_rackAware,
-            final boolean p_switchAware) {
+    AbstractPlacementStrategy(final int p_replicationFactor, final boolean p_disjunctiveFirstBackupPeer,
+            final boolean p_rackAware, final boolean p_switchAware) {
         m_replicationFactor = p_replicationFactor;
 
         m_disjunctive = p_disjunctiveFirstBackupPeer;
@@ -52,7 +52,8 @@ public abstract class AbstractPlacementStrategy {
      * @return the backup peers
      * @lock BackupComponent.m_lock must be write-locked
      */
-    public abstract BackupRange determineBackupPeers(short p_backupRangeID, List<BackupPeer> p_availablePeers, BackupRange p_currentBackupRange);
+    public abstract BackupRange determineBackupPeers(short p_backupRangeID, List<BackupPeer> p_availablePeers,
+            BackupRange p_currentBackupRange);
 
     /**
      * Determines a new backup peer to replace a failed one
@@ -62,7 +63,8 @@ public abstract class AbstractPlacementStrategy {
      * @return the replacement
      * @lock BackupComponent.m_lock must be write-locked
      */
-    public abstract BackupPeer determineReplacementBackupPeer(BackupPeer[] p_currentBackupPeers, List<BackupPeer> p_availablePeers);
+    public abstract BackupPeer determineReplacementBackupPeer(BackupPeer[] p_currentBackupPeers,
+            List<BackupPeer> p_availablePeers);
 
     /**
      * Adds a new backup peer
@@ -121,7 +123,8 @@ public abstract class AbstractPlacementStrategy {
      * @param p_currentIndex
      *         the array index
      */
-    void addNewRandomBackupPeer(final List<BackupPeer> p_availablePeers, final BackupPeer[] p_backupPeers, final int p_numberOfNodes, final int p_currentIndex,
+    void addNewRandomBackupPeer(final List<BackupPeer> p_availablePeers, final BackupPeer[] p_backupPeers,
+            final int p_numberOfNodes, final int p_currentIndex,
             final Random p_rand) {
         BackupPeer newBackupPeer = null;
         BackupPeer currentBackupPeer;
@@ -135,7 +138,8 @@ public abstract class AbstractPlacementStrategy {
                     break;
                 }
 
-                if (newBackupPeer.getNodeID() == currentBackupPeer.getNodeID() || m_rackAware && newBackupPeer.getRack() == currentBackupPeer.getRack() ||
+                if (newBackupPeer.getNodeID() == currentBackupPeer.getNodeID() ||
+                        m_rackAware && newBackupPeer.getRack() == currentBackupPeer.getRack() ||
                         m_switchAware && newBackupPeer.getSwitch() == currentBackupPeer.getSwitch()) {
                     ready = false;
                     break;
@@ -146,7 +150,8 @@ public abstract class AbstractPlacementStrategy {
     }
 
     /**
-     * Add a new backup peer by random select. It is guaranteed that the new backup peer is not a duplicate (not in p_oldBackupPeers and p_newBackupPeers).
+     * Add a new backup peer by random select. It is guaranteed that the new backup peer is not a duplicate
+     * (not in p_oldBackupPeers and p_newBackupPeers).
      *
      * @param p_availablePeers
      *         all available peers to select from
@@ -159,7 +164,8 @@ public abstract class AbstractPlacementStrategy {
      * @param p_currentIndex
      *         the array index
      */
-    void addNewRandomBackupPeer(final List<BackupPeer> p_availablePeers, final BackupPeer[] p_oldBackupPeers, final BackupPeer[] p_newBackupPeers,
+    void addNewRandomBackupPeer(final List<BackupPeer> p_availablePeers, final BackupPeer[] p_oldBackupPeers,
+            final BackupPeer[] p_newBackupPeers,
             final int p_numberOfNodes, final int p_currentIndex, final Random p_rand) {
         BackupPeer newBackupPeer = null;
         BackupPeer currentBackupPeer;
@@ -192,6 +198,7 @@ public abstract class AbstractPlacementStrategy {
             boolean isNew;
             ArrayList<Short> racks = new ArrayList<>();
             ArrayList<Short> switches = new ArrayList<>();
+
             for (BackupPeer peer : p_availablePeers) {
                 isNew = true;
                 for (Short currentRack : racks) {
@@ -217,24 +224,24 @@ public abstract class AbstractPlacementStrategy {
             }
 
             if (m_rackAware && racks.size() < m_replicationFactor) {
-
                 LOGGER.warn("Rack-awareness not applicable with %d racks in initial set of peers!", racks.size());
 
                 m_rackAware = false;
             } else if (m_rackAware && racks.size() <= 2 * m_replicationFactor) {
-
-                LOGGER.warn("Rack-awareness restricts replica placement with only %d racks in initial set of peers!", racks.size());
+                LOGGER.warn("Rack-awareness restricts replica placement with only %d racks in initial set of peers!",
+                        racks.size());
 
             }
 
             if (m_switchAware && switches.size() < m_replicationFactor) {
-
-                LOGGER.warn("Switch-awareness not applicable with %d switches in initial set of peers!", switches.size());
+                LOGGER.warn("Switch-awareness not applicable with %d switches in initial set of peers!",
+                        switches.size());
 
                 m_switchAware = false;
             } else if (m_switchAware && switches.size() <= 2 * m_replicationFactor) {
-
-                LOGGER.warn("Switch-awareness restricts replica placement with only %d switches in initial set of peers!", switches.size());
+                LOGGER.warn(
+                        "Switch-awareness restricts replica placement with only %d switches in initial set of peers!",
+                        switches.size());
 
             }
         }

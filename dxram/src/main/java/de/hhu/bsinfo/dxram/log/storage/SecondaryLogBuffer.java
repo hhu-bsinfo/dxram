@@ -95,7 +95,6 @@ public final class SecondaryLogBuffer {
             flushSecLogBuffer();
         } catch (final IOException | InterruptedException e) {
 
-
             LOGGER.error("Could not flush secondary log buffer", e);
 
         }

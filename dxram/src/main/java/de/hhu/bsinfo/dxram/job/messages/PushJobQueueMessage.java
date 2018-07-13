@@ -50,7 +50,8 @@ public class PushJobQueueMessage extends Message {
      * @param p_callbackJobEventBitMask
      *         Bit mask indicating the events the other node wants to be notified about
      */
-    public PushJobQueueMessage(final short p_destination, final AbstractJob p_job, final byte p_callbackJobEventBitMask) {
+    public PushJobQueueMessage(final short p_destination, final AbstractJob p_job,
+            final byte p_callbackJobEventBitMask) {
         super(p_destination, DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE);
 
         m_job = p_job;

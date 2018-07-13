@@ -57,14 +57,15 @@ final class ApplicationGsonContext {
     static Gson createGsonInstance(final Class<? extends AbstractApplication> p_appClass) {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation()
                 .registerTypeAdapter(AbstractApplication.class, new ApplicationSerializer(p_appClass))
-                .registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer()).registerTypeAdapter(TimeUnit.class, new TimeUnitGsonSerializer())
-                .create();
+                .registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer()).registerTypeAdapter(
+                        TimeUnit.class, new TimeUnitGsonSerializer()).create();
     }
 
     /**
      * Gson serializer and deserializer for DXRAM application classes
      */
-    private static class ApplicationSerializer implements JsonDeserializer<AbstractApplication>, JsonSerializer<AbstractApplication> {
+    private static class ApplicationSerializer
+            implements JsonDeserializer<AbstractApplication>, JsonSerializer<AbstractApplication> {
         private Class<? extends AbstractApplication> m_appClass;
 
         public ApplicationSerializer(final Class<? extends AbstractApplication> p_appClass) {
@@ -88,7 +89,8 @@ final class ApplicationGsonContext {
                 // check if there is an "interface"/abstract class between DXRAMComponent and the instance to
                 // create
                 if (!m_appClass.getSuperclass().getSuperclass().equals(AbstractApplication.class)) {
-                    LOGGER.fatal("Could class '%s' is not a subclass of AbstractApplication, check your config file", className);
+                    LOGGER.fatal("Could class '%s' is not a subclass of AbstractApplication, check your config file",
+                            className);
                     return null;
                 }
             }

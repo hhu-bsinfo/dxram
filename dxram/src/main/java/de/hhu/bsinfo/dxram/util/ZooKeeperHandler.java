@@ -38,7 +38,6 @@ import org.apache.zookeeper.data.Stat;
  * @author Florian Klein, florian.klein@hhu.de, 02.12.2013
  */
 public final class ZooKeeperHandler {
-
     private static final Logger LOGGER = LogManager.getFormatterLogger(ZooKeeperHandler.class.getSimpleName());
 
     // Attributes
@@ -53,11 +52,11 @@ public final class ZooKeeperHandler {
      * Creates an instance of ZooKeeperHandler
      *
      * @param p_path
-     *     Path in zookeeper to handle.
+     *         Path in zookeeper to handle.
      * @param p_connection
-     *     Connection string
+     *         Connection string
      * @param p_timeout
-     *     Timeout in ms
+     *         Timeout in ms
      */
     public ZooKeeperHandler(final String p_path, final String p_connection, final int p_timeout) {
         m_path = p_path;
@@ -80,12 +79,10 @@ public final class ZooKeeperHandler {
      * Connects to ZooKeeper
      *
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public synchronized void connect() throws ZooKeeperException {
-
         LOGGER.trace("Entering connect");
-
 
         if (m_zookeeper == null) {
             try {
@@ -106,14 +103,13 @@ public final class ZooKeeperHandler {
         }
 
         LOGGER.trace(getClass().getName(), "Exiting connect");
-
     }
 
     /**
      * Disconnects from ZooKeeper
      *
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public void close() throws ZooKeeperException {
         close(false);
@@ -123,9 +119,9 @@ public final class ZooKeeperHandler {
      * Disconnects from ZooKeeper
      *
      * @param p_delete
-     *     if true alle ZooKeeper nodes are deleted
+     *         if true alle ZooKeeper nodes are deleted
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public synchronized void close(final boolean p_delete) throws ZooKeeperException {
         if (m_zookeeper != null) {
@@ -137,6 +133,7 @@ public final class ZooKeeperHandler {
             } catch (final InterruptedException | KeeperException e) {
                 throw new ZooKeeperException("Could not access ZooKeeper", e);
             }
+
             m_zookeeper = null;
         }
     }
@@ -145,10 +142,10 @@ public final class ZooKeeperHandler {
      * Checks if a node exists
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @return true if the node exists, false otherwise
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public boolean exists(final String p_path) throws ZooKeeperException {
         return getStatus(p_path, null) != null;
@@ -158,12 +155,12 @@ public final class ZooKeeperHandler {
      * Checks if a node exists
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_watcher
-     *     the watcher
+     *         the watcher
      * @return true if the node exists, fals eotherwise
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public boolean exists(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
         return getStatus(p_path, p_watcher) != null;
@@ -173,10 +170,10 @@ public final class ZooKeeperHandler {
      * Gets the status of a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @return true if the node exists, fals eotherwise
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public Stat getStatus(final String p_path) throws ZooKeeperException {
         return getStatus(p_path, null);
@@ -186,12 +183,12 @@ public final class ZooKeeperHandler {
      * Gets the status of a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_watcher
-     *     the watcher
+     *         the watcher
      * @return true if the node exists, fals eotherwise
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public Stat getStatus(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
         Stat ret;
@@ -219,13 +216,13 @@ public final class ZooKeeperHandler {
      * Creates a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      * @throws InterruptedException
-     *     if connection to ZooKeeper is interrupted
+     *         if connection to ZooKeeper is interrupted
      * @throws KeeperException
-     *     if node already exists in ZooKeeper
+     *         if node already exists in ZooKeeper
      */
     public void create(final String p_path) throws ZooKeeperException, KeeperException, InterruptedException {
         create(p_path, new byte[0], CreateMode.PERSISTENT);
@@ -235,17 +232,18 @@ public final class ZooKeeperHandler {
      * Creates a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_data
-     *     the node data
+     *         the node data
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      * @throws InterruptedException
-     *     if connection to ZooKeeper is interrupted
+     *         if connection to ZooKeeper is interrupted
      * @throws KeeperException
-     *     if node already exists in ZooKeeper
+     *         if node already exists in ZooKeeper
      */
-    public void create(final String p_path, final byte[] p_data) throws ZooKeeperException, KeeperException, InterruptedException {
+    public void create(final String p_path, final byte[] p_data)
+            throws ZooKeeperException, KeeperException, InterruptedException {
         create(p_path, p_data, CreateMode.PERSISTENT);
     }
 
@@ -253,9 +251,9 @@ public final class ZooKeeperHandler {
      * Deletes a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public void delete(final String p_path) throws ZooKeeperException {
         delete(p_path, -1);
@@ -265,11 +263,11 @@ public final class ZooKeeperHandler {
      * Deletes a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_version
-     *     the node version (-1 for every version)
+     *         the node version (-1 for every version)
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public void delete(final String p_path, final int p_version) throws ZooKeeperException {
         assert p_path != null;
@@ -278,6 +276,7 @@ public final class ZooKeeperHandler {
             if (m_zookeeper == null) {
                 connect();
             }
+
             m_zookeeper.delete(m_path + '/' + p_path, p_version);
         } catch (final KeeperException | InterruptedException e) {
             throw new ZooKeeperException("Could not access ZooKeeper", e);
@@ -288,13 +287,13 @@ public final class ZooKeeperHandler {
      * Creates a barrier node ein ZooKeeper
      *
      * @param p_path
-     *     the barrier node path
+     *         the barrier node path
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      * @throws InterruptedException
-     *     if connection to ZooKeeper is interrupted
+     *         if connection to ZooKeeper is interrupted
      * @throws KeeperException
-     *     if node already exists in ZooKeeper
+     *         if node already exists in ZooKeeper
      */
     public void createBarrier(final String p_path) throws ZooKeeperException, KeeperException, InterruptedException {
         create(p_path);
@@ -304,9 +303,9 @@ public final class ZooKeeperHandler {
      * Deletes a barrier node ein ZooKeeper
      *
      * @param p_path
-     *     the barrier node path
+     *         the barrier node path
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public void deleteBarrier(final String p_path) throws ZooKeeperException {
         delete(p_path);
@@ -316,11 +315,11 @@ public final class ZooKeeperHandler {
      * Waits for the deletion of a barrier node ein ZooKeeper
      *
      * @param p_path
-     *     the barrier node path
+     *         the barrier node path
      * @param p_watcher
-     *     the watcher
+     *         the watcher
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public void waitForBarrier(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
         while (exists(p_path, p_watcher)) {
@@ -335,10 +334,10 @@ public final class ZooKeeperHandler {
      * Gets the child nodes of a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @return the child nodes
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public List<String> getChildren(final String p_path) throws ZooKeeperException {
         return getChildren(p_path, null);
@@ -348,12 +347,12 @@ public final class ZooKeeperHandler {
      * Gets the child nodes of a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_watcher
-     *     the watcher
+     *         the watcher
      * @return the child nodes
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public List<String> getChildren(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
         List<String> ret;
@@ -375,10 +374,10 @@ public final class ZooKeeperHandler {
      * Gets the data of a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @return the node data
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public byte[] getData(final String p_path) throws ZooKeeperException {
         return getData(p_path, null, null);
@@ -388,12 +387,12 @@ public final class ZooKeeperHandler {
      * Gets the data of a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_status
-     *     the node status
+     *         the node status
      * @return the node data
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public byte[] getData(final String p_path, final Stat p_status) throws ZooKeeperException {
         return getData(p_path, null, p_status);
@@ -403,12 +402,12 @@ public final class ZooKeeperHandler {
      * Gets the data of a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_watcher
-     *     the watcher
+     *         the watcher
      * @return the node data
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public byte[] getData(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
         return getData(p_path, p_watcher, null);
@@ -418,14 +417,14 @@ public final class ZooKeeperHandler {
      * Gets the data of a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_watcher
-     *     the watcher
+     *         the watcher
      * @param p_status
-     *     the node status
+     *         the node status
      * @return the node data
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public byte[] getData(final String p_path, final Watcher p_watcher, final Stat p_status) throws ZooKeeperException {
         byte[] ret;
@@ -447,11 +446,11 @@ public final class ZooKeeperHandler {
      * Sets the data of a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_data
-     *     the node data
+     *         the node data
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public void setData(final String p_path, final byte[] p_data) throws ZooKeeperException {
         setData(p_path, p_data, -1);
@@ -461,13 +460,13 @@ public final class ZooKeeperHandler {
      * Sets the data of a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_data
-     *     the node data
+     *         the node data
      * @param p_version
-     *     the node version (-1 for every version)
+     *         the node version (-1 for every version)
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public void setData(final String p_path, final byte[] p_data, final int p_version) throws ZooKeeperException {
         assert p_path != null;
@@ -488,11 +487,11 @@ public final class ZooKeeperHandler {
      * Sets an exists watcher
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_watcher
-     *     the watcher
+     *         the watcher
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public void setExistsWatch(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
         try {
@@ -510,11 +509,11 @@ public final class ZooKeeperHandler {
      * Sets a data watcher
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_watcher
-     *     the watcher
+     *         the watcher
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public void setDataWatch(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
         try {
@@ -532,11 +531,11 @@ public final class ZooKeeperHandler {
      * Sets a children watcher
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_watcher
-     *     the watcher
+     *         the watcher
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public void setChildrenWatch(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
         try {
@@ -554,9 +553,9 @@ public final class ZooKeeperHandler {
      * Executes multiple operations
      *
      * @param p_operations
-     *     the operations to be executed
+     *         the operations to be executed
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      */
     public void executeOperations(final Iterable<Op> p_operations) throws ZooKeeperException {
         try {
@@ -574,19 +573,20 @@ public final class ZooKeeperHandler {
      * Creates a node in ZooKeeper
      *
      * @param p_path
-     *     the node path
+     *         the node path
      * @param p_data
-     *     the node data
+     *         the node data
      * @param p_mode
-     *     the creation mode
+     *         the creation mode
      * @throws ZooKeeperException
-     *     if ZooKeeper could not accessed
+     *         if ZooKeeper could not accessed
      * @throws InterruptedException
-     *     if connection to ZooKeeper is interrupted
+     *         if connection to ZooKeeper is interrupted
      * @throws KeeperException
-     *     if node already exists in ZooKeeper
+     *         if node already exists in ZooKeeper
      */
-    private void create(final String p_path, final byte[] p_data, final CreateMode p_mode) throws ZooKeeperException, KeeperException, InterruptedException {
+    private void create(final String p_path, final byte[] p_data, final CreateMode p_mode)
+            throws ZooKeeperException, KeeperException, InterruptedException {
         assert p_path != null;
         assert p_data != null;
         assert p_mode != null;
@@ -643,7 +643,7 @@ public final class ZooKeeperHandler {
          * Creates an instance of ZooKeeperException
          *
          * @param p_message
-         *     the message
+         *         the message
          */
         public ZooKeeperException(final String p_message) {
             super(p_message);
@@ -653,9 +653,9 @@ public final class ZooKeeperHandler {
          * Creates an instance of ZooKeeperException
          *
          * @param p_message
-         *     the message
+         *         the message
          * @param p_cause
-         *     the cause
+         *         the cause
          */
         public ZooKeeperException(final String p_message, final Throwable p_cause) {
             super(p_message, p_cause);

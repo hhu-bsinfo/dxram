@@ -26,7 +26,7 @@ public interface TaskListener {
      * Gets called when the task is taken from the queue and is about to get executed.
      *
      * @param p_taskScriptState
-     *     TaskScriptState of the task to get executed.
+     *         TaskScriptState of the task to get executed.
      */
     void taskBeforeExecution(final TaskScriptState p_taskScriptState);
 
@@ -34,7 +34,7 @@ public interface TaskListener {
      * Gets called when the task execution has completed.
      *
      * @param p_taskScriptState
-     *     TaskScriptState of the task that completed execution.
+     *         TaskScriptState of the task that completed execution.
      */
     void taskCompleted(final TaskScriptState p_taskScriptState);
 }

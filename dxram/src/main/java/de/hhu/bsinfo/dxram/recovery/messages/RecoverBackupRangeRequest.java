@@ -57,7 +57,8 @@ public class RecoverBackupRangeRequest extends Request {
      *         the backup range to recover
      */
     public RecoverBackupRangeRequest(final short p_destination, final short p_owner, final BackupRange p_backupRange) {
-        super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, true);
+        super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
+                RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, true);
 
         m_owner = p_owner;
         m_backupRange = p_backupRange;

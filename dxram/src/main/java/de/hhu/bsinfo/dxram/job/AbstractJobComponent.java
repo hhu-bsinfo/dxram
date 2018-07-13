@@ -33,7 +33,8 @@ public abstract class AbstractJobComponent<T extends AbstractDXRAMComponentConfi
      * @param p_priorityShutdown
      *         Default shutdown priority for this component
      */
-    public AbstractJobComponent(final short p_priorityInit, final short p_priorityShutdown, final Class<T> p_configClass) {
+    public AbstractJobComponent(final short p_priorityInit, final short p_priorityShutdown,
+            final Class<T> p_configClass) {
         super(p_priorityInit, p_priorityShutdown, p_configClass);
     }
 

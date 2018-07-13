@@ -249,13 +249,15 @@ public final class DXRAM {
         String str = ">>> DXRAM Node <<<\n";
         str += VERSION + "\n";
         str += "Build type: " + BUILD_TYPE + '\n';
-        str += "Git commit: " + GIT_COMMIT + "\n";
+        str += "Git commit: " + GIT_COMMIT + '\n';
 
         String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
+
         if (buildDate != null) {
             str += "BuildDate: " + buildDate + '\n';
         }
         String buildUser = ManifestHelper.getProperty(getClass(), "BuildUser");
+
         if (buildUser != null) {
             str += "BuildUser: " + buildUser + '\n';
         }

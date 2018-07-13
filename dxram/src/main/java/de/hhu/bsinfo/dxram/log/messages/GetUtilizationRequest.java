@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.log.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Get Utilization Request
@@ -39,7 +39,7 @@ public class GetUtilizationRequest extends Request {
      * Creates an instance of GetUtilizationRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      */
     public GetUtilizationRequest(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST);

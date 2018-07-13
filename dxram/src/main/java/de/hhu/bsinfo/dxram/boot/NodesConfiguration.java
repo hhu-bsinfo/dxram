@@ -90,16 +90,17 @@ public final class NodesConfiguration {
 
     @Override
     public String toString() {
-        StringBuilder str = new StringBuilder();
+        StringBuilder builder = new StringBuilder();
 
-        str.append("NodesConfiguration[ownID: ").append(m_ownID).append("]:");
+        builder.append("NodesConfiguration[ownID: ").append(m_ownID).append("]:");
+
         for (int i = 0; i < m_nodes.length; i++) {
             if (m_nodes[i] != null) {
-                str.append('\n').append(NodeID.toHexString((short) i)).append(": ").append(m_nodes[i]);
+                builder.append('\n').append(NodeID.toHexString((short) i)).append(": ").append(m_nodes[i]);
             }
         }
 
-        return str.toString();
+        return builder.toString();
     }
 
     /**
@@ -191,7 +192,8 @@ public final class NodesConfiguration {
         private short m_switch = 0;
 
         /**
-         * If 1, this entry is read from file, 0 if the node joined the system without being part of the initial configuration
+         * If 1, this entry is read from file, 0 if the node joined the system without being part of the
+         * initial configuration
          */
         @Expose
         private byte m_readFromFile = 1;
@@ -218,23 +220,27 @@ public final class NodesConfiguration {
 
         /**
          * Creates an instance of NodesConfigurationEntry
-         *  @param p_address
+         *
+         * @param p_address
          *         addres of the node
          * @param p_rack
          *         the rack of the node
          * @param p_switch
- *         the switcharea of the node
+         *         the switcharea of the node
          * @param p_role
-*         the role of the node
+         *         the role of the node
          * @param p_capabilities
+         *         node capability flags
          * @param p_readFromFile
          *         whether this node's information was read from nodes file or not
          * @param p_availableForBackup
- *         whether this peer is available for backup/logging or not
+         *         whether this peer is available for backup/logging or not
          * @param p_isOnline
+         *         True if the node is only, false otherwise
          */
-        NodeEntry(final IPV4Unit p_address, final short p_nodeID, final short p_rack, final short p_switch, final NodeRole p_role, int p_capabilities, final boolean p_readFromFile,
-                  final boolean p_availableForBackup, final boolean p_isOnline) {
+        NodeEntry(final IPV4Unit p_address, final short p_nodeID, final short p_rack, final short p_switch,
+                final NodeRole p_role, int p_capabilities, final boolean p_readFromFile,
+                final boolean p_availableForBackup, final boolean p_isOnline) {
             assert p_rack >= 0;
             assert p_switch >= 0;
             assert p_role != null;
@@ -316,8 +322,10 @@ public final class NodesConfiguration {
 
         @Override
         public String toString() {
-            return "NodesConfigurationEntry [m_address=" + m_address + ", m_nodeID=" + m_nodeID + ", m_rack=" + m_rack + ", m_switch=" + m_switch +
-                    ", m_role=" + m_role.getAcronym() + ", m_capabilities=" + m_capabilities +  ", m_online=" + m_online + ", m_availableForBackup="
+            return "NodesConfigurationEntry [m_address=" + m_address + ", m_nodeID=" + m_nodeID + ", m_rack=" + m_rack +
+                    ", m_switch=" + m_switch +
+                    ", m_role=" + m_role.getAcronym() + ", m_capabilities=" + m_capabilities + ", m_online=" +
+                    m_online + ", m_availableForBackup="
                     + m_availableForBackup + ", m_readFromFile=" + (m_readFromFile == 1 ? "true" : "false") + ']';
         }
 
@@ -386,7 +394,8 @@ public final class NodesConfiguration {
 
         @Override
         public int sizeofObject() {
-            return ObjectSizeUtil.sizeofString(m_address.getAddressStr()) + 4 * Short.BYTES + Byte.BYTES + Integer.BYTES;
+            return ObjectSizeUtil.sizeofString(m_address.getAddressStr()) + 4 * Short.BYTES + Byte.BYTES +
+                    Integer.BYTES;
         }
     }
 }

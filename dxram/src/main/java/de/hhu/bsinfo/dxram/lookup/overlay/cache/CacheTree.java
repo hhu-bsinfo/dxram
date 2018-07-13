@@ -22,8 +22,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
-import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
+import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.RandomUtils;
 
 /**
@@ -53,11 +53,11 @@ public final class CacheTree {
      * Creates an instance of CacheTree
      *
      * @param p_order
-     *     order of the btree
+     *         order of the btree
      * @param p_ttl
-     *     the ttl for cached entries
+     *         the ttl for cached entries
      * @param p_cacheMaxSize
-     *     the maximal number of cache entries
+     *         the maximal number of cache entries
      */
     public CacheTree(final short p_order, final long p_ttl, final long p_cacheMaxSize) {
         // too small order for BTree
@@ -100,9 +100,9 @@ public final class CacheTree {
      * Returns the node in which the predecessor is
      *
      * @param p_chunkID
-     *     the ChunkID whose predecessor's node is searched
+     *         the ChunkID whose predecessor's node is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the node in which the predecessor of p_chunkID is or null if there is no predecessor
      */
     private static Node getPredecessorsNode(final long p_chunkID, final Node p_node) {
@@ -153,9 +153,9 @@ public final class CacheTree {
      * Returns the entry of the predecessor
      *
      * @param p_chunkID
-     *     the ChunkID whose predecessor is searched
+     *         the ChunkID whose predecessor is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the entry of p_chunkID's predecessor or null if there is no predecessor
      */
     private static Entry getPredecessorsEntry(final long p_chunkID, final Node p_node) {
@@ -181,9 +181,9 @@ public final class CacheTree {
      * Returns the node in which the successor is
      *
      * @param p_chunkID
-     *     the ChunkID whose successor's node is searched
+     *         the ChunkID whose successor's node is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the node in which the successor of p_chunkID is or null if there is no successor
      */
     private static Node getSuccessorsNode(final long p_chunkID, final Node p_node) {
@@ -234,9 +234,9 @@ public final class CacheTree {
      * Returns the entry of the successor
      *
      * @param p_chunkID
-     *     the ChunkID whose successor is searched
+     *         the ChunkID whose successor is searched
      * @param p_node
-     *     anchor node
+     *         anchor node
      * @return the entry of p_chunkID's successor or null if there is no successor
      */
     private static Entry getSuccessorsEntry(final long p_chunkID, final Node p_node) {
@@ -262,11 +262,11 @@ public final class CacheTree {
      * Prints one node of the btree and walks down the btree recursively
      *
      * @param p_node
-     *     the current node
+     *         the current node
      * @param p_prefix
-     *     the prefix to use
+     *         the prefix to use
      * @param p_isTail
-     *     defines wheter the node is the tail
+     *         defines wheter the node is the tail
      * @return String interpretation of the tree
      */
     private static String getString(final Node p_node, final String p_prefix, final boolean p_isTail) {
@@ -324,13 +324,14 @@ public final class CacheTree {
      * puts entries with specified nodeID in the list 'p_list' provided as argument
      *
      * @param p_node
-     *     the current node
+     *         the current node
      * @param p_list
-     *     list to add to
+     *         list to add to
      * @author michael.birkhoff@hhu.de
      */
 
-    private static void getFilteredInverseList(final Node p_node, final ArrayList<CacheNodeElement> p_list, final short p_nodeID) {
+    private static void getFilteredInverseList(final Node p_node, final ArrayList<CacheNodeElement> p_list,
+            final short p_nodeID) {
 
         Node obj;
 
@@ -369,7 +370,7 @@ public final class CacheTree {
      * Returns the primary peer for given object
      *
      * @param p_chunkID
-     *     ChunkID of requested object
+     *         ChunkID of requested object
      * @return the NodeID of the primary peer for given object
      */
     public short getPrimaryPeer(final long p_chunkID) {
@@ -388,7 +389,7 @@ public final class CacheTree {
      * Returns the range given ChunkID is in
      *
      * @param p_chunkID
-     *     ChunkID of requested object
+     *         ChunkID of requested object
      * @return the first and last ChunkID of the range
      */
     public LookupRange getMetadata(final long p_chunkID) {
@@ -437,11 +438,11 @@ public final class CacheTree {
      * Caches a range
      *
      * @param p_startCID
-     *     the first ChunkID
+     *         the first ChunkID
      * @param p_endCID
-     *     the last ChunkID
+     *         the last ChunkID
      * @param p_nodeID
-     *     the primary peer
+     *         the primary peer
      * @return true if insertion was successful
      */
     public boolean cacheRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
@@ -469,7 +470,7 @@ public final class CacheTree {
      * Removes given ChunkID from btree
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      */
     public void invalidateChunkID(final long p_chunkID) {
         m_lock.writeLock().lock();
@@ -481,7 +482,7 @@ public final class CacheTree {
      * Removes ChunkID range with given ChunkID from btree
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      */
     public void invalidateRange(final long p_chunkID) {
         short nodeID;
@@ -527,7 +528,7 @@ public final class CacheTree {
      * Removes all ChunkIDs of given peer from btree
      *
      * @param p_nodeID
-     *     the NodeID
+     *         the NodeID
      */
     public void invalidatePeer(final short p_nodeID) {
         m_lock.writeLock().lock();
@@ -610,9 +611,9 @@ public final class CacheTree {
      * Caches a single ChunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_nodeID
-     *     the primary peer
+     *         the primary peer
      * @return true if insertion was successful
      */
     private boolean cacheChunkID(final long p_chunkID, final short p_nodeID) {
@@ -633,7 +634,7 @@ public final class CacheTree {
      * Removes given ChunkID from btree
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @note assumes m_lock has been locked
      */
     private void removeEntry(final long p_chunkID) {
@@ -716,9 +717,9 @@ public final class CacheTree {
      * Creates a new entry or replaces the old one
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_nodeID
-     *     the NodeID
+     *         the NodeID
      * @return the node in which the entry is stored
      */
     private Node createOrReplaceEntry(final long p_chunkID, final short p_nodeID) {
@@ -785,11 +786,11 @@ public final class CacheTree {
      * Merges the object or range with predecessor
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_nodeID
-     *     the NodeID
+     *         the NodeID
      * @param p_node
-     *     anchor node
+     *         anchor node
      */
     private void mergeWithPredecessorOrBound(final long p_chunkID, final short p_nodeID, final Node p_node) {
         Entry predecessor;
@@ -826,9 +827,9 @@ public final class CacheTree {
      * Merges the object or range with successor
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_nodeID
-     *     the NodeID
+     *         the NodeID
      */
     private void mergeWithSuccessor(final long p_chunkID, final short p_nodeID) {
         Node node;
@@ -845,9 +846,9 @@ public final class CacheTree {
      * Removes all entries between start (inclusive) and end
      *
      * @param p_start
-     *     the first object in range
+     *         the first object in range
      * @param p_end
-     *     the last object in range
+     *         the last object in range
      */
     private void removeEntriesWithinRange(final long p_start, final long p_end) {
         long successor;
@@ -865,10 +866,11 @@ public final class CacheTree {
      * Returns the node in which the next entry to given ChunkID (could be the ChunkID itself) is stored
      *
      * @param p_chunkID
-     *     the ChunkID whose node is searched
+     *         the ChunkID whose node is searched
      * @param p_registerAccess
-     *     whether the access of any traversed node should be registered or not
-     * @return node in which the ChunkID is stored if ChunkID is in tree or successors node, null if there is no successor
+     *         whether the access of any traversed node should be registered or not
+     * @return node in which the ChunkID is stored if ChunkID is in tree or successors node,
+     * null if there is no successor
      */
     private Node getNodeOrSuccessorsNode(final long p_chunkID, final boolean p_registerAccess) {
         Node ret;
@@ -932,7 +934,7 @@ public final class CacheTree {
      * Returns next ChunkID to given ChunkID (could be the ChunkID itself)
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return p_chunkID if p_chunkID is in btree or successor of p_chunkID, (-1) if there is no successor
      */
     private long getCIDOrSuccessorsCID(final long p_chunkID) {
@@ -957,7 +959,7 @@ public final class CacheTree {
      * Returns the location and backup nodes of next ChunkID to given ChunkID (could be the ChunkID itself)
      *
      * @param p_chunkID
-     *     the ChunkID whose corresponding NodeID is searched
+     *         the ChunkID whose corresponding NodeID is searched
      * @return NodeID for p_chunkID if p_chunkID is in btree or successors NodeID
      */
     private short getNodeIDOrSuccessorsNodeID(final long p_chunkID) {
@@ -982,9 +984,9 @@ public final class CacheTree {
      * Splits down the middle if node is greater than maxEntries
      *
      * @param p_chunkID
-     *     the new ChunkID that causes the splitting
+     *         the new ChunkID that causes the splitting
      * @param p_node
-     *     the node that has to be split
+     *         the node that has to be split
      * @return the node in which p_chunkID must be inserted
      */
     private Node split(final long p_chunkID, final Node p_node) {
@@ -1057,7 +1059,7 @@ public final class CacheTree {
      * Removes given ChunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return p_chunkID or (-1) if there is no entry for p_chunkID
      */
     private long remove(final long p_chunkID) {
@@ -1074,9 +1076,9 @@ public final class CacheTree {
      * Removes the p_chunkID from given node and checks invariants
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_node
-     *     the node in which p_chunkID should be stored
+     *         the node in which p_chunkID should be stored
      * @return p_chunkID or (-1) if there is no entry for p_chunkID
      */
     private long remove(final long p_chunkID, final Node p_node) {
@@ -1129,7 +1131,7 @@ public final class CacheTree {
      * Combines children entries with parent when size is less than minEntries
      *
      * @param p_node
-     *     the node
+     *         the node
      */
     private void combined(final Node p_node) {
         Node parent;
@@ -1247,7 +1249,7 @@ public final class CacheTree {
      * Validates the node according to the btree invariants
      *
      * @param p_node
-     *     the node
+     *         the node
      * @return whether the node is valid or not
      */
     private boolean validateNode(final Node p_node) {
@@ -1349,7 +1351,7 @@ public final class CacheTree {
      * A single node of the btree
      *
      * @author Kevin Beineke
-     *         13.06.2013
+     * 13.06.2013
      */
     private static final class Node implements Comparable<Node> {
 
@@ -1371,11 +1373,11 @@ public final class CacheTree {
          * Creates an instance of Node
          *
          * @param p_parent
-         *     the parent
+         *         the parent
          * @param p_maxEntries
-         *     the number of entries that can be stored
+         *         the number of entries that can be stored
          * @param p_maxChildren
-         *     the number of children that can be stored
+         *         the number of children that can be stored
          */
         private Node(final Node p_parent, final short p_maxEntries, final int p_maxChildren) {
             m_parent = p_parent;
@@ -1392,7 +1394,7 @@ public final class CacheTree {
          * Compares two nodes
          *
          * @param p_cmp
-         *     the node to compare with
+         *         the node to compare with
          * @return 0 if the nodes are equal, (-1) if p_cmp is larger, 1 otherwise
          */
         @Override
@@ -1479,7 +1481,7 @@ public final class CacheTree {
          * Returns the parent node
          *
          * @param p_parent
-         *     the parent node
+         *         the parent node
          */
         private void setParent(final Node p_parent) {
             m_parent = p_parent;
@@ -1516,7 +1518,7 @@ public final class CacheTree {
          * Returns the ChunkID to given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the ChunkID to given index
          */
         private long getCID(final int p_index) {
@@ -1527,7 +1529,7 @@ public final class CacheTree {
          * Returns the data leaf to given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the data leaf to given index
          */
         private short getNodeID(final int p_index) {
@@ -1546,7 +1548,7 @@ public final class CacheTree {
          * java.util.Arrays adapted to our needs
          *
          * @param p_chunkID
-         *     the ChunkID
+         *         the ChunkID
          * @return the index for given ChunkID, if it is contained in the array, (-(insertion point) - 1) otherwise
          */
         private int indexOf(final long p_chunkID) {
@@ -1583,9 +1585,9 @@ public final class CacheTree {
          * Adds an entry
          *
          * @param p_chunkID
-         *     the ChunkID
+         *         the ChunkID
          * @param p_nodeID
-         *     the NodeID
+         *         the NodeID
          */
         private void addEntry(final long p_chunkID, final short p_nodeID) {
             int index;
@@ -1605,11 +1607,11 @@ public final class CacheTree {
          * Adds an entry
          *
          * @param p_chunkID
-         *     the ChunkID
+         *         the ChunkID
          * @param p_nodeID
-         *     the NodeID
+         *         the NodeID
          * @param p_index
-         *     the index to store the element at
+         *         the index to store the element at
          */
         private void addEntry(final long p_chunkID, final short p_nodeID, final int p_index) {
             System.arraycopy(m_keys, p_index, m_keys, p_index + 1, m_numberOfEntries - p_index);
@@ -1625,13 +1627,13 @@ public final class CacheTree {
          * Adds entries from another node
          *
          * @param p_node
-         *     the other node
+         *         the other node
          * @param p_offsetSrc
-         *     the offset in source array
+         *         the offset in source array
          * @param p_endSrc
-         *     the end of source array
+         *         the end of source array
          * @param p_offsetDst
-         *     the offset in destination array or -1 if the source array has to be prepended
+         *         the offset in destination array or -1 if the source array has to be prepended
          */
         private void addEntries(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
             long[] aux1;
@@ -1660,11 +1662,11 @@ public final class CacheTree {
          * Changes an entry
          *
          * @param p_chunkID
-         *     the ChunkID
+         *         the ChunkID
          * @param p_nodeID
-         *     the NodeID
+         *         the NodeID
          * @param p_index
-         *     the index of given entry in this node
+         *         the index of given entry in this node
          */
         private void changeEntry(final long p_chunkID, final short p_nodeID, final int p_index) {
 
@@ -1678,7 +1680,7 @@ public final class CacheTree {
          * Removes the entry with given ChunkID
          *
          * @param p_chunkID
-         *     the ChunkID of the entry that has to be deleted
+         *         the ChunkID of the entry that has to be deleted
          * @return p_chunkID or (-1) if there is no entry for p_chunkID in this node
          */
         private long removeEntry(final long p_chunkID) {
@@ -1701,7 +1703,7 @@ public final class CacheTree {
          * Removes the entry with given index
          *
          * @param p_index
-         *     the index of the entry that has to be deleted
+         *         the index of the entry that has to be deleted
          * @return p_chunkID or (-1) if p_index is to large
          */
         private long removeEntry(final int p_index) {
@@ -1722,7 +1724,7 @@ public final class CacheTree {
          * Returns the child with given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the child with given index
          */
         private Node getChild(final int p_index) {
@@ -1742,7 +1744,7 @@ public final class CacheTree {
          * java.util.Arrays adapted to our needs
          *
          * @param p_child
-         *     the child
+         *         the child
          * @return the index of the given child, if it is contained in the array, (-(insertion point) - 1) otherwise
          */
         private int indexOf(final Node p_child) {
@@ -1781,7 +1783,7 @@ public final class CacheTree {
          * Adds a child
          *
          * @param p_child
-         *     the child
+         *         the child
          */
         private void addChild(final Node p_child) {
             int index;
@@ -1799,13 +1801,13 @@ public final class CacheTree {
          * Adds children of another node
          *
          * @param p_node
-         *     the other node
+         *         the other node
          * @param p_offsetSrc
-         *     the offset in source array
+         *         the offset in source array
          * @param p_endSrc
-         *     the end of source array
+         *         the end of source array
          * @param p_offsetDst
-         *     the offset in destination array or -1 if the source array has to be prepended
+         *         the offset in destination array or -1 if the source array has to be prepended
          */
         private void addChildren(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
             Node[] aux;
@@ -1842,7 +1844,7 @@ public final class CacheTree {
          * Removes the given child
          *
          * @param p_child
-         *     the child
+         *         the child
          * @return true if the child was found and deleted, false otherwise
          */
         private boolean removeChild(final Node p_child) {
@@ -1864,7 +1866,7 @@ public final class CacheTree {
          * Removes the child with given index
          *
          * @param p_index
-         *     the index
+         *         the index
          * @return the deleted child
          */
         private Node removeChild(final int p_index) {
@@ -1885,7 +1887,7 @@ public final class CacheTree {
      * Auxiliary object to return ChunkID and NodeID at once
      *
      * @author Kevin Beineke
-     *         13.06.2013
+     * 13.06.2013
      */
     private static final class Entry {
 
@@ -1899,9 +1901,9 @@ public final class CacheTree {
          * Creates an instance of Entry
          *
          * @param p_chunkID
-         *     the ChunkID
+         *         the ChunkID
          * @param p_nodeID
-         *     the NodeID
+         *         the NodeID
          */
         Entry(final long p_chunkID, final short p_nodeID) {
             m_chunkID = p_chunkID;
@@ -1951,9 +1953,9 @@ public final class CacheTree {
          * Creates an instance of CacheNodeElement
          *
          * @param p_chunkId
-         *     chunk to find ...
+         *         chunk to find ...
          * @param p_nodeId
-         *     ... on node
+         *         ... on node
          */
         CacheNodeElement(final Long p_chunkId, final short p_nodeId) {
             m_chunkId = p_chunkId;
@@ -2000,7 +2002,7 @@ public final class CacheTree {
          * Creates an instance of TTLHandler
          *
          * @param p_ttl
-         *     the TTL value
+         *         the TTL value
          */
         TTLHandler(final long p_ttl, final long p_maxCachedEntries) {
             m_ttl = p_ttl;
@@ -2059,9 +2061,9 @@ public final class CacheTree {
          * Removes given range from btree
          *
          * @param p_startCID
-         *     the first ChunkID
+         *         the first ChunkID
          * @param p_endCID
-         *     the last ChunkID
+         *         the last ChunkID
          */
         private void invalidateRange(final long p_startCID, final long p_endCID) {
             Node node;

@@ -13,14 +13,16 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
 
 /**
  * Copyset replica placement strategy.
- * Based on the RAMCloud implementation from the paper "Copysets: Reducing the Frequency of Data Loss in Cloud Storage", Asaf Cidon from Stanford University.
+ * Based on the RAMCloud implementation from the paper "Copysets: Reducing the Frequency of Data Loss in Cloud Storage",
+ * Asaf Cidon from Stanford University.
  * https://web.stanford.edu/~skatti/pubs/usenix13-copysets.pdf
  * Differences:
- * - DXRAM determines backup peers not for single chunks but for backup ranges containing many chunks. Therefore, the maximal number of copysets
- * is smaller. Still, with copyset replication the probability for data loss can be reduced.
- * - We do not determine the copysets on one server and use them globally. Instead, every server determines the copysets on its own. Given the set
- * of available nodes is identical, every node determines the same copysets. But, copysets can differ when nodes are added because nodes might detect
- * the joining nodes in different order. Therefore, the number of copysets (globally) can be higher than
+ * - DXRAM determines backup peers not for single chunks but for backup ranges containing many chunks. Therefore, the
+ * maximal number of copysets is smaller. Still, with copyset replication the probability for data loss can be reduced.
+ * - We do not determine the copysets on one server and use them globally. Instead, every server determines the
+ * copysets on its own. Given the set of available nodes is identical, every node determines the same copysets.
+ * But, copysets can differ when nodes are added because nodes might detect the joining nodes in different order.
+ * Therefore, the number of copysets (globally) can be higher than
  * ((scatterwidth / (replicationFactor − 1)) * (n / replicationFactor))
  * but still a lot smaller (for n >> scatterWidth) compared to random replication (n choose replicationFactor).
  *
@@ -37,11 +39,14 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
     /**
      * Creates an instance of CopysetPlacement
      */
-    public CopysetPlacement(final int p_replicationFactor, final boolean p_disjunctiveFirstBackupPeer, final boolean p_rackAware, final boolean p_switchAware) {
+    public CopysetPlacement(final int p_replicationFactor, final boolean p_disjunctiveFirstBackupPeer,
+            final boolean p_rackAware, final boolean p_switchAware) {
         super(p_replicationFactor, p_disjunctiveFirstBackupPeer, p_rackAware, p_switchAware);
 
-        // ScatterWidth does not impact recovery performance -> like for RAMCloud the scatter width for DXRAM is always (replicationFactor - 1)
-        // Permutations are always 1 for fixed scatterWidth (formula: (int) Math.ceil(scatterWidth / (m_replicationFactor - 1)))
+        // ScatterWidth does not impact recovery performance -> like for RAMCloud the scatter width for DXRAM is
+        // always (replicationFactor - 1)
+        // Permutations are always 1 for fixed scatterWidth
+        // (formula: (int) Math.ceil(scatterWidth / (m_replicationFactor - 1)))
 
         m_incompleteCopyset = new BackupPeer[m_replicationFactor];
     }
@@ -69,7 +74,8 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
                 aware = true;
                 for (int i = counter - counter % m_replicationFactor; i < counter; i++) {
                     cmp = permutation[i];
-                    if (m_rackAware && currentPeer.getRack() == cmp.getRack() || m_switchAware && currentPeer.getSwitch() == cmp.getSwitch()) {
+                    if (m_rackAware && currentPeer.getRack() == cmp.getRack() ||
+                            m_switchAware && currentPeer.getSwitch() == cmp.getSwitch()) {
                         aware = false;
                         break;
                     }
@@ -78,8 +84,8 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
                     // Put the peer back and try again
                     p_availablePeers.add(currentPeer);
                     if (tries++ == 1000000) {
-
-                        LOGGER.warn("Unable to find enough copysets meeting the requirements. Fallback to random replication!");
+                        LOGGER.warn("Unable to find enough copysets meeting the requirements. Fallback to random " +
+                                "replication!");
 
                         return false;
                     }
@@ -132,7 +138,8 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
     }
 
     @Override
-    public BackupPeer determineReplacementBackupPeer(final BackupPeer[] p_currentBackupPeers, final List<BackupPeer> p_availablePeers) {
+    public BackupPeer determineReplacementBackupPeer(final BackupPeer[] p_currentBackupPeers,
+            final List<BackupPeer> p_availablePeers) {
         BackupPeer ret;
         BackupPeer currentPeer;
         short numberOfPeers;
@@ -144,13 +151,13 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
 
             LOGGER.warn("Less than three peers for backup available. Replication will be incomplete!");
 
-
             return null;
         }
 
         if (numberOfPeers < m_replicationFactor * 2) {
 
-            LOGGER.warn("Less than six peers for backup available. Some peers may store more" + " than one backup range of a node!");
+            LOGGER.warn("Less than six peers for backup available. Some peers may store more" +
+                    " than one backup range of a node!");
 
         }
 
@@ -186,7 +193,8 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
     }
 
     @Override
-    public BackupRange determineBackupPeers(final short p_backupRangeID, final List<BackupPeer> p_availablePeers, final BackupRange p_currentBackupRange) {
+    public BackupRange determineBackupPeers(final short p_backupRangeID, final List<BackupPeer> p_availablePeers,
+            final BackupRange p_currentBackupRange) {
         BackupRange ret;
         boolean insufficientPeers = false;
         BackupPeer[] newBackupPeers;
@@ -198,8 +206,8 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
 
         if (numberOfPeers < m_replicationFactor) {
 
-            LOGGER.warn("Less than %d peers for backup available. Replication will be incomplete!", m_replicationFactor);
-
+            LOGGER.warn("Less than %d peers for backup available. Replication will be incomplete!",
+                    m_replicationFactor);
 
             insufficientPeers = true;
         }
@@ -226,7 +234,6 @@ public class CopysetPlacement extends AbstractPlacementStrategy {
 
                         LOGGER.warn("Insufficient peers available for disjunctive backup strategy." +
                                 " Backup peers might be used more than once as a first backup peer!");
-
 
                         m_usedBackupPeers.clear();
                         availablePeers = p_availablePeers;

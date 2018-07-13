@@ -56,32 +56,24 @@ public class MasterSlaveComputeServiceConfig extends AbstractDXRAMServiceConfig 
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
-        if (!Objects.equals(m_role.toLowerCase(), ComputeRole.NONE_STR) && !Objects.equals(m_role.toLowerCase(), ComputeRole.MASTER_STR) &&
-                !Objects.equals(m_role.toLowerCase(), ComputeRole.SLAVE_STR)) {
-
+        if (!Objects.equals(m_role.toLowerCase(), ComputeRole.NONE_STR) && !Objects.equals(m_role.toLowerCase(),
+                ComputeRole.MASTER_STR) && !Objects.equals(m_role.toLowerCase(), ComputeRole.SLAVE_STR)) {
             LOGGER.error("Invalid role string for m_role: %s", m_role);
-
             return false;
         }
 
         if (m_computeGroupId < 0) {
-
             LOGGER.error("Invalid m_computeGroupId %d, must be >= 0", m_computeGroupId);
-
             return false;
         }
 
         if (m_pingInterval.getMs() < PING_INTERVAL_MIN.getMs()) {
-
             LOGGER.error("Min m_pingInterval: %s", PING_INTERVAL_MIN.getMs());
-
             return false;
         }
 
         if (m_pingInterval.getMs() > PING_INTERVAL_MAX.getMs()) {
-
             LOGGER.error("Max m_pingInterval: %s", PING_INTERVAL_MAX.getMs());
-
             return false;
         }
 

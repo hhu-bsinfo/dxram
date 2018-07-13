@@ -50,7 +50,8 @@ public class InsertNameserviceEntriesResponse extends Response {
      * @param p_backupSuperpeers
      *         the backup superpeers
      */
-    public InsertNameserviceEntriesResponse(final InsertNameserviceEntriesRequest p_request, final short[] p_backupSuperpeers) {
+    public InsertNameserviceEntriesResponse(final InsertNameserviceEntriesRequest p_request,
+            final short[] p_backupSuperpeers) {
         super(p_request, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_RESPONSE);
 
         m_backupSuperpeers = p_backupSuperpeers;

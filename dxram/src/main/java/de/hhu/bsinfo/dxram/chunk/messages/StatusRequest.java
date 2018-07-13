@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Request to get status information from a remote chunk service.
@@ -38,7 +38,7 @@ public class StatusRequest extends Request {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      */
     public StatusRequest(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_STATUS_REQUEST);

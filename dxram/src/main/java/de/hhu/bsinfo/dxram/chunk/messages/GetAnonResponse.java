@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
+import de.hhu.bsinfo.dxram.data.ChunkState;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**

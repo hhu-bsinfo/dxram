@@ -16,12 +16,12 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
+import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
-import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -58,7 +58,8 @@ public class PutMessage extends Message {
      * @param p_dataStructures
      *         Data structure with the data to put.
      */
-    public PutMessage(final short p_destination, final ChunkLockOperation p_unlockOperation, final DataStructure... p_dataStructures) {
+    public PutMessage(final short p_destination, final ChunkLockOperation p_unlockOperation,
+            final DataStructure... p_dataStructures) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_MESSAGE);
 
         m_dataStructures = p_dataStructures;

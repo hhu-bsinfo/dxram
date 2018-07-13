@@ -16,14 +16,15 @@
 
 package de.hhu.bsinfo.dxram.net.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
- * Network message to debug the network subsystem by trying to trigger as many code paths as possible when sending messages
+ * Network message to debug the network subsystem by trying to trigger as many code paths as possible when
+ * sending messages
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 04.08.17
  */
@@ -328,6 +329,7 @@ public class NetworkDebugMessage extends Message {
 
     private void throwVerificationException(final int p_pos, final int p_iteration, final int p_iteration2) {
         throw new IllegalStateException(
-                "Verifying NetworkDebugMessage readPayload failed, pos " + p_pos + ", iteration " + p_iteration + ", iteration2 " + p_iteration2);
+                "Verifying NetworkDebugMessage readPayload failed, pos " + p_pos + ", iteration " + p_iteration +
+                        ", iteration2 " + p_iteration2);
     }
 }

@@ -102,7 +102,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
                 // check for any kind of instance of the specified class
                 // we might have another interface/abstract class between the
                 // class we request and an instance we could serve
-                for (Entry<String, AbstractDXRAMService> entry : m_contextHandler.getContext().getServices().entrySet()) {
+                for (Entry<String, AbstractDXRAMService> entry : m_contextHandler.getContext().getServices()
+                        .entrySet()) {
                     tmpService = entry.getValue();
                     if (p_class.isInstance(tmpService)) {
                         break;
@@ -112,22 +113,18 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
                 }
             }
 
-            if (tmpService != null && p_class.isInstance(tmpService)) {
+            if (p_class.isInstance(tmpService)) {
                 service = p_class.cast(tmpService);
             }
-
 
             if (service == null) {
                 LOGGER.warn("Service not available %s", p_class);
             }
-
         }
-
 
         if (service == null) {
             LOGGER.warn("Service '%s' not available", p_class.getSimpleName());
         }
-
 
         return service;
     }
@@ -140,11 +137,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             service = m_contextHandler.getContext().getServices().get(m_servicesShortName.get(p_shortName));
         }
 
-
         if (service == null) {
             LOGGER.warn("Service '%s' not available", p_shortName);
         }
-
 
         return service;
     }
@@ -175,12 +170,14 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     public <T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
         T component = null;
 
-        AbstractDXRAMComponent tmpComponent = m_contextHandler.getContext().getComponents().get(p_class.getSimpleName());
+        AbstractDXRAMComponent tmpComponent = m_contextHandler.getContext().getComponents().get(
+                p_class.getSimpleName());
         if (tmpComponent == null) {
             // check for any kind of instance of the specified class
             // we might have another interface/abstract class between the
             // class we request and an instance we could serve
-            for (Entry<String, AbstractDXRAMComponent> entry : m_contextHandler.getContext().getComponents().entrySet()) {
+            for (Entry<String, AbstractDXRAMComponent> entry : m_contextHandler.getContext().getComponents()
+                    .entrySet()) {
                 tmpComponent = entry.getValue();
                 if (p_class.isInstance(tmpComponent)) {
                     break;
@@ -190,15 +187,13 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             }
         }
 
-        if (tmpComponent != null && p_class.isInstance(tmpComponent)) {
+        if (p_class.isInstance(tmpComponent)) {
             component = p_class.cast(tmpComponent);
         }
-
 
         if (component == null) {
             LOGGER.warn("Getting component '%s', not available", p_class.getSimpleName());
         }
-
 
         return component;
     }
@@ -214,9 +209,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         final List<AbstractDXRAMComponent> list;
         final Comparator<AbstractDXRAMComponent> comp;
 
-
         LOGGER.info("Initializing engine (version %s)...", m_version);
-
 
         if (!bootstrap()) {
             // false indicates here that a configuration file was created
@@ -242,7 +235,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         comp = Comparator.comparingInt(AbstractDXRAMComponent::getPriorityInit);
         list.sort(comp);
 
-
         LOGGER.info("Initializing %d components...", list.size());
 
         for (AbstractDXRAMComponent component : list) {
@@ -255,9 +247,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         }
 
         LOGGER.info("Initializing components done");
-        //
         LOGGER.info("Starting %d services...", m_contextHandler.getContext().getServices().size());
-
 
         for (AbstractDXRAMService service : m_contextHandler.getContext().getServices().values()) {
             // check for null -> invalid service
@@ -275,22 +265,19 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         }
 
         LOGGER.info("Starting services done");
-        //
         LOGGER.info("Finishing initialization of components");
-
 
         for (AbstractDXRAMComponent component : list) {
             if (!component.finishInitComponent()) {
 
-                LOGGER.error("Finishing initialization of component '%s' failed, aborting init", component.getComponentName());
+                LOGGER.error("Finishing initialization of component '%s' failed, aborting init",
+                        component.getComponentName());
 
                 return false;
             }
         }
 
-
         LOGGER.info("Initializing engine done");
-
 
         m_isInitialized = true;
 
@@ -309,7 +296,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     public boolean update() {
         if (Thread.currentThread().getId() != 1) {
             throw new RuntimeException(
-                    "Update called by thread-" + Thread.currentThread().getId() + " (" + Thread.currentThread().getName() + "), not main thread");
+                    "Update called by thread-" + Thread.currentThread().getId() + " (" +
+                            Thread.currentThread().getName() + "), not main thread");
         }
 
         if (m_triggerReboot) {
@@ -345,23 +333,19 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         final List<AbstractDXRAMComponent> list;
         final Comparator<AbstractDXRAMComponent> comp;
 
-
         LOGGER.info("Shutting down engine...");
-
-
         LOGGER.info("Shutting down %d services...", m_contextHandler.getContext().getServices().size());
 
+        m_contextHandler.getContext().getServices().values().stream().filter(service -> !service.shutdown()).forEach(
+                service -> {
 
-        m_contextHandler.getContext().getServices().values().stream().filter(service -> !service.shutdown()).forEach(service -> {
+                    LOGGER.error("Shutting down service '%s' failed.", service.getServiceName());
 
-            LOGGER.error("Shutting down service '%s' failed.", service.getServiceName());
+                });
 
-        });
         m_servicesShortName.clear();
 
-
         LOGGER.info("Shutting down services done");
-
 
         list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());
 
@@ -369,18 +353,12 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         list.sort(comp);
 
-
         LOGGER.info("Shutting down %d components...", list.size());
-
 
         list.forEach(AbstractDXRAMComponent::shutdown);
 
-
         LOGGER.info("Shutting down components done");
-
-
         LOGGER.info("Shutting down engine done");
-
 
         m_contextHandler = null;
 
@@ -418,9 +396,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         if (config == null) {
             config = "";
         } else {
-
             LOGGER.info("Loading configuration file: %s", config);
-
         }
 
         // check if a config needs to be created
@@ -434,7 +410,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         // load existing configuration
         if (!m_contextHandler.loadConfiguration(config)) {
-
             LOGGER.info("Loading configuration failed: %s", config);
 
             return false;

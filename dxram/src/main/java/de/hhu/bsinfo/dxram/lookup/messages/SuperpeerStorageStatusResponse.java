@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 
 /**
  * Response to the status request.
@@ -44,7 +44,8 @@ public class SuperpeerStorageStatusResponse extends Response {
      * @param p_status
      *         Status to send with the response
      */
-    public SuperpeerStorageStatusResponse(final SuperpeerStorageStatusRequest p_request, final SuperpeerStorage.Status p_status) {
+    public SuperpeerStorageStatusResponse(final SuperpeerStorageStatusRequest p_request,
+            final SuperpeerStorage.Status p_status) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE);
 
         m_status = p_status;

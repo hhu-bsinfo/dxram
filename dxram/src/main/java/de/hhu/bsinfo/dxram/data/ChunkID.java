@@ -41,7 +41,7 @@ public final class ChunkID {
      * Get the CreatorID/NodeID part of the ChunkID.
      *
      * @param p_chunkID
-     *     ChunkID.
+     *         ChunkID.
      * @return The NodeID/CreatorID part.
      */
     public static short getCreatorID(final long p_chunkID) {
@@ -54,7 +54,7 @@ public final class ChunkID {
      * Get the LocalID part of the ChunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return the LocalID part
      */
     public static long getLocalID(final long p_chunkID) {
@@ -67,9 +67,9 @@ public final class ChunkID {
      * Create a full chunkID from a local and node ID.
      *
      * @param p_nid
-     *     Node ID part.
+     *         Node ID part.
      * @param p_lid
-     *     Local ID part.
+     *         Local ID part.
      * @return Full Chunk ID.
      */
     public static long getChunkID(final short p_nid, final long p_lid) {
@@ -80,7 +80,7 @@ public final class ChunkID {
      * Convert a chunk id to a hex string
      *
      * @param p_chunkId
-     *     Chunk id to convert to a hex string.
+     *         Chunk id to convert to a hex string.
      * @return Converted chunk id, example: 0x1111000000000001
      */
     public static String toHexString(final long p_chunkId) {
@@ -91,7 +91,7 @@ public final class ChunkID {
      * Method to convert a list of chunk IDs to a list of hex strings
      *
      * @param p_chunkIDs
-     *     Chunk IDs
+     *         Chunk IDs
      * @return String with list of chunk IDs in hex
      */
     public static String chunkIDArrayToString(final long[] p_chunkIDs) {
@@ -112,7 +112,7 @@ public final class ChunkID {
      * Parse a hex string containing a chunk id.
      *
      * @param p_str
-     *     Hex string with chunk id, e.g. either 0x1234567890ABCDEF or 1234567890ABCDEF
+     *         Hex string with chunk id, e.g. either 0x1234567890ABCDEF or 1234567890ABCDEF
      * @return Parsed chunk id
      */
     public static long parse(final String p_str) {

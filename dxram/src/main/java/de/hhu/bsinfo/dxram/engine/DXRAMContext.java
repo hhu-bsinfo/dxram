@@ -92,11 +92,9 @@ public class DXRAMContext {
      */
     boolean verifyConfigurationValuesComponents() {
         for (AbstractDXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
-
             LOGGER.debug("Verifying component configuration values of %s...", config.getClassName());
 
             if (!config.verify(m_config)) {
-
                 LOGGER.error("Verifying component configuration values failed (%s)", config.getClassName());
 
                 return false;
@@ -113,11 +111,9 @@ public class DXRAMContext {
      */
     boolean verifyConfigurationValuesServices() {
         for (AbstractDXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
-
             LOGGER.debug("Verifying service configuration values of %s...", config.getClassName());
 
             if (!config.verify(m_config)) {
-
                 LOGGER.error("Verifying service configuration values failed (%s)", config.getClassName());
 
                 return false;
@@ -139,17 +135,19 @@ public class DXRAMContext {
         m_components.clear();
 
         for (AbstractDXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
-            if (p_nodeRole == NodeRole.SUPERPEER && config.isEnabledForSuperpeer() || p_nodeRole == NodeRole.PEER && config.isEnabledForPeer()) {
+            if (p_nodeRole == NodeRole.SUPERPEER && config.isEnabledForSuperpeer() ||
+                    p_nodeRole == NodeRole.PEER && config.isEnabledForPeer()) {
                 AbstractDXRAMComponent comp = p_manager.createInstance(config.getComponentClass());
                 comp.setConfig(config);
 
-                if (p_nodeRole == NodeRole.SUPERPEER && comp.supportsSuperpeer() || p_nodeRole == NodeRole.PEER && comp.supportsPeer()) {
+                if (p_nodeRole == NodeRole.SUPERPEER && comp.supportsSuperpeer() ||
+                        p_nodeRole == NodeRole.PEER && comp.supportsPeer()) {
                     m_components.put(comp.getClass().getSimpleName(), comp);
                 } else {
-
-                    LOGGER.error("Creating instance of component '%s' not possible on current node type '%s', not supported", comp.getComponentName(),
+                    LOGGER.error(
+                            "Creating instance of component '%s' not possible on current node type '%s', not supported",
+                            comp.getComponentName(),
                             p_nodeRole);
-
                 }
             }
         }
@@ -167,16 +165,18 @@ public class DXRAMContext {
         m_services.clear();
 
         for (AbstractDXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
-            if (p_nodeRole == NodeRole.SUPERPEER && config.isEnabledForSuperpeer() || p_nodeRole == NodeRole.PEER && config.isEnabledForPeer()) {
+            if (p_nodeRole == NodeRole.SUPERPEER && config.isEnabledForSuperpeer() ||
+                    p_nodeRole == NodeRole.PEER && config.isEnabledForPeer()) {
                 AbstractDXRAMService serv = p_manager.createInstance(config.getServiceClass());
                 serv.setConfig(config);
 
-                if (p_nodeRole == NodeRole.SUPERPEER && serv.supportsSuperpeer() || p_nodeRole == NodeRole.PEER && serv.supportsPeer()) {
+                if (p_nodeRole == NodeRole.SUPERPEER && serv.supportsSuperpeer() ||
+                        p_nodeRole == NodeRole.PEER && serv.supportsPeer()) {
                     m_services.put(serv.getClass().getSimpleName(), serv);
                 } else {
-
-                    LOGGER.error("Creating instance of service '%s' not possible on current node type '%s', not supported", serv.getServiceName(), p_nodeRole);
-
+                    LOGGER.error(
+                            "Creating instance of service '%s' not possible on current node type '%s', not supported",
+                            serv.getServiceName(), p_nodeRole);
                 }
             }
         }

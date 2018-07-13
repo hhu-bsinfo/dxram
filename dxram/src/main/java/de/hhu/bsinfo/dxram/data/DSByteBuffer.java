@@ -35,7 +35,7 @@ public final class DSByteBuffer extends DataStructure {
      * Sets the chunk id to invalid.
      *
      * @param p_bufferSize
-     *     p_bufferSize Initial size of the byte buffer.
+     *         p_bufferSize Initial size of the byte buffer.
      */
     public DSByteBuffer(final int p_bufferSize) {
         super();
@@ -46,9 +46,9 @@ public final class DSByteBuffer extends DataStructure {
      * Constructor
      *
      * @param p_id
-     *     ID the chunk is assigned to.
+     *         ID the chunk is assigned to.
      * @param p_bufferSize
-     *     Initial size of the byte buffer.
+     *         Initial size of the byte buffer.
      */
     public DSByteBuffer(final long p_id, final int p_bufferSize) {
         super(p_id);
@@ -61,8 +61,8 @@ public final class DSByteBuffer extends DataStructure {
      * Create the chunk with an external buffer.
      *
      * @param p_buffer
-     *     External buffer containing the data for the chunk. Be careful
-     *     with shared references of the ByteBuffer object.
+     *         External buffer containing the data for the chunk. Be careful
+     *         with shared references of the ByteBuffer object.
      */
     public DSByteBuffer(final ByteBuffer p_buffer) {
         super();
@@ -79,10 +79,10 @@ public final class DSByteBuffer extends DataStructure {
      * Create the chunk with an external buffer.
      *
      * @param p_id
-     *     ID the chunk is assigned to.
+     *         ID the chunk is assigned to.
      * @param p_buffer
-     *     External buffer containing the data for the chunk. Be careful
-     *     with shared references of the ByteBuffer object.
+     *         External buffer containing the data for the chunk. Be careful
+     *         with shared references of the ByteBuffer object.
      */
     public DSByteBuffer(final long p_id, final ByteBuffer p_buffer) {
         super(p_id);

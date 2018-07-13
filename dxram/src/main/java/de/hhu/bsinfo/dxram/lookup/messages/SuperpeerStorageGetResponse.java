@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 
 /**
  * Response to the get request.
@@ -52,7 +52,8 @@ public class SuperpeerStorageGetResponse extends Response {
      * @param p_dataStructure
      *         Data structure filled with the read data from memory
      */
-    public SuperpeerStorageGetResponse(final SuperpeerStorageGetRequest p_request, final DataStructure p_dataStructure, final byte p_status) {
+    public SuperpeerStorageGetResponse(final SuperpeerStorageGetRequest p_request, final DataStructure p_dataStructure,
+            final byte p_status) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE);
         m_dataStructure = p_dataStructure;
         m_status = p_status;

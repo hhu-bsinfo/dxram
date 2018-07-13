@@ -97,9 +97,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             return chunksRemoved;
         }
 
-
         LOGGER.trace("remove[dataStructures(%d) %s, ...]", p_chunkIDs.length, ChunkID.toHexString(p_chunkIDs[0]));
-
 
         // #ifdef STATISTICS
         SOP_REMOVE.add(p_chunkIDs.length);
@@ -269,9 +267,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
         SOP_REMOVE_TIME.stop();
         // #endif /* STATISTICS */
 
-
         LOGGER.trace("remove[dataStructures(%d) 0x%X, ...] -> %d", p_chunkIDs.length, p_chunkIDs[0], chunksRemoved);
-
 
         return chunksRemoved;
     }
@@ -280,7 +276,6 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
     public void onIncomingMessage(final Message p_message) {
 
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
-
 
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
@@ -296,7 +291,6 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                 }
             }
         }
-
 
         LOGGER.trace("Exiting incomingMessage");
 
@@ -355,7 +349,6 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
         while (!m_remover.push(p_message.getChunkIDs())) {
 
             LOGGER.warn("Remover queue full, delaying remove and retry...");
-
 
             try {
                 Thread.sleep(50);

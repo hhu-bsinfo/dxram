@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.data.ChunkAnon;
 
 /**
  * Request to get data from the superpeer storage (anonymous chunk).
@@ -53,7 +53,8 @@ public class SuperpeerStorageGetAnonRequest extends Request {
      *         Anonymous chunk with the ID of the chunk to get.
      */
     public SuperpeerStorageGetAnonRequest(final short p_destination, final ChunkAnon p_chunk) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_REQUEST);
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_ANON_REQUEST);
 
         m_chunk = p_chunk;
     }

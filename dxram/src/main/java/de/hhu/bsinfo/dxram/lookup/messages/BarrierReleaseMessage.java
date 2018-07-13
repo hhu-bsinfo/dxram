@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
-import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 
 /**
  * Message to release the signed on instances from the barrier.
@@ -50,7 +50,8 @@ public class BarrierReleaseMessage extends Message {
      * @param p_barrierStatus
      *         Results of the barrier sign on process
      */
-    public BarrierReleaseMessage(final short p_destination, final int p_barrierId, final BarrierStatus p_barrierStatus) {
+    public BarrierReleaseMessage(final short p_destination, final int p_barrierId,
+            final BarrierStatus p_barrierStatus) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE);
 
         m_barrierId = p_barrierId;

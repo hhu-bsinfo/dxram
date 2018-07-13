@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.ms.tasks;
 
+import de.hhu.bsinfo.dxram.chunk.ChunkDebugService;
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
-import de.hhu.bsinfo.dxram.chunk.ChunkDebugService;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
 

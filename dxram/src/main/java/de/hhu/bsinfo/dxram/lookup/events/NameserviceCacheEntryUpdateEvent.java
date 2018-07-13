@@ -32,11 +32,11 @@ public class NameserviceCacheEntryUpdateEvent extends AbstractEvent {
      * Constructor
      *
      * @param p_sourceClass
-     *     The calling class
+     *         The calling class
      * @param p_id
-     *     Id for the mapping.
+     *         Id for the mapping.
      * @param p_chunkId
-     *     Chunk id mapped to the id
+     *         Chunk id mapped to the id
      */
     public NameserviceCacheEntryUpdateEvent(final String p_sourceClass, final int p_id, final long p_chunkId) {
         super(p_sourceClass);

@@ -60,7 +60,8 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfig> implements EventListener<AbstractEvent> {
+public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfig>
+        implements EventListener<AbstractEvent> {
     private static final short ORDER = 10;
 
     // component dependencies
@@ -146,9 +147,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-
         LOGGER.trace("Entering getLookupRange with: p_chunkID=0x%X", p_chunkID);
-
 
         if (getConfig().cachesEnabled()) {
             // Read from cache
@@ -166,7 +165,6 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         } else {
             ret = m_peer.getLookupRange(p_chunkID);
         }
-
 
         LOGGER.trace("Exiting getLookupRange");
 
@@ -186,16 +184,13 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-
         LOGGER.trace("Entering remove with %d chunkIDs", p_chunkIDs.getSize());
-
 
         if (getConfig().cachesEnabled()) {
             invalidate(p_chunkIDs);
         }
 
         m_peer.removeChunkIDs(p_chunkIDs);
-
 
         LOGGER.trace("Exiting remove");
 
@@ -220,13 +215,11 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         LOGGER.trace("Entering insertID with: p_id=%d, p_chunkID=0x%X", p_id, p_chunkID);
 
-
         if (getConfig().cachesEnabled()) {
             m_applicationIDCache.put(p_id, p_chunkID);
         }
 
         m_peer.insertNameserviceEntry(p_id, p_chunkID);
-
 
         LOGGER.trace("Exiting insertID");
 
@@ -255,7 +248,6 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         LOGGER.trace("Entering getChunkID with: p_id=%d", p_id);
 
-
         if (getConfig().cachesEnabled()) {
             // Read from application cache first
             final Long chunkID = m_applicationIDCache.get(p_id);
@@ -264,7 +256,6 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
                 // Cache miss -> ask superpeer
 
                 LOGGER.trace("Value not cached for application cache: %d", p_id);
-
 
                 ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
 
@@ -277,9 +268,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
             ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
         }
 
-
         LOGGER.trace("Exiting getChunkID");
-
 
         return ret;
     }
@@ -299,16 +288,13 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-
         LOGGER.trace("Entering migrate with: p_chunkID=0x%X, p_nodeID=0x%X", p_chunkID, p_nodeID);
-
 
         if (getConfig().cachesEnabled()) {
             invalidate(p_chunkID);
         }
 
         m_peer.migrate(p_chunkID, p_nodeID);
-
 
         LOGGER.trace("Exiting migrate");
 
@@ -331,16 +317,14 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-
-        LOGGER.trace("Entering migrateRange with: p_startChunkID=0x%X, p_endChunkID=0x%X, p_nodeID=0x%X", p_startCID, p_endCID, p_nodeID);
-
+        LOGGER.trace("Entering migrateRange with: p_startChunkID=0x%X, p_endChunkID=0x%X, p_nodeID=0x%X", p_startCID,
+                p_endCID, p_nodeID);
 
         if (getConfig().cachesEnabled()) {
             invalidate(p_startCID, p_endCID);
         }
 
         m_peer.migrateRange(p_startCID, p_endCID, p_nodeID);
-
 
         LOGGER.trace("Exiting migrateRange");
 
@@ -362,12 +346,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-
         LOGGER.trace("Entering initRange with: p_backupRange=%s", p_backupRange);
 
-
         m_peer.initRange(p_backupRange);
-
 
         LOGGER.trace("Exiting initRange");
 
@@ -389,12 +370,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-
         LOGGER.trace("Entering getAllBackupRanges with: p_nodeID=0x%X", p_nodeID);
 
-
         ret = m_peer.getAllBackupRanges(p_nodeID);
-
 
         LOGGER.trace("Exiting getAllBackupRanges");
 
@@ -518,8 +496,10 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @param p_customData
      *         Custom data to pass along with the sign on
      * @param p_waitForRelease
-     *         True to wait for the barrier to be released, false to just sign on and don't wait for release (e.g. signal for remotes)
-     * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
+     *         True to wait for the barrier to be released, false to just sign on and don't wait for release
+     *         (e.g. signal for remotes)
+     * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons,
+     * null on error
      */
     public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData, final boolean p_waitForRelease) {
         // #ifdef ASSERT_NODE_ROLE
@@ -538,7 +518,8 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         Id of the barrier to sign on to.
      * @param p_customData
      *         Custom data to pass along with the sign on
-     * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign ons, null on error
+     * @return A pair consisting of the list of signed on peers and their custom data passed along with the sign
+     * ons, null on error
      */
     public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData) {
         // #ifdef ASSERT_NODE_ROLE
@@ -602,7 +583,8 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
 
-            LOGGER.error("Invalid id 0x%X for data struct to allocate memory in superpeer storage", p_dataStructure.getID());
+            LOGGER.error("Invalid id 0x%X for data struct to allocate memory in superpeer storage",
+                    p_dataStructure.getID());
 
             return false;
         }
@@ -740,7 +722,8 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
 
-            LOGGER.error("Invalid id 0x%X for data struct to remove data from superpeer storage", p_dataStructure.getID());
+            LOGGER.error("Invalid id 0x%X for data struct to remove data from superpeer storage",
+                    p_dataStructure.getID());
 
             return false;
         }
@@ -828,10 +811,8 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
                 capabilities |= NodeCapabilities.BACKUP_DST;
             }
-            
 
             LOGGER.info(String.format("Detected capabilities %s", NodeCapabilities.toString(capabilities)));
-
 
             m_boot.updateNodeCapabilities(capabilities);
 
@@ -869,23 +850,29 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         BackupRange.setBackupRangeSize(backupConfig.getBackupRangeSize().getBytes());
 
         if (getConfig().cachesEnabled()) {
-            m_chunkIDCacheTree = new CacheTree(ORDER, getConfig().getCacheTtl().getMs(), getConfig().getMaxCacheEntries());
+            m_chunkIDCacheTree = new CacheTree(ORDER, getConfig().getCacheTtl().getMs(),
+                    getConfig().getMaxCacheEntries());
 
             // TODO: Check cache! If number of entries is smaller than number of entries in nameservice, bg won't terminate.
-            m_applicationIDCache = new Cache<>(p_config.getComponentConfig(NameserviceComponentConfig.class).getNameserviceCacheEntries());
+            m_applicationIDCache = new Cache<>(
+                    p_config.getComponentConfig(NameserviceComponentConfig.class).getNameserviceCacheEntries());
             // m_aidCache.enableTTL();
 
             m_event.registerListener(this, NodeFailureEvent.class);
         }
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            m_superpeer = new OverlaySuperpeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(),
-                    (int) getConfig().getStabilizationBreakTime(), p_config.getServiceConfig(SynchronizationServiceConfig.class).getMaxBarriersPerSuperpeer(),
+            m_superpeer = new OverlaySuperpeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(),
+                    m_boot.getNumberOfAvailableSuperpeers(),
+                    (int) getConfig().getStabilizationBreakTime(),
+                    p_config.getServiceConfig(SynchronizationServiceConfig.class).getMaxBarriersPerSuperpeer(),
                     p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxNumEntries(),
                     (int) p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxSize().getBytes(),
-                    p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive(), m_boot, m_network, m_event);
+                    p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive(), m_boot, m_network,
+                    m_event);
         } else {
-            m_peer = new OverlayPeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_network, m_event);
+            m_peer = new OverlayPeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(),
+                    m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_network, m_event);
             m_event.registerListener(this, NameserviceCacheEntryUpdateEvent.class);
         }
 
@@ -938,9 +925,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-
         LOGGER.trace("Entering getPrimaryPeer with: p_chunkID=0x%X", p_chunkID);
-
 
         if (getConfig().cachesEnabled()) {
             // Read from cache
@@ -951,8 +936,10 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
                 // Add response to cache
                 if (lookupRange != null) {
-                    m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[0],
-                            ((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[1], lookupRange.getPrimaryPeer());
+                    m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) +
+                                    lookupRange.getRange()[0],
+                            ((long) ChunkID.getCreatorID(p_chunkID) << 48) + lookupRange.getRange()[1],
+                            lookupRange.getPrimaryPeer());
 
                     ret = lookupRange.getPrimaryPeer();
                 }
@@ -964,9 +951,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
             }
         }
 
-
         LOGGER.trace("Exiting getPrimaryPeer");
-
 
         return ret;
     }
@@ -1007,9 +992,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
         // #endif /* ASSERT_NODE_ROLE */
 
-
         LOGGER.trace("Entering getSuperPeerLookUpTree with: p_nodeID=0x%X", p_nodeID);
-
 
         ret = m_superpeer.getLookupTree(p_nodeID);
 
@@ -1038,7 +1021,8 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     @SuppressWarnings("unused")
     private void clear() {
         if (getConfig().cachesEnabled()) {
-            m_chunkIDCacheTree = new CacheTree(ORDER, getConfig().getCacheTtl().getMs(), getConfig().getMaxCacheEntries());
+            m_chunkIDCacheTree = new CacheTree(ORDER, getConfig().getCacheTtl().getMs(),
+                    getConfig().getMaxCacheEntries());
             m_applicationIDCache.clear();
         }
     }

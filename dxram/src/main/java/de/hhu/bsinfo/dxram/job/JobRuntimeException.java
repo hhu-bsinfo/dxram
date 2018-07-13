@@ -18,6 +18,7 @@ package de.hhu.bsinfo.dxram.job;
 
 /**
  * Runtime exception for non recoverable failure in job package.
+ *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 01.02.2016
  */
 public class JobRuntimeException extends RuntimeException {
@@ -26,8 +27,9 @@ public class JobRuntimeException extends RuntimeException {
 
     /**
      * Creates an instance of JobRuntimeException
+     *
      * @param p_message
-     *            the message
+     *         the message
      */
     public JobRuntimeException(final String p_message) {
         super(p_message);
@@ -35,10 +37,11 @@ public class JobRuntimeException extends RuntimeException {
 
     /**
      * Creates an instance of JobRuntimeException
+     *
      * @param p_message
-     *            the message
+     *         the message
      * @param p_cause
-     *            the cause
+     *         the cause
      */
     public JobRuntimeException(final String p_message, final Throwable p_cause) {
         super(p_message, p_cause);

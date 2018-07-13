@@ -36,17 +36,20 @@ public final class TemporaryVersionsStorage {
      * Creates an instance of TemporaryVersionsStorage
      *
      * @param p_secondaryLogSize
-     *     the size of the secondary log
+     *         the size of the secondary log
      */
     public TemporaryVersionsStorage(final long p_secondaryLogSize) {
         m_maximumBackupRangeSize = p_secondaryLogSize / 2;
 
-        // Initialize array with default value suitable for 64-byte chunks; use localID 0 to fit first backup range as well; size: ~28 MB
-        m_versionsArray = new VersionsArray(AbstractSecLogEntryHeader.getMaximumNumberOfVersions(m_maximumBackupRangeSize, 64, false));
+        // Initialize array with default value suitable for 64-byte chunks; use localID 0 to fit first backup range
+        // as well; size: ~28 MB
+        m_versionsArray = new VersionsArray(
+                AbstractSecLogEntryHeader.getMaximumNumberOfVersions(m_maximumBackupRangeSize, 64, false));
 
         // Initialize hashtable with default value suitable for 64-byte chunks; size: ~54 MB
         // (we do not want to rehash often, might still be increased)
-        m_versionsHashTable = new VersionsHashTable(AbstractSecLogEntryHeader.getMaximumNumberOfVersions(m_maximumBackupRangeSize, 64, true));
+        m_versionsHashTable = new VersionsHashTable(
+                AbstractSecLogEntryHeader.getMaximumNumberOfVersions(m_maximumBackupRangeSize, 64, true));
     }
 
     // Methods
@@ -63,7 +66,7 @@ public final class TemporaryVersionsStorage {
      * Returns the current version for given ChunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @return the version
      */
     Version get(final long p_chunkID) {
@@ -74,9 +77,9 @@ public final class TemporaryVersionsStorage {
      * Returns the current version for given ChunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_lowestLID
-     *     the lowest localID
+     *         the lowest localID
      * @return the version
      */
     Version get(final long p_chunkID, final long p_lowestLID) {
@@ -91,9 +94,9 @@ public final class TemporaryVersionsStorage {
      * Returns the current version for given ChunkID
      *
      * @param p_chunkID
-     *     the ChunkID
+     *         the ChunkID
      * @param p_lowestCID
-     *     the lowest CID
+     *         the lowest CID
      * @return the version
      */
     Version get(final long p_chunkID, final long p_lowestCID, final SecondaryLog.Statistics p_stat) {

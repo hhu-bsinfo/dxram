@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Message to allocate memory in the superpeer storage.
@@ -50,8 +50,10 @@ public class SuperpeerStorageCreateRequest extends Request {
      * @param p_replicate
      *         True if this message is a replication to other superpeer message, false if normal message
      */
-    public SuperpeerStorageCreateRequest(final short p_destination, final int p_storageId, final int p_size, final boolean p_replicate) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST);
+    public SuperpeerStorageCreateRequest(final short p_destination, final int p_storageId, final int p_size,
+            final boolean p_replicate) {
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST);
 
         m_storageId = p_storageId;
         m_size = p_size;

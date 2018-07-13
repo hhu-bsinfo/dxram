@@ -102,9 +102,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
     public int get(final ChunkAnon[] p_ret, final long... p_chunkIDs) {
         int numChunks = 0;
 
-
         LOGGER.trace("get[chunkIDs(%d) ...]", p_chunkIDs.length);
-
 
         // #ifdef STATISTICS
         SOP_GET_ANON.start(p_chunkIDs.length);
@@ -190,9 +188,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                         }
                     }
 
-
                     LOGGER.error("Sending chunk get request to peer 0x%X failed: %s", peer, e);
-
 
                     continue;
                 }
@@ -205,9 +201,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         SOP_GET_ANON.stop();
         // #endif /* STATISTICS */
 
-
         LOGGER.trace("get[chunkIDs(%d) ...] -> %d", p_chunkIDs.length, numChunks);
-
 
         return numChunks;
     }
@@ -227,9 +221,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
     public int getLocal(final ChunkAnon[] p_ret, final long... p_chunkIDs) {
         int numChunks = 0;
 
-
         LOGGER.trace("getLocal[chunkIDs(%d) ...]", p_chunkIDs.length);
-
 
         // #ifdef STATISTICS
         SOP_GET_ANON.start(p_chunkIDs.length);
@@ -257,9 +249,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         SOP_GET_ANON.stop();
         // #endif /* STATISTICS */
 
-
         LOGGER.trace("getLocal[chunkIDs(%d) ...] -> %d", p_chunkIDs.length, numChunks);
-
 
         return numChunks;
     }
@@ -305,9 +295,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
             final int p_count) {
         int chunksPut = 0;
 
-
         LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...]", p_chunkUnlockOperation, p_chunks.length);
-
 
         // #ifdef STATISTICS
         SOP_PUT_ANON.start(p_count);
@@ -457,7 +445,6 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
 
                         LOGGER.trace("Logging %d chunks to 0x%X", chunks.length, backupPeer.getNodeID());
 
-
                         try {
                             m_network.sendMessage(
                                     new LogAnonMessage(backupPeer.getNodeID(), backupRange.getRangeID(), chunks));
@@ -473,10 +460,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         SOP_PUT_ANON.stop();
         // #endif /* STATISTICS */
 
-
         LOGGER.trace("put[unlockOp %s, dataStructures(%d) ...] -> %d", p_chunkUnlockOperation, p_chunks.length,
                 chunksPut);
-
 
         return chunksPut;
     }
@@ -485,7 +470,6 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
     public void onIncomingMessage(final Message p_message) {
 
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
-
 
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
@@ -501,7 +485,6 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                 }
             }
         }
-
 
         LOGGER.trace("Exiting incomingMessage");
 
@@ -708,7 +691,6 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                     if (backupPeer != null) {
 
                         LOGGER.trace("Logging %d chunks to 0x%X", chunks.length, backupPeer.getNodeID());
-
 
                         try {
                             m_network.sendMessage(

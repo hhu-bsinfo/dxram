@@ -22,6 +22,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -37,9 +40,6 @@ import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -78,20 +78,30 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      * @param p_lookup
      *         LookupComponent
      */
-    ComputeSlave(final short p_computeGroupId, final long p_pingIntervalMs, final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
-            final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
-        super(ComputeRole.SLAVE, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_nameservice, p_boot, p_lookup);
+    ComputeSlave(final short p_computeGroupId, final long p_pingIntervalMs,
+            final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
+            final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot,
+            final LookupComponent p_lookup) {
+        super(ComputeRole.SLAVE, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_nameservice,
+                p_boot, p_lookup);
 
-        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST,
+        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST,
                 ExecuteTaskScriptRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE,
+        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE,
                 ExecuteTaskScriptResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SIGNAL_MESSAGE, SignalMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_SIGNAL_MESSAGE, SignalMessage.class);
 
-        m_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, this);
-        m_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SIGNAL_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+                MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SIGNAL_MESSAGE,
+                this);
 
         m_masterExecutionBarrierId = BarrierID.INVALID_ID;
 
@@ -171,14 +181,12 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
         LOGGER.debug("Setting up slave for compute group %d", m_computeGroupId);
 
-
         // bootstrap: get master node id from nameservice
         if (m_masterNodeId == NodeID.INVALID_ID) {
             long tmp = m_nameservice.getChunkID(m_nameserviceMasterNodeIdKey, 0);
             if (tmp == -1) {
-
-                LOGGER.error("Setting up slave, cannot find nameservice entry for master node id for key %s of compute group %d", m_nameserviceMasterNodeIdKey,
-                        m_computeGroupId);
+                LOGGER.error("Setting up slave, cannot find nameservice entry for master node id for key %s " +
+                        "of compute group %d", m_nameserviceMasterNodeIdKey, m_computeGroupId);
 
                 try {
                     Thread.sleep(1000);
@@ -205,19 +213,14 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
                 } catch (final InterruptedException ignored) {
                 }
             } else {
-
                 LOGGER.info("Successfully joined compute group %d with master 0x%X", m_computeGroupId, m_masterNodeId);
-
 
                 m_masterExecutionBarrierId = response.getExecutionBarrierId();
                 m_state = State.STATE_IDLE;
 
-
                 LOGGER.debug("Entering idle state");
-
             }
         } catch (final NetworkException e) {
-
             LOGGER.error("Sending join request to master 0x%X failed: %s", m_masterNodeId, e);
 
             try {
@@ -241,9 +244,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             if (m_lastPingMs + m_pingIntervalMs < System.currentTimeMillis()) {
                 if (!m_boot.isNodeOnline(m_masterNodeId)) {
                     // master is gone, go back to sign on
-
                     LOGGER.info("Master 0x%X went offline, logout", m_masterNodeId);
-
 
                     m_masterNodeId = NodeID.INVALID_ID;
                     m_state = State.STATE_SETUP;
@@ -252,9 +253,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
                 m_lastPingMs = System.currentTimeMillis();
 
-
                 LOGGER.trace("Pinging master 0x%X: online", m_masterNodeId);
-
             }
 
             try {
@@ -268,9 +267,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      * Execute state. Execute the assigned task.
      */
     private void stateExecute() {
-
         LOGGER.info("Starting execution of task script %s", m_taskScript);
-
 
         m_executeTaskScriptLock.lock();
 
@@ -283,9 +280,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             }
         }
 
-
         LOGGER.info("Execution finished, return code: %d", result);
-
 
         m_handleSignalLock.lock();
         m_taskScript = null;
@@ -300,21 +295,18 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
         // taking a different path in the task script thus taking longer to finish
         Long masterRetCode;
         do {
-
             LOGGER.debug("Final syncing with master 0x%X ...", m_masterNodeId);
-
 
             BarrierStatus barrierResult = m_lookup.barrierSignOn(m_masterExecutionBarrierId, result);
 
             masterRetCode = barrierResult.findCustomData(m_masterNodeId);
+
             if (masterRetCode == null) {
                 throw new RuntimeException("Could not find master return code in barrier sign on result");
             }
         } while (masterRetCode != 0);
 
-
         LOGGER.debug("Syncing done, entering idle state");
-
     }
 
     /**
@@ -322,9 +314,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      * of a single task statement of a task script
      */
     private void syncStepMaster() {
-
         LOGGER.debug("Sync step with master 0x%X ...", m_masterNodeId);
-
 
         m_lookup.barrierSignOn(m_masterExecutionBarrierId, 1L << 32);
     }
@@ -345,9 +335,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             if (p_taskScriptNode instanceof TaskResultCondition) {
                 TaskResultCondition condition = (TaskResultCondition) p_taskScriptNode;
 
-
                 LOGGER.debug("Executing condition: %s", condition);
-
 
                 TaskScript script = condition.evaluate(result);
                 syncStepMaster();
@@ -361,9 +349,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             } else if (p_taskScriptNode instanceof Task) {
                 Task task = (Task) p_taskScriptNode;
 
-
                 LOGGER.debug("Executing task: %s", task);
-
 
                 try {
                     result = task.execute(new TaskContext(m_ctxData, this, getServiceAccessor()));
@@ -375,9 +361,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             } else if (p_taskScriptNode instanceof TaskResultSwitch) {
                 TaskResultSwitch resSwitch = (TaskResultSwitch) p_taskScriptNode;
 
-
                 LOGGER.debug("Executing switch: %s", resSwitch);
-
 
                 TaskScript script = resSwitch.evaluate(result);
                 syncStepMaster();
@@ -391,9 +375,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
             } else if (p_taskScriptNode instanceof TaskAbort) {
                 TaskAbort abort = (TaskAbort) p_taskScriptNode;
 
-
                 LOGGER.debug("Executing abort: %s", abort);
-
 
                 System.out.printf("Aborting task script: %s\n", abort.getAbortMsg());
                 result = null;

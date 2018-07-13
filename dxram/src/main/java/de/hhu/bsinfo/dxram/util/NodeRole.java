@@ -65,6 +65,7 @@ public enum NodeRole {
      */
     public static NodeRole toNodeRole(final String p_str) {
         String str = p_str.toLowerCase();
+
         if (str.equals(SUPERPEER_STR) || "s".equals(str)) {
             return NodeRole.SUPERPEER;
         } else {

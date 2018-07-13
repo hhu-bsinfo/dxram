@@ -20,6 +20,9 @@ import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -39,9 +42,6 @@ import de.hhu.bsinfo.dxram.migration.messages.MigrationRemoteMessage;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.util.ArrayListLong;
 import de.hhu.bsinfo.dxutils.NodeID;
 
@@ -93,9 +93,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
 
             chunk = new DSByteArray(p_chunkID, data);
 
-
             LOGGER.trace("Sending migration request to %s", p_target);
-
 
             MigrationRequest request = new MigrationRequest(p_target, chunk);
             try {
@@ -220,7 +218,6 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
                     }
                     m_memoryManager.unlockAccess();
 
-
                     LOGGER.info("Sending %d Chunks (%d Bytes) to 0x%X", counter, size, p_target);
 
                     try {
@@ -281,9 +278,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
         }
         m_migrationLock.unlock();
 
-
         LOGGER.info("All chunks migrated");
-
 
         return ret;
     }
@@ -418,7 +413,8 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
 
             if (!success) {
 
-                LOGGER.trace("Failure! Could not migrate chunk 0x%X to node 0x%X", p_message.getChunkID(), p_message.getTargetNode());
+                LOGGER.trace("Failure! Could not migrate chunk 0x%X to node 0x%X", p_message.getChunkID(),
+                        p_message.getTargetNode());
 
             }
         };
@@ -431,9 +427,12 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      * Register network messages we use in here.
      */
     private void registerNetworkMessages() {
-        m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST, MigrationRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE, MigrationResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE,
+        m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE,
+                MigrationMessages.SUBTYPE_MIGRATION_REQUEST, MigrationRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE,
+                MigrationMessages.SUBTYPE_MIGRATION_RESPONSE, MigrationResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE,
+                MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE,
                 MigrationRemoteMessage.class);
 
     }
@@ -442,8 +441,10 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      * Register network messages we want to listen to in here.
      */
     private void registerNetworkMessageListener() {
-        m_network.register(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST, this);
-        m_network.register(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE, this);
+        m_network.register(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST,
+                this);
+        m_network.register(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE,
+                MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE, this);
     }
 
 }

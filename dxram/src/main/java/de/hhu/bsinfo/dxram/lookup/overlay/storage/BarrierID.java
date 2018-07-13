@@ -36,7 +36,7 @@ public final class BarrierID {
      * Get the owner node id of the barrier
      *
      * @param p_barrierId
-     *     Barrier id
+     *         Barrier id
      * @return Owner node id of the barrier
      */
     public static short getOwnerID(final int p_barrierId) {
@@ -48,7 +48,7 @@ public final class BarrierID {
      * Convert the barrier id to a hex string
      *
      * @param p_barrierId
-     *     Barrier id
+     *         Barrier id
      * @return Hex string representation
      */
     public static String toHexString(final int p_barrierId) {
@@ -59,7 +59,7 @@ public final class BarrierID {
      * Parse a hex string containing a barrier id.
      *
      * @param p_str
-     *     Hex string with barrier id, e.g. either 0x12345678 or 12345678
+     *         Hex string with barrier id, e.g. either 0x12345678 or 12345678
      * @return Parsed barrier id
      */
     public static int parse(final String p_str) {
@@ -76,7 +76,7 @@ public final class BarrierID {
      * Get the (local) barrier id of the barrier id.
      *
      * @param p_barrierId
-     *     Full barrier id to get the local part of.
+     *         Full barrier id to get the local part of.
      * @return Local id of the barrier id.
      */
     static int getBarrierID(final int p_barrierId) {
@@ -88,9 +88,9 @@ public final class BarrierID {
      * Create a barrier id from a separate nid and id
      *
      * @param p_nodeId
-     *     Node id (owning the barrier)
+     *         Node id (owning the barrier)
      * @param p_id
-     *     Id of the barrier
+     *         Id of the barrier
      * @return Barrier id
      */
     static int createBarrierId(final short p_nodeId, final int p_id) {

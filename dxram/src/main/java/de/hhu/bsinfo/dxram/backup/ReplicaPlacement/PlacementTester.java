@@ -39,8 +39,8 @@ public final class PlacementTester {
 
         // Parse command line arguments
         if (p_args.length != 4 && p_args.length != 10) {
-            System.out.println(
-                    "Usage: num_peers num_backup_ranges num_new_peers num_replacements [replication_factor disjunctive rackAware switchAware num_racks num_switches]");
+            System.out.println("Usage: num_peers num_backup_ranges num_new_peers num_replacements " +
+                    "[replication_factor disjunctive rackAware switchAware num_racks num_switches]");
             System.exit(-1);
         }
 
@@ -67,14 +67,16 @@ public final class PlacementTester {
         Random rand = new Random(0);
         ArrayList<BackupPeer> availablePeers = new ArrayList<BackupPeer>(peers);
         for (int i = 0; i < peers; i++) {
-            availablePeers.add(new BackupPeer((short) rand.nextInt(), (short) rand.nextInt(racks), (short) rand.nextInt(switches)));
+            availablePeers.add(new BackupPeer((short) rand.nextInt(), (short) rand.nextInt(racks),
+                    (short) rand.nextInt(switches)));
         }
 
         ArrayList<BackupPeer> initialSetOfPeers = new ArrayList<>(availablePeers.size());
         initialSetOfPeers.addAll(availablePeers);
 
         /* Replace class here to switch placement strategy */
-        AbstractPlacementStrategy strategy = new CopysetPlacement(replicationFactor, disjunctive, rackAware, switchAware);
+        AbstractPlacementStrategy strategy = new CopysetPlacement(replicationFactor, disjunctive, rackAware,
+                switchAware);
         if (!strategy.initialize(initialSetOfPeers)) {
             strategy = new RandomPlacement(replicationFactor, disjunctive, rackAware, switchAware);
         }
@@ -113,7 +115,8 @@ public final class PlacementTester {
 
             LOGGER.info("Adding %d new backup peers.", newPeers);
             for (int i = 0; i < newPeers; i++) {
-                strat.addNewBackupPeer(new BackupPeer((short) rand.nextInt(), (short) rand.nextInt(racks), (short) rand.nextInt(switches)));
+                strat.addNewBackupPeer(new BackupPeer((short) rand.nextInt(), (short) rand.nextInt(racks),
+                        (short) rand.nextInt(switches)));
             }
 
             LOGGER.info("Replacing %d backup peers.", replacements);

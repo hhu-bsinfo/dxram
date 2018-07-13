@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.net.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Network request for running tests/benchmarks.
@@ -36,8 +36,9 @@ public class NetworkTestRequest extends Request {
     /**
      * Creates an instance of NetworkTestRequest.
      * This constructor is used when sending this message.
+     *
      * @param p_destination
-     *            the destination node id.
+     *         the destination node id.
      */
     public NetworkTestRequest(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.NETWORK_MESSAGES_TYPE, NetworkMessages.SUBTYPE_TEST_REQUEST);

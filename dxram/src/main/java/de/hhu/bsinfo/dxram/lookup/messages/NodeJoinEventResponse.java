@@ -35,7 +35,7 @@ public class NodeJoinEventResponse extends Response {
      * Creates an instance of NodeJoinEventResponse
      *
      * @param p_request
-     *     the corresponding NodeJoinEventRequest
+     *         the corresponding NodeJoinEventRequest
      */
     public NodeJoinEventResponse(final NodeJoinEventRequest p_request) {
         super(p_request, LookupMessages.SUBTYPE_NODE_JOIN_EVENT_RESPONSE);

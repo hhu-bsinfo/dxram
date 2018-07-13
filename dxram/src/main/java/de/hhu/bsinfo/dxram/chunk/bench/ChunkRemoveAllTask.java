@@ -74,7 +74,8 @@ public class ChunkRemoveAllTask implements Task {
 
         ChunkIDRanges allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern, p_ctx, chunkService);
         long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(activeChunkCount, m_numThreads);
-        ChunkIDRanges[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
+        ChunkIDRanges[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread,
+                allChunkRanges);
 
         Thread[] threads = new Thread[m_numThreads];
         Stopwatch[] time = new Stopwatch[m_numThreads];
@@ -82,7 +83,9 @@ public class ChunkRemoveAllTask implements Task {
             time[i] = new Stopwatch();
         }
 
-        System.out.printf("Removing all (pattern %d) active chunks (total %d) in batches of %d chunk(s) with %d thread(s)...\n", m_pattern, activeChunkCount,
+        System.out.printf(
+                "Removing all (pattern %d) active chunks (total %d) in batches of %d chunk(s) with %d thread(s)...\n",
+                m_pattern, activeChunkCount,
                 m_chunkBatch, m_numThreads);
 
         for (int i = 0; i < threads.length; i++) {
@@ -149,7 +152,8 @@ public class ChunkRemoveAllTask implements Task {
                             }
 
                             if (ret != valid) {
-                                LOGGER.error("Removing one or multiple chunks of %s failed", ChunkID.chunkIDArrayToString(chunkIds));
+                                LOGGER.error("Removing one or multiple chunks of %s failed",
+                                        ChunkID.chunkIDArrayToString(chunkIds));
                             }
                         }
 
@@ -195,7 +199,8 @@ public class ChunkRemoveAllTask implements Task {
         }
 
         System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
-        System.out.printf("Throughput: %f chunks/sec\n", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / activeChunkCount));
+        System.out.printf("Throughput: %f chunks/sec\n",
+                1000.0 * 1000.0 * 1000.0 / ((double) totalTime / activeChunkCount));
 
         allChunkRanges = chunkService.getAllLocalChunkIDRanges();
 

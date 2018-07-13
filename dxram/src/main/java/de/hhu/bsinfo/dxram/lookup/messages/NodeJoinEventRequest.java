@@ -17,7 +17,6 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
@@ -54,13 +53,15 @@ public class NodeJoinEventRequest extends Request {
 
     /**
      * Creates an instance of NodeJoinEventRequest
+     *
      * @param p_destination
      *         the destination
      * @param p_nodeID
      * @param p_capabilities
      */
-    public NodeJoinEventRequest(final short p_destination, final short p_nodeID, final NodeRole p_role, int p_capabilities, final short p_rack, final short p_switch,
-                                final boolean p_availableForBackup, final IPV4Unit p_address) {
+    public NodeJoinEventRequest(final short p_destination, final short p_nodeID, final NodeRole p_role,
+            int p_capabilities, final short p_rack, final short p_switch, final boolean p_availableForBackup,
+            final IPV4Unit p_address) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NODE_JOIN_EVENT_REQUEST);
 
         m_nodeID = p_nodeID;

@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.migration.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Sends a Migration Message which requests a remote migration request
@@ -52,7 +52,8 @@ public class MigrationRemoteMessage extends Message {
      *         the target peer to get the chunk
      */
     public MigrationRemoteMessage(final short p_destination, final long p_cid, final short p_target) {
-        super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE);
+        super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE,
+                MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE);
 
         m_chunkID = p_cid;
         m_target = p_target;

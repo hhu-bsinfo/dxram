@@ -345,9 +345,7 @@ class VersionsBuffer {
         if (m_count == WAIT_THRESHOLD) {
             m_logComponent.flushDataToPrimaryLog();
 
-
             LOGGER.warn("Could not transfer log entry to new eon as current epoch is full");
-
 
             return;
         }

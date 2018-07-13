@@ -74,6 +74,6 @@ public final class JobID {
         assert p_node != INVALID_ID;
         assert p_id != INVALID_ID;
 
-        return ((long) p_node << 48) | p_id;
+        return (long) p_node << 48 | p_id;
     }
 }

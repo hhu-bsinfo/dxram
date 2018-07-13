@@ -113,7 +113,8 @@ public class NameserviceRegisterTask implements Task {
         }
 
         System.out.printf("Total time: %f sec\n", totalTime / 1000.0 / 1000.0 / 1000.0);
-        System.out.printf("Throughput: %f chunks/sec\n", 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_chunkCount));
+        System.out.printf("Throughput: %f chunks/sec\n",
+                1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_chunkCount));
 
         return 0;
     }

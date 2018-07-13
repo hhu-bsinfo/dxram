@@ -94,7 +94,6 @@ public final class LogCatalog {
             LOGGER.error("There is no secondary log for RID=%d", p_rangeID);
         }
 
-
         return ret;
     }
 
@@ -110,11 +109,9 @@ public final class LogCatalog {
 
         ret = m_buffers[p_rangeID & 0xFFFF];
 
-
         if (ret == null) {
             LOGGER.error("There is no secondary log buffer for RID=%d", p_rangeID);
         }
-
 
         return ret;
     }
@@ -131,7 +128,8 @@ public final class LogCatalog {
      * @param p_logSegmentSize
      *         the segment size
      */
-    public void insertRange(short p_rangeID, final SecondaryLog p_log, final int p_secondaryLogBufferSize, final int p_logSegmentSize) {
+    public void insertRange(short p_rangeID, final SecondaryLog p_log, final int p_secondaryLogBufferSize,
+            final int p_logSegmentSize) {
         SecondaryLogBuffer buffer;
 
         if (p_rangeID >= m_logs.length) {

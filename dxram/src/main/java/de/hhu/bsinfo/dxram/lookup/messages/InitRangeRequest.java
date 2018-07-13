@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.BackupRange;
 
 /**
  * Init Range Request
@@ -59,7 +59,8 @@ public class InitRangeRequest extends Request {
      * @param p_isBackup
      *         whether this is a backup message or not
      */
-    public InitRangeRequest(final short p_destination, final short p_rangeOwner, final BackupRange p_backupRange, final boolean p_isBackup) {
+    public InitRangeRequest(final short p_destination, final short p_rangeOwner, final BackupRange p_backupRange,
+            final boolean p_isBackup) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST);
 
         m_rangeOwner = p_rangeOwner;

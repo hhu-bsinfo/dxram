@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -64,9 +64,10 @@ public class ReplaceBackupPeerRequest extends Request {
      * @param p_isBackup
      *         whether this is a backup or not
      */
-    public ReplaceBackupPeerRequest(final short p_destination, final short p_rangeID, final short p_failedBackupPeer, final short p_newBackupPeer,
-            final boolean p_isBackup) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_REPLACE_BACKUP_PEER_REQUEST);
+    public ReplaceBackupPeerRequest(final short p_destination, final short p_rangeID, final short p_failedBackupPeer,
+            final short p_newBackupPeer, final boolean p_isBackup) {
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_REPLACE_BACKUP_PEER_REQUEST);
 
         m_rangeID = p_rangeID;
         m_failedBackupPeer = p_failedBackupPeer;

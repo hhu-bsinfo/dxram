@@ -23,7 +23,6 @@ import java.util.List;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
-import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
@@ -44,7 +43,8 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      * @param p_priorityShutdown
      *         Default shutdown priority for this component
      */
-    protected AbstractBootComponent(final short p_priorityInit, final short p_priorityShutdown, final Class<T> p_configClass) {
+    protected AbstractBootComponent(final short p_priorityInit, final short p_priorityShutdown,
+            final Class<T> p_configClass) {
         super(p_priorityInit, p_priorityShutdown, p_configClass);
     }
 
@@ -98,7 +98,8 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
     /**
      * Collects all node ids supporting the specified capabilities.
      *
-     * @param p_capabilities The requested capabilities.
+     * @param p_capabilities
+     *         The requested capabilities.
      * @return A list containing all matching node ids.
      */
     public abstract List<Short> getSupportingNodes(int p_capabilities);
@@ -127,7 +128,8 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
     /**
      * Updates this node's capabilities.
      *
-     * @param p_capibilities The updated capabilities.
+     * @param p_capibilities
+     *         The updated capabilities.
      */
     public abstract void updateNodeCapabilities(int p_capibilities);
 
@@ -180,7 +182,8 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
     /**
      * Returns the capabilities of the specified node.
      *
-     * @param p_nodeId The node's id.
+     * @param p_nodeId
+     *         The node's id.
      * @return The capabilities of the specified node.
      */
     public abstract int getNodeCapabilities(short p_nodeId);

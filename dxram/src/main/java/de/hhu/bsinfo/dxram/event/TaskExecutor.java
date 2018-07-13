@@ -37,7 +37,6 @@ import org.apache.logging.log4j.Logger;
  * @see java.util.concurrent.ExecutorService
  */
 final class TaskExecutor {
-
     private final Logger LOGGER;
 
     private final ExecutorService m_executor;
@@ -49,9 +48,9 @@ final class TaskExecutor {
      * Creates a new TaskExecutor
      *
      * @param p_name
-     *     Identifier for debug prints
+     *         Identifier for debug prints
      * @param p_threads
-     *     Number of Threads to create
+     *         Number of Threads to create
      */
     TaskExecutor(final String p_name, final int p_threads) {
         LOGGER = LogManager.getFormatterLogger(TaskExecutor.class.getSimpleName() + ' ' + p_name);
@@ -66,7 +65,7 @@ final class TaskExecutor {
      * Add a task to the queue to be executed
      *
      * @param p_runnable
-     *     TaskScript to be executed
+     *         TaskScript to be executed
      */
     public void execute(final Runnable p_runnable) {
         try {
@@ -90,7 +89,7 @@ final class TaskExecutor {
      *
      * @return whether the shut-down is finished or not
      * @throws InterruptedException
-     *     if awaiting termination was interrupted
+     *         if awaiting termination was interrupted
      */
     boolean awaitTermination() throws InterruptedException {
         return m_executor.awaitTermination(100, TimeUnit.MILLISECONDS);

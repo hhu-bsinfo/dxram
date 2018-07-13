@@ -45,7 +45,6 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.05.2016
  */
 public class SuperpeerStorage extends AbstractMetadata {
-
     private static final Logger LOGGER = LogManager.getFormatterLogger(SuperpeerStorage.class.getSimpleName());
 
     private int m_maxNumEntries;
@@ -99,9 +98,7 @@ public class SuperpeerStorage extends AbstractMetadata {
             currentData = new byte[size];
             data.get(currentData);
 
-
             LOGGER.trace("Storing superpeer storage: %d <-> %d", id, size);
-
 
             create(id, size);
             put(id, currentData);
@@ -124,9 +121,7 @@ public class SuperpeerStorage extends AbstractMetadata {
         while (iter.hasNext()) {
             Map.Entry<Integer, byte[]> pair = iter.next();
 
-
             LOGGER.trace("Including superpeer storage: %s <-> %d", pair.getKey(), pair.getValue().length);
-
 
             data.putInt(pair.getKey());
             data.putInt(pair.getValue().length);
@@ -158,7 +153,6 @@ public class SuperpeerStorage extends AbstractMetadata {
 
                 LOGGER.trace("Including superpeer storage: %d <-> %d", id, currentData.length);
 
-
                 data.putInt(id);
                 data.putInt(currentData.length);
                 data.put(currentData);
@@ -182,7 +176,6 @@ public class SuperpeerStorage extends AbstractMetadata {
             if (!OverlayHelper.isHashInSuperpeerRange(CRC16.hash(id), p_bound1, p_bound2)) {
 
                 LOGGER.trace("Removing superpeer storage: %d", id);
-
 
                 iter.remove();
                 ret++;
@@ -379,13 +372,13 @@ public class SuperpeerStorage extends AbstractMetadata {
 
         @Override
         public String toString() {
-            String str = "Id: Size in bytes";
+            StringBuilder builder = new StringBuilder("Id: Size in bytes");
 
             for (long val : m_storageStatus) {
-                str += '\n' + ChunkID.toHexString((int) (val >> 32)) + ": " + (int) val;
+                builder.append('\n').append(ChunkID.toHexString((int) (val >> 32))).append(": ").append((int) val);
             }
 
-            return str;
+            return builder.toString();
         }
 
         @Override

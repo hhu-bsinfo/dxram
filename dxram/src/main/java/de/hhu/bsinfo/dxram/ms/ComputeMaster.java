@@ -27,6 +27,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -42,9 +45,6 @@ import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -86,11 +86,15 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
      * @param p_lookup
      *         LookupComponent
      */
-    ComputeMaster(final short p_computeGroupId, final long p_pingIntervalMs, final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
-            final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
-        super(ComputeRole.MASTER, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_nameservice, p_boot, p_lookup);
+    ComputeMaster(final short p_computeGroupId, final long p_pingIntervalMs,
+            final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
+            final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot,
+            final LookupComponent p_lookup) {
+        super(ComputeRole.MASTER, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_nameservice,
+                p_boot, p_lookup);
 
-        p_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, this);
+        p_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST,
+                this);
 
         m_executionBarrierId = m_lookup.barrierAllocate(1);
 
@@ -220,12 +224,12 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
         LOGGER.info("Setting up master of compute group %d", m_computeGroupId);
 
-
         // check first, if there is already a master registered for this compute group
         long id = m_nameservice.getChunkID(m_nameserviceMasterNodeIdKey, 0);
         if (id != -1) {
 
-            LOGGER.error("Cannot setup master for compute group id %d, node 0x%X is already master of group", m_computeGroupId, ChunkID.getCreatorID(id));
+            LOGGER.error("Cannot setup master for compute group id %d, node 0x%X is already master of group",
+                    m_computeGroupId, ChunkID.getCreatorID(id));
 
             m_state = State.STATE_ERROR_DIE;
             return;
@@ -233,10 +237,10 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
         // setup bootstrapping for other slaves
         // use the nameservice to store our node id
-        m_nameservice.register(ChunkID.getChunkID(m_boot.getNodeID(), ChunkID.INVALID_ID), m_nameserviceMasterNodeIdKey);
+        m_nameservice.register(ChunkID.getChunkID(m_boot.getNodeID(), ChunkID.INVALID_ID),
+                m_nameserviceMasterNodeIdKey);
 
         m_state = State.STATE_IDLE;
-
 
         LOGGER.debug("Entering idle state");
 
@@ -299,9 +303,9 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
         while (m_signedOnSlaves.size() < minSlaves || m_signedOnSlaves.size() > maxSlaves) {
 
-            LOGGER.debug("Waiting for num slaves in interval [%d, %d] for task script %s (current slave count: %d)...", minSlaves, maxSlaves, taskScript,
+            LOGGER.debug("Waiting for num slaves in interval [%d, %d] for task script %s (current slave count: %d)...",
+                    minSlaves, maxSlaves, taskScript,
                     m_signedOnSlaves.size());
-
 
             try {
                 Thread.sleep(2000);
@@ -315,9 +319,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
         // lock joining of further slaves
         m_joinLock.lock();
 
-
         LOGGER.info("Starting execution of task script %s with %d slaves", taskScript, m_signedOnSlaves.size());
-
 
         short[] slaves = new short[m_signedOnSlaves.size()];
         for (int i = 0; i < slaves.length; i++) {
@@ -334,7 +336,8 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
             TaskContextData ctxData = new TaskContextData(m_computeGroupId, numberOfSlavesOnExecution, slaves);
 
             // pass barrier identifier for syncing after taskScript along
-            ExecuteTaskScriptRequest request = new ExecuteTaskScriptRequest(slave, m_executeBarrierIdentifier, ctxData, taskScript);
+            ExecuteTaskScriptRequest request = new ExecuteTaskScriptRequest(slave, m_executeBarrierIdentifier, ctxData,
+                    taskScript);
 
             try {
                 m_network.sendSync(request);
@@ -351,29 +354,26 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
             if (response.getStatus() != 0) {
                 // exclude slave from execution
 
-                LOGGER.error("Slave 0x%X response %d on execution of task script %s excluding from current execution", slave, response.getStatus(), taskScript);
+                LOGGER.error("Slave 0x%X response %d on execution of task script %s excluding from current execution",
+                        slave, response.getStatus(), taskScript);
 
             } else {
                 numberOfSlavesOnExecution++;
             }
         }
 
-
         LOGGER.debug("Executing sync steps with %d/%d slaves...", numberOfSlavesOnExecution, m_signedOnSlaves.size());
-
 
         int[] returnCodes;
         do {
 
             LOGGER.debug("Awaiting sync step...");
 
-
             BarrierStatus result = m_lookup.barrierSignOn(m_executionBarrierId, -1);
 
             if (result != null) {
 
                 LOGGER.debug("Sync step done");
-
 
                 final boolean[] allDone = {true};
                 result.forEachSignedOnPeer((p_signedOnPeer, p_customData) -> {
@@ -414,9 +414,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
                 }
             }
 
-
             LOGGER.debug("Sync all done");
-
 
             break;
         } while (true);
@@ -428,7 +426,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
         m_state = State.STATE_IDLE;
         // allow further slaves to join
         m_joinLock.unlock();
-
 
         LOGGER.debug("Entering idle state");
 
@@ -448,7 +445,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
             if (!onlineNodesList.contains(slave)) {
 
                 LOGGER.info("Slave 0x%X is not available anymore, removing", slave);
-
 
                 it.remove();
             }
@@ -484,11 +480,8 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
             try {
                 m_network.sendMessage(response);
 
-
                 LOGGER.info("Slave (%d) 0x%X has joined", m_signedOnSlaves.size() - 1, p_message.getSource());
-
             } catch (final NetworkException e) {
-
                 LOGGER.error("Sending response to join request of slave 0x%X failed: %s", p_message.getSource(), e);
 
                 // remove slave
@@ -500,15 +493,12 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
             LOGGER.trace("Cannot join slave, master not in idle state");
 
-
             // send response that joining is not possible currently
             SlaveJoinResponse response = new SlaveJoinResponse(p_message, BarrierID.INVALID_ID, (byte) 1);
             try {
                 m_network.sendMessage(response);
             } catch (final NetworkException e) {
-
                 LOGGER.error("Sending response to join request of slave 0x%X failed: %s", p_message.getSource(), e);
-
             }
         }
     }
@@ -525,23 +515,18 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
                 // the slave requested aborting the currently running task
                 // send an abort to all other slaves as well
                 for (short slaveNodeId : m_signedOnSlaves) {
-
                     try {
                         m_network.sendMessage(new SignalMessage(slaveNodeId, p_message.getSignal()));
                     } catch (final NetworkException e) {
-
                         LOGGER.error("Sending signal to slave 0x%X failed: %s", p_message.getSource(), e);
-
                     }
                 }
 
                 break;
             }
+
             default: {
-
-
                 LOGGER.error("Unhandled signal %d from peer 0x%X", p_message.getSignal(), p_message.getSource());
-
                 break;
             }
         }

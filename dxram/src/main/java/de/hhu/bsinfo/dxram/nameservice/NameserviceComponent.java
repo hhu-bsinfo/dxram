@@ -53,7 +53,8 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
      * Constructor
      */
     public NameserviceComponent() {
-        super(DXRAMComponentOrder.Init.NAMESERVICE, DXRAMComponentOrder.Shutdown.NAMESERVICE, NameserviceComponentConfig.class);
+        super(DXRAMComponentOrder.Init.NAMESERVICE, DXRAMComponentOrder.Shutdown.NAMESERVICE,
+                NameserviceComponentConfig.class);
     }
 
     /**
@@ -82,7 +83,6 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
 
             LOGGER.trace("Registering chunkID 0x%X, name %s, id %d", p_chunkId, p_name, id);
 
-
             m_lookup.insertNameserviceEntry(id, p_chunkId);
             insertMapping(id, p_chunkId);
         } catch (final IllegalArgumentException e) {
@@ -109,9 +109,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
 
             LOGGER.trace("Lookup name %s, id %d", p_name, id);
 
-
             ret = m_lookup.getChunkIDForNameserviceEntry(id, p_timeoutMs);
-
 
             LOGGER.trace("Lookup name %s, resulting chunkID 0x%X", p_name, ret);
 
@@ -127,7 +125,6 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
     public void reinit() {
 
         LOGGER.warn("Re-initializing");
-
 
         shutdownName();
         initName();

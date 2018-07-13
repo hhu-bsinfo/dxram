@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Ask About Successor Request
@@ -39,10 +39,11 @@ public class AskAboutSuccessorRequest extends Request {
      * Creates an instance of AskAboutSuccessorRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      */
     public AskAboutSuccessorRequest(final short p_destination) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST);
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST);
     }
 
 }

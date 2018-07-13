@@ -29,9 +29,9 @@ public class MasterNodeEntry {
      * Constructor
      *
      * @param p_nodeId
-     *     Node id of the master node
+     *         Node id of the master node
      * @param p_cgid
-     *     Id of the compute group the master is leading
+     *         Id of the compute group the master is leading
      */
     public MasterNodeEntry(final short p_nodeId, final short p_cgid) {
         m_nodeId = p_nodeId;

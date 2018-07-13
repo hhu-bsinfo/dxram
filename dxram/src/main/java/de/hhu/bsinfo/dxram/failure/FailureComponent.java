@@ -18,6 +18,10 @@ package de.hhu.bsinfo.dxram.failure;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
+import de.hhu.bsinfo.dxnet.core.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -35,11 +39,7 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
-import de.hhu.bsinfo.dxnet.core.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxnet.MessageReceiver;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -47,7 +47,8 @@ import de.hhu.bsinfo.dxutils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 05.10.2016
  */
-public class FailureComponent extends AbstractDXRAMComponent<FailureComponentConfig> implements MessageReceiver, EventListener<AbstractEvent> {
+public class FailureComponent extends AbstractDXRAMComponent<FailureComponentConfig>
+        implements MessageReceiver, EventListener<AbstractEvent> {
 
     private static final int EVENT_TIMEOUT = 1000;
 
@@ -93,7 +94,8 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
                     mask = 1 << (nodeID & 0xFFFF) % 8;
 
                     m_failureLock.lock();
-                    if (m_nodeTimestamps[nodeID & 0xFFFF] + EVENT_TIMEOUT < System.currentTimeMillis() || (m_nodeStatus[index] & mask) != 0) {
+                    if (m_nodeTimestamps[nodeID & 0xFFFF] + EVENT_TIMEOUT < System.currentTimeMillis() ||
+                            (m_nodeStatus[index] & mask) != 0) {
                         m_nodeTimestamps[nodeID & 0xFFFF] = System.currentTimeMillis();
 
                         // Set bit to 0
@@ -105,25 +107,21 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
                          * A connection was removed after an error -> try to re-connect
                          * If re-connecting fails, failure will be handled
                          *
-                         * There can only be one thread per NodeID in here, but there might be another thread in section B for
-                         * the same NodeID. All other events (ConnectionLostEvents and ResponseDelayedEvents) for given NodeID
-                         * are ignored for given interval.
+                         * There can only be one thread per NodeID in here, but there might be another thread
+                         * in section B for the same NodeID. All other events (ConnectionLostEvents and
+                         * ResponseDelayedEvents) for given NodeID are ignored for given interval.
                          */
-
 
                         LOGGER.debug("ConnectionLostEvent triggered: 0x%X", nodeID);
 
-
                         try {
                             m_network.connectNode(nodeID);
-
 
                             LOGGER.debug("Re-connect successful, continuing");
 
                         } catch (final NetworkException e) {
 
                             LOGGER.debug("Node is unreachable. Initiating failure handling");
-
 
                             failureHandling(nodeID, false);
                         }
@@ -149,16 +147,17 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
                          * Section B - Low priority
                          * A response was delayed -> send a message to check connection
                          *
-                         * There can only be one thread per NodeID in here, but there might be another thread in section A for
-                         * the same NodeID. All other ResponseDelayedEvents for given NodeID are ignored for given interval.
+                         * There can only be one thread per NodeID in here, but there might be another thread in
+                         * section A for the same NodeID. All other ResponseDelayedEvents for given NodeID are
+                         * ignored for given interval.
                          */
 
-
-                        LOGGER.debug("ResponseDelayedEvent triggered: 0x%X. Sending default message and return.", nodeID);
-
+                        LOGGER.debug("ResponseDelayedEvent triggered: 0x%X. Sending default message and return.",
+                                nodeID);
 
                         try {
-                            // Sending default message to detect connection failure. If the connection is broken, a ConnectionLostEvent will be triggered
+                            // Sending default message to detect connection failure. If the connection is broken, a
+                            // ConnectionLostEvent will be triggered
                             m_network.sendMessage(new DefaultMessage(nodeID));
                         } catch (final NetworkException ignored) {
                         }
@@ -207,8 +206,10 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
-        m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST, FailureRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_RESPONSE, FailureResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST,
+                FailureRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_RESPONSE,
+                FailureResponse.class);
 
         m_network.register(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST, this);
 
@@ -248,29 +249,39 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
          *  1) This is a superpeer:
          *      a) Failed node was a superpeer:
          *          In LookupComponent:
-         *          i)   This is the successor: Inform all other superpeers actively and take over peers (other metadata is already available)
-         *          ii)  This is the last backup superpeer: Send failed superpeer's metadata to this superpeer's successor
-         *          iii) Failed superpeer was one of this node's backup superpeers: Send this superpeer's metadata to new, succeeding backup superpeer
-         *          iv)  Remove superpeer from ring (locally, but as every superpeer does this the node is erased completely)
+         *          i)   This is the successor: Inform all other superpeers actively and take over peers
+         *               (other metadata is already available)
+         *          ii)  This is the last backup superpeer: Send failed superpeer's metadata to this superpeer's
+         *               successor
+         *          iii) Failed superpeer was one of this node's backup superpeers: Send this superpeer's metadata to
+         *               new, succeeding backup superpeer
+         *          iv)  Remove superpeer from ring (locally, but as every superpeer does this the node is erased
+         *               completely)
          *          v)   This is the successor or predecessor: Determine new neighbor (is a special role in overlay)
          *          In ZooKeeperBootComponent:
          *          i)   This is the successor: Remove superpeer from "/nodes/superpeers"
-         *          ii)  This is the successor: Add ChunkID of failed superpeer to "/nodes/free" if node was not registered in file at startup
-         *          iii) This is the successor: Replace failed superpeer as a bootstrap ("/nodes/bootstrap") if it was the bootstrap
-         *          iv)  This is the successor: If superpeer was not registered in file at startup, remove its ChunkID from "/nodes/new"
+         *          ii)  This is the successor: Add ChunkID of failed superpeer to "/nodes/free" if node was not
+         *               registered in file at startup
+         *          iii) This is the successor: Replace failed superpeer as a bootstrap ("/nodes/bootstrap") if it
+         *               was the bootstrap
+         *          iv)  This is the successor: If superpeer was not registered in file at startup, remove its
+         *               ChunkID from "/nodes/new"
          *      b) Failed node was a peer:
          *          In LookupComponent:
          *          i)   Inform all assigned peers
          *          ii)  This is the responsible superpeer: Inform all other superpeers (to inform all peers, see above)
-         *          iii) This is the responsible superpeer: Get all backup ranges (normal and migration) from LookupTree and start recovery for every backup
-         *                 range by sending a RecoverBackupRangeRequest to the primary backup peers (secondary and tertiary if unavailable)
-         *                 - If the recovery was successful: Set the new owner as restorer in LookupTree to replace creator as owner and replicate change to
-         *                      backup superpeers
+         *          iii) This is the responsible superpeer: Get all backup ranges (normal and migration) from
+         *               LookupTree and start recovery for every backup range by sending a RecoverBackupRangeRequest
+         *               to the primary backup peers (secondary and tertiary if unavailable)
+         *                 - If the recovery was successful: Set the new owner as restorer in LookupTree to replace
+         *                   creator as owner and replicate change to backup superpeers
          *          iv)  This is the responsible superpeer: Remove peer (locally)
          *          In ZooKeeperBootComponent:
          *          i)   This is the responsible superpeer: Remove peer from "/nodes/peers"
-         *          ii)  This is the responsible superpeer: Add ChunkID of failed peer to "/nodes/free" if node was not registered in file at startup
-         *          iii) This is the responsible superpeer: If peer was not registered in file at startup, remove its ChunkID from "/nodes/new"
+         *          ii)  This is the responsible superpeer: Add ChunkID of failed peer to "/nodes/free" if node was
+         *               not registered in file at startup
+         *          iii) This is the responsible superpeer: If peer was not registered in file at startup, remove
+         *               its ChunkID from "/nodes/new"
          *
          *
          *  2) This is a peer:
@@ -286,25 +297,26 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
          *                  In ChunkBackupComponent:
          *                      - Replicate every single chunk of this backup range to the new backup peer
          *                  In LookupComponent
-         *                      - Replace the failed backup peer by the new determined backup peer on the responsible superpeer
+         *                      - Replace the failed backup peer by the new determined backup peer on the
+         *                        responsible superpeer
          *                  In LookupComponent (if caches are enabled):
-         *                      i) Invalidate all cached lookup ranges in CacheTree that store the failed peer as current location
+         *                      i) Invalidate all cached lookup ranges in CacheTree that store the failed peer as
+         *                         current location
          *                  In PeerLockService:
-         *                      i) Unlock all remote locks (for chunks stored on this peer) that are held by the failed peer
+         *                      i) Unlock all remote locks (for chunks stored on this peer) that are held by the
+         *                         failed peer
          */
 
         if (ownRole == NodeRole.SUPERPEER) {
 
             LOGGER.debug("********** ********** Node Failure ********** **********");
-            LOGGER.debug("Remote detection: " + p_remoteDetect);
-
+            LOGGER.debug("Remote detection: %s", p_remoteDetect);
 
             // Restore superpeer overlay, cleanup ZooKeeper and/or initiate recovery
             responsible = m_lookup.superpeersNodeFailureHandling(p_nodeID, roleOfFailedNode);
 
             if (responsible) {
                 // Failed node was either the predecessor superpeer or a peer this superpeer is responsible for
-
 
                 LOGGER.debug("Failed node was a %s, NodeID: 0x%X", roleOfFailedNode, p_nodeID);
 
@@ -319,9 +331,8 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
                 if (!p_remoteDetect) {
                     short responsibleSuperpeer = m_lookup.getResponsibleSuperpeer(m_boot.getNodeID());
 
-
-                    LOGGER.debug("Detected failure of 0x%X. Informing own superpeer 0x%X.", p_nodeID, responsibleSuperpeer);
-
+                    LOGGER.debug("Detected failure of 0x%X. Informing own superpeer 0x%X.", p_nodeID,
+                            responsibleSuperpeer);
 
                     // Notify superpeer
                     FailureRequest request = new FailureRequest(responsibleSuperpeer, p_nodeID);
@@ -352,7 +363,8 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
         int mask = 1 << (nodeID & 0xFFFF) % 8;
 
         m_failureLock.lock();
-        if (m_nodeTimestamps[nodeID & 0xFFFF] + EVENT_TIMEOUT < System.currentTimeMillis() || (m_nodeStatus[index] & mask) != 0) {
+        if (m_nodeTimestamps[nodeID & 0xFFFF] + EVENT_TIMEOUT < System.currentTimeMillis() ||
+                (m_nodeStatus[index] & mask) != 0) {
             m_nodeTimestamps[nodeID & 0xFFFF] = System.currentTimeMillis();
 
             // Set bit to 0

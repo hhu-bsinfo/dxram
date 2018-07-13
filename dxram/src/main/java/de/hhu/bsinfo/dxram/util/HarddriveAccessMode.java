@@ -32,7 +32,7 @@ public enum HarddriveAccessMode {
      * Get the harddrive access mode from a full string.
      *
      * @param p_str
-     *     String to parse.
+     *         String to parse.
      * @return HarddriveAccess
      */
     public static HarddriveAccessMode convert(final String p_str) {
@@ -51,7 +51,7 @@ public enum HarddriveAccessMode {
      * Returns the JNI file name
      *
      * @param p_mode
-     *     the HarddriveAccessMode
+     *         the HarddriveAccessMode
      * @return the name
      */
     public static String getJNIFileName(final HarddriveAccessMode p_mode) {

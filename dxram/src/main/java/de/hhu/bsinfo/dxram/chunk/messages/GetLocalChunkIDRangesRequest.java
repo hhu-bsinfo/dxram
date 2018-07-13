@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Request for getting the chunk id ranges of locally stored chunk ids from another node.
@@ -38,9 +38,10 @@ public class GetLocalChunkIDRangesRequest extends Request {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     the destination node id.
+     *         the destination node id.
      */
     public GetLocalChunkIDRangesRequest(final short p_destination) {
-        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST);
+        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE,
+                ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST);
     }
 }

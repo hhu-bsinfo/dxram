@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.log.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.backup.RangeID;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -55,9 +55,10 @@ public class InitRecoveredBackupRangeRequest extends Request {
      * @param p_isNewBackupRange
      *         whether this is a new backup range or a transferable
      */
-    public InitRecoveredBackupRangeRequest(final short p_destination, final short p_rangeID, final short p_originalRangeID, final short p_originalOwner,
-            final boolean p_isNewBackupRange) {
-        super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST, true);
+    public InitRecoveredBackupRangeRequest(final short p_destination, final short p_rangeID,
+            final short p_originalRangeID, final short p_originalOwner, final boolean p_isNewBackupRange) {
+        super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE,
+                LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST, true);
 
         m_rangeID = p_rangeID;
         m_originalRangeID = p_originalRangeID;

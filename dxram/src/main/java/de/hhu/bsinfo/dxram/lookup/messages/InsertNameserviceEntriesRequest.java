@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 
 /**
  * Request for storing an id to ChunkID mapping on a remote node
@@ -59,8 +59,10 @@ public class InsertNameserviceEntriesRequest extends Request {
      * @param p_isBackup
      *         whether this is a backup message or not
      */
-    public InsertNameserviceEntriesRequest(final short p_destination, final int p_id, final long p_chunkID, final boolean p_isBackup) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST);
+    public InsertNameserviceEntriesRequest(final short p_destination, final int p_id, final long p_chunkID,
+            final boolean p_isBackup) {
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST);
 
         m_id = p_id;
         m_chunkID = p_chunkID;

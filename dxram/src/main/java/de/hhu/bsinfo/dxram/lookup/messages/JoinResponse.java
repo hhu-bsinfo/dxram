@@ -82,8 +82,10 @@ public class JoinResponse extends Response {
      * @param p_metadata
      *         the metadata
      */
-    public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer, final short p_predecessor, final short p_successor,
-            final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<NodesConfiguration.NodeEntry> p_onlineNodes,
+    public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer, final short p_predecessor,
+            final short p_successor,
+            final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers,
+            final ArrayList<NodesConfiguration.NodeEntry> p_onlineNodes,
             final byte[] p_metadata) {
         super(p_request, LookupMessages.SUBTYPE_JOIN_RESPONSE);
 

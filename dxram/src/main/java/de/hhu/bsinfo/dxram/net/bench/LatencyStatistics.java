@@ -10,8 +10,9 @@ public class LatencyStatistics {
     private static final int MAX_THREADS = 1000;
 
     private static final String[] MS_LATENCY_UNITS =
-            new String[] {"< 1 us", "< 2 us", "< 5 us", "< 10 us", "< 15 us", "< 20 us", "< 25 us", "< 50 us", "< 100 us", "< 250 us", "< 500 us", "< 1 ms",
-                    "< 2 ms", "< 5 ms", "< 10 ms", "< 25 ms", "< 50 ms", "< 100 ms", "< 250 ms", "< 500 ms", "< 1 sec", ">= 1 sec"};
+            new String[] {"< 1 us", "< 2 us", "< 5 us", "< 10 us", "< 15 us", "< 20 us", "< 25 us", "< 50 us",
+                    "< 100 us", "< 250 us", "< 500 us", "< 1 ms", "< 2 ms", "< 5 ms", "< 10 ms", "< 25 ms", "< 50 ms",
+                    "< 100 ms", "< 250 ms", "< 500 ms", "< 1 sec", ">= 1 sec"};
 
     private final Stopwatch[] m_stopwatch;
     private final long[][] m_latencyCounts;

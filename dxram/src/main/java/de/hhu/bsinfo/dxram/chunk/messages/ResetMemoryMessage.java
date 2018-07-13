@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Reset the memory on a peer
@@ -38,7 +38,7 @@ public class ResetMemoryMessage extends Message {
      * Creates an instance of ResetMemoryMessage
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      */
     public ResetMemoryMessage(final short p_destination) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_RESET_MEMORY_MESSAGE);

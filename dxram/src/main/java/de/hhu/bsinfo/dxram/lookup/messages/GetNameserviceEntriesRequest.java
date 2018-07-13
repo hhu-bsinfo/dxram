@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 
 /**
  * Request for getting the number of mappings
@@ -39,10 +39,11 @@ public class GetNameserviceEntriesRequest extends Request {
      * Creates an instance of GetMappingCountRequest
      *
      * @param p_destination
-     *     the destination
+     *         the destination
      */
     public GetNameserviceEntriesRequest(final short p_destination) {
-        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST);
+        super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+                LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST);
     }
 
 }

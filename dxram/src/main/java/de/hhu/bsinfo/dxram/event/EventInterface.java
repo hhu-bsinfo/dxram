@@ -16,8 +16,6 @@
 
 package de.hhu.bsinfo.dxram.event;
 
-import de.hhu.bsinfo.dxram.event.AbstractEvent;
-
 /**
  * Generic interface for any type of event handler.
  *
@@ -32,5 +30,5 @@ public interface EventInterface {
      * @param p_event
      *         Event to fire.
      */
-    <T extends AbstractEvent> void fireEvent(T p_event);
+    <T extends AbstractEvent> void fireEvent(final T p_event);
 }

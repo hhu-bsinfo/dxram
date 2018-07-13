@@ -381,13 +381,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      * @param p_rangeID
      *         the RangeID
      * @return the secondary log buffer
-     * @throws IOException
-     *         if the secondary log buffer could not be returned
-     * @throws InterruptedException
-     *         if the secondary log buffer could not be returned
      */
-    public SecondaryLogBuffer getSecondaryLogBuffer(final short p_owner, final short p_rangeID)
-            throws IOException, InterruptedException {
+    public SecondaryLogBuffer getSecondaryLogBuffer(final short p_owner, final short p_rangeID) {
         SecondaryLogBuffer ret = null;
         LogCatalog cat;
 
@@ -668,23 +663,20 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                 m_secondaryLogsReorgThread.join();
 
                 LOGGER.info("Shutdown of SecondaryLogsReorgThread successful");
-
-            } catch (final InterruptedException e1) {
-
+            } catch (final InterruptedException ignored) {
                 LOGGER.warn("Could not wait for reorganization thread to finish. Interrupted");
-
             }
+
             m_secondaryLogsReorgThread = null;
 
             // Close primary log
             if (m_primaryLog != null) {
                 try {
                     m_primaryLog.close();
-                } catch (final IOException e) {
-
+                } catch (final IOException ignored) {
                     LOGGER.warn("Could not close primary log!");
-
                 }
+
                 m_primaryLog = null;
             }
 
@@ -695,10 +687,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                     if (cat != null) {
                         cat.closeLogsAndBuffers();
                     }
-                } catch (final IOException e) {
-
+                } catch (final IOException ignored) {
                     LOGGER.warn("Could not close secondary log buffer %d", i);
-
                 }
             }
             m_logCatalogs = null;

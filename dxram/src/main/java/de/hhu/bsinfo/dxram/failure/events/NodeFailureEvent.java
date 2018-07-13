@@ -18,7 +18,6 @@ package de.hhu.bsinfo.dxram.failure.events;
 
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * An event for node failure
@@ -27,8 +26,8 @@ import de.hhu.bsinfo.dxutils.NodeID;
  */
 public class NodeFailureEvent extends AbstractEvent {
 
-    private short m_nodeID = NodeID.INVALID_ID;
-    private NodeRole m_role = NodeRole.PEER;
+    private short m_nodeID;
+    private NodeRole m_role;
 
     /**
      * Creates an instance of NodeFailureEvent

@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.ms.messages;
 
-import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService.StatusMaster;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService.StatusMaster;
 
 /**
  * Response to the request to get the status of a master compute node.
@@ -47,7 +47,8 @@ public class GetMasterStatusResponse extends Response {
      * @param p_statusMaster
      *         Status data of the master to send back
      */
-    public GetMasterStatusResponse(final GetMasterStatusRequest p_request, final StatusMaster p_statusMaster, final byte p_status) {
+    public GetMasterStatusResponse(final GetMasterStatusRequest p_request, final StatusMaster p_statusMaster,
+            final byte p_status) {
         super(p_request, MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_RESPONSE);
         m_statusMaster = p_statusMaster;
         m_status = p_status;
@@ -82,10 +83,12 @@ public class GetMasterStatusResponse extends Response {
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
         m_status = p_importer.readByte(m_status);
+
         if (m_status == 0) {
             if (m_statusMaster == null) {
                 m_statusMaster = new StatusMaster();
             }
+
             p_importer.importObject(m_statusMaster);
         }
     }

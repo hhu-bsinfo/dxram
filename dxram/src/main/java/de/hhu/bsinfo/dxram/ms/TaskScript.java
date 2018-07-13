@@ -89,7 +89,8 @@ public final class TaskScript implements Importable, Exportable {
      * @param p_tasks
      *         List of tasks forming the script
      */
-    public TaskScript(final short p_minSlaves, final short p_maxSlaves, final String p_name, final TaskScriptNode... p_tasks) {
+    public TaskScript(final short p_minSlaves, final short p_maxSlaves, final String p_name,
+            final TaskScriptNode... p_tasks) {
         m_minSlaves = p_minSlaves;
         m_maxSlaves = p_maxSlaves;
         m_name = p_name;
@@ -164,7 +165,8 @@ public final class TaskScript implements Importable, Exportable {
 
                 try {
                     m_tasks[i] = (TaskScriptNode) clazz.getConstructor().newInstance();
-                } catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                } catch (final NoSuchMethodException | SecurityException | InstantiationException |
+                        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                     throw new RuntimeException("Cannot create instance of Task, maybe missing default constructor", e);
                 }
             }
