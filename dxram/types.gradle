@@ -10,6 +10,10 @@ buildTypes {
 
             typedField "GIT_COMMIT", String, gitCommit
 
+            typedField "BUILD_USER", String, System.getProperty("user.name")
+
+            field "BUILD_DATE", "java.util", "Date", "new Date()"
+
             field "DXRAM_VERSION", "de.hhu.bsinfo.dxram.engine", "DXRAMVersion", "DXRAMVersion.fromString(\"${version}\")"
         }
     }
