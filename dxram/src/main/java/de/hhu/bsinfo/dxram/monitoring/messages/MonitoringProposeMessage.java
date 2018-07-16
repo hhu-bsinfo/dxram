@@ -19,7 +19,6 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
-
 /**
  * Monitoring propose message - will be send by callback functions automatically "in the background"
  *

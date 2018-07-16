@@ -1,8 +1,8 @@
 package de.hhu.bsinfo.dxram.monitoring.metric;
 
-import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
-
 import java.util.ArrayList;
+
+import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
 
 /**
  * Metric Helper class which will load multiple collected DataStructures in a 2D grid
@@ -47,7 +47,6 @@ public class Metric {
 
         return floatTable;
     }
-
 
     public static long[][] createLongTable(ArrayList<MonitoringDataStructure> p_datas) {
         int numData = p_datas.size();

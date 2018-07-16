@@ -8,7 +8,12 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.monitoring.messages.*;
+import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringDataMessage;
+import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringDataRequest;
+import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringDataResponse;
+import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringMessages;
+import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringProposeMessage;
+import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringSysInfoMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
@@ -24,8 +29,6 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
     private AbstractBootComponent m_boot;
     private MonitoringComponent m_monitor;
     private NetworkComponent m_network;
-
-    //private ArrayList<String> m_supportedComponents = new ArrayList<>();
 
     /**
      * Constructor
@@ -68,27 +71,40 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
     }
 
     private void registerMessageReceiver() {
-        m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST, this);
-        m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA, this);
-        m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_PROPOSE, this);
-        m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO, this);
+        m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
+                MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA,
+                this);
+        m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_PROPOSE,
+                this);
+        m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO,
+                this);
     }
 
     private void unregisterMessageReceiver() {
-        m_network.unregister(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST, this);
-        m_network.unregister(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA, this);
-        m_network.unregister(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_PROPOSE, this);
-        m_network.unregister(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO, this);
+        m_network.unregister(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
+                MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST, this);
+        m_network.unregister(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA,
+                this);
+        m_network.unregister(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_PROPOSE,
+                this);
+        m_network.unregister(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO,
+                this);
     }
 
     private void registerMonitorMessages() {
-        m_network.registerMessageType(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST, MonitoringDataRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
+                MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST, MonitoringDataRequest.class);
         m_network
-                .registerMessageType(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA_RESPONSE, MonitoringDataResponse.class);
-        m_network.registerMessageType(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA, MonitoringDataMessage.class);
+                .registerMessageType(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
+                        MonitoringMessages.SUBTYPE_MONITORING_DATA_RESPONSE, MonitoringDataResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
+                MonitoringMessages.SUBTYPE_MONITORING_DATA, MonitoringDataMessage.class);
         m_network
-                .registerMessageType(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_PROPOSE, MonitoringProposeMessage.class);
-        m_network.registerMessageType(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO, MonitoringSysInfoMessage.class);
+                .registerMessageType(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
+                        MonitoringMessages.SUBTYPE_MONITORING_PROPOSE, MonitoringProposeMessage.class);
+        m_network.registerMessageType(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
+                MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO, MonitoringSysInfoMessage.class);
     }
 
     @Override
@@ -103,6 +119,7 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
                         break;
                     case MonitoringMessages.SUBTYPE_MONITORING_DATA:
                         LOGGER.trace("Received Monitoring-Data");
+
                         if (m_peerIsSuperpeer) {
                             incomingMonitoringData((MonitoringDataMessage) p_message);
                         }
@@ -133,8 +150,8 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
     }
 
     private void incomingMonitoringPropose(final MonitoringProposeMessage p_message) {
-        LOGGER.debug("Received Monitoring propose from: " + p_message.getSource() +
-                " - component: " + p_message.getComponent() + " value: " + p_message.getValue());
+        LOGGER.debug("Received Monitoring propose from: %d - component %s value: %f",
+                p_message.getSource(), p_message.getComponent(), p_message.getValue());
     }
 
     private void incomingMonitoringDataRequest(final MonitoringDataRequest p_request) {

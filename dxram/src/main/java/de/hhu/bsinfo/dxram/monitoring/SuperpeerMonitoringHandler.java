@@ -1,5 +1,17 @@
 package de.hhu.bsinfo.dxram.monitoring;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -8,14 +20,6 @@ import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
 
 /**
  * Superpeer monitoring handler thread. Will write a list of nodes on event trigger.
@@ -23,7 +27,8 @@ import java.util.Map;
  * @author Burak Akguel, burak.akguel@hhu.de, 08.07.2018
  */
 public class SuperpeerMonitoringHandler extends Thread implements EventListener<AbstractEvent> {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(SuperpeerMonitoringHandler.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(
+            SuperpeerMonitoringHandler.class.getSimpleName());
 
     private ArrayList<MonitoringDataStructure> m_collectedData;
     private volatile boolean m_shouldShutdown;
@@ -40,7 +45,8 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
     /**
      * Constructor
      */
-    SuperpeerMonitoringHandler(float p_secondDelay, AbstractBootComponent p_bootComponent, EventComponent p_eventComponent, String p_monitoringFolder) {
+    SuperpeerMonitoringHandler(float p_secondDelay, AbstractBootComponent p_bootComponent,
+            EventComponent p_eventComponent, String p_monitoringFolder) {
         m_collectedData = new ArrayList<>();
         m_sysInfos = new HashMap<>();
         m_shouldShutdown = false;
@@ -63,7 +69,6 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
     public void run() {
         m_eventComponent.registerListener(this, NodeJoinEvent.class);
         m_eventComponent.registerListener(this, NodeFailureEvent.class);
-
 
         m_sysInfos.put(m_bootComponent.getNodeID(), new MonitoringSysInfoDataStructure());
 

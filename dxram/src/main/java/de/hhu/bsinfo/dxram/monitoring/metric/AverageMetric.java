@@ -1,8 +1,8 @@
 package de.hhu.bsinfo.dxram.monitoring.metric;
 
-import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
-
 import java.util.ArrayList;
+
+import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
 
 /**
  * This helper class provides methods to calculate a single DataStructure from multiple ones using the average.
@@ -30,12 +30,15 @@ public class AverageMetric extends Metric {
 
         MonitoringDataStructure dataStructure = new MonitoringDataStructure(p_ownNid, System.nanoTime());
         dataStructure.setCpuUsage(floatValues[0][0]);
-        dataStructure.setCpuLoads(new float[]{floatValues[1][0], floatValues[2][0], floatValues[3][0]});
+        dataStructure.setCpuLoads(new float[] {floatValues[1][0], floatValues[2][0], floatValues[3][0]});
         dataStructure.setMemoryUsage(floatValues[4][0]);
-        dataStructure.setNetworsStats(new float[]{floatValues[5][0], floatValues[6][0], floatValues[7][0], floatValues[8][0]});
-        dataStructure.setDiskStats(new float[]{floatValues[9][0], floatValues[10][0]});
-        dataStructure.setJvmMemStats(new float[]{floatValues[11][0], floatValues[12][0], floatValues[13][0], floatValues[14][0]});
-        dataStructure.setJvmThreadsStats(new long[]{longValues[0][0], longValues[1][0], longValues[2][0], longValues[3][0]});
+        dataStructure.setNetworsStats(
+                new float[] {floatValues[5][0], floatValues[6][0], floatValues[7][0], floatValues[8][0]});
+        dataStructure.setDiskStats(new float[] {floatValues[9][0], floatValues[10][0]});
+        dataStructure.setJvmMemStats(
+                new float[] {floatValues[11][0], floatValues[12][0], floatValues[13][0], floatValues[14][0]});
+        dataStructure.setJvmThreadsStats(
+                new long[] {longValues[0][0], longValues[1][0], longValues[2][0], longValues[3][0]});
 
         return dataStructure;
     }

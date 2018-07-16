@@ -1,13 +1,19 @@
 package de.hhu.bsinfo.dxram.monitoring;
 
-import de.hhu.bsinfo.dxmonitor.monitor.*;
+import java.lang.management.MemoryPoolMXBean;
+import java.util.Arrays;
+
+import de.hhu.bsinfo.dxmonitor.monitor.CpuMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.DiskMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.JVMMemMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.JVMThreadsMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.MemMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.Monitor;
+import de.hhu.bsinfo.dxmonitor.monitor.NetworkMonitor;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
-
-import java.lang.management.MemoryPoolMXBean;
-import java.util.Arrays;
 
 /**
  * Monitoring Data structure class
@@ -183,31 +189,37 @@ public class MonitoringDataStructure extends DataStructure {
 
     @Override
     public String toString() {
-        return String.format("==MonitoringData Node: %s==\n" + "Timestamp : %s\n" + "Cpu: Usage: %f, Loads: %s\n" + "Memory: Usage: %f\n" +
-                        "Network: rThroughput: %f, tThroughput: %f\n" + "Disk: Reads: %f, Writes: %f\n" + "JVM: Heap: %f, Eden: %f, Survivor: %f, Old: %f\n\n",
-                NodeID.toHexString(m_nid), String.valueOf(m_timestamp), m_cpuUsage, Arrays.toString(m_loads), m_memoryUsage, m_rxThroughput, m_txThroughput,
-                m_readPercent, m_writePercent, m_jvmHeapUsage, m_jvmEdenUsage, m_jvmSurvivorUsage, m_jvmOldUsage); // todo add jvm thread stats
+        return String.format("==MonitoringData Node: %s==\n" + "Timestamp : %s\n" + "Cpu: Usage: %f, Loads: %s\n" +
+                        "Memory: Usage: %f\n" +
+                        "Network: rThroughput: %f, tThroughput: %f\n" + "Disk: Reads: %f, Writes: %f\n" +
+                        "JVM: Heap: %f, Eden: %f, Survivor: %f, Old: %f\n\n",
+                NodeID.toHexString(m_nid), String.valueOf(m_timestamp), m_cpuUsage, Arrays.toString(m_loads),
+                m_memoryUsage, m_rxThroughput, m_txThroughput,
+                m_readPercent, m_writePercent, m_jvmHeapUsage, m_jvmEdenUsage, m_jvmSurvivorUsage,
+                m_jvmOldUsage); // todo add jvm thread stats
     }
 
     /**
      * Get needed information from certain components.
+     *
      * @param p_monitor
      */
     void fillWithData(Monitor p_monitor) {
-        if(p_monitor instanceof CpuMonitor) {
+        if (p_monitor instanceof CpuMonitor) {
             m_cpuUsage = ((CpuMonitor) p_monitor).getProgress().getCpuUsage();
-            m_loads = ((CpuMonitor) p_monitor).getLoads(); // todo think of a better way (creating a new float array every getLoads call is expensive)
-        } else if(p_monitor instanceof MemMonitor) {
+            m_loads = ((CpuMonitor) p_monitor)
+                    .getLoads(); // todo think of a better way (creating a new float array every getLoads call is expensive)
+        } else if (p_monitor instanceof MemMonitor) {
             m_memoryUsage = ((MemMonitor) p_monitor).getState().getUsedPercent();
-        } else if(p_monitor instanceof DiskMonitor) {
+        } else if (p_monitor instanceof DiskMonitor) {
             m_readPercent = ((DiskMonitor) p_monitor).getProgress().getReadUsagePercentage();
             m_writePercent = ((DiskMonitor) p_monitor).getProgress().getWriteUsagePercentage();
-        } else if(p_monitor instanceof NetworkMonitor) {
+        } else if (p_monitor instanceof NetworkMonitor) {
             m_rxThroughput = ((NetworkMonitor) p_monitor).getProgress().getReceiveThroughput();
             m_rxError = ((NetworkMonitor) p_monitor).getProgress().getReceivePacketErrorCount();
             m_txThroughput = ((NetworkMonitor) p_monitor).getProgress().getTransmitThroughput();
             m_txError = ((NetworkMonitor) p_monitor).getProgress().getTransmitPacketErrorCount();
-        } else if(p_monitor instanceof JVMMemMonitor) {
+        } else if (p_monitor instanceof JVMMemMonitor) {
             JVMMemMonitor monitor = (JVMMemMonitor) p_monitor;
             m_jvmHeapUsage = monitor.getState().getHeapUsage().getUsed();
             for (MemoryPoolMXBean p : monitor.getState().getListMemoryPoolMXBean()) {
@@ -219,7 +231,7 @@ public class MonitoringDataStructure extends DataStructure {
                     m_jvmSurvivorUsage = p.getUsage().getUsed();
                 }
             }
-        } else if(p_monitor instanceof JVMThreadsMonitor) {
+        } else if (p_monitor instanceof JVMThreadsMonitor) {
             JVMThreadsMonitor monitor = (JVMThreadsMonitor) p_monitor;
             m_jvmDaemonThreadCnt = monitor.getState().getDaemonThreadCount();
             m_jvmNonDaemonThreadCnt = monitor.getState().getNonDaemonThreadCount();

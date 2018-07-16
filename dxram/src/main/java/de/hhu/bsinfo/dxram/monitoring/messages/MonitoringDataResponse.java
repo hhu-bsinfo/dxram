@@ -5,7 +5,6 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
 import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
 
-
 /**
  * Monitoring Response message (only used by terminal)
  *
@@ -30,6 +29,7 @@ public class MonitoringDataResponse extends Response {
         super(p_request, MonitoringMessages.SUBTYPE_MONITORING_DATA_RESPONSE);
         m_data = p_monitoringData;
     }
+
     /**
      * Get monitoring data.
      *

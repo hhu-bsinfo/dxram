@@ -248,7 +248,6 @@ public class PeerMonitoringHandler extends Thread {
     }
 
     /******* Callback functions ********/
-    // TODO implement better callbacks
     private void callbackCpuUsageThresholdExceed(final double p_currentValue,
             final MultipleThresholdDouble p_threshold) {
         sendProposeToSuperpeer("cpu", p_currentValue);

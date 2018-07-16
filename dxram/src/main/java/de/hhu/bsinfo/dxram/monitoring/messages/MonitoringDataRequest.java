@@ -23,10 +23,11 @@ public class MonitoringDataRequest extends Request {
      * This constructor is used when sending this message.
      *
      * @param p_destination
-     *     The destination nid.
+     *         The destination nid.
      */
     public MonitoringDataRequest(final short p_destination) {
-        super(p_destination, DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST);
+        super(p_destination, DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
+                MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST);
     }
 
 }

@@ -6,7 +6,6 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.monitoring.MonitoringSysInfoDataStructure;
 
-
 /**
  * Monitoring message with system information
  *
@@ -21,7 +20,8 @@ public class MonitoringSysInfoMessage extends Message {
     }
 
     public MonitoringSysInfoMessage(short p_destination, MonitoringSysInfoDataStructure p_dataStructure) {
-        super(p_destination, DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO);
+        super(p_destination, DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
+                MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO);
 
         monitoringSysInfoDataStructure = p_dataStructure;
     }

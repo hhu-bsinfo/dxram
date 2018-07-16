@@ -4,7 +4,6 @@ package de.hhu.bsinfo.dxram.monitoring;
  * Wrapper class which provides information about DXRAM (compile type, git commit, ...)
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 08.06.2018
- *
  */
 public class MonitoringDXRAMInformation {
     private static String ms_buildDate;
@@ -17,7 +16,7 @@ public class MonitoringDXRAMInformation {
     private static boolean ms_pageCacheInUse;
 
     public static void setValues(final String p_buildDate, final String p_buildUser, final String p_buildType,
-                                 final String p_version, final String p_commit, final boolean p_pageCache) {
+            final String p_version, final String p_commit, final boolean p_pageCache) {
         ms_buildDate = p_buildDate;
         ms_buildUser = p_buildUser;
         ms_buildType = p_buildType;
@@ -52,7 +51,8 @@ public class MonitoringDXRAMInformation {
         return ms_pageCacheInUse;
     }
 
-    private MonitoringDXRAMInformation() {};
+    private MonitoringDXRAMInformation() {
+    }
 
 }
 
