@@ -20,7 +20,9 @@ buildTypes {
 
     release {
 
-        excludeInvocations 'org.apache.logging.log4j.Logger'
+        excludeInvocations 'org.apache.logging.log4j.Logger#debug'
+
+        excludeInvocations 'org.apache.logging.log4j.Logger#trace'
 
         buildConfig {
 
@@ -30,7 +32,13 @@ buildTypes {
         }
     }
 
-    statistics {
+    performance {
+
+        excludeInvocations 'org.apache.logging.log4j.Logger#info'
+
+        excludeInvocations 'org.apache.logging.log4j.Logger#debug'
+
+        excludeInvocations 'org.apache.logging.log4j.Logger#trace'
 
         buildConfig {
 

@@ -30,9 +30,9 @@ dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
     implementation files(Jvm.current().toolsJar)
 
-    implementation 'de.hhu.bsinfo:dxutils:1.0.0'
     implementation 'de.hhu.bsinfo:dxnet:1.0.0'
     implementation 'de.hhu.bsinfo:dxmon:1.0.0'
+    nativeImplementation 'de.hhu.bsinfo:dxutils:1.0.0'
 
     implementation 'com.google.code.gson:gson:2.7'
     implementation 'jline:jline:2.14.6'

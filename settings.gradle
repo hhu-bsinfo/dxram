@@ -1,4 +1,4 @@
-include ':dxram', ':native'
+include ':dxram'
 
 // Development mode switch
 boolean isDevelop = true
@@ -6,6 +6,10 @@ boolean isDevelop = true
 // Do not include other builds if this build is included
 if (isDevelop && gradle.parent != null) {
     return
+}
+
+if (isDevelop && new File('../dxgradle').exists()) {
+    includeBuild('../dxgradle')
 }
 
 if (isDevelop && new File('../dxutils').exists()) {
@@ -22,8 +26,4 @@ if (isDevelop && new File('../dxnet').exists()) {
 
 if (isDevelop && new File('../dxgraph').exists()) {
     includeBuild('../dxgraph')
-}
-
-if (isDevelop && new File('../dxgradle').exists()) {
-    includeBuild('../dxgradle')
 }
