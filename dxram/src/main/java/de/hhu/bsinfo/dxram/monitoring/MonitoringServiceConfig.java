@@ -8,8 +8,8 @@ public class MonitoringServiceConfig extends AbstractDXRAMServiceConfig {
 
     public MonitoringServiceConfig() {
         // FIXME temporarily disable the component by default due to several bugs that must be fixed first
-        super(MonitoringService.class, false, false);
-        //super(MonitoringService.class, true, true);
+        //super(MonitoringService.class, false, false);
+        super(MonitoringService.class, true, true);
     }
 
     @Override

@@ -25,14 +25,14 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
     private short m_collectsPerWindow = 10;
 
     @Expose
-    private String m_monitoringFolder = System.getProperty("user.dir") + "/mon";
+    private String m_monitoringFolder = "";
 
     private TimeUnit m_csvTimeWindow;
 
     public MonitoringComponentConfig() {
         // FIXME temporarily disable the component by default due to several bugs that must be fixed first
-        super(MonitoringComponent.class, false, false);
-        //super(MonitoringComponent.class, true, true);
+        //super(MonitoringComponent.class, false, false);
+        super(MonitoringComponent.class, true, true);
     }
 
     @Override
@@ -53,6 +53,10 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
             return false;
         }
 
+
+        if(m_monitoringFolder.isEmpty()) {
+            m_monitoringFolder = System.getProperty("user.dir") + "/mon";
+        }
         File file = new File(m_monitoringFolder);
 
         if (!file.exists()) {

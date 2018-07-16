@@ -71,13 +71,13 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
     }
 
     private void registerMessageReceiver() {
+        m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO,
+                this);
         m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
                 MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST, this);
         m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA,
                 this);
         m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_PROPOSE,
-                this);
-        m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO,
                 this);
     }
 
@@ -142,7 +142,7 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
     }
 
     private void incomingMonitoringSystemInfo(MonitoringSysInfoMessage p_message) {
-        m_monitor.addMonitoringSysInfoToWriter(p_message.getSource(), p_message.getMonitoringSysInfoDataStructure());
+        m_monitor.addMonitoringSysInfoToWriter(p_message.getSource(), p_message.getWrapper());
     }
 
     private void incomingMonitoringData(final MonitoringDataMessage p_message) {

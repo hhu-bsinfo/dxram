@@ -28,15 +28,15 @@ public class MonitoringDXRAMInformation {
     }
 
     public static String getBuildDate() {
-        return ms_buildDate;
+        return ms_buildDate != null ? ms_buildDate : "NULL";
     }
 
     public static String getBuildUser() {
-        return ms_buildUser;
+        return ms_buildUser != null ? ms_buildUser : "NULL";
     }
 
     public static String getBuildType() {
-        return ms_buildType;
+        return ms_buildType != null ? ms_buildType : "NULL";
     }
 
     public static String getVersion() {

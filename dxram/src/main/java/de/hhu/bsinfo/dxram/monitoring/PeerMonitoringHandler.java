@@ -19,6 +19,7 @@ import de.hhu.bsinfo.dxmonitor.monitor.Monitor;
 import de.hhu.bsinfo.dxmonitor.monitor.MultipleThresholdDouble;
 import de.hhu.bsinfo.dxmonitor.monitor.NetworkMonitor;
 import de.hhu.bsinfo.dxmonitor.state.StateUpdateException;
+import de.hhu.bsinfo.dxmonitor.state.SystemState;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringDataMessage;
 import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringProposeMessage;
@@ -100,8 +101,25 @@ public class PeerMonitoringHandler extends Thread {
         createPrintWriter();
 
         try {
-            MonitoringSysInfoDataStructure sysInfoDataStructure = new MonitoringSysInfoDataStructure();
-            m_networkComponent.sendMessage(new MonitoringSysInfoMessage(m_superpeerNid, sysInfoDataStructure));
+            String[] sysInfos = new String[5];
+            String[] dxramInfos = new String[5];
+
+            sysInfos[0] = SystemState.getKernelVersion();
+            sysInfos[1] = SystemState.getDistribution();
+            sysInfos[2] = SystemState.getCurrentWorkingDirectory();
+            sysInfos[3] = SystemState.getHostName();
+            sysInfos[4] = SystemState.getUserName();
+
+            dxramInfos[0] = MonitoringDXRAMInformation.getBuildUser();
+            dxramInfos[1] = MonitoringDXRAMInformation.getBuildDate();
+            dxramInfos[2] = MonitoringDXRAMInformation.getCommit();
+            dxramInfos[3] = MonitoringDXRAMInformation.getVersion();
+            dxramInfos[4] = MonitoringDXRAMInformation.getBuildType();
+            boolean isPageCacheInUse = MonitoringDXRAMInformation.isPageCacheInUse();
+
+            MonitoringSysInfoMessage message = new MonitoringSysInfoMessage(m_superpeerNid,
+                    sysInfos, dxramInfos, isPageCacheInUse);
+            m_networkComponent.sendMessage(message);
         } catch (NetworkException e) {
             e.printStackTrace();
         }

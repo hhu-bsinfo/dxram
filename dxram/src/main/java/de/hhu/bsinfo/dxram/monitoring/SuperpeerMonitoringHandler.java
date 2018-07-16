@@ -12,12 +12,14 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxmonitor.state.SystemState;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
+import de.hhu.bsinfo.dxram.monitoring.util.MonitoringSysDxramWrapper;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
 
@@ -32,7 +34,7 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
 
     private ArrayList<MonitoringDataStructure> m_collectedData;
     private volatile boolean m_shouldShutdown;
-    private HashMap<Short, MonitoringSysInfoDataStructure> m_sysInfos;
+    private HashMap<Short, MonitoringSysDxramWrapper> m_sysInfos;
 
     private AbstractBootComponent m_bootComponent;
     private EventComponent m_eventComponent;
@@ -60,8 +62,8 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
         m_collectedData.add(p_data);
     }
 
-    void addSysInfoToList(short p_nid, MonitoringSysInfoDataStructure p_dataStructure) {
-        m_sysInfos.put(p_nid, p_dataStructure);
+    void addSysInfoToList(short p_nid, MonitoringSysDxramWrapper p_wrapper) {
+        m_sysInfos.put(p_nid, p_wrapper);
         nodeOverview();
     }
 
@@ -70,7 +72,25 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
         m_eventComponent.registerListener(this, NodeJoinEvent.class);
         m_eventComponent.registerListener(this, NodeFailureEvent.class);
 
-        m_sysInfos.put(m_bootComponent.getNodeID(), new MonitoringSysInfoDataStructure());
+
+        String[] sysInfos = new String[5];
+        String[] dxramInfos = new String[5];
+
+        sysInfos[0] = SystemState.getKernelVersion();
+        sysInfos[1] = SystemState.getDistribution();
+        sysInfos[2] = SystemState.getCurrentWorkingDirectory();
+        sysInfos[3] = SystemState.getHostName();
+        sysInfos[4] = SystemState.getUserName();
+
+        dxramInfos[0] = MonitoringDXRAMInformation.getBuildUser();
+        dxramInfos[1] = MonitoringDXRAMInformation.getBuildDate();
+        dxramInfos[2] = MonitoringDXRAMInformation.getCommit();
+        dxramInfos[3] = MonitoringDXRAMInformation.getVersion();
+        dxramInfos[4] = MonitoringDXRAMInformation.getBuildType();
+        boolean isPageCacheInUse = MonitoringDXRAMInformation.isPageCacheInUse();
+
+        m_sysInfos.put(m_bootComponent.getNodeID(),
+                new MonitoringSysDxramWrapper(sysInfos, dxramInfos, isPageCacheInUse));
 
         while (!m_shouldShutdown) {
             try {
@@ -100,9 +120,9 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
             nodesPW.println("nid,role,ip,port,kernel_version,distribution,cwd,host_name,logged_in_user," +
                     "build_user,build_date,dxram_commit,dxram_version,pagecache_enabled");
 
-            for (Map.Entry<Short, MonitoringSysInfoDataStructure> set : m_sysInfos.entrySet()) {
+            for (Map.Entry<Short, MonitoringSysDxramWrapper> set : m_sysInfos.entrySet()) {
                 short nid = set.getKey();
-                MonitoringSysInfoDataStructure data = set.getValue();
+                MonitoringSysDxramWrapper data = set.getValue();
 
                 NodeRole nodeRole = m_bootComponent.getNodeRole(nid);
                 nodesPW.print(NodeID.toHexString(nid));

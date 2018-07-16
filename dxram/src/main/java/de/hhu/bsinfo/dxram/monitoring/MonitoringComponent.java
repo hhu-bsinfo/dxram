@@ -10,6 +10,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.log.LogComponentConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
+import de.hhu.bsinfo.dxram.monitoring.util.MonitoringSysDxramWrapper;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.ManifestHelper;
@@ -158,8 +159,8 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
         m_superpeerHandler.addDataToList(p_data);
     }
 
-    void addMonitoringSysInfoToWriter(short p_nid, MonitoringSysInfoDataStructure p_dataStructure) {
-        m_superpeerHandler.addSysInfoToList(p_nid, p_dataStructure);
+    void addMonitoringSysInfoToWriter(short p_nid, MonitoringSysDxramWrapper p_wrapper) {
+        m_superpeerHandler.addSysInfoToList(p_nid, p_wrapper);
     }
 
     @Override
