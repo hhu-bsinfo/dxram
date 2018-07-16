@@ -12,7 +12,7 @@ import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
  */
 public class MedianMetric extends Metric {
 
-    public static MonitoringDataStructure calculate(final short p_ownNid, ArrayList<MonitoringDataStructure> p_datas) {
+    public static MonitoringDataStructure calculate(ArrayList<MonitoringDataStructure> p_datas) {
         int numData = p_datas.size();
         float[][] floatTable = createFloatTable(p_datas);
         long[][] longTable = createLongTable(p_datas);
@@ -20,21 +20,21 @@ public class MedianMetric extends Metric {
         for (int i = 0; i < floatTable.length; i++) {
             Arrays.sort(floatTable[i]);
             if (numData % 2 == 0) {
-                floatTable[i][0] = 0.5f * (floatTable[i][numData / 2] + floatTable[i][numData / 2 + 1]);
+                floatTable[i][0] = 0.5f * (floatTable[i][numData / 2 - 1] + floatTable[i][numData / 2]);
             } else {
-                floatTable[i][0] = floatTable[i][(numData + 1) / 2];
+                floatTable[i][0] = floatTable[i][numData / 2];
             }
         }
         for (int i = 0; i < longTable.length; i++) {
             Arrays.sort(longTable[i]);
             if (numData % 2 == 0) {
-                longTable[i][0] = (longTable[i][numData / 2] + longTable[i][numData / 2 + 1]) / 2;
+                longTable[i][0] = (longTable[i][numData / 2 - 1] + longTable[i][numData / 2]) / 2;
             } else {
-                longTable[i][0] = longTable[i][(numData + 1) / 2];
+                longTable[i][0] = longTable[i][numData / 2];
             }
         }
 
-        MonitoringDataStructure dataStructure = new MonitoringDataStructure(p_ownNid, System.nanoTime());
+        MonitoringDataStructure dataStructure = new MonitoringDataStructure(p_datas.get(0).getNid(), System.nanoTime());
         dataStructure.setCpuUsage(floatTable[0][0]);
         dataStructure.setCpuLoads(new float[] {floatTable[1][0], floatTable[2][0], floatTable[3][0]});
         dataStructure.setMemoryUsage(floatTable[4][0]);

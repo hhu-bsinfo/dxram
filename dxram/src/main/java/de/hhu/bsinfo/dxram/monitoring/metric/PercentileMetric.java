@@ -17,7 +17,7 @@ public class PercentileMetric extends Metric {
      * @param p_k
      *         kth-Percentile - use numbers from 0 to 1 -> example 25 Perctile <=> 0.25
      */
-    public static MonitoringDataStructure calculate(final short p_ownNid, ArrayList<MonitoringDataStructure> p_datas,
+    public static MonitoringDataStructure calculate(ArrayList<MonitoringDataStructure> p_datas,
             final float p_k) {
         if (p_k <= 0.0f || p_k >= 1.0f) {
             throw new IllegalArgumentException("Percentile argument 'p_kth' must be in (0.0, 1.0)!");
@@ -31,14 +31,14 @@ public class PercentileMetric extends Metric {
 
         for (int i = 0; i < floatTable.length; i++) {
             Arrays.sort(floatTable[i]);
-            floatTable[i][0] = floatTable[index][0];
+            floatTable[i][0] = floatTable[i][index];
         }
         for (int i = 0; i < longTable.length; i++) {
             Arrays.sort(longTable[i]);
-            longTable[i][0] = longTable[index][0];
+            longTable[i][0] = longTable[i][index];
         }
 
-        MonitoringDataStructure dataStructure = new MonitoringDataStructure(p_ownNid, System.nanoTime());
+        MonitoringDataStructure dataStructure = new MonitoringDataStructure(p_datas.get(0).getNid(), System.nanoTime());
         dataStructure.setCpuUsage(floatTable[0][0]);
         dataStructure.setCpuLoads(new float[] {floatTable[1][0], floatTable[2][0], floatTable[3][0]});
         dataStructure.setMemoryUsage(floatTable[4][0]);

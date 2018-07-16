@@ -11,7 +11,7 @@ import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
  */
 public class AverageMetric extends Metric {
 
-    public static MonitoringDataStructure calculate(final short p_ownNid, ArrayList<MonitoringDataStructure> p_datas) {
+    public static MonitoringDataStructure calculate(ArrayList<MonitoringDataStructure> p_datas) {
         int numData = p_datas.size();
         float[][] floatValues = createFloatTable(p_datas);
         long[][] longValues = createLongTable(p_datas);
@@ -28,7 +28,7 @@ public class AverageMetric extends Metric {
             longValues[i][0] /= numData;
         }
 
-        MonitoringDataStructure dataStructure = new MonitoringDataStructure(p_ownNid, System.nanoTime());
+        MonitoringDataStructure dataStructure = new MonitoringDataStructure(p_datas.get(0).getNid(), System.nanoTime());
         dataStructure.setCpuUsage(floatValues[0][0]);
         dataStructure.setCpuLoads(new float[] {floatValues[1][0], floatValues[2][0], floatValues[3][0]});
         dataStructure.setMemoryUsage(floatValues[4][0]);

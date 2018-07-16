@@ -140,7 +140,7 @@ public class PeerMonitoringHandler extends Thread {
     }
 
     private void sendDataToSuperpeer() {
-        MonitoringDataStructure data = AverageMetric.calculate(m_ownNid, m_monitoringDatas);
+        MonitoringDataStructure data = AverageMetric.calculate(m_monitoringDatas);
         MonitoringDataMessage dataMessage = new MonitoringDataMessage(m_superpeerNid, data);
 
         try {

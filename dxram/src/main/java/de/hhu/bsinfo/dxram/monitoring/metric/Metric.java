@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.monitoring.metric;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
 
@@ -15,7 +16,7 @@ public class Metric {
         int numData = p_datas.size();
         /******** Create Table *********/
         float[][] floatTable = new float[15][numData];
-        long[][] longTable = new long[4][numData];
+
         for (int i = 0; i < numData; i++) {
             MonitoringDataStructure data = p_datas.get(i);
             // add cpu usage
@@ -56,7 +57,7 @@ public class Metric {
             MonitoringDataStructure data = p_datas.get(i);
             // add JVMThreadsState Values
             long[] tmp2 = data.getJvmThreadStats();
-            for (int j = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
                 longTable[j][i] = tmp2[j];
             }
         }
