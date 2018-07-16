@@ -16,14 +16,15 @@
 
 package de.hhu.bsinfo.dxram.monitoring;
 
+import java.io.File;
+
 import com.google.gson.annotations.Expose;
+
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxutils.OSValidator;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
-
-import java.io.File;
 
 /**
  * Monitoring Component config.
@@ -48,7 +49,7 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
     private short m_collectsPerWindow = 10;
 
     @Expose
-    private String m_monitoringFolder = "";
+    private String m_monitoringFolder = "./mon";
 
     private TimeUnit m_csvTimeWindow;
 
@@ -74,10 +75,10 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
             return false;
         }
 
-
         if (m_monitoringFolder.isEmpty()) {
             m_monitoringFolder = System.getProperty("user.dir") + "/mon";
         }
+        
         File file = new File(m_monitoringFolder);
 
         if (!file.exists()) {
